@@ -1,0 +1,7 @@
+# Mod set: Pickle plus Immersive Opening (Workshop 3698099797, ferny), for
+# the welcome dialog vs. scenario opening scenario: the opening replaces the
+# scenario's start dialog with a full-screen window.
+after brrainz.harmony
+rimworks.rimlogging
+rimworks.pickle
+ferny.immersiveopening

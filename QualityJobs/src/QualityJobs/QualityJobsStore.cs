@@ -1504,7 +1504,7 @@ namespace QualityJobs
         {
             QualityJobsSettings? settings = QualityJobsMod.Settings;
             if (settings == null
-                || !RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves))
+                || !RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves, queueWelcome))
                 return;
             QualityJobsMod.Instance.WriteSettings();
             Find.WindowStack?.Add(new RimShared.UiLib.WelcomeDialog(

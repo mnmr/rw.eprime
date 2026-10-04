@@ -81,7 +81,7 @@ namespace WorkRoles
         {
             WorkRolesSettings? settings = WorkRolesMod.Settings;
             if (settings == null
-                || !RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves))
+                || !RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves, queueWelcome))
                 return;
             settings.Write();
             Find.WindowStack?.Add(new RimShared.UiLib.WelcomeDialog(

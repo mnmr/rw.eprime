@@ -302,7 +302,9 @@ public sealed class AutomationRunner : MonoBehaviour
     private void RememberBlockers()
     {
         knownBlockers.Clear();
-        WindowStack stack = Find.WindowStack;
+        // Null between scenes (Pickle's main menu to fixture load).
+        WindowStack? stack = Find.WindowStack;
+        if (stack == null) return;
         for (int i = 0; i < stack.Count; i++) if (IsBlocker(stack[i])) knownBlockers.Add(stack[i]);
     }
 

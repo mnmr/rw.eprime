@@ -46,7 +46,7 @@ namespace Implanner
         {
             ImplannerSettings? settings = ImplannerMod.Settings;
             if (settings == null
-                || !RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves))
+                || !RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves, queueWelcome))
                 return;
             ImplannerMod.Instance.WriteSettings();
             Find.WindowStack?.Add(new RimShared.UiLib.WelcomeDialog(

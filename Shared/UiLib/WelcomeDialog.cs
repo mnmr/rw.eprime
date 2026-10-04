@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using HarmonyLib;
 using UnityEngine;
 using Verse;
 
@@ -32,14 +33,50 @@ namespace RimShared.UiLib
         /// returns for this save. False with no world, while Suppressed, or
         /// once seen. Presentation only: per-player settings, never synced
         /// state.
-        public static bool ClaimSave(List<string> shownSaves)
+        ///
+        /// Also false while the scenario's opening is on screen (vanilla's
+        /// start dialog, or a replacement such as Immersive Opening; both
+        /// bracket it with WindowStack.Notify_GameStartDialogOpened/Closed):
+        /// a welcome added then draws over the opening. The save stays
+        /// unclaimed and retry (the caller's own queue action) runs once the
+        /// opening closes.
+        public static bool ClaimSave(List<string> shownSaves, Action retry)
         {
             RimWorld.Planet.World? world = Find.World;
             if (world == null || Suppressed) return false;
+            if (!openingClosing
+                && Find.WindowStack?.SecondsSinceClosedGameStartDialog == 0f)
+            {
+                retryAfterOpening = retry;
+                return false;
+            }
+            retryAfterOpening = null;
             string id = world.info.persistentRandomValue.ToString();
             if (shownSaves.Contains(id)) return false;
             shownSaves.Add(id);
             return true;
+        }
+
+        // The welcome waiting for the opening to close: this assembly's (one
+        // mod's) cached static queue action, holding no game state. Set by
+        // ClaimSave while the opening is on screen; cleared when the opening
+        // closes (Patch_GameStartDialogClosed runs it) or by the next claim.
+        // One left over from a game quit mid-opening is harmless: it re-runs
+        // the claim against whatever save is current.
+        private static Action? retryAfterOpening;
+
+        // True while OpeningClosed runs the retry: for the rest of the
+        // closing frame the stack still reports 0 seconds since the close.
+        private static bool openingClosing;
+
+        internal static void OpeningClosed()
+        {
+            Action? retry = retryAfterOpening;
+            if (retry == null) return;
+            retryAfterOpening = null;
+            openingClosing = true;
+            try { retry(); }
+            finally { openingClosing = false; }
         }
 
         private const float PreviewWidth = 520f;
@@ -298,5 +335,13 @@ namespace RimShared.UiLib
             }
             return null;
         }
+    }
+
+    /// Opens the welcome a scenario opening held back, as the opening
+    /// closes (vanilla's start dialog and Immersive Opening both call this).
+    [HarmonyPatch(typeof(WindowStack), nameof(WindowStack.Notify_GameStartDialogClosed))]
+    internal static class Patch_GameStartDialogClosed
+    {
+        private static void Postfix() => WelcomeDialog.OpeningClosed();
     }
 }
