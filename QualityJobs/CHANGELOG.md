@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.1.7 — 2026-10-04
+
+- Changed: Extracted common logic to shared library for easier maintenance.
+- Fixed: Welcome dialogs now wait for any opening dialog to be closed before showing.
+
 ## 1.1.6 — 2026-10-03
 
 - Changed: Suppress welcome dialog when dev mode is enabled.
