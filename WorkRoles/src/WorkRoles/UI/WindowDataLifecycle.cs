@@ -1,3 +1,6 @@
+using RimShared.GameLib;
+using RimShared.UiLib;
+
 namespace WorkRoles.UI
 {
     /// Shared projections created only for WorkRoles windows. Keeping the owner
@@ -13,8 +16,8 @@ namespace WorkRoles.UI
             RoleIconPresentationCatalog.ReleaseForTeardown();
             WorkJobLabels.InvalidateLanguageCaches();
             ColonistsTabView.InvalidateSharedLanguageCaches();
-            ColonyScope.ReleaseSnapshot();
-            WrText.ClearFitWidthCache();
+            MapClassifications.ReleaseSnapshot();
+            WrText.Reset();
             Patches.Patch_Bill_DoConfigInterface.Clear();
             WrToast.Clear();
         }

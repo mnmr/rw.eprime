@@ -1,4 +1,5 @@
 using RimShared.Common;
+using RimShared.UiLib;
 using WorkRoles.Core;
 using WorkRoles.Signals;
 
@@ -31,9 +32,9 @@ namespace WorkRoles
             UI.RolesTabView.InvalidateSharedLanguageCaches();
             JobSkillProfiles.InvalidateLanguageCaches();
             JobSkillProfiles.QueueLocalizedFacadeWarm();
-            ColonyScope.InvalidateLanguageCaches();
+            ColonyScope.InvalidateLocationSnapshots();
             ExternalPawnFacts.InvalidateAll();
-            UI.StructuredTipPresenter.Reset();
+            StructuredTipPresenter.Reset();
         }
     }
 }

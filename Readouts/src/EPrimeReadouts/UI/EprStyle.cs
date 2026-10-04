@@ -1,6 +1,3 @@
-using System;
-using EPrimeReadouts.Core;
-using RimShared.Common;
 using RimShared.UiLib;
 using UnityEngine;
 using Verse;
@@ -11,41 +8,6 @@ namespace EPrimeReadouts.UI
     internal static class EprStyle
     {
         internal const float SectionHeaderHeight = 28f;
-        internal const float HelpPanelOffset = 8f;
-        internal const float HelpPanelPadding = 8f;
-        internal const float HelpExpandedBottomMargin = 20f;
-        internal const float HelpCollapsedBottomMargin = 8f;
-
-        private struct CaptionMeasureState
-        {
-            internal string Caption;
-            internal float Width;
-        }
-
-        // Cache contract:
-        // Owner: process/current UI presentation.
-        // Key: caption text, Tiny font, width and UiVersion.Current.
-        // Value: wrapped caption height.
-        // Dependencies: the complete measurement key above.
-        // Refresh policy: immediate when a key component changes.
-        // Equality policy: equal keys reuse the measured float.
-        // Teardown: Reset clears all caption measurements.
-        private static readonly TextHeightCache captionHeights = new TextHeightCache();
-        private static readonly Func<CaptionMeasureState, float> measureCaptionHeight =
-            state => Text.CalcHeight(state.Caption, state.Width);
-
-        // Cache contract:
-        // Owner: process/current UI presentation.
-        // Key: UiVersion.Current.
-        // Value: whole-pixel line geometry for a Tiny request after RimWorld's
-        // possible Small-font substitution.
-        // Dependencies: UI scale, tiny-text preference, language font support,
-        // and platform as represented by the UI metric revision.
-        // Refresh policy: first read in a UI revision; every later dialog read
-        // reuses the measured value.
-        // Teardown: Reset clears the stamp and value.
-        private static ResolvedTinyTextMetrics tinyTextMetrics;
-        private static int tinyTextMetricsVersion = -1;
 
         internal static readonly Color PanelBackground = new Color(0.08f, 0.08f, 0.08f, 0.9f);
         internal static readonly Color PanelOutline = new Color(1f, 1f, 1f, 0.15f);
@@ -64,20 +26,12 @@ namespace EPrimeReadouts.UI
         /// bright enough to stay readable next to unassigned rows.
         internal static readonly Color AssignedTint = new Color(1f, 1f, 1f, 0.6f);
 
-        internal static ResolvedTinyTextMetrics TinyTextMetrics
-        {
-            get
-            {
-                UiVersion.ObserveCurrentMetrics();
-                if (tinyTextMetricsVersion == UiVersion.Current)
-                    return tinyTextMetrics;
-                TinyTextMetrics shared = TinyText.Metrics;
-                tinyTextMetrics = new ResolvedTinyTextMetrics(
-                    shared.LineHeight, shared.Font == GameFont.Small);
-                tinyTextMetricsVersion = UiVersion.Current;
-                return tinyTextMetrics;
-            }
-        }
+        /// Help foldout spacing (shared HelpFoldout) on this mod's 28px
+        /// section-header tier.
+        internal static readonly HelpFoldoutMetrics HelpMetrics = new HelpFoldoutMetrics(
+            headerHeight: SectionHeaderHeight, panelOffset: 8f, panelPadding: 8f,
+            expandedBottomMargin: 20f, collapsedBottomMargin: 8f,
+            ruleColor: HeaderRule, labelAnchor: TextAnchor.UpperLeft);
 
         /// Plain underlined header (no fold toggle, no caption). Returns the
         /// height consumed.
@@ -85,76 +39,6 @@ namespace EPrimeReadouts.UI
         {
             bool folded = false;
             return SectionHeader(x, y, width, label, null, ref folded, foldable: false);
-        }
-
-        /// A secondary Help foldout followed by either a compact collapsed gap
-        /// or a framed caption panel. Returns the complete vertical footprint.
-        internal static float HelpGroup(float x, float y, float width,
-            string label, string caption, ref bool folded)
-        {
-            float used = FoldoutHeader(x, y, width, label, ref folded);
-            if (folded) return used + HelpCollapsedBottomMargin;
-
-            float textWidth = Mathf.Max(1f, width - 2f * HelpPanelPadding);
-            float captionHeight = CaptionHeight(caption, textWidth);
-            ResolvedTinyTextMetrics metrics = TinyTextMetrics;
-            float panelHeight = captionHeight + 2f * HelpPanelPadding;
-            var panelRect = new Rect(
-                x,
-                y + used + HelpPanelOffset,
-                width,
-                panelHeight);
-
-            using (GuiStateScope.Capture())
-            {
-                Widgets.DrawBoxSolidWithOutline(
-                    panelRect, PanelBackground, PanelOutline);
-                GUI.color = CaptionText;
-                TinyText.Label(new Rect(
-                    panelRect.x + HelpPanelPadding,
-                    panelRect.y + HelpPanelPadding + metrics.CaptionOffsetY,
-                    textWidth,
-                    captionHeight), caption);
-            }
-
-            return used + HelpPanelOffset + panelHeight
-                + HelpExpandedBottomMargin;
-        }
-
-        /// Complete vertical footprint of a Help foldout without drawing it.
-        internal static float HelpGroupHeight(float width, string caption, bool folded)
-        {
-            if (folded) return SectionHeaderHeight + HelpCollapsedBottomMargin;
-
-            float textWidth = Mathf.Max(1f, width - 2f * HelpPanelPadding);
-            return SectionHeaderHeight
-                + HelpPanelOffset
-                + CaptionHeight(caption, textWidth)
-                + 2f * HelpPanelPadding
-                + HelpExpandedBottomMargin;
-        }
-
-        private static float FoldoutHeader(float x, float y, float width,
-            string label, ref bool folded)
-        {
-            using (GuiStateScope.Capture())
-            {
-                var clickRect = new Rect(x, y, width, 22f);
-                Widgets.DrawHighlightIfMouseover(clickRect);
-                if (Widgets.ButtonInvisible(clickRect)) folded = !folded;
-
-                GUI.DrawTexture(
-                    new Rect(x + 1f, y + 3f, 16f, 16f),
-                    folded ? TexButton.Reveal : TexButton.Collapse);
-
-                Text.Font = GameFont.Small;
-                GUI.color = HeaderText;
-                Widgets.Label(new Rect(x + 21f, y, Mathf.Max(0f, width - 21f), 22f),
-                    label);
-                GUI.color = HeaderRule;
-                WrText.LineHorizontal(x, y + 24f, width);
-            }
-            return SectionHeaderHeight;
         }
 
         /// Underlined section header. When <paramref name="foldable"/>, clicking
@@ -191,7 +75,7 @@ namespace EPrimeReadouts.UI
                 float capH = CaptionHeight(caption!, width); // NullOrEmpty checked above
                 TinyText.Label(new Rect(
                     x,
-                    y + used + TinyTextMetrics.CaptionOffsetY,
+                    y + used + TinyText.FallbackCaptionOffsetY,
                     width,
                     capH), caption!);
                 GUI.color = Color.white;
@@ -201,27 +85,12 @@ namespace EPrimeReadouts.UI
             }
         }
 
+        /// Wrapped Tiny caption height, sharing the Help foldout's caption
+        /// measurement cache.
         internal static float CaptionHeight(string caption, float width)
         {
-            UiVersion.ObserveCurrentMetrics();
-            using (TinyText.UseFont())
-            {
-                float measured = captionHeights.Get(
-                    caption,
-                    (int)TinyText.Metrics.Font,
-                    width,
-                    UiVersion.Current,
-                    new CaptionMeasureState { Caption = caption, Width = width },
-                    measureCaptionHeight);
-                return TinyTextMetrics.MinHeight(Mathf.Ceil(measured));
-            }
-        }
-
-        internal static void Reset()
-        {
-            captionHeights.Reset();
-            tinyTextMetrics = default;
-            tinyTextMetricsVersion = -1;
+            UiRevision.ObserveCurrentMetrics();
+            return HelpFoldout.CaptionHeight(caption, width, UiRevision.Current);
         }
     }
 }

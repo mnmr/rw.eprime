@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using RimShared.GameLib;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -107,14 +109,14 @@ namespace WorkRoles.UI
             if (ownerChanged || snapshot == null
                 || displayStamp != UiVersion.Current
                 || displayDefinitionRevision != DefinitionReloadCoordinator.Revision
-                || displayLocationRevision != ColonyScope.LocationRevision
+                || displayLocationRevision != MapClassifications.LocationRevision
                 || displayCollapseRevision != collapseRevision
                 || displayNestedPreference != nestedPreference
                 || displaySearch != RoleSearch || displayJobFilter != JobFilterDefName)
             {
                 displayStamp = UiVersion.Current;
                 displayDefinitionRevision = DefinitionReloadCoordinator.Revision;
-                displayLocationRevision = ColonyScope.LocationRevision;
+                displayLocationRevision = MapClassifications.LocationRevision;
                 displayCollapseRevision = collapseRevision;
                 displayNestedPreference = nestedPreference;
                 displaySearch = RoleSearch;

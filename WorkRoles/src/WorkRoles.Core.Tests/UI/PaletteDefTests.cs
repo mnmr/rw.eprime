@@ -36,10 +36,7 @@ public class PaletteDefTests
 
     private static Dictionary<string, string> ShippedPalette()
     {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "mod", "1.6", "Defs")))
-            dir = dir.Parent;
-        var path = Path.Combine(dir!.FullName, "mod", "1.6", "Defs", "Palette.xml");
+        var path = ShippedMod.Path("1.6", "Defs", "Palette.xml");
         return XElement
             .Load(path)
             .Elements("WorkRoles.PaletteDef")

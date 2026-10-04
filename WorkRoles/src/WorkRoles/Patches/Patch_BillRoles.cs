@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HarmonyLib;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -126,7 +127,7 @@ namespace WorkRoles.Patches
                 : "WR_BillRoleOption".Translate(role.label);
             if (Widgets.ButtonText(buttonRect, ButtonLabel(label, buttonRect.width - ButtonTextPadding)))
                 Find.WindowStack.Add(new FloatMenu(WorkerOptions(bill)));
-            UI.WrTips.Key("WR_SurgeryWorkerRoleTip").Region(buttonRect);
+            WrTips.Key("WR_SurgeryWorkerRoleTip").Region(buttonRect);
         }
 
         private static string ButtonLabel(string label, float width)
@@ -141,7 +142,7 @@ namespace WorkRoles.Patches
             {
                 // Same drift margin as WrText.FitWidth so a fractional UI scale
                 // cannot wrap a label that measured as fitting.
-                result = UI.WrText.FitWidth(label) <= width ? label : label.Truncate((width - 2f) / 1.02f);
+                result = WrText.FitWidth(label) <= width ? label : label.Truncate((width - 2f) / 1.02f);
                 buttonLabels[key] = result;
             }
             return result;
@@ -420,7 +421,7 @@ namespace WorkRoles.Patches
             // click was already handled by the dropdown underneath this frame.
             var rect = new Rect(0f, 0f, listing.ColumnWidth, 30f);
             Widgets.ButtonText(rect, "WR_BillRoleOption".Translate(role.label));
-            UI.WrTips.Key("WR_BillWorkerRoleTip").Region(rect);
+            WrTips.Key("WR_BillWorkerRoleTip").Region(rect);
         }
     }
 }

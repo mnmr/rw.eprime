@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RimShared.UiLib;
 using Verse;
 
 namespace EPrimeReadouts.UI
@@ -9,7 +10,7 @@ namespace EPrimeReadouts.UI
         // Owner: process/current language.
         // Key: translation key string.
         // Value: immutable translated string.
-        // Dependencies: UiVersion.LanguageCurrent.
+        // Dependencies: UiRevision.LanguageCurrent.
         // Refresh policy: immediate clear on observed language revision change.
         // Equality policy: cache hits preserve the string reference.
         // Teardown: Reset clears every translated string.
@@ -19,11 +20,11 @@ namespace EPrimeReadouts.UI
 
         internal static string Get(string key)
         {
-            UiVersion.ObserveCurrentMetrics();
-            if (languageVersion != UiVersion.LanguageCurrent)
+            UiRevision.ObserveCurrentMetrics();
+            if (languageVersion != UiRevision.LanguageCurrent)
             {
                 text.Clear();
-                languageVersion = UiVersion.LanguageCurrent;
+                languageVersion = UiRevision.LanguageCurrent;
             }
             if (!text.TryGetValue(key, out string value))
             {

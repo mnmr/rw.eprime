@@ -37,9 +37,9 @@ namespace EPrimeReadouts.UI
 
         public string ReloadLabelKey => "EPR.HelpReload";
 
-        public int UiMetricRevision => UiVersion.Current;
+        public int UiMetricRevision => UiRevision.Current;
 
-        public int LanguageRevision => UiVersion.LanguageCurrent;
+        public int LanguageRevision => UiRevision.LanguageCurrent;
 
         public IReadOnlyList<string> ReadTopicSlugs =>
             EPrimeReadoutsMod.Settings.helpTopicsRead;
@@ -47,6 +47,15 @@ namespace EPrimeReadouts.UI
         public void PersistReadTopics(List<string> slugs)
         {
             EPrimeReadoutsMod.Persist(s => s.helpTopicsRead.AddRange(slugs));
+        }
+
+        /// No guided tour: the first chapter is a plain topic list.
+        public HelpTour? Tour => null;
+
+        public bool TryGetDemo(string name, out IHelpDemo? demo)
+        {
+            demo = null;
+            return false;
         }
     }
 }

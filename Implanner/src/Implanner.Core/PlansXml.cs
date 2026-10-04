@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using RimShared.Common;
 
 namespace Implanner.Core
 {
@@ -285,41 +286,11 @@ namespace Implanner.Core
 
         // ── Helpers ───────────────────────────────────────────────────────────
 
-        /// <summary>
-        /// Evaluates the vanilla-style mod-requirement attributes on an
-        /// element: <c>MayRequire</c> (comma-separated packageIds, ALL must
-        /// be active) and <c>MayRequireAnyOf</c> (comma-separated packageIds,
-        /// ANY must be active). A null predicate keeps everything.
-        /// </summary>
-        static bool ModsPresent(XElement el, Func<string, bool>? isModActive)
-        {
-            if (isModActive == null) return true;
-
-            string all = (string)el.Attribute("MayRequire");
-            if (!string.IsNullOrEmpty(all))
-            {
-                foreach (var id in all.Split(','))
-                    if (!isModActive(id.Trim()))
-                        return false;
-            }
-
-            string any = (string)el.Attribute("MayRequireAnyOf");
-            if (!string.IsNullOrEmpty(any))
-            {
-                bool anyActive = false;
-                foreach (var id in any.Split(','))
-                {
-                    if (isModActive(id.Trim()))
-                    {
-                        anyActive = true;
-                        break;
-                    }
-                }
-                if (!anyActive) return false;
-            }
-
-            return true;
-        }
+        /// The element's vanilla-style <c>MayRequire</c>/<c>MayRequireAnyOf</c>
+        /// attributes (see <see cref="MayRequireRules.Satisfied"/>).
+        static bool ModsPresent(XElement el, Func<string, bool>? isModActive) =>
+            MayRequireRules.Satisfied((string)el.Attribute("MayRequire"),
+                (string)el.Attribute("MayRequireAnyOf"), isModActive);
 
         static bool TryCollectPlanNames(
             IReadOnlyList<Plan>? plans,

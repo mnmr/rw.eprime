@@ -16,7 +16,7 @@ namespace QualityJobs.Patches
     ///   on ALL clients during synced command replay. This hook therefore runs on
     ///   every client with identical timing. It reads ONLY the synced store
     ///   (pendingCopy* fields set via [SyncMethod], and the scribed construction
-    ///   defaults) and mutates the store directly through PlanOps.Apply — which is
+    ///   defaults) and mutates the store directly through ApplyPlanSettings — which is
     ///   deterministic, exactly like the gate/scan already mutate the store during
     ///   synced replay. No client-local state is consulted, so no divergence is
     ///   possible. (The old DesignateSingleCell postfix consulted a client-local
@@ -64,27 +64,23 @@ namespace QualityJobs.Patches
             // pass) — nothing to do.
             if (store.FindPlan(bp) != null) return;
 
-            // Application order, both via PlanOps.Apply (direct store mutation;
-            // deterministic in synced replay, reads only synced store):
+            // Application order, both via store.ApplyPlanSettings (direct store
+            // mutation; deterministic in synced replay, reads only synced store).
+            // All-neutral values create no plan there.
             if (store.pendingCopyActive)
             {
                 // Copy path: apply the synced source plan settings.
-                PlanOps.Apply(store, bp.thingIDNumber,
+                store.ApplyPlanSettings(bp.thingIDNumber,
                     store.pendingCopyMinSkill,
                     store.pendingCopyInspired,
                     store.pendingCopySpecialist,
                     store.pendingCopyQuality,
                     store.pendingCopyAutoBest);
             }
-            else if (store.manageNewConstructionDefault
-                && (store.constructionMinSkillDefault > 0
-                    || store.constructionRequireInspiredDefault
-                    || store.constructionRequireSpecialistDefault
-                    || store.constructionTargetQualityDefault > 0
-                    || store.constructionAutoBestDefault))
+            else if (store.manageNewConstructionDefault)
             {
                 // Auto-create path: apply the store's construction defaults.
-                PlanOps.Apply(store, bp.thingIDNumber,
+                store.ApplyPlanSettings(bp.thingIDNumber,
                     store.constructionMinSkillDefault,
                     store.constructionRequireInspiredDefault,
                     store.constructionRequireSpecialistDefault,

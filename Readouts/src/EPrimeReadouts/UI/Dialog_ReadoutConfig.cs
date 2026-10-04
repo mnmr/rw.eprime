@@ -29,9 +29,6 @@ namespace EPrimeReadouts.UI
         private const float ModeHeaderH = 34f;
         private const float ModeBodyGap = 6f;
 
-        // Between TabRecord's normal white and its hover yellow.
-        private static readonly Color ActiveTabLabelColor = new Color(1f, 0.95f, 0.55f);
-
         /// Currently selected group id; -1 = none.
         public int selectedGroupId = -1;
 
@@ -62,7 +59,7 @@ namespace EPrimeReadouts.UI
 
         // Cache contract:
         // Owner: this window.
-        // Key: UiVersion.LanguageCurrent.
+        // Key: UiRevision.LanguageCurrent.
         // Value: the three TabRecords with translated labels.
         // Dependencies: language only; selection reads curTab live.
         // Refresh policy: rebuilt on the first draw after the revision moves.
@@ -134,7 +131,7 @@ namespace EPrimeReadouts.UI
 
             using (GuiStateScope.Capture())
             {
-                UiVersion.ObserveCurrentMetrics();
+                UiRevision.ObserveCurrentMetrics();
                 EnsureTabs();
 
                 var content = new Rect(
@@ -144,7 +141,7 @@ namespace EPrimeReadouts.UI
                 // Active-tab emphasis: TabRecord reads labelColor per pass, so
                 // a per-frame field write is how selection tints the label.
                 for (int i = 0; i < tabs!.Count; i++)
-                    tabs[i].labelColor = i == (int)curTab ? ActiveTabLabelColor : (Color?)null;
+                    tabs[i].labelColor = i == (int)curTab ? TabStrip.ActiveLabelColor : (Color?)null;
                 TabStrip.Draw(content, tabs, ReadoutTextures.TabAtlas);
                 TabStrip.DrawActiveTabSeam(content, (int)curTab, tabs.Count);
 
@@ -161,8 +158,8 @@ namespace EPrimeReadouts.UI
 
         private void EnsureTabs()
         {
-            if (tabs != null && tabsLanguageStamp == UiVersion.LanguageCurrent) return;
-            tabsLanguageStamp = UiVersion.LanguageCurrent;
+            if (tabs != null && tabsLanguageStamp == UiRevision.LanguageCurrent) return;
+            tabsLanguageStamp = UiRevision.LanguageCurrent;
             tabs = new List<TabRecord>
             {
                 new TabRecord(UiText.Get("EPR.Overview"),
@@ -223,9 +220,11 @@ namespace EPrimeReadouts.UI
             if (Widgets.ButtonText(restoreRect, UiText.Get("EPR.RestoreDefaults")))
             {
                 string restorePayload = DefaultGroups.GetRestorePayload();
-                Find.WindowStack.Add(new Dialog_CompactConfirm(
+                Find.WindowStack.Add(new CompactConfirmDialog(
                     "EPR.RestoreConfirm".Translate(),
-                    () => ReadoutCommands.RestoreDefaults(restorePayload), destructive: true));
+                    () => ReadoutCommands.RestoreDefaults(restorePayload),
+                    UiText.Get("OK"), UiText.Get("CancelButton"),
+                    UiRevision.Current, destructive: true));
             }
 
             // [Export] — 90px wide, to the left of Restore

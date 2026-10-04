@@ -234,12 +234,12 @@ namespace WorkRoles.UI
             DrawRecommendationOrder(recPanel);
             DrawHelpParagraph(recOrderHelpRect, state.RecommendationOrderHelp);
 
-            WrText.HeaderLabel(leftHeader, panels.HeaderLabel);
+            WrLabels.HeaderLabel(leftHeader, panels.HeaderLabel);
             DrawHelpParagraph(panelsHelpRect, panels.Help);
             DrawRolePanels(flowX, panelsStartY, flowW, panels,
                 detail, bodyHeight);
 
-            WrText.HeaderLabel(rightHeader, tuning.HeaderLabel);
+            WrLabels.HeaderLabel(rightHeader, tuning.HeaderLabel);
             DrawHelpParagraph(globalHelpRect, tuning.GlobalHelp);
             float ty = tuningStartY;
             for (int i = 0; i < tuning.Count; i++)

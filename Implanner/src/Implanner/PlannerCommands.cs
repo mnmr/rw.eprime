@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Multiplayer.API;
 using Implanner.Core;
+using RimShared.GameLib;
 using RimWorld;
 using Verse;
 using Plan = Implanner.Core.Plan;
@@ -156,7 +157,7 @@ namespace Implanner
         {
             int best = 0;
             List<Pawn> colonists = ColonyScope.AllPlanableColonists(
-                ColonyScope.AuthoritativeFaction);
+                PlayerFactions.AuthoritativeFaction);
             for (int i = 0; i < colonists.Count; i++)
             {
                 Pawn pawn = colonists[i];
@@ -244,7 +245,7 @@ namespace Implanner
                         DeleteFromStack(bench.BillStack, ids);
             }
             List<Pawn> pawns = ColonyScope.AllPlanableColonists(
-                ColonyScope.AuthoritativeFaction);
+                PlayerFactions.AuthoritativeFaction);
             for (int i = 0; i < pawns.Count; i++)
                 DeleteFromStack(pawns[i].BillStack, ids);
         }

@@ -23,7 +23,7 @@ public static class RoleDefaults
     private static Dictionary<string, DefTuning> Load()
     {
         var result = new Dictionary<string, DefTuning>(StringComparer.Ordinal);
-        XElement root = XDocument.Load(RolesXmlPath()).Root ?? throw new InvalidDataException("Roles.xml has no root element");
+        XElement root = XDocument.Load(ShippedMod.Path("1.6", "Defs", "Roles.xml")).Root ?? throw new InvalidDataException("Roles.xml has no root element");
         foreach (XElement def in root.Elements("WorkRoles.RoleDef"))
         {
             string? defName = def.Element("defName")?.Value;
@@ -74,18 +74,5 @@ public static class RoleDefaults
             result.Add((role, IntOf(entry.Element("min")), entry.Element("max") == null ? SkillProgressionMath.MaxLevel : IntOf(entry.Element("max"))));
         }
         return result;
-    }
-
-    private static string RolesXmlPath()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory != null)
-        {
-            string candidate = Path.Combine(directory.FullName, "mod", "1.6", "Defs", "Roles.xml");
-            if (File.Exists(candidate))
-                return candidate;
-            directory = directory.Parent;
-        }
-        throw new FileNotFoundException("mod/1.6/Defs/Roles.xml not found above " + AppContext.BaseDirectory);
     }
 }

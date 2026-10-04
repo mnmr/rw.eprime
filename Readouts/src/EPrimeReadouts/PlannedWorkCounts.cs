@@ -15,8 +15,6 @@ namespace EPrimeReadouts
     /// is read live here like any other work. Reads game state; mutates nothing.
     internal static class PlannedWorkCounts
     {
-        private static readonly System.Comparison<Map> compareMaps = CompareMaps;
-
         private readonly struct CarriedKey : System.IEquatable<CarriedKey>
         {
             internal CarriedKey(Thing destination, ThingDef resource)
@@ -71,52 +69,6 @@ namespace EPrimeReadouts
                         AccumulateManagedConstruction(
                             managed.ConstructionJobs[i], accumulator, carried);
             }
-        }
-
-        /// Groups QJA's jobs by map, maps in uniqueID order and jobs in QJA's
-        /// own order, so the projection is deterministic.
-        internal static QualityJobsPlannedWorkSnapshot BuildQualityJobsSnapshot(
-            QualityJobsBridge.ManagedJobsSnapshot source)
-        {
-            if (source.Bills.Length == 0 && source.Construction.Length == 0)
-                return QualityJobsPlannedWorkSnapshot.Empty;
-
-            var bills = new Dictionary<Map, List<QualityJobsBridge.ManagedBillJob>>(
-                IdentityComparer<Map>.Instance);
-            var construction = new Dictionary<Map,
-                List<QualityJobsBridge.ManagedConstructionJob>>(
-                IdentityComparer<Map>.Instance);
-            var maps = new List<Map>();
-            for (int i = 0; i < source.Bills.Length; i++)
-                ListFor(bills, source.Bills[i].Map, maps).Add(source.Bills[i]);
-            for (int i = 0; i < source.Construction.Length; i++)
-                ListFor(construction, source.Construction[i].Map, maps)
-                    .Add(source.Construction[i]);
-
-            maps.Sort(compareMaps);
-            var projected = new QualityJobsMapWorkSnapshot[maps.Count];
-            for (int i = 0; i < maps.Count; i++)
-            {
-                Map map = maps[i];
-                projected[i] = new QualityJobsMapWorkSnapshot(map,
-                    bills.TryGetValue(map, out var mapBills)
-                        ? mapBills.ToArray()
-                        : System.Array.Empty<QualityJobsBridge.ManagedBillJob>(),
-                    construction.TryGetValue(map, out var mapConstruction)
-                        ? mapConstruction.ToArray()
-                        : System.Array.Empty<QualityJobsBridge.ManagedConstructionJob>());
-            }
-            return new QualityJobsPlannedWorkSnapshot(projected);
-        }
-
-        private static List<T> ListFor<T>(
-            Dictionary<Map, List<T>> byMap, Map map, List<Map> maps)
-        {
-            if (byMap.TryGetValue(map, out List<T> list)) return list;
-            list = new List<T>();
-            byMap.Add(map, list);
-            if (!maps.Contains(map)) maps.Add(map);
-            return list;
         }
 
         private static void AccumulateManagedBill(
@@ -213,9 +165,6 @@ namespace EPrimeReadouts
             return left >= int.MaxValue - right
                 ? int.MaxValue : left + right;
         }
-
-        private static int CompareMaps(Map left, Map right)
-            => left.uniqueID.CompareTo(right.uniqueID);
 
         // ---- bills -------------------------------------------------------
 

@@ -16,6 +16,7 @@ verification commands. Where this file is silent, the root contract governs.
 - `src/EPrimeReadouts` owns game integration, persistence, patches, rendering, and UI.
 - `src/EPrimeReadouts.Core.Tests` owns executable behavioral and regression tests.
 - Shared game-side UI source from `..\Shared\UiLib` (namespace `RimShared.UiLib`, may reference Verse/Unity) is compiled into `EPrimeReadouts` via `$(RimSharedRoot)`; it must never be included in `EPrimeReadouts.Core`.
+- Shared test-only source from `..\Shared\Tests\Support` (namespace `RimShared.Tests.Support`, e.g. the shipped-help validator `HelpContentChecks`) is compiled into `EPrimeReadouts.Core.Tests` the same way; it must never be included in a shipped project.
 
 ## Canonical refresh boundaries
 
@@ -48,11 +49,13 @@ verification commands. Where this file is silent, the root contract governs.
 | Group assignment tree rows | Store/world identity, `GroupsVersion`, selected group and token, pool snapshot identity, shared filter revision, group expansion state, and language revision |
 | Pool membership tree rows | Store/world identity, `PoolsVersion`, selected pool, shared filter revision, pool expansion state, and language revision |
 | Tooltip content | Token (search results are keyed apart from group slots and use the global count basis, never a count rule), render snapshot identity, `ThresholdsVersion`, `CountRulesVersion`; capture when a display session begins and retain until it ends |
-| Tooltip geometry | Tooltip model identity, maximum width, UI metric revision; capture when a display session begins and retain until it ends |
-| Text width/height | Text, font, available width where applicable, UI metric revision |
+| Tooltip geometry (shared `RimShared.UiLib` tooltip stack in `Shared/UiLib/Tips`; Readouts' window id, table inset and revisions in `UI/TipHost.cs`) | Tooltip model identity, maximum width, UI metric revision (`UiRevision.Current`); capture when a display session begins and retain until it ends |
+| Text width/height (fit widths: shared `RimShared.UiLib.WrText.FitWidth`, per-assembly static) | Text, font, available width where applicable, UI metric revision (`UiRevision.Current`, shared `RimShared.UiLib.UiRevision`: UI scale, tiny-font preference, language); `WrText.Reset` from `RuntimeTeardown.ResetAll` |
+| Help foldout and caption heights (shared `RimShared.UiLib.HelpFoldout`, per-assembly static; `EprStyle.CaptionHeight` reads the same cache) | Caption text, effective Tiny font (`TinyText.Metrics.Font`), wrap width, and the caller-supplied `UiRevision.Current`; `HelpFoldout.Reset` from `RuntimeTeardown.ResetAll` |
+| Confirmation body heights (shared `RimShared.UiLib.CompactConfirmDialog`, per-assembly static) | Body text, Small font, body wrap width, and the caller-supplied `UiRevision.Current`, measured once at dialog construction; `CompactConfirmDialog.Reset` from `RuntimeTeardown.ResetAll` |
 | Export snapshot | `GroupsVersion` and `PoolsVersion`; threshold-only edits must not invalidate it |
-| Editor tab records (`Dialog_ReadoutConfig`) | `UiVersion.LanguageCurrent`; the selected tab is session-static presentation state, never persisted; dropped on close |
-| Help content (shared `HelpContentState` via `ReadoutHelpHost`) | Chapter topic lists loaded from `mod/Help/<Language>/<chapter>` on demand (tab open, chapter click, dev Reload); draw models keyed by chapter + slug + width + `UiVersion.Current`; word/space/line-height measurements stamped by `UiVersion.Current`; file-loaded textures owned and destroyed by `Release()`; read marks persisted to `ReadoutSettings.helpTopicsRead` from `WindowUpdate`/close, one settings write per batch, never from a draw pass; language change and window close release everything (window-owned via `HelpTabView`) |
+| Editor tab records (`Dialog_ReadoutConfig`) | `UiRevision.LanguageCurrent`; the selected tab is session-static presentation state, never persisted; dropped on close |
+| Help content (shared `HelpContentState` via `ReadoutHelpHost`) | Chapter topic lists loaded from `mod/Help/<Language>/<chapter>` on demand (tab open, chapter click, dev Reload); draw models keyed by chapter + slug + width + `UiRevision.Current`; word/space/line-height measurements stamped by `UiRevision.Current`; file-loaded textures owned and destroyed by `Release()`; read marks persisted to `ReadoutSettings.helpTopicsRead` from `WindowUpdate`/close, one settings write per batch, never from a draw pass; language change and window close release everything (window-owned via `HelpTabView`) |
 | Welcome dialog assets (shared `RimShared.UiLib.WelcomeDialog`, built in `ReadoutGameComponent.QueueWelcome`) | Translated strings resolved at construction; About/Preview.png loaded from disk and wrapped-text measurements resolved once in `PreOpen` (language and UI scale cannot change while open); window-owned, texture destroyed in `PostClose`; shown once per player per save via `ReadoutSettings.welcomeShownSaves` keyed by the world's persistent random value |
 
 Changes to these dependencies require updated behavioral tests in the same change.

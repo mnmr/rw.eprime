@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using Verse;
@@ -17,6 +18,30 @@ namespace RimShared.UiLib
     /// adding the window, so no text is resolved during drawing.
     public sealed class WelcomeDialog : Window
     {
+        /// Callers skip the welcome (without marking the save seen) while
+        /// dev mode is on: mod authors start many throwaway games and must
+        /// not be greeted on every one.
+        public static bool Suppressed => Prefs.DevMode;
+
+        /// The once-per-player-per-save gate every mod's welcome goes
+        /// through. True when the current save has not shown this mod's
+        /// welcome yet: its id (the world's persistent random value, the
+        /// save's stable identity) is added to shownSaves, and the caller
+        /// persists its settings and opens the dialog. Marked seen the
+        /// moment it is claimed, so however the dialog is dismissed it never
+        /// returns for this save. False with no world, while Suppressed, or
+        /// once seen. Presentation only: per-player settings, never synced
+        /// state.
+        public static bool ClaimSave(List<string> shownSaves)
+        {
+            RimWorld.Planet.World? world = Find.World;
+            if (world == null || Suppressed) return false;
+            string id = world.info.persistentRandomValue.ToString();
+            if (shownSaves.Contains(id)) return false;
+            shownSaves.Add(id);
+            return true;
+        }
+
         private const float PreviewWidth = 520f;
         private const float IconSize = 48f;
         private const float ButtonHeight = 35f;
@@ -127,9 +152,9 @@ namespace RimShared.UiLib
                         Mathf.Ceil(Text.CalcSize(FindButtonLabel).x) + 20f);
                     adornmentHeight = ButtonHeight;
                 }
-                // 2% + 2px drift margin (the mods' FitWidth rule): an exact
-                // CalcSize rect wraps at fractional UI scales (seen at 1.5).
-                linkWidth = Mathf.Ceil(Text.CalcSize(takeMeThere).x * 1.02f + 2f);
+                // Fit width: an exact CalcSize rect wraps at fractional UI
+                // scales (seen at 1.5).
+                linkWidth = WrText.MeasureFitWidth(takeMeThere);
                 linkHeight = Mathf.Max(22f,
                     Mathf.Ceil(Text.LineHeightOf(GameFont.Small)));
                 titleHeight = Mathf.Max(34f,

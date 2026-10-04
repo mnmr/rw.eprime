@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Verse;
@@ -58,6 +59,36 @@ namespace QualityJobs.UI
             {
                 GUI.color = prev;
             }
+        }
+
+        /// Label + slider row: label left 50%, slider right 50% (SliderLabeled's
+        /// default labelPct), shared by the settings grid and both dialogs.
+        /// Returns the new integer value. Callers cache the translated label;
+        /// nothing here allocates.
+        public static int SliderRow(Rect row, string label, int current, float min, float max)
+        {
+            TextAnchor prev = Text.Anchor;
+            Text.Anchor = TextAnchor.MiddleLeft;
+            Widgets.Label(row.LeftHalf(), label);
+            Text.Anchor = prev;
+            return (int)Widgets.HorizontalSlider(row.RightHalf(), current, min, max,
+                middleAlignment: true);
+        }
+
+        /// Target-quality picker menu: zeroLabel for 0 ("Any" or "No retries"),
+        /// then labels[1..6]. Build it on click only. vanishIfMouseDistant = false
+        /// so the menu does not self-close when spawned clamped away from the
+        /// mouse near the screen edge.
+        public static FloatMenu QualityMenu(string zeroLabel, string[] labels, Action<int> pick)
+        {
+            var options = new List<FloatMenuOption>(7);
+            options.Add(new FloatMenuOption(zeroLabel, () => pick(0)));
+            for (int q = 1; q <= 6; q++)
+            {
+                int capturedQ = q;
+                options.Add(new FloatMenuOption(labels[q], () => pick(capturedQ)));
+            }
+            return new FloatMenu(options) { vanishIfMouseDistant = false };
         }
     }
 }

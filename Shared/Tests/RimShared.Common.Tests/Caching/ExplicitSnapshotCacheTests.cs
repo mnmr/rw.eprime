@@ -48,5 +48,24 @@ public class ExplicitSnapshotCacheTests
         await Assert.That(builds).IsEqualTo(3);
     }
 
+    [Test]
+    public async Task ValueTypeKeysReuseOneStableValue()
+    {
+        int builds = 0;
+        var cache = new ExplicitSnapshotCache<int, Action>(key =>
+        {
+            builds++;
+            return () => _ = key;
+        });
+
+        Action first = cache.Get(7);
+        Action repeated = cache.Get(7);
+
+        // Assert.That(Action) is interpreted as an executable delegate by the
+        // runner, so compare the cached delegate references explicitly.
+        await Assert.That(ReferenceEquals(repeated, first)).IsTrue();
+        await Assert.That(builds).IsEqualTo(1);
+    }
+
     private sealed class Owner { }
 }

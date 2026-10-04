@@ -8,20 +8,21 @@ namespace RimShared.Common
     /// clears them. Reading never observes, hashes, or compares the live source.
     /// </summary>
     public sealed class ExplicitSnapshotCache<TKey, TSnapshot>
-        where TKey : class
+        where TKey : notnull
     {
-        private readonly Dictionary<TKey, TSnapshot> snapshots =
-            new Dictionary<TKey, TSnapshot>();
+        private readonly Dictionary<TKey, TSnapshot> snapshots;
         private readonly Func<TKey, TSnapshot> build;
 
-        public ExplicitSnapshotCache(Func<TKey, TSnapshot> build)
+        public ExplicitSnapshotCache(Func<TKey, TSnapshot> build,
+            IEqualityComparer<TKey>? comparer = null)
         {
             this.build = build ?? throw new ArgumentNullException(nameof(build));
+            snapshots = new Dictionary<TKey, TSnapshot>(
+                comparer ?? EqualityComparer<TKey>.Default);
         }
 
         public TSnapshot Get(TKey key)
         {
-            if (key == null) throw new ArgumentNullException(nameof(key));
             if (!snapshots.TryGetValue(key, out TSnapshot? snapshot))
             {
                 snapshot = build(key);

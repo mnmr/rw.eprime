@@ -60,7 +60,7 @@ namespace EPrimeReadouts.UI
         // Cache contract:
         // Owner: process/current world and selected map.
         // Key: map identity, exact domain revisions, view stamp, width,
-        // UiVersion, and shared pool/count snapshot identities.
+        // UiRevision, and shared pool/count snapshot identities.
         // Value: immutable resolved DrawModel plus presentation measurements.
         // Dependencies: those keys and per-player depth/search/settings state.
         // Refresh policy: immediate on dependency changes; counts arrive via
@@ -73,7 +73,7 @@ namespace EPrimeReadouts.UI
         private static DrawModel? draw;
         private static Vector2 scroll;
         private static float cachedTitleWidth = -1f;
-        private static int cachedTitleUiVersion = -1;
+        private static int cachedTitleUiRevision = -1;
         private static string? cachedTitleText;
         private static int viewStamp;
         private static int builtGroupsVersion = -1;
@@ -85,7 +85,7 @@ namespace EPrimeReadouts.UI
         private static PoolSnapshot? builtPools;
         private static RenderCountSnapshot? builtCounts;
         private static LayoutInput? builtInput;
-        private static int builtUiVersion = -1;
+        private static int builtUiRevision = -1;
 
         // Buffered presentation owns no Unity resources until the main-thread
         // update gate builds its first inactive frame.
@@ -192,7 +192,7 @@ namespace EPrimeReadouts.UI
         //        count-refresh path, which only ever runs against entries
         //        built from the current count snapshot.
         // Dependencies: every non-hover rebuild input (domain revisions, view
-        //        stamp, map, width, UiVersion, pool snapshot identity) and
+        //        stamp, map, width, UiRevision, pool snapshot identity) and
         //        the count snapshot identity. Any of them changing clears the
         //        cache; only pure hover transitions read it.
         // Refresh policy: immediate — a non-hover input change clears all
@@ -254,7 +254,7 @@ namespace EPrimeReadouts.UI
             draw = null;
             scroll = Vector2.zero;
             cachedTitleWidth = -1f;
-            cachedTitleUiVersion = -1;
+            cachedTitleUiRevision = -1;
             cachedTitleText = null;
             builtGroupsVersion = -1;
             builtThresholdsVersion = -1;
@@ -265,7 +265,7 @@ namespace EPrimeReadouts.UI
             builtPools = null;
             builtCounts = null;
             builtInput = null;
-            builtUiVersion = -1;
+            builtUiRevision = -1;
             inputBlocked = false;
             CancelContentPress();
             searchFieldFocused = false;
@@ -418,7 +418,7 @@ namespace EPrimeReadouts.UI
                 PanelHeaderRevision header = CurrentHeaderRevision(settings);
                 if (!active.BuildBack(
                     ticket, draw, geometry, header,
-                    PanelVisualOptions.Default, UiVersion.Current,
+                    PanelVisualOptions.Default, UiRevision.Current,
                     IconScaleCache.Revision))
                 {
                     active.CancelBuild();
@@ -487,7 +487,7 @@ namespace EPrimeReadouts.UI
         public static void OnGUI()
         {
             if (Event.current.type == EventType.Layout) return;
-            UiVersion.ObserveCurrentMetrics();
+            UiRevision.ObserveCurrentMetrics();
             if (Current.ProgramState != ProgramState.Playing)
             { Hide(); return; }
             Map? currentMap = Find.CurrentMap;
@@ -634,7 +634,7 @@ namespace EPrimeReadouts.UI
                     // IMGUI labels remain the fallback without a font
                     // material.
                     glyphsDirect = repaint && directGlyphs.Ensure(
-                        draw, UiVersion.Current, RasterScale());
+                        draw, UiRevision.Current, RasterScale());
                     CellRenderer.DrawDirect(
                         draw, viewportTop, viewportBottom,
                         inputBlocked, PanelVisualOptions.Default,
@@ -992,7 +992,7 @@ namespace EPrimeReadouts.UI
                 cachedTitleWidth,
                 settings.panelWidth,
                 Mathf.CeilToInt(SearchRowH),
-                UiVersion.Current,
+                UiRevision.Current,
                 Prefs.UIScale > 0f ? Prefs.UIScale : 1f);
 
         private static void DisableBufferedRenderer(string reason)
@@ -1077,7 +1077,7 @@ namespace EPrimeReadouts.UI
                 && builtThresholdsVersion == store.ThresholdsVersion
                 && builtCountRulesVersion == store.CountRulesVersion
                 && builtStamp == viewStamp
-                && builtUiVersion == UiVersion.Current
+                && builtUiRevision == UiRevision.Current
                 && builtMap == map && builtWidth == width
                 && ReferenceEquals(builtPools, renderData.Structure);
 
@@ -1179,14 +1179,14 @@ namespace EPrimeReadouts.UI
             builtWidth = width;
             builtPools = renderData.Structure;
             builtCounts = renderData.Counts;
-            builtUiVersion = UiVersion.Current;
+            builtUiRevision = UiRevision.Current;
             builtHoverId = hoveredGroupId;
             return changed;
         }
 
         private static void EnsurePresentationText()
         {
-            if (cachedTitleUiVersion == UiVersion.Current
+            if (cachedTitleUiRevision == UiRevision.Current
                 && cachedTitleText != null) return;
             cachedTitleText = UiText.Get("EPR.Title");
             using (GuiStateScope.Capture())
@@ -1194,7 +1194,7 @@ namespace EPrimeReadouts.UI
                 Text.Font = GameFont.Small;
                 cachedTitleWidth = WrText.FitWidth(cachedTitleText) + 4f;
             }
-            cachedTitleUiVersion = UiVersion.Current;
+            cachedTitleUiRevision = UiRevision.Current;
         }
 
         private static void EnsureHotRects(float x, float headerY,

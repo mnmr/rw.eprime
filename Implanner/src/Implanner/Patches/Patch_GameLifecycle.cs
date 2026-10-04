@@ -1,5 +1,7 @@
 using HarmonyLib;
 using Implanner.UI;
+using RimShared.GameLib;
+using RimShared.UiLib;
 using Verse;
 using Verse.Profile;
 
@@ -17,9 +19,10 @@ namespace Implanner.Patches
             // and any implant drag in progress must not outlive the world.
             Dialog_Implanner.AnyOpen = false;
             PlannerDrag.Cancel();
-            ColonyScope.ReleaseSnapshot();
+            MapClassifications.ReleaseSnapshot();
             Catalogs.Release();
             WrText.Reset();
+            RimShared.UiLib.HelpFoldout.Reset();
             WrTips.Reset();
             PlannerLabels.Reset();
             PlannerTips.Reset();

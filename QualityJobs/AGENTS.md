@@ -24,6 +24,7 @@ commands. Where this file is silent, the root contract governs.
 | Store settings presentation (`StoreSettingsSnapshot`) | The fourteen per-save bill, construction, cap, and sharing default fields; command and load/seed invalidation |
 | Construction plan presentation (`PlanPresentationSnapshot`) | Plan target identity/map, configuration, and state; immediate command/lifecycle invalidation |
 | Sparkle overlay maps (`SparkleOverlay.MapSnapshot`) | Plan membership and target identity/map/position/rotation/footprint; immediate structural invalidation plus the 2500-tick audit fallback |
+| Structured tips (shared `RimShared.UiLib` `WrTips`/`StructuredTipPresenter`/`WrTipUI` in `Shared/UiLib/Tips`, per-assembly statics; Quality Jobs' window id, table inset and revisions in `UI/TipHost.cs`) | Stable key + continuous-hover session (0.45s delay); content and geometry frozen per session; registries and geometry cleared when `UiRevision.Current` moves; Begin/EndSuppression pairs from popup owners reset the session |
 | Bill dialog status | `QualityJobsStore.BillStatusRevision`; entry/count/sharing/configuration changes and external pawn facts |
 | Construction dialog status | `QualityJobsStore.PlanStatusRevision`; plan configuration/state/map changes and external pawn facts |
 | Expected-attempt API memos | Complete configuration in `AttemptsKey`; external pawn-facts revision only for auto-best keys; store identity teardown |
@@ -31,7 +32,7 @@ commands. Where this file is silent, the root contract governs.
 | Managed recipe set (`ManagedRecipes`) | Definition database: recipe `unfinishedThingDef` and product, product `CompQuality`, and the ingredient filters' declared things/categories (a `GeneticRim.DefExtension_Quality` ingredient excludes the recipe: the ingredient, not the crafter, decides quality; `IngredientQuality`, shared with finisher work-giver generation); startup build queued to run after every mod's static constructor (Quality Bionics Remastered adds `CompQuality` in its own, and the game runs them in no guaranteed order; finisher work-giver generation precedes it, so it also counts `isTechHediff` products), `Invalidate` on definition reload; every load releases unmanaged recipes' gate-locked items and drops per-bill configuration only for bills unmanaged for another reason (e.g. Quality Bionics Remastered removed), keeping it for ingredient-quality bills |
 | Optional VSE stat definitions (`QualityBonusStats`) | The three quality StatDef identities; startup and `ManagedRecipes.Invalidate` definition reload; no pawn/map/world references retained |
 | Pawn-specific odds (`OddsRows`) | Skill, inspiration, role offset, and normalized post-roll quality bonus; bonus values observed through the external pawn-facts revision; equal keys preserve row identity |
-| Text fit widths (`WrText.FitWidth`) | `(font, text)` key; cleared when `UiVersion.Current` moves or on language change |
+| Text fit widths (shared `RimShared.UiLib.WrText.FitWidth`, per-assembly static) | `(font, text)` key; cleared when `UiRevision.Current` (shared `RimShared.UiLib.UiRevision`: UI scale, tiny-font preference, language) moves; `WrText.Reset` on game dispose (`Patch_GameDispose`) |
 | Stock-cap counts | UFT spawn/despawn events keyed by map identity; `FixedTickBoundaryGate(2500)` audit fallback |
 | Idle-UFT pooling and dispatch health | Spawn/despawn-maintained UFT index; immediate/next-component-tick reconcile for commands and pause events; explicitly named `ResponsivenessInterval(250)` fallback |
 | Welcome dialog assets (shared `RimShared.UiLib.WelcomeDialog`, built in `QualityJobsStore.QueueWelcome`) | Translated strings resolved at construction; About/Preview.png loaded from disk and wrapped-text measurements resolved once in `PreOpen` (language and UI scale cannot change while open); window-owned, texture destroyed in `PostClose`; shown once per player per save via `QualityJobsSettings.welcomeShownSaves` keyed by the world's persistent random value, queued after the existing-bill migration prompt so it opens on top |
@@ -41,7 +42,7 @@ Changes to these dependencies require updated behavioral tests in the same chang
 
 ## Text and layout measurement
 
-- The shared measurement cache is `WrText.FitWidth`, keyed by `(font, text)` and cleared when `UiVersion.Current` moves or the language changes.
+- The shared measurement cache is `RimShared.UiLib.WrText.FitWidth`, keyed by `(font, text)` and cleared when `UiRevision.Current` moves (UI scale, tiny-font preference or language).
 - Fractional UI-scale glyph drift is absorbed by `FitWidth` padding, not by re-measuring per frame.
 
 ## Authoritative state

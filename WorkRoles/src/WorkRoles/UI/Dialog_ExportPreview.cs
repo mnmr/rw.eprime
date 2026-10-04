@@ -77,7 +77,7 @@ namespace WorkRoles.UI
             // Bottom-up layout: Cancel/Save row, optional custom-dir row,
             // location+filename row, caption/Copy Path link row.
             float btnY = inRect.yMax - ButtonH;
-            float customRowY = btnY - 8f - (location == Location.Custom ? RowH : 0f);
+            float customRowY = btnY - 8f - (picker.Location == ExportLocation.Custom ? RowH : 0f);
             float locRowY = customRowY - RowH;
             float captionRowY = locRowY - CaptionRowH;
 
@@ -153,7 +153,7 @@ namespace WorkRoles.UI
             exportLocationLabel =
                 "WR_ExportLocationLabel".Translate().ToString();
             copyPathLabel = "WR_CopyPath".Translate().ToString();
-            cancelLabel = "WR_Cancel".Translate().ToString();
+            cancelLabel = "CancelButton".Translate().ToString();
             saveLabel = "WR_Save".Translate().ToString();
             GameFont previousFont = Text.Font;
             try
@@ -178,18 +178,19 @@ namespace WorkRoles.UI
             // appeared after the name was typed is still caught.
             if (!confirmed && File.Exists(path))
             {
-                Find.WindowStack.Add(new Dialog_SmallConfirm(
+                Find.WindowStack.Add(new CompactConfirmDialog(
                     "WR_ExportOverwriteConfirm".Translate(path),
                     () =>
                     {
                         pendingSavePath = path;
                         overwriteConfirmed = true;
                         WorkRolesGameComponent.RunOutsideOnGUI(savePendingAction);
-                    }));
+                    },
+                    "OK".Translate(), "CancelButton".Translate(),
+                    UiRevision.Current, destructive: true));
                 return;
             }
-            string? error = RoleIO.SaveTo(path, xml);
-            if (error == null)
+            if (ExportFolder.TryWrite(path, xml, out string? error))
             {
                 Messages.Message("WR_ExportSaved".Translate(path),
                     MessageTypeDefOf.PositiveEvent, historical: false);

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System;
 using HarmonyLib;
 using QualityJobs.UI;
 using RimShared.UiLib;
@@ -45,12 +45,6 @@ namespace QualityJobs
         private const float RowGap    =  2f;
         private const float ColGap    = 24f;
 
-        // EprStyle color values replicated from EPrimeReadouts\src\EPrimeReadouts\UI\EprStyle.cs
-        // (lines 29-31). Do not reference the other mod; values copied verbatim.
-        private static readonly Color PanelBackground = new Color(0.08f, 0.08f, 0.08f, 0.9f);
-        private static readonly Color PanelOutline    = new Color(1f, 1f, 1f, 0.15f);
-        private static readonly Color HeaderText      = new Color(0.85f, 0.85f, 0.85f);
-
         public override void DoSettingsWindowContents(Rect inRect)
         {
             using (GuiStateScope.Capture())
@@ -79,7 +73,8 @@ namespace QualityJobs
             // inRect is already ContractedBy(Window.Margin=18f) and AtZero'd by
             // Window.InnerWindowOnGUI, so top margin equals side margins at 18f.
             var panelRect = new Rect(inRect.x, inRect.y, inRect.width, PanelH);
-            Widgets.DrawBoxSolidWithOutline(panelRect, PanelBackground, PanelOutline);
+            Widgets.DrawBoxSolidWithOutline(panelRect,
+                SegmentedControl.PanelBackground, SegmentedControl.PanelOutline);
 
             // Mod icon — 40x40 at 8px left padding, vertically centred.
             var iconRect = new Rect(panelRect.x + 8f, panelRect.y + 8f, 40f, 40f);
@@ -91,7 +86,7 @@ namespace QualityJobs
             Color prevColor     = GUI.color;
             Text.Font   = GameFont.Medium;
             Text.Anchor = TextAnchor.MiddleLeft;
-            GUI.color   = HeaderText;
+            GUI.color   = SectionHeader.LabelColor;
             Widgets.Label(
                 new Rect(iconRect.xMax + 8f, panelRect.y,
                     panelRect.width - iconRect.xMax - 8f - 158f, PanelH),
@@ -164,75 +159,37 @@ namespace QualityJobs
             QjUi.MiniHeader(rightX, y, colW, SettingsLabels.ConstructionDefaults!);
             y += 30f;
 
+            // Rows 1-4 pass activeSettings?.Field as the store value: activeSettings
+            // is non-null exactly when activeStore is (TryGetSettingsPresentation
+            // above), so null selects the global Settings field.
+
             // Row 1: Manage new bills (left) / Manage new construction (right).
             {
-                Rect leftRow  = new Rect(leftX,  y, colW, CheckboxH);
-                Rect rightRow = new Rect(rightX, y, colW, CheckboxH);
-
-                // Left: manage new bills (dual-pattern).
-                if (activeStore != null)
-                {
-                    bool manageNew = activeSettings!.ManageNewBills;
-                    Widgets.CheckboxLabeled(leftRow, SettingsLabels.ManageNewBills!, ref manageNew);
-                    if (manageNew != activeSettings.ManageNewBills)
-                        Commands.SetManageNewBillsDefault(manageNew);
-                }
-                else
-                {
-                    Widgets.CheckboxLabeled(leftRow, SettingsLabels.ManageNewBills!, ref Settings.defaultManageNewBills);
-                }
-                WrTips.Key("QJ_SettingsManageNewBillsTip").Region(leftRow);
-
-                // Right: manage new construction (dual-pattern).
-                if (activeStore != null)
-                {
-                    bool manageNewC = activeSettings!.ManageNewConstruction;
-                    Widgets.CheckboxLabeled(rightRow, SettingsLabels.ManageNewConstruction!, ref manageNewC);
-                    if (manageNewC != activeSettings.ManageNewConstruction)
-                        Commands.SetManageNewConstructionDefault(manageNewC);
-                }
-                else
-                {
-                    Widgets.CheckboxLabeled(rightRow, SettingsLabels.ManageNewConstruction!, ref Settings.defaultManageNewConstruction);
-                }
-                WrTips.Key("QJ_SettingsManageNewConstructionTip").Region(rightRow);
-
+                DualCheckbox(new Rect(leftX, y, colW, CheckboxH),
+                    SettingsLabels.ManageNewBills!, "QJ_SettingsManageNewBillsTip",
+                    activeSettings?.ManageNewBills,
+                    static v => Commands.SetManageNewBillsDefault(v),
+                    ref Settings.defaultManageNewBills);
+                DualCheckbox(new Rect(rightX, y, colW, CheckboxH),
+                    SettingsLabels.ManageNewConstruction!, "QJ_SettingsManageNewConstructionTip",
+                    activeSettings?.ManageNewConstruction,
+                    static v => Commands.SetManageNewConstructionDefault(v),
+                    ref Settings.defaultManageNewConstruction);
                 y += CheckboxH + RowGap;
             }
 
             // Row 2: Require inspired (dual-pattern, both columns).
             {
-                Rect leftRow  = new Rect(leftX,  y, colW, CheckboxH);
-                Rect rightRow = new Rect(rightX, y, colW, CheckboxH);
-
-                // Left: bill require inspired.
-                if (activeStore != null)
-                {
-                    bool inspired = activeSettings!.RequireInspired;
-                    Widgets.CheckboxLabeled(leftRow, SettingsLabels.RequireInspired!, ref inspired);
-                    if (inspired != activeSettings.RequireInspired)
-                        Commands.SetRequireInspiredDefault(inspired);
-                }
-                else
-                {
-                    Widgets.CheckboxLabeled(leftRow, SettingsLabels.RequireInspired!, ref Settings.defaultRequireInspired);
-                }
-                WrTips.Key("QJ_RequireInspiredTip").Region(leftRow);
-
-                // Right: construction require inspired.
-                if (activeStore != null)
-                {
-                    bool inspired = activeSettings!.ConstructionRequireInspired;
-                    Widgets.CheckboxLabeled(rightRow, SettingsLabels.RequireInspired!, ref inspired);
-                    if (inspired != activeSettings.ConstructionRequireInspired)
-                        Commands.SetConstructionRequireInspiredDefault(inspired);
-                }
-                else
-                {
-                    Widgets.CheckboxLabeled(rightRow, SettingsLabels.RequireInspired!, ref Settings.defaultConstructionRequireInspired);
-                }
-                WrTips.Key("QJ_RequireInspiredTip").Region(rightRow);
-
+                DualCheckbox(new Rect(leftX, y, colW, CheckboxH),
+                    SettingsLabels.RequireInspired!, "QJ_RequireInspiredTip",
+                    activeSettings?.RequireInspired,
+                    static v => Commands.SetRequireInspiredDefault(v),
+                    ref Settings.defaultRequireInspired);
+                DualCheckbox(new Rect(rightX, y, colW, CheckboxH),
+                    SettingsLabels.RequireInspired!, "QJ_RequireInspiredTip",
+                    activeSettings?.ConstructionRequireInspired,
+                    static v => Commands.SetConstructionRequireInspiredDefault(v),
+                    ref Settings.defaultConstructionRequireInspired);
                 y += CheckboxH + RowGap;
             }
 
@@ -240,36 +197,16 @@ namespace QualityJobs
             {
                 if (ModsConfig.IdeologyActive)
                 {
-                    Rect leftRow  = new Rect(leftX,  y, colW, CheckboxH);
-                    Rect rightRow = new Rect(rightX, y, colW, CheckboxH);
-
-                    // Left: bill require specialist.
-                    if (activeStore != null)
-                    {
-                        bool specialist = activeSettings!.RequireSpecialist;
-                        Widgets.CheckboxLabeled(leftRow, SettingsLabels.RequireSpecialist!, ref specialist);
-                        if (specialist != activeSettings.RequireSpecialist)
-                            Commands.SetRequireSpecialistDefault(specialist);
-                    }
-                    else
-                    {
-                        Widgets.CheckboxLabeled(leftRow, SettingsLabels.RequireSpecialist!, ref Settings.defaultRequireSpecialist);
-                    }
-                    WrTips.Key("QJ_RequireSpecialistTip").Region(leftRow);
-
-                    // Right: construction require specialist.
-                    if (activeStore != null)
-                    {
-                        bool specialist = activeSettings!.ConstructionRequireSpecialist;
-                        Widgets.CheckboxLabeled(rightRow, SettingsLabels.RequireSpecialist!, ref specialist);
-                        if (specialist != activeSettings.ConstructionRequireSpecialist)
-                            Commands.SetConstructionRequireSpecialistDefault(specialist);
-                    }
-                    else
-                    {
-                        Widgets.CheckboxLabeled(rightRow, SettingsLabels.RequireSpecialist!, ref Settings.defaultConstructionRequireSpecialist);
-                    }
-                    WrTips.Key("QJ_RequireSpecialistTip").Region(rightRow);
+                    DualCheckbox(new Rect(leftX, y, colW, CheckboxH),
+                        SettingsLabels.RequireSpecialist!, "QJ_RequireSpecialistTip",
+                        activeSettings?.RequireSpecialist,
+                        static v => Commands.SetRequireSpecialistDefault(v),
+                        ref Settings.defaultRequireSpecialist);
+                    DualCheckbox(new Rect(rightX, y, colW, CheckboxH),
+                        SettingsLabels.RequireSpecialist!, "QJ_RequireSpecialistTip",
+                        activeSettings?.ConstructionRequireSpecialist,
+                        static v => Commands.SetConstructionRequireSpecialistDefault(v),
+                        ref Settings.defaultConstructionRequireSpecialist);
                 }
                 // else: both rows are blank — identical consumed height = CheckboxH + RowGap.
                 y += CheckboxH + RowGap;
@@ -280,37 +217,16 @@ namespace QualityJobs
             // on: they still seed the manual threshold for bills and plans where
             // auto is later turned off.
             {
-                Rect leftRow  = new Rect(leftX,  y, colW, CheckboxH);
-                Rect rightRow = new Rect(rightX, y, colW, CheckboxH);
-
-                // Left: bill auto-best default.
-                if (activeStore != null)
-                {
-                    bool auto = activeSettings!.AutoBest;
-                    Widgets.CheckboxLabeled(leftRow, SettingsLabels.AutoBest!, ref auto);
-                    if (auto != activeSettings.AutoBest)
-                        Commands.SetAutoBestDefault(auto);
-                }
-                else
-                {
-                    Widgets.CheckboxLabeled(leftRow, SettingsLabels.AutoBest!, ref Settings.defaultAutoBest);
-                }
-                WrTips.Key("QJ_AutoBestTip").Region(leftRow);
-
-                // Right: construction auto-best default.
-                if (activeStore != null)
-                {
-                    bool autoC = activeSettings!.ConstructionAutoBest;
-                    Widgets.CheckboxLabeled(rightRow, SettingsLabels.AutoBest!, ref autoC);
-                    if (autoC != activeSettings.ConstructionAutoBest)
-                        Commands.SetConstructionAutoBestDefault(autoC);
-                }
-                else
-                {
-                    Widgets.CheckboxLabeled(rightRow, SettingsLabels.AutoBest!, ref Settings.defaultConstructionAutoBest);
-                }
-                WrTips.Key("QJ_AutoBestTip").Region(rightRow);
-
+                DualCheckbox(new Rect(leftX, y, colW, CheckboxH),
+                    SettingsLabels.AutoBest!, "QJ_AutoBestTip",
+                    activeSettings?.AutoBest,
+                    static v => Commands.SetAutoBestDefault(v),
+                    ref Settings.defaultAutoBest);
+                DualCheckbox(new Rect(rightX, y, colW, CheckboxH),
+                    SettingsLabels.AutoBest!, "QJ_AutoBestTip",
+                    activeSettings?.ConstructionAutoBest,
+                    static v => Commands.SetConstructionAutoBestDefault(v),
+                    ref Settings.defaultConstructionAutoBest);
                 y += CheckboxH + RowGap;
             }
 
@@ -332,13 +248,13 @@ namespace QualityJobs
                     SettingsLabels.MinSkillLabel = "QJ_FinisherSkill".Translate(leftSkill);
                     SettingsLabels.MinSkillValue = leftSkill;
                 }
+                Rect leftRow = new Rect(leftX, y, colW, SliderH);
                 if (leftAuto)
                     GUI.color = new Color(rowColor.r, rowColor.g, rowColor.b, rowColor.a * 0.55f);
-                int newLeftSkill = DrawSliderRow(leftX, y, colW,
+                int newLeftSkill = QjUi.SliderRow(leftRow,
                     SettingsLabels.MinSkillLabel!, leftSkill, 0f, 20f);
                 GUI.color = rowColor;
-                WrTips.Key("QJ_SettingsFinisherSkillTip")
-                    .Region(new Rect(leftX, y, colW, SliderH));
+                WrTips.Key("QJ_SettingsFinisherSkillTip").Region(leftRow);
                 if (newLeftSkill != leftSkill)
                 {
                     if (activeStore != null)
@@ -354,13 +270,13 @@ namespace QualityJobs
                     SettingsLabels.ConstructionMinSkillLabel = "QJ_FinisherSkill".Translate(rightSkill);
                     SettingsLabels.ConstructionMinSkillValue = rightSkill;
                 }
+                Rect rightRow = new Rect(rightX, y, colW, SliderH);
                 if (rightAuto)
                     GUI.color = new Color(rowColor.r, rowColor.g, rowColor.b, rowColor.a * 0.55f);
-                int newRightSkill = DrawSliderRow(rightX, y, colW,
+                int newRightSkill = QjUi.SliderRow(rightRow,
                     SettingsLabels.ConstructionMinSkillLabel!, rightSkill, 0f, 20f);
                 GUI.color = rowColor;
-                WrTips.Key("QJ_SettingsFinisherSkillTip")
-                    .Region(new Rect(rightX, y, colW, SliderH));
+                WrTips.Key("QJ_SettingsFinisherSkillTip").Region(rightRow);
                 if (newRightSkill != rightSkill)
                 {
                     if (activeStore != null)
@@ -373,11 +289,25 @@ namespace QualityJobs
             }
 
             // Row 6: Target quality pickers (dual-pattern, both columns).
+            // 0 shows "Any" for bills (a below-target finish raises the bill
+            // count instead of retrying a build) and "No retries" for construction.
             {
-                Rect leftRow  = new Rect(leftX,  y, colW, CheckboxH);
-                Rect rightRow = new Rect(rightX, y, colW, CheckboxH);
-                DrawBillQualityPickerRow(leftRow, activeStore);
-                DrawQualityPickerRow(rightRow, activeStore);
+                DrawQualityPickerRow(new Rect(leftX, y, colW, CheckboxH),
+                    SettingsLabels.AnyQualityLabel!, "QJ_BillTargetQualityTip",
+                    activeStore != null
+                        ? activeStore.SettingsPresentation.TargetQuality
+                        : Settings.defaultTargetQuality,
+                    activeStore != null
+                        ? static q => Commands.SetTargetQualityDefault(q)
+                        : static q => Settings.defaultTargetQuality = q);
+                DrawQualityPickerRow(new Rect(rightX, y, colW, CheckboxH),
+                    SettingsLabels.NoRetriesLabel!, "QJ_RetriedUntilTip",
+                    activeStore != null
+                        ? activeStore.SettingsPresentation.ConstructionTargetQuality
+                        : Settings.defaultConstructionTargetQuality,
+                    activeStore != null
+                        ? static q => Commands.SetConstructionTargetQualityDefault(q)
+                        : static q => Settings.defaultConstructionTargetQuality = q);
                 y += CheckboxH + RowGap;
             }
 
@@ -390,10 +320,10 @@ namespace QualityJobs
                     SettingsLabels.DefaultCapLabel = "QJ_SettingsDefaultCap".Translate(capVal);
                     SettingsLabels.DefaultCapValue = capVal;
                 }
-                int newCap = DrawSliderRow(leftX, y, colW,
+                Rect capRow = new Rect(leftX, y, colW, SliderH);
+                int newCap = QjUi.SliderRow(capRow,
                     SettingsLabels.DefaultCapLabel!, capVal, 0f, 50f);
-                WrTips.Key("QJ_SettingsDefaultCapTip")
-                    .Region(new Rect(leftX, y, colW, SliderH));
+                WrTips.Key("QJ_SettingsDefaultCapTip").Region(capRow);
                 if (newCap != capVal)
                 {
                     if (activeStore != null)
@@ -498,29 +428,35 @@ namespace QualityJobs
 
         internal static void ResetPresentationCaches() => SettingsLabels.Reset();
 
-        /// Draws a manual slider row (label left 50%, slider right 50%) without
-        /// Listing_Standard. Mirrors SliderLabeled's default labelPct = 0.5f.
-        /// Returns the new integer value. No allocations on cache-hit paths.
-        ///
-        /// Owner: called from DoSettingsWindowContents (render path, pre-cached label).
-        private static int DrawSliderRow(float x, float y, float width, string label,
-            int current, float min, float max)
+        /// Dual-pattern checkbox row: with a store (storeValue non-null) it shows
+        /// the per-save value and pushes an edit through its synced command;
+        /// without one it binds the global new-save default directly. Callers
+        /// pass static lambdas, which the compiler caches, so no delegate
+        /// allocates per frame.
+        private static void DualCheckbox(Rect row, string label, string tipKey,
+            bool? storeValue, Action<bool> command, ref bool setting)
         {
-            TextAnchor prev = Text.Anchor;
-            Rect lRect = new Rect(x,               y, width * 0.5f, SliderH);
-            Rect sRect = new Rect(x + width * 0.5f, y, width * 0.5f, SliderH);
-            Text.Anchor = TextAnchor.MiddleLeft;
-            Widgets.Label(lRect, label);
-            Text.Anchor = prev;
-            return (int)Widgets.HorizontalSlider(sRect, current, min, max, middleAlignment: true);
+            if (storeValue.HasValue)
+            {
+                bool value = storeValue.Value;
+                Widgets.CheckboxLabeled(row, label, ref value);
+                if (value != storeValue.Value)
+                    command(value);
+            }
+            else
+            {
+                Widgets.CheckboxLabeled(row, label, ref setting);
+            }
+            WrTips.Key(tipKey).Region(row);
         }
 
-        /// Draws the target-quality button-picker row for construction defaults.
-        /// Layout: label left 50%, button right 50% — matching the SliderLabeled
-        /// 50/50 split so columns stay aligned.
-        /// Menu allocation occurs only on click, not per frame.
-        /// Dual-pattern: reads/writes store when activeStore != null, else Settings.
-        private static void DrawQualityPickerRow(Rect row, QualityJobsStore? activeStore)
+        /// Draws a target-quality picker row: label left 50%, button right 50%,
+        /// matching the slider rows' 50/50 split so columns stay aligned.
+        /// zeroLabel captions quality 0. apply is a cached static delegate (synced
+        /// command with a store, Settings field otherwise); the menu and its
+        /// closures are built on click only.
+        private static void DrawQualityPickerRow(Rect row, string zeroLabel, string tipKey,
+            int current, Action<int> apply)
         {
             Rect lRect = new Rect(row.x,               row.y, row.width * 0.5f, row.height);
             Rect bRect = new Rect(row.x + row.width * 0.5f, row.y, row.width * 0.5f, row.height);
@@ -529,94 +465,11 @@ namespace QualityJobs
             Text.Anchor = TextAnchor.MiddleLeft;
             Widgets.Label(lRect, SettingsLabels.TargetQualityLabel!);
             Text.Anchor = prev;
-            WrTips.Key("QJ_RetriedUntilTip").Region(row);
+            WrTips.Key(tipKey).Region(row);
 
-            int curQ = activeStore != null
-                ? activeStore.SettingsPresentation.ConstructionTargetQuality
-                : Settings.defaultConstructionTargetQuality;
-
-            string btnCaption = curQ <= 0
-                ? SettingsLabels.NoRetriesLabel!
-                : SettingsLabels.QualityLabels![curQ];
-
+            string btnCaption = current <= 0 ? zeroLabel : SettingsLabels.QualityLabels![current];
             if (Widgets.ButtonText(bRect, btnCaption))
-            {
-                // Build options list only on click — allocation on interaction, not per frame.
-                // Capture activeStore locally so the closure holds the right reference.
-                QualityJobsStore? capturedStore = activeStore;
-                var options = new List<FloatMenuOption>();
-                options.Add(new FloatMenuOption(SettingsLabels.NoRetriesLabel!, () =>
-                {
-                    if (capturedStore != null)
-                        Commands.SetConstructionTargetQualityDefault(0);
-                    else
-                        Settings.defaultConstructionTargetQuality = 0;
-                }));
-                for (int q = 1; q <= 6; q++)
-                {
-                    int capturedQ = q;
-                    options.Add(new FloatMenuOption(SettingsLabels.QualityLabels![q], () =>
-                    {
-                        if (capturedStore != null)
-                            Commands.SetConstructionTargetQualityDefault(capturedQ);
-                        else
-                            Settings.defaultConstructionTargetQuality = capturedQ;
-                    }));
-                }
-                var menu = new FloatMenu(options) { vanishIfMouseDistant = false };
-                Find.WindowStack.Add(menu);
-            }
-        }
-
-        /// Draws the target-quality picker row for BILL defaults: label left 50%,
-        /// button right 50%. 0 shows "Any" (a below-target finish raises the bill
-        /// count instead of retrying a build). Menu allocation on click only.
-        /// Dual-pattern: reads/writes store when activeStore != null, else Settings.
-        private static void DrawBillQualityPickerRow(Rect row, QualityJobsStore? activeStore)
-        {
-            Rect lRect = new Rect(row.x,               row.y, row.width * 0.5f, row.height);
-            Rect bRect = new Rect(row.x + row.width * 0.5f, row.y, row.width * 0.5f, row.height);
-
-            TextAnchor prev = Text.Anchor;
-            Text.Anchor = TextAnchor.MiddleLeft;
-            Widgets.Label(lRect, SettingsLabels.TargetQualityLabel!);
-            Text.Anchor = prev;
-            WrTips.Key("QJ_BillTargetQualityTip").Region(row);
-
-            int curQ = activeStore != null
-                ? activeStore.SettingsPresentation.TargetQuality
-                : Settings.defaultTargetQuality;
-
-            string btnCaption = curQ <= 0
-                ? SettingsLabels.AnyQualityLabel!
-                : SettingsLabels.QualityLabels![curQ];
-
-            if (Widgets.ButtonText(bRect, btnCaption))
-            {
-                // Menu built on click only; capture the store for the closures.
-                QualityJobsStore? capturedStore = activeStore;
-                var options = new List<FloatMenuOption>();
-                options.Add(new FloatMenuOption(SettingsLabels.AnyQualityLabel!, () =>
-                {
-                    if (capturedStore != null)
-                        Commands.SetTargetQualityDefault(0);
-                    else
-                        Settings.defaultTargetQuality = 0;
-                }));
-                for (int q = 1; q <= 6; q++)
-                {
-                    int capturedQ = q;
-                    options.Add(new FloatMenuOption(SettingsLabels.QualityLabels![q], () =>
-                    {
-                        if (capturedStore != null)
-                            Commands.SetTargetQualityDefault(capturedQ);
-                        else
-                            Settings.defaultTargetQuality = capturedQ;
-                    }));
-                }
-                var menu = new FloatMenu(options) { vanishIfMouseDistant = false };
-                Find.WindowStack.Add(menu);
-            }
+                Find.WindowStack.Add(QjUi.QualityMenu(zeroLabel, SettingsLabels.QualityLabels!, apply));
         }
 
         /// I4: language-keyed label cache for the settings window. Constant labels

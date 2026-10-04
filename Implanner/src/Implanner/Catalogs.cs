@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Implanner.Core;
+using RimShared.UiLib;
 using RimWorld;
 using Verse;
 
@@ -168,11 +169,11 @@ namespace Implanner
 
         private static void EnsureCurrent()
         {
-            if (languageStamp != UiVersion.LanguageCurrent)
+            if (languageStamp != UiRevision.LanguageCurrent)
             {
                 implants = null;
                 implantsByDefName = null;
-                languageStamp = UiVersion.LanguageCurrent;
+                languageStamp = UiRevision.LanguageCurrent;
             }
         }
 

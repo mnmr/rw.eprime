@@ -112,7 +112,7 @@ namespace Implanner.UI
             title = "IMP_ReqTitle".Translate().ToString();
             body = "IMP_ReqBody".Translate(row.Label, row.RequirementSlot).ToString();
             okLabel = "IMP_ReqConfirm".Translate().ToString();
-            cancelLabel = "IMP_Cancel".Translate().ToString();
+            cancelLabel = "CancelButton".Translate().ToString();
             using (GuiStateScope.Capture())
             {
                 Text.Font = GameFont.Small;

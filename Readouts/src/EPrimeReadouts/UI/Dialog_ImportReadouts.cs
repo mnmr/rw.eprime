@@ -18,7 +18,7 @@ namespace EPrimeReadouts.UI
         private enum Stage { Source, Preview }
 
         private static float FileRowH =>
-            EprStyle.TinyTextMetrics.MinHeight(28f);
+            Mathf.Max(28f, TinyText.LineHeight);
         private const float DeleteW  = 22f;
 
         // ── Stage ────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ namespace EPrimeReadouts.UI
         // Refresh policy: WindowUpdate only, never OnGUI.
         // Equality policy: unchanged directory preserves list/entry identities.
         // Teardown: PreClose releases entries, XML and preview snapshots.
-        private List<ReadoutsFiles.Entry>? files;
+        private List<ExportFolder.Entry>? files;
         private string? listedDir;  // directory the current file list came from
         private Vector2 sourceScroll;
         private string? clip;
@@ -64,11 +64,11 @@ namespace EPrimeReadouts.UI
         /// when the directory changed or an explicit action invalidated it.
         private void EnsureFiles()
         {
-            string dir = ResolvedDir();
+            string dir = picker.ResolvedDir();
             if (files != null && string.Equals(dir, listedDir, StringComparison.Ordinal))
                 return;
             listedDir = dir;
-            files = ReadoutsFiles.ListFiles(dir);
+            files = ExportFolder.ListFiles(dir);
             sourceScroll = Vector2.zero;
         }
 
@@ -154,7 +154,7 @@ namespace EPrimeReadouts.UI
             float locRowY = bodyTop;
             float customRowY = locRowY + RowH;
             DrawLocationRows(inRect, locRowY, customRowY, includeNameField: false);
-            bodyTop += RowH + (location == Location.Custom ? RowH : 0f);
+            bodyTop += RowH + (picker.Location == ExportLocation.Custom ? RowH : 0f);
 
             float footerY = FooterY(inRect);
 
@@ -184,7 +184,7 @@ namespace EPrimeReadouts.UI
                 {
                 for (int i = 0; i < files.Count; i++)
                 {
-                    ReadoutsFiles.Entry file = files[i];
+                    ExportFolder.Entry file = files[i];
                     string name = file.Name;
                     string fullPath = file.FullPath;
                     var rowRect = new Rect(0f, i * FileRowH, viewRect.width, FileRowH);
@@ -200,7 +200,7 @@ namespace EPrimeReadouts.UI
                     {
                         string capturedPath = fullPath;
                         string capturedName = name;
-                        Find.WindowStack.Add(new Dialog_CompactConfirm(
+                        Find.WindowStack.Add(new CompactConfirmDialog(
                             "EPR.DeleteFileConfirm".Translate(capturedName),
                             () =>
                             {
@@ -212,7 +212,8 @@ namespace EPrimeReadouts.UI
                                 }
                                 files = null;   // force re-list next frame
                             },
-                            destructive: true));
+                            UiText.Get("OK"), UiText.Get("CancelButton"),
+                            UiRevision.Current, destructive: true));
                     }
 
                     // File name (left)
@@ -234,7 +235,7 @@ namespace EPrimeReadouts.UI
                     if (Widgets.ButtonInvisible(
                         new Rect(rowRect.x, rowRect.y, rowRect.width - DeleteW - 4f, FileRowH)))
                     {
-                        if (!ReadoutsFiles.TryRead(fullPath, out string? xml, out string? readError))
+                        if (!ExportFolder.TryRead(fullPath, out string? xml, out string? readError))
                         {
                             Messages.Message(readError, MessageTypeDefOf.RejectInput, historical: false);
                         }
@@ -253,7 +254,7 @@ namespace EPrimeReadouts.UI
 
             // Cancel
             if (Widgets.ButtonText(new Rect(inRect.xMax - ButtonW, footerY, ButtonW, FooterH),
-                UiText.Get("EPR.Cancel")))
+                UiText.Get("CancelButton")))
                 Close();
         }
 
@@ -266,12 +267,12 @@ namespace EPrimeReadouts.UI
             EnsurePreviewText();
 
             // Summary line
-            ResolvedTinyTextMetrics tinyMetrics = EprStyle.TinyTextMetrics;
-            float summaryH = tinyMetrics.MinHeight(18f);
+            float captionOffsetY = TinyText.FallbackCaptionOffsetY;
+            float summaryH = Mathf.Max(18f, TinyText.LineHeight);
             GUI.color   = EprStyle.CaptionText;
             TinyText.Label(new Rect(
                     inRect.x,
-                    bodyTop + tinyMetrics.CaptionOffsetY,
+                    bodyTop + captionOffsetY,
                     inRect.width,
                     summaryH),
                 previewSummary!);
@@ -284,7 +285,7 @@ namespace EPrimeReadouts.UI
             float warnH = EprStyle.CaptionHeight(warning, inRect.width);
             TinyText.Label(new Rect(
                 inRect.x,
-                bodyTop + tinyMetrics.CaptionOffsetY,
+                bodyTop + captionOffsetY,
                 inRect.width,
                 warnH), warning);
             GUI.color = Color.white;
@@ -303,11 +304,11 @@ namespace EPrimeReadouts.UI
             float cancelX = backX   - FooterGap - ButtonW;
 
             if (Widgets.ButtonText(new Rect(cancelX, footerY, ButtonW, FooterH),
-                UiText.Get("EPR.Cancel")))
+                UiText.Get("CancelButton")))
                 Close();
 
             if (Widgets.ButtonText(new Rect(backX, footerY, ButtonW, FooterH),
-                UiText.Get("EPR.Back")))
+                UiText.Get("Back")))
             {
                 stage = Stage.Source;
                 files = null;   // re-list on return
@@ -327,9 +328,9 @@ namespace EPrimeReadouts.UI
 
         private void EnsurePreviewText()
         {
-            UiVersion.ObserveCurrentMetrics();
+            UiRevision.ObserveCurrentMetrics();
             if (ReferenceEquals(previewTextSnapshot, previewSnapshot)
-                && previewTextLanguageVersion == UiVersion.LanguageCurrent
+                && previewTextLanguageVersion == UiRevision.LanguageCurrent
                 && previewSummary != null)
                 return;
             int pools = previewSnapshot?.Pools.Count ?? 0;
@@ -337,7 +338,7 @@ namespace EPrimeReadouts.UI
             previewSummary = "EPR.ContentSummary".Translate(pools, groups);
             previewWarning = UiText.Get("EPR.ImportWarning");
             previewTextSnapshot = previewSnapshot;
-            previewTextLanguageVersion = UiVersion.LanguageCurrent;
+            previewTextLanguageVersion = UiRevision.LanguageCurrent;
         }
     }
 }

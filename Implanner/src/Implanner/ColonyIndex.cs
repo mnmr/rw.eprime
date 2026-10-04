@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using RimShared.GameLib;
 using RimWorld;
 using Verse;
 
@@ -31,7 +32,7 @@ namespace Implanner
     /// floor/pocket-map canonicalization and faction resolution happen here,
     /// once per pass — consumers never touch FloorMaps or per-client view
     /// state. Built exclusively from authoritative synchronized state with
-    /// ColonyScope.AuthoritativeFaction, so every multiplayer client derives
+    /// PlayerFactions.AuthoritativeFaction, so every multiplayer client derives
     /// the identical index from the same tick. Pass-scoped: built at the top
     /// of a reconcile pass, discarded with it, never cached.
     internal sealed class ColonyIndex
@@ -98,7 +99,7 @@ namespace Implanner
         internal static ColonyIndex Build(Core.PlannerModel model)
         {
             var index = new ColonyIndex();
-            Faction faction = ColonyScope.AuthoritativeFaction;
+            Faction faction = PlayerFactions.AuthoritativeFaction;
 
             // Colonies: group maps by canonical map, serviceable stacks only.
             List<Map> maps = Find.Maps;

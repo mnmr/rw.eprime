@@ -44,8 +44,8 @@ namespace Implanner.UI
         // Equality policy: an unchanged key preserves list/entry identities
         //   without a syscall.
         // Teardown: PreClose releases entries, XML and preview rows.
-        private List<PlansFiles.Entry>? files;
-        private Location filesLocation;
+        private List<ExportFolder.Entry>? files;
+        private ExportLocation filesLocation;
         private string? filesCustomDir;
         private bool filesValid;
         private Vector2 sourceScroll;
@@ -64,7 +64,7 @@ namespace Implanner.UI
 
         // Cache contract:
         // Owner: one import window.
-        // Key: pending rows identity plus UiVersion.LanguageCurrent.
+        // Key: pending rows identity plus UiRevision.LanguageCurrent.
         // Value: translated summary/note strings and per-plan captions.
         // Dependencies: pending rows identity and the language revision only.
         // Refresh policy: immediate re-translate behind the gate in
@@ -81,7 +81,7 @@ namespace Implanner.UI
         // Key: note text, effective (Tiny) font and wrap width — via the
         //   shared RimShared.Common.TextHeightCache.
         // Value: Tiny-font wrapped note height.
-        // Dependencies: key plus UiVersion.Current (scale/font/language
+        // Dependencies: key plus UiRevision.Current (scale/font/language
         //   metrics) as the revision.
         // Refresh policy: immediate re-measure on UI revision change.
         // Equality policy: unchanged keys return the cached float.
@@ -104,7 +104,7 @@ namespace Implanner.UI
 
         private static float NoteHeight(string text, float width) =>
             noteHeights.Get(text, (int)GameFont.Tiny, width,
-                UiVersion.Current, (text, width), MeasureNote);
+                UiRevision.Current, (text, width), MeasureNote);
 
         public override Vector2 InitialSize => new Vector2(560f, 560f);
 
@@ -130,13 +130,13 @@ namespace Implanner.UI
         private void EnsureFiles()
         {
             if (filesValid
-                && filesLocation == location
-                && string.Equals(filesCustomDir, customDir, StringComparison.Ordinal))
+                && filesLocation == picker.Location
+                && string.Equals(filesCustomDir, picker.CustomDir, StringComparison.Ordinal))
                 return;
-            filesLocation = location;
-            filesCustomDir = customDir;
+            filesLocation = picker.Location;
+            filesCustomDir = picker.CustomDir;
             filesValid = true;
-            files = PlansFiles.ListFiles(ResolvedDir());
+            files = ExportFolder.ListFiles(picker.ResolvedDir());
             sourceScroll = Vector2.zero;
         }
 
@@ -192,7 +192,7 @@ namespace Implanner.UI
         {
             using (GuiStateScope.Capture())
             {
-                UiVersion.ObserveCurrentMetrics();
+                UiRevision.ObserveCurrentMetrics();
                 PlanIoLabels.Ensure();
 
                 if (stage == Stage.Source)
@@ -226,7 +226,7 @@ namespace Implanner.UI
             float locRowY = bodyTop;
             float customRowY = locRowY + RowH;
             DrawLocationRows(inRect, locRowY, customRowY, includeNameField: false);
-            bodyTop += RowH + (location == Location.Custom ? RowH : 0f);
+            bodyTop += RowH + (picker.Location == ExportLocation.Custom ? RowH : 0f);
 
             float footerY = FooterY(inRect);
 
@@ -258,7 +258,7 @@ namespace Implanner.UI
 
         private void DrawFileList(Rect listRect)
         {
-            List<PlansFiles.Entry> entries = files!; // caller checked
+            List<ExportFolder.Entry> entries = files!; // caller checked
             float rowH = FileRowH;
             float totalH = entries.Count * rowH;
             bool needsBar = totalH > listRect.height;
@@ -270,7 +270,7 @@ namespace Implanner.UI
             {
                 for (int i = 0; i < entries.Count; i++)
                 {
-                    PlansFiles.Entry file = entries[i];
+                    ExportFolder.Entry file = entries[i];
                     var rowRect = new Rect(0f, i * rowH, viewRect.width, rowH);
 
                     if (i % 2 == 0)
@@ -316,7 +316,7 @@ namespace Implanner.UI
                     if (Widgets.ButtonInvisible(
                         new Rect(rowRect.x, rowRect.y, rowRect.width - DeleteW - 4f, rowH)))
                     {
-                        if (!PlansFiles.TryRead(file.FullPath, out string? xml, out string? readError))
+                        if (!ExportFolder.TryRead(file.FullPath, out string? xml, out string? readError))
                         {
                             Messages.Message("IMP_ReadFailed".Translate(readError),
                                 MessageTypeDefOf.RejectInput, historical: false);
@@ -399,7 +399,7 @@ namespace Implanner.UI
         private void EnsurePreviewText()
         {
             if (ReferenceEquals(textRows, pendingRows)
-                && textLanguageVersion == UiVersion.LanguageCurrent
+                && textLanguageVersion == UiRevision.LanguageCurrent
                 && previewSummary != null)
                 return;
             int planCount = pendingRows?.PlanCount ?? 0;
@@ -409,7 +409,7 @@ namespace Implanner.UI
             for (int i = 0; i < planCount; i++)
                 previewCaptions[i] = "IMP_PlanGoalCount".Translate(pendingRows!.ImplantCounts[i]);
             textRows = pendingRows;
-            textLanguageVersion = UiVersion.LanguageCurrent;
+            textLanguageVersion = UiRevision.LanguageCurrent;
         }
     }
 }

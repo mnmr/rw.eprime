@@ -1,4 +1,3 @@
-using System.IO;
 using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
@@ -14,8 +13,6 @@ namespace WorkRoles.UI
         private const float TitleH = 38f;
 
         public override Vector2 InitialSize => new Vector2(560f, 250f);
-
-        protected override bool AcceptsExactTypedName => true;
 
         // Owner: import dialog. Key: explicit open/mouse-down clipboard refresh.
         // Value: immutable clipboard string plus a scalar format precheck.
@@ -50,7 +47,9 @@ namespace WorkRoles.UI
         private string cancelLabel = null!;
         private string importLabel = null!;
 
-        public Dialog_ImportSource()
+        // Exports written before ".xml" was added keep loading by the name
+        // they were saved under.
+        public Dialog_ImportSource() : base(acceptExactTypedName: true)
         {
             refreshClipboardAction = RefreshClipboard;
             importPendingAction = ImportPending;
@@ -101,7 +100,7 @@ namespace WorkRoles.UI
 
             // Bottom-up: Cancel/Import row, optional custom-dir row, location row.
             float btnY = inRect.yMax - ButtonH;
-            float customRowY = btnY - 8f - (location == Location.Custom ? RowH : 0f);
+            float customRowY = btnY - 8f - (picker.Location == ExportLocation.Custom ? RowH : 0f);
             float locRowY = customRowY - RowH;
             float captionRowY = locRowY - CaptionRowH;
 
@@ -133,7 +132,7 @@ namespace WorkRoles.UI
             titleLabel = "WR_ImportTitle".Translate().ToString();
             clipboardLabel = "WR_ImportFromClipboard".Translate().ToString();
             locationCaption = "WR_ImportLocationLabel".Translate().ToString();
-            cancelLabel = "WR_Cancel".Translate().ToString();
+            cancelLabel = "CancelButton".Translate().ToString();
             importLabel = "WR_Import".Translate().ToString();
         }
 
@@ -153,18 +152,15 @@ namespace WorkRoles.UI
             pendingImportXml = null;
             pendingImportPath = null;
             importPending = false;
-            if (xml == null)
+            if (xml == null
+                && !ExportFolder.TryRead(path!, out xml, out string? readError)) // path set when xml isn't
             {
-                try { xml = File.ReadAllText(path); }
-                catch (System.Exception error)
-                {
-                    Messages.Message(
-                        "WR_ImportParseFailed".Translate(error.Message),
-                        MessageTypeDefOf.RejectInput, historical: false);
-                    return;
-                }
+                Messages.Message(
+                    "WR_ImportParseFailed".Translate(readError),
+                    MessageTypeDefOf.RejectInput, historical: false);
+                return;
             }
-            if (TryOpenPreview(xml)) Close();
+            if (TryOpenPreview(xml!)) Close(); // TryRead sets it on success
         }
 
         /// Parses and opens the merge/overwrite preview; false (with a message)

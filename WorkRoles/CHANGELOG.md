@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.6.4 — 2026-10-03
+
+- Changed: Suppress welcome dialog when dev mode is enabled.
+
 ## 1.6.3 — 2026-09-28
 
 - Added: Auto-assigned roles are now gated by the role age brackets.

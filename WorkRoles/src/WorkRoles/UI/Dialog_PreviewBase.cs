@@ -35,7 +35,7 @@ namespace WorkRoles.UI
             if (previewLanguageRevision == current) return false;
             previewLanguageRevision = current;
             selectAllLabel = "WR_SelectAll".Translate();
-            cancelLabel = "WR_Cancel".Translate();
+            cancelLabel = "CancelButton".Translate();
             applyLabel = "WR_Apply".Translate();
             return true;
         }

@@ -27,12 +27,11 @@ namespace EPrimeReadouts
 
         private static void QueueWelcome()
         {
-            RimWorld.Planet.World? world = Find.World;
             ReadoutSettings? settings = EPrimeReadoutsMod.Settings;
-            if (world == null || settings == null) return;
-            string id = world.info.persistentRandomValue.ToString();
-            if (settings.welcomeShownSaves.Contains(id)) return;
-            EPrimeReadoutsMod.Persist(s => s.welcomeShownSaves.Add(id));
+            if (settings == null
+                || !RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves))
+                return;
+            EPrimeReadoutsMod.Persist();
             Find.WindowStack?.Add(new RimShared.UiLib.WelcomeDialog(
                 "EPR.WelcomeTitle".Translate(),
                 "EPR.WelcomeBody".Translate(),

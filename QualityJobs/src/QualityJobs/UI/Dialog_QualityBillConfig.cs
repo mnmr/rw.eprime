@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using QualityJobs.Core;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -269,14 +270,9 @@ namespace QualityJobs.UI
                             _minSkillLabel = "QJ_FinisherSkill".Translate(minSkill);
                             _minSkillLabelValue = minSkill;
                         }
-                        Rect skillLabel = new Rect(x, y, w * 0.5f, SliderH);
-                        Text.Anchor = TextAnchor.MiddleLeft;
-                        Widgets.Label(skillLabel, _minSkillLabel!);
-                        Text.Anchor = prevAnchor;
-                        WrTips.Key("QJ_FinisherSkillTip").Region(skillLabel);
-                        newMinSkill = (int)Widgets.HorizontalSlider(
-                            new Rect(x + w * 0.5f, y, w * 0.5f, SliderH), minSkill, 0f, 20f,
-                            middleAlignment: true);
+                        Rect skillRow = new Rect(x, y, w, SliderH);
+                        newMinSkill = QjUi.SliderRow(skillRow, _minSkillLabel!, minSkill, 0f, 20f);
+                        WrTips.Key("QJ_FinisherSkillTip").Region(skillRow.LeftHalf());
                         y += SliderH + Gap;
                     }
 
@@ -290,15 +286,8 @@ namespace QualityJobs.UI
                     if (Widgets.ButtonText(new Rect(x + w * 0.5f, y, w * 0.5f, RowH), qualityCaption))
                     {
                         // Menu built on click only; allocation on interaction, not per frame.
-                        var options = new System.Collections.Generic.List<FloatMenuOption>();
-                        options.Add(new FloatMenuOption(_anyQualityLabel!, () => PushTargetQuality(0)));
-                        for (int q = 1; q <= 6; q++)
-                        {
-                            int capturedQ = q;
-                            options.Add(new FloatMenuOption(_qualityLabels![q],
-                                () => PushTargetQuality(capturedQ)));
-                        }
-                        Find.WindowStack.Add(new FloatMenu(options) { vanishIfMouseDistant = false });
+                        Find.WindowStack.Add(QjUi.QualityMenu(_anyQualityLabel!, _qualityLabels!,
+                            PushTargetQuality));
                     }
                     WrTips.Key("QJ_BillTargetQualityTip").Region(qualityRow);
                     y += RowH + Gap;
@@ -310,14 +299,9 @@ namespace QualityJobs.UI
                         _capLabel = "QJ_StockCapLabel".Translate(cap);
                         _capLabelValue = cap;
                     }
-                    Rect capLabel = new Rect(x, y, w * 0.5f, SliderH);
-                    Text.Anchor = TextAnchor.MiddleLeft;
-                    Widgets.Label(capLabel, _capLabel!);
-                    Text.Anchor = prevAnchor;
-                    WrTips.Key("QJ_StockCapTooltip").Region(capLabel);
-                    int newCap = (int)Widgets.HorizontalSlider(
-                        new Rect(x + w * 0.5f, y, w * 0.5f, SliderH), cap, 0f, 50f,
-                        middleAlignment: true);
+                    Rect capRow = new Rect(x, y, w, SliderH);
+                    int newCap = QjUi.SliderRow(capRow, _capLabel!, cap, 0f, 50f);
+                    WrTips.Key("QJ_StockCapTooltip").Region(capRow.LeftHalf());
 
                     PushChanges(newManaged, newAutoBest, newMinSkill, newInspired, newSpecialist, newCap);
                 }

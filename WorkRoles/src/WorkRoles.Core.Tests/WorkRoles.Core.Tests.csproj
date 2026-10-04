@@ -16,5 +16,6 @@
              Link="OfflineData\VanillaJobSkillBaseline.cs" />
     <Compile Include="..\WorkRoles.Lab\Data\VanillaWorkOrder.cs"
              Link="OfflineData\VanillaWorkOrder.cs" />
+    <Compile Include="$(RimSharedRoot)\Tests\Support\**\*.cs" LinkBase="Shared" />
   </ItemGroup>
 </Project>

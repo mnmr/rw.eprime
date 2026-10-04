@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using RimShared.Common;
 
 namespace EPrimeReadouts.Core
 {
@@ -43,6 +44,13 @@ namespace EPrimeReadouts.Core
         /// token. Absent means fully inherit the player's global options.
         public Dictionary<string, CountRule> CountRules = new Dictionary<string, CountRule>();
 
+        private static readonly Func<ReadoutGroup, string> GroupNameOf = group => group.Name;
+        private static readonly Action<ReadoutGroup, string> SetGroupName =
+            (group, name) => group.Name = name;
+        private static readonly Func<ResourcePool, string> PoolNameOf = pool => pool.Name;
+        private static readonly Action<ResourcePool, string> SetPoolName =
+            (pool, name) => pool.Name = name;
+
         public ReadoutGroup? GroupById(int id)
         {
             foreach (var group in Groups)
@@ -70,16 +78,8 @@ namespace EPrimeReadouts.Core
         /// other than <paramref name="exceptGroupId"/>. Unique names let the
         /// UI find a group it just created by name, even when the synced
         /// create lands frames later in multiplayer.
-        public bool CanUseGroupName(string? name, int exceptGroupId = -1)
-        {
-            string normalized = ReadoutGroupNames.Normalize(name);
-            if (normalized.Length == 0) return false;
-            foreach (var group in Groups)
-                if (group.Id != exceptGroupId
-                    && ReadoutGroupNames.Comparer.Equals(group.Name, normalized))
-                    return false;
-            return true;
-        }
+        public bool CanUseGroupName(string? name, int exceptGroupId = -1) =>
+            CatalogNameRules.IsAvailable(name, Groups, GroupNameOf, GroupById(exceptGroupId));
 
         public ReadoutGroup CreateGroup(int id, string name)
         {
@@ -104,36 +104,6 @@ namespace EPrimeReadouts.Core
             if (group.Name == nextName) return false;
             group.Name = nextName;
             return true;
-        }
-
-        /// Renames later duplicates (display order) and blank names with a
-        /// " (n)" suffix no other group uses. Deterministic for the same
-        /// groups, so load and synced import converge on every client.
-        private void MakeGroupNamesUnique(List<ReadoutGroup> ordered)
-        {
-            var reserved = new HashSet<string>(ReadoutGroupNames.Comparer);
-            foreach (var group in ordered)
-            {
-                string normalized = ReadoutGroupNames.Normalize(group.Name);
-                if (normalized.Length != 0) reserved.Add(normalized);
-            }
-
-            var claimed = new HashSet<string>(ReadoutGroupNames.Comparer);
-            foreach (var group in ordered)
-            {
-                string baseName = ReadoutGroupNames.Normalize(group.Name);
-                string unique = baseName;
-                if (baseName.Length == 0 || !claimed.Add(baseName))
-                {
-                    if (baseName.Length == 0) baseName = ReadoutGroupNames.FallbackName;
-                    unique = baseName;
-                    int suffix = 2;
-                    while (!reserved.Add(unique))
-                        unique = baseName + " (" + suffix++ + ")";
-                    claimed.Add(unique);
-                }
-                group.Name = unique;
-            }
         }
 
         public bool DeleteGroup(int id)
@@ -340,16 +310,8 @@ namespace EPrimeReadouts.Core
         /// than <paramref name="exceptPoolId"/>. Resource and category names are
         /// intentionally outside this namespace.
         /// </summary>
-        public bool CanUsePoolName(string? name, int exceptPoolId = -1)
-        {
-            string normalized = PoolNameRules.Normalize(name);
-            if (normalized.Length == 0) return false;
-            foreach (var pool in Pools)
-                if (pool.Id != exceptPoolId
-                    && PoolNameRules.Comparer.Equals(pool.Name, normalized))
-                    return false;
-            return true;
-        }
+        public bool CanUsePoolName(string? name, int exceptPoolId = -1) =>
+            CatalogNameRules.IsAvailable(name, Pools, PoolNameOf, PoolById(exceptPoolId));
 
         /// Adds a new pool with the given id and name, returns it. The pools
         /// list stays name-sorted.
@@ -383,53 +345,45 @@ namespace EPrimeReadouts.Core
         {
             string baseName = PoolNameRules.Normalize(requestedName);
             if (baseName.Length == 0) baseName = PoolNameRules.LegacyFallbackName;
-            if (CanUsePoolName(baseName)) return baseName;
-
-            int suffix = 2;
-            while (true)
-            {
-                string candidate = baseName + " (" + suffix + ")";
-                if (CanUsePoolName(candidate)) return candidate;
-                suffix++;
-            }
+            return CatalogNameRules.Unique(baseName, Pools, PoolNameOf)!; // non-blank base => non-null
         }
 
-        private void NormalizeLegacyPoolNames()
+        /// Renames later duplicates (list order) and blank names with a
+        /// " (n)" suffix no other entry uses; every original name stays
+        /// reserved, so a suffixed name never takes a later entry's name.
+        /// Deterministic for the same entries, so load and synced import
+        /// converge on every client. Returns true when any name changed.
+        private static bool MakeNamesUnique<T>(IReadOnlyList<T> ordered,
+            Func<T, string> nameOf, Action<T, string> setName, string fallbackName)
         {
-            var normalizedNames = new string[Pools.Count];
-            var reservedNames = new HashSet<string>(PoolNameRules.Comparer);
-            for (int i = 0; i < Pools.Count; i++)
+            var reserved = new HashSet<string>(PoolNameRules.Comparer);
+            for (int i = 0; i < ordered.Count; i++)
             {
-                string normalized = PoolNameRules.Normalize(Pools[i].Name);
-                normalizedNames[i] = normalized;
-                if (normalized.Length != 0) reservedNames.Add(normalized);
+                string normalized = PoolNameRules.Normalize(nameOf(ordered[i]));
+                if (normalized.Length != 0) reserved.Add(normalized);
             }
 
-            var claimedNames = new HashSet<string>(PoolNameRules.Comparer);
+            var claimed = new HashSet<string>(PoolNameRules.Comparer);
             bool changed = false;
-            for (int i = 0; i < Pools.Count; i++)
+            for (int i = 0; i < ordered.Count; i++)
             {
-                ResourcePool pool = Pools[i];
-                string baseName = normalizedNames[i];
-                string uniqueName;
-                if (baseName.Length != 0 && claimedNames.Add(baseName))
+                T item = ordered[i];
+                string baseName = PoolNameRules.Normalize(nameOf(item));
+                string unique = baseName;
+                if (baseName.Length == 0 || !claimed.Add(baseName))
                 {
-                    uniqueName = baseName;
-                }
-                else
-                {
-                    if (baseName.Length == 0) baseName = PoolNameRules.LegacyFallbackName;
-                    uniqueName = baseName;
+                    if (baseName.Length == 0) baseName = fallbackName;
+                    unique = baseName;
                     int suffix = 2;
-                    while (!reservedNames.Add(uniqueName))
-                        uniqueName = baseName + " (" + suffix++ + ")";
+                    while (!reserved.Add(unique))
+                        unique = baseName + " (" + suffix++ + ")";
                 }
 
-                if (pool.Name == uniqueName) continue;
-                pool.Name = uniqueName;
+                if (nameOf(item) == unique) continue;
+                setName(item, unique);
                 changed = true;
             }
-            if (changed) SortPools();
+            return changed;
         }
 
         /// Pools are kept name-sorted (case-insensitive, id tie-break) as a
@@ -536,8 +490,9 @@ namespace EPrimeReadouts.Core
         /// </summary>
         public void CleanupMissing(Func<string, bool> tokenValid, Func<string, bool> memberValid)
         {
-            NormalizeLegacyPoolNames();
-            MakeGroupNamesUnique(InDisplayOrder());
+            if (MakeNamesUnique(Pools, PoolNameOf, SetPoolName, PoolNameRules.LegacyFallbackName))
+                SortPools();
+            MakeNamesUnique(InDisplayOrder(), GroupNameOf, SetGroupName, ReadoutGroupNames.FallbackName);
             foreach (var group in Groups) TierOps.Cleanup(group.Tiers, tokenValid);
 
             var stale = new List<string>();
@@ -661,7 +616,7 @@ namespace EPrimeReadouts.Core
                     Groups.Add(group);
                 }
                 // Files exported before names were unique may repeat them.
-                MakeGroupNamesUnique(Groups);
+                MakeNamesUnique(Groups, GroupNameOf, SetGroupName, ReadoutGroupNames.FallbackName);
             }
             return change;
         }

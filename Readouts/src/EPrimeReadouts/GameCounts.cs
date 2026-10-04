@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
+using RimShared.Common;
 using RimWorld;
 using Verse;
 
@@ -29,7 +30,7 @@ namespace EPrimeReadouts
         // after every map pass, so no Thing, Map, or per-save state is
         // retained between passes.
         private static readonly Dictionary<ThingDef, DefTally> tallies =
-            new Dictionary<ThingDef, DefTally>(IdentityComparer<ThingDef>.Instance);
+            new Dictionary<ThingDef, DefTally>(ReferenceIdentityComparer<ThingDef>.Instance);
 
         internal static RenderCountSnapshot BuildSnapshot(
             Map map,
@@ -38,7 +39,7 @@ namespace EPrimeReadouts
             var accumulator = new CountAccumulator();
             QualityJobsPlannedWorkSnapshot qualityJobs =
                 options.PlannedWork.QualityRework
-                    ? QualityJobsPlannedWork.Current()
+                    ? QualityJobsBridge.Current()
                     : QualityJobsPlannedWorkSnapshot.Empty;
             Dictionary<int, Map>? levels = LevelStacks.LevelsOf(map);
             if (levels == null)

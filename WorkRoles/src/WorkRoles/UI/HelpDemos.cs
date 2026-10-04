@@ -1,23 +1,13 @@
 using System.Collections.Generic;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
 namespace WorkRoles.UI
 {
     /// <summary>
-    /// An embedded help-page demo: a fixed-size, self-animating vignette.
-    /// Draw is called on every window pass with the reserved rect; demos are
-    /// stateless presentations driven by the realtime clock, mutate nothing,
-    /// and allocate nothing per frame.
-    /// </summary>
-    internal interface IHelpDemo
-    {
-        Vector2 Size { get; }
-        void Draw(Rect rect);
-    }
-
-    /// <summary>
-    /// Registry the help pipeline resolves "@demo:name" blocks against.
+    /// Registry the help pipeline resolves "@demo:name" blocks against
+    /// (through <see cref="WorkRolesHelpHost"/>).
     /// </summary>
     // Owner: process (fixed set, no per-save data). Key: demo name from the
     // markdown source. Value: stateless demo instances; their translated
@@ -32,22 +22,8 @@ namespace WorkRoles.UI
                 { "chip-drag", new ChipDragDemo() },
             };
 
-        internal static bool TryGetSize(
-            string name, out float width, out float height)
-        {
-            if (demos.TryGetValue(name, out IHelpDemo? demo))
-            {
-                width = demo.Size.x;
-                height = demo.Size.y;
-                return true;
-            }
-            width = 0f;
-            height = 0f;
-            return false;
-        }
-
-        internal static IHelpDemo? Get(string name) =>
-            demos.TryGetValue(name, out IHelpDemo? demo) ? demo : null;
+        internal static bool TryGet(string name, out IHelpDemo? demo) =>
+            demos.TryGetValue(name, out demo);
     }
 
     /// <summary>

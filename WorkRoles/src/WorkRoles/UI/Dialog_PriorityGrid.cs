@@ -492,7 +492,7 @@ namespace WorkRoles.UI
                 float x = headerRect.x + NameW + c * ColW - scroll.x;
                 var headRect = new Rect(x, headerRect.y, ColW, headerRect.height);
                 TooltipHandler.TipRegion(headRect, columnTips[c]);
-                if (WrText.InclinedLabelButton(headRect, columnLabelSizes[c],
+                if (WrLabels.InclinedLabelButton(headRect, columnLabelSizes[c],
                         columnLabelGeometries[c], LabelAngle))
                     ToggleSort(c);
             }
@@ -512,7 +512,7 @@ namespace WorkRoles.UI
             // Each label draws only its own trailing 45° line; the first label
             // needs the line BEFORE it drawn separately (an empty phantom label
             // one column to the left).
-            WrText.InclinedLabel(new Rect(
+            WrLabels.InclinedLabel(new Rect(
                     headerRect.x + NameW - ColW - scroll.x,
                     headerRect.y,
                     ColW,
@@ -525,7 +525,7 @@ namespace WorkRoles.UI
                 Color? labelColor = sortState.SortedColumnIndex == c
                     ? SortedHeaderColor
                     : (Color?)null;
-                WrText.InclinedLabel(headRect, columnLabels[c], columnLabelSizes[c],
+                WrLabels.InclinedLabel(headRect, columnLabels[c], columnLabelSizes[c],
                     columnLabelGeometries[c], LabelAngle, labelColor);
                 // Header stub of the column separator; the body draws the rest.
                 GUI.color = new Color(1f, 1f, 1f, 0.12f);

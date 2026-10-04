@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.6 — 2026-10-03
+
+- Changed: Suppress welcome dialog when dev mode is enabled.
+
 ## 1.1.5 — 2026-09-27
 
 - Added: Support for Quality Bionics Remastered (quality in plans and production bills).

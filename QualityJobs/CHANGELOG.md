@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.1.6 — 2026-10-03
+
+- Changed: Suppress welcome dialog when dev mode is enabled.
+
 ## 1.1.5 — 2026-09-28
 
 - Fixed: Mod load order could break support for Quality Bionics Remastered and EPOE (fixed so load order doesn't matter).

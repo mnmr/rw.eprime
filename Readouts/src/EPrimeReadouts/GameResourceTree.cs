@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
+using RimShared.UiLib;
 using RimWorld;
 using Verse;
 
@@ -15,7 +16,7 @@ namespace EPrimeReadouts
         // Owner: process/loaded def set.
         // Key: loaded defs and the current UI language revision.
         // Value: detached resource-tree nodes consumed by both editor trees.
-        // Dependencies: ThingCategoryDef/ThingDef data and UiVersion.LanguageCurrent.
+        // Dependencies: ThingCategoryDef/ThingDef data and UiRevision.LanguageCurrent.
         // Refresh policy: lazy, immediate on UI language revision changes.
         // Equality policy: unchanged dependencies preserve root identity.
         // Teardown: Reset releases all cached nodes on global teardown.
@@ -25,12 +26,12 @@ namespace EPrimeReadouts
 
         public static List<ResourceTreeNode> GetRoots(ItemPickerType type = ItemPickerType.Resources)
         {
-            UiVersion.ObserveCurrentMetrics();
-            if (cachedLanguageVersion != UiVersion.LanguageCurrent)
+            UiRevision.ObserveCurrentMetrics();
+            if (cachedLanguageVersion != UiRevision.LanguageCurrent)
             {
                 cachedResourceRoots = null;
                 cachedStorableRoots = null;
-                cachedLanguageVersion = UiVersion.LanguageCurrent;
+                cachedLanguageVersion = UiRevision.LanguageCurrent;
             }
 
             if (type == ItemPickerType.AllStorableItems)

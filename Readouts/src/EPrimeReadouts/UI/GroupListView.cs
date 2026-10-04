@@ -1,4 +1,5 @@
 using EPrimeReadouts.Core;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -51,13 +52,15 @@ namespace EPrimeReadouts.UI
                 rect.x, rect.y, rect.width, UiText.Get("EPR.Groups"));
 
             bool folded = settings.helpGroupsFolded;
-            headerUsed += EprStyle.HelpGroup(
+            headerUsed += HelpFoldout.Draw(
                 rect.x,
                 rect.y + headerUsed,
                 rect.width,
                 UiText.Get("EPR.Help"),
                 UiText.Get("EPR.HelpGroups"),
-                ref folded);
+                ref folded,
+                EprStyle.HelpMetrics,
+                UiRevision.Current);
             if (folded != settings.helpGroupsFolded)
                 EPrimeReadoutsMod.Persist(s => s.helpGroupsFolded = folded);
 
@@ -162,9 +165,11 @@ namespace EPrimeReadouts.UI
                 if (Widgets.ButtonText(new Rect(row.xMax - 24f, row.y + 2f, 22f, 22f), "✕"))
                 {
                     int id = group.Id;
-                    Find.WindowStack.Add(new Dialog_CompactConfirm(
+                    Find.WindowStack.Add(new CompactConfirmDialog(
                         "EPR.DeleteConfirm".Translate(group.Name),
-                        () => ReadoutCommands.DeleteGroup(id), destructive: true));
+                        () => ReadoutCommands.DeleteGroup(id),
+                        UiText.Get("OK"), UiText.Get("CancelButton"),
+                        UiRevision.Current, destructive: true));
                 }
             }
             }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using RimShared.UiLib;
 using RimWorld;
 using Verse;
 
@@ -13,7 +14,7 @@ namespace Implanner.UI
     // Key: implant definition name (only implant tips are stored).
     // Value: the immutable formatted tip string.
     // Dependencies: the loaded definition set (static per session) and
-    //   UiVersion.LanguageCurrent for labels and stat names. Quality Bionics
+    //   UiRevision.LanguageCurrent for labels and stat names. Quality Bionics
     //   Remastered's efficiency multipliers are read when a tip builds and
     //   observed through ImplantQualities.SettingsRevision (checked on the
     //   1020-tick boundary, since the mod sends no change notification).
@@ -37,11 +38,11 @@ namespace Implanner.UI
 
         private static void EnsureCurrent()
         {
-            if (languageStamp == UiVersion.LanguageCurrent
+            if (languageStamp == UiRevision.LanguageCurrent
                 && qualityStamp == ImplantQualities.SettingsRevision)
                 return;
             tips.Clear();
-            languageStamp = UiVersion.LanguageCurrent;
+            languageStamp = UiRevision.LanguageCurrent;
             qualityStamp = ImplantQualities.SettingsRevision;
         }
 

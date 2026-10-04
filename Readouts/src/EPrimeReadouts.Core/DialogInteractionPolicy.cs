@@ -15,15 +15,4 @@ namespace EPrimeReadouts.Core
             return inputEmpty ? DialogEscapeAction.UnfocusInput : DialogEscapeAction.ClearInput;
         }
     }
-
-    public static class CompactDialogLayout
-    {
-        public static float Height(float bodyHeight, float chromeHeight, float minHeight, float maxHeight)
-        {
-            float natural = bodyHeight + chromeHeight;
-            if (natural < minHeight) return minHeight;
-            if (natural > maxHeight) return maxHeight;
-            return natural;
-        }
-    }
 }

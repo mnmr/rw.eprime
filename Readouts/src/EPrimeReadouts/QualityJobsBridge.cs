@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using EPrimeReadouts.Core;
+using RimShared.Common;
 using RimWorld;
 using Verse;
 
 namespace EPrimeReadouts
 {
     /// Soft-bound Quality Jobs integration. The foreign snapshot is projected
-    /// into EPrime-owned immutable arrays only when QJA publishes a new object.
+    /// into an EPrime-owned map-indexed snapshot only when QJA publishes a new
+    /// object.
     internal static class QualityJobsBridge
     {
         private const string PackageId = "EPrime.QualityJobs";
@@ -38,31 +40,33 @@ namespace EPrimeReadouts
         private static Type billJobType = null!;
         private static Type constructionJobType = null!;
 
-        private static readonly Func<object, ManagedJobsSnapshot> buildSnapshot =
-            BuildSnapshot;
-        private static readonly IEqualityComparer<ManagedJobsSnapshot>
-            distinctSourceComparer = new DistinctSourceComparer();
+        private static readonly Func<object, QualityJobsPlannedWorkSnapshot>
+            buildSnapshot = BuildSnapshot;
+        private static readonly Comparison<Map> compareMaps = CompareMaps;
 
         // Cache contract:
-        // Owner: the active QJA store/world, behind process-scoped API binding.
+        // Owner: the active world/store lifecycle, behind process-scoped API
+        //        binding.
         // Key: QJA's published snapshot object, by reference identity.
-        // Value: immutable EPrime-owned bill/construction handle projection.
+        // Value: immutable per-map managed bills, targets and job handles.
         // Dependencies: Map, Bill, Recipe, Product,
         //               RemainingAcceptedIterations and probability for bills;
         //               Map, BuildableDef, Stuff, Targets and probability for
         //               construction. UFTs and settings are intentionally not
-        //               consumed independently.
-        // Refresh policy: immediate on a new QJA snapshot reference.
+        //               consumed independently. Live material state is
+        //               deliberately not a dependency: the count pass reads it
+        //               through the job handles.
+        // Refresh policy: immediate when QJA publishes a new snapshot reference;
+        //                 unchanged source references are allocation-free.
         //                 A runtime API/projection failure disables the bridge
         //                 for the process and publishes the empty fallback.
-        // Equality policy: every distinct QJA source produces a distinct bridge
-        //                  projection so live handles are reread downstream;
-        //                  the resource projection preserves identity only
-        //                  after its complete rendered contents compare equal.
-        // Teardown: Reset releases source and projected world/game references.
-        private static readonly ReferenceProjectionCache<object, ManagedJobsSnapshot>
-            snapshotCache = new ReferenceProjectionCache<object, ManagedJobsSnapshot>(
-                buildSnapshot, distinctSourceComparer);
+        // Equality policy: equal rebuilt jobs preserve projection identity.
+        // Teardown: Reset on map removal and world teardown releases all QJA,
+        //           map, bill and target references.
+        private static readonly ReferenceProjectionCache<object,
+            QualityJobsPlannedWorkSnapshot> snapshotCache =
+            new ReferenceProjectionCache<object, QualityJobsPlannedWorkSnapshot>(
+                buildSnapshot);
 
         internal static bool Installed
         {
@@ -74,15 +78,15 @@ namespace EPrimeReadouts
             get { Resolve(); return getManagedJobs != null; }
         }
 
-        internal static ManagedJobsSnapshot GetManagedJobs()
+        internal static QualityJobsPlannedWorkSnapshot Current()
         {
             Resolve();
-            if (getManagedJobs == null) return ManagedJobsSnapshot.Empty;
+            if (getManagedJobs == null) return QualityJobsPlannedWorkSnapshot.Empty;
             try
             {
                 object source = getManagedJobs();
                 return source == null
-                    ? ManagedJobsSnapshot.Empty
+                    ? QualityJobsPlannedWorkSnapshot.Empty
                     : snapshotCache.Get(source);
             }
             catch (Exception exception)
@@ -92,7 +96,7 @@ namespace EPrimeReadouts
                 Log.Warning("[EPrimeReadouts] Quality Jobs runtime API failed; "
                     + "quality rework is disabled for this process: "
                     + exception.GetType().Name + ": " + exception.Message);
-                return ManagedJobsSnapshot.Empty;
+                return QualityJobsPlannedWorkSnapshot.Empty;
             }
         }
 
@@ -103,20 +107,25 @@ namespace EPrimeReadouts
             snapshotCache.Clear();
         }
 
-        private static ManagedJobsSnapshot BuildSnapshot(object source)
+        /// Groups QJA's jobs by map, maps in uniqueID order and jobs in QJA's
+        /// own order, so the projection is deterministic.
+        private static QualityJobsPlannedWorkSnapshot BuildSnapshot(object source)
         {
             object jobs = getJobs(source);
             int count = getJobCount(jobs);
-            List<ManagedBillJob>? bills = null;
-            List<ManagedConstructionJob>? construction = null;
+            var bills = new Dictionary<Map, List<ManagedBillJob>>(
+                ReferenceIdentityComparer<Map>.Instance);
+            var construction = new Dictionary<Map, List<ManagedConstructionJob>>(
+                ReferenceIdentityComparer<Map>.Instance);
+            var maps = new List<Map>();
             for (int i = 0; i < count; i++)
             {
                 object job = getJobAt(jobs, i);
                 if (billJobType.IsInstanceOfType(job))
                 {
-                    if (bills == null) bills = new List<ManagedBillJob>();
-                    bills.Add(new ManagedBillJob(
-                        getMap(job), getBill(job), getRecipe(job),
+                    Map billMap = getMap(job);
+                    ListFor(bills, billMap, maps).Add(new ManagedBillJob(
+                        billMap, getBill(job), getRecipe(job),
                         getProduct(job), getRemainingIterations(job),
                         getProbability(job)));
                     continue;
@@ -128,21 +137,42 @@ namespace EPrimeReadouts
                 var copiedTargets = new Thing[targetCount];
                 for (int target = 0; target < targetCount; target++)
                     copiedTargets[target] = getTargetAt(targets, target);
-                if (construction == null)
-                    construction = new List<ManagedConstructionJob>();
-                construction.Add(new ManagedConstructionJob(
-                    getMap(job), getBuildableDef(job), getStuff(job),
-                    copiedTargets, getProbability(job)));
+                Map constructionMap = getMap(job);
+                ListFor(construction, constructionMap, maps).Add(
+                    new ManagedConstructionJob(
+                        constructionMap, getBuildableDef(job), getStuff(job),
+                        copiedTargets, getProbability(job)));
             }
 
-            if (bills == null && construction == null)
-                return ManagedJobsSnapshot.Empty;
-            return new ManagedJobsSnapshot(
-                bills != null ? bills.ToArray() : Array.Empty<ManagedBillJob>(),
-                construction != null
-                    ? construction.ToArray()
-                    : Array.Empty<ManagedConstructionJob>());
+            if (maps.Count == 0) return QualityJobsPlannedWorkSnapshot.Empty;
+            maps.Sort(compareMaps);
+            var projected = new QualityJobsMapWorkSnapshot[maps.Count];
+            for (int i = 0; i < maps.Count; i++)
+            {
+                Map map = maps[i];
+                projected[i] = new QualityJobsMapWorkSnapshot(map,
+                    bills.TryGetValue(map, out var mapBills)
+                        ? mapBills.ToArray()
+                        : Array.Empty<ManagedBillJob>(),
+                    construction.TryGetValue(map, out var mapConstruction)
+                        ? mapConstruction.ToArray()
+                        : Array.Empty<ManagedConstructionJob>());
+            }
+            return new QualityJobsPlannedWorkSnapshot(projected);
         }
+
+        private static List<T> ListFor<T>(
+            Dictionary<Map, List<T>> byMap, Map map, List<Map> maps)
+        {
+            if (byMap.TryGetValue(map, out List<T> list)) return list;
+            list = new List<T>();
+            byMap.Add(map, list);
+            if (!maps.Contains(map)) maps.Add(map);
+            return list;
+        }
+
+        private static int CompareMaps(Map left, Map right)
+            => left.uniqueID.CompareTo(right.uniqueID);
 
         private static void Resolve()
         {
@@ -316,54 +346,6 @@ namespace EPrimeReadouts
         {
             Log.Warning("[EPrimeReadouts] Quality Jobs is active but its "
                 + "managed-jobs API is unavailable; quality rework is disabled.");
-        }
-
-        private sealed class DistinctSourceComparer
-            : IEqualityComparer<ManagedJobsSnapshot>
-        {
-            public bool Equals(
-                ManagedJobsSnapshot left, ManagedJobsSnapshot right) => false;
-
-            public int GetHashCode(ManagedJobsSnapshot value) => 0;
-        }
-
-        internal sealed class ManagedJobsSnapshot
-            : IEquatable<ManagedJobsSnapshot>
-        {
-            internal static readonly ManagedJobsSnapshot Empty =
-                new ManagedJobsSnapshot(
-                    Array.Empty<ManagedBillJob>(),
-                    Array.Empty<ManagedConstructionJob>());
-
-            internal ManagedJobsSnapshot(
-                ManagedBillJob[] bills,
-                ManagedConstructionJob[] construction)
-            {
-                Bills = bills;
-                Construction = construction;
-            }
-
-            internal readonly ManagedBillJob[] Bills;
-            internal readonly ManagedConstructionJob[] Construction;
-
-            public bool Equals(ManagedJobsSnapshot? other)
-            {
-                if (other == null
-                    || Bills.Length != other.Bills.Length
-                    || Construction.Length != other.Construction.Length)
-                    return false;
-                for (int i = 0; i < Bills.Length; i++)
-                    if (!Bills[i].Equals(other.Bills[i])) return false;
-                for (int i = 0; i < Construction.Length; i++)
-                    if (!Construction[i].Equals(other.Construction[i])) return false;
-                return true;
-            }
-
-            public override bool Equals(object obj)
-                => Equals(obj as ManagedJobsSnapshot);
-
-            public override int GetHashCode()
-                => (Bills.Length * 397) ^ Construction.Length;
         }
 
         internal readonly struct ManagedBillJob : IEquatable<ManagedBillJob>

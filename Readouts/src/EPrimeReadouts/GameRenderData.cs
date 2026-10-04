@@ -76,7 +76,7 @@ namespace EPrimeReadouts
             if (!ReferenceEquals(cacheOwner, store))
             {
                 cache.Clear();
-                QualityJobsPlannedWork.Reset();
+                QualityJobsBridge.Reset();
                 cacheOwner = store;
                 unionRulesVersion = -1;
             }
@@ -144,7 +144,7 @@ namespace EPrimeReadouts
         {
             if (map == null) return;
             cache.Remove(map);
-            QualityJobsPlannedWork.Reset();
+            QualityJobsBridge.Reset();
             if (cache.Count == 0) cacheOwner = null;
         }
 
@@ -157,7 +157,7 @@ namespace EPrimeReadouts
             unionRulesVersion = -1;
             unionForcesScattered = false;
             unionForcesForbidden = false;
-            QualityJobsPlannedWork.Reset();
+            QualityJobsBridge.Reset();
         }
 
         private static RenderDataCache<Map, int, PoolSnapshot, RenderCountSnapshot> NewCache() =>

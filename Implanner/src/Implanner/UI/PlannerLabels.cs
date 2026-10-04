@@ -1,3 +1,4 @@
+using RimShared.UiLib;
 using Verse;
 
 namespace Implanner.UI
@@ -8,7 +9,7 @@ namespace Implanner.UI
     // Owner: process/current UI presentation.
     // Key: none (single snapshot of all keys).
     // Value: immutable translated strings.
-    // Dependencies: UiVersion.LanguageCurrent.
+    // Dependencies: UiRevision.LanguageCurrent.
     // Refresh policy: immediate rebuild on next Ensure() after the language
     //   revision moves.
     // Equality policy: unchanged language returns the same strings.
@@ -103,8 +104,8 @@ namespace Implanner.UI
 
         internal static void Ensure()
         {
-            if (stamp == UiVersion.LanguageCurrent) return;
-            stamp = UiVersion.LanguageCurrent;
+            if (stamp == UiRevision.LanguageCurrent) return;
+            stamp = UiRevision.LanguageCurrent;
             TabOverview = "IMP_TabOverview".Translate();
             TabPlans = "IMP_TabPlans".Translate();
             TabAutomation = "IMP_TabAutomation".Translate();
@@ -124,7 +125,7 @@ namespace Implanner.UI
             NoSelection = "IMP_NoSelection".Translate();
             AddPlan = "IMP_AddPlan".Translate();
             NoPlans = "IMP_NoPlans".Translate();
-            Rename = "IMP_Rename".Translate();
+            Rename = "Rename".Translate();
             DeletePlan = "IMP_DeletePlan".Translate();
             NoPlan = "IMP_NoPlan".Translate();
             OptEnable = "IMP_OptEnable".Translate();

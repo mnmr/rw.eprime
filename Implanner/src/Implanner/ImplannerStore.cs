@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Implanner.Core;
+using RimShared.GameLib;
 using RimWorld;
 using RimWorld.Planet;
 using Verse;
@@ -194,7 +195,7 @@ namespace Implanner
             // reconcile pass that observes one.
             if (!surgeryConcurrencySeeded)
                 SeedSurgeryConcurrency(ColonyScope.AllPlanableColonists(
-                    ColonyScope.AuthoritativeFaction).Count);
+                    PlayerFactions.AuthoritativeFaction).Count);
             Publish(PlannerChange.All);
         }
 

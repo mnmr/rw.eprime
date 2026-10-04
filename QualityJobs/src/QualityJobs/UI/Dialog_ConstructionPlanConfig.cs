@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using QualityJobs.Core;
 using RimShared.Common;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -613,12 +614,8 @@ namespace QualityJobs.UI
                         minSkillLabelValue = minSkill;
                     }
                     Rect sliderRowRect = new Rect(x, y, width, SliderH);
-                    Text.Anchor = TextAnchor.MiddleLeft;
-                    Widgets.Label(sliderRowRect.LeftHalf(), minSkillLabel!);
+                    newMinSkill = QjUi.SliderRow(sliderRowRect, minSkillLabel!, minSkill, 0f, 20f);
                     WrTips.Key("QJ_FinisherSkillTip").Region(sliderRowRect.LeftHalf());
-                    Text.Anchor = TextAnchor.UpperLeft;
-                    newMinSkill = (int)Widgets.HorizontalSlider(
-                        sliderRowRect.RightHalf(), minSkill, 0f, 20f, middleAlignment: true);
                     y += SliderH + GapH;
                 }
 
@@ -635,25 +632,11 @@ namespace QualityJobs.UI
                 string btnCaption = minQuality <= 0 ? noRetriesLabel! : qualityLabels![minQuality];
                 if (Widgets.ButtonText(qualityBtnRect, btnCaption))
                 {
-                    // Build options list on click only — allocation on interaction, not per frame.
-                    // Fix 3: set vanishIfMouseDistant = false so the menu does not self-close
-                    // when spawned clamped away from the mouse near the screen edge.
-                    // Verified: FloatMenu.vanishIfMouseDistant field at
-                    //   Decompiled\Verse\FloatMenu.cs line 14 (public bool vanishIfMouseDistant = true).
-                    var options = new List<FloatMenuOption>();
-                    options.Add(new FloatMenuOption(anyQualityLabel!, () =>
-                        PushMinQuality(0)));
-                    for (int q = 1; q <= 6; q++)
-                    {
-                        int capturedQ = q;
-                        options.Add(new FloatMenuOption(qualityLabels![q], () =>
-                            PushMinQuality(capturedQ)));
-                    }
-                    var menu = new FloatMenu(options)
-                    {
-                        vanishIfMouseDistant = false,
-                        onCloseCallback = OnQualityMenuClosed,
-                    };
+                    // Menu built on click only — allocation on interaction, not per frame.
+                    // This fold-out suppresses structured tips while its menu is open.
+                    FloatMenu menu = QjUi.QualityMenu(anyQualityLabel!, qualityLabels!,
+                        PushMinQuality);
+                    menu.onCloseCallback = OnQualityMenuClosed;
                     qualityMenu = menu;
                     StructuredTipPresenter.BeginSuppression();
                     try

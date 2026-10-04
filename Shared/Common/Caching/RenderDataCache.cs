@@ -76,40 +76,10 @@ namespace RimShared.Common
             TRevision structureRevision,
             int tick,
             Func<TStructure> buildStructure,
-            Func<TCounts> buildCounts)
-        {
-            if (entries.TryGetValue(key, out var existing))
-            {
-                if (!EqualityComparer<TRevision>.Default.Equals(
-                    existing.StructureRevision, structureRevision))
-                {
-                    existing.Snapshot = new RenderDataSnapshot<TStructure, TCounts>(
-                        buildStructure(), existing.Snapshot.Counts);
-                    existing.StructureRevision = structureRevision;
-                }
-                if (existing.CountsDirty
-                    || tick - existing.LastCountRefreshTick >= countRefreshInterval)
-                {
-                    var refreshedCounts = buildCounts();
-                    if (!countsComparer.Equals(existing.Snapshot.Counts, refreshedCounts))
-                        existing.Snapshot = new RenderDataSnapshot<TStructure, TCounts>(
-                            existing.Snapshot.Structure, refreshedCounts);
-                    existing.CountsDirty = false;
-                    existing.LastCountRefreshTick = tick;
-                }
-                return existing.Snapshot;
-            }
-
-            var entry = new Entry
-            {
-                Snapshot = new RenderDataSnapshot<TStructure, TCounts>(
-                    buildStructure(), buildCounts()),
-                LastCountRefreshTick = tick,
-                StructureRevision = structureRevision,
-            };
-            entries.Add(key, entry);
-            return entry.Snapshot;
-        }
+            Func<TCounts> buildCounts) =>
+            Get(key, structureRevision, tick, (buildStructure, buildCounts),
+                static builders => builders.buildStructure(),
+                static (builders, _) => builders.buildCounts());
 
         public RenderDataSnapshot<TStructure, TCounts> Get<TState>(
             TKey key,

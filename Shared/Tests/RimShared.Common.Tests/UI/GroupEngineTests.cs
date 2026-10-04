@@ -2,15 +2,17 @@ namespace RimShared.Common.Tests;
 
 public class GroupEngineTests
 {
-    private static List<GroupSection<string>> Partition(params string[] items) => GroupEngine.Partition(items, s => (key: "k:" + s[0], title: s[0].ToString().ToUpperInvariant()));
-
     [Test]
-    public async Task SectionsAreOrderedByTitleAndMembersKeepInputOrder()
+    public async Task SectionsAreOrderedByKeyNotTitleAndMembersKeepInputOrder()
     {
-        var sections = Partition("banana", "apple", "blueberry", "avocado");
-        await Assert.That(string.Join(",", sections.Select(s => s.Title))).IsEqualTo("A,B");
-        await Assert.That(string.Join(",", sections[0].Members)).IsEqualTo("apple,avocado");
-        await Assert.That(string.Join(",", sections[1].Members)).IsEqualTo("banana,blueberry");
+        // Life-stage keys carry the stage index before the label, so key
+        // order puts the youngest first; title order would read
+        // Adult,Baby,Child.
+        var sections = GroupEngine.Partition(
+            [("anna", 4, "Adult"), ("bob", 0, "Baby"), ("carl", 4, "Adult"), ("dina", 1, "Child")],
+            p => (key: "age|" + p.Item2.ToString("D2") + "|" + p.Item3, title: p.Item3));
+        await Assert.That(string.Join(",", sections.Select(s => s.Title))).IsEqualTo("Baby,Child,Adult");
+        await Assert.That(string.Join(",", sections[2].Members.Select(m => m.Item1))).IsEqualTo("anna,carl");
     }
 
     [Test]
@@ -23,12 +25,13 @@ public class GroupEngineTests
     }
 
     [Test]
-    public async Task TitleOrderingIsCaseInsensitive()
+    public async Task KeyOrderingIsCaseInsensitive()
     {
         // "apple" before "Banana" holds only case-insensitively; Ordinal
-        // would sort "Banana" (66) ahead of "apple" (97).
-        var sections = GroupEngine.Partition(["cherry", "apple", "Banana"], s => (key: s, title: s));
-        await Assert.That(string.Join(",", sections.Select(s => s.Title))).IsEqualTo("apple,Banana,cherry");
+        // would sort "Banana" (66) ahead of "apple" (97). Equal titles keep
+        // title order from deciding anything.
+        var sections = GroupEngine.Partition(["cherry", "apple", "Banana"], s => (key: s, title: "All"));
+        await Assert.That(string.Join(",", sections.Select(s => s.Key))).IsEqualTo("apple,Banana,cherry");
     }
 
     private static MembershipGroup<string> Members(string key, string title, params string[] members) =>

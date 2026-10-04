@@ -183,7 +183,7 @@ namespace Implanner.UI
     {
         // Cache contract:
         // Owner: the Implanner dialog window.
-        // Key: UiVersion.Current, store identity, PlansVersion,
+        // Key: UiRevision.Current, store identity, PlansVersion,
         //   RankingsVersion, AssignmentsVersion, OptionsVersion (the mod
         //   compatibility options feed the override captions and the
         //   catalog option filters purchase-only rows),
@@ -201,11 +201,11 @@ namespace Implanner.UI
         //   pawn-to-plan assignments (AssignmentsVersion), installed
         //   implants and roster membership for the progress aggregate
         //   (ExternalPawnFacts.Revision), the implant catalog and conflict
-        //   facts (language revision folded into UiVersion.Current; conflict
+        //   facts (language revision folded into UiRevision.Current; conflict
         //   facts are def-derived and static per session), the selection,
         //   the filter segments, and the search query. The plan-name and
         //   "extends" widths are measured here (the language and metric
-        //   revisions are inside UiVersion.Current).
+        //   revisions are inside UiRevision.Current).
         // Refresh policy: immediate on the next Current read (from the
         //   dialog's WindowUpdate) after a key component moves; command
         //   bumps make structural edits visible while paused.
@@ -402,7 +402,7 @@ namespace Implanner.UI
         {
             string query = ActiveQuery();
             if (snapshot == null
-                || uiStamp != UiVersion.Current
+                || uiStamp != UiRevision.Current
                 || !ReferenceEquals(owner, store)
                 || plansStamp != store.PlansVersion
                 || rankingsStamp != store.RankingsVersion
@@ -414,7 +414,7 @@ namespace Implanner.UI
                 || !string.Equals(queryStamp, query, StringComparison.Ordinal))
             {
                 snapshot = Build(store, query);
-                uiStamp = UiVersion.Current;
+                uiStamp = UiRevision.Current;
                 owner = store;
                 plansStamp = store.PlansVersion;
                 rankingsStamp = store.RankingsVersion;
@@ -439,7 +439,7 @@ namespace Implanner.UI
             SelectedPlanId = selected?.Id ?? 0;
             result.SelectedPlanId = SelectedPlanId;
             result.SelectedPlanName = selected?.Name ?? "";
-            // Measured inside the UiVersion-gated build (Text.Font is
+            // Measured inside the UiRevision-gated build (Text.Font is
             // established first) so the draw pass reads stored widths.
             GameFont font = Text.Font;
             Text.Font = GameFont.Medium;

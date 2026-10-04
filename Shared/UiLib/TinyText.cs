@@ -65,6 +65,14 @@ namespace RimShared.UiLib
         public static float LineHeight => Metrics.LineHeight;
 
         /// <summary>
+        /// Downward caption ink shift when Tiny resolves to Small, overlapping
+        /// unused Small-font leading with the following control. Zero for
+        /// native Tiny.
+        /// </summary>
+        public static float FallbackCaptionOffsetY =>
+            EffectiveFont == GameFont.Small ? 2f : 0f;
+
+        /// <summary>
         /// Selects the effective Tiny font until the returned scope is
         /// disposed. Use this to route measurements through a mod's existing
         /// current-font measurement cache.

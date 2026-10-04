@@ -71,7 +71,7 @@ namespace WorkRoles.UI
             var displayHeader = new Rect(flowX, y + 8f, flowW, 28f);
             y += 8f + 32f;
 
-            WrText.HeaderLabel(compatHeader, snapshot.CompatibilityHeader);
+            WrLabels.HeaderLabel(compatHeader, snapshot.CompatibilityHeader);
 
             StructuredTipPresenter.TipRegion(numericRect, snapshot.NumericTip);
             bool numericNew = snapshot.Numeric;
@@ -97,7 +97,7 @@ namespace WorkRoles.UI
             // Per-save automation: the hourly auto-optimize schedule is shared
             // world state (AutoOptimizer runs in the synced simulation), so
             // the edit travels through a synced command like the toggles above.
-            WrText.HeaderLabel(automationHeader, snapshot.AutomationHeader);
+            WrLabels.HeaderLabel(automationHeader, snapshot.AutomationHeader);
             StructuredTipPresenter.TipRegion(
                 autoOptimizeRect, snapshot.AutoOptimizeTip);
             bool autoOptimizeNew = snapshot.AutoOptimize;
@@ -113,7 +113,7 @@ namespace WorkRoles.UI
 
             // Client-side display preferences: chip caches key on these values
             // directly, so a write here is picked up on the next draw pass.
-            WrText.HeaderLabel(displayHeader, snapshot.DisplayHeader);
+            WrLabels.HeaderLabel(displayHeader, snapshot.DisplayHeader);
             bool? changed = DisplayToggle(new Rect(flowX, y, flowW, 28f),
                 snapshot.SkillCaptionsLabel, "WR_OptSkillCaptionsTip",
                 snapshot.SkillCaptions);

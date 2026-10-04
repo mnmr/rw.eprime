@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Implanner.Core;
+using RimShared.Common;
+using RimShared.GameLib;
 using RimShared.UiLib;
 using RimWorld;
 using RimWorld.Planet;
@@ -213,8 +215,8 @@ namespace Implanner.UI
     {
         // Cache contract (overview data):
         // Owner: the Implanner dialog window.
-        // Key: UiVersion.Current, store identity and Version,
-        //   ExternalPawnFacts.Revision, ColonyScope.LocationRevision, and
+        // Key: UiRevision.Current, store identity and Version,
+        //   ExternalPawnFacts.Revision, MapClassifications.LocationRevision, and
         //   the selected grouping (kind + location id). The current map is
         //   NOT a key: it is read only when the grouping selection must be
         //   revalidated (first build, or a vanished location), and both of
@@ -417,21 +419,21 @@ namespace Implanner.UI
             string? groupingLocation =
                 Grouping?.Kind == GroupingKind.Location ? Grouping.LocationId : null;
             if (data == null
-                || uiStamp != UiVersion.Current
+                || uiStamp != UiRevision.Current
                 || !ReferenceEquals(owner, store)
                 || storeStamp != store.Version
                 || factsStamp != ExternalPawnFacts.Revision
-                || locationStamp != ColonyScope.LocationRevision
+                || locationStamp != MapClassifications.LocationRevision
                 || groupingKindStamp != groupingKind
                 || !string.Equals(groupingLocationStamp, groupingLocation,
                     StringComparison.Ordinal))
             {
                 data = Build(store);
-                uiStamp = UiVersion.Current;
+                uiStamp = UiRevision.Current;
                 owner = store;
                 storeStamp = store.Version;
                 factsStamp = ExternalPawnFacts.Revision;
-                locationStamp = ColonyScope.LocationRevision;
+                locationStamp = MapClassifications.LocationRevision;
                 // Re-read: Build revalidates the grouping selection.
                 groupingKindStamp = Grouping?.Kind ?? (GroupingKind)(-1);
                 groupingLocationStamp =
@@ -501,7 +503,7 @@ namespace Implanner.UI
             for (int i = 0; i < caravans.Count; i++)
             {
                 Caravan caravan = caravans[i];
-                if (caravan.Faction != ColonyScope.ViewFaction) continue;
+                if (caravan.Faction != PlayerFactions.ViewFaction) continue;
                 infos.Add(new GroupingInfo(
                     LocationGrouping.CaravanPrefix + caravan.ID.ToStringCached(),
                     caravan.LabelCap, isShip: false, isCaravan: true));
@@ -654,7 +656,7 @@ namespace Implanner.UI
                 unitsSatisfied, unitsTotal).ToString();
 
             // The strip's dynamic sentences are measured here, inside the
-            // UiVersion-gated build, so the draw pass compares stored
+            // UiRevision-gated build, so the draw pass compares stored
             // widths instead of growing the shared measurement cache with
             // generated text.
             GameFont font = Text.Font;
@@ -760,39 +762,27 @@ namespace Implanner.UI
         }
 
         /// Sections the sorted rows by the group-by selection, inserting one
-        /// header row per section (A-Z by section key). "none" leaves the
-        /// flat list. (Classification ported from WorkRoles' GroupSources.)
+        /// header row per section (GroupEngine.Partition: A-Z by section
+        /// key). "none" leaves the flat list. Ordering-layer work, so the
+        /// capturing classifier is allowed here. (Classification ported from
+        /// WorkRoles' GroupSources.)
         private List<OverviewRow> ApplyGrouping(
             List<OverviewRow> rows, Dictionary<string, string> locationLabels)
         {
             if (GroupByKey == "none" || rows.Count == 0)
                 return rows;
-            var sectionKeys = new List<string>();
-            var sections = new Dictionary<string, List<OverviewRow>>(StringComparer.Ordinal);
-            var titles = new Dictionary<string, string>(StringComparer.Ordinal);
-            for (int i = 0; i < rows.Count; i++)
-            {
-                (string key, string title) = Classify(rows[i], locationLabels);
-                if (!sections.TryGetValue(key, out List<OverviewRow> bucket))
-                {
-                    bucket = new List<OverviewRow>();
-                    sections.Add(key, bucket);
-                    sectionKeys.Add(key);
-                    titles.Add(key, title);
-                }
-                bucket.Add(rows[i]);
-            }
-            sectionKeys.Sort(StringComparer.OrdinalIgnoreCase);
-            var grouped = new List<OverviewRow>();
-            for (int s = 0; s < sectionKeys.Count; s++)
+            List<GroupSection<OverviewRow>> sections =
+                GroupEngine.Partition(rows, row => Classify(row, locationLabels));
+            var grouped = new List<OverviewRow>(rows.Count + sections.Count);
+            for (int s = 0; s < sections.Count; s++)
             {
                 grouped.Add(new OverviewRow
                 {
                     Header = true,
-                    Name = titles[sectionKeys[s]],
-                    SectionKey = sectionKeys[s],
+                    Name = sections[s].Title,
+                    SectionKey = sections[s].Key,
                 });
-                grouped.AddRange(sections[sectionKeys[s]]);
+                grouped.AddRange(sections[s].Members);
             }
             return grouped;
         }
@@ -808,7 +798,9 @@ namespace Implanner.UI
                     string? id = row.GroupingId;
                     if (id != null && locationLabels.TryGetValue(id, out string label))
                         return ("location|" + label, label);
-                    return ("location|~", "IMP_StateAway".Translate().ToString());
+                    // U+FFFF sorts after every label, non-ASCII ones too
+                    // ('~' did not), so Away is the last section.
+                    return ("location|\uffff", "IMP_StateAway".Translate().ToString());
                 }
                 case "faction":
                 {
@@ -1333,7 +1325,6 @@ namespace Implanner.UI
             List<Map> maps, Dictionary<ThingDef, int> promised, RecipeDef recipe,
             int crafts, bool intermediaries, HashSet<ThingDef> visited, int depth)
         {
-            const int MaxDepth = 8;
             List<IngredientCount>? ingredients = recipe.ingredients;
             if (ingredients == null) return null;
             for (int i = 0; i < ingredients.Count; i++)
@@ -1342,14 +1333,12 @@ namespace Implanner.UI
                 if (!ingredient.IsFixedIngredient) continue;
                 ThingDef def = ingredient.FixedIngredient;
                 int cost = ingredient.CountRequiredOfFor(def, recipe) * crafts;
-                int available = 0;
-                for (int m = 0; m < maps.Count; m++)
-                    available += maps[m].resourceCounter.GetCount(def);
+                int available = PlannerProduction.ColonyResourceCount(maps, def);
                 promised.TryGetValue(def, out int committed);
                 int reserve = model.ResourceReserveOf(def.defName);
                 if (available - committed - cost >= reserve) continue;
                 RecipeDef? subRecipe =
-                    intermediaries && depth < MaxDepth
+                    intermediaries && depth < PlannerProduction.MaxIntermediaryDepth
                     && PlannerProduction.IsManufactured(def)
                     && visited.Add(def)
                         ? PlannerProduction.ProductionRecipeFor(def)

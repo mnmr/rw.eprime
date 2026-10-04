@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
 using EPrimeReadouts.UI;
+using RimShared.UiLib;
 using Verse;
 
 namespace EPrimeReadouts
@@ -67,7 +68,7 @@ namespace EPrimeReadouts
 
         // Cache contract:
         // Owner: process/loaded def set and current presentation revision.
-        // Key: loaded ThingDefs and UiVersion.LanguageCurrent.
+        // Key: loaded ThingDefs and UiRevision.LanguageCurrent.
         // Value: immutable All/Vanilla/user-mod picker options.
         // Dependencies: storable/acquirable defs, owning ModContentPacks, and
         // localized fixed labels.
@@ -147,9 +148,9 @@ namespace EPrimeReadouts
 
         internal IReadOnlyList<ItemSourceOption> SourceChoices()
         {
-            UiVersion.ObserveCurrentMetrics();
+            UiRevision.ObserveCurrentMetrics();
             if (sourceChoices != null
-                && sourceChoicesLanguageVersion == UiVersion.LanguageCurrent)
+                && sourceChoicesLanguageVersion == UiRevision.LanguageCurrent)
                 return sourceChoices;
 
             var contributing = new List<ItemSourceOption>();
@@ -169,7 +170,7 @@ namespace EPrimeReadouts
             }
             sourceChoices = ItemSourceChoices.Build(
                 contributing, UiText.Get("EPR.All"), UiText.Get("EPR.Vanilla")).AsReadOnly();
-            sourceChoicesLanguageVersion = UiVersion.LanguageCurrent;
+            sourceChoicesLanguageVersion = UiRevision.LanguageCurrent;
             return sourceChoices;
         }
 
@@ -229,11 +230,11 @@ namespace EPrimeReadouts
 
         public string CategoryLabelOf(string categoryDefName)
         {
-            UiVersion.ObserveCurrentMetrics();
-            if (categoryLabelLanguageVersion != UiVersion.LanguageCurrent)
+            UiRevision.ObserveCurrentMetrics();
+            if (categoryLabelLanguageVersion != UiRevision.LanguageCurrent)
             {
                 categoryLabelCache.Clear();
-                categoryLabelLanguageVersion = UiVersion.LanguageCurrent;
+                categoryLabelLanguageVersion = UiRevision.LanguageCurrent;
             }
             if (categoryLabelCache.TryGetValue(categoryDefName, out var cached))
                 return cached;

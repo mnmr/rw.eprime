@@ -24,7 +24,7 @@ namespace Implanner.UI
     {
         // Cache contract:
         // Owner: dialog window; shared by Options and both skill controls.
-        // Key/dependencies: UiVersion.Current and the local slider maximum.
+        // Key/dependencies: UiRevision.Current and the local slider maximum.
         // Value: immutable presentation bounds, value text and Small line box.
         // Refresh policy: immediate in WindowUpdate; gated tab-switch fallback.
         // Equality policy: unchanged or equal rebuilt contents preserve identity.
@@ -35,7 +35,7 @@ namespace Implanner.UI
         internal SkillSliderSnapshot Current()
         {
             int maximum = ImplannerMod.Settings.skillSliderMaximum;
-            if (snapshot == null || snapshot.Maximum != maximum || uiStamp != UiVersion.Current)
+            if (snapshot == null || snapshot.Maximum != maximum || uiStamp != UiRevision.Current)
             {
                 using (GuiStateScope.Capture())
                 {
@@ -44,7 +44,7 @@ namespace Implanner.UI
                     if (snapshot == null || snapshot.Maximum != maximum || snapshot.TextHeight != height)
                         snapshot = new SkillSliderSnapshot(maximum, height);
                 }
-                uiStamp = UiVersion.Current;
+                uiStamp = UiRevision.Current;
             }
             return snapshot;
         }
@@ -70,7 +70,7 @@ namespace Implanner.UI
     {
         // Cache contract:
         // Owner: the Implanner dialog window.
-        // Key: UiVersion.Current, store identity, and the Options store
+        // Key: UiRevision.Current, store identity, and the Options store
         //   revision.
         // Value: an immutable snapshot of the mod compatibility and catalog
         //   flags so the tab never reads the live model.
@@ -98,7 +98,7 @@ namespace Implanner.UI
         internal OptionsSnapshot Current(ImplannerStore store)
         {
             if (snapshot == null
-                || uiStamp != UiVersion.Current
+                || uiStamp != UiRevision.Current
                 || !ReferenceEquals(owner, store)
                 || optionsStamp != store.OptionsVersion)
             {
@@ -109,7 +109,7 @@ namespace Implanner.UI
                     AllowMultipleHygieneEnhancers = model.AllowMultipleHygieneEnhancers,
                     ShowPurchaseOnly = model.ShowPurchaseOnly,
                 };
-                uiStamp = UiVersion.Current;
+                uiStamp = UiRevision.Current;
                 owner = store;
                 optionsStamp = store.OptionsVersion;
             }
@@ -123,10 +123,10 @@ namespace Implanner.UI
     /// language: both static within one UI revision).
     // Cache contract:
     // Owner: the Implanner dialog window.
-    // Key: UiVersion.Current.
+    // Key: UiRevision.Current.
     // Value: WrTip references (the registry's own immutable-per-revision
     //   entries; their text gathers lazily on hover).
-    // Dependencies: UiVersion.Current only — the WrTips registry clears
+    // Dependencies: UiRevision.Current only — the WrTips registry clears
     //   its entries on that revision, so the holder must re-resolve then.
     // Refresh policy: immediate on the first Ensure after the stamp moves.
     // Equality policy: an unchanged stamp reuses every reference.
@@ -144,7 +144,7 @@ namespace Implanner.UI
         /// Called after the window observed the current UI metrics.
         internal void Ensure()
         {
-            int current = UiVersion.Current;
+            int current = UiRevision.Current;
             if (stamp == current) return;
             stamp = current;
             AllowMultipleBladders = WrTips.Key("IMP_OptAllowMultipleBladdersTip",

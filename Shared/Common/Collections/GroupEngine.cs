@@ -7,7 +7,7 @@ namespace RimShared.Common
     /// One rendered section of a grouped list.
     public sealed class GroupSection<T>
     {
-        public string Key = null!;    // stable id ("faction:Zorble", "slave:1") for collapse state; assigned at construction
+        public string Key = null!;    // stable id ("faction|Zorble", "slaves|1") for collapse state and Partition order; assigned at construction
         public string Title = null!;  // display title, without member count; assigned at construction
         public List<T> Members = new List<T>();
     }
@@ -24,8 +24,10 @@ namespace RimShared.Common
     public static class GroupEngine
     {
         /// Partitions items into titled sections: classify gives each item its
-        /// section key and title. Sections are ordered by title (A-Z, ordinal,
-        /// case-insensitive); members keep their input order.
+        /// section key and title. Sections are ordered by key (A-Z, ordinal,
+        /// case-insensitive), never by the translated title, so a key decides
+        /// its section's place: an index prefix orders sections numerically,
+        /// a label suffix alphabetically. Members keep their input order.
         public static List<GroupSection<T>> Partition<T>(
             IEnumerable<T> items, Func<T, (string key, string title)> classify)
         {
@@ -44,12 +46,12 @@ namespace RimShared.Common
                 section.Members.Add(item);
             }
             return sections
-                .OrderBy(s => s.Title, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(s => s.Key, StringComparer.OrdinalIgnoreCase)
                 .ToList();
         }
 
         /// Partitions by membership lookup: sections follow the GIVEN group
-        /// order (it is meaningful, unlike classify's A-Z), each holds the
+        /// order (it is meaningful, unlike classify's key order), each holds the
         /// items in that group in input order. An item in several groups
         /// appears in each; empty groups are skipped; items in no group form
         /// a trailing section keyed "ungrouped".

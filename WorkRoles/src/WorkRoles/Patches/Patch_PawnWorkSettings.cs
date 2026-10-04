@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using HarmonyLib;
+using RimShared.GameLib;
+using RimShared.UiLib;
 using RimWorld;
 using Verse;
 using Verse.Profile;
@@ -189,7 +191,8 @@ namespace WorkRoles.Patches
             FloorMaps.ReleaseForTeardown();
             PawnLocationTracker.ReleaseForTeardown();
             RoleStore.ClearCached();
-            UI.StructuredTipPresenter.Reset();
+            StructuredTipPresenter.Reset();
+            RimShared.UiLib.CompactConfirmDialog.Reset();
         }
     }
 }

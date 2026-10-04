@@ -54,6 +54,12 @@ namespace EPrimeReadouts
         public static void Persist(Action<ReadoutSettings> change)
         {
             change(Settings);
+            Persist();
+        }
+
+        /// Writes the settings, deferred while a Scribe pass is active.
+        public static void Persist()
+        {
             if (Scribe.mode == LoadSaveMode.Inactive) Settings.Write();
             else LongEventHandler.ExecuteWhenFinished(Settings.Write);
         }
@@ -88,12 +94,12 @@ namespace EPrimeReadouts
 
         private void EnsureSettingsText()
         {
-            UiVersion.ObserveCurrentMetrics();
+            UiRevision.ObserveCurrentMetrics();
             int offsetX = (int)Settings.offsetX;
             int offsetY = (int)Settings.offsetY;
             int panelWidth = (int)Settings.panelWidth;
             int bottomMargin = (int)Settings.bottomMargin;
-            if (settingsTextLanguageVersion == UiVersion.LanguageCurrent
+            if (settingsTextLanguageVersion == UiRevision.LanguageCurrent
                 && textOffsetX == offsetX
                 && textOffsetY == offsetY
                 && textPanelWidth == panelWidth
@@ -103,7 +109,7 @@ namespace EPrimeReadouts
             offsetYLabel = UiText.Get("EPR.OffsetY") + ": " + offsetY;
             panelWidthLabel = UiText.Get("EPR.PanelWidth") + ": " + panelWidth;
             bottomMarginLabel = UiText.Get("EPR.BottomMargin") + ": " + bottomMargin;
-            settingsTextLanguageVersion = UiVersion.LanguageCurrent;
+            settingsTextLanguageVersion = UiRevision.LanguageCurrent;
             textOffsetX = offsetX;
             textOffsetY = offsetY;
             textPanelWidth = panelWidth;

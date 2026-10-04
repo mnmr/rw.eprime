@@ -99,7 +99,7 @@ namespace Implanner.Patches
             ContentFinder<Texture2D>.Get("UI/Overlays/Circle75Solid");
 
         /// The vanilla tab atlas (TabRecord keeps its copy private); drawn by
-        /// PlannerTabs, never mutated.
+        /// the shared TabStrip, never mutated.
         internal static readonly Texture2D TabAtlas =
             ContentFinder<Texture2D>.Get("UI/Widgets/TabAtlas");
     }

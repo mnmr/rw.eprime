@@ -17,10 +17,7 @@ public class RoleDefVanillaTests
 
     private static List<RoleXml> LoadShippedRoles()
     {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "mod", "1.6", "Defs")))
-            dir = dir.Parent;
-        var path = Path.Combine(dir!.FullName, "mod", "1.6", "Defs", "Roles.xml");
+        var path = ShippedMod.Path("1.6", "Defs", "Roles.xml");
 
         List<RoleXml> roles = [];
         foreach (var def in XElement.Load(path).Elements("WorkRoles.RoleDef"))
@@ -47,10 +44,7 @@ public class RoleDefVanillaTests
     [Test]
     public async Task EveryColorRefResolvesInThePalette()
     {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "mod", "1.6", "Defs")))
-            dir = dir.Parent;
-        var defsDir = Path.Combine(dir!.FullName, "mod", "1.6", "Defs");
+        var defsDir = ShippedMod.Path("1.6", "Defs");
         var palette = XElement.Load(Path.Combine(defsDir, "Palette.xml")).Elements("WorkRoles.PaletteDef").Select(d => d.Element("defName")!.Value).ToHashSet();
         foreach (var def in XElement.Load(Path.Combine(defsDir, "Roles.xml")).Elements("WorkRoles.RoleDef"))
         {
@@ -66,10 +60,7 @@ public class RoleDefVanillaTests
     {
         // group must name one of the file's RoleGroupDef labels (colorRef has
         // its own test above).
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "mod", "1.6", "Defs")))
-            dir = dir.Parent;
-        var root = XElement.Load(Path.Combine(dir!.FullName, "mod", "1.6", "Defs", "Roles.xml"));
+        var root = XElement.Load(ShippedMod.Path("1.6", "Defs", "Roles.xml"));
         var groups = root.Elements("WorkRoles.RoleGroupDef").Select(d => d.Element("label")!.Value).ToHashSet();
 
         foreach (var def in root.Elements("WorkRoles.RoleDef"))
@@ -117,12 +108,7 @@ public class RoleDefVanillaTests
     [Test]
     public async Task ShippedRolesHaveNoExplicitSkillGates()
     {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null
-            && !Directory.Exists(Path.Combine(dir.FullName, "mod", "1.6", "Defs")))
-            dir = dir.Parent;
-        XElement root = XElement.Load(Path.Combine(
-            dir!.FullName, "mod", "1.6", "Defs", "Roles.xml"));
+        XElement root = XElement.Load(ShippedMod.Path("1.6", "Defs", "Roles.xml"));
 
         foreach (XElement def in root.Elements("WorkRoles.RoleDef"))
             await Assert.That(
@@ -136,16 +122,11 @@ public class RoleDefVanillaTests
     [Test]
     public async Task EveryShippedRoleIconResolvesToAPackagedTexture()
     {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null
-            && !Directory.Exists(Path.Combine(dir.FullName, "mod", "Textures")))
-            dir = dir.Parent;
-
         foreach (RoleXml role in Roles)
         {
             await Assert.That(role.IconPath).IsNotNull()
                 .Because($"{role.DefName} has no icon");
-            string texturePath = Path.Combine(dir!.FullName, "mod", "Textures",
+            string texturePath = ShippedMod.Path("Textures",
                 role.IconPath!.Replace('/', Path.DirectorySeparatorChar) + ".png");
             await Assert.That(File.Exists(texturePath)).IsTrue()
                 .Because($"{role.DefName}: texture '{role.IconPath}' is not packaged");

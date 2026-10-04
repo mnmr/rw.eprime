@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
 using RimShared.Common;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -252,7 +253,7 @@ namespace EPrimeReadouts.UI
                 && string.Equals(
                     owner.selectedCanonical, builtCanonical, StringComparison.Ordinal)
                 && ReferenceEquals(owner.PoolsSnapshot, builtPools)
-                && UiVersion.LanguageCurrent == builtLanguageVersion)
+                && UiRevision.LanguageCurrent == builtLanguageVersion)
                 return;
 
             ReadoutGroup? selected = store?.Model.GroupById(owner.selectedGroupId);
@@ -324,7 +325,7 @@ namespace EPrimeReadouts.UI
             builtGroupId = owner.selectedGroupId;
             builtCanonical = owner.selectedCanonical;
             builtPools = owner.PoolsSnapshot;
-            builtLanguageVersion = UiVersion.LanguageCurrent;
+            builtLanguageVersion = UiRevision.LanguageCurrent;
         }
 
         private static bool IsResourceTinted(string defName, string? canonical)

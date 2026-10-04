@@ -32,7 +32,7 @@ namespace WorkRoles.UI
         // draw time.
         public static readonly Texture2D HelpMedal;
         // The vanilla tab atlas (TabRecord keeps its copy private); drawn by
-        // WrTabs, never mutated.
+        // the shared TabStrip, never mutated.
         public static readonly Texture2D TabAtlas;
         // Owner: world session. Key: the current world lifecycle (one shared
         // slot). Value: two WorkRoles-owned Texture2D assets. Dependencies:

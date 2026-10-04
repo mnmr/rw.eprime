@@ -74,7 +74,7 @@ namespace Implanner.UI
             surgeryHeader = "IMP_OptSurgery".Translate().ToString();
             productionHeader = "IMP_OptProduction".Translate().ToString();
             okLabel = "OK".Translate().ToString();
-            cancelLabel = "IMP_Cancel".Translate().ToString();
+            cancelLabel = "CancelButton".Translate().ToString();
 
             BuildRows(store);
             int headers = (surgeryRows.Count > 0 ? 1 : 0)

@@ -11,7 +11,7 @@ namespace EPrimeReadouts.UI
     internal sealed class ReadoutsPreviewView
     {
         private static float RowH =>
-            EprStyle.TinyTextMetrics.MinHeight(22f);
+            Mathf.Max(22f, TinyText.LineHeight);
         private const float HeaderH = 26f;
         private const float BottomPad = 8f;
 
@@ -19,14 +19,14 @@ namespace EPrimeReadouts.UI
         // Owner: one import/export dialog window.
         // Key: detached snapshot identity.
         // Value: immutable parallel arrays of translated preview rows.
-        // Dependencies: snapshot identity and UiVersion.Current (language plus
+        // Dependencies: snapshot identity and UiRevision.Current (language plus
         // resolved Tiny-font line metrics).
         // Refresh policy: immediate when either dependency changes.
         // Equality policy: unchanged dependencies preserve the arrays by identity.
         // Teardown: Reset is called by the owning dialog during PreClose.
         private ReadoutSnapshot? lastSnapshot;
         private int lastLanguageVersion = -1;
-        private int lastUiVersion = -1;
+        private int lastUiRevision = -1;
         private string[]? lines;
         private bool[]? isHeader;
         private float contentHeight;
@@ -63,17 +63,17 @@ namespace EPrimeReadouts.UI
 
         private void EnsureLines(ReadoutSnapshot snapshot)
         {
-            UiVersion.ObserveCurrentMetrics();
-            int languageVersion = UiVersion.LanguageCurrent;
+            UiRevision.ObserveCurrentMetrics();
+            int languageVersion = UiRevision.LanguageCurrent;
             if (ReferenceEquals(lastSnapshot, snapshot)
                 && lastLanguageVersion == languageVersion
-                && lastUiVersion == UiVersion.Current
+                && lastUiRevision == UiRevision.Current
                 && lines != null)
                 return;
 
             lastSnapshot = snapshot;
             lastLanguageVersion = languageVersion;
-            lastUiVersion = UiVersion.Current;
+            lastUiRevision = UiRevision.Current;
 
             var builtLines = new List<string>();
             var builtHeaders = new List<bool>();
@@ -152,7 +152,7 @@ namespace EPrimeReadouts.UI
         {
             lastSnapshot = null;
             lastLanguageVersion = -1;
-            lastUiVersion = -1;
+            lastUiRevision = -1;
             lines = null;
             isHeader = null;
             contentHeight = 0f;

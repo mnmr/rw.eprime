@@ -1,3 +1,5 @@
+using RimShared.UiLib;
+
 namespace Implanner.UI
 {
     /// The Automation tab's tooltip sources, resolved from the shared
@@ -5,10 +7,10 @@ namespace Implanner.UI
     /// lookups per pass.
     // Cache contract:
     // Owner: the Implanner dialog window.
-    // Key: UiVersion.Current.
+    // Key: UiRevision.Current.
     // Value: WrTip references (the registry's own immutable-per-revision
     //   entries; their text gathers lazily on hover).
-    // Dependencies: UiVersion.Current only — the WrTips registry clears
+    // Dependencies: UiRevision.Current only — the WrTips registry clears
     //   its entries on that revision, so the holder must re-resolve then.
     // Refresh policy: immediate on the first Ensure after the stamp moves.
     // Equality policy: an unchanged stamp reuses every reference.
@@ -38,7 +40,7 @@ namespace Implanner.UI
         /// Called after the window observed the current UI metrics.
         internal void Ensure()
         {
-            int current = UiVersion.Current;
+            int current = UiRevision.Current;
             if (stamp == current) return;
             stamp = current;
             Enable = WrTips.Key("IMP_OptEnableTip");

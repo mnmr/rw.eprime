@@ -22,7 +22,7 @@ namespace EPrimeReadouts.UI
         // Cache contract:
         // Owner: one configuration-dialog EditorView and one ReadoutStore.
         // Key: selected group, exact group/threshold revisions, width,
-        // UiVersion, shared pool/count snapshot identities and the
+        // UiRevision, shared pool/count snapshot identities and the
         // storage-only/hide-forbidden count-basis options.
         // Value: detached group snapshot and immutable resolved band DrawModels.
         // Dependencies: only the keys above plus selected-token presentation.
@@ -33,7 +33,7 @@ namespace EPrimeReadouts.UI
         private int builtThresholdsVersion = -1;
         private int builtCountRulesVersion = -1;
         private int builtGroupId = -1;
-        private int builtUiVersion = -1;
+        private int builtUiRevision = -1;
         private float builtWidth = -1f;
         private RenderCountSnapshot? builtCounts;
         private PoolSnapshot? builtPools;
@@ -50,7 +50,7 @@ namespace EPrimeReadouts.UI
         private List<(RenderModel model, DrawModel draw)>? cachedBands;
 
         // Owner: this EditorView. Key: selected group identity,
-        // GroupsVersion, and UiVersion.Current. Value: the Medium-font name
+        // GroupsVersion, and UiRevision.Current. Value: the Medium-font name
         // width plus coupled row/icon geometry. Dependencies: the group
         // group name and active Medium GUI style. Refresh: immediate on a key
         // change, before drawing the row. Equality: exact key hits reuse all
@@ -61,7 +61,7 @@ namespace EPrimeReadouts.UI
         private float cachedNameRowHeight = -1f;
         private int cachedNameGroupId = -1;
         private int cachedNameGroupsVersion = -1;
-        private int cachedNameUiVersion = -1;
+        private int cachedNameUiRevision = -1;
 
         // Options fields synchronized against the selected token's stored value.
         private readonly ThresholdEditorState thresholdEditor = new ThresholdEditorState();
@@ -86,7 +86,7 @@ namespace EPrimeReadouts.UI
 
         public void Draw(Rect rect, Dialog_ReadoutConfig owner)
         {
-            UiVersion.ObserveCurrentMetrics();
+            UiRevision.ObserveCurrentMetrics();
             var settings = EPrimeReadoutsMod.Settings;
             var store = ReadoutStore.Current;
             if (store == null) return;
@@ -123,7 +123,7 @@ namespace EPrimeReadouts.UI
             // row follows the larger of icon and measured line height.
             if (group != null && (cachedNameGroupId != group.Id
                 || cachedNameGroupsVersion != store.GroupsVersion
-                || cachedNameUiVersion != UiVersion.Current
+                || cachedNameUiRevision != UiRevision.Current
                 || cachedNameWidth < 0f))
             {
                 using (GuiStateScope.Capture())
@@ -140,29 +140,31 @@ namespace EPrimeReadouts.UI
                 }
                 cachedNameGroupId = group.Id;
                 cachedNameGroupsVersion = store.GroupsVersion;
-                cachedNameUiVersion = UiVersion.Current;
+                cachedNameUiRevision = UiRevision.Current;
             }
 
-            float headerUsed = EprStyle.HelpGroup(
+            float headerUsed = HelpFoldout.Draw(
                 rect.x,
                 rect.y,
                 rect.width,
                 UiText.Get("EPR.Help"),
                 UiText.Get("EPR.HelpEditor"),
-                ref folded);
+                ref folded,
+                EprStyle.HelpMetrics,
+                UiRevision.Current);
             if (folded != settings.helpEditorFolded)
                 EPrimeReadoutsMod.Persist(s => s.helpEditorFolded = folded);
 
             // The selected name is a stronger white row below Help; the rename
             // pencil follows the measured name rather than staying in the
-            // section header above it. HelpGroup's trailing margin is shared
+            // section header above it. The foldout's trailing margin is shared
             // evenly above and below this visual row without changing the
             // logical advance to the editor body.
             if (group != null)
             {
                 float helpBottomMargin = folded
-                    ? EprStyle.HelpCollapsedBottomMargin
-                    : EprStyle.HelpExpandedBottomMargin;
+                    ? EprStyle.HelpMetrics.CollapsedBottomMargin
+                    : EprStyle.HelpMetrics.ExpandedBottomMargin;
                 float groupNameY = rect.y + headerUsed
                     - helpBottomMargin / 2f;
                 float pencilX = Mathf.Min(
@@ -190,7 +192,7 @@ namespace EPrimeReadouts.UI
                         int capturedId = group.Id;
                         string capturedName = group.Name;
                         Find.WindowStack.Add(new Dialog_NameInput(
-                            "EPR.RenameGroup", capturedName,
+                            capturedName,
                             name => ReadoutCommands.RenameGroup(
                                 capturedId, name.Trim()),
                             name => GroupListView.GroupNameProblem(name, capturedId)));
@@ -244,16 +246,16 @@ namespace EPrimeReadouts.UI
                     store,
                     owner.selectedCanonical,
                     store.PoolsVersion,
-                    UiVersion.LanguageCurrent,
+                    UiRevision.LanguageCurrent,
                     SlotToken.IsPoolRef(owner.selectedCanonical),
                     resolveDisplayName);
                 string displayName = selectedDisplayName ?? owner.selectedCanonical;
-                if (optionsLanguageVersion != UiVersion.LanguageCurrent
+                if (optionsLanguageVersion != UiRevision.LanguageCurrent
                     || !string.Equals(optionsDisplayName, displayName,
                         StringComparison.Ordinal))
                 {
                     optionsDisplayName = displayName;
-                    optionsLanguageVersion = UiVersion.LanguageCurrent;
+                    optionsLanguageVersion = UiRevision.LanguageCurrent;
                     optionsHeader = "EPR.OptionsFor".Translate(displayName);
                 }
                 bool dummy = false;
@@ -281,7 +283,7 @@ namespace EPrimeReadouts.UI
             if (store.ThresholdsVersion != builtThresholdsVersion) return true;
             if (store.CountRulesVersion != builtCountRulesVersion) return true;
             if (groupId != builtGroupId) return true;
-            if (UiVersion.Current != builtUiVersion) return true;
+            if (UiRevision.Current != builtUiRevision) return true;
             if (width != builtWidth) return true;
             if (!ReferenceEquals(builtPools, pools)) return true;
             if (!ReferenceEquals(builtCounts, counts)) return true;
@@ -302,7 +304,7 @@ namespace EPrimeReadouts.UI
             builtThresholdsVersion = store.ThresholdsVersion;
             builtCountRulesVersion = store.CountRulesVersion;
             builtGroupId = group.Id;
-            builtUiVersion = UiVersion.Current;
+            builtUiRevision = UiRevision.Current;
             builtWidth = width;
             builtPools = owner.PoolsSnapshot;
             builtCounts = owner.RenderData?.Counts;
@@ -549,13 +551,13 @@ namespace EPrimeReadouts.UI
         // Owner: this EditorView instance.
         // Key: none (single value).
         // Value: immutable ThresholdRowLayout.
-        // Dependencies: UiVersion.Current (language, UI scale, tiny-text
+        // Dependencies: UiRevision.Current (language, UI scale, tiny-text
         // preference — label/button text and the resolved font both follow it).
         // Refresh policy: immediate on UI revision change.
         // Equality policy: value struct; equal rebuilds are identical.
         // Teardown: Reset restores the unset stamp.
         private ThresholdRowLayout thresholdRow;
-        private int thresholdRowUiVersion = -1;
+        private int thresholdRowUiRevision = -1;
 
         /// Extra width ButtonText needs around its caption.
         private const float ButtonPadX = 16f;
@@ -565,12 +567,12 @@ namespace EPrimeReadouts.UI
         // Key: none (single value).
         // Value: resolved count-rule row captions, the stable segment-label
         // array handed to SegmentedControl, and measured widths.
-        // Dependencies: UiVersion.Current (language, UI scale — labels and
+        // Dependencies: UiRevision.Current (language, UI scale — labels and
         // segments both render Small).
         // Refresh policy: immediate on UI revision change.
         // Equality policy: equal rebuilds are identical.
         // Teardown: Reset restores the unset stamp.
-        private int ruleRowUiVersion = -1;
+        private int ruleRowUiRevision = -1;
         private string? ruleCaption;
         private string? ruleStorageLabel;
         private string? ruleForbiddenLabel;
@@ -594,7 +596,7 @@ namespace EPrimeReadouts.UI
 
         private void EnsureRuleRow()
         {
-            if (ruleRowUiVersion == UiVersion.Current) return;
+            if (ruleRowUiRevision == UiRevision.Current) return;
             using (GuiStateScope.Capture())
             {
                 ruleCaption = UiText.Get("EPR.CountRuleCaption");
@@ -617,7 +619,7 @@ namespace EPrimeReadouts.UI
                 ruleRowMinW = ruleStateLabels.Length * (stateW + 2f * SegmentMinPadX)
                     + 2f * 2f + (ruleStateLabels.Length - 1);
             }
-            ruleRowUiVersion = UiVersion.Current;
+            ruleRowUiRevision = UiRevision.Current;
         }
 
         /// One override row: Small label on the left, a right-aligned
@@ -649,7 +651,7 @@ namespace EPrimeReadouts.UI
 
         private ThresholdRowLayout EnsureThresholdRow()
         {
-            if (thresholdRowUiVersion == UiVersion.Current) return thresholdRow;
+            if (thresholdRowUiRevision == UiRevision.Current) return thresholdRow;
             using (GuiStateScope.Capture())
             {
                 // Labels render in Tiny, which RimWorld resolves to Small when
@@ -662,7 +664,7 @@ namespace EPrimeReadouts.UI
                 float clearW = WrText.FitWidth(UiText.Get("EPR.Clear")) + ButtonPadX;
                 thresholdRow = ThresholdRowLayout.Compute(lowW, criticalW, setW, clearW);
             }
-            thresholdRowUiVersion = UiVersion.Current;
+            thresholdRowUiRevision = UiRevision.Current;
             return thresholdRow;
         }
 
@@ -672,7 +674,7 @@ namespace EPrimeReadouts.UI
             if (owner.selectedCanonical == null) return;
 
             float y = rect.y;
-            ResolvedTinyTextMetrics tinyMetrics = EprStyle.TinyTextMetrics;
+            TinyTextMetrics tinyMetrics = TinyText.Metrics;
 
             // Line 1: show-when-zero checkbox (width capped at 50% of panel)
             bool showWhenZero = storedToken == null || SlotToken.ShowWhenZero(storedToken);
@@ -687,7 +689,7 @@ namespace EPrimeReadouts.UI
             y += 22f + CaptionPadTop;
 
             // Line 2: threshold caption (Tiny, CaptionText style)
-            float captionH = tinyMetrics.MinHeight(22f);
+            float captionH = Mathf.Max(22f, tinyMetrics.LineHeight);
             GUI.color = EprStyle.CaptionText;
             TinyText.Caption(new Rect(
                     rect.x,
@@ -707,7 +709,7 @@ namespace EPrimeReadouts.UI
             float controlY = y + Mathf.Floor((thresholdRowH - ControlH) / 2f);
             float labelY = y
                 + Mathf.Floor((thresholdRowH - tinyMetrics.LineHeight) / 2f)
-                + tinyMetrics.CaptionOffsetY;
+                + TinyText.FallbackCaptionOffsetY;
             TinyText.Label(new Rect(
                     rect.x,
                     labelY,
@@ -778,7 +780,7 @@ namespace EPrimeReadouts.UI
             builtThresholdsVersion = -1;
             builtCountRulesVersion = -1;
             builtGroupId = -1;
-            builtUiVersion = -1;
+            builtUiRevision = -1;
             builtWidth = -1f;
             builtCounts = null;
             builtPools = null;
@@ -792,7 +794,7 @@ namespace EPrimeReadouts.UI
             cachedNameRowHeight = -1f;
             cachedNameGroupId = -1;
             cachedNameGroupsVersion = -1;
-            cachedNameUiVersion = -1;
+            cachedNameUiRevision = -1;
             selectionGroupsVersion = -1;
             selectionGroupId = -1;
             selectionCanonical = null;
@@ -803,8 +805,8 @@ namespace EPrimeReadouts.UI
             optionsHeader = null;
             optionsLanguageVersion = -1;
             thresholdRow = default;
-            thresholdRowUiVersion = -1;
-            ruleRowUiVersion = -1;
+            thresholdRowUiRevision = -1;
+            ruleRowUiRevision = -1;
             ruleCaption = null;
             ruleStorageLabel = null;
             ruleForbiddenLabel = null;

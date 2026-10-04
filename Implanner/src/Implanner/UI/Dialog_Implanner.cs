@@ -76,7 +76,6 @@ namespace Implanner.UI
         private Vector2 rankingsScroll;
         private Vector2 automationScroll;
 
-        private const float TabHeight = 32f;
         private const float Pad = 10f;
         private const float RowHeight = 28f;
         private const float HeaderHeight = 24f;
@@ -86,9 +85,6 @@ namespace Implanner.UI
 
         /// Gap between the Automation tab's two option columns.
         private const float ColumnGap = 20f;
-
-        // Between TabRecord's normal white and its hover yellow.
-        private static readonly Color ActiveTabLabelColor = new Color(1f, 0.95f, 0.55f);
 
         public Dialog_Implanner()
         {
@@ -177,32 +173,20 @@ namespace Implanner.UI
 
             using (GuiStateScope.Capture())
             {
-                UiVersion.ObserveCurrentMetrics();
+                UiRevision.ObserveCurrentMetrics();
                 PlannerLabels.Ensure();
                 EnsureTabs();
 
                 Rect content = new Rect(
-                    inRect.x, inRect.y + TabHeight,
-                    inRect.width, inRect.height - TabHeight);
+                    inRect.x, inRect.y + TabStrip.TabHeight,
+                    inRect.width, inRect.height - TabStrip.TabHeight);
                 Widgets.DrawMenuSection(content);
                 // Active-tab emphasis: TabRecord reads labelColor per pass, so
                 // a per-frame field write is how selection tints the label.
                 for (int i = 0; i < tabs!.Count; i++)
-                    tabs[i].labelColor = i == (int)curTab ? ActiveTabLabelColor : (Color?)null;
-                // Our own tab-strip drawer: vanilla geometry, minus the
-                // cap/middle sub-pixel seam at fractional UI scales.
-                PlannerTabs.DrawTabs(content, tabs);
-                // Vanilla leaves the menu-section top border visible under the
-                // active tab. Overpaint its span with the section fill so the
-                // active tab connects seamlessly to the content (geometry
-                // mirrors the tab strip: tabWidth capped at 200, 10px
-                // overlap). Inset 2px per side so the rounded tab corners
-                // keep their border pixel.
-                float tabWidth = Mathf.Min(200f,
-                    (content.width + (tabs.Count - 1) * 10f) / tabs.Count);
-                float activeTabX = content.x + (int)curTab * (tabWidth - 10f);
-                Widgets.DrawBoxSolid(new Rect(activeTabX + 2f, content.y, tabWidth - 4f, 2f),
-                    Widgets.MenuSectionBGFillColor);
+                    tabs[i].labelColor = i == (int)curTab ? TabStrip.ActiveLabelColor : (Color?)null;
+                TabStrip.Draw(content, tabs, Patches.ImplannerTex.TabAtlas);
+                TabStrip.DrawActiveTabSeam(content, (int)curTab, tabs.Count);
 
                 content = content.ContractedBy(Pad);
                 PlannerDrag.Update();
@@ -341,7 +325,7 @@ namespace Implanner.UI
             help.FlushPendingWrites();
             ImplannerStore? store = EnsureStore();
             if (store == null) return;
-            UiVersion.ObserveCurrentMetrics();
+            UiRevision.ObserveCurrentMetrics();
             // Builders read translated labels (priority names, No plan), so
             // the label cache must be current before any snapshot rebuilds
             // here: WindowUpdate runs before the first draw of a new window.
@@ -362,8 +346,8 @@ namespace Implanner.UI
 
         private void EnsureTabs()
         {
-            if (tabs != null && tabsLanguageStamp == UiVersion.LanguageCurrent) return;
-            tabsLanguageStamp = UiVersion.LanguageCurrent;
+            if (tabs != null && tabsLanguageStamp == UiRevision.LanguageCurrent) return;
+            tabsLanguageStamp = UiRevision.LanguageCurrent;
             tabs = new List<TabRecord>
             {
                 new TabRecord(PlannerLabels.TabOverview,
@@ -1505,8 +1489,9 @@ namespace Implanner.UI
             float top = body.y + 32f;
 
             bool folded = ImplannerMod.Settings.helpPlanTiersFolded;
-            top += PlannerStyle.HelpGroup(body.x, top, body.width,
-                PlannerLabels.Help, PlannerLabels.RankTiersHelp, ref folded);
+            top += HelpFoldout.Draw(body.x, top, body.width,
+                PlannerLabels.Help, PlannerLabels.RankTiersHelp, ref folded,
+                PlannerStyle.HelpMetrics, UiRevision.Current);
             if (folded != ImplannerMod.Settings.helpPlanTiersFolded)
             {
                 ImplannerMod.Settings.helpPlanTiersFolded = folded;

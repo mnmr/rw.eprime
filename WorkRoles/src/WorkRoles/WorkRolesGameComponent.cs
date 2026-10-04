@@ -52,6 +52,11 @@ namespace WorkRoles
 
         public override void GameComponentUpdate()
         {
+            // Once per frame, before OnGUI: UI scale, tiny-font and language
+            // changes advance the shared UI metric revision that WorkRoles'
+            // text measurements (WrText.FitWidth, the confirm dialog's body
+            // height) and tooltip geometry key on.
+            RimShared.UiLib.UiRevision.ObserveCurrentMetrics();
             while (deferredUi.Count > 0)
                 deferredUi.Dequeue()();
         }
@@ -69,19 +74,15 @@ namespace WorkRoles
         public override void LoadedGame() =>
             LongEventHandler.ExecuteWhenFinished(queueWelcome);
 
-        /// The welcome dialog appears once per player per save, keyed by the
-        /// world's persistent random value in the per-player settings.
-        /// Marked seen the moment it is queued, so however it is dismissed it
-        /// never returns for this save. Presentation only: never touches
+        /// The welcome dialog appears once per player per save
+        /// (`WelcomeDialog.ClaimSave`). Presentation only: never touches
         /// synced state.
         private static void QueueWelcome()
         {
-            RimWorld.Planet.World? world = Find.World;
             WorkRolesSettings? settings = WorkRolesMod.Settings;
-            if (world == null || settings == null) return;
-            string id = world.info.persistentRandomValue.ToString();
-            if (settings.welcomeShownSaves.Contains(id)) return;
-            settings.welcomeShownSaves.Add(id);
+            if (settings == null
+                || !RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves))
+                return;
             settings.Write();
             Find.WindowStack?.Add(new RimShared.UiLib.WelcomeDialog(
                 "WR_WelcomeTitle".Translate(),

@@ -352,19 +352,25 @@ namespace QualityJobs
             recipe = ManagedRecipes.Registered(recipe) ?? recipe;
             if (s_workTypeCache.TryGetValue(recipe, out WorkGiverDef? cached))
                 return cached;
-            List<WorkGiverDef> givers = DefDatabase<WorkGiverDef>.AllDefsListForReading;
-            WorkGiverDef? result = null;
+            WorkGiverDef? result = ResolveWorkGiver(recipe,
+                DefDatabase<WorkGiverDef>.AllDefsListForReading);
+            s_workTypeCache[recipe] = result;
+            return result;
+        }
+
+        /// Unmemoized resolution: the first giver whose fixedBillGiverDefs cover
+        /// a bench for this recipe. Finisher work-giver generation calls it at
+        /// PreResolve, where the memo above must not be filled yet (other mods'
+        /// defs are still loading) and ManagedRecipes must not be touched.
+        internal static WorkGiverDef? ResolveWorkGiver(RecipeDef recipe,
+            List<WorkGiverDef> givers)
+        {
             foreach (ThingDef benchDef in recipe.AllRecipeUsers)
                 for (int i = 0; i < givers.Count; i++)
                     if (givers[i].fixedBillGiverDefs != null
                         && givers[i].fixedBillGiverDefs.Contains(benchDef))
-                    {
-                        result = givers[i];
-                        goto done;
-                    }
-            done:
-            s_workTypeCache[recipe] = result;
-            return result;
+                        return givers[i];
+            return null;
         }
 
         // ---- config, revert, completion ---------------------------------------

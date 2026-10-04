@@ -43,13 +43,15 @@ namespace EPrimeReadouts.UI
             var settings = EPrimeReadoutsMod.Settings;
 
             bool folded = settings.helpPoolsFolded;
-            float headerUsed = EprStyle.HelpGroup(
+            float headerUsed = HelpFoldout.Draw(
                 rect.x,
                 rect.y,
                 rect.width,
                 UiText.Get("EPR.Help"),
                 UiText.Get("EPR.HelpPools"),
-                ref folded);
+                ref folded,
+                EprStyle.HelpMetrics,
+                UiRevision.Current);
             if (folded != settings.helpPoolsFolded)
                 EPrimeReadoutsMod.Persist(s => s.helpPoolsFolded = folded);
 
@@ -120,7 +122,7 @@ namespace EPrimeReadouts.UI
             if (Widgets.ButtonText(footer, UiText.Get("EPR.Add")))
             {
                 Find.WindowStack.Add(new Dialog_NameInput(
-                    "EPR.Pools", "",
+                    "",
                     name =>
                     {
                         ReadoutCommands.CreatePool(name);
@@ -164,7 +166,7 @@ namespace EPrimeReadouts.UI
                 int capturedId = row.Id;
                 string capturedName = row.Name;
                 Find.WindowStack.Add(new Dialog_NameInput(
-                    "EPR.Rename", capturedName,
+                    capturedName,
                     name => ReadoutCommands.RenamePool(capturedId, name),
                     name => PoolNameProblem(name, capturedId)));
             }
@@ -174,7 +176,7 @@ namespace EPrimeReadouts.UI
             {
                 int capturedId = row.Id;
                 string capturedName = row.Name;
-                Find.WindowStack.Add(new Dialog_CompactConfirm(
+                Find.WindowStack.Add(new CompactConfirmDialog(
                     "EPR.DeletePoolConfirm".Translate(capturedName),
                     () =>
                     {
@@ -182,7 +184,8 @@ namespace EPrimeReadouts.UI
                         if (owner.selectedPoolId == capturedId)
                             owner.selectedPoolId = -1;
                     },
-                    destructive: true));
+                    UiText.Get("OK"), UiText.Get("CancelButton"),
+                    UiRevision.Current, destructive: true));
             }
 
             Event current = Event.current;

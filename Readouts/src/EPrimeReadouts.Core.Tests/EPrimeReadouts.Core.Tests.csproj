@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\EPrimeReadouts.Core\EPrimeReadouts.Core.csproj" />
+    <Compile Include="$(RimSharedRoot)\Tests\Support\**\*.cs" LinkBase="Shared" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="TUnit" Version="1.58.0" />

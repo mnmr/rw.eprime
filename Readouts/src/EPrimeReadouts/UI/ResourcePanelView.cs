@@ -27,7 +27,7 @@ namespace EPrimeReadouts.UI
         internal void Draw(Rect rect, Dialog_ReadoutConfig owner,
             ReadoutConfigMode mode)
         {
-            UiVersion.ObserveCurrentMetrics();
+            UiRevision.ObserveCurrentMetrics();
             var settings = EPrimeReadoutsMod.Settings;
 
             float used = EprStyle.SectionHeader(
@@ -37,13 +37,15 @@ namespace EPrimeReadouts.UI
             string helpKey = mode == ReadoutConfigMode.ResourcePools
                 ? "EPR.HelpPoolEditor"
                 : "EPR.HelpResources";
-            used += EprStyle.HelpGroup(
+            used += HelpFoldout.Draw(
                 rect.x,
                 rect.y + used,
                 rect.width,
                 UiText.Get("EPR.Help"),
                 UiText.Get(helpKey),
-                ref folded);
+                ref folded,
+                EprStyle.HelpMetrics,
+                UiRevision.Current);
             if (folded != settings.helpResourcesFolded)
                 EPrimeReadoutsMod.Persist(s => s.helpResourcesFolded = folded);
 

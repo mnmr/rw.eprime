@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using RimShared.Common;
+using RimShared.UiLib;
 using RimWorld;
 using Verse;
 using WorkRoles.Core;
@@ -78,7 +79,7 @@ namespace WorkRoles
         private sealed class ReferenceIdentity<T> where T : class
         {
             private readonly Dictionary<T, int> identities =
-                new Dictionary<T, int>(ReferenceComparer<T>.Instance);
+                new Dictionary<T, int>(ReferenceIdentityComparer<T>.Instance);
             private int next = 1;
 
             internal int Of(T value)
@@ -90,13 +91,6 @@ namespace WorkRoles
                 }
                 return identity;
             }
-        }
-
-        private sealed class ReferenceComparer<T> : IEqualityComparer<T> where T : class
-        {
-            internal static readonly ReferenceComparer<T> Instance = new ReferenceComparer<T>();
-            public bool Equals(T x, T y) => ReferenceEquals(x, y);
-            public int GetHashCode(T value) => RuntimeHelpers.GetHashCode(value);
         }
 
         private sealed class CurveFacts
@@ -317,7 +311,7 @@ namespace WorkRoles
             var recipeUserIdentities = new ReferenceIdentity<ThingDef>();
             var recipeIdentities = new ReferenceIdentity<RecipeDef>();
             var fixedRecipeUsers = new List<ThingDef>();
-            var fixedRecipeUsersSeen = new HashSet<ThingDef>(ReferenceComparer<ThingDef>.Instance);
+            var fixedRecipeUsersSeen = new HashSet<ThingDef>(ReferenceIdentityComparer<ThingDef>.Instance);
 
             foreach (SkillDef skill in DefDatabase<SkillDef>.AllDefsListForReading)
             {
@@ -376,7 +370,7 @@ namespace WorkRoles
                     CuratedGiverEffects(giver, xpSkills, usedSkills, snapshot));
             }
 
-            var observedRecipeUsers = new HashSet<ThingDef>(ReferenceComparer<ThingDef>.Instance);
+            var observedRecipeUsers = new HashSet<ThingDef>(ReferenceIdentityComparer<ThingDef>.Instance);
             foreach (ThingDef thing in DefDatabase<ThingDef>.AllDefsListForReading)
             {
                 if (thing == null) continue;

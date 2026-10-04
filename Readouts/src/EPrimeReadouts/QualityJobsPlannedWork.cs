@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using EPrimeReadouts.Core;
+using RimShared.Common;
 using RimWorld;
 using Verse;
 
@@ -11,42 +11,8 @@ namespace EPrimeReadouts
     /// and construction targets QJA manages. The material those jobs still
     /// owe is live game state (deliveries, bill ingredient filters) that QJA
     /// does not republish, so it is read on every count pass instead
-    /// (PlannedWorkCounts), never frozen into this projection.
-    internal static class QualityJobsPlannedWork
-    {
-        private static readonly Func<QualityJobsBridge.ManagedJobsSnapshot,
-            QualityJobsPlannedWorkSnapshot> build =
-            PlannedWorkCounts.BuildQualityJobsSnapshot;
-
-        // Cache contract:
-        // Owner: the active world/store lifecycle.
-        // Key: EPrime's immutable projection of the QJA snapshot, by reference.
-        // Value: immutable per-map managed bills, targets and job handles.
-        // Dependencies: all QJA fields consumed by QualityJobsBridge. Live
-        //               material state is deliberately not a dependency: the
-        //               count pass reads it through the job handles.
-        // Refresh policy: immediate when QJA publishes a changed snapshot;
-        //                 unchanged source references are allocation-free.
-        // Equality policy: equal rebuilt jobs preserve projection identity.
-        // Teardown: Reset on map removal and world teardown releases all QJA,
-        //           map, bill and target references.
-        private static readonly ReferenceProjectionCache<
-            QualityJobsBridge.ManagedJobsSnapshot,
-            QualityJobsPlannedWorkSnapshot> cache =
-            new ReferenceProjectionCache<
-                QualityJobsBridge.ManagedJobsSnapshot,
-                QualityJobsPlannedWorkSnapshot>(build);
-
-        internal static QualityJobsPlannedWorkSnapshot Current()
-            => cache.Get(QualityJobsBridge.GetManagedJobs());
-
-        internal static void Reset()
-        {
-            cache.Clear();
-            QualityJobsBridge.Reset();
-        }
-    }
-
+    /// (PlannedWorkCounts), never frozen into this projection. Published by
+    /// QualityJobsBridge.Current().
     internal sealed class QualityJobsPlannedWorkSnapshot
         : IEquatable<QualityJobsPlannedWorkSnapshot>
     {
@@ -61,7 +27,7 @@ namespace EPrimeReadouts
         {
             Maps = maps;
             byMap = new Dictionary<Map, QualityJobsMapWorkSnapshot>(
-                maps.Length, IdentityComparer<Map>.Instance);
+                maps.Length, ReferenceIdentityComparer<Map>.Instance);
             for (int i = 0; i < maps.Length; i++)
                 byMap.Add(maps[i].Map, maps[i]);
         }
@@ -103,11 +69,11 @@ namespace EPrimeReadouts
             BillJobs = billJobs;
             ConstructionJobs = constructionJobs;
             managedBills = new HashSet<Bill_Production>(
-                IdentityComparer<Bill_Production>.Instance);
+                ReferenceIdentityComparer<Bill_Production>.Instance);
             for (int i = 0; i < billJobs.Length; i++)
                 managedBills.Add(billJobs[i].Bill);
             managedTargets = new HashSet<Thing>(
-                IdentityComparer<Thing>.Instance);
+                ReferenceIdentityComparer<Thing>.Instance);
             for (int i = 0; i < constructionJobs.Length; i++)
             {
                 Thing[] targets = constructionJobs[i].Targets;
@@ -145,20 +111,5 @@ namespace EPrimeReadouts
             => Equals(obj as QualityJobsMapWorkSnapshot);
 
         public override int GetHashCode() => RuntimeHelpers.GetHashCode(Map);
-    }
-
-    internal sealed class IdentityComparer<T> : IEqualityComparer<T>
-        where T : class
-    {
-        internal static readonly IdentityComparer<T> Instance =
-            new IdentityComparer<T>();
-
-        private IdentityComparer()
-        {
-        }
-
-        public bool Equals(T left, T right) => ReferenceEquals(left, right);
-
-        public int GetHashCode(T value) => RuntimeHelpers.GetHashCode(value);
     }
 }

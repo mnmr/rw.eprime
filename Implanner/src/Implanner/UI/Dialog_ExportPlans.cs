@@ -28,7 +28,7 @@ namespace Implanner.UI
 
         // Cache contract:
         // Owner: one export window.
-        // Key: rows identity plus UiVersion.LanguageCurrent.
+        // Key: rows identity plus UiRevision.LanguageCurrent.
         // Value: translated summary line and per-plan implant-count captions.
         // Dependencies: rows snapshot identity and the language revision only.
         // Refresh policy: immediate re-translate behind the gate in EnsureText.
@@ -46,7 +46,7 @@ namespace Implanner.UI
         public Dialog_ExportPlans()
         {
             RebuildSnapshot();
-            RefreshResolvedPathCache();
+            picker.Refresh();
         }
 
         private void RebuildSnapshot()
@@ -73,7 +73,7 @@ namespace Implanner.UI
         public override void WindowUpdate()
         {
             base.WindowUpdate();
-            RefreshResolvedPathCache();
+            picker.Refresh();
             var store = ImplannerStore.Current;
             if (store == null)
             {
@@ -92,7 +92,7 @@ namespace Implanner.UI
         {
             using (GuiStateScope.Capture())
             {
-                UiVersion.ObserveCurrentMetrics();
+                UiRevision.ObserveCurrentMetrics();
                 PlanIoLabels.Ensure();
                 EnsureText();
 
@@ -119,7 +119,7 @@ namespace Implanner.UI
                 // Bottom-up layout: Cancel/Save row, optional custom-dir row,
                 // then the location + file name row.
                 float btnY = FooterY(inRect);
-                float customRowY = btnY - FooterGap - (location == Location.Custom ? RowH : 0f);
+                float customRowY = btnY - FooterGap - (picker.Location == ExportLocation.Custom ? RowH : 0f);
                 float locRowY = customRowY - RowH;
 
                 // ── Framed listing fills the middle region ──────────────────
@@ -131,7 +131,7 @@ namespace Implanner.UI
 
                 DrawLocationRows(inRect, locRowY, customRowY);
 
-                string? path = CachedResolvedPath(out _, out _);
+                string? path = picker.CachedPath;
 
                 // Bottom row: Cancel escapes left, Save commits right.
                 var cancelRect = new Rect(inRect.x, btnY, ButtonW, FooterH);
@@ -142,7 +142,7 @@ namespace Implanner.UI
                         active: path != null && xml != null)
                     && path != null && xml != null)
                 {
-                    if (PlansFiles.TryWrite(path, xml, out string? writeError))
+                    if (ExportFolder.TryWrite(path, xml, out string? writeError))
                     {
                         Messages.Message("IMP_SavedTo".Translate(path),
                             MessageTypeDefOf.TaskCompletion, historical: false);
@@ -163,7 +163,7 @@ namespace Implanner.UI
         private void EnsureText()
         {
             if (ReferenceEquals(textRows, rows)
-                && textLanguageVersion == UiVersion.LanguageCurrent
+                && textLanguageVersion == UiRevision.LanguageCurrent
                 && summaryText != null)
                 return;
             int planCount = rows?.PlanCount ?? 0;
@@ -173,7 +173,7 @@ namespace Implanner.UI
             for (int i = 0; i < planCount; i++)
                 captions[i] = "IMP_PlanGoalCount".Translate(rows!.ImplantCounts[i]);
             textRows = rows;
-            textLanguageVersion = UiVersion.LanguageCurrent;
+            textLanguageVersion = UiRevision.LanguageCurrent;
         }
     }
 }

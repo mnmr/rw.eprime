@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Implanner.Core;
 using RimShared.Common;
+using RimShared.GameLib;
 using RimWorld;
 using Verse;
 using Plan = Implanner.Core.Plan;
@@ -747,7 +748,7 @@ namespace Implanner
             // running a hospital would otherwise never get under the cap.
             if (model.CountHospitalized)
             {
-                Faction ownFaction = ColonyScope.AuthoritativeFaction;
+                Faction ownFaction = PlayerFactions.AuthoritativeFaction;
                 for (int c = 0; c < index.Colonies.Count; c++)
                 {
                     Colony hospitalColony = index.Colonies[c];

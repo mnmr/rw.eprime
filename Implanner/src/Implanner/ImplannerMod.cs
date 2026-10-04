@@ -1,4 +1,5 @@
 using HarmonyLib;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -21,7 +22,7 @@ namespace Implanner
         // Owner: process (the settings window has no instance state).
         // Key: none (one label).
         // Value: the translated toolbar-button setting label (immutable).
-        // Dependencies: UiVersion.LanguageCurrent.
+        // Dependencies: UiRevision.LanguageCurrent.
         // Refresh policy: immediate on the first draw after the language
         //   revision moves.
         // Equality policy: an unchanged revision reuses the string.
@@ -41,10 +42,10 @@ namespace Implanner
 
         public override void DoSettingsWindowContents(Rect inRect)
         {
-            UiVersion.ObserveCurrentMetrics();
-            if (showToolbarLabelStamp != UiVersion.LanguageCurrent)
+            UiRevision.ObserveCurrentMetrics();
+            if (showToolbarLabelStamp != UiRevision.LanguageCurrent)
             {
-                showToolbarLabelStamp = UiVersion.LanguageCurrent;
+                showToolbarLabelStamp = UiRevision.LanguageCurrent;
                 showToolbarLabel = "IMP_SettingsShowToolbarButton".Translate();
             }
             var listing = new Listing_Standard();

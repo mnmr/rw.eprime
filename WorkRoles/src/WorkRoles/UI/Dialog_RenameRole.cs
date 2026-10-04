@@ -155,8 +155,8 @@ namespace WorkRoles.UI
                     ? null
                     : "WR_CopySource".Translate(sourceLabel).ToString(),
                 "WR_NameTaken".Translate().ToString(),
-                showCancel ? "WR_Cancel".Translate().ToString() : null,
-                "WR_OK".Translate().ToString());
+                showCancel ? "CancelButton".Translate().ToString() : null,
+                "OK".Translate().ToString());
             if (chromeSnapshot == null || !chromeSnapshot.ContentEquals(rebuilt))
                 chromeSnapshot = rebuilt;
             chromeLanguageRevision = languageRevision;

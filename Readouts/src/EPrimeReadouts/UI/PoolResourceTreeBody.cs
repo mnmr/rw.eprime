@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
 using RimShared.Common;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -86,7 +87,7 @@ namespace EPrimeReadouts.UI
                 || poolId != builtPoolId
                 || filterRevision != builtFilterRevision
                 || expansionRevision != builtExpansionRevision
-                || UiVersion.LanguageCurrent != builtLanguageVersion;
+                || UiRevision.LanguageCurrent != builtLanguageVersion;
         }
 
         private void Rebuild(ReadoutStore store, int poolId,
@@ -100,7 +101,7 @@ namespace EPrimeReadouts.UI
             builtPoolsVersion = store.PoolsVersion;
             builtPoolId = poolId;
             builtFilterRevision = filterRevision;
-            builtLanguageVersion = UiVersion.LanguageCurrent;
+            builtLanguageVersion = UiRevision.LanguageCurrent;
 
             if (pool == null)
             {

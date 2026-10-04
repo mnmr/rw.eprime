@@ -152,7 +152,6 @@
   <!-- {0}=implant goal count (own + inherited) -->
   <IMP_PlanCounts>{0} implants</IMP_PlanCounts>
   <IMP_PlanColonists>{0} colonists</IMP_PlanColonists>
-  <IMP_Rename>Rename</IMP_Rename>
   <IMP_DeletePlan>Delete plan</IMP_DeletePlan>
   <!-- {0}=quality name, e.g. "good" -->
   <IMP_PlanMinQuality>Minimum quality: {0}</IMP_PlanMinQuality>
@@ -283,8 +282,6 @@
   <IMP_CopyClipboard>Copy to clipboard</IMP_CopyClipboard>
   <IMP_FromClipboard>From clipboard</IMP_FromClipboard>
   <IMP_Save>Save</IMP_Save>
-  <IMP_Cancel>Cancel</IMP_Cancel>
-  <IMP_Back>Back</IMP_Back>
   <IMP_ImportAddNote>Imported plans are added next to your existing plans; nothing is replaced. A name that is already taken gets a number.</IMP_ImportAddNote>
   <IMP_LocGameData>Implanner folder</IMP_LocGameData>
   <IMP_LocDesktop>Desktop</IMP_LocDesktop>

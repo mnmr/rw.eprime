@@ -11,7 +11,7 @@ namespace EPrimeReadouts.UI
     internal static class ItemPickerFilterBar
     {
         internal static float Height =>
-            EprStyle.TinyTextMetrics.LineHeight + ControlH + BottomGap;
+            TinyText.LineHeight + ControlH + BottomGap;
         private const float Gap = 6f;
         private const float ClearW = 20f;
         private const float ControlH = 24f;
@@ -26,8 +26,7 @@ namespace EPrimeReadouts.UI
         internal static void Draw(Rect rect, ItemPickerState state,
             string controlName, Action changed)
         {
-            ResolvedTinyTextMetrics metrics = EprStyle.TinyTextMetrics;
-            float captionH = metrics.LineHeight;
+            float captionH = TinyText.LineHeight;
 
             string typeLabel = state.Type == ItemPickerType.Resources
                 ? UiText.Get("EPR.Resources")

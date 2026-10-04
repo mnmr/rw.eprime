@@ -1,8 +1,4 @@
 using System;
-using System.IO;
-using System.Linq;
-using System.Text;
-using RimShared.Common;
 using RimShared.UiLib;
 using UnityEngine;
 using Verse;
@@ -12,39 +8,42 @@ namespace WorkRoles.UI
     /// Shared location/file plumbing for the export and import dialogs: a
     /// captioned location dropdown (game data folder, Desktop, user home or a
     /// custom directory), a file name field, and an Enter-path row while
-    /// Custom is picked. Both dialogs lay these rows out bottom-up.
+    /// Custom is picked, drawn by the shared location picker. Both dialogs
+    /// lay these rows out bottom-up.
     public abstract class Dialog_RoleFilePicker : Window
     {
-        protected enum Location { GameData, Desktop, UserHome, Custom }
-
         protected const float RowH = 30f;
         protected const float ButtonW = 150f;
         protected const float ButtonH = 32f;
         protected const float CaptionRowH = 22f;
 
-        protected Location location = Location.GameData;
-        protected string fileName = RoleIO.DefaultFileName;
-        protected string customDir = "";
+        private protected readonly ExportLocationPicker picker;
 
         // Owner: dialog. Key: LanguageChangeCoordinator.Revision. Value:
-        // translated location/enter-path labels and the Small-font enter-path
-        // width. Dependencies: language and font. Refresh: immediately on
-        // language revision. Equality: matching revision reuses strings/width.
-        // Teardown: dialog close releases the instance and its owned array.
-        private readonly string[] locationLabels = new string[4];
+        // translated location/enter-path labels, path problem messages and the
+        // Small-font enter-path width. Dependencies: language and font.
+        // Refresh: immediately on language revision. Equality: matching
+        // revision reuses strings/width. Teardown: dialog close releases the
+        // instance and its owned labels.
+        private readonly ExportPickerLabels labels = new ExportPickerLabels();
         private int textLanguageRevision = -1;
-        // Assigned by EnsureTextCache before first use.
-        private string enterPathLabel = null!;
-        private float enterPathLabelWidth;
 
-        private static bool OnWindows =>
-            Application.platform == RuntimePlatform.WindowsPlayer
-            || Application.platform == RuntimePlatform.WindowsEditor;
+        // Owner: dialog. The picker's path state (resolved path, problem and
+        // existence for the location, file-name and custom-directory text) is
+        // refreshed queued once in GameComponentUpdate after an input-key
+        // miss, never from OnGUI. Equality: ordinally equal input keys reuse
+        // the complete result. Teardown: dialog close and completion of any
+        // queued cached delegate release the instance.
+        private bool pathRefreshPending;
+        private readonly Action refreshPathAction;
 
-        private string LocationLabel(Location location)
+        /// Import passes acceptExactTypedName to also find a file saved under
+        /// the exact typed name when no ".xml" file exists.
+        protected Dialog_RoleFilePicker(bool acceptExactTypedName = false)
         {
-            EnsureTextCache();
-            return locationLabels[(int)location];
+            picker = new ExportLocationPicker(RoleIO.Exports, RoleIO.DefaultFileName,
+                acceptExactTypedName);
+            refreshPathAction = RefreshPathOutsideOnGUI;
         }
 
         private void EnsureTextCache()
@@ -52,20 +51,18 @@ namespace WorkRoles.UI
             int revision = LanguageChangeCoordinator.Revision;
             if (textLanguageRevision == revision) return;
             textLanguageRevision = revision;
-            locationLabels[(int)Location.GameData] =
-                "WR_LocGameData".Translate().ToString();
-            locationLabels[(int)Location.Desktop] =
-                "WR_LocDesktop".Translate().ToString();
-            locationLabels[(int)Location.UserHome] =
-                "WR_LocUserHome".Translate().ToString();
-            locationLabels[(int)Location.Custom] =
-                "WR_LocCustom".Translate().ToString();
-            enterPathLabel = "WR_EnterPath".Translate().ToString();
+            labels.GameData = "WR_LocGameData".Translate().ToString();
+            labels.Desktop = "WR_LocDesktop".Translate().ToString();
+            labels.UserHome = "WR_LocUserHome".Translate().ToString();
+            labels.Custom = "WR_LocCustom".Translate().ToString();
+            labels.EnterPath = "WR_EnterPath".Translate().ToString();
+            labels.BadFileName = "WR_BadFileName".Translate().ToString();
+            labels.BadDirectory = "WR_BadDirectory".Translate().ToString();
             GameFont previousFont = Text.Font;
             try
             {
                 Text.Font = GameFont.Small;
-                enterPathLabelWidth = WrText.FitWidth(enterPathLabel) + 8f;
+                labels.EnterPathWidth = WrText.FitWidth(labels.EnterPath) + 8f;
             }
             finally
             {
@@ -73,131 +70,34 @@ namespace WorkRoles.UI
             }
         }
 
-        private string ResolvedDir()
-        {
-            switch (location)
-            {
-                case Location.Desktop: return Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-                case Location.UserHome: return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                case Location.Custom: return customDir.Trim();
-                default: return RoleIO.GameDataDir;
-            }
-        }
-
-        // Owner: dialog. Key: (location, file-name text, custom-directory text).
-        // Value: immutable resolved path/problem strings and existence scalar.
-        // Dependencies: picker inputs, platform special folders, filesystem
-        // existence, and translated validation messages. Refresh: queued once in
-        // GameComponentUpdate after an input-key miss, never from OnGUI. Equality:
-        // ordinally equal input keys reuse the complete result. Teardown: dialog
-        // close and completion of any queued cached delegate release the instance.
-        private Location cachedLocation;
-        private string? cachedFileName;
-        private string? cachedCustomDir;
-        private string? cachedPath;
-        private string? cachedProblem;
-        private bool cachedExists;
-        private bool cacheValid;
-        private bool pathRefreshPending;
-        private readonly Action refreshPathAction;
-
-        protected Dialog_RoleFilePicker()
-        {
-            refreshPathAction = RefreshPathOutsideOnGUI;
-        }
-
         /// Path + existence, recomputed outside OnGUI when the input key changes.
         /// Idle passes only compare the cached key; File.Exists and special-folder
         /// resolution execute at most once for each queued refresh.
         protected string? CachedResolvedPath(out string? problem, out bool exists)
         {
-            bool current = cacheValid
-                && cachedLocation == location
-                && string.Equals(cachedFileName, fileName,
-                    StringComparison.Ordinal)
-                && string.Equals(cachedCustomDir, customDir,
-                    StringComparison.Ordinal);
+            bool current = picker.IsCurrent;
             if (!current && !pathRefreshPending)
             {
-                cacheValid = false;
+                picker.Invalidate();
                 pathRefreshPending = true;
                 WorkRolesGameComponent.RunOutsideOnGUI(refreshPathAction);
             }
-            problem = current ? cachedProblem : null;
-            exists = current && cachedExists;
-            return current ? cachedPath : null;
+            if (!current)
+            {
+                problem = null;
+                exists = false;
+                return null;
+            }
+            EnsureTextCache();
+            problem = labels.Problem(picker.CachedProblem);
+            exists = picker.CachedExists;
+            return picker.CachedPath;
         }
 
         private void RefreshPathOutsideOnGUI()
         {
             pathRefreshPending = false;
-            cachedLocation = location;
-            cachedFileName = fileName;
-            cachedCustomDir = customDir;
-            cachedPath = ResolvedPath(out cachedProblem);
-            cachedExists = cachedPath != null && File.Exists(cachedPath);
-            if (!cachedExists && AcceptsExactTypedName)
-            {
-                // Exports written before ".xml" was added keep loading by the
-                // name they were saved under.
-                string? exact = ResolvedPath(out _, addExtension: false);
-                if (exact != null && File.Exists(exact))
-                {
-                    cachedPath = exact;
-                    cachedExists = true;
-                }
-            }
-            cacheValid = true;
-        }
-
-        /// Import overrides this to also find a file saved under the exact
-        /// typed name when no ".xml" file exists.
-        protected virtual bool AcceptsExactTypedName => false;
-
-        /// Full destination, or null (with a reason) when not usable. The file
-        /// name gains ".xml" unless it already ends with it, so export and
-        /// import resolve the same typed name to the same file. The result
-        /// uses the platform's directory separator throughout (game paths arrive
-        /// with '/', Path.Combine joins with the native one — never mix them).
-        protected string? ResolvedPath(out string? problem, bool addExtension = true)
-        {
-            problem = null;
-            string name = fileName.Trim();
-            if (name.NullOrEmpty() || name.IndexOfAny(InvalidNameChars) >= 0)
-            {
-                problem = "WR_BadFileName".Translate();
-                return null;
-            }
-            string dir = ResolvedDir();
-            if (dir.NullOrEmpty() || dir.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
-            {
-                problem = "WR_BadDirectory".Translate();
-                return null;
-            }
-            try
-            {
-                return Path.Combine(dir, addExtension ? XmlFileName.WithExtension(name) : name)
-                    .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-            }
-            catch (Exception) { problem = "WR_BadDirectory".Translate(); return null; }
-        }
-
-        // Characters the file system rejects can't be typed at all. A file name
-        // additionally never holds separators or a drive colon — Windows'
-        // invalid set includes them but Unix's doesn't, so they're explicit.
-        private static readonly char[] InvalidNameChars = Path.GetInvalidFileNameChars()
-            .Concat(new[] { '\\', '/', ':' }).Distinct().ToArray();
-        private static readonly char[] InvalidDirChars = Path.GetInvalidFileNameChars()
-            .Where(c => c != '\\' && c != '/' && c != ':').ToArray();
-
-        private static string Strip(string text, char[] invalid)
-        {
-            // Callers pass Widgets.TextField results, which are never null.
-            if (text == null || text.IndexOfAny(invalid) < 0) return text!;
-            var sb = new StringBuilder(text.Length);
-            foreach (char c in text)
-                if (Array.IndexOf(invalid, c) < 0) sb.Append(c);
-            return sb.ToString();
+            picker.Refresh();
         }
 
         /// Tiny grey caption, matching the filter-row captions.
@@ -217,38 +117,7 @@ namespace WorkRoles.UI
         protected void DrawLocationRows(Rect inRect, float locRowY, float customRowY)
         {
             EnsureTextCache();
-            var locRect = new Rect(inRect.x, locRowY, 170f, RowH - 6f);
-            if (Widgets.ButtonText(locRect, LocationLabel(location)))
-            {
-                var options = new System.Collections.Generic.List<FloatMenuOption>();
-                foreach (var l in new[] { Location.GameData, Location.Desktop, Location.UserHome, Location.Custom })
-                {
-                    if (l == Location.Desktop && !OnWindows) continue;
-                    var captured = l;
-                    options.Add(new FloatMenuOption(LocationLabel(l), () => location = captured));
-                }
-                Find.WindowStack.Add(new FloatMenu(options));
-            }
-            fileName = Strip(Widgets.TextField(
-                new Rect(locRect.xMax + 8f, locRowY, inRect.width - locRect.width - 8f, RowH - 6f), fileName),
-                InvalidNameChars);
-
-            if (location == Location.Custom)
-            {
-                Text.Anchor = TextAnchor.MiddleLeft;
-                Widgets.Label(new Rect(inRect.x, customRowY,
-                    enterPathLabelWidth, RowH - 6f), enterPathLabel);
-                Text.Anchor = TextAnchor.UpperLeft;
-                const float ClearW = 24f;
-                customDir = Strip(Widgets.TextField(
-                    new Rect(inRect.x + enterPathLabelWidth, customRowY,
-                        inRect.width - enterPathLabelWidth - ClearW - 4f,
-                        RowH - 6f), customDir),
-                    InvalidDirChars);
-                var clearRect = new Rect(inRect.xMax - ClearW, customRowY + (RowH - 6f - ClearW) / 2f, ClearW, ClearW);
-                if (Widgets.ButtonImage(clearRect, TexButton.CloseXSmall))
-                    customDir = "";
-            }
+            picker.DrawLocationRows(inRect, locRowY, customRowY, labels);
         }
     }
 }

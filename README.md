@@ -27,7 +27,8 @@ Code shared across the mods lives in [Shared](Shared/) and is compiled directly 
 
 - **[Shared/Common](Shared/Common/)** (`RimShared.Common`) — deterministic, game-independent building blocks: caching and snapshot publication, revision/invalidation gates, layout and viewport math, text/count formatting, tooltip policies, lifecycle helpers. No RimWorld, Unity or Harmony references, so it is fully unit-testable.
 - **[Shared/UiLib](Shared/UiLib/)** (`RimShared.UiLib`) — game-side UI helpers (tiny-text rendering, segmented controls, pixel-exact boxes). May reference Verse/Unity; compiled only into the game assemblies, never into `*.Core`.
-- **[Shared/Tests](Shared/Tests/)** — behavioral tests for `RimShared.Common`.
+- **[Shared/GameLib](Shared/GameLib/)** (`RimShared.GameLib`) — game-side mechanics shared by some mods, opted into one subfolder at a time because a subfolder may carry Harmony patches. [Locations](Shared/GameLib/Locations/) (floor-map canonicalization, map classification, the player-faction binding and the location-transition patches) is compiled into Implanner and WorkRoles only; each mod supplies its side of the partial hooks.
+- **[Shared/Tests](Shared/Tests/)** — behavioral tests for `RimShared.Common` (`RimShared.Common.Tests`), plus test-only helpers in `Shared/Tests/Support` (`RimShared.Tests.Support`, e.g. `HelpContentChecks`). The helpers are source-included into the mods' `*.Core.Tests` projects and never shipped.
 - **[Shared/tools/automation](Shared/tools/automation/)** — shared commands for automated in-game verification (launch, input, capture, profile refresh) run against a disposable profile. The curated profile baseline is committed under [AutomationProfiles/Shared/Config](AutomationProfiles/Shared/Config/).
 
 ## Engineering contract

@@ -1,9 +1,4 @@
 using System;
-using System.IO;
-using System.Linq;
-using System.Text;
-using EPrimeReadouts.Core;
-using RimShared.Common;
 using RimShared.UiLib;
 using UnityEngine;
 using Verse;
@@ -13,132 +8,82 @@ namespace EPrimeReadouts.UI
     /// Shared location/file plumbing for the export and import dialogs: a
     /// captioned location dropdown (mod data folder under the game's save
     /// data root, Desktop, user home or a custom directory), a file name
-    /// field, and an Enter-path row while Custom is picked. Ported from
-    /// WorkRoles Dialog_RoleFilePicker.
+    /// field, and an Enter-path row while Custom is picked, drawn by the
+    /// shared location picker. Ported from WorkRoles Dialog_RoleFilePicker.
     public abstract class Dialog_EprFilePicker : Dialog_EprPreviewBase
     {
-        protected enum Location { GameData, Desktop, UserHome, Custom }
-
         protected const float RowH = 30f;
         protected static float CaptionRowH =>
-            EprStyle.TinyTextMetrics.MinHeight(22f);
+            Mathf.Max(22f, TinyText.LineHeight);
 
-        protected Location location = Location.GameData;
-        protected string fileName = "Readouts.xml";
-        protected string customDir = "";
+        private const string FileNameControl = "EPR.FileName";
+        private const string CustomDirControl = "EPR.CustomDirectory";
 
-        private static bool OnWindows =>
-            Application.platform == RuntimePlatform.WindowsPlayer
-            || Application.platform == RuntimePlatform.WindowsEditor;
+        private static readonly ExportFolder Exports = new ExportFolder("EPrimeReadouts");
 
-        private string LocationLabel(Location l) =>
-            l == Location.Desktop ? UiText.Get("EPR.LocDesktop")
-            : l == Location.UserHome ? UiText.Get("EPR.LocUserHome")
-            : l == Location.Custom ? UiText.Get("EPR.LocCustom")
-            : UiText.Get("EPR.LocGameData");
-
-        protected string ResolvedDir()
-        {
-            switch (location)
+        // Leaving Custom drops focus from the directory field it hides.
+        private static readonly Action<ExportLocation> UnfocusHiddenDirectory =
+            static picked =>
             {
-                case Location.Desktop: return Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-                case Location.UserHome: return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                case Location.Custom: return customDir.Trim();
-                default: return ReadoutsFiles.Folder;
-            }
-        }
+                if (picked != ExportLocation.Custom)
+                    DialogInputFocus.Unfocus(CustomDirControl);
+            };
+
+        private protected readonly ExportLocationPicker picker = new ExportLocationPicker(
+            Exports, "Readouts.xml", fileNameControl: FileNameControl,
+            customDirControl: CustomDirControl, locationChanged: UnfocusHiddenDirectory);
 
         // Cache contract:
-        // Owner: one file-picker window.
-        // Key: location, file name and custom directory.
-        // Value: resolved path, validation problem and existence flag.
-        // Dependencies: exact key fields and filesystem state sampled by WindowUpdate.
-        // Refresh policy: immediate outside OnGUI when an input changes.
-        // Equality policy: unchanged inputs preserve strings and avoid syscalls.
-        // Teardown: window collection releases all cached strings.
-        private Location cachedLocation;
-        private string? cachedFileName;
-        private string? cachedCustomDir;
-        private string? cachedPath;
-        private string? cachedProblem;
-        private bool cachedExists;
-        private bool cacheValid;
+        // Owner: one picker window.
+        // Key: none (single slot).
+        // Value: location labels, the Enter-path label with its measured
+        //   Small-font width, and the path problem strings.
+        // Dependencies: UiRevision.Current (language and UI metrics).
+        // Refresh policy: immediate on the next draw after the revision moves.
+        // Equality policy: an unchanged revision reuses the strings and width.
+        // Teardown: window close releases the instance.
+        private readonly ExportPickerLabels pickerLabels = new ExportPickerLabels();
+        private int pickerLabelsStamp = -1;
 
-        /// Returns path state previously sampled by WindowUpdate. This draw-path
+        private ExportPickerLabels PickerLabels()
+        {
+            UiRevision.ObserveCurrentMetrics();
+            if (pickerLabelsStamp == UiRevision.Current) return pickerLabels;
+            pickerLabelsStamp = UiRevision.Current;
+            pickerLabels.GameData = UiText.Get("EPR.LocGameData");
+            pickerLabels.Desktop = UiText.Get("EPR.LocDesktop");
+            pickerLabels.UserHome = UiText.Get("EPR.LocUserHome");
+            pickerLabels.Custom = UiText.Get("EPR.LocCustom");
+            pickerLabels.EnterPath = UiText.Get("EPR.EnterPath");
+            pickerLabels.BadFileName = UiText.Get("EPR.BadFileName");
+            pickerLabels.BadDirectory = UiText.Get("EPR.BadDirectory");
+            GameFont previousFont = Text.Font;
+            try
+            {
+                Text.Font = GameFont.Small;
+                pickerLabels.EnterPathWidth = WrText.FitWidth(pickerLabels.EnterPath) + 6f;
+            }
+            finally
+            {
+                Text.Font = previousFont;
+            }
+            return pickerLabels;
+        }
+
+        /// Path state previously sampled by WindowUpdate. This draw-path
         /// accessor never resolves shell folders or touches the filesystem.
         protected string? CachedResolvedPath(out string? problem, out bool exists)
         {
-            problem = cachedProblem;
-            exists = cachedExists;
-            return cachedPath;
-        }
-
-        /// <summary>Refreshes filesystem-backed path state outside OnGUI.</summary>
-        protected void RefreshResolvedPathCache()
-        {
-            if (cacheValid
-                && cachedLocation == location
-                && string.Equals(cachedFileName, fileName, StringComparison.Ordinal)
-                && string.Equals(cachedCustomDir, customDir, StringComparison.Ordinal))
-                return;
-            cachedLocation = location;
-            cachedFileName = fileName;
-            cachedCustomDir = customDir;
-            cachedPath = ResolvedPath(out cachedProblem);
-            cachedExists = cachedPath != null && File.Exists(cachedPath);
-            cacheValid = true;
-        }
-
-        /// Full destination, or null (with a reason) when not usable. The result
-        /// uses the platform's directory separator throughout (game paths arrive
-        /// with '/', Path.Combine joins with the native one — never mix them).
-        protected string? ResolvedPath(out string? problem)
-        {
-            problem = null;
-            string name = fileName.Trim();
-            if (name.NullOrEmpty() || name.IndexOfAny(InvalidNameChars) >= 0)
-            {
-                problem = UiText.Get("EPR.BadFileName");
-                return null;
-            }
-            string dir = ResolvedDir();
-            if (dir.NullOrEmpty() || dir.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
-            {
-                problem = UiText.Get("EPR.BadDirectory");
-                return null;
-            }
-            try
-            {
-                // Import lists only *.xml, so every export gets the extension.
-                return Path.Combine(dir, XmlFileName.WithExtension(name))
-                    .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-            }
-            catch (Exception) { problem = UiText.Get("EPR.BadDirectory"); return null; }
-        }
-
-        // Characters the file system rejects can't be typed at all. A file name
-        // additionally never holds separators or a drive colon — Windows'
-        // invalid set includes them but Unix's doesn't, so they're explicit.
-        private static readonly char[] InvalidNameChars = Path.GetInvalidFileNameChars()
-            .Concat(new[] { '\\', '/', ':' }).Distinct().ToArray();
-        private static readonly char[] InvalidDirChars = Path.GetInvalidFileNameChars()
-            .Where(c => c != '\\' && c != '/' && c != ':').ToArray();
-
-        private static string? Strip(string? text, char[] invalid)
-        {
-            if (text == null || text.IndexOfAny(invalid) < 0) return text;
-            var sb = new StringBuilder(text.Length);
-            foreach (char c in text)
-                if (Array.IndexOf(invalid, c) < 0) sb.Append(c);
-            return sb.ToString();
+            problem = PickerLabels().Problem(picker.CachedProblem);
+            exists = picker.CachedExists;
+            return picker.CachedPath;
         }
 
         /// Tiny grey caption, matching the dialog captions elsewhere.
         protected static void DrawCaption(Rect rect, string text)
         {
-            ResolvedTinyTextMetrics metrics = EprStyle.TinyTextMetrics;
-            rect.y += metrics.CaptionOffsetY;
-            rect.height = metrics.MinHeight(rect.height);
+            rect.y += TinyText.FallbackCaptionOffsetY;
+            rect.height = Mathf.Max(rect.height, TinyText.LineHeight);
             GUI.color = EprStyle.CaptionText;
             Text.Anchor = TextAnchor.LowerLeft;
             TinyText.Label(rect, text);
@@ -159,66 +104,24 @@ namespace EPrimeReadouts.UI
         /// Location dropdown (+ file name field for export-style dialogs), and
         /// the Enter-path row (with a clear X) while Custom is picked.
         protected void DrawLocationRows(Rect inRect, float locRowY, float customRowY,
-            bool includeNameField = true)
-        {
-            var locRect = new Rect(inRect.x, locRowY, 170f, RowH - 6f);
-            if (Widgets.ButtonText(locRect, LocationLabel(location)))
-            {
-                var options = new System.Collections.Generic.List<FloatMenuOption>();
-                foreach (var l in new[] { Location.GameData, Location.Desktop, Location.UserHome, Location.Custom })
-                {
-                    if (l == Location.Desktop && !OnWindows) continue;
-                    var captured = l;
-                    options.Add(new FloatMenuOption(LocationLabel(l), () =>
-                    {
-                        location = captured;
-                        if (captured != Location.Custom)
-                            DialogInputFocus.Unfocus("EPR.CustomDirectory");
-                    }));
-                }
-                Find.WindowStack.Add(new FloatMenu(options));
-            }
-            if (includeNameField)
-            {
-                GUI.SetNextControlName("EPR.FileName");
-                fileName = Strip(Widgets.TextField(
-                    new Rect(locRect.xMax + 8f, locRowY, inRect.width - locRect.width - 8f, RowH - 6f), fileName),
-                    InvalidNameChars)!; // non-null for non-null input
-            }
-
-            if (location == Location.Custom)
-            {
-                string enterPath = UiText.Get("EPR.EnterPath");
-                UiVersion.ObserveCurrentMetrics();
-                float labelW = WrText.FitWidth(enterPath) + 6f;
-                Text.Anchor = TextAnchor.MiddleLeft;
-                Widgets.Label(new Rect(inRect.x, customRowY, labelW, RowH - 6f), enterPath);
-                Text.Anchor = TextAnchor.UpperLeft;
-                const float ClearW = 24f;
-                GUI.SetNextControlName("EPR.CustomDirectory");
-                customDir = Strip(Widgets.TextField(
-                    new Rect(inRect.x + labelW, customRowY, inRect.width - labelW - ClearW - 4f, RowH - 6f), customDir),
-                    InvalidDirChars)!; // non-null for non-null input
-                var clearRect = new Rect(inRect.xMax - ClearW, customRowY + (RowH - 6f - ClearW) / 2f, ClearW, ClearW);
-                if (Widgets.ButtonImage(clearRect, TexButton.CloseXSmall))
-                    customDir = "";
-            }
-        }
+            bool includeNameField = true) =>
+            picker.DrawLocationRows(inRect, locRowY, customRowY, PickerLabels(),
+                includeNameField);
 
         public override void OnCancelKeyPressed()
         {
             if (DialogInputFocus.TryHandleEscape(
-                    "EPR.FileName", fileName, () => fileName = "")
+                    FileNameControl, picker.FileName, () => picker.FileName = "")
                 || DialogInputFocus.TryHandleEscape(
-                    "EPR.CustomDirectory", customDir, () => customDir = ""))
+                    CustomDirControl, picker.CustomDir, () => picker.CustomDir = ""))
                 return;
             base.OnCancelKeyPressed();
         }
 
         protected static void UnfocusPickerInputs()
         {
-            DialogInputFocus.Unfocus("EPR.FileName");
-            DialogInputFocus.Unfocus("EPR.CustomDirectory");
+            DialogInputFocus.Unfocus(FileNameControl);
+            DialogInputFocus.Unfocus(CustomDirControl);
         }
     }
 }

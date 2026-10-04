@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
 using RimShared.Common;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -149,7 +150,7 @@ namespace EPrimeReadouts.UI
             /// The presenter invokes this once when a display session opens.
             StructuredTip IStructuredTipSource.Resolve()
             {
-                UiVersion.ObserveCurrentMetrics();
+                UiRevision.ObserveCurrentMetrics();
                 var store = ReadoutStore.Current;
                 var state = new BuildState
                 {
@@ -166,7 +167,7 @@ namespace EPrimeReadouts.UI
                         new TipRevision(RenderData,
                             store != null ? store.ThresholdsVersion : 0,
                             store != null ? store.CountRulesVersion : 0,
-                            UiVersion.LanguageCurrent,
+                            UiRevision.LanguageCurrent,
                             settings.searchStorageOnly,
                             settings.searchHideForbidden,
                             settings.showNegativeCounts),

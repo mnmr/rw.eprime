@@ -44,13 +44,10 @@ namespace QualityJobs.Patches
             //     the same predicate but is built after the static constructors —
             //     after def generation — so we duplicate the small predicate here.)
             //
-            // The work-type resolution below intentionally duplicates the logic in
-            // Dispatcher.WorkTypeForRecipe rather than calling it or using
-            // ManagedRecipes. Memoizing via Dispatcher at PreResolve would freeze
-            // the cache before other mods finish loading their defs; the runtime
-            // memo in Dispatcher starts fresh at first post-startup use and sees the
-            // final, fully-resolved def database. The duplication is small, one-time,
-            // and isolated to this startup path.
+            // Work types resolve through the unmemoized Dispatcher.ResolveWorkGiver:
+            // memoizing at PreResolve would freeze the cache before other mods
+            // finish loading their defs, and touching ManagedRecipes here would
+            // run its static constructor too early.
             //
             // Use a List+manual dedup (not HashSet) to avoid enumerator boxing in
             // this one-time startup path; the set is tiny (~3-5 work types).
@@ -79,21 +76,8 @@ namespace QualityJobs.Patches
                     || !(product.HasComp(typeof(CompQuality)) || product.isTechHediff)) continue;
                 if (IngredientQuality.Decides(recipe, ingredientQuality)) continue;
 
-                // Resolve work type the same way Dispatcher.WorkTypeForRecipe does.
-                WorkTypeDef? wt = null;
-                foreach (ThingDef benchDef in recipe.AllRecipeUsers)
-                {
-                    for (int g = 0; g < givers.Count; g++)
-                    {
-                        if (givers[g].fixedBillGiverDefs != null
-                            && givers[g].fixedBillGiverDefs.Contains(benchDef))
-                        {
-                            wt = givers[g].workType;
-                            goto foundWorkType;
-                        }
-                    }
-                }
-                foundWorkType:
+                // Same resolution as runtime dispatch, without its memo.
+                WorkTypeDef? wt = Dispatcher.ResolveWorkGiver(recipe, givers)?.workType;
                 if (wt == null) continue;
 
                 // Dedup without LINQ/HashSet allocation.

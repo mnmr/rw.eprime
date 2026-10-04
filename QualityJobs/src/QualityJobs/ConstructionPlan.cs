@@ -25,6 +25,13 @@ namespace QualityJobs
 
         public ResumeCondition Condition => new ResumeCondition(minSkill, requireInspired, requireSpecialist);
 
+        /// True when no option is active. A neutral plan gates nothing, so the
+        /// store never keeps one: ApplyPlanSettings removes it and load drops it.
+        internal static bool IsNeutral(int minSkill, bool requireInspired,
+            bool requireSpecialist, int minQuality, bool autoBest)
+            => minSkill == 0 && !requireInspired && !requireSpecialist
+               && minQuality == 0 && !autoBest;
+
         public void ExposeData()
         {
             Scribe_References.Look(ref target, "target");

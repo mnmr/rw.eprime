@@ -9,7 +9,8 @@ namespace RimShared.UiLib
     /// left, and the rendered topic on the right. All content is loaded
     /// lazily by HelpContentState and rendered from its positioned draw
     /// model; the steady pass performs indexed draws only. Content location,
-    /// chapters, revisions, and read-topic persistence come from the host.
+    /// chapters, revisions, read-topic persistence and the optional guided
+    /// tour (the first chapter becomes a Start page) come from the host.
     /// </summary>
     public sealed class HelpTabView
     {
@@ -86,6 +87,58 @@ namespace RimShared.UiLib
         /// render pass, one write per batch.
         private List<string>? pendingReadSlugs;
 
+        // Start page (only with a host tour).
+        private const float TourRowHeight = 28f;
+        private const float TourProgressHeight = 22f;
+        // Medal block: 40px medal, Medium title, then the hint wrapped over
+        // up to two Small lines so the full sentence stays visible.
+        private const float TourBadgeHeight = 84f;
+        private const float HubPanelWidth = 470f;
+        private static readonly Color MedalGold = new Color(1f, 0.84f, 0.35f);
+        private static readonly Color TourChapterDim =
+            new Color(1f, 1f, 1f, 0.45f);
+        private static readonly Color UnreadBoxFill =
+            new Color(0f, 0f, 0f, 0.35f);
+        private static readonly Color ProgressBarFill =
+            new Color(0f, 0f, 0f, 0.4f);
+
+        private struct TourRow
+        {
+            public string Slug;
+            public string Title;
+            public int ChapterIndex;
+        }
+
+        // Owner: window. Key: the host's language revision and
+        // HelpContentState.Generation. Value: the resolved tour rows (slug,
+        // list title, chapter index); the tour captions are cached with the
+        // chapter labels. Dependencies: loaded help content and language.
+        // Refresh: lazy when either stamp moves. Equality: unchanged stamps
+        // reuse the array. Teardown: ReleaseWindowData clears.
+        private TourRow[]? tourRows;
+        private int tourRowsLanguageStamp = -1;
+        private int tourRowsGeneration = -1;
+        private string tourHeaderLabel = "";
+        private string tourCompleteLabel = "";
+        private string tourCompleteHintLabel = "";
+
+        // Owner: window. Key: the tour rows' identity plus the read revision.
+        // Value: one read flag per tour row, the read count and the
+        // translated progress line. Dependencies: the read set and the rows.
+        // Refresh: immediate on the next read after either moves. Equality:
+        // an unchanged key reuses them. Teardown: ReleaseWindowData clears.
+        private bool[]? tourReadFlags;
+        private TourRow[]? tourReadFlagsRows;
+        private int tourReadFlagsRevision = -1;
+        private int tourReadCount;
+        private string tourProgressLabel = "";
+
+        /// The Start page's selected tour topic, LATCHED: displaying a topic
+        /// marks it read, so recomputing the default (the first unread) every
+        /// frame would advance through, and complete, the whole tour one
+        /// frame at a time.
+        private string? hubSelectedSlug;
+
         public HelpTabView(IHelpHost host)
         {
             this.host = host;
@@ -112,6 +165,13 @@ namespace RimShared.UiLib
             topicReadFlagsTopics = null;
             topicReadFlagsRevision = -1;
             pendingReadSlugs = null;
+            tourRows = null;
+            tourRowsLanguageStamp = -1;
+            tourRowsGeneration = -1;
+            tourReadFlags = null;
+            tourReadFlagsRows = null;
+            tourReadFlagsRevision = -1;
+            hubSelectedSlug = null;
             topicScroll = Vector2.zero;
             contentScroll = Vector2.zero;
         }
@@ -126,6 +186,14 @@ namespace RimShared.UiLib
             for (int i = 0; i < labels.Length; i++)
                 labels[i] = chapters[i].LabelKey.Translate().ToString();
             reloadLabel = host.ReloadLabelKey.Translate().ToString();
+            HelpTour? tour = host.Tour;
+            if (tour != null)
+            {
+                tourHeaderLabel = tour.HeaderKey.Translate().ToString();
+                tourCompleteLabel = tour.CompleteKey.Translate().ToString();
+                tourCompleteHintLabel =
+                    tour.CompleteHintKey.Translate().ToString();
+            }
             chapterLabels = labels;
             labelLanguageStamp = revision;
             return labels;
@@ -165,6 +233,12 @@ namespace RimShared.UiLib
 
             var body = new Rect(rect.x, rect.y + ChapterRowHeight + Gap,
                 rect.width, rect.height - ChapterRowHeight - Gap);
+            HelpTour? tour = host.Tour;
+            if (tour != null && activeChapter == 0)
+            {
+                DrawStartHub(body, tour);
+                return;
+            }
             var panelRect = new Rect(
                 body.x, body.y, TopicPanelWidth, body.height);
             var contentRect = new Rect(panelRect.xMax + Gap, body.y,
@@ -175,6 +249,205 @@ namespace RimShared.UiLib
             DrawTopicPanel(panelRect, topics, selected);
             if (selected >= 0)
                 DrawTopic(contentRect, activeChapter, topics[selected]);
+        }
+
+        /// <summary>The Start page: the welcome text and the tour checklist
+        /// on the left, the selected tour topic rendered on the right.</summary>
+        private void DrawStartHub(Rect rect, HelpTour tour)
+        {
+            var leftRect = new Rect(rect.x, rect.y, HubPanelWidth,
+                rect.height);
+            var rightRect = new Rect(leftRect.xMax + Gap, rect.y,
+                rect.width - HubPanelWidth - Gap, rect.height);
+            Rect inner = SegmentedControl.Panel(leftRect);
+
+            HelpTopicData[] topics = content.ChapterTopics(0);
+            float leftWidth = inner.width - 24f;
+            HelpDrawModel? welcome = topics.Length > 0
+                ? content.Model(0, topics[0], leftWidth) : null;
+
+            TourRow[] rows = TourRowsFor(tour);
+            bool[] read = TourReadFlags(tour, rows);
+            bool complete = rows.Length > 0 && tourReadCount == rows.Length;
+
+            if (hubSelectedSlug == null && rows.Length > 0)
+            {
+                hubSelectedSlug = rows[0].Slug;
+                for (int i = 0; i < rows.Length; i++)
+                {
+                    if (read[i]) continue;
+                    hubSelectedSlug = rows[i].Slug;
+                    break;
+                }
+            }
+            string? selectedSlug = hubSelectedSlug;
+
+            float headerHeight = Mathf.Max(30f, TitleHeight());
+            float welcomeHeight = welcome?.Height ?? 0f;
+            float tourTop = welcomeHeight + 16f;
+            float tourHeight = headerHeight + TourProgressHeight + 8f
+                + rows.Length * TourRowHeight
+                + (complete ? TourBadgeHeight + 8f : 0f);
+            var scrollOut = new Rect(inner.x + 8f, inner.y + 8f,
+                inner.width - 16f, inner.height - 16f);
+            bool scrollbar = tourTop + tourHeight > scrollOut.height;
+            var viewRect = new Rect(0f, 0f,
+                scrollOut.width - (scrollbar ? 16f : 0f),
+                tourTop + tourHeight);
+            Widgets.BeginScrollView(scrollOut, ref topicScroll, viewRect);
+            try
+            {
+                if (welcome != null)
+                    DrawModelItems(welcome, topicScroll.y, scrollOut.height);
+                using (GuiStateScope.Capture())
+                {
+                    Text.Font = GameFont.Medium;
+                    Text.Anchor = TextAnchor.MiddleLeft;
+                    Text.WordWrap = false;
+                    Widgets.Label(new Rect(0f, tourTop, viewRect.width,
+                        headerHeight), tourHeaderLabel);
+                }
+                DrawTourProgress(new Rect(0f, tourTop + headerHeight,
+                    viewRect.width, TourProgressHeight), rows.Length);
+
+                float rowY = tourTop + headerHeight + TourProgressHeight + 8f;
+                using (GuiStateScope.Capture())
+                {
+                    Text.Font = GameFont.Small;
+                    Text.Anchor = TextAnchor.MiddleLeft;
+                    Text.WordWrap = false;
+                    Color plainColor = GUI.color;
+                    for (int i = 0; i < rows.Length; i++)
+                    {
+                        var row = new Rect(0f, rowY + i * TourRowHeight,
+                            viewRect.width, TourRowHeight);
+                        bool isSelected = rows[i].Slug == selectedSlug;
+                        if (isSelected)
+                            Widgets.DrawBoxSolid(row, TopicSelectedFill);
+                        else
+                            Widgets.DrawHighlightIfMouseover(row);
+                        var checkRect = new Rect(row.x + 4f,
+                            row.y + (TourRowHeight - 20f) / 2f, 20f, 20f);
+                        // Unread is an empty box, deliberately: the vanilla
+                        // off texture is a red X and reads as failure.
+                        if (read[i])
+                            GUI.DrawTexture(checkRect, Widgets.CheckboxOnTex);
+                        else
+                            Widgets.DrawBoxSolidWithOutline(checkRect,
+                                UnreadBoxFill, SegmentedControl.PanelOutline);
+                        Widgets.Label(new Rect(row.x + 32f, row.y,
+                            row.width - 190f, row.height), rows[i].Title);
+                        GUI.color = TourChapterDim;
+                        Widgets.Label(new Rect(row.xMax - 154f, row.y,
+                                150f, row.height),
+                            chapterLabels![rows[i].ChapterIndex]);   // set by ChapterLabels() before any draw
+                        GUI.color = plainColor;
+                        if (Widgets.ButtonInvisible(row) && !isSelected)
+                        {
+                            hubSelectedSlug = rows[i].Slug;
+                            contentScroll = Vector2.zero;
+                        }
+                    }
+
+                    if (complete)
+                    {
+                        float badgeY = rowY + rows.Length * TourRowHeight + 8f;
+                        GUI.color = MedalGold;
+                        GUI.DrawTexture(new Rect(4f, badgeY + 8f, 40f, 40f),
+                            tour.Medal);
+                        GUI.color = plainColor;
+                        Text.Font = GameFont.Medium;
+                        Widgets.Label(new Rect(56f, badgeY,
+                            viewRect.width - 56f, 32f), tourCompleteLabel);
+                        Text.Font = GameFont.Small;
+                        GUI.color = TourChapterDim;
+                        Text.WordWrap = true;
+                        Text.Anchor = TextAnchor.UpperLeft;
+                        Widgets.Label(new Rect(56f, badgeY + 32f,
+                            viewRect.width - 56f, 48f), tourCompleteHintLabel);
+                    }
+                }
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
+
+            if (selectedSlug != null && content.TryFindTopic(selectedSlug,
+                    out int chapterIndex, out int topicIndex))
+                DrawTopic(rightRect, chapterIndex,
+                    content.ChapterTopics(chapterIndex)[topicIndex]);
+        }
+
+        private void DrawTourProgress(Rect rect, int total)
+        {
+            var barRect = new Rect(rect.x, rect.y + 4f, 220f, 12f);
+            Widgets.DrawBoxSolidWithOutline(barRect, ProgressBarFill,
+                SegmentedControl.PanelOutline);
+            if (total > 0 && tourReadCount > 0)
+            {
+                float fraction = (float)tourReadCount / total;
+                Widgets.DrawBoxSolid(new Rect(barRect.x + 1f, barRect.y + 1f,
+                    (barRect.width - 2f) * fraction, barRect.height - 2f),
+                    MedalGold);
+            }
+            using (GuiStateScope.Capture())
+            {
+                Text.Font = GameFont.Small;
+                Text.Anchor = TextAnchor.MiddleLeft;
+                Widgets.Label(new Rect(barRect.xMax + 10f, rect.y,
+                    rect.width - barRect.width - 10f, rect.height),
+                    tourProgressLabel);
+            }
+        }
+
+        private TourRow[] TourRowsFor(HelpTour tour)
+        {
+            int language = host.LanguageRevision;
+            if (tourRows != null && tourRowsLanguageStamp == language
+                && tourRowsGeneration == content.Generation)
+                return tourRows;
+            var rows = new List<TourRow>(tour.Slugs.Length);
+            for (int i = 0; i < tour.Slugs.Length; i++)
+            {
+                if (!content.TryFindTopic(tour.Slugs[i],
+                        out int chapterIndex, out int topicIndex))
+                    continue;
+                rows.Add(new TourRow
+                {
+                    Slug = tour.Slugs[i],
+                    Title = content.ChapterTopics(chapterIndex)[topicIndex]
+                        .ListTitle,
+                    ChapterIndex = chapterIndex,
+                });
+            }
+            tourRows = rows.ToArray();
+            tourRowsLanguageStamp = language;
+            tourRowsGeneration = content.Generation;
+            return tourRows;
+        }
+
+        private bool[] TourReadFlags(HelpTour tour, TourRow[] rows)
+        {
+            if (tourReadFlags != null
+                && ReferenceEquals(tourReadFlagsRows, rows)
+                && tourReadFlagsRevision == readRevision)
+                return tourReadFlags;
+            HashSet<string> read = ReadSlugs();
+            var flags = new bool[rows.Length];
+            int count = 0;
+            for (int i = 0; i < rows.Length; i++)
+            {
+                flags[i] = read.Contains(rows[i].Slug);
+                if (flags[i]) count++;
+            }
+            tourReadFlags = flags;
+            tourReadFlagsRows = rows;
+            tourReadFlagsRevision = readRevision;
+            tourReadCount = count;
+            tourProgressLabel = tour.ProgressKey.Translate(count, rows.Length)
+                .ToString();
+            return flags;
         }
 
         private void SelectChapter(int chapterIndex)
@@ -346,6 +619,11 @@ namespace RimShared.UiLib
                         || itemRect.y > visibleBottom)
                         continue;
                     byte kind = model.Kinds[i];
+                    if (kind == HelpDrawModel.KindDemo)
+                    {
+                        model.Demos[i]?.Draw(itemRect);
+                        continue;
+                    }
                     if (kind == HelpDrawModel.KindImage)
                     {
                         Texture2D? texture = model.Images[i];

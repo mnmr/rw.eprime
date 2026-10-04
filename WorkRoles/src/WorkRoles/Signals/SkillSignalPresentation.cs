@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using RimShared.Common;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;

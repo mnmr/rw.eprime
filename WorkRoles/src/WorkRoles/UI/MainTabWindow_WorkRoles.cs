@@ -18,18 +18,16 @@ namespace WorkRoles.UI
         private readonly RolesTabView rolesTab = new RolesTabView();
         private readonly RecommendationsTabView recommendationsTab = new RecommendationsTabView();
         private readonly OptionsTabView optionsTab = new OptionsTabView();
-        private readonly HelpTabView helpTab = new HelpTabView();
+        private readonly HelpTabView helpTab =
+            new HelpTabView(WorkRolesHelpHost.Instance);
         private readonly System.Action drawGrip;
         private int observedLanguageRevision;
 
-        private const float TabHeight = 32f;
         /// Top-right action buttons: one 130px button on every tab that has
         /// one, plus two 90px import/export buttons on Roles (8px gaps).
         private const float ActionBtnW = 130f;
         private const float IoBtnW = 90f;
         private const float ActionClusterW = ActionBtnW + 2f * (8f + IoBtnW);
-        // Between TabRecord's normal white and its hover yellow.
-        private static readonly Color ActiveTabLabelColor = new Color(1f, 0.95f, 0.55f);
         private static readonly Color AutoManagedColor =
             new Color(0.55f, 0.8f, 0.45f);
         private static readonly Color AutoManagedBackground =
@@ -213,6 +211,7 @@ namespace WorkRoles.UI
             RoleIconCatalog.WarmDefinitions();
             RoleIconPresentationCatalog.Refresh(RoleStore.Current);
             WrToast.Update();
+            helpTab.FlushPendingWrites();
             if (pendingWindowRect.TryConsume(out var nextWindowRect))
                 windowRect = nextWindowRect;
         }
@@ -257,7 +256,6 @@ namespace WorkRoles.UI
             rolesTab.InvalidateLanguageCaches();
             recommendationsTab.InvalidateLanguageCaches();
             optionsTab.InvalidateLanguageCaches();
-            helpTab.InvalidateLanguageCaches();
         }
 
         public override void PreOpen()
@@ -293,6 +291,7 @@ namespace WorkRoles.UI
             rolesTab.ReleaseWindowData();
             recommendationsTab.ReleaseWindowData();
             optionsTab.ReleaseWindowData();
+            helpTab.FlushPendingWrites();
             helpTab.ReleaseWindowData();
             WindowDataLifecycle.ReleaseShared();
             autoManagedGate.Reset();
@@ -419,34 +418,25 @@ namespace WorkRoles.UI
                 }
             }
 
-            Rect content = new Rect(inRect.x, inRect.y + TabHeight, inRect.width, inRect.height - TabHeight);
+            Rect content = new Rect(inRect.x, inRect.y + TabStrip.TabHeight, inRect.width, inRect.height - TabStrip.TabHeight);
             Widgets.DrawMenuSection(content);
             // Active-tab emphasis: TabRecord reads labelColor per pass, so a
-            // per-frame field write is how selection tints the label (between
-            // the normal white and the hover yellow).
+            // per-frame field write is how selection tints the label.
             for (int i = 0; i < tabs!.Count; i++) // ObserveLanguageRevision built the list this pass
-                tabs[i].labelColor = i == (int)curTab ? ActiveTabLabelColor : (Color?)null;
+                tabs[i].labelColor = i == (int)curTab ? TabStrip.ActiveLabelColor : (Color?)null;
             // The strip stops short of the per-tab action buttons at the top
             // right (widest cluster: Import, Export, Restore Defaults on the
             // Roles tab), so narrow windows shrink the tabs instead of
             // burying the last ones under the buttons.
             var tabStrip = new Rect(content.x, content.y,
                 content.width - ActionClusterW - 8f, content.height);
-            WrTabs.DrawTabs(tabStrip, tabs);
-            // Vanilla leaves the menu-section top border visible under the
-            // active tab. Overpaint its span with the section fill so the
-            // active tab connects seamlessly to the content (geometry mirrors
-            // WrTabs: tabWidth capped at 200, 10px horizontal overlap).
-            float tabWidth = Mathf.Min(200f,
-                (tabStrip.width + (tabs.Count - 1) * 10f) / tabs.Count);
-            float activeTabX = content.x + (int)curTab * (tabWidth - 10f);
-            Widgets.DrawBoxSolid(new Rect(activeTabX + 1f, content.y, tabWidth - 2f, 2f),
-                Widgets.MenuSectionBGFillColor);
+            TabStrip.Draw(tabStrip, tabs, WorkRolesTex.TabAtlas);
+            TabStrip.DrawActiveTabSeam(tabStrip, (int)curTab, tabs.Count);
 
             // Per-tab action button in the window's top-right corner, beside the tab
             // strip: Fix My Colony on Colonists, Restore Defaults on Roles.
             const float ActionBtnH = 28f;
-            float btnY = inRect.y + (TabHeight - ActionBtnH) / 2f;
+            float btnY = inRect.y + (TabStrip.TabHeight - ActionBtnH) / 2f;
             var actionRect = new Rect(inRect.xMax - ActionBtnW, btnY, ActionBtnW, ActionBtnH);
             if (curTab == Tab.Colonists)
             {

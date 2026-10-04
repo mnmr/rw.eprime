@@ -13,14 +13,4 @@ public class DialogInteractionPolicyTests
     {
         await Assert.That(DialogInteractionPolicy.Escape(inputFocused, inputEmpty)).IsEqualTo(expected);
     }
-
-    [Test]
-    [Arguments(10f, 100f)]
-    [Arguments(180f, 220f)]
-    [Arguments(900f, 480f)]
-    public async Task CompactDialogHeightIsContentSizedAndClamped(float bodyHeight, float expected)
-    {
-        await Assert.That(CompactDialogLayout.Height(bodyHeight, chromeHeight: 40f, minHeight: 100f, maxHeight: 480f))
-            .IsEqualTo(expected);
-    }
 }

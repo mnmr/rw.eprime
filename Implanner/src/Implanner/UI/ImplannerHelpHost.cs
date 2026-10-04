@@ -40,9 +40,9 @@ namespace Implanner.UI
 
         public string ReloadLabelKey => "IMP_HelpReload";
 
-        public int UiMetricRevision => UiVersion.Current;
+        public int UiMetricRevision => UiRevision.Current;
 
-        public int LanguageRevision => UiVersion.LanguageCurrent;
+        public int LanguageRevision => UiRevision.LanguageCurrent;
 
         public IReadOnlyList<string> ReadTopicSlugs =>
             ImplannerMod.Settings.helpTopicsRead;
@@ -51,6 +51,15 @@ namespace Implanner.UI
         {
             ImplannerMod.Settings.helpTopicsRead.AddRange(slugs);
             ImplannerMod.Instance.WriteSettings();
+        }
+
+        /// No guided tour: the first chapter is a plain topic list.
+        public HelpTour? Tour => null;
+
+        public bool TryGetDemo(string name, out IHelpDemo? demo)
+        {
+            demo = null;
+            return false;
         }
     }
 }

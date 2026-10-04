@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using RimShared.Common;
+using RimShared.GameLib;
 using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
@@ -887,7 +888,7 @@ namespace WorkRoles.UI
             ScopeKind scopeKind = scope?.Kind ?? ScopeKind.CurrentLocation;
             string? scopeLocationId = scope?.LocationId;
             int pawnListRevision = PawnListRevision;
-            int locationRevision = ColonyScope.LocationRevision;
+            int locationRevision = MapClassifications.LocationRevision;
             int mapId = Find.CurrentMap?.uniqueID ?? -1;
             int skillColumnsRevision = rosterState.SkillColumnsRevision;
             ChipDisplay chipDisplay = TableChips;
@@ -1002,7 +1003,7 @@ namespace WorkRoles.UI
             chromeScopeKind = scope?.Kind ?? ScopeKind.CurrentLocation;
             chromeScopeLocationId = scope?.LocationId;
             chromePawnListRevision = PawnListRevision;
-            chromeLocationRevision = ColonyScope.LocationRevision;
+            chromeLocationRevision = MapClassifications.LocationRevision;
             chromeMapId = Find.CurrentMap?.uniqueID ?? -1;
             chromeSkillColumnsRevision = rosterState.SkillColumnsRevision;
             chromeChipDisplay = chipDisplay;
@@ -4612,7 +4613,7 @@ namespace WorkRoles.UI
                         rosterCatalog, PawnListStamp, recW, rect.height,
                         externalSnapshotProvider);
                 Rect localHeader = preview.HeaderRect;
-                WrText.HeaderLabel(new Rect(recX + localHeader.x,
+                WrLabels.HeaderLabel(new Rect(recX + localHeader.x,
                     rect.y + localHeader.y, localHeader.width,
                     localHeader.height), preview.HeaderLabel);
 

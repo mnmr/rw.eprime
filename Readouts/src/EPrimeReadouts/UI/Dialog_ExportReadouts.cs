@@ -37,7 +37,7 @@ namespace EPrimeReadouts.UI
         public Dialog_ExportReadouts()
         {
             RebuildSnapshot();
-            RefreshResolvedPathCache();
+            picker.Refresh();
         }
 
         private void RebuildSnapshot()
@@ -65,7 +65,7 @@ namespace EPrimeReadouts.UI
         public override void WindowUpdate()
         {
             base.WindowUpdate();
-            RefreshResolvedPathCache();
+            picker.Refresh();
             var store = ReadoutStore.Current;
             if (store == null)
             {
@@ -102,12 +102,11 @@ namespace EPrimeReadouts.UI
             }
 
             // ── Summary line ────────────────────────────────────────────────
-            ResolvedTinyTextMetrics tinyMetrics = EprStyle.TinyTextMetrics;
-            float summaryH = tinyMetrics.MinHeight(18f);
+            float summaryH = Mathf.Max(18f, TinyText.LineHeight);
             GUI.color   = EprStyle.CaptionText;
             TinyText.Label(new Rect(
                     inRect.x,
-                    bodyTop + tinyMetrics.CaptionOffsetY,
+                    bodyTop + TinyText.FallbackCaptionOffsetY,
                     inRect.width,
                     summaryH),
                 summaryText!);
@@ -117,7 +116,7 @@ namespace EPrimeReadouts.UI
             // Bottom-up layout: Cancel/Save row, optional custom-dir row,
             // location+filename row, caption/Copy Path link row.
             float btnY = FooterY(inRect);
-            float customRowY = btnY - FooterGap - (location == Location.Custom ? RowH : 0f);
+            float customRowY = btnY - FooterGap - (picker.Location == ExportLocation.Custom ? RowH : 0f);
             float locRowY = customRowY - RowH;
             float captionRowY = locRowY - CaptionRowH;
 
@@ -136,7 +135,7 @@ namespace EPrimeReadouts.UI
             // name it copies. With nothing to copy it CLEARS the clipboard, so a
             // paste can't insert stale content.
             string copyPathLabel = UiText.Get("EPR.CopyPath");
-            UiVersion.ObserveCurrentMetrics();
+            UiRevision.ObserveCurrentMetrics();
             float linkW = WrText.FitWidth(copyPathLabel) + 6f;
             var linkRect = new Rect(inRect.xMax - linkW, captionRowY, linkW, CaptionRowH - 4f);
             if (problem != null)
@@ -154,7 +153,7 @@ namespace EPrimeReadouts.UI
             // Bottom row: Cancel escapes on the left, Save commits on the right.
             var cancelRect = new Rect(inRect.x, btnY, ButtonW, FooterH);
             var saveRect   = new Rect(inRect.xMax - ButtonW, btnY, ButtonW, FooterH);
-            if (Widgets.ButtonText(cancelRect, UiText.Get("EPR.Cancel")))
+            if (Widgets.ButtonText(cancelRect, UiText.Get("CancelButton")))
                 Close();
             if (problem != null)
                 WrTips.Text("EPR.ExportProblem", problem).Region(saveRect);
@@ -164,9 +163,11 @@ namespace EPrimeReadouts.UI
                 // Checked at the click, not from the path cache, so a file
                 // that appeared after the name was typed is still caught.
                 if (System.IO.File.Exists(path))
-                    Find.WindowStack.Add(new Dialog_CompactConfirm(
+                    Find.WindowStack.Add(new CompactConfirmDialog(
                         "EPR.ExportOverwriteConfirm".Translate(path),
-                        () => Save(path), destructive: true));
+                        () => Save(path), UiText.Get("OK"),
+                        UiText.Get("CancelButton"), UiRevision.Current,
+                        destructive: true));
                 else
                     Save(path);
             }
@@ -176,7 +177,7 @@ namespace EPrimeReadouts.UI
         private void Save(string path)
         {
             if (xml == null) return; // store gone while the confirmation was open
-            if (ReadoutsFiles.TryWrite(path, xml, out string? writeError))
+            if (ExportFolder.TryWrite(path, xml, out string? writeError))
             {
                 Messages.Message("EPR.Exported".Translate(path),
                     MessageTypeDefOf.TaskCompletion, historical: false);
@@ -190,16 +191,16 @@ namespace EPrimeReadouts.UI
 
         private void EnsureText()
         {
-            UiVersion.ObserveCurrentMetrics();
+            UiRevision.ObserveCurrentMetrics();
             if (ReferenceEquals(textSnapshot, snapshot)
-                && textLanguageVersion == UiVersion.LanguageCurrent
+                && textLanguageVersion == UiRevision.LanguageCurrent
                 && summaryText != null)
                 return;
             int pools = snapshot?.Pools.Count ?? 0;
             int groups = snapshot?.Groups.Count ?? 0;
             summaryText = "EPR.ContentSummary".Translate(pools, groups);
             textSnapshot = snapshot;
-            textLanguageVersion = UiVersion.LanguageCurrent;
+            textLanguageVersion = UiRevision.LanguageCurrent;
         }
     }
 }

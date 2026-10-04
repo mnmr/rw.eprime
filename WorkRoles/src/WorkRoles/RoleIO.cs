@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using RimShared.Common;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
@@ -16,13 +16,14 @@ namespace WorkRoles
     {
         public const string DefaultFileName = "WorkRoles.xml";
 
-        // Session-fixed paths; the properties are read per frame from tooltips.
-        private static string? gameDataDir;
+        /// Our folder under the game's per-user data root (beside Saves\, Config\).
+        internal static readonly ExportFolder Exports = new ExportFolder("WorkRoles");
+
+        // Session-fixed path (Exports caches the folder); the properties are
+        // read per frame from tooltips.
         private static string? exportFile;
 
-        /// Our folder under the game's per-user data root (beside Saves\, Config\).
-        public static string GameDataDir =>
-            gameDataDir ??= Path.Combine(GenFilePaths.SaveDataFolderPath, "WorkRoles");
+        public static string GameDataDir => Exports.Folder;
 
         public static string ExportFile =>
             exportFile ??= Path.Combine(GameDataDir, DefaultFileName);
@@ -152,22 +153,6 @@ namespace WorkRoles
                         selection.locationRuntimeTokens.Add(
                             ImportLocationResolver.Resolve(fileToken, locations) ?? "");
                     }
-        }
-
-        /// Writes xml to path, creating directories; returns an error or null.
-        public static string? SaveTo(string path, string xml)
-        {
-            try
-            {
-                var dir = Path.GetDirectoryName(path);
-                if (!dir.NullOrEmpty()) Directory.CreateDirectory(dir);
-                File.WriteAllText(path, xml, Encoding.UTF8);
-                return null;
-            }
-            catch (System.Exception e)
-            {
-                return e.Message;
-            }
         }
 
         // ----- Colors -----

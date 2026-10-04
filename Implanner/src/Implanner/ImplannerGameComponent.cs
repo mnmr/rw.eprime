@@ -39,19 +39,15 @@ namespace Implanner
         public override void LoadedGame() =>
             LongEventHandler.ExecuteWhenFinished(queueWelcome);
 
-        /// The welcome dialog appears once per player per save, keyed by the
-        /// world's persistent random value (the save's stable identity) in
-        /// the per-player settings. Marked seen the moment it is queued, so
-        /// however it is dismissed it never returns for this save.
-        /// Presentation only — never touches synced state.
+        /// The welcome dialog appears once per player per save
+        /// (`WelcomeDialog.ClaimSave`). Presentation only — never touches
+        /// synced state.
         private static void QueueWelcome()
         {
-            RimWorld.Planet.World? world = Find.World;
             ImplannerSettings? settings = ImplannerMod.Settings;
-            if (world == null || settings == null) return;
-            string id = world.info.persistentRandomValue.ToString();
-            if (settings.welcomeShownSaves.Contains(id)) return;
-            settings.welcomeShownSaves.Add(id);
+            if (settings == null
+                || !RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves))
+                return;
             ImplannerMod.Instance.WriteSettings();
             Find.WindowStack?.Add(new RimShared.UiLib.WelcomeDialog(
                 "IMP_WelcomeTitle".Translate(),

@@ -1,6 +1,7 @@
 using EPrimeReadouts.Patches;
 using EPrimeReadouts.UI;
 using HarmonyLib;
+using RimShared.UiLib;
 using Verse;
 using Verse.Profile;
 
@@ -24,8 +25,8 @@ namespace EPrimeReadouts
             WrText.Reset();
             PanelCellMetrics.Reset();
             UiText.Reset();
-            EprStyle.Reset();
-            Dialog_CompactConfirm.Reset();
+            RimShared.UiLib.HelpFoldout.Reset();
+            RimShared.UiLib.CompactConfirmDialog.Reset();
             EprDrag.Cancel();
             PanelBufferBackend.Shared.Release();
             IconScaleCache.ReleaseGraphics();

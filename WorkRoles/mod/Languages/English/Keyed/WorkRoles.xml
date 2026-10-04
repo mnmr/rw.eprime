@@ -386,7 +386,6 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
 
   <!-- Change preview dialog -->
   <WR_Apply>Apply</WR_Apply>
-  <WR_Cancel>Cancel</WR_Cancel>
   <WR_SelectAll>Select all</WR_SelectAll>
   <WR_PreviewNoChanges>No changes.</WR_PreviewNoChanges>
   <WR_PreviewStale>The colony changed while the preview was open; nothing was applied.</WR_PreviewStale>
@@ -773,7 +772,6 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
 
   <WR_SelectRoleIcon>Select role icon</WR_SelectRoleIcon>
   <WR_RenameRoleTitle>Rename Role</WR_RenameRoleTitle>
-  <WR_OK>OK</WR_OK>
 
   <!-- ===== Mod coverage (M5) ===== -->
 

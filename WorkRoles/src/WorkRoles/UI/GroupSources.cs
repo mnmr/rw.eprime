@@ -7,7 +7,8 @@ using WorkRoles.Core;
 namespace WorkRoles.UI
 {
     /// One grouping the colonist table offers. Partition == null means the
-    /// flat list; classify-backed sources section A-Z, membership-backed
+    /// flat list; classify-backed sources section A-Z by key (a key ending
+    /// in the displayed name sorts alphabetically by it), membership-backed
     /// sources (Colony Groups) keep their own group order.
     internal sealed class GroupSourceDef
     {

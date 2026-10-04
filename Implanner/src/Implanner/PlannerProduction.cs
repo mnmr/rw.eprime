@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using HarmonyLib;
 using Implanner.Core;
 using RimShared.Common;
+using RimShared.GameLib;
 using RimWorld;
 using Verse;
 
@@ -85,7 +86,7 @@ namespace Implanner
             new Dictionary<RecipeDef, HashSet<ThingDef>>();
 
         /// Depth cap for intermediary chains (modded recipe cycles).
-        private const int MaxIntermediaryDepth = 8;
+        internal const int MaxIntermediaryDepth = 8;
 
         /// Bill.loadID is private; it increases with every bill the game
         /// creates, so it orders Implanner's bills oldest first.
@@ -479,7 +480,7 @@ namespace Implanner
                         Thing thing = pass.Index.ItemsById[ids[i]];
                         if (!thing.IsForbidden(Faction.OfPlayer)) AddItems(qualities, thing);
                     }
-                Faction faction = ColonyScope.AuthoritativeFaction;
+                Faction faction = PlayerFactions.AuthoritativeFaction;
                 for (int m = 0; m < colony.Maps.Count; m++)
                 {
                     IReadOnlyList<Pawn> pawns = colony.Maps[m].mapPawns.AllPawnsSpawned;
@@ -714,7 +715,7 @@ namespace Implanner
         /// Such bills promise no stock and are never withdrawn.
         internal static void CollectInProgress(List<Map> maps, HashSet<Bill> into)
         {
-            Faction faction = ColonyScope.AuthoritativeFaction;
+            Faction faction = PlayerFactions.AuthoritativeFaction;
             for (int m = 0; m < maps.Count; m++)
             {
                 IReadOnlyList<Pawn> pawns = maps[m].mapPawns.AllPawnsSpawned;
@@ -827,7 +828,7 @@ namespace Implanner
             return 0;
         }
 
-        private static int ColonyResourceCount(List<Map> maps, ThingDef def)
+        internal static int ColonyResourceCount(List<Map> maps, ThingDef def)
         {
             int total = 0;
             for (int m = 0; m < maps.Count; m++)

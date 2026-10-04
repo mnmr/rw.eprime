@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Implanner.Core;
 using RimShared.Common;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -22,9 +23,9 @@ namespace Implanner.UI
     // Key: overview DATA identity (OverviewData, not the ordered snapshot:
     //   a sort or group-by click changes nothing the tooltip shows).
     // Value: one immutable StructuredTip (its TipModel keeps its own
-    //   geometry cache behind UiVersion).
+    //   geometry cache behind UiRevision).
     // Dependencies: the overview data, which already folds
-    //   UiVersion.Current (language and metrics), store identity and
+    //   UiRevision.Current (language and metrics), store identity and
     //   Version, pawn facts, locations, and the grouping selection.
     // Refresh policy: rebuilt on the next display session after the
     //   data reference changes; an open session stays frozen by the

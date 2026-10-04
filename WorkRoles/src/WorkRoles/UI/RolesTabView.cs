@@ -132,10 +132,10 @@ namespace WorkRoles.UI
         // lazy on the first reorder registration for a role. Equality: equal role
         // ids reuse delegate identity. Teardown: Reset clears all memoized
         // callbacks before the window and its role catalog are released.
-        private readonly MemoizedFactory<int, System.Action<int, int>>
+        private readonly ExplicitSnapshotCache<int, System.Action<int, int>>
             entryReorderCallbacks;
         // Same contract as entryReorderCallbacks, for composite member rows.
-        private readonly MemoizedFactory<int, System.Action<int, int>>
+        private readonly ExplicitSnapshotCache<int, System.Action<int, int>>
             memberReorderCallbacks;
         private Vector2 listScroll;
         private Vector2 entriesScroll;
@@ -193,14 +193,14 @@ namespace WorkRoles.UI
         public RolesTabView()
         {
             entryReorderCallbacks =
-                new MemoizedFactory<int, System.Action<int, int>>(roleId =>
+                new ExplicitSnapshotCache<int, System.Action<int, int>>(roleId =>
                     (from, to) =>
                     {
                         if (to > from) to--;
                         RoleCommands.MoveEntry(roleId, from, to);
                     });
             memberReorderCallbacks =
-                new MemoizedFactory<int, System.Action<int, int>>(roleId =>
+                new ExplicitSnapshotCache<int, System.Action<int, int>>(roleId =>
                     (from, to) =>
                     {
                         if (to > from) to--;
@@ -1358,13 +1358,15 @@ namespace WorkRoles.UI
                     else if (header.HasRules)
                     {
                         // The checkbox derives from HasRules, so unchecking means clearing the rules.
-                        Find.WindowStack.Add(new Dialog_SmallConfirm(
+                        Find.WindowStack.Add(new CompactConfirmDialog(
                             header.ClearRulesConfirmation,
                             () =>
                             {
                                 RoleCommands.ClearRoleRules(model.RoleId);
                                 rulesRevealed.Remove(model.RoleId);
-                            }));
+                            },
+                            "OK".Translate(), "CancelButton".Translate(),
+                            UiRevision.Current, destructive: true));
                     }
                     else
                     {
@@ -1395,11 +1397,13 @@ namespace WorkRoles.UI
                     ? model.Composite != null && model.Composite.MemberCount > 0
                     : model.Entries != null && model.Entries.Count > 0;
                 if (losesContent)
-                    Find.WindowStack.Add(new Dialog_SmallConfirm(
+                    Find.WindowStack.Add(new CompactConfirmDialog(
                         header.Composite
                             ? header.CompositeRevertConfirmation
                             : header.CompositeConfirmation,
-                        () => RoleCommands.SetRoleComposite(roleId, compositeWanted)));
+                        () => RoleCommands.SetRoleComposite(roleId, compositeWanted),
+                        "OK".Translate(), "CancelButton".Translate(),
+                        UiRevision.Current, destructive: true));
                 else
                     RoleCommands.SetRoleComposite(roleId, compositeWanted);
             }
@@ -1761,7 +1765,7 @@ namespace WorkRoles.UI
             entrySelection.Retain(entries.Entries);
             bool multi = entrySelection.Count > 1;
             // Same visible-gap correction as the Available Jobs header.
-            WrText.HeaderLabel(new Rect(rect.x + 8f, rect.y + WrText.MediumTopBearing, rect.width - 8f, 28f),
+            WrLabels.HeaderLabel(new Rect(rect.x + 8f, rect.y + WrLabels.MediumTopBearing, rect.width - 8f, 28f),
                 entries.Title);
 
             // Column headers — 24f height so descenders aren't clipped
@@ -1800,7 +1804,7 @@ namespace WorkRoles.UI
             if (Event.current.type == EventType.Repaint)
             {
                 entriesReorderableGroupId = ReorderableWidget.NewGroup(
-                    entryReorderCallbacks.For(model.RoleId),
+                    entryReorderCallbacks.Get(model.RoleId),
                     ReorderableDirection.Vertical,
                     scrollRect);
             }
@@ -1919,7 +1923,7 @@ namespace WorkRoles.UI
 
             // HeaderLabel puts the VISIBLE text top at rect.y; directly under the
             // top box that reads as flush, so the top bearing is re-added as gap.
-            WrText.HeaderLabel(new Rect(rect.x + 4f, rect.y + WrText.MediumTopBearing, headerW - 4f, 28f),
+            WrLabels.HeaderLabel(new Rect(rect.x + 4f, rect.y + WrLabels.MediumTopBearing, headerW - 4f, 28f),
                 tree.Title);
 
             // "Search" label immediately left of field; group shifted 4f left from right edge
@@ -2252,7 +2256,7 @@ namespace WorkRoles.UI
         private void DrawCompositeCandidates(Rect rect, RoleEditorSnapshot model)
         {
             RoleCompositeSnapshot composite = model.Composite!; // composite editor only
-            WrText.HeaderLabel(new Rect(rect.x + 4f, rect.y + WrText.MediumTopBearing,
+            WrLabels.HeaderLabel(new Rect(rect.x + 4f, rect.y + WrLabels.MediumTopBearing,
                 rect.width - 4f, 28f), composite.CandidatesTitle);
             float topY = rect.y + 28f + 4f;
             var scrollRect = new Rect(rect.x, topY, rect.width, rect.yMax - topY);
@@ -2317,7 +2321,7 @@ namespace WorkRoles.UI
             RoleCompositeSnapshot composite = model.Composite!; // composite editor only
             memberSelection.Retain(composite.MemberIds);
             bool multi = memberSelection.Count > 1;
-            WrText.HeaderLabel(new Rect(rect.x + 8f, rect.y + WrText.MediumTopBearing,
+            WrLabels.HeaderLabel(new Rect(rect.x + 8f, rect.y + WrLabels.MediumTopBearing,
                 rect.width - 8f, 28f), composite.MembersTitle);
             var scrollRect = new Rect(rect.x + 8f, rect.y + 28f + 4f,
                 rect.width - 8f, rect.height - 28f - 4f);
@@ -2346,7 +2350,7 @@ namespace WorkRoles.UI
             if (Event.current.type == EventType.Repaint)
             {
                 membersReorderableGroupId = ReorderableWidget.NewGroup(
-                    memberReorderCallbacks.For(model.RoleId),
+                    memberReorderCallbacks.Get(model.RoleId),
                     ReorderableDirection.Vertical,
                     scrollRect);
             }

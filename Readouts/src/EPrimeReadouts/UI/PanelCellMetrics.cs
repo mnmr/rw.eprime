@@ -1,7 +1,6 @@
 using EPrimeReadouts.Core;
 using RimShared.Common;
 using RimShared.UiLib;
-using Verse;
 
 namespace EPrimeReadouts.UI
 {
@@ -17,7 +16,7 @@ namespace EPrimeReadouts.UI
     // Owner: process/current UI presentation.
     // Key: none (single value).
     // Value: immutable CellMetrics struct.
-    // Dependencies: UiVersion.Current (UI scale, tiny-text preference,
+    // Dependencies: UiRevision.Current (UI scale, tiny-text preference,
     // language) — the same revision the layout rebuild keys on, so a metric
     // change and the rebuild that consumes it always travel together.
     // Refresh policy: immediate on UI revision change.
@@ -37,7 +36,7 @@ namespace EPrimeReadouts.UI
         {
             get
             {
-                if (stamp == UiVersion.Current) return cached;
+                if (stamp == UiRevision.Current) return cached;
                 using (GuiStateScope.Capture())
                 {
                     // Resolves to Small when tiny text is unavailable; both
@@ -50,13 +49,9 @@ namespace EPrimeReadouts.UI
                         float w = WrText.FitTinyWidth(WideSamples[i]);
                         if (w > maxW) maxW = w;
                     }
-                    TinyTextMetrics shared = TinyText.Metrics;
-                    var textMetrics = new ResolvedTinyTextMetrics(
-                        shared.LineHeight,
-                        shared.Font == GameFont.Small);
-                    cached = new CellMetrics(maxW, textMetrics.LineHeight);
+                    cached = new CellMetrics(maxW, TinyText.LineHeight);
                 }
-                stamp = UiVersion.Current;
+                stamp = UiRevision.Current;
                 return cached;
             }
         }

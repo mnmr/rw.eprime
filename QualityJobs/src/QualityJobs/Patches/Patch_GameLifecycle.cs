@@ -1,5 +1,6 @@
 using HarmonyLib;
 using QualityJobs.UI;
+using RimShared.UiLib;
 using Verse;
 
 namespace QualityJobs.Patches

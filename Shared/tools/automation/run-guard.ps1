@@ -15,6 +15,8 @@ while ($true) {
     if (-not $game -or $game.HasExited) { return }
     try {
         $heartbeatUtc = [IO.File]::GetLastWriteTimeUtc($statePath)
+        # A missing file (mid-replace) reports 1601-01-01: a racing read, not a stall.
+        if ($heartbeatUtc.Year -lt 2000) { continue }
         $state = Get-Content -LiteralPath $statePath -Raw -ErrorAction Stop | ConvertFrom-Json
     } catch { continue } # the game replaces the file 4x per second; retry on a racing read
     $activityUtc = if (Test-Path -LiteralPath $activityPath) { [IO.File]::GetLastWriteTimeUtc($activityPath) } else { $tracker.ReadyUtc }

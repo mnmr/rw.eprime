@@ -27,7 +27,8 @@ namespace RimShared.UiLib
     /// <summary>
     /// Fully positioned draw model for one topic at one width: parallel
     /// arrays the render pass iterates by index. Kinds: 0 text, 1 topic
-    /// link, 2 list marker, 3 image. Texts carry final rich-text markup.
+    /// link, 2 list marker, 3 image, 4 demo. Texts carry final rich-text
+    /// markup.
     /// </summary>
     public sealed class HelpDrawModel
     {
@@ -37,12 +38,14 @@ namespace RimShared.UiLib
         internal GameFont[] Fonts = Array.Empty<GameFont>();
         internal string[] Targets = Array.Empty<string>();
         internal Texture2D?[] Images = Array.Empty<Texture2D?>();
+        internal IHelpDemo?[] Demos = Array.Empty<IHelpDemo?>();
         internal float Height;
 
         internal const byte KindText = 0;
         internal const byte KindLink = 1;
         internal const byte KindMarker = 2;
         internal const byte KindImage = 3;
+        internal const byte KindDemo = 4;
     }
 
     /// <summary>
@@ -117,23 +120,22 @@ namespace RimShared.UiLib
             {
                 Text.Font = GameFontOf(font);
                 string markup = Markup(word, font, style);
-                width = Text.CalcSize(markup).x;
                 // Synthesized bold/italic glyphs render a couple of pixels
                 // wider than CalcSize reports; an exact-fit rect clips the
-                // last glyph. CJK text is measured one glyph at a time and
-                // the glyphs that share a line merge into one drawn string,
-                // so a per-glyph constant or ceil would pile up into a
-                // visible gap after every styled run. Glyphs keep only the
-                // proportional drift; the per-string constant is added to
-                // the draw rect once in BuildDrawModel (StyledDrawSlack).
-                if (!ReferenceEquals(markup, word))
-                {
-                    bool glyph = word.Length == 1
-                        && LineBreakRules.IsCharacterBreakable(word[0]);
-                    width = glyph
-                        ? width * 1.02f
-                        : Mathf.Ceil(width * 1.02f + 2f);
-                }
+                // last glyph, so styled words take the fit width. CJK text
+                // is measured one glyph at a time and the glyphs that share
+                // a line merge into one drawn string, so a per-glyph
+                // constant or ceil would pile up into a visible gap after
+                // every styled run. Glyphs keep only the proportional
+                // drift; the per-string constant is added to the draw rect
+                // once in BuildDrawModel (StyledDrawSlack).
+                if (ReferenceEquals(markup, word))
+                    width = Text.CalcSize(markup).x;
+                else if (word.Length == 1
+                    && LineBreakRules.IsCharacterBreakable(word[0]))
+                    width = Text.CalcSize(markup).x * 1.02f;
+                else
+                    width = WrText.MeasureFitWidth(markup);
             }
             finally
             {
@@ -201,15 +203,17 @@ namespace RimShared.UiLib
     // Owner: window (via HelpTabView). Key: chapter index for topic lists;
     // (chapter, slug, width, host UI metric revision) for the two LRU draw
     // models; image path for textures. Value: immutable HelpTopicData
-    // arrays, two HelpDrawModels, and textures (file-loaded ones owned and
-    // destroyed here; "tex:" references borrowed from game content and never
-    // destroyed). Dependencies: the on-disk Help folder (read on explicit
-    // user actions only), the host's language revision, UI metric revision,
-    // content width. Refresh: lazy on first access after a stamp mismatch;
-    // language change drops everything via Release(). Equality: unchanged
-    // stamps reuse the cached objects by identity. Teardown: Release()
-    // destroys owned textures and clears all caches (window close, language
-    // change, dev reload).
+    // arrays, two HelpDrawModels (demo instances borrowed from the host,
+    // never owned), and textures (file-loaded ones owned and destroyed here;
+    // "tex:" references borrowed from game content and never destroyed).
+    // Dependencies: the on-disk Help folder (read on explicit user actions
+    // only), the host's language revision, UI metric revision, content
+    // width, and the host's fixed demo set. Refresh: lazy on first access
+    // after a stamp mismatch; language change drops everything via
+    // Release(), which advances Generation. Equality: unchanged stamps reuse
+    // the cached objects by identity. Teardown: Release() destroys owned
+    // textures and clears all caches (window close, language change, dev
+    // reload).
     public sealed class HelpContentState
     {
         private readonly IHelpHost host;
@@ -234,6 +238,7 @@ namespace RimShared.UiLib
                 StringComparer.OrdinalIgnoreCase);
         private readonly HelpTextMeasurer measurer;
         private readonly HelpFlowLayout.ImageSizeResolver imageSizeResolver;
+        private readonly HelpFlowLayout.DemoSizeResolver demoSizeResolver;
         private readonly Func<string, string?> keyResolver;
 
         private sealed class ModelSlot
@@ -247,7 +252,9 @@ namespace RimShared.UiLib
         }
 
         // Two LRU slots: a player who toggles between two topics reuses both
-        // without rebuilding either every time.
+        // without rebuilding either every time, and a view that draws two
+        // topics in one pass (a start page beside the selected topic) does
+        // not rebuild both every frame.
         private readonly ModelSlot[] modelSlots =
             { new ModelSlot(), new ModelSlot() };
         private int modelAge;
@@ -259,6 +266,7 @@ namespace RimShared.UiLib
             chapters = new HelpTopicData[]?[host.Chapters.Length];
             measurer = new HelpTextMeasurer(host);
             imageSizeResolver = TryGetImageSize;
+            demoSizeResolver = TryGetDemoSize;
             keyResolver = ResolveKey;
         }
 
@@ -268,10 +276,16 @@ namespace RimShared.UiLib
             key.TryTranslate(out TaggedString result)
                 ? result.ToString() : null;
 
+        /// <summary>Advances whenever Release() drops the loaded content, so
+        /// consumers caching derived rows (e.g. a tour checklist) can
+        /// observe reloads.</summary>
+        public int Generation { get; private set; }
+
         /// <summary>Drops all content, layouts, measurements, and destroys
         /// owned textures. Safe to call repeatedly and after partial loads.</summary>
         public void Release()
         {
+            Generation++;
             for (int i = 0; i < chapters.Length; i++) chapters[i] = null;
             foreach (KeyValuePair<string, TextureEntry> pair in textures)
             {
@@ -358,10 +372,11 @@ namespace RimShared.UiLib
 
             HelpDocument resolved = HelpDocuments.ResolveKeyedLabels(
                 topic.Document, keyResolver);
-            // No demo resolver: @demo blocks are skipped by the layout, so
-            // no Demo item ever reaches BuildDrawModel.
+            // @demo blocks the host does not resolve are skipped by the
+            // layout, so no Demo item reaches BuildDrawModel for them.
             HelpTopicLayout layout = HelpFlowLayout.Build(resolved, width,
-                measurer, DefaultMetrics, imageSizeResolver);
+                measurer, DefaultMetrics, imageSizeResolver,
+                demoSizeResolver);
             target!.Model = BuildDrawModel(layout);
             target.Chapter = chapterIndex;
             target.Slug = topic.Entry.Slug;
@@ -392,6 +407,7 @@ namespace RimShared.UiLib
                 Fonts = new GameFont[count],
                 Targets = new string[count],
                 Images = new Texture2D?[count],
+                Demos = new IHelpDemo?[count],
                 Height = layout.Height,
             };
             for (int i = 0; i < count; i++)
@@ -403,6 +419,12 @@ namespace RimShared.UiLib
                 built.Targets[i] = item.Target;
                 switch (item.Kind)
                 {
+                    case HelpItemKind.Demo:
+                        built.Kinds[i] = HelpDrawModel.KindDemo;
+                        built.Texts[i] = item.Text;
+                        host.TryGetDemo(item.Text, out IHelpDemo? demo);
+                        built.Demos[i] = demo;
+                        break;
                     case HelpItemKind.Image:
                         built.Kinds[i] = HelpDrawModel.KindImage;
                         built.Texts[i] = item.Text;
@@ -517,6 +539,21 @@ namespace RimShared.UiLib
             width = texture.width;
             height = texture.height;
             return true;
+        }
+
+        /// <summary>Demo sizes for layout, from the host's demo set.</summary>
+        private bool TryGetDemoSize(
+            string name, out float width, out float height)
+        {
+            if (host.TryGetDemo(name, out IHelpDemo? demo) && demo != null)
+            {
+                width = demo.Size.x;
+                height = demo.Size.y;
+                return true;
+            }
+            width = 0f;
+            height = 0f;
+            return false;
         }
 
         private static bool TryParseHeightSuffix(

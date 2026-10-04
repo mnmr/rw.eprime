@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.3.7 — 2026-10-03
+
+- Changed: Suppress welcome dialog when dev mode is enabled.
+
 ## 1.3.6 — 2026-09-27
 
 - Fixed: Group names are now trimmed and must be unique.

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimShared.Common;
+using RimShared.GameLib;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -160,7 +162,7 @@ namespace WorkRoles.UI
             bool sectionsNested = WorkRolesMod.Settings?.nestedRoleTree ?? true;
             if (!revealTreeSelection && editorSnapshotStamp == UiVersion.Current
                 && editorSnapshotRoleId == roleId
-                && editorSnapshotLocationRevision == ColonyScope.LocationRevision
+                && editorSnapshotLocationRevision == MapClassifications.LocationRevision
                 && editorSnapshotPawnRevision == pawnRevision
                 && editorSnapshotTreeRevision == treeRevision
                 && editorSnapshotRoleIconRevision
@@ -173,7 +175,7 @@ namespace WorkRoles.UI
 
             editorSnapshotStamp = UiVersion.Current;
             editorSnapshotRoleId = roleId;
-            editorSnapshotLocationRevision = ColonyScope.LocationRevision;
+            editorSnapshotLocationRevision = MapClassifications.LocationRevision;
             editorSnapshotPawnRevision = pawnRevision;
             editorSnapshotRoleIconRevision =
                 RoleIconPresentationCatalog.Revision;

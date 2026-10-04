@@ -5,12 +5,14 @@ namespace RimShared.Common
 {
     /// <summary>
     /// Owner-keyed snapshots whose read path is deliberately separate from
-    /// publishing a derived projection into mutable external state.
+    /// publishing a derived projection into mutable external state. A steady
+    /// managed hit is also proof that the owner is managed: ownership is
+    /// queried only after a cache miss.
     /// </summary>
     public sealed class ExplicitProjectionCache<TOwner, TSnapshot>
         where TOwner : class
     {
-        private readonly ManagedSnapshotCache<TOwner, TSnapshot> snapshots;
+        private readonly Dictionary<TOwner, TSnapshot> snapshots;
         private readonly Func<TOwner, TSnapshot> build;
         private readonly Action<TOwner, TSnapshot> publish;
 
@@ -21,25 +23,46 @@ namespace RimShared.Common
         {
             this.build = build ?? throw new ArgumentNullException(nameof(build));
             this.publish = publish ?? throw new ArgumentNullException(nameof(publish));
-            snapshots = new ManagedSnapshotCache<TOwner, TSnapshot>(comparer);
+            snapshots = new Dictionary<TOwner, TSnapshot>(
+                comparer ?? EqualityComparer<TOwner>.Default);
         }
 
         public bool TryGetManaged(TOwner owner,
             Func<TOwner, bool> isManaged,
-            out TSnapshot? snapshot) =>
-            snapshots.TryGetManaged(owner, isManaged, build, out snapshot);
+            out TSnapshot? snapshot)
+        {
+            if (isManaged == null) throw new ArgumentNullException(nameof(isManaged));
+            if (owner != null && snapshots.TryGetValue(owner, out snapshot))
+                return true;
+            if (owner == null || !isManaged(owner))
+            {
+                snapshot = default;
+                return false;
+            }
+            snapshot = build(owner);
+            snapshots.Add(owner, snapshot);
+            return true;
+        }
 
-        public TSnapshot GetOrBuild(TOwner owner) =>
-            snapshots.GetOrBuild(owner, build);
+        public TSnapshot GetOrBuild(TOwner owner)
+        {
+            if (owner == null) throw new ArgumentNullException(nameof(owner));
+            if (!snapshots.TryGetValue(owner, out TSnapshot? snapshot))
+            {
+                snapshot = build(owner);
+                snapshots.Add(owner, snapshot);
+            }
+            return snapshot;
+        }
 
         public void PublishFresh(TOwner owner)
         {
-            snapshots.Remove(owner);
-            TSnapshot snapshot = snapshots.GetOrBuild(owner, build);
-            publish(owner, snapshot);
+            Remove(owner);
+            publish(owner, GetOrBuild(owner));
         }
 
-        public bool Remove(TOwner owner) => snapshots.Remove(owner);
+        public bool Remove(TOwner owner) =>
+            owner != null && snapshots.Remove(owner);
 
         public void Clear() => snapshots.Clear();
     }

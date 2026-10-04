@@ -52,14 +52,6 @@ public class MigrationPlannerTests
 
     // ----- Shipped-data round trip -----
 
-    private static string RepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "mod", "1.6", "Defs")))
-            dir = dir.Parent;
-        return dir?.FullName ?? throw new InvalidOperationException("repo root not found");
-    }
-
     /// AllowTool's FinishingOff ships visible=false; migration's
     /// MigratableEntries drops invisible work types from role matching, so
     /// the fixture must too.
@@ -67,7 +59,7 @@ public class MigrationPlannerTests
 
     private static List<MigrationRole> ShippedRoles(params string[] thirdPartyMods)
     {
-        var path = Path.Combine(RepoRoot(), "mod", "1.6", "Defs", "Roles.xml");
+        var path = ShippedMod.Path("1.6", "Defs", "Roles.xml");
         List<MigrationRole> roles = [];
         int id = 1;
         foreach (var def in XElement.Load(path).Elements("WorkRoles.RoleDef"))

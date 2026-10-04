@@ -36,7 +36,7 @@ public class WorkTypeCoverageTests
         // Data guard: the roles we ship must reach every giver-bearing vanilla
         // work type (invisible ones route to Odd Jobs at runtime, but all vanilla
         // types are visible).
-        var path = Path.Combine(RepoRoot(), "mod", "1.6", "Defs", "Roles.xml");
+        var path = ShippedMod.Path("1.6", "Defs", "Roles.xml");
         var catalog = new FakeCatalog();
         foreach (var group in VanillaGiverBaseline.GiverWorkType.GroupBy(kv => kv.Value))
             catalog.WithWorkType(group.Key, group.Select(kv => kv.Key).ToArray());
@@ -96,13 +96,5 @@ public class WorkTypeCoverageTests
         var catalog = new FakeCatalog().WithWorkType("Doctor", "TendPatients");
         var moved = WorkTypeCoverage.MovedGivers([WT("Doctor")], new Dictionary<string, List<string>>(), new Dictionary<string, string> { ["TendPatients"] = "Doctor" }, catalog);
         await Assert.That(moved == null).IsTrue();
-    }
-
-    private static string RepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "mod", "1.6", "Defs")))
-            dir = dir.Parent;
-        return dir!.FullName;
     }
 }

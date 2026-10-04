@@ -31,6 +31,11 @@ namespace RimShared.UiLib
     public static class TabStrip
     {
         public const float TabHeight = 32f;
+
+        /// Active-tab label tint, between TabRecord's normal white and its
+        /// hover yellow. Windows assign it to the selected tab's labelColor.
+        public static readonly Color ActiveLabelColor = new Color(1f, 0.95f, 0.55f);
+
         private const float TabOverlap = 10f;
         private const float MaxTabWidth = 200f;
         private const float TabEndWidth = 30f;

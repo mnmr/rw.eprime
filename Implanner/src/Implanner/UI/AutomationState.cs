@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Implanner.Core;
+using RimShared.UiLib;
 using Verse;
 
 namespace Implanner.UI
@@ -73,7 +74,7 @@ namespace Implanner.UI
     {
         // Cache contract:
         // Owner: the Implanner dialog window.
-        // Key: UiVersion.Current, store identity, and the Options, Surgery
+        // Key: UiRevision.Current, store identity, and the Options, Surgery
         //   and Production store revisions.
         // Value: an immutable snapshot (the master switch, iteration,
         //   doctor-floor and hospitalized flags, manual-floor text,
@@ -83,7 +84,7 @@ namespace Implanner.UI
         // Dependencies: the master switch, iteration, doctor floor and
         //   hospitalized counting (Options), implant reservations
         //   (Surgery), production options and reserves (Production), and
-        //   the implant catalog + language for the row sets (via UiVersion).
+        //   the implant catalog + language for the row sets (via UiRevision).
         // Refresh policy: immediate on the next Current read (from the
         //   dialog's WindowUpdate) after any key component moves.
         // Equality policy: rebuilds replace the snapshot.
@@ -148,7 +149,7 @@ namespace Implanner.UI
         internal AutomationSnapshot Current(ImplannerStore store)
         {
             if (snapshot == null
-                || uiStamp != UiVersion.Current
+                || uiStamp != UiRevision.Current
                 || !ReferenceEquals(owner, store)
                 || optionsStamp != store.OptionsVersion
                 || surgeryStamp != store.SurgeryVersion
@@ -158,7 +159,7 @@ namespace Implanner.UI
                 PruneBuffers(snapshot);
                 ResourceBuffers = SeedBuffers(snapshot.Reserves);
                 ImplantBuffers = SeedBuffers(snapshot.ImplantReserves);
-                uiStamp = UiVersion.Current;
+                uiStamp = UiRevision.Current;
                 owner = store;
                 optionsStamp = store.OptionsVersion;
                 surgeryStamp = store.SurgeryVersion;

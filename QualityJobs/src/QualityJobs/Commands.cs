@@ -326,7 +326,7 @@ namespace QualityJobs
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || productDefName == null || recipeDefName == null)
                 return;
-            Thing? thing = FindSpawnedThing(billGiverThingId);
+            Thing? thing = QualityJobsStore.FindSpawnedThing(billGiverThingId);
             if (thing is not IBillGiver giver || !thing.Spawned
                 || thing.MapHeld == null
                 || thing.MapHeld.uniqueID != mapUniqueId
@@ -536,137 +536,51 @@ namespace QualityJobs
         /// After applying, removes the plan if it becomes fully neutral.
         [SyncMethod]
         public static void SetPlanMinSkill(int thingId, int value)
-        {
-            value = ConfigurationLimits.Skill(value);
-            QualityJobsStore? store = QualityJobsStore.Active;
-            if (store == null) return;
-            ConstructionPlan? plan = store.FindPlanById(thingId);
-            if (plan == null)
-            {
-                if (value == 0) return; // neutral: no plan needed
-                plan = CreateNeutralPlan(store, thingId);
-                if (plan == null) return;
-            }
-            if (plan.minSkill == value) return;
-            plan.minSkill = value;
-            if (!RemoveIfNeutral(store, plan))
-                store.NotifyPlanConfigurationChanged();
-        }
+            => ApplyPlanField(thingId, minSkill: value);
 
         /// Sets the require-inspired flag for the plan identified by thingId.
         /// Implicit creation/removal follows the same pattern as SetPlanMinSkill.
         [SyncMethod]
         public static void SetPlanRequireInspired(int thingId, bool value)
-        {
-            QualityJobsStore? store = QualityJobsStore.Active;
-            if (store == null) return;
-            ConstructionPlan? plan = store.FindPlanById(thingId);
-            if (plan == null)
-            {
-                if (!value) return; // neutral: no plan needed
-                plan = CreateNeutralPlan(store, thingId);
-                if (plan == null) return;
-            }
-            if (plan.requireInspired == value) return;
-            plan.requireInspired = value;
-            if (!RemoveIfNeutral(store, plan))
-                store.NotifyPlanConfigurationChanged();
-        }
+            => ApplyPlanField(thingId, requireInspired: value);
 
         /// Sets the require-specialist flag for the plan identified by thingId.
         /// Implicit creation/removal follows the same pattern as SetPlanMinSkill.
         [SyncMethod]
         public static void SetPlanRequireSpecialist(int thingId, bool value)
-        {
-            value = value && ModsConfig.IdeologyActive;
-            QualityJobsStore? store = QualityJobsStore.Active;
-            if (store == null) return;
-            ConstructionPlan? plan = store.FindPlanById(thingId);
-            if (plan == null)
-            {
-                if (!value) return; // neutral: no plan needed
-                plan = CreateNeutralPlan(store, thingId);
-                if (plan == null) return;
-            }
-            if (plan.requireSpecialist == value) return;
-            plan.requireSpecialist = value;
-            if (!RemoveIfNeutral(store, plan))
-                store.NotifyPlanConfigurationChanged();
-        }
+            => ApplyPlanField(thingId, requireSpecialist: value);
 
         /// Sets the auto-best flag for the plan identified by thingId.
         /// Implicit creation/removal follows the same pattern as SetPlanMinSkill.
         [SyncMethod]
         public static void SetPlanAutoBest(int thingId, bool value)
-        {
-            QualityJobsStore? store = QualityJobsStore.Active;
-            if (store == null) return;
-            ConstructionPlan? plan = store.FindPlanById(thingId);
-            if (plan == null)
-            {
-                if (!value) return; // neutral: no plan needed
-                plan = CreateNeutralPlan(store, thingId);
-                if (plan == null) return;
-            }
-            if (plan.autoBest == value) return;
-            plan.autoBest = value;
-            if (!RemoveIfNeutral(store, plan))
-                store.NotifyPlanConfigurationChanged();
-        }
+            => ApplyPlanField(thingId, autoBest: value);
 
         /// Sets the minimum acceptable quality for the plan identified by thingId.
         /// Implicit creation/removal follows the same pattern as SetPlanMinSkill.
         [SyncMethod]
         public static void SetPlanMinQuality(int thingId, int value)
+            => ApplyPlanField(thingId, minQuality: value);
+
+        /// One-field plan edit shared by the SetPlan* commands. The other four
+        /// options are read here, inside the synced method (neutral when no
+        /// plan exists), never captured in the UI, so concurrent edits of
+        /// different fields do not overwrite each other. store.ApplyPlanSettings
+        /// clamps, coerces specialist off without Ideology, creates the plan
+        /// when needed, and removes it once fully neutral.
+        private static void ApplyPlanField(int thingId, int? minSkill = null,
+            bool? requireInspired = null, bool? requireSpecialist = null,
+            int? minQuality = null, bool? autoBest = null)
         {
-            // Clamp incoming value to [0, 6]: a minQuality > 6 would retry
-            // forever because no quality level (even Legendary = 6) can meet it.
-            value = ConfigurationLimits.Quality(value);
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return;
             ConstructionPlan? plan = store.FindPlanById(thingId);
-            if (plan == null)
-            {
-                if (value == 0) return; // neutral: no plan needed
-                plan = CreateNeutralPlan(store, thingId);
-                if (plan == null) return;
-            }
-            if (plan.minQuality == value) return;
-            plan.minQuality = value;
-            if (!RemoveIfNeutral(store, plan))
-                store.NotifyPlanConfigurationChanged();
-        }
-
-        /// Returns true when the plan has all-neutral values (no active options).
-        private static bool IsNeutral(ConstructionPlan plan)
-            => plan.minSkill == 0 && !plan.requireInspired && !plan.requireSpecialist
-               && plan.minQuality == 0 && !plan.autoBest;
-
-        /// Removes the plan and its Deconstruct designation if it is fully neutral.
-        private static bool RemoveIfNeutral(QualityJobsStore store, ConstructionPlan plan)
-        {
-            if (!IsNeutral(plan)) return false;
-            Dispatcher.RemoveOurDeconstructDesignation(plan);
-            store.RemovePlan(plan);
-            return true;
-        }
-
-        /// Resolves or creates a neutral plan for the given thingId.
-        /// Returns null if the thing cannot be found or is not a Blueprint_Build/Frame.
-        private static ConstructionPlan? CreateNeutralPlan(QualityJobsStore store, int thingId)
-        {
-            Thing? target = FindSpawnedThing(thingId);
-            if (target == null) return null;
-            // SyncMethods are a public replay surface: reject anything that is not
-            // a Blueprint_Build or Frame. Other thing types cannot be gate-managed.
-            if (!(target is Blueprint_Build) && !(target is Frame)) return null;
-            var plan = new ConstructionPlan
-            {
-                target = target,
-                state = ConstructionPlanState.Active,
-            };
-            store.AddPlan(plan);
-            return plan;
+            store.ApplyPlanSettings(thingId,
+                minSkill ?? plan?.minSkill ?? 0,
+                requireInspired ?? plan?.requireInspired ?? false,
+                requireSpecialist ?? plan?.requireSpecialist ?? false,
+                minQuality ?? plan?.minQuality ?? 0,
+                autoBest ?? plan?.autoBest ?? false);
         }
 
         /// Creates or overwrites the plan for the given thingId with the supplied values.
@@ -677,25 +591,12 @@ namespace QualityJobs
         public static void ApplyPlanSettings(int thingId, int minSkill, bool requireInspired,
             bool requireSpecialist, int minQuality, bool autoBest)
         {
-            // Fix 2: synced entry point resolves the store and delegates the
-            // create-or-overwrite-or-remove-if-neutral logic to the non-synced
-            // PlanOps.Apply core (clamping + Ideology coercion live there).
+            // Synced entry point: the store holds the non-synced core that the
+            // blueprint spawn hook also calls directly.
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return;
-            PlanOps.Apply(store, thingId, minSkill, requireInspired, requireSpecialist,
+            store.ApplyPlanSettings(thingId, minSkill, requireInspired, requireSpecialist,
                 minQuality, autoBest);
-        }
-
-        private static Thing? FindSpawnedThing(int thingId)
-        {
-            List<Map> maps = Find.Maps;
-            for (int m = 0; m < maps.Count; m++)
-            {
-                List<Thing> things = maps[m].listerThings.AllThings;
-                for (int i = 0; i < things.Count; i++)
-                    if (things[i].thingIDNumber == thingId) return things[i];
-            }
-            return null;
         }
     }
 }

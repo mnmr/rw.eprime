@@ -676,9 +676,8 @@ namespace QualityJobs
             requireSpecialist = requireSpecialist && ModsConfig.IdeologyActive;
 
             ConstructionPlan? plan = FindPlanById(thingId);
-            bool neutral = minSkill == 0 && !requireInspired
-                && !requireSpecialist && minQuality == 0 && !autoBest;
-            if (neutral)
+            if (ConstructionPlan.IsNeutral(minSkill, requireInspired,
+                    requireSpecialist, minQuality, autoBest))
             {
                 if (plan != null)
                 {
@@ -690,14 +689,8 @@ namespace QualityJobs
 
             if (plan == null)
             {
-                Thing? target = FindSpawnedThing(thingId);
-                if (!(target is Blueprint_Build) && !(target is Frame)) return;
-                plan = new ConstructionPlan
-                {
-                    target = target,
-                    state = ConstructionPlanState.Active,
-                };
-                AddPlan(plan);
+                plan = CreatePlanFor(thingId);
+                if (plan == null) return;
             }
 
             if (plan.minSkill == minSkill
@@ -715,7 +708,24 @@ namespace QualityJobs
             NotifyPlanConfigurationChanged();
         }
 
-        private static Thing? FindSpawnedThing(int thingId)
+        /// The one home of the rule that only blueprints and frames can be
+        /// gate-managed: adds a neutral Active plan for a spawned Blueprint_Build
+        /// or Frame, else returns null. Synced commands are a public replay
+        /// surface, so any other thing id is rejected here.
+        internal ConstructionPlan? CreatePlanFor(int thingId)
+        {
+            Thing? target = FindSpawnedThing(thingId);
+            if (!(target is Blueprint_Build) && !(target is Frame)) return null;
+            var plan = new ConstructionPlan
+            {
+                target = target,
+                state = ConstructionPlanState.Active,
+            };
+            AddPlan(plan);
+            return plan;
+        }
+
+        internal static Thing? FindSpawnedThing(int thingId)
         {
             List<Map> maps = Find.Maps;
             for (int m = 0; m < maps.Count; m++)
@@ -1486,20 +1496,16 @@ namespace QualityJobs
         private static readonly System.Action queueWelcome = QueueWelcome;
         private static readonly System.Action openSettings = OpenSettings;
 
-        /// The welcome dialog appears once per player per save, keyed by the
-        /// world's persistent random value in the per-player settings. Marked
-        /// seen the moment it is queued, so however it is dismissed it never
-        /// returns for this save. LoadedGame and StartedNewGame run on the
-        /// long-event worker thread, so this always runs deferred on the main
-        /// thread. Presentation only: never touches synced state.
+        /// The welcome dialog appears once per player per save
+        /// (`WelcomeDialog.ClaimSave`). LoadedGame and StartedNewGame run on
+        /// the long-event worker thread, so this always runs deferred on the
+        /// main thread. Presentation only: never touches synced state.
         private static void QueueWelcome()
         {
-            RimWorld.Planet.World? world = Find.World;
             QualityJobsSettings? settings = QualityJobsMod.Settings;
-            if (world == null || settings == null) return;
-            string id = world.info.persistentRandomValue.ToString();
-            if (settings.welcomeShownSaves.Contains(id)) return;
-            settings.welcomeShownSaves.Add(id);
+            if (settings == null
+                || !RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves))
+                return;
             QualityJobsMod.Instance.WriteSettings();
             Find.WindowStack?.Add(new RimShared.UiLib.WelcomeDialog(
                 "QJ_WelcomeTitle".Translate(),
@@ -2158,9 +2164,8 @@ namespace QualityJobs
                 plan.minSkill = ConfigurationLimits.Skill(plan.minSkill);
                 plan.minQuality = ConfigurationLimits.Quality(plan.minQuality);
                 if (!ModsConfig.IdeologyActive) plan.requireSpecialist = false;
-                if (plan.minSkill == 0 && !plan.requireInspired
-                    && !plan.requireSpecialist && plan.minQuality == 0
-                    && !plan.autoBest)
+                if (ConstructionPlan.IsNeutral(plan.minSkill, plan.requireInspired,
+                        plan.requireSpecialist, plan.minQuality, plan.autoBest))
                 {
                     Dispatcher.RemoveOurDeconstructDesignation(plan);
                     plans.RemoveAt(i);
