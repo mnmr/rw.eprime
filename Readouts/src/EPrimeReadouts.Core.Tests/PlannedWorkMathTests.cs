@@ -34,6 +34,33 @@ public class PlannedWorkMathTests
             .IsEqualTo(60);
     }
 
+    [Test]
+    public async Task UnreachableQualityBillReservesAtMostAThousandRuns()
+    {
+        // A 0% chance (legendary art past the crafter's reach) used to
+        // saturate at int.MaxValue and show as about -2.1 billion.
+        await Assert.That(PlannedWorkMath.BillDebt(
+                perIterationCost: 50, iterations: 1,
+                expectedAttempts: float.PositiveInfinity))
+            .IsEqualTo(50_000);
+    }
+
+    [Test]
+    public async Task UnreachableQualityBuildReservesAtMostAThousandBuilds()
+    {
+        await Assert.That(PlannedWorkMath.FailedBuildableDebt(
+                fullCost: 100,
+                expectedAttempts: float.PositiveInfinity,
+                returnedFraction: 0f))
+            .IsEqualTo(100_000);
+        // The current attempt plus 999 rebuilds.
+        await Assert.That(PlannedWorkMath.BuildableDebt(
+                outstanding: 60, fullCost: 100,
+                expectedAttempts: float.PositiveInfinity,
+                returnedFraction: 0f))
+            .IsEqualTo(99_960);
+    }
+
     // ---- bill iterations ---------------------------------------------------
 
     [Test]
@@ -123,7 +150,7 @@ public class PlannedWorkMathTests
         await Assert.That(PlannedWorkMath.BillIterations(
             BillRepeat.RepeatCount, repeatCount: int.MaxValue, targetCount: 0,
             produced: 0, yieldPerIteration: 1))
-            .IsEqualTo(PlannedWorkMath.MaxIterationsPerBill);
+            .IsEqualTo(PlannedWorkMath.MaxRunsPerWork);
     }
 
     // ---- bill debt ---------------------------------------------------------

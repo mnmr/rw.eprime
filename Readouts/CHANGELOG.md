@@ -4,6 +4,7 @@
 
 - Changed: Extracted common logic to shared library for easier maintenance.
 - Fixed: Welcome dialogs now wait for any opening dialog to be closed before showing.
+- Fixed: Unreachable Quality Jobs targets no longer make counts overflow (capped at 1000 runs).
 
 ## 1.3.7 — 2026-10-03
 

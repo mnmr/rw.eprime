@@ -67,7 +67,8 @@ namespace EPrimeReadouts.Core
     {
         /// Expected independent attempts until one result is accepted. The
         /// published probability is authoritative; zero means the expected
-        /// material demand is unbounded and downstream debt saturates.
+        /// material demand is unbounded and downstream debt stops at
+        /// <see cref="MaxRunsPerWork"/>.
         public static float ExpectedAttempts(double probability)
         {
             if (probability >= 1.0) return 1f;
@@ -77,10 +78,12 @@ namespace EPrimeReadouts.Core
                 ? float.PositiveInfinity : (float)attempts;
         }
 
-        /// Ceiling on the iterations a single bill may reserve for. A
-        /// do-until-you-have bill with a huge target would otherwise zero every
-        /// counter it touches on the strength of work that will take seasons.
-        public const int MaxIterationsPerBill = 1000;
+        /// Ceiling on the runs one bill or buildable may reserve for, counting
+        /// both iterations and expected quality attempts. A do-until-you-have
+        /// bill with a huge target, or a quality nobody can reach (a 0% chance
+        /// means endless attempts), would otherwise zero every counter it
+        /// touches on the strength of work that will take seasons.
+        public const int MaxRunsPerWork = 1000;
 
         /// Iterations the bill still owes.
         /// <paramref name="produced"/> and <paramref name="yieldPerIteration"/>
@@ -110,8 +113,8 @@ namespace EPrimeReadouts.Core
                     break;
             }
             if (iterations <= 0) return 0;
-            return iterations > MaxIterationsPerBill
-                ? MaxIterationsPerBill : iterations;
+            return iterations > MaxRunsPerWork
+                ? MaxRunsPerWork : iterations;
         }
 
         /// Ingredient debt for one bill and one ingredient def.
@@ -123,8 +126,17 @@ namespace EPrimeReadouts.Core
             int perIterationCost, int iterations, float expectedAttempts)
         {
             if (perIterationCost <= 0 || iterations <= 0) return 0;
-            double attempts = expectedAttempts > 1f ? expectedAttempts : 1f;
-            return CeilToInt((double)perIterationCost * iterations * attempts);
+            double runs = iterations * CappedAttempts(expectedAttempts);
+            if (runs > MaxRunsPerWork) runs = MaxRunsPerWork;
+            return CeilToInt(perIterationCost * runs);
+        }
+
+        /// Expected attempts, at least one and at most the run cap.
+        private static double CappedAttempts(float expectedAttempts)
+        {
+            if (!(expectedAttempts > 1f)) return 1.0;
+            return expectedAttempts > MaxRunsPerWork
+                ? MaxRunsPerWork : expectedAttempts;
         }
 
         /// Allocates a construction-haul stack the way vanilla commits it:
@@ -176,8 +188,7 @@ namespace EPrimeReadouts.Core
         {
             if (outstanding < 0) outstanding = 0;
 
-            double attempts = expectedAttempts > 1f ? expectedAttempts : 1f;
-            double rebuilds = attempts - 1.0;
+            double rebuilds = CappedAttempts(expectedAttempts) - 1.0;
             if (rebuilds <= 0.0 || fullCost <= 0) return outstanding;
 
             double returned = returnedFraction;
@@ -198,7 +209,7 @@ namespace EPrimeReadouts.Core
         {
             if (fullCost <= 0) return 0;
 
-            double attempts = expectedAttempts > 1f ? expectedAttempts : 1f;
+            double attempts = CappedAttempts(expectedAttempts);
             double returned = returnedFraction;
             if (returned < 0.0) returned = 0.0;
             if (returned > 1.0) returned = 1.0;

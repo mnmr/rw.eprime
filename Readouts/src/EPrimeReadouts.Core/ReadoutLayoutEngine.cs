@@ -355,6 +355,18 @@ namespace EPrimeReadouts.Core
                 ResolveDebt(input, defName), input.AllowNegativeCounts);
         }
 
+        /// Pool total, clamped to int range: members deep in debt must never
+        /// wrap the sum around to a positive count.
+        private static int EffectiveSum(LayoutInput input,
+            IReadOnlyList<string> members, bool storageOnly, bool hideForbidden)
+        {
+            long total = 0;
+            for (int i = 0; i < members.Count; i++)
+                total += EffectiveCount(input, members[i], storageOnly, hideForbidden);
+            if (total > int.MaxValue) return int.MaxValue;
+            return total < int.MinValue ? int.MinValue : (int)total;
+        }
+
         private static Band CounterBand(LayoutInput input, string canonical, int count)
         {
             if (count < 0) return Band.Critical;
@@ -414,8 +426,7 @@ namespace EPrimeReadouts.Core
                 members = poolMembers;
                 iconDefName = poolIcon;
                 highlightName = poolName;
-                foreach (var m in members)
-                    sum += EffectiveCount(input, m, storageOnly, hideForbidden);
+                sum = EffectiveSum(input, members, storageOnly, hideForbidden);
                 return true;
             }
             else if (SlotToken.IsPool(token))
@@ -426,8 +437,7 @@ namespace EPrimeReadouts.Core
                 members = cats;
                 iconDefName = members[0];
                 highlightName = null; // use member labels for legacy pools
-                foreach (var m in members)
-                    sum += EffectiveCount(input, m, storageOnly, hideForbidden);
+                sum = EffectiveSum(input, members, storageOnly, hideForbidden);
                 return true;
             }
             else

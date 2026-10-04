@@ -133,6 +133,21 @@ public class LayoutEnginePlannedWorkTests
     }
 
     [Test]
+    public async Task SaturatedMemberDebtsNeverWrapAPoolSumPositive()
+    {
+        // Each member alone is about -2.1 billion; their plain int sum wraps
+        // to +42 and would show a short pool as stocked.
+        var input = Input(Group("#1"), new Dictionary<string, PlannedWorkDebt>
+        {
+            ["Meat_Cow"] = new PlannedWorkDebt(int.MaxValue, 0),
+            ["Meat_Chicken"] = new PlannedWorkDebt(int.MaxValue, 0),
+        }, allowNegative: true);
+        input.Pools = StaticResources.MeatPool();
+        var model = ReadoutLayoutEngine.Build(input);
+        await Assert.That(Counter(model).Count).IsEqualTo(int.MinValue);
+    }
+
+    [Test]
     public async Task ThresholdBandReflectsTheDebtedCount()
     {
         var input = Input(Group("Steel"), Debt("Steel", buildables: 90));
