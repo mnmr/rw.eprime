@@ -111,12 +111,14 @@ namespace WorkRoles.Core.Recs
             string workGiverDefName,
             IReadOnlyList<RoleSkillUseSpec>? usedSkills,
             IReadOnlyList<string>? trainedSkillDefNames,
-            IReadOnlyList<RoleWorkContentSpec>? contents)
+            IReadOnlyList<RoleWorkContentSpec>? contents,
+            IReadOnlyList<string>? relevantSkillDefNames = null)
         {
             WorkGiverDefName = workGiverDefName;
             UsedSkills = usedSkills ?? Array.Empty<RoleSkillUseSpec>();
             TrainedSkillDefNames = trainedSkillDefNames ?? Array.Empty<string>();
             Contents = contents ?? Array.Empty<RoleWorkContentSpec>();
+            RelevantSkillDefNames = relevantSkillDefNames ?? Array.Empty<string>();
         }
 
         public string WorkGiverDefName { get; }
@@ -124,6 +126,9 @@ namespace WorkRoles.Core.Recs
         public IReadOnlyList<string> TrainedSkillDefNames { get; }
         /// Empty for direct givers and givers with no gate-bearing content.
         public IReadOnlyList<RoleWorkContentSpec> Contents { get; }
+        /// The parent work type's declared relevant skills: the primary
+        /// tie-break when a giver's recipes split evenly across skills.
+        public IReadOnlyList<string> RelevantSkillDefNames { get; }
     }
 
     public sealed class RoleWorkCapabilitySpec
@@ -315,8 +320,12 @@ namespace WorkRoles.Core.Recs
                 if (a.WorkGiverDefName != b.WorkGiverDefName
                     || a.UsedSkills.Count != b.UsedSkills.Count
                     || a.TrainedSkillDefNames.Count != b.TrainedSkillDefNames.Count
-                    || a.Contents.Count != b.Contents.Count)
+                    || a.Contents.Count != b.Contents.Count
+                    || a.RelevantSkillDefNames.Count != b.RelevantSkillDefNames.Count)
                     return false;
+                for (int at = 0; at < a.RelevantSkillDefNames.Count; at++)
+                    if (a.RelevantSkillDefNames[at] != b.RelevantSkillDefNames[at])
+                        return false;
                 for (int at = 0; at < a.UsedSkills.Count; at++)
                     if (a.UsedSkills[at].SkillDefName != b.UsedSkills[at].SkillDefName
                         || a.UsedSkills[at].Effects != b.UsedSkills[at].Effects)

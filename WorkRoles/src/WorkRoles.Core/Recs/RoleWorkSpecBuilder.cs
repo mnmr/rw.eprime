@@ -22,6 +22,8 @@ namespace WorkRoles.Core.Recs
             internal int WeightedGivers;
             internal int Importance;
             internal bool Participates;
+            /// Declared relevant by a covered giver's work type.
+            internal bool Relevant;
         }
 
         public static RoleWorkSpec Build(
@@ -293,9 +295,21 @@ namespace WorkRoles.Core.Recs
                             skill.WeightedGivers += weight;
                     }
                     AddGateTotals(giver, bySkill, totals, touched, weight);
+                    MarkRelevant(giver, bySkill);
                 }
             foreach (SkillTotals skill in totals)
                 skill.Participates = skill.WeightedGivers * 2 >= roleWeight;
+        }
+
+        /// Relevance never creates a skill fact; it only tags skills the
+        /// giver already uses, trains, or gates.
+        private static void MarkRelevant(
+            RoleWorkGiverSpec giver, Dictionary<string, SkillTotals> bySkill)
+        {
+            foreach (string relevant in giver.RelevantSkillDefNames)
+                if (relevant != null
+                    && bySkill.TryGetValue(relevant, out SkillTotals skill))
+                    skill.Relevant = true;
         }
 
         /// Composite roles: counts recomputed from the deduplicated giver
@@ -323,6 +337,7 @@ namespace WorkRoles.Core.Recs
                         if (skill != null) skill.TrainedGivers++;
                     }
                     AddGateTotals(giver, bySkill, totals, null, 0);
+                    MarkRelevant(giver, bySkill);
                 }
             foreach (SkillTotals skill in totals)
                 skill.Participates =
@@ -354,11 +369,17 @@ namespace WorkRoles.Core.Recs
             return false;
         }
 
+        /// Importance decides; a tie goes to the skill the covered work type
+        /// declares relevant (a bill giver whose recipes split evenly across
+        /// skills, such as one book per skill, otherwise lands on the
+        /// alphabetical first), then to training, then to name.
         private static bool Better(SkillTotals candidate, SkillTotals? best)
         {
             if (best == null) return true;
             if (candidate.Importance != best.Importance)
                 return candidate.Importance > best.Importance;
+            if (candidate.Relevant != best.Relevant)
+                return candidate.Relevant;
             if (candidate.TrainedGivers != best.TrainedGivers)
                 return candidate.TrainedGivers > best.TrainedGivers;
             return string.CompareOrdinal(
@@ -456,7 +477,8 @@ namespace WorkRoles.Core.Recs
                 giverName,
                 ReadOnly(used),
                 facts.TrainedSkillDefNames,
-                ReadOnly(contents));
+                ReadOnly(contents),
+                facts.RelevantSkillDefNames);
         }
 
         private static RoleWorkEffect CuratedEffectFor(

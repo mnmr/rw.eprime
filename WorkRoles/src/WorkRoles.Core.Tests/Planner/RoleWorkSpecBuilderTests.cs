@@ -116,6 +116,38 @@ public class RoleWorkSpecBuilderTests
     }
 
     [Test]
+    public async Task RecipeSplitTieBreaksToTheWorkTypeRelevantSkill()
+    {
+        // Vanilla Books Expanded: one bill giver whose recipes each carry a
+        // different work skill (one book per skill), under a work type that
+        // declares Intellectual. Every skill ties on importance; the declared
+        // relevant skill must win the tie, not the alphabetical first (Animals).
+        var builder = new WorkRoles.Core.JobProfileIndexBuilder();
+        builder.AddWorkType(1, "VBE_Writing", [new WorkRoles.Core.JobProfileSkillSource(4, "Intellectual")], ["VBE_DoBillsWrite"]);
+        builder.AddGiver("VBE_DoBillsWrite", 1, [new WorkRoles.Core.JobProfileSkillSource(4, "Intellectual")], fixedRecipeUserIds: [1]);
+        string[] subjects = ["Shooting", "Mining", "Animals", "Intellectual"];
+        var recipes = new List<int>();
+        for (int at = 0; at < subjects.Length; at++)
+        {
+            recipes.Add(at + 1);
+            builder.AddRecipe(new WorkRoles.Core.JobProfileRecipeSource(
+                at + 1, null, new WorkRoles.Core.JobProfileSkillSource(at + 1, subjects[at]), 1f, [], $"VBE_Recipe{subjects[at]}"));
+        }
+        builder.AddRecipeUser(1, WorkRoles.Core.JobProfileRecipeUserKind.None, recipes);
+        WorkRoles.Core.JobProfileIndex index = builder.Build();
+
+        RoleWorkSpec spec = RoleWorkSpecBuilder.Build(
+            1, ["VBE_DoBillsWrite"], ["VBE_Writing"], [], _ => "VBE_Writing",
+            new Dictionary<string, int>(), index.Givers, index, null!);
+
+        await Assert.That(spec.PrimarySkillDefName).IsEqualTo("Intellectual");
+        await Assert.That(spec.Skills[0].SkillDefName).IsEqualTo("Intellectual");
+        await Assert.That(spec.Skills.Count).IsEqualTo(4);
+        foreach (RoleSkillFact fact in spec.Skills)
+            await Assert.That(fact.Participates).IsTrue();
+    }
+
+    [Test]
     public async Task CompositeMergePreservesEachMemberParticipatingSkill()
     {
         RoleView farmer = RecsTestBed.Skilled(1, "Growing", "Plants", "Grow");

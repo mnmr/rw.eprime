@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.6.6 — 2026-10-11
+
+- Fixed: Jobs whose bills span many skills (e.g. writing books) now use the job's own skill when recommending colonists.
+
 ## 1.6.5 — 2026-10-04
 
 - Changed: Extracted common logic to shared library for easier maintenance.
