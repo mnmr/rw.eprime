@@ -12,6 +12,12 @@ namespace WorkRoles
 {
     public class RoleStore : WorldComponent
     {
+        // Owner: this store. Keys: stable role/pawn ids; values: mutation-domain
+        // stamps. Dependencies: explicit changed commands/lifecycle events only.
+        // Refresh: immediate, batched commands share one sequence. No-op edits
+        // preserve every stamp. Teardown: ClearCached resets all entries;
+        // role deletion and pawn destruction forget their individual identities.
+        internal readonly ModelRevisions Revisions = new ModelRevisions();
         /// Mutate only via RoleCommands — direct writes bypass cache invalidation.
         public List<Role> roles = new List<Role>();
         /// Mutate only via RoleCommands — direct writes bypass cache invalidation.
@@ -130,7 +136,11 @@ namespace WorkRoles
 
         /// World teardown: drop the reference so the old world graph (pawn and
         /// bill keyed maps) is collectable while the player sits in the menu.
-        internal static void ClearCached() => cached = null;
+        internal static void ClearCached()
+        {
+            cached?.Revisions.Reset();
+            cached = null;
+        }
 
         public int NextId() => nextRoleId++;
 
@@ -313,10 +323,11 @@ namespace WorkRoles
         /// preserve the current projection, remove mod state, dirty vanilla's
         /// cached giver lists, then request UI invalidation. Callers performing a
         /// bulk command may supply a coalescing request action.
-        internal bool UnmanagePawn(Pawn pawn, Action? invalidateUi = null)
+        internal bool UnmanagePawn(Pawn pawn)
         {
             if (pawn == null || !pawnSets.TryGetValue(pawn, out var set)) return false;
-            var requestUiInvalidation = invalidateUi ?? UiVersion.Bump;
+            Action requestUiInvalidation = () =>
+                CompiledJobOrders.InvalidateAssignments(pawn, planChanged: true);
             if (set.assignments.Count == 0)
             {
                 pawnSets.Remove(pawn);

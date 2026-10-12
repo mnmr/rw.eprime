@@ -370,20 +370,17 @@ namespace WorkRoles
     {
         private readonly struct ImportApplyResult
         {
-            internal ImportApplyResult(string summary, bool changed,
-                bool compilationChanged)
+            internal ImportApplyResult(string summary, bool changed)
             {
                 Summary = summary;
                 Changed = changed;
-                CompilationChanged = compilationChanged;
             }
 
             internal string Summary { get; }
             internal bool Changed { get; }
-            internal bool CompilationChanged { get; }
         }
 
-        /// Exact before/after value used only by the explicit import command.
+        /// Exact before/after value used only by explicit import/restore commands.
         /// It prevents a semantically identical import from publishing UI or
         /// compiled-order invalidations; it is not retained as a render cache.
         private sealed class ImportStoreState
@@ -418,13 +415,45 @@ namespace WorkRoles
                 return true;
             }
 
-            internal bool CompilationEquals(ImportStoreState other)
+            internal void PublishChanges(ImportStoreState other)
             {
-                if (roles.Count != other.roles.Count) return false;
-                for (int i = 0; i < roles.Count; i++)
-                    if (!roles[i].CompilationEquals(other.roles[i])) return false;
-                return true;
+                using var batch = RoleStore.Current?.Revisions.Batch();
+                if (!swatches.SequenceEqual(other.swatches) || !swatchNames.SequenceEqual(other.swatchNames))
+                    UiVersion.Changed(ModelDomain.Preferences);
+                if (!recommendationOrder.SequenceEqual(other.recommendationOrder))
+                    UiVersion.Changed(ModelDomain.RecommendationOrder);
+                bool catalogChanged = groups.Count != other.groups.Count || roles.Count != other.roles.Count;
+                for (int i = 0; i < groups.Count && !catalogChanged; i++)
+                    catalogChanged = !groups[i].ContentEquals(other.groups[i]);
+                for (int i = 0; i < roles.Count && !catalogChanged; i++)
+                    catalogChanged = roles[i].Id != other.roles[i].Id;
+                if (catalogChanged) UiVersion.Changed(ModelDomain.Catalog);
+                var prior = roles.ToDictionary(role => role.Id);
+                foreach (var role in other.roles)
+                {
+                    if (!prior.TryGetValue(role.Id, out RoleState before))
+                    {
+                        UiVersion.AggregateChanged(ModelDomain.Catalog | ModelDomain.RoleRecommendation);
+                        if (RoleStore.Current?.RoleById(role.Id)?.templateDefName == "WS_Basics")
+                            CompiledJobOrders.InvalidateRole(role.Id);
+                        continue;
+                    }
+                    ModelDomain changed = before.ChangedDomains(role);
+                    bool compilationChanged = !before.CompilationEquals(role);
+                    if (changed == ModelDomain.None && !compilationChanged) continue;
+                    if (compilationChanged)
+                        CompiledJobOrders.InvalidateRole(role.Id, changed,
+                            memberBlockerChanged: before.BlockerChanged(role),
+                            memberBlockerOnlyCompilationChange: before.CompilationEquals(role, ignoreBlocker: true));
+                    else
+                    {
+                        if ((changed & ModelDomain.RoleWork) != 0)
+                            CompiledJobOrders.InvalidateRoleWorkFacts(role.Id);
+                        UiVersion.RoleChanged(role.Id, changed);
+                    }
+                }
             }
+
         }
 
         private readonly struct GroupState
@@ -446,6 +475,8 @@ namespace WorkRoles
         {
             private readonly int id;
             private readonly string label;
+            private readonly string? iconPath;
+            internal int Id => id;
             private readonly bool enabled;
             private readonly bool hasCustomColor;
             private readonly Color color;
@@ -478,6 +509,7 @@ namespace WorkRoles
             {
                 id = role.id;
                 label = role.label;
+                iconPath = role.iconPath;
                 enabled = role.enabled;
                 hasCustomColor = role.hasCustomColor;
                 color = role.color;
@@ -511,6 +543,7 @@ namespace WorkRoles
             internal bool ContentEquals(RoleState other) =>
                 id == other.id
                 && label == other.label
+                && iconPath == other.iconPath
                 && enabled == other.enabled
                 && hasCustomColor == other.hasCustomColor
                 && color.Equals(other.color)
@@ -539,10 +572,41 @@ namespace WorkRoles
                 && trainingMaxes.SequenceEqual(other.trainingMaxes)
                 && SnapshotContentEquals(other);
 
-            internal bool CompilationEquals(RoleState other) =>
+            internal bool BlockerChanged(RoleState other) => blocker != other.blocker;
+
+            internal ModelDomain ChangedDomains(RoleState other)
+            {
+                ModelDomain changed = ModelDomain.None;
+                if (label != other.label || iconPath != other.iconPath
+                    || hasCustomColor != other.hasCustomColor || !color.Equals(other.color))
+                    changed |= ModelDomain.RolePresentation;
+                if (autoAssign != other.autoAssign) changed |= ModelDomain.RolePresentation;
+                if (groupId != other.groupId) changed |= ModelDomain.Catalog;
+                if (enabled != other.enabled) changed |= ModelDomain.RoleActivation;
+                if (activeHours != other.activeHours || !locationTokens.SequenceEqual(other.locationTokens))
+                    changed |= ModelDomain.RoleRules;
+                if (composite != other.composite || !entries.SequenceEqual(other.entries)
+                    || !memberRoleIds.SequenceEqual(other.memberRoleIds)
+                    || !requiredSkills.SequenceEqual(other.requiredSkills)
+                    || (composite && blocker != other.blocker))
+                    changed |= ModelDomain.RoleWork | ModelDomain.RoleCapability;
+                if (!SnapshotContentEquals(other)) changed |= ModelDomain.RoleHistory;
+                if (blocker != other.blocker) changed |= ModelDomain.RoleCapability;
+                if (partialCapability != other.partialCapability || minAge != other.minAge || maxAge != other.maxAge
+                    || !trainingRoleIds.SequenceEqual(other.trainingRoleIds)
+                    || !trainingMins.SequenceEqual(other.trainingMins) || !trainingMaxes.SequenceEqual(other.trainingMaxes))
+                    changed |= ModelDomain.RoleCapability | ModelDomain.RoleRecommendation;
+                if (blocker != other.blocker || templateDefName != other.templateDefName
+                    || autoAssign != other.autoAssign || category != other.category || time != other.time
+                    || championPenalty != other.championPenalty || colonyMin != other.colonyMin || coverage != other.coverage)
+                    changed |= ModelDomain.RoleRecommendation;
+                return changed;
+            }
+
+            internal bool CompilationEquals(RoleState other, bool ignoreBlocker = false) =>
                 id == other.id
                 && enabled == other.enabled
-                && blocker == other.blocker
+                && (ignoreBlocker || blocker == other.blocker)
                 && activeHours == other.activeHours
                 && composite == other.composite
                 && locationTokens.SequenceEqual(other.locationTokens)
@@ -822,7 +886,7 @@ namespace WorkRoles
                 foreach (var role in store.roles)
                     store.SanitizeCompositeMembers(role);
                 RoleCommands.SweepEmptyGroups();
-                Seeding.RefreshWorkTypeSnapshots();
+                Seeding.RefreshWorkTypeSnapshots(publishChanges: false);
                 store.MigrateRoleTuning();
             }
 
@@ -876,11 +940,11 @@ namespace WorkRoles
             EnforcePaletteCoverage(store);
 
             var after = new ImportStoreState(store);
+            before.PublishChanges(after);
             return new ImportApplyResult(
                 "WR_ImportSummary".Translate(
                     added, updated, deleted, paletteChanges, pathsAdded),
-                !before.ContentEquals(after),
-                !before.CompilationEquals(after));
+                !before.ContentEquals(after));
         }
 
         /// The unique highest-band-minimum entry of a legacy path; -1 on ties.

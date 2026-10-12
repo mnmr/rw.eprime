@@ -19,7 +19,7 @@ namespace RimShared.GameLib
             CompiledJobOrders.InvalidateLocationRules(map);
 
         // A map entering or leaving changes the scope filter's settlement
-        // membership; window scope stamps key on UiVersion.Current.
-        static partial void OnMapSetChanged() => UiVersion.Bump();
+        // membership; window scope stamps observe the roster revision.
+        static partial void OnMapSetChanged() => UiVersion.RosterChanged();
     }
 }

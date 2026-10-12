@@ -20,12 +20,12 @@ namespace WorkRoles.UI
     }
 
     /// Per-pawn activity cache re-resolved when ActivityTracker's live-activity
-    /// revision moves, UiVersion or definition reload changes the compiled role
+    /// revision moves, per-pawn RuntimeRules or definition reload changes the compiled role
     /// claiming the same running job, or the owning RoleStore changes.
     internal sealed class ActivityState
     {
         // Owner: Colonists window. Key: RoleStore and Pawn reference identity,
-        // activity revision, UiVersion, and definition revision. Value:
+        // activity revision, RuntimeForPawn, and definition revision. Value:
         // detached ActivitySnapshot.
         // Dependencies: job/draft/mental transitions plus compiled claiming-role
         // changes.
@@ -42,7 +42,7 @@ namespace WorkRoles.UI
         {
             if (pawn == null) return new ActivitySnapshot(-1, "");
             return For(pawn, ActivityTracker.RevisionOf(pawn),
-                UiVersion.Current, DefinitionReloadCoordinator.Revision,
+                UiVersion.RuntimeForPawn(pawn), DefinitionReloadCoordinator.Revision,
                 RoleStore.Current);
         }
 

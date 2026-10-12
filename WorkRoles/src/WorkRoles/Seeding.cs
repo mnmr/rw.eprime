@@ -582,12 +582,17 @@ namespace WorkRoles
         /// seen under a role's work-type entries, so jobs a mod later moves to a
         /// different work type stay in the role (compile-time expansion in
         /// CompiledJobOrders via JobOrderCompiler.WithMovedSnapshotGivers).
-        public static void RefreshWorkTypeSnapshots()
+        public static void RefreshWorkTypeSnapshots() =>
+            RefreshWorkTypeSnapshots(publishChanges: true);
+
+        internal static void RefreshWorkTypeSnapshots(bool publishChanges)
         {
             var store = RoleStore.Current;
             if (store == null) return;
-            bool changed = false;
+            using var batch = store.Revisions.Batch();
             foreach (var role in store.roles)
+            {
+                bool changed = false;
                 foreach (var entry in role.entries)
                 {
                     if (entry.Kind != JobEntryKind.WorkType) continue;
@@ -600,7 +605,9 @@ namespace WorkRoles
                             changed = true;
                         }
                 }
-            if (changed) CompiledJobOrders.InvalidateAll();
+                if (changed && publishChanges)
+                    CompiledJobOrders.InvalidateRole(role.id, ModelDomain.RoleHistory);
+            }
         }
 
         /// Coverage math lives in Core (WorkTypeCoverage) with tests.
@@ -969,7 +976,9 @@ namespace WorkRoles
                     (touched ??= new List<Pawn>()).Add(pawn);
                 }
             }
-            if (touched != null) CompiledJobOrders.InvalidateBatch(touched);
+            if (touched != null)
+                foreach (var pawn in touched)
+                    CompiledJobOrders.InvalidateAssignments(pawn, planChanged: true);
         }
 
         /// Position of the first still-assigned prior role whose old coverage
@@ -1041,7 +1050,7 @@ namespace WorkRoles
                         known.AddRange(kv.Value);
                     }
                     result.Add("WR_RestoreMovedJobs".Translate(role.label, moved.Sum(kv => kv.Value.Count)));
-                    CompiledJobOrders.InvalidateRole(roleId);
+                    CompiledJobOrders.InvalidateRole(roleId, ModelDomain.RoleHistory);
                 }
 
             if (selection.entriesRoleIds != null && selection.entriesRoleIds.Count > 0)
@@ -1058,7 +1067,7 @@ namespace WorkRoles
                     result.Add("WR_RestoreJobsItem".Translate(role.label));
                     CompiledJobOrders.InvalidateRole(roleId);
                 }
-                RefreshWorkTypeSnapshots();
+                RefreshWorkTypeSnapshots(publishChanges: false);
             }
 
             if (selection.paletteSnapRoleIds != null)

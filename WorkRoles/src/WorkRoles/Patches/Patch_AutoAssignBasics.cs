@@ -9,26 +9,13 @@ namespace WorkRoles.Patches
     [HarmonyPatch(typeof(Pawn), nameof(Pawn.SetFaction))]
     public static class Patch_Pawn_SetFaction
     {
-        private readonly struct TransitionState
-        {
-            internal TransitionState(bool wasColonyMember, int uiRevision)
-            {
-                WasColonyMember = wasColonyMember;
-                UiRevision = uiRevision;
-            }
-
-            internal bool WasColonyMember { get; }
-            internal int UiRevision { get; }
-        }
-
         private static bool IsColonyMember(Pawn pawn) =>
             pawn?.IsColonist == true || pawn?.IsSlaveOfColony == true;
 
-        private static void Prefix(Pawn __instance, out TransitionState __state) =>
-            __state = new TransitionState(
-                IsColonyMember(__instance), UiVersion.Current);
+        private static void Prefix(Pawn __instance, out bool __state) =>
+            __state = IsColonyMember(__instance);
 
-        private static void Postfix(Pawn __instance, TransitionState __state)
+        private static void Postfix(Pawn __instance, bool __state)
         {
             var store = RoleStore.Current;
             if (store != null)
@@ -39,14 +26,12 @@ namespace WorkRoles.Patches
                     Seeding.TryAutoAssignBasics(__instance);
             }
 
-            // Role removal/auto-assignment normally invalidates the UI itself.
-            // A roleless joiner or leaver changes roster membership without
-            // touching role state, so provide exactly one fallback bump.
-            if (__state.WasColonyMember != IsColonyMember(__instance))
+            // Roster membership is independent of assignment changes, including
+            // roleless joiners/leavers and newly auto-assigned colonists.
+            if (__state != IsColonyMember(__instance))
             {
                 ExternalPawnFacts.Invalidate(__instance);
-                if (UiVersion.Current == __state.UiRevision)
-                    UiVersion.Bump();
+                UiVersion.RosterChanged();
             }
         }
     }

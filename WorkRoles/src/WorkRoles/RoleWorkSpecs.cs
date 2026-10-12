@@ -6,34 +6,21 @@ using WorkRoles.Core.Recs;
 
 namespace WorkRoles
 {
-    /// Narrow revision for role work facts. Advances only when a command
-    /// changes data the work-spec catalog consumes: coverage entries,
-    /// work-type snapshots, composite membership (via the InvalidateRole
-    /// composite reverse scan reaching Role.InvalidateCoverage), and
-    /// assignment skill gates. No-op commands do not advance it.
-    internal static class RoleWorkRevision
-    {
-        internal static int Current { get; private set; }
-
-        internal static void Bump()
-        {
-            unchecked { Current++; }
-        }
-    }
-
     /// Single shared producer of full-fidelity RoleWorkSpecs for UI and
     /// adapter consumers. Plan builds derive their exclusion-adjusted specs
     /// from the same Core builder inside RecommendationCatalogBuilder.
     /// The contract mechanics (owner partition, revision and index stamps,
     /// equal-rebuild identity, teardown) live in Core's RoleWorkSpecCache so
     /// they run under the executable test suite; this wrapper supplies the
-    /// live inputs: RoleStore.Current as owner, RoleWorkRevision.Current,
+    /// live inputs: RoleStore.Current as owner, each role's work revision,
     /// and the JobProfileIndex snapshot identity (definition reloads replace
     /// it through JobSkillProfiles.InvalidateDefinitions). Language is
     /// deliberately not a dependency: specs hold invariant names only.
     internal static class RoleWorkSpecs
     {
         private static readonly RoleWorkSpecCache Cache = new RoleWorkSpecCache();
+        private static readonly Func<Role, RoleWorkSpec> BuildSpec = Build;
+        internal static void Remove(int roleId) => Cache.Remove(roleId);
         private static JobProfileIndex? prioritiesIndex;
         private static Dictionary<string, int>? naturalPriorities;
 
@@ -52,9 +39,9 @@ namespace WorkRoles
             return Cache.For(
                 role.id,
                 store,
-                RoleWorkRevision.Current,
+                UiVersion.WorkForRole(role.id),
                 JobSkillProfiles.RecommendationIndex(),
-                () => Build(role));
+                role, BuildSpec);
         }
 
         private static RoleWorkSpec Build(Role role)

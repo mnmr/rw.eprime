@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Verse;
@@ -120,7 +120,7 @@ namespace WorkRoles
 
         /// Expanded job coverage — the nesting/redundancy identity, independent of
         /// how the entries spell it. Cached; entry edits invalidate through
-        /// CompiledJobOrders.InvalidateRole/InvalidateAll (member edits reach a
+        /// work-domain invalidation in CompiledJobOrders (member edits reach a
         /// composite via that command's composite reverse scan). A composite's
         /// coverage is the union of its members' coverage; a blocker member
         /// contributes nothing (its jobs are vetoes) unless the composite itself
@@ -149,9 +149,7 @@ namespace WorkRoles
             primarySkillCache = null;
             primarySkillCached = false;
             fullyUnlocksAtAgeCache = -1;
-            // Coverage-affecting edits (entries, snapshots, composite member
-            // edits via the reverse scan) are exactly the work-spec inputs.
-            RoleWorkRevision.Bump();
+
         }
 
         /// True when this role's coverage strictly includes other's (equal

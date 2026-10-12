@@ -3,76 +3,43 @@ using System.Collections.Generic;
 
 namespace WorkRoles.Core.Recs
 {
-    /// Identity-preserving per-role spec cache. The game-side catalog
-    /// supplies the owner token (RoleStore), the narrow role-work revision,
-    /// the job-profile index identity, and the builder; this class owns the
-    /// contract mechanics so they are executable without the game runtime.
-    ///
-    /// - Owner: the caller-supplied owner token; an owner change drops every
-    ///   previous entry (no identity crosses stores).
-    /// - Key: stable role id within the current stamp.
-    /// - Value: one immutable RoleWorkSpec per role.
-    /// - Dependencies: the revision and the index identity; either change
-    ///   invalidates the whole generation.
-    /// - Refresh: immediate on the first read after a stamp change.
-    /// - Equality: an equal rebuild republishes the previous instance
-    ///   (RoleWorkSpec.StructurallyEqual).
-    /// - Teardown: Reset clears entries and identity seeds; idempotent.
+    /// Owner: supplied store identity. Key: role id within that store.
+    /// Value: immutable RoleWorkSpec. Dependencies: that role's work revision
+    /// and the definition-index identity. Refresh: immediate on the next read.
+    /// Equality: equal rebuilt contents preserve the previous spec identity.
+    /// Teardown: Remove drops deleted roles; Reset/owner replacement clears all.
     public sealed class RoleWorkSpecCache
     {
+        private sealed class Entry
+        {
+            internal int Revision;
+            internal object Index = null!;
+            internal RoleWorkSpec Spec = null!;
+        }
         private object? owner;
-        private int builtRevision = int.MinValue;
-        private object? builtIndex;
-        private Dictionary<int, RoleWorkSpec> specs =
-            new Dictionary<int, RoleWorkSpec>();
-        private Dictionary<int, RoleWorkSpec> previous =
-            new Dictionary<int, RoleWorkSpec>();
+        private readonly Dictionary<int, Entry> specs = new Dictionary<int, Entry>();
+        public void Reset() { owner = null; specs.Clear(); }
+        public void Remove(int roleId) => specs.Remove(roleId);
+        public RoleWorkSpec For(int roleId, object currentOwner, int revision,
+            object index, Func<RoleWorkSpec> build) =>
+            For(roleId, currentOwner, revision, index, build, InvokeFactory);
+        private static readonly Func<Func<RoleWorkSpec>, RoleWorkSpec> InvokeFactory = build => build();
 
-        public void Reset()
+        /// Passing a context plus a cached static builder avoids a capturing
+        /// factory allocation on every cache hit. Recursive member builds work
+        /// because publication happens only after the builder returns.
+        public RoleWorkSpec For<T>(int roleId, object currentOwner, int revision,
+            object index, T context, Func<T, RoleWorkSpec> build)
         {
-            owner = null;
-            builtRevision = int.MinValue;
-            builtIndex = null;
-            specs.Clear();
-            previous.Clear();
-        }
-
-        /// Builders may recurse into For for member roles: entries publish
-        /// after the recursive build completes, within one stamp generation.
-        public RoleWorkSpec For(
-            int roleId,
-            object currentOwner,
-            int revision,
-            object index,
-            Func<RoleWorkSpec> build)
-        {
-            EnsureCurrent(currentOwner, revision, index);
-            if (specs.TryGetValue(roleId, out RoleWorkSpec cached))
-                return cached;
-            RoleWorkSpec built = build?.Invoke() ?? RoleWorkSpec.Empty;
-            if (previous.TryGetValue(roleId, out RoleWorkSpec prior)
-                && RoleWorkSpec.StructurallyEqual(prior, built))
-                built = prior;
-            specs[roleId] = built;
+            if (!ReferenceEquals(owner, currentOwner))
+            { specs.Clear(); owner = currentOwner; }
+            if (specs.TryGetValue(roleId, out Entry entry)
+                && entry.Revision == revision && ReferenceEquals(entry.Index, index))
+                return entry.Spec;
+            RoleWorkSpec built = build(context) ?? RoleWorkSpec.Empty;
+            if (entry != null && RoleWorkSpec.StructurallyEqual(entry.Spec, built)) built = entry.Spec;
+            specs[roleId] = new Entry { Revision = revision, Index = index, Spec = built };
             return built;
-        }
-
-        private void EnsureCurrent(
-            object currentOwner, int revision, object index)
-        {
-            if (ReferenceEquals(owner, currentOwner)
-                && builtRevision == revision
-                && ReferenceEquals(builtIndex, index))
-                return;
-            // The previous owner's entries never seed identity preservation;
-            // within one owner the last generation does.
-            previous = ReferenceEquals(owner, currentOwner)
-                ? specs
-                : new Dictionary<int, RoleWorkSpec>();
-            specs = new Dictionary<int, RoleWorkSpec>();
-            owner = currentOwner;
-            builtRevision = revision;
-            builtIndex = index;
         }
     }
 }

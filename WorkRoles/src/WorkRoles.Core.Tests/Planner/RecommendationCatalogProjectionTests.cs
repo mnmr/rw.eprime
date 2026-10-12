@@ -9,6 +9,59 @@ namespace WorkRoles.Core.Tests.Planner;
 public class RecommendationCatalogProjectionTests
 {
     [Test]
+    public async Task ActivationChangesRetainTrainingAndCompositeSpecsAndSwitchSpecialFallbacks()
+    {
+        var jobs = new FakeCatalog().WithWorkType("Crafting", "MakeDrug")
+            .WithWorkType("Art", "MakeArt").WithWorkType("Hunting", "Hunt");
+        var general = new RecommendationRoleSource { Id = 1, Entries = [new(JobEntryKind.WorkGiver, "MakeDrug"), new(JobEntryKind.WorkGiver, "MakeArt")] };
+        var maker = new RecommendationRoleSource { Id = 2, Entries = [new(JobEntryKind.WorkGiver, "MakeDrug")] };
+        var composite = new RecommendationRoleSource { Id = 3, MemberRoleIds = [1, 2] };
+        var preferred = new RecommendationRoleSource { Id = 4, SpecialRole = RecommendationSpecialRoleKind.Hunter, Entries = [new(JobEntryKind.WorkType, "Hunting")] };
+        var fallback = new RecommendationRoleSource { Id = 5, Entries = [new(JobEntryKind.WorkType, "Hunting")] };
+        RecommendationCatalogProjection original = RecommendationCatalogBuilder.Build(
+            [general, maker, composite, preferred, fallback], [RecsTestBed.Path(2, (1, 0, 12), (2, 12, 21))],
+            jobs, new Dictionary<string, int> { ["Crafting"] = 400, ["Art"] = 430, ["Hunting"] = 950 }, Profiles());
+
+        RecommendationCatalogProjection changed = original.WithActivation([true, false, true, false, true]);
+
+        await Assert.That(changed.Roles[1].Enabled).IsFalse();
+        await Assert.That(original.Roles[1].Enabled).IsTrue();
+        await Assert.That(changed.HunterRoleId).IsEqualTo(5);
+        for (int index = 0; index < original.Roles.Count; index++)
+            await Assert.That(ReferenceEquals(original.Roles[index].WorkSpec, changed.Roles[index].WorkSpec)).IsTrue();
+        await Assert.That(ReferenceEquals(original.Roles[0], changed.Roles[0])).IsTrue();
+        await Assert.That(ReferenceEquals(original.Paths, changed.Paths)).IsTrue();
+        await Assert.That(ReferenceEquals(changed, changed.WithActivation([true, false, true, false, true]))).IsTrue();
+    }
+
+    [Test]
+    public async Task SharedFullWorkSpecsAreReusedUntilTrainingExclusionNeedsADifferentProjection()
+    {
+        var jobs = new FakeCatalog().WithWorkType("Crafting", "MakeDrug").WithWorkType("Art", "MakeArt");
+        JobProfileIndex profiles = Profiles();
+        var priorities = new Dictionary<string, int> { ["Crafting"] = 400, ["Art"] = 430 };
+        var general = new RecommendationRoleSource { Id = 1, Entries = [new JobEntry(JobEntryKind.WorkGiver, "MakeDrug"), new JobEntry(JobEntryKind.WorkGiver, "MakeArt")] };
+        var drugMaker = new RecommendationRoleSource { Id = 2, Entries = [new JobEntry(JobEntryKind.WorkGiver, "MakeDrug")] };
+        RecommendationCatalogProjection full = RecommendationCatalogBuilder.Build(
+            [general, drugMaker], [], jobs, priorities, profiles);
+        general.FullWorkSpec = full.Roles[0].WorkSpec;
+        drugMaker.FullWorkSpec = full.Roles[1].WorkSpec;
+
+        RecommendationCatalogProjection reused = RecommendationCatalogBuilder.Build(
+            [general, drugMaker], [], jobs, priorities, profiles);
+        await Assert.That(ReferenceEquals(full.Roles[0].WorkSpec, reused.Roles[0].WorkSpec)).IsTrue();
+        await Assert.That(ReferenceEquals(full.Roles[1].WorkSpec, reused.Roles[1].WorkSpec)).IsTrue();
+
+        RecommendationCatalogProjection training = RecommendationCatalogBuilder.Build(
+            [general, drugMaker], [RecsTestBed.Path(2, (1, 0, 12), (2, 12, 21))],
+            jobs, priorities, profiles);
+        await Assert.That(ReferenceEquals(full.Roles[1].WorkSpec, training.Roles[1].WorkSpec)).IsTrue();
+        await Assert.That(ReferenceEquals(full.Roles[0].WorkSpec, training.Roles[0].WorkSpec)).IsFalse();
+        await Assert.That(training.Roles[0].Skills.Select(skill => skill.SkillDefName)).IsEquivalentTo(["Artistic"]);
+        await Assert.That(full.Roles[0].Skills.Select(skill => skill.SkillDefName)).IsEquivalentTo(["Crafting", "Artistic"]);
+    }
+
+    [Test]
     public async Task TrainingTargetCoverageDoesNotSupplyTheTrainerSkillProfile()
     {
         var jobs = new FakeCatalog().WithWorkType("Crafting", "MakeDrug").WithWorkType("Art", "MakeArt");

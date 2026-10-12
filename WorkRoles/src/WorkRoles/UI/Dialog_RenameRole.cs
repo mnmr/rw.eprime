@@ -49,6 +49,12 @@ namespace WorkRoles.UI
         private string name;
         private string? validatedName;
         private string trimmedName = "";
+        // Owner: dialog. Key: store identity, input text and role/group name
+        // catalog. Value: normalized name and immutable validation flags.
+        // Dependencies: Catalog; role mode also RolePresentation. Refresh:
+        // immediate on key changes or submit. Equality: unchanged keys reuse
+        // flags/string. Teardown: PostClose releases the retained store/input.
+        private RoleStore? validationOwner;
         private int validationRevision = int.MinValue;
         private bool nameTaken;
         private bool nameValid;
@@ -177,16 +183,28 @@ namespace WorkRoles.UI
 
         private void EnsureValidation(bool force = false)
         {
-            int revision = UiVersion.Current;
+            RoleStore? owner = RoleStore.Current;
+            int revision = exceptGroupId >= 0 ? UiVersion.Catalog
+                : Math.Max(UiVersion.Catalog, UiVersion.RolePresentation);
             if (!force && validationRevision == revision
+                && ReferenceEquals(validationOwner, owner)
                 && string.Equals(validatedName, name, StringComparison.Ordinal)) return;
 
             validatedName = name;
+            validationOwner = owner;
             validationRevision = revision;
             trimmedName = (name ?? "").Trim();
             bool hasName = !trimmedName.NullOrEmpty();
             nameTaken = hasName && requireUniqueName && IsNameTaken(trimmedName);
             nameValid = hasName && !nameTaken;
+        }
+
+        public override void PostClose()
+        {
+            validationOwner = null;
+            validatedName = null;
+            validationRevision = int.MinValue;
+            base.PostClose();
         }
 
         private bool TryApply()

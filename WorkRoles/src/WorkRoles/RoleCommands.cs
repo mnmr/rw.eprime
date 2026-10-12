@@ -41,7 +41,7 @@ namespace WorkRoles
                 minAge = 0,
             });
             Store.InvalidateRoleIndex();
-            UiVersion.Bump();
+            UiVersion.AggregateChanged(ModelDomain.Catalog | ModelDomain.RoleRecommendation);
         }
 
         /// Flips a role between regular and composite. The replaced content is
@@ -54,11 +54,13 @@ namespace WorkRoles
             var role = FindRole(roleId);
             if (role == null || role.composite == value
                 || Store.IsCompositeMember(roleId)) return;
+            bool historyChanged = role.workTypeSnapshots.Count > 0;
             role.composite = value;
             role.entries.Clear();
             role.memberRoleIds.Clear();
             role.workTypeSnapshots.Clear();
-            CompiledJobOrders.InvalidateRole(roleId);
+            CompiledJobOrders.InvalidateRole(roleId, ModelDomain.RoleWork | ModelDomain.RoleCapability
+                | (historyChanged ? ModelDomain.RoleHistory : ModelDomain.None));
             ReconcileHolders(roleId);
         }
 
@@ -116,6 +118,7 @@ namespace WorkRoles
             }
             Store.roles.Add(role);
             Store.InvalidateRoleIndex();
+            UiVersion.AggregateChanged(ModelDomain.Catalog | ModelDomain.RoleRecommendation);
             if (role.templateDefName == "WS_Basics")
                 CompiledJobOrders.InvalidateRole(role.id);
             return role;
@@ -136,15 +139,13 @@ namespace WorkRoles
             if (doc.error != null) return;
             var resolvedLocations = ImportLocationResolver.BuildMap(
                 selection.locationFileTokens, selection.locationRuntimeTokens);
+            using var batch = Store.Revisions.Batch();
             ImportApplyResult result = ApplyImportToStore(Store, doc,
                 selection.palette, selection.paletteOverwrite, selection.paletteRows,
                 selection.roles, selection.rolesOverwrite, selection.roleRows,
                 selection.paths, selection.pathsOverwrite, selection.pathRows,
                 selection.order, resolvedLocations);
             if (!result.Changed) return;
-            if (result.CompilationChanged)
-                CompiledJobOrders.InvalidateAll();
-            UiVersion.Bump();
             UI.WrToast.Show(result.Summary, MessageTypeDefOf.PositiveEvent);
         }
 
@@ -157,9 +158,11 @@ namespace WorkRoles
         public static void RestoreSelected(RestoreSelection selection)
         {
             if (Store == null || selection == null) return;
+            using var batch = Store.Revisions.Batch();
+            var before = new ImportStoreState(Store);
             var restored = Seeding.RestoreSelected(selection);
+            before.PublishChanges(new ImportStoreState(Store));
             if (restored.Count == 0) return;
-            UiVersion.Bump();
             UI.WrToast.Show("WR_RolesRestored".Translate(restored.ToCommaList()),
                 MessageTypeDefOf.PositiveEvent);
         }
@@ -194,7 +197,7 @@ namespace WorkRoles
         {
             if (Store == null || Store.rolePriorityEmergencyRule == value) return;
             Store.rolePriorityEmergencyRule = value;
-            CompiledJobOrders.InvalidateAll();
+            CompiledJobOrders.InvalidateRuntimeAll();
         }
 
         /// Hourly automatic Fix My Colony on or off (AutoOptimizer).
@@ -214,7 +217,7 @@ namespace WorkRoles
             if (TrainingPathMutationPolicy.IntSequenceEqual(
                     Store.recommendationOrder, roleIds)) return;
             Store.recommendationOrder = roleIds ?? new List<int>();
-            UiVersion.Bump();
+            UiVersion.Changed(ModelDomain.RecommendationOrder);
         }
 
         /// One shared recommendation-formula edit. The option id is synced as
@@ -255,7 +258,7 @@ namespace WorkRoles
         }
 
         /// Per-role recommendation tuning. Enums travel as primitive ints for
-        /// sync safety; UiVersion is the domain.
+        /// sync safety; each edit publishes only its consumed model domains.
         [SyncMethod]
         public static void SetRoleCategory(int roleId, int category)
         {
@@ -263,7 +266,7 @@ namespace WorkRoles
             if (role == null || !System.Enum.IsDefined(typeof(RoleCategory), category)
                 || role.category == (RoleCategory)category) return;
             role.category = (RoleCategory)category;
-            UiVersion.Bump();
+            UiVersion.RoleChanged(roleId, ModelDomain.RoleRecommendation);
         }
 
         [SyncMethod]
@@ -273,7 +276,7 @@ namespace WorkRoles
             if (role == null || !System.Enum.IsDefined(typeof(RoleTime), time)
                 || role.time == (RoleTime)time) return;
             role.time = (RoleTime)time;
-            UiVersion.Bump();
+            UiVersion.RoleChanged(roleId, ModelDomain.RoleRecommendation);
         }
 
         [SyncMethod]
@@ -282,7 +285,7 @@ namespace WorkRoles
             var role = FindRole(roleId);
             if (role == null || role.championPenalty == value) return;
             role.championPenalty = value;
-            UiVersion.Bump();
+            UiVersion.RoleChanged(roleId, ModelDomain.RoleRecommendation);
         }
 
         [SyncMethod]
@@ -291,7 +294,7 @@ namespace WorkRoles
             var role = FindRole(roleId);
             if (role == null || role.partialCapability == value) return;
             role.partialCapability = value;
-            UiVersion.Bump();
+            UiVersion.RoleChanged(roleId, ModelDomain.RoleCapability | ModelDomain.RoleRecommendation);
         }
 
         /// Both age gates in one synced command: a band click can move both.
@@ -305,7 +308,7 @@ namespace WorkRoles
                 || (role.minAge == minValue && role.maxAge == maxValue)) return;
             role.minAge = minValue;
             role.maxAge = maxValue;
-            UiVersion.Bump();
+            UiVersion.RoleChanged(roleId, ModelDomain.RoleCapability | ModelDomain.RoleRecommendation);
         }
 
         /// Assignment scaling inputs (future scale replacement).
@@ -316,7 +319,7 @@ namespace WorkRoles
             value = UnityEngine.Mathf.Clamp(value, 0, 30);
             if (role == null || role.colonyMin == value) return;
             role.colonyMin = value;
-            UiVersion.Bump();
+            UiVersion.RoleChanged(roleId, ModelDomain.RoleRecommendation);
         }
 
         [SyncMethod]
@@ -326,7 +329,7 @@ namespace WorkRoles
             value = UnityEngine.Mathf.Clamp(value, 0, 100);
             if (role == null || role.coverage == value) return;
             role.coverage = value;
-            UiVersion.Bump();
+            UiVersion.RoleChanged(roleId, ModelDomain.RoleRecommendation);
         }
 
         [SyncMethod]
@@ -338,8 +341,7 @@ namespace WorkRoles
             if (role.requiredSkills.Contains(skillDefName)) return;
             role.skillGatesSeeded = true;
             role.requiredSkills.Add(skillDefName);
-            RoleWorkRevision.Bump();
-            UiVersion.Bump();
+            CompiledJobOrders.InvalidateRoleWorkFacts(roleId);
         }
 
         [SyncMethod]
@@ -348,8 +350,7 @@ namespace WorkRoles
             var role = FindRole(roleId);
             if (role == null || skillDefName.NullOrEmpty()) return;
             if (!role.requiredSkills.Remove(skillDefName)) return;
-            RoleWorkRevision.Bump();
-            UiVersion.Bump();
+            CompiledJobOrders.InvalidateRoleWorkFacts(roleId);
         }
 
         /// Whole-list upsert of a role's own training path. Hard validation: a
@@ -395,7 +396,7 @@ namespace WorkRoles
             role.trainingRoleIds = trainingRoleIds;
             role.trainingMins = trainingRoleIds.Count == 0 ? new List<int>() : bandMins;
             role.trainingMaxes = trainingRoleIds.Count == 0 ? new List<int>() : bandMaxes;
-            UiVersion.Bump();
+            UiVersion.RoleChanged(roleId, ModelDomain.RoleRecommendation | ModelDomain.RoleCapability);
         }
 
         /// Toggles blocker semantics: the role's jobs become vetoes (or stop being).
@@ -408,7 +409,8 @@ namespace WorkRoles
             if (role == null || role.blocker == value
                 || Store.IsCompositeMember(roleId)) return;
             role.blocker = value;
-            CompiledJobOrders.InvalidateRole(roleId);
+            CompiledJobOrders.InvalidateRole(roleId, ModelDomain.RoleRecommendation | ModelDomain.RoleCapability
+                | (role.composite ? ModelDomain.RoleWork : ModelDomain.None));
             ReconcileHolders(roleId);
         }
 
@@ -417,7 +419,7 @@ namespace WorkRoles
         {
             var role = FindRole(roleId);
             if (role == null) return;
-            using var uiBatch = new UiInvalidationBatch(UiVersion.Bump);
+            using var uiBatch = Store.Revisions.Batch();
             var losingLastAssignment = Store.pawnSets
                 .Where(kv => kv.Value.assignments.Count > 0
                     && kv.Value.assignments.TrueForAll(a => a.roleId == roleId))
@@ -433,10 +435,11 @@ namespace WorkRoles
                     if (!keepers.Contains(pawn) && !losingLastAssignment.Contains(pawn))
                         keepers.Add(pawn);
             foreach (var pawn in losingLastAssignment)
-                Store.UnmanagePawn(pawn, uiBatch.Request);
-            CompiledJobOrders.InvalidateRole(roleId, uiBatch.Request);
-            foreach (var set in Store.pawnSets.Values)
-                set.assignments.RemoveAll(a => a.roleId == roleId);
+                Store.UnmanagePawn(pawn);
+            CompiledJobOrders.InvalidateRole(roleId);
+            foreach (var pair in Store.pawnSets)
+                if (pair.Value.assignments.RemoveAll(a => a.roleId == roleId) > 0)
+                    UiVersion.PawnChanged(pair.Key, planChanged: true);
             // A pawn's last role going away must unmanage it fully — a lingering
             // empty set would shadow its vanilla priorities (see RoleStore save sync).
             Store.pawnSets.RemoveAll(kv => kv.Value.assignments.Count == 0);
@@ -447,7 +450,13 @@ namespace WorkRoles
             // and compiled orders were invalidated above, while membership was
             // still visible to the reverse scan).
             foreach (var other in Store.roles)
-                if (other.composite) other.memberRoleIds.Remove(roleId);
+                if (other.composite && other.memberRoleIds.Remove(roleId))
+                {
+                    // The member sequence itself changed, including when the
+                    // removed veto member contributed no ordinary work facts.
+                    other.InvalidateCoverage();
+                    UiVersion.RoleChanged(other.id, ModelDomain.RoleWork | ModelDomain.RoleCapability);
+                }
             // The deleted role leaves every other role's training path; a path
             // reduced to the trivial self-only shape clears via sanitize.
             foreach (var other in Store.roles)
@@ -460,7 +469,11 @@ namespace WorkRoles
                 other.trainingMins.RemoveAt(at);
                 other.trainingMaxes.RemoveAt(at);
                 Store.SanitizeRoleTraining(other);
+                UiVersion.RoleChanged(other.id, ModelDomain.RoleRecommendation | ModelDomain.RoleCapability);
             }
+            UiVersion.AggregateChanged(ModelDomain.Catalog | ModelDomain.RoleRecommendation);
+            Store.Revisions.ForgetRole(roleId);
+            RoleWorkSpecs.Remove(roleId);
             SweepEmptyGroups();
             CompiledJobOrders.EnqueueReconciles(keepers);
         }
@@ -533,7 +546,7 @@ namespace WorkRoles
                 }
             if (!changed) return;
             SweepEmptyGroups();
-            UiVersion.Bump();
+            UiVersion.Changed(ModelDomain.Catalog);
         }
 
         /// Drag drop: SetRoleGroup plus a catalog reposition — the moved block
@@ -581,7 +594,7 @@ namespace WorkRoles
                 Store.InvalidateRoleIndex();
             }
             SweepEmptyGroups();
-            UiVersion.Bump();
+            UiVersion.Changed(ModelDomain.Catalog);
         }
 
         [SyncMethod]
@@ -598,7 +611,7 @@ namespace WorkRoles
                 || !GroupNameRules.IsAvailable(
                     name, store.groups, existing => existing.label, group)) return;
             group.label = name;
-            UiVersion.Bump();
+            UiVersion.Changed(ModelDomain.Catalog);
         }
 
         /// Reorders the group list (display order). Default stays pinned first.
@@ -630,7 +643,7 @@ namespace WorkRoles
             if (!changed) return;
             groups.Clear();
             groups.AddRange(reordered);
-            UiVersion.Bump();
+            UiVersion.Changed(ModelDomain.Catalog);
         }
 
         [SyncMethod]
@@ -644,7 +657,7 @@ namespace WorkRoles
                 || !CatalogNameRules.IsAvailable(
                     label, Store.roles, existing => existing.label, role)) return;
             role.label = label;
-            UiVersion.Bump();
+            UiVersion.RoleChanged(roleId, ModelDomain.RolePresentation);
         }
 
         [SyncMethod]
@@ -657,7 +670,7 @@ namespace WorkRoles
                     true, color.r, color.g, color.b, color.a)) return;
             role.color = color;
             role.hasCustomColor = true;
-            UiVersion.Bump();
+            UiVersion.RoleChanged(roleId, ModelDomain.RolePresentation);
         }
 
         /// Sets the persisted role presentation icon. Empty means explicitly
@@ -670,7 +683,7 @@ namespace WorkRoles
             if (role == null || string.Equals(role.iconPath, normalized,
                     System.StringComparison.Ordinal)) return;
             role.iconPath = normalized;
-            UiVersion.Bump();
+            UiVersion.RoleChanged(roleId, ModelDomain.RolePresentation);
         }
 
         /// Auto-assign roles go to newcomers and lead every plan target.
@@ -680,7 +693,7 @@ namespace WorkRoles
             var role = FindRole(roleId);
             if (role == null || role.autoAssign == value) return;
             role.autoAssign = value;
-            UiVersion.Bump();
+            UiVersion.RoleChanged(roleId, ModelDomain.RoleRecommendation | ModelDomain.RolePresentation);
         }
 
         /// Defines one of the shared custom swatch slots in the role editor.
@@ -698,7 +711,7 @@ namespace WorkRoles
             while (Store.customSwatches.Count <= index)
                 Store.customSwatches.Add(UnityEngine.Color.clear);
             Store.customSwatches[index] = color;
-            UiVersion.Bump();
+            UiVersion.Changed(ModelDomain.Preferences);
         }
 
         /// Empties one shared custom swatch slot; it renders as a "+" picker
@@ -711,7 +724,7 @@ namespace WorkRoles
                 || index >= Store.customSwatches.Count) return;
             if (Store.customSwatches[index].a < 0.5f) return;
             Store.customSwatches[index] = UnityEngine.Color.clear;
-            UiVersion.Bump();
+            UiVersion.Changed(ModelDomain.Preferences);
         }
 
         /// Role-level mutations can revoke or demote work the holders are
@@ -731,7 +744,7 @@ namespace WorkRoles
             var role = FindRole(roleId);
             if (role == null) return;
             role.enabled = !role.enabled;
-            CompiledJobOrders.InvalidateRole(roleId);
+            CompiledJobOrders.InvalidateRole(roleId, ModelDomain.RoleActivation);
             ReconcileHolders(roleId);
         }
 
@@ -747,7 +760,7 @@ namespace WorkRoles
             var copy = PlayerDuplicate(source, Store.NextId(), label);
             Store.roles.Add(copy);
             Store.InvalidateRoleIndex();
-            UiVersion.Bump();
+            UiVersion.AggregateChanged(ModelDomain.Catalog | ModelDomain.RoleRecommendation);
         }
 
         /// Player duplicates retain role behavior and presentation but deliberately
@@ -829,7 +842,7 @@ namespace WorkRoles
             roles.RemoveAt(from);
             roles.Insert(to, role);
             store.InvalidateRoleIndex();
-            UiVersion.Bump();
+            UiVersion.Changed(ModelDomain.Catalog);
         }
 
         // ----- Role rules -----
@@ -865,13 +878,13 @@ namespace WorkRoles
                 replacements.Add(normalized);
             }
 
-            using (var uiBatch = new UiInvalidationBatch(UiVersion.Bump))
+            using (var uiBatch = store.Revisions.Batch())
                 for (int i = 0; i < changedRoles.Count; i++)
                 {
                     Role role = changedRoles[i];
                     role.locationTokens = replacements[i];
                     CompiledJobOrders.InvalidateRole(
-                        role.id, uiBatch.Request);
+                        role.id, ModelDomain.RoleRules);
                 }
 
             PawnLocationTracker.RefreshManagedLocations();
@@ -896,10 +909,11 @@ namespace WorkRoles
         public static void SetRoleActiveHours(int roleId, int hoursMask)
         {
             var role = FindRole(roleId);
+            hoursMask &= Role.AllHours;
             if (role == null || role.activeHours == hoursMask
                 || Store.IsCompositeMember(roleId)) return;
             role.activeHours = hoursMask;
-            CompiledJobOrders.InvalidateRole(roleId);
+            CompiledJobOrders.InvalidateRole(roleId, ModelDomain.RoleRules);
             ReconcileHolders(roleId);
         }
 
@@ -914,7 +928,7 @@ namespace WorkRoles
                 || Store.IsCompositeMember(roleId)) return;
             if (!LocationTokenSelection.Toggle(role.locationTokens, token))
                 return;
-            CompiledJobOrders.InvalidateRole(roleId);
+            CompiledJobOrders.InvalidateRole(roleId, ModelDomain.RoleRules);
             ReconcileHolders(roleId);
         }
 
@@ -924,7 +938,7 @@ namespace WorkRoles
             var role = FindRole(roleId);
             if (role == null || role.locationTokens.Count == 0) return;
             role.locationTokens.Clear();
-            CompiledJobOrders.InvalidateRole(roleId);
+            CompiledJobOrders.InvalidateRole(roleId, ModelDomain.RoleRules);
             ReconcileHolders(roleId);
         }
 
@@ -944,7 +958,7 @@ namespace WorkRoles
             if (role == null || !role.HasRules) return;
             role.activeHours = Role.AllHours;
             role.locationTokens.Clear();
-            CompiledJobOrders.InvalidateRole(roleId);
+            CompiledJobOrders.InvalidateRole(roleId, ModelDomain.RoleRules);
             // Activation-only, but newly active work can demote holders'
             // in-flight jobs below it.
             ReconcileHolders(roleId);
@@ -1124,6 +1138,7 @@ namespace WorkRoles
             };
             Store.roles.Add(role);
             Store.InvalidateRoleIndex();
+            UiVersion.AggregateChanged(ModelDomain.Catalog | ModelDomain.RoleRecommendation);
             return role;
         }
 
@@ -1149,7 +1164,7 @@ namespace WorkRoles
             if (index < 0 || index > set.assignments.Count) index = set.assignments.Count;
             set.assignments.Insert(index, new RoleAssignment { roleId = roleId });
             if (!wasManaged) PawnLocationTracker.NotifyManaged(pawn);
-            CompiledJobOrders.Invalidate(pawn);
+            CompiledJobOrders.InvalidateAssignments(pawn, planChanged: true);
             return true;
         }
 
@@ -1178,7 +1193,7 @@ namespace WorkRoles
                 Store.UnmanagePawn(pawn);
                 return;
             }
-            CompiledJobOrders.Invalidate(pawn);
+            CompiledJobOrders.InvalidateAssignments(pawn, planChanged: true);
             CompiledJobOrders.EnqueueReconcile(pawn);
         }
 
@@ -1191,7 +1206,7 @@ namespace WorkRoles
             var assignment = set.assignments[from];
             set.assignments.RemoveAt(from);
             set.assignments.Insert(to, assignment);
-            CompiledJobOrders.Invalidate(pawn);
+            CompiledJobOrders.InvalidateAssignments(pawn, planChanged: true);
             CompiledJobOrders.EnqueueReconcile(pawn);
         }
 
@@ -1204,7 +1219,7 @@ namespace WorkRoles
             // Fully independent of the global toggle: advances only this pawn's
             // state and never touches the role or other holders.
             assignment.state = RoleActivation.Next(assignment.state);
-            CompiledJobOrders.Invalidate(pawn);
+            CompiledJobOrders.InvalidateAssignments(pawn, planChanged: false);
             CompiledJobOrders.EnqueueReconcile(pawn);
         }
 
@@ -1219,7 +1234,7 @@ namespace WorkRoles
             var assignment = set.assignments.FirstOrDefault(a => a.roleId == roleId);
             if (assignment == null || assignment.state == (AssignmentState)state) return;
             assignment.state = (AssignmentState)state;
-            CompiledJobOrders.Invalidate(pawn);
+            CompiledJobOrders.InvalidateAssignments(pawn, planChanged: false);
             CompiledJobOrders.EnqueueReconcile(pawn);
         }
 
@@ -1232,7 +1247,7 @@ namespace WorkRoles
             if (assignment == null) return;
             assignment.pinned = !assignment.pinned;
             // Pins shape the plan and the chip's marker width.
-            UiVersion.Bump();
+            UiVersion.PawnChanged(pawn, planChanged: true);
         }
 
         [SyncMethod]
@@ -1261,15 +1276,23 @@ namespace WorkRoles
                     out PawnRoleSet existing)
                 && AssignmentSequencesEqual(existing.assignments, assignments))
                 return;
+            bool planChanged = !wasManaged || !AssignmentSequencesEqual(
+                Store.pawnSets[pawn].assignments, assignments, includeState: false, includePins: true);
+            bool compiledChanged = !wasManaged || !AssignmentSequencesEqual(
+                Store.pawnSets[pawn].assignments, assignments, includeState: true, includePins: false);
             Store.SetFor(pawn).assignments = assignments;
             if (!wasManaged) PawnLocationTracker.NotifyManaged(pawn);
-            CompiledJobOrders.Invalidate(pawn);
-            CompiledJobOrders.EnqueueReconcile(pawn);
+            if (compiledChanged)
+            {
+                CompiledJobOrders.InvalidateAssignments(pawn, planChanged);
+                CompiledJobOrders.EnqueueReconcile(pawn);
+            }
+            else UiVersion.PawnChanged(pawn, planChanged);
         }
 
         private static bool AssignmentSequencesEqual(
             IReadOnlyList<RoleAssignment> left,
-            IReadOnlyList<RoleAssignment> right)
+            IReadOnlyList<RoleAssignment> right, bool includeState = true, bool includePins = true)
         {
             if (ReferenceEquals(left, right)) return true;
             if (left == null || right == null || left.Count != right.Count)
@@ -1283,8 +1306,8 @@ namespace WorkRoles
                     if (!ReferenceEquals(a, b)) return false;
                     continue;
                 }
-                if (a.roleId != b.roleId || a.state != b.state
-                    || a.pinned != b.pinned) return false;
+                if (a.roleId != b.roleId || includeState && a.state != b.state
+                    || includePins && a.pinned != b.pinned) return false;
             }
             return true;
         }

@@ -15,7 +15,9 @@ namespace WorkRoles.UI
     internal sealed class RolesListState
     {
         // Owner: process role catalog, with explicit window lifecycle release.
-        // Key: RoleStore identity, nested/flat slot, UiVersion, and definition
+        // Key: RoleStore identity, nested/flat slot, Catalog/RoleWork/RoleRules/
+        // RoleCapability (blocker section/nesting),
+        // language and definition
         // revision. Value:
         // private section-builder projections; their mutable Lists and
         // authoritative Role references are never published to rendering.
@@ -27,13 +29,15 @@ namespace WorkRoles.UI
         private static readonly List<RoleSection>?[] sectionsCache = new List<RoleSection>?[2];
         private static readonly int[] sectionsCacheStamp = { -1, -1 };
         private static readonly int[] sectionsCacheDefinitionRevision = { -1, -1 };
+        private static readonly int[] sectionsCacheLanguageRevision = { -1, -1 };
         private static RoleStore? sectionsCacheOwner;
         private static int collapseRevision;
 
         // Owner: window. Key: this RolesListState instance and RoleStore
         // identity. Value: immutable role-list render rows; producer-owned
         // buffers are transferred directly and never exposed for mutation.
-        // Dependencies: store ownership, UiVersion, definition, location and
+        // Dependencies: store ownership, Catalog/RoleWork/RoleRules/
+        // RolePresentation/RoleActivation/RoleCapability, UI metrics, definition, location and
         // collapse revisions, nested/search/job-filter state, and language.
         // Refresh: immediate at the next Snapshot call after a dependency moves.
         // Equality: exact equal contents preserve snapshot identity within one
@@ -43,6 +47,8 @@ namespace WorkRoles.UI
         private RoleStore? displayOwner;
         private int displayStamp = -1;
         private int displayDefinitionRevision = -1;
+        private int displayLanguageRevision = -1;
+        private int displayMetricRevision = -1;
         private int displayLocationRevision = -1;
         private int displayCollapseRevision = -1;
         private bool displayNestedPreference;
@@ -50,7 +56,7 @@ namespace WorkRoles.UI
         private string? displayJobFilter;
 
         // Owner: this Roles-list state for one open Work Roles window.
-        // Key: RoleStore identity and UiVersion.Current.
+        // Key: RoleStore identity and Catalog/RolePresentation revisions.
         // Value: immutable detached ordered role IDs and labels used only for
         // presentation selection and command payload lookup.
         // Dependencies: ordered role-catalog membership, role IDs, and labels.
@@ -75,6 +81,8 @@ namespace WorkRoles.UI
             displayOwner = null;
             displayStamp = -1;
             displayDefinitionRevision = -1;
+            displayLanguageRevision = -1;
+            displayMetricRevision = -1;
             displayLocationRevision = -1;
             displayCollapseRevision = -1;
             displayNestedPreference = false;
@@ -92,8 +100,12 @@ namespace WorkRoles.UI
         }
 
         internal RoleListSnapshot Snapshot(RoleStore store, int selectedRoleId,
-            bool revealSelected, System.Func<Role, StructuredTip?>? roleTooltip)
+            bool revealSelected)
         {
+            int revision = store.Revisions.For(ModelDomain.Catalog
+                | ModelDomain.RoleWork | ModelDomain.RoleRules
+                | ModelDomain.RolePresentation | ModelDomain.RoleActivation
+                | ModelDomain.RoleCapability);
             bool ownerChanged = !ReferenceEquals(displayOwner, store);
             bool filtered = FiltersActive;
             bool nestedPreference = WorkRolesMod.Settings?.nestedRoleTree ?? true;
@@ -107,15 +119,19 @@ namespace WorkRoles.UI
                         ToggleSectionCollapsed(section.key);
 
             if (ownerChanged || snapshot == null
-                || displayStamp != UiVersion.Current
+                || displayStamp != revision
                 || displayDefinitionRevision != DefinitionReloadCoordinator.Revision
+                || displayLanguageRevision != LanguageChangeCoordinator.Revision
+                || displayMetricRevision != UiRevision.Current
                 || displayLocationRevision != MapClassifications.LocationRevision
                 || displayCollapseRevision != collapseRevision
                 || displayNestedPreference != nestedPreference
                 || displaySearch != RoleSearch || displayJobFilter != JobFilterDefName)
             {
-                displayStamp = UiVersion.Current;
+                displayStamp = revision;
                 displayDefinitionRevision = DefinitionReloadCoordinator.Revision;
+                displayLanguageRevision = LanguageChangeCoordinator.Revision;
+                displayMetricRevision = UiRevision.Current;
                 displayLocationRevision = MapClassifications.LocationRevision;
                 displayCollapseRevision = collapseRevision;
                 displayNestedPreference = nestedPreference;
@@ -128,7 +144,7 @@ namespace WorkRoles.UI
                 {
                     foreach (Role role in store.roles.Where(MatchesFilters))
                         rebuiltRows.Add(PublishRoleRow(null, role, store, 0,
-                            virtualRow: false, liveLocationIds, roleTooltip));
+                            virtualRow: false, liveLocationIds));
                 }
                 else
                 {
@@ -159,7 +175,7 @@ namespace WorkRoles.UI
                             foreach (var (member, parent, depth, virtualRow) in section.rows)
                                 rebuiltRows.Add(PublishRoleRow(publishedSection,
                                     member, store, depth, virtualRow,
-                                    liveLocationIds, roleTooltip));
+                                    liveLocationIds));
                     }
                 }
                 var rebuilt = new RoleListSnapshot(rebuiltRows, filtered,
@@ -174,7 +190,7 @@ namespace WorkRoles.UI
 
         internal RoleSelectionSnapshot SelectionSnapshot(RoleStore store)
         {
-            int stamp = UiVersion.Current;
+            int stamp = store.Revisions.For(ModelDomain.Catalog | ModelDomain.RolePresentation);
             bool ownerChanged = !ReferenceEquals(selectionOwner, store);
             if (!ownerChanged && selectionSnapshot != null
                 && selectionStamp == stamp)
@@ -197,8 +213,7 @@ namespace WorkRoles.UI
 
         private static RoleListRowSnapshot PublishRoleRow(
             RoleListSectionSnapshot? section, Role role, RoleStore store,
-            int depth, bool virtualRow, ISet<string> liveLocationIds,
-            System.Func<Role, StructuredTip?>? roleTooltip)
+            int depth, bool virtualRow, ISet<string> liveLocationIds)
         {
             string? originGroupLabel = null;
             if (virtualRow)
@@ -212,7 +227,7 @@ namespace WorkRoles.UI
                 role.enabled
                     ? role.label
                     : "WR_RoleLabelOff".Translate(role.label).ToString(),
-                roleTooltip?.Invoke(role), role.enabled, role.hasCustomColor,
+                role.enabled, role.hasCustomColor,
                 role.color, role.blocker, role.activeHours != Role.AllHours,
                 role.locationTokens.Count > 0, role.composite, originGroupLabel);
         }
@@ -277,6 +292,7 @@ namespace WorkRoles.UI
             sectionsCacheStamp[0] = sectionsCacheStamp[1] = -1;
             sectionsCacheDefinitionRevision[0] =
                 sectionsCacheDefinitionRevision[1] = -1;
+            sectionsCacheLanguageRevision[0] = sectionsCacheLanguageRevision[1] = -1;
         }
 
         /// Invalidation alone leaves the old world's roles reachable until the
@@ -297,12 +313,17 @@ namespace WorkRoles.UI
             }
             int slot = nested ? 1 : 0;
             int definitionRevision = DefinitionReloadCoordinator.Revision;
+            int languageRevision = LanguageChangeCoordinator.Revision;
+            int revision = store.Revisions.For(ModelDomain.Catalog
+                | ModelDomain.RoleWork | ModelDomain.RoleRules | ModelDomain.RoleCapability);
             if (sectionsCache[slot] == null
-                || sectionsCacheStamp[slot] != UiVersion.Current
+                || sectionsCacheStamp[slot] != revision
+                || sectionsCacheLanguageRevision[slot] != languageRevision
                 || sectionsCacheDefinitionRevision[slot] != definitionRevision)
             {
-                sectionsCacheStamp[slot] = UiVersion.Current;
+                sectionsCacheStamp[slot] = revision;
                 sectionsCacheDefinitionRevision[slot] = definitionRevision;
+                sectionsCacheLanguageRevision[slot] = languageRevision;
                 sectionsCache[slot] = BuildSectionsUncached(store, nested);
             }
             return sectionsCache[slot]!; // built above when the slot was empty
@@ -598,7 +619,7 @@ namespace WorkRoles.UI
         internal RoleListRowSnapshot(RoleListSectionSnapshot? section,
             RoleChipRenderData chip,
             int depth, bool virtualRow, bool invalid, string? label,
-            StructuredTip? tooltip, bool enabled, bool hasCustomColor, Color color,
+            bool enabled, bool hasCustomColor, Color color,
             bool blocker, bool hasTimeRule, bool hasLocationRule,
             bool composite, string? virtualOriginGroupLabel)
         {
@@ -608,7 +629,6 @@ namespace WorkRoles.UI
             VirtualRow = virtualRow;
             Invalid = invalid;
             Label = label;
-            Tooltip = tooltip;
             Enabled = enabled;
             HasCustomColor = hasCustomColor;
             Color = color;
@@ -625,7 +645,7 @@ namespace WorkRoles.UI
                 new RoleChipRenderData(-1, null!, default(Color), false, // header sentinel chip; never rendered
                     false, false, false),
                 0, false, false, null,
-                null, true, false, default, false, false, false, false, null);
+                true, false, default, false, false, false, false, null);
 
         internal RoleListSectionSnapshot? Section { get; }
         internal RoleChipRenderData Chip { get; }
@@ -634,7 +654,6 @@ namespace WorkRoles.UI
         internal bool VirtualRow { get; }
         internal bool Invalid { get; }
         internal string? Label { get; }
-        internal StructuredTip? Tooltip { get; }
         internal bool Enabled { get; }
         internal bool HasCustomColor { get; }
         internal Color Color { get; }
@@ -663,9 +682,7 @@ namespace WorkRoles.UI
                     other.VirtualOriginGroupLabel,
                     System.StringComparison.Ordinal))
                 return false;
-            if (ReferenceEquals(Tooltip, other.Tooltip)) return true;
-            return Tooltip != null && other.Tooltip != null
-                && Tooltip.ContentEquals(other.Tooltip);
+            return true;
         }
 
         private static bool ColorEquals(Color left, Color right) =>

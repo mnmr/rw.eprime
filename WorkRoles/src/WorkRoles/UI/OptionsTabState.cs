@@ -156,7 +156,7 @@ namespace WorkRoles.UI
     {
         // Owner: Options tab window instance.
         // Key: RoleStore identity, WorkRolesSettings identity,
-        // LanguageChangeCoordinator.Revision, UiVersion.Current (the palette
+        // LanguageChangeCoordinator.Revision, UiRevision.Current (the palette
         // grouping control width is a text measurement), the palette grouping
         // value, and the exact eight boolean values displayed by the tab.
         // Value: immutable OptionsRenderSnapshot containing translated chrome,
@@ -204,7 +204,7 @@ namespace WorkRoles.UI
         {
             WorkRolesSettings? settings = WorkRolesMod.Settings;
             int language = LanguageChangeCoordinator.Revision;
-            int ui = UiVersion.Current;
+            int ui = UiRevision.Current;
             bool numeric = Current.Game?.playSettings?.useWorkPriorities ?? false;
             bool vanillaRange = store?.reportVanillaPriorities ?? true;
             bool emergencyRule = store?.rolePriorityEmergencyRule ?? true;

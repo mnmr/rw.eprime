@@ -214,8 +214,7 @@ namespace WorkRoles.UI
         // and warning texts plus their measured wrapped heights (immutable
         // between key changes; a null/empty warning result renders nothing).
         // Dependencies: LanguageChangeCoordinator.Revision, banner width,
-        // GameFont.Small metrics (the dialog is fixed-size, so width moves
-        // only with UI metrics, which rebuild the whole window layout). The
+        // GameFont.Small metrics through UiRevision.Current. The
         // warning's condition (e.g. colony count) is deliberately frozen for
         // the display session and re-evaluated on language refresh or reopen.
         // Refresh: immediate on the next draw after a key change. Equality:
@@ -226,22 +225,31 @@ namespace WorkRoles.UI
         private string? infoText;
         private string? warningText;
         private int infoLanguageRevision = int.MinValue;
+        private int infoMetricRevision = int.MinValue;
         private float infoMeasuredWidth = -1f;
         private float infoHeight;
         private float warningHeight;
 
-        // Owner: changes-preview dialog. Key: RoleStore identity, UiVersion,
-        // language revision, available row width, entry generation, and each
+        // Owner: changes-preview dialog. Key: RoleStore identity, the shown
+        // roles' identities and Presentation/Rules/Capability revisions,
+        // language/UI metric revisions, row width, entry generation, and each
         // preview pawn's ExternalPawnFacts revision. Value: one immutable-by-
         // publication snapshot containing detached pawn labels, role chip
         // render data, tooltips, verdicts, geometry, and viewport layout.
         // Dependencies: current role presentation, pawn names, translated empty
-        // text, preview source rows, and width. Refresh: immediate on a key
+        // text, preview source rows, and width. Catalog plus those role domains
+        // gate checking the per-role entries; unrelated roles preserve the
+        // snapshot. Refresh: immediate on a key
         // change. Equality: equal contents retain identity within one RoleStore.
         // Teardown: PostClose releases the snapshot, owner, and revision stamps.
         private ChangesPreviewRenderSnapshot? renderSnapshot;
         private RoleStore? renderOwner;
         private int renderUiRevision = int.MinValue;
+        private int renderMetricRevision = int.MinValue;
+        private const ModelDomain ChipDomains = ModelDomain.RolePresentation
+            | ModelDomain.RoleRules | ModelDomain.RoleCapability;
+        private readonly Dictionary<int, (Role? Role, int Revision)> renderRoles =
+            new Dictionary<int, (Role?, int)>();
         private int renderLanguageRevision = int.MinValue;
         private int renderEntriesGeneration = int.MinValue;
         private int renderFactsCurrent = int.MinValue;
@@ -347,17 +355,21 @@ namespace WorkRoles.UI
         }
 
         /// Measurement-gated banner build: CalcHeight runs only when the
-        /// language revision or available width changes.
+        /// language/UI metric revision or available width changes.
         private void EnsureInfoBanner(float width)
         {
             if (infoFactory == null) return;
             int languageRevision = LanguageChangeCoordinator.Revision;
             if (infoText != null && infoLanguageRevision == languageRevision
+                && infoMetricRevision == UiRevision.Current
                 && infoMeasuredWidth == width)
                 return;
-            infoText = infoFactory();
-            string? warning = warningFactory?.Invoke();
-            warningText = string.IsNullOrEmpty(warning) ? null : warning;
+            if (infoText == null || infoLanguageRevision != languageRevision)
+            {
+                infoText = infoFactory();
+                string? warning = warningFactory?.Invoke();
+                warningText = string.IsNullOrEmpty(warning) ? null : warning;
+            }
             GameFont previousFont = Text.Font;
             bool previousWordWrap = Text.WordWrap;
             try
@@ -374,21 +386,31 @@ namespace WorkRoles.UI
                 Text.WordWrap = previousWordWrap;
             }
             infoLanguageRevision = languageRevision;
+            infoMetricRevision = UiRevision.Current;
             infoMeasuredWidth = width;
         }
 
         private void EnsureRenderSnapshot(float width)
         {
             RoleStore? store = RoleStore.Current;
-            int uiRevision = UiVersion.Current;
+            int uiRevision = store?.Revisions.For(ModelDomain.Catalog | ChipDomains) ?? 0;
             int languageRevision = LanguageChangeCoordinator.Revision;
             int factsCurrent = ExternalPawnFacts.Revisions.Current;
             bool ownerChanged = !ReferenceEquals(renderOwner, store);
             bool keyChanged = renderSnapshot == null || ownerChanged
-                || renderUiRevision != uiRevision
+                || renderMetricRevision != UiRevision.Current
                 || renderLanguageRevision != languageRevision
                 || renderEntriesGeneration != entriesGeneration
                 || renderWidth != width;
+
+            if (!keyChanged && renderUiRevision != uiRevision)
+                foreach (var pair in renderRoles)
+                    if (!ReferenceEquals(pair.Value.Role, store?.RoleById(pair.Key))
+                        || pair.Value.Revision != (store?.Revisions.ForRole(pair.Key, ChipDomains) ?? 0))
+                    {
+                        keyChanged = true;
+                        break;
+                    }
 
             bool pawnFactsChanged = renderSnapshot == null
                 || renderPawnFactRevisions.Length != entries.Count;
@@ -404,9 +426,11 @@ namespace WorkRoles.UI
             if (!keyChanged && !pawnFactsChanged)
             {
                 renderFactsCurrent = factsCurrent;
+                renderUiRevision = uiRevision;
                 return;
             }
 
+            renderRoles.Clear();
             var descriptors = new EntryLayout[entries.Count];
             var heights = new float[entries.Count];
             for (int i = 0; i < entries.Count; i++)
@@ -429,6 +453,8 @@ namespace WorkRoles.UI
                     {
                         var chip = line.ChipAt(chipIndex);
                         Role? currentRole = store?.RoleById(chip.RoleId);
+                        renderRoles[chip.RoleId] = (currentRole,
+                            store?.Revisions.ForRole(chip.RoleId, ChipDomains) ?? 0);
                         RoleChipRenderData renderData = currentRole == null
                             ? chip.RenderData
                             : RoleChipRenderData.From(currentRole);
@@ -466,6 +492,7 @@ namespace WorkRoles.UI
 
             renderOwner = store;
             renderUiRevision = uiRevision;
+            renderMetricRevision = UiRevision.Current;
             renderLanguageRevision = languageRevision;
             renderEntriesGeneration = entriesGeneration;
             renderFactsCurrent = factsCurrent;
@@ -592,8 +619,10 @@ namespace WorkRoles.UI
         {
             renderSnapshot = null;
             renderOwner = null;
+            renderRoles.Clear();
             renderPawnFactRevisions = Array.Empty<int>();
             renderUiRevision = int.MinValue;
+            renderMetricRevision = int.MinValue;
             renderLanguageRevision = int.MinValue;
             renderEntriesGeneration = int.MinValue;
             renderFactsCurrent = int.MinValue;
@@ -601,6 +630,7 @@ namespace WorkRoles.UI
             infoText = null;
             warningText = null;
             infoLanguageRevision = int.MinValue;
+            infoMetricRevision = int.MinValue;
             infoMeasuredWidth = -1f;
             infoHeight = 0f;
             warningHeight = 0f;

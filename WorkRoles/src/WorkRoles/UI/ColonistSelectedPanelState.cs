@@ -139,8 +139,8 @@ namespace WorkRoles.UI
         // Dependencies: chrome and traits use the pawn's ExternalPawnFacts
         // revision (plus language and the portrait-width name-tag clamp);
         // activity uses ActivityTracker.RevisionOf(pawn),
-        // UiVersion.Current and definition revision for claiming-role changes,
-        // the shared detached role catalog, language, and slot width. Refresh:
+        // RuntimeForPawn and definition revision for claiming-role changes,
+        // the active role's presentation revision, language, UI metrics and slot width. Refresh:
         // immediate on the next panel
         // read after a dependency changes; an activity-only change rebuilds only
         // the activity component. Equality: equal component rebuilds preserve
@@ -148,10 +148,11 @@ namespace WorkRoles.UI
         // Release on reset, language invalidation, window close, or owner change.
         private RoleStore? owner;
         private Pawn? pawn;
-        private ColonistsRosterCatalogSnapshot? activityCatalog;
         private int externalRevision = -1;
         private int activityRevision = -1;
         private int uiRevision = -1;
+        private int rolePresentationRevision = -1;
+        private int metricRevision = -1;
         private int definitionRevision = -1;
         private int languageRevision = -1;
         private float portraitSize = -1f;
@@ -180,13 +181,16 @@ namespace WorkRoles.UI
             bool pawnChanged = !ReferenceEquals(pawn, selected);
             int nextExternal = ExternalPawnFacts.Revisions.RevisionOf(selected);
             int nextActivity = ActivityTracker.RevisionOf(selected);
-            int nextUi = UiVersion.Current;
+            int nextUi = UiVersion.RuntimeForPawn(selected);
+            int nextRolePresentation = UiVersion.PresentationForRole(
+                activityState.For(selected).RoleId);
             int nextDefinition = DefinitionReloadCoordinator.Revision;
             int nextLanguage = LanguageChangeCoordinator.Revision;
 
             ColonistSelectedChromeSnapshot? nextChrome = chrome;
             if (ownerChanged || pawnChanged || externalRevision != nextExternal
                 || languageRevision != nextLanguage
+                || metricRevision != UiRevision.Current
                 || this.portraitSize != portraitSize)
             {
                 nextChrome = BuildChrome(selected, portraitSize);
@@ -209,7 +213,8 @@ namespace WorkRoles.UI
             if (ownerChanged || pawnChanged || activityRevision != nextActivity
                 || uiRevision != nextUi || languageRevision != nextLanguage
                 || definitionRevision != nextDefinition
-                || !ReferenceEquals(activityCatalog, catalog)
+                || rolePresentationRevision != nextRolePresentation
+                || metricRevision != UiRevision.Current
                 || this.activityWidth != activityWidth)
             {
                 nextActivitySnapshot = BuildActivity(store, selected, catalog,
@@ -230,10 +235,11 @@ namespace WorkRoles.UI
 
             owner = store;
             pawn = selected;
-            activityCatalog = catalog;
             externalRevision = nextExternal;
             activityRevision = nextActivity;
             uiRevision = nextUi;
+            rolePresentationRevision = nextRolePresentation;
+            metricRevision = UiRevision.Current;
             definitionRevision = nextDefinition;
             languageRevision = nextLanguage;
             this.portraitSize = portraitSize;
@@ -248,7 +254,6 @@ namespace WorkRoles.UI
         {
             owner = null;
             pawn = null;
-            activityCatalog = null;
             externalRevision = -1;
             activityRevision = -1;
             uiRevision = -1;

@@ -19,15 +19,18 @@ namespace WorkRoles.UI
     /// only by the view's input path.
     internal sealed class ColonistRecommendationState
     {
-        // Cache contract — Owner: Colonists window. Key: RoleStore identity,
-        // ScopeCacheStamp, map identity, and recommendation tuning revision. Value: the
-        // window-owned colony fix-plan snapshot plus per-pawn role suitability
-        // buckets (language-free; badges are resolved at preview build), never
-        // mutated after publish. Dependencies: projected colony facts,
-        // role/path/order state, roster, location scope, and normalized tuning.
-        // Refresh: immediately when a key changes. Equality: a matching key
-        // preserves list identity. Teardown: Reset/ReleaseSnapshots drops
-        // plans, suitability, and all previews.
+        private readonly ColonistRecommendationProducer producer =
+            new ColonistRecommendationProducer();
+
+        // Owner: Colonists window/store. Key: shared computation identity and
+        // assignment presentation revision; map cohort keyed by map identity,
+        // roster revision and pawn-list revision. Value: owned fix targets and
+        // preview explanations, immutable after publication. Dependencies: the
+        // producer's plan plus current assignment state/pins, role identities.
+        // Refresh: immediate on an explicit model/external change. Equality:
+        // unchanged producer/assignment inputs reuse targets; the expensive
+        // plan survives assignment enabled/disabled/force-on edits. Teardown:
+        // Reset/ReleaseSnapshots drops producer, cohort, targets and previews.
         private List<PawnFixPlan>? plans;
         // The engine plan behind `plans` and its pawn order, kept for
         // PlacementIndex; both share the plan key and teardown.
@@ -39,22 +42,40 @@ namespace WorkRoles.UI
         private ScopeCacheStamp planStamp = ScopeCacheStamp.Invalid;
         private int planMapId = -1;
         private int planTuningRevision = -1;
+        private int planDefinitionRevision = -1;
+        private RecommendationSnapshot? planSnapshot;
+        private int planAssignmentPresentation = -1;
+        private int cohortRoster = -1;
+        private int cohortListRevision = -1;
+        private int cohortMapId = -1;
+        private RoleStore? cohortOwner;
+        // Same owner/cohort lifecycle as plans. Each target additionally keys
+        // its pawn's presentation revision, so another pawn's toggle cannot
+        // rebuild this pawn's command payload or explanation projection.
+        private readonly RevisionedCache<Pawn, (RecommendationPlan, int), PawnFixPlan> pawnPlans =
+            new RevisionedCache<Pawn, (RecommendationPlan, int), PawnFixPlan>();
+        private static readonly Func<(ColonistRecommendationState owner, int index), PawnFixPlan> BuildPawnPlan =
+            state => state.owner.BuildPawnFixPlan(state.index);
 
-        // Owner: Colonists window. Key: RoleStore, selected Pawn, shared detached
-        // role catalog, ScopeCacheStamp, map identity, recommendation tuning,
-        // language, verdict preference, and recommendation-panel dimensions.
+        // Owner: Colonists window. Key: RoleStore, selected Pawn and its fix-plan
+        // identity, selected external-facts identity, presentation/activation/rule
+        // revisions for referenced roles, map identity, recommendation tuning,
+        // UI metrics/definitions/language, verdict preference, panel dimensions.
         // Value: immutable ColonistRecommendationRenderSnapshot with detached
         // chip facts, local geometry, tooltips, command ids/indices, and a
         // producer-owned target-assignment buffer. Dependencies: the keyed plan,
         // role/assignment presentation, external pawn snapshots, translated
         // labels/tooltips, verdicts, and dimensions. Refresh: immediate on the
-        // next read after a key change or InvalidatePlan; the gate is checked
-        // before any planner/external-snapshot work. Equality: equal rebuilt
+        // next read after a key change; plan and external-fact access share their
+        // existing producer gates. Equality: equal rebuilt
         // contents preserve the published snapshot identity. Teardown: Reset,
         // language invalidation, and ReleaseSnapshots drop every owned reference.
         private RoleStore? previewOwner;
-        private ColonistsRosterCatalogSnapshot? previewCatalog;
-        private ScopeCacheStamp previewStamp = ScopeCacheStamp.Invalid;
+        private PawnFixPlan? previewPlan;
+        private PawnExternalSnapshot? previewFacts;
+        private int previewRoleRevision = -1;
+        private int previewMetricRevision = -1;
+        private int previewDefinitionRevision = -1;
         private Pawn? previewPawn;
         private bool previewVerdictsShown;
         private int previewTuningRevision = -1;
@@ -66,7 +87,10 @@ namespace WorkRoles.UI
 
         internal void Reset()
         {
+            producer.Reset();
+            pawnPlans.Clear();
             plans = null;
+            planSnapshot = null;
             recommendations = null;
             planPawns = null;
             planSuitability.Clear();
@@ -74,17 +98,28 @@ namespace WorkRoles.UI
             planStamp = ScopeCacheStamp.Invalid;
             planMapId = -1;
             planTuningRevision = -1;
+            planDefinitionRevision = -1;
+            planAssignmentPresentation = cohortRoster = cohortListRevision = cohortMapId = -1;
+            cohortOwner = null;
             ClearPreview();
         }
 
         internal void InvalidatePlan()
         {
-            plans = null;
-            recommendations = null;
-            planPawns = null;
-            planSuitability.Clear();
-            ClearPreview();
+            planStamp = ScopeCacheStamp.Invalid;
         }
+
+        internal void InvalidateExternalFacts()
+        {
+            producer.InvalidateExternalFacts();
+            cohortRoster = -1;
+            InvalidatePlan();
+        }
+
+        internal IReadOnlyList<Dictionary<int, SignalBucket>> SuitabilityFor(
+            RoleStore store, IReadOnlyList<Pawn> pawns,
+            Func<Pawn, PawnExternalSnapshot> externalSnapshot)
+            => producer.For(store, pawns, externalSnapshot).Suitability;
 
         internal void InvalidateLanguageCaches()
         {
@@ -95,9 +130,10 @@ namespace WorkRoles.UI
 
         private void ClearPreview()
         {
-            previewStamp = ScopeCacheStamp.Invalid;
             previewOwner = null;
-            previewCatalog = null;
+            previewPlan = null;
+            previewFacts = null;
+            previewRoleRevision = previewMetricRevision = previewDefinitionRevision = -1;
             previewPawn = null;
             previewVerdictsShown = false;
             previewTuningRevision = -1;
@@ -119,17 +155,23 @@ namespace WorkRoles.UI
             Map? map = anchor?.MapHeld ?? Find.CurrentMap;
             int mapId = map?.uniqueID ?? -1;
             int tuningRevision = store?.RecommendationTuningRevision ?? -1;
+            int revision = Math.Max(Math.Max(UiVersion.RoleWork, UiVersion.RoleRecommendation),
+                Math.Max(Math.Max(UiVersion.RoleActivation, UiVersion.RoleRules),
+                    Math.Max(Math.Max(UiVersion.AssignmentPresentation, UiVersion.RecommendationOrder), UiVersion.Roster)));
+            var dependencyStamp = new ScopeCacheStamp(revision, stamp.PawnListRevision);
             if (plans == null
                 || !ReferenceEquals(planOwner, store)
-                || planStamp != stamp
+                || planStamp != dependencyStamp
                 || planMapId != mapId
+                || planDefinitionRevision != DefinitionReloadCoordinator.Revision
                 || planTuningRevision != tuningRevision)
             {
                 planOwner = store;
-                planStamp = stamp;
+                planStamp = dependencyStamp;
+                planDefinitionRevision = DefinitionReloadCoordinator.Revision;
                 planMapId = mapId;
                 planTuningRevision = tuningRevision;
-                plans = BuildColonyFixPlan(store, map, externalSnapshot);
+                plans = BuildColonyFixPlan(store, map, stamp, externalSnapshot);
             }
             return plans;
         }
@@ -157,17 +199,6 @@ namespace WorkRoles.UI
             int tuningRevision = store?.RecommendationTuningRevision ?? -1;
             int mapId = (pawn?.MapHeld ?? Find.CurrentMap)?.uniqueID ?? -1;
             int languageRevision = LanguageChangeCoordinator.Revision;
-            if (preview != null && ReferenceEquals(previewOwner, store)
-                && ReferenceEquals(previewCatalog, catalog)
-                && previewStamp == stamp && ReferenceEquals(previewPawn, pawn)
-                && previewVerdictsShown == verdictsShown
-                && previewTuningRevision == tuningRevision
-                && previewMapId == mapId
-                && previewLanguageRevision == languageRevision
-                && previewWidth == width && previewHeight == height)
-                return preview;
-
-            externalSnapshot(pawn!); // the snapshot provider tolerates a null pawn
             IReadOnlyList<PawnFixPlan> source = Plans(store,
                 pawn, stamp, externalSnapshot);
             PawnFixPlan? plan = null;
@@ -177,6 +208,19 @@ namespace WorkRoles.UI
                     plan = source[i];
                     break;
                 }
+            PawnExternalSnapshot facts = externalSnapshot(pawn!);
+            int roleRevision = plan?.PresentationRevision() ?? 0;
+            int metricRevision = UiRevision.Current;
+            int definitionRevision = DefinitionReloadCoordinator.Revision;
+            if (preview != null && ReferenceEquals(previewOwner, store)
+                && ReferenceEquals(previewPlan, plan) && ReferenceEquals(previewFacts, facts)
+                && previewRoleRevision == roleRevision && ReferenceEquals(previewPawn, pawn)
+                && previewMetricRevision == metricRevision && previewDefinitionRevision == definitionRevision
+                && previewVerdictsShown == verdictsShown
+                && previewTuningRevision == tuningRevision && previewMapId == mapId
+                && previewLanguageRevision == languageRevision
+                && previewWidth == width && previewHeight == height)
+                return preview;
             ColonistRecommendationRenderSnapshot rebuilt =
                 BuildRenderSnapshot(store!, pawn!, catalog, plan, width, height, // null store/pawn yield a null plan, so neither is dereferenced
                     externalSnapshot);
@@ -187,8 +231,11 @@ namespace WorkRoles.UI
                 preview = rebuilt;
 
             previewOwner = store;
-            previewCatalog = catalog;
-            previewStamp = stamp;
+            previewPlan = plan;
+            previewFacts = facts;
+            previewRoleRevision = roleRevision;
+            previewMetricRevision = metricRevision;
+            previewDefinitionRevision = definitionRevision;
             previewPawn = pawn;
             previewVerdictsShown = verdictsShown;
             previewTuningRevision = tuningRevision;
@@ -399,38 +446,75 @@ namespace WorkRoles.UI
         }
 
         private List<PawnFixPlan> BuildColonyFixPlan(RoleStore? store, Map? map,
+            ScopeCacheStamp stamp,
             Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
-            var result = new List<PawnFixPlan>();
-            planSuitability.Clear();
-            this.recommendations = null;
-            planPawns = null;
-            if (store == null) return result;
-            List<Pawn> pawns = MapColonists(map);
-            ColonyView colony = RecsAdapter.BuildColonyView(
-                store, pawns, externalSnapshot);
-            RecommendationPlan recommendations = RecommendationPlan.Build(
-                colony,
-                store.recommendationTuning
-                    ?? RecommendationsTuningOptions.Default);
+            if (store == null)
+            {
+                Reset();
+                return new List<PawnFixPlan>();
+            }
+            int mapId = map?.uniqueID ?? -1;
+            if (planPawns == null || !ReferenceEquals(cohortOwner, store)
+                || cohortRoster != UiVersion.Roster
+                || cohortListRevision != stamp.PawnListRevision || cohortMapId != mapId)
+            {
+                List<Pawn> next = MapColonists(map);
+                bool same = ReferenceEquals(cohortOwner, store) && planPawns != null
+                    && planPawns.Count == next.Count;
+                if (same)
+                    for (int index = 0; index < next.Count; index++)
+                        if (!ReferenceEquals(planPawns![index], next[index])) { same = false; break; }
+                if (!same)
+                {
+                    pawnPlans.Clear();
+                    planPawns = next;
+                }
+                cohortOwner = store;
+                cohortRoster = UiVersion.Roster;
+                cohortListRevision = stamp.PawnListRevision;
+                cohortMapId = mapId;
+            }
+            List<Pawn> pawns = planPawns!;
+            RecommendationSnapshot snapshot = producer.For(store, pawns, externalSnapshot);
+            if (plans != null && ReferenceEquals(planSnapshot, snapshot)
+                && planAssignmentPresentation == UiVersion.AssignmentPresentation)
+                return plans;
+            planSnapshot = snapshot;
+            planAssignmentPresentation = UiVersion.AssignmentPresentation;
+            RecommendationPlan recommendations = snapshot.Plan;
             this.recommendations = recommendations;
-            planPawns = pawns;
-            // Targets and changed flags come from the shared planner so the
-            // preview shows exactly what AutoOptimizer would apply.
-            IReadOnlyList<PawnFixTarget> fixTargets =
-                ColonyFixPlanner.Build(colony, recommendations);
-            List<Dictionary<int, SignalBucket>> suitability =
-                RoleSuitability.Verdicts(colony);
+            var result = new List<PawnFixPlan>(pawns.Count);
+            IReadOnlyList<Dictionary<int, SignalBucket>> suitability = snapshot.Suitability;
+            planSuitability.Clear();
             for (int i = 0; i < pawns.Count; i++)
                 planSuitability[pawns[i]] = suitability[i];
 
             for (int i = 0; i < pawns.Count; i++)
             {
                 Pawn pawn = pawns[i];
+                result.Add(pawnPlans.Get(pawn,
+                    (recommendations, UiVersion.PresentationForPawn(pawn)), (this, i), BuildPawnPlan));
+            }
+            if (plans != null && plans.Count == result.Count)
+            {
+                bool equal = true;
+                for (int index = 0; index < result.Count; index++)
+                    if (!ReferenceEquals(plans[index], result[index])) { equal = false; break; }
+                if (equal) return plans;
+            }
+            return result;
+        }
+
+        private PawnFixPlan BuildPawnFixPlan(int i)
+        {
+                RoleStore store = planOwner!;
+                Pawn pawn = planPawns![i];
+                RecommendationPlan recommendations = this.recommendations!;
                 store.pawnSets.TryGetValue(pawn, out PawnRoleSet set);
                 List<RoleAssignment> existing =
                     set?.assignments ?? new List<RoleAssignment>();
-                PawnFixTarget fixTarget = fixTargets[i];
+                PawnFixTarget fixTarget = planSnapshot!.FixTargets[i];
                 var target = new List<RoleAssignment>(fixTarget.RoleIds.Count);
                 for (int roleIndex = 0;
                      roleIndex < fixTarget.RoleIds.Count;
@@ -485,9 +569,8 @@ namespace WorkRoles.UI
                     Role? role = store.RoleById(assignment.roleId);
                     if (role != null) plan.Removed.Add(role);
                 }
-                result.Add(plan);
-            }
-            return result;
+                plan.SealPresentationDependencies();
+                return plan;
         }
 
         private static List<Pawn> MapColonists(Map? map)
@@ -501,6 +584,7 @@ namespace WorkRoles.UI
 
     internal sealed class PawnFixPlan
     {
+        private int[] presentationRoleIds = Array.Empty<int>();
         internal PawnFixPlan(Pawn pawn, List<RoleAssignment> target, bool orderChanged)
         {
             Pawn = pawn;
@@ -516,6 +600,37 @@ namespace WorkRoles.UI
         internal bool HasChanges => Added.Count > 0 || Removed.Count > 0 || OrderChanged;
         internal Dictionary<int, RoleRecommendationExplanation> Explanations { get; } =
             new Dictionary<int, RoleRecommendationExplanation>();
+
+        internal void SealPresentationDependencies()
+        {
+            var roles = new HashSet<int>();
+            for (int index = 0; index < Target.Count; index++) roles.Add(Target[index].roleId);
+            for (int index = 0; index < Removed.Count; index++) roles.Add(Removed[index].id);
+            foreach (var pair in Explanations) AddExplanationRoles(pair.Value, roles);
+            presentationRoleIds = new int[roles.Count];
+            roles.CopyTo(presentationRoleIds);
+        }
+
+        private static void AddExplanationRoles(RoleRecommendationExplanation explanation, HashSet<int> roles)
+        {
+            roles.Add(explanation.RoleId);
+            if (explanation.RelatedRoleId >= 0) roles.Add(explanation.RelatedRoleId);
+            for (int index = 0; index < explanation.BundledMembers.Count; index++)
+                AddExplanationRoles(explanation.BundledMembers[index], roles);
+        }
+
+        internal int PresentationRevision()
+        {
+            int revision = 0;
+            for (int index = 0; index < presentationRoleIds.Length; index++)
+            {
+                int id = presentationRoleIds[index];
+                revision = Math.Max(revision, UiVersion.PresentationForRole(id));
+                revision = Math.Max(revision, UiVersion.ActivationForRole(id));
+                revision = Math.Max(revision, UiVersion.RulesForRole(id));
+            }
+            return revision;
+        }
     }
 
     internal readonly struct ColonistRecommendationRenderChip

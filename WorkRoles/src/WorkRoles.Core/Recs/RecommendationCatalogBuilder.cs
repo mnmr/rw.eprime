@@ -47,28 +47,74 @@ namespace WorkRoles.Core.Recs
         public bool Available = true;
         public bool Enabled = true;
         public RecommendationSpecialRoleKind SpecialRole;
+        /// Optional immutable full-fidelity work projection from the shared
+        /// producer. Training exclusions derive a separate spec when necessary.
+        public RoleWorkSpec? FullWorkSpec;
     }
 
     /// Complete role-catalog projection consumed by RecommendationPlan. The
     /// role views and their work specs are owned by this projection.
     public sealed class RecommendationCatalogProjection
     {
+        private readonly RecommendationSpecialRoleKind[] specialRoles;
+        private readonly int[] entryCounts;
+
         internal RecommendationCatalogProjection(
-            List<RoleView> roles,
-            List<PathView> paths,
-            int hunterRoleId,
-            int fireBlockerRoleId)
+            IReadOnlyList<RoleView> roles,
+            IReadOnlyList<PathView> paths,
+            RecommendationSpecialRoleKind[] specialRoles,
+            int[] entryCounts)
         {
-            Roles = new ReadOnlyCollection<RoleView>(roles);
-            Paths = new ReadOnlyCollection<PathView>(paths);
-            HunterRoleId = hunterRoleId;
-            FireBlockerRoleId = fireBlockerRoleId;
+            Roles = roles;
+            Paths = paths;
+            this.specialRoles = specialRoles;
+            this.entryCounts = entryCounts;
+            HunterRoleId = RecommendationCatalogBuilder.ResolveHunterRoleId(roles, specialRoles, entryCounts);
+            FireBlockerRoleId = RecommendationCatalogBuilder.ResolveFireBlockerRoleId(roles, specialRoles);
         }
 
         public IReadOnlyList<RoleView> Roles { get; }
         public IReadOnlyList<PathView> Paths { get; }
         public int HunterRoleId { get; }
         public int FireBlockerRoleId { get; }
+
+        /// Reuse the already-resolved work/training artifact when only global
+        /// switches changed. Shared role/path collections are immutable by
+        /// producer ownership; changed roles receive detached scalar overlays.
+        public RecommendationCatalogProjection WithActivation(IReadOnlyList<bool> enabled)
+        {
+            if (enabled.Count != Roles.Count) throw new ArgumentException("Activation count must match the catalog.", nameof(enabled));
+            List<RoleView>? changed = null;
+            for (int index = 0; index < Roles.Count; index++)
+            {
+                RoleView role = Roles[index];
+                if (role.Enabled == enabled[index])
+                {
+                    changed?.Add(role);
+                    continue;
+                }
+                if (changed == null)
+                {
+                    changed = new List<RoleView>(Roles.Count);
+                    for (int prior = 0; prior < index; prior++) changed.Add(Roles[prior]);
+                }
+                changed.Add(new RoleView
+                {
+                    Id = role.Id, TemplateDefName = role.TemplateDefName,
+                    MemberRoleIds = role.MemberRoleIds, Coverage = role.Coverage,
+                    OrderedCoverage = role.OrderedCoverage, AutoAssign = role.AutoAssign,
+                    HasRules = role.HasRules, Blocker = role.Blocker,
+                    PreserveRecommendationOrder = role.PreserveRecommendationOrder,
+                    ChampionPenalty = role.ChampionPenalty, PartialCapability = role.PartialCapability,
+                    Category = role.Category, Time = role.Time, MinAge = role.MinAge, MaxAge = role.MaxAge,
+                    ColonyMin = role.ColonyMin, CoveragePercent = role.CoveragePercent,
+                    Available = role.Available, Enabled = enabled[index],
+                    RequiresMechanitor = role.RequiresMechanitor, WorkSpec = role.WorkSpec,
+                });
+            }
+            return changed == null ? this : new RecommendationCatalogProjection(
+                new ReadOnlyCollection<RoleView>(changed), Paths, specialRoles, entryCounts);
+        }
 
         public ColonyView CreateColony(
             IEnumerable<int> orderTemplate,
@@ -128,7 +174,8 @@ namespace WorkRoles.Core.Recs
                         "Role sources cannot contain null.", nameof(sources));
                 views.Add(ViewOf(
                     source,
-                    SpecOf(source, jobs, naturalPriorities, jobProfiles, null),
+                    source.FullWorkSpec
+                        ?? SpecOf(source, jobs, naturalPriorities, jobProfiles, null),
                     jobs));
             }
             ApplyCompositeSpecs(sources, views);
@@ -147,11 +194,16 @@ namespace WorkRoles.Core.Recs
             }
             ApplyCompositeSpecs(sources, views);
 
+            var specialRoles = new RecommendationSpecialRoleKind[sources.Count];
+            var entryCounts = new int[sources.Count];
+            for (int index = 0; index < sources.Count; index++)
+            {
+                specialRoles[index] = sources[index].SpecialRole;
+                entryCounts[index] = sources[index].Entries.Count;
+            }
             return new RecommendationCatalogProjection(
-                views,
-                ownedPaths,
-                ResolveHunterRoleId(sources, views),
-                ResolveFireBlockerRoleId(sources, views));
+                new ReadOnlyCollection<RoleView>(views),
+                new ReadOnlyCollection<PathView>(ownedPaths), specialRoles, entryCounts);
         }
 
         private static RoleWorkSpec SpecOf(
@@ -291,44 +343,44 @@ namespace WorkRoles.Core.Recs
             };
         }
 
-        private static int ResolveHunterRoleId(
-            IReadOnlyList<RecommendationRoleSource> sources,
-            IReadOnlyList<RoleView> views)
+        internal static int ResolveHunterRoleId(
+            IReadOnlyList<RoleView> views,
+            IReadOnlyList<RecommendationSpecialRoleKind> specialRoles,
+            IReadOnlyList<int> entryCounts)
         {
-            for (int index = 0; index < sources.Count; index++)
+            for (int index = 0; index < views.Count; index++)
             {
-                RecommendationRoleSource source = sources[index];
-                if (source.SpecialRole == RecommendationSpecialRoleKind.Hunter
+                RoleView source = views[index];
+                if (specialRoles[index] == RecommendationSpecialRoleKind.Hunter
                     && source.Enabled
                     && !source.HasRules
                     && !source.Blocker)
                     return source.Id;
             }
 
-            RecommendationRoleSource? best = null;
-            for (int index = 0; index < sources.Count; index++)
+            int best = -1;
+            for (int index = 0; index < views.Count; index++)
             {
-                RecommendationRoleSource source = sources[index];
+                RoleView source = views[index];
                 if (!source.Enabled
                     || source.HasRules
                     || source.Blocker
                     || !views[index].WorkSpec.HasLiteralWorkType("Hunting"))
                     continue;
-                if (best == null
-                    || source.Entries.Count < best.Entries.Count)
-                    best = source;
+                if (best < 0 || entryCounts[index] < entryCounts[best])
+                    best = index;
             }
-            return best?.Id ?? -1;
+            return best < 0 ? -1 : views[best].Id;
         }
 
-        private static int ResolveFireBlockerRoleId(
-            IReadOnlyList<RecommendationRoleSource> sources,
-            IReadOnlyList<RoleView> views)
+        internal static int ResolveFireBlockerRoleId(
+            IReadOnlyList<RoleView> views,
+            IReadOnlyList<RecommendationSpecialRoleKind> specialRoles)
         {
-            for (int index = 0; index < sources.Count; index++)
+            for (int index = 0; index < views.Count; index++)
             {
-                RecommendationRoleSource source = sources[index];
-                if (source.SpecialRole
+                RoleView source = views[index];
+                if (specialRoles[index]
                         == RecommendationSpecialRoleKind.FireBlocker
                     && source.Enabled
                     && !source.HasRules
@@ -336,9 +388,9 @@ namespace WorkRoles.Core.Recs
                     return source.Id;
             }
 
-            for (int index = 0; index < sources.Count; index++)
+            for (int index = 0; index < views.Count; index++)
             {
-                RecommendationRoleSource source = sources[index];
+                RoleView source = views[index];
                 if (source.Enabled
                     && !source.HasRules
                     && source.Blocker

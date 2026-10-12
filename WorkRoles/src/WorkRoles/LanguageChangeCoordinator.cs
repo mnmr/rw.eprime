@@ -25,7 +25,7 @@ namespace WorkRoles
         {
             if (!deferredRevision.Complete()) return;
             GameJobCatalog.Instance.InvalidateSessionCache();
-            UiVersion.Bump();
+            UiVersion.Changed(ModelDomain.RolePresentation | ModelDomain.Catalog);
             UI.GroupSources.InvalidateLanguageCaches();
             UI.WorkJobLabels.InvalidateLanguageCaches();
             UI.ColonistsTabView.InvalidateSharedLanguageCaches();

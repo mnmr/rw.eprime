@@ -44,8 +44,8 @@ namespace WorkRoles.UI
             // The Roles tab's holder list mirrors whatever the colonist table lists.
             rolesTab.listedPawns = () => colonistsTab.ListedPawns();
             rolesTab.pawnListRevision = () => colonistsTab.PawnListRevision;
-            rolesTab.roleTip = role => colonistsTab.RoleTip(
-                role, RoleTipContext.TreeRow);
+            rolesTab.presentRoleTip = (rect, roleId) => colonistsTab.PresentRoleTip(
+                rect, roleId, RoleTipContext.TreeRow);
             optionsTab.showAutoOptimizeEnablePreview =
                 colonistsTab.ShowAutoOptimizeEnablePreview;
         }

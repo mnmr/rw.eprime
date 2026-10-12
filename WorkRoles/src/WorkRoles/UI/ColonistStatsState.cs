@@ -69,31 +69,35 @@ namespace WorkRoles.UI
         private readonly Dictionary<SkillDef, float> rosterCellWidths =
             new Dictionary<SkillDef, float>();
 
-        // Owner: Colonists window. Key: (Pawn, SkillDef). Value: immutable skill
-        // render presentation with stable external texture references.
-        // Dependencies: UiVersion presentation stamp, language, current RoleStore
-        // identity and RecommendationTuningRevision, and the pawn's own external
-        // capture. Refresh: lazy on first presentation read after invalidation;
-        // a partial external refresh evicts only the changed pawns' entries.
-        // Equality: exact key hits preserve presentation identity.
-        // Teardown: InvalidatePresentations/ReleaseSnapshots clears the table.
-        private readonly Dictionary<(Pawn pawn, SkillDef skill), ColonistSkillPresentation>
-            presentations =
-                new Dictionary<(Pawn, SkillDef), ColonistSkillPresentation>();
-        private int presentationStamp = -1;
-        private RoleStore? presentationStore;
-        private int presentationTuningRevision = -1;
+        // Owner: Colonists window. Key: Pawn reference identity within RoleStore.
+        // Value: immutable per-pawn stats and skill presentations, shared by the
+        // roster, selected panel, and role tips. Dependencies: external capture
+        // identity, store identity, RecommendationTuningRevision, language,
+        // definitions, and UiRevision metrics. Role/assignment UiVersion is not
+        // consumed. Refresh: lazy on changed dependencies; external refresh
+        // removes departed/changed pawns. Equality: unchanged presentation facts
+        // preserve individual and complete snapshot identities. Teardown:
+        // Reset/InvalidatePresentations/ReleaseSnapshots clear all entries.
+        private readonly PawnPresentationCache<Pawn, ColonistStatsSnapshot> stats;
+        private static readonly Func<ColonistStatsSnapshot, ColonistStatsSnapshot, bool>
+            StatsContentEquals = (left, right) => left.ContentEquals(right);
 
-        // Owner: Colonists window. Key: (UiVersion, selected Pawn identity).
-        // Value: immutable selected-pawn stats render projection with a
-        // producer-owned presentation buffer. Dependencies: presentation cache,
-        // language, RoleStore identity and RecommendationTuningRevision, and the
-        // published external pawn snapshot. Refresh: immediate on the next
-        // Snapshot read after key change. Equality: exact key hits preserve
-        // snapshot identity. Teardown: InvalidatePresentations clears it.
-        private int statsStamp = -1;
-        private Pawn? statsPawn;
-        private ColonistStatsSnapshot? stats;
+        // Owner: window. Key: exact skill label, fixed Small font. Value: raw
+        // measured width, immutable. Dependencies: label, language/definition
+        // revisions, UiRevision metrics. Refresh: first builder read after a
+        // revision changes; tuning and pawn changes reuse measurements. Equality:
+        // repeated keys reuse the float. Teardown: InvalidatePresentations/reset.
+        private readonly Dictionary<string, float> labelWidths =
+            new Dictionary<string, float>(StringComparer.Ordinal);
+        private int labelMetricRevision = -1;
+        private int labelLanguageRevision = -1;
+        private int labelDefinitionRevision = -1;
+
+        internal ColonistStatsState()
+        {
+            stats = new PawnPresentationCache<Pawn, ColonistStatsSnapshot>(
+                BuildSnapshot, StatsContentEquals, ReferenceIdentityComparer<Pawn>.Instance);
+        }
 
         internal bool NeedsExternalSnapshotRefresh =>
             externalSnapshots.NeedsRefresh(ExternalPawnFacts.Revisions);
@@ -116,14 +120,13 @@ namespace WorkRoles.UI
             PawnSignalSnapshotCache.Clear();
             externalSnapshots.Clear();
             rosterCellWidths.Clear();
+            changedPawns.Clear();
             InvalidatePresentations();
         }
 
         /// Pawns whose capture was replaced or removed by the latest partial
         /// refresh; empty after a full generation. Producer-owned buffer.
         private readonly List<Pawn> changedPawns = new List<Pawn>();
-        private readonly List<(Pawn pawn, SkillDef skill)> presentationKeyBuffer =
-            new List<(Pawn, SkillDef)>();
 
         internal IReadOnlyList<Pawn> ChangedPawns => changedPawns;
 
@@ -150,25 +153,11 @@ namespace WorkRoles.UI
             return true;
         }
 
-        /// Drops the (pawn, skill) presentations and the selected-pawn stats
-        /// projection of one pawn. A bounded key scan at the explicit refresh
-        /// boundary; never on a draw path.
+        /// Drops one pawn's owned presentation buffer at an explicit external
+        /// refresh boundary, including removed pawns so none stay rooted.
         private void InvalidatePresentationsFor(Pawn pawn)
         {
-            presentationKeyBuffer.Clear();
-            foreach (KeyValuePair<(Pawn pawn, SkillDef skill), ColonistSkillPresentation> pair
-                in presentations)
-                if (ReferenceEquals(pair.Key.pawn, pawn))
-                    presentationKeyBuffer.Add(pair.Key);
-            for (int i = 0; i < presentationKeyBuffer.Count; i++)
-                presentations.Remove(presentationKeyBuffer[i]);
-            presentationKeyBuffer.Clear();
-            if (ReferenceEquals(statsPawn, pawn))
-            {
-                statsStamp = -1;
-                statsPawn = null;
-                stats = null;
-            }
+            stats.Remove(pawn);
         }
 
         private static ExternalCapture CaptureExternal(Pawn pawn)
@@ -219,12 +208,9 @@ namespace WorkRoles.UI
             width = RosterCellMinWidth;
             foreach (Pawn pawn in externalSnapshots.Owners)
             {
-                if (!externalSnapshots.TryGet(pawn, out ExternalCapture? capture)
-                    || !capture!.SkillLinesByDef.TryGetValue(skill, out SkillLine line)
-                    || line.Disabled) continue;
-                SkillSignalView view = SignalPresentationPolicy.ForSkill(
-                    SignalSnapshot(pawn).Signals, skill.defName);
-                int icons = SkillSignalPresentation.ResolveIcons(view).Count;
+                ColonistSkillPresentation? presentation = Snapshot(pawn).ForSkill(skill);
+                if (presentation == null || presentation.Line.Disabled) continue;
+                int icons = presentation.SignalIcons.Count;
                 if (icons == 0) continue;
                 width = Mathf.Max(width, RosterIconStartX
                     + icons * DecoratorSize + (icons - 1) * DecoratorGap);
@@ -235,47 +221,57 @@ namespace WorkRoles.UI
 
         private void InvalidatePresentations()
         {
-            statsStamp = -1;
-            statsPawn = null;
-            stats = null;
-            presentations.Clear();
-            presentationStamp = -1;
-            presentationStore = null;
-            presentationTuningRevision = -1;
+            stats.Clear();
+            labelWidths.Clear();
+            labelMetricRevision = -1;
+            labelLanguageRevision = -1;
+            labelDefinitionRevision = -1;
         }
 
-        private void EnsurePresentationGeneration()
+        private float LabelWidth(string label)
         {
-            RoleStore? store = RoleStore.Current;
-            int tuningRevision = store?.RecommendationTuningRevision ?? -1;
-            if (presentationStamp == UiVersion.Current
-                && ReferenceEquals(presentationStore, store)
-                && presentationTuningRevision == tuningRevision)
-                return;
-            presentations.Clear();
-            presentationStamp = UiVersion.Current;
-            presentationStore = store;
-            presentationTuningRevision = tuningRevision;
-            statsStamp = -1;
-            statsPawn = null;
-            stats = null;
+            if (labelMetricRevision != UiRevision.Current
+                || labelLanguageRevision != LanguageChangeCoordinator.Revision
+                || labelDefinitionRevision != DefinitionReloadCoordinator.Revision)
+            {
+                labelWidths.Clear();
+                labelMetricRevision = UiRevision.Current;
+                labelLanguageRevision = LanguageChangeCoordinator.Revision;
+                labelDefinitionRevision = DefinitionReloadCoordinator.Revision;
+            }
+            if (!labelWidths.TryGetValue(label, out float width))
+            {
+                using (new TextBlock(GameFont.Small))
+                    width = Text.CalcSize(label).x;
+                labelWidths.Add(label, width);
+            }
+            return width;
         }
 
         internal ColonistSkillPresentation PresentationFor(Pawn pawn, SkillLine line)
         {
+            ColonistStatsSnapshot snapshot = Snapshot(pawn);
+            ColonistSkillPresentation? cached = snapshot.ForSkill(line.Def);
+            if (cached != null) return cached;
+            // A role can mention a skill absent from this pawn's tracker. This
+            // placeholder is requested only by the revision-gated role-tip
+            // builder; ordinary skill rows use the published snapshot above.
+            return BuildPresentation(pawn, line, ExternalSnapshot(pawn), null);
+        }
+
+        private ColonistSkillPresentation BuildPresentation(Pawn pawn, SkillLine line,
+            object externalIdentity, ColonistSkillPresentation? previous)
+        {
             PawnSignalSnapshot pawnSnapshot = SignalSnapshot(pawn);
-            EnsurePresentationGeneration();
-
-            var key = (pawn, line.Def);
-            if (presentations.TryGetValue(key, out ColonistSkillPresentation cached))
-                return cached;
-
-            SkillSignalView signalView = SignalPresentationPolicy.ForSkill(
-                pawnSnapshot.Signals, line.Def?.defName!); // existing behavior: placeholder lines may carry a null def
-            List<Texture2D> icons = SkillSignalPresentation.ResolveIcons(signalView);
-            float labelWidth;
-            using (new TextBlock(GameFont.Small))
-                labelWidth = Text.CalcSize(line.Label).x;
+            bool sameSource = previous != null && previous.SourceMatches(
+                externalIdentity, LanguageChangeCoordinator.Revision,
+                DefinitionReloadCoordinator.Revision);
+            SkillSignalView signalView = sameSource ? previous!.SignalView
+                : SignalPresentationPolicy.ForSkill(
+                    pawnSnapshot.Signals, line.Def?.defName!);
+            IReadOnlyList<Texture2D> icons = sameSource ? previous!.SignalIcons
+                : SkillSignalPresentation.ResolveIcons(signalView);
+            float labelWidth = LabelWidth(line.Label);
             SignalBucket? baseBucket = pawnSnapshot.SkillBuckets
                 .ForSkill(line.Def?.defName!)?.Bucket;
             SignalBucket? bucket = baseBucket;
@@ -283,7 +279,7 @@ namespace WorkRoles.UI
             if (bucket.HasValue)
             {
                 RecommendationsTuningOptions tuning =
-                    presentationStore?.recommendationTuning
+                    RoleStore.Current?.recommendationTuning
                     ?? RecommendationsTuningOptions.Default;
                 bucket = tuning.PromoteSkillSignal(line.Level, bucket.Value);
                 if (bucket.Value > baseBucket!.Value) // baseBucket had a value for bucket.HasValue to hold
@@ -295,7 +291,12 @@ namespace WorkRoles.UI
                             RecommendationTuningOption.OptionalTargetStrongLevel);
             }
 
-            var result = new ColonistSkillPresentation(
+            if (sameSource && previous!.PresentationMatches(
+                    labelWidth, bucket, baseBucket, promotionThreshold))
+                return previous;
+            return new ColonistSkillPresentation(
+                pawn, externalIdentity, LanguageChangeCoordinator.Revision,
+                DefinitionReloadCoordinator.Revision,
                 line,
                 labelWidth,
                 signalView,
@@ -304,42 +305,35 @@ namespace WorkRoles.UI
                     ? default(RoleChipVerdict)
                     : SkillSignalPresentation.VerdictBadgePanel(
                         bucket ?? SignalBucket.Neutral),
-                SkillSignalPresentation.CreateTooltip(
-                    pawn,
-                    line.Def?.defName!,
-                    line.Label,
-                    line.ValueText,
-                    SkillTextColor(line, signalView.PassionTier),
-                    signalView,
-                    bucket,
-                    baseBucket,
-                    line.Level,
-                    promotionThreshold));
-            presentations.Add(key, result);
-            return result;
+                bucket, baseBucket, promotionThreshold,
+                sameSource ? previous : null);
         }
 
         internal ColonistStatsSnapshot Snapshot(Pawn pawn)
         {
-            SignalSnapshot(pawn);
-            EnsurePresentationGeneration();
-            if (statsStamp == UiVersion.Current && statsPawn == pawn)
-                return stats!; // published together with the stamp/pawn key
-            statsStamp = UiVersion.Current;
-            statsPawn = pawn;
+            if (!externalSnapshots.TryGet(pawn, out ExternalCapture? capture))
+                return ColonistStatsSnapshot.Empty;
+            RoleStore? store = RoleStore.Current;
+            return stats.Get(pawn, new PawnPresentationStamp(
+                store, capture!, store?.RecommendationTuningRevision ?? -1,
+                LanguageChangeCoordinator.Revision, DefinitionReloadCoordinator.Revision,
+                UiRevision.Current));
+        }
 
-            List<SkillLine> lines = externalSnapshots.TryGet(
-                pawn, out ExternalCapture? capture)
-                ? capture!.SkillLines
-                : new List<SkillLine>();
-            var items = new List<ColonistSkillPresentation>(lines.Count);
+        private ColonistStatsSnapshot BuildSnapshot(Pawn pawn,
+            ColonistStatsSnapshot? previous)
+        {
+            ExternalCapture capture = externalSnapshots.Get(pawn);
+            List<SkillLine> lines = capture.SkillLines;
+            var items = new ColonistSkillPresentation[lines.Count];
             float columnWidth = MinimumSkillColumnWidth;
             using (new TextBlock(GameFont.Small))
             {
                 for (int i = 0; i < lines.Count; i++)
                 {
-                    ColonistSkillPresentation item = PresentationFor(pawn, lines[i]);
-                    items.Add(item);
+                    ColonistSkillPresentation item = BuildPresentation(pawn, lines[i],
+                        capture, previous?.ForSkill(lines[i].Def));
+                    items[i] = item;
                     float iconWidth = item.SignalIcons.Count == 0 ? 0f
                         : LabelDecoratorGap + item.SignalIcons.Count * DecoratorSize
                             + (item.SignalIcons.Count - 1) * DecoratorGap;
@@ -348,8 +342,7 @@ namespace WorkRoles.UI
                     columnWidth = Mathf.Max(columnWidth, Mathf.Ceil(required));
                 }
             }
-            stats = new ColonistStatsSnapshot(items, columnWidth);
-            return stats;
+            return new ColonistStatsSnapshot(items, columnWidth);
         }
 
         internal static Color SkillTextColor(SkillLine line, SignalPassionTier tier)
@@ -364,17 +357,54 @@ namespace WorkRoles.UI
 
     internal sealed class ColonistSkillPresentation
     {
-        internal ColonistSkillPresentation(SkillLine line, float labelWidth,
+        private readonly object externalIdentity;
+        private readonly int languageRevision;
+        private readonly int definitionRevision;
+        private readonly SignalBucket? bucket;
+        private readonly SignalBucket? baseBucket;
+        private readonly int promotionThreshold;
+        private readonly TooltipContent? tooltip;
+
+        internal ColonistSkillPresentation(Pawn pawn, object externalIdentity,
+            int languageRevision, int definitionRevision,
+            SkillLine line, float labelWidth,
             SkillSignalView signalView, IReadOnlyList<Texture2D> signalIcons,
-            RoleChipVerdict verdictStars, StructuredTip? tooltip)
+            RoleChipVerdict verdictStars, SignalBucket? bucket,
+            SignalBucket? baseBucket, int promotionThreshold,
+            ColonistSkillPresentation? previous)
         {
+            this.externalIdentity = externalIdentity;
+            this.languageRevision = languageRevision;
+            this.definitionRevision = definitionRevision;
+            this.bucket = bucket;
+            this.baseBucket = baseBucket;
+            this.promotionThreshold = promotionThreshold;
             Line = line;
             LabelWidth = labelWidth;
             SignalView = signalView;
             SignalIcons = signalIcons;
             VerdictStars = verdictStars;
-            Tooltip = tooltip;
+            if (signalView.HasTooltip)
+                tooltip = previous != null && previous.TooltipMatches(
+                        bucket, baseBucket, promotionThreshold)
+                    ? previous.tooltip
+                    : new TooltipContent(pawn, line, signalView,
+                        bucket, baseBucket, promotionThreshold);
         }
+
+        internal bool SourceMatches(object external, int language, int definition) =>
+            ReferenceEquals(externalIdentity, external)
+            && languageRevision == language && definitionRevision == definition;
+
+        private bool TooltipMatches(SignalBucket? nextBucket,
+            SignalBucket? nextBaseBucket, int nextPromotionThreshold) =>
+            bucket == nextBucket && baseBucket == nextBaseBucket
+            && promotionThreshold == nextPromotionThreshold;
+
+        internal bool PresentationMatches(float labelWidth,
+            SignalBucket? nextBucket, SignalBucket? nextBaseBucket,
+            int nextPromotionThreshold) => LabelWidth == labelWidth
+            && TooltipMatches(nextBucket, nextBaseBucket, nextPromotionThreshold);
 
         internal SkillLine Line { get; }
         internal float LabelWidth { get; }
@@ -383,11 +413,66 @@ namespace WorkRoles.UI
         /// The tooltip's (promoted) skill verdict as a star pair; default for
         /// disabled skills.
         internal RoleChipVerdict VerdictStars { get; }
-        internal StructuredTip? Tooltip { get; }
+        internal StructuredTip? Tooltip => tooltip?.Get();
+        internal IStructuredTipSource? TooltipSource => tooltip;
+
+        // Owner: one immutable skill presentation, shared across metric-only
+        // replacements. Key: captured pawn/skill facts, source/language/definition
+        // epoch and promoted verdict. Value: immutable tooltip content (including
+        // a memoized null). Dependencies: the enclosing presentation's external
+        // capture, language, definitions and consumed tuning result; UI geometry
+        // belongs to the shared presenter's frozen session. Refresh: first
+        // eligible hover request only. Equality: repeated requests reuse content.
+        // Teardown: releasing the per-pawn snapshot releases this memo; there are
+        // no subscriptions or owned Unity resources. The caller must check hover
+        // eligibility before reading Tooltip.
+        private sealed class TooltipContent : IStructuredTipSource
+        {
+            private readonly Pawn pawn;
+            private readonly SkillLine line;
+            private readonly SkillSignalView view;
+            private readonly SignalBucket? bucket;
+            private readonly SignalBucket? baseBucket;
+            private readonly int promotionThreshold;
+            private bool built;
+            private StructuredTip? value;
+
+            internal TooltipContent(Pawn pawn, SkillLine line,
+                SkillSignalView view, SignalBucket? bucket,
+                SignalBucket? baseBucket, int promotionThreshold)
+            {
+                this.pawn = pawn;
+                this.line = line;
+                this.view = view;
+                this.bucket = bucket;
+                this.baseBucket = baseBucket;
+                this.promotionThreshold = promotionThreshold;
+                StableKey = $"skill-signal:{pawn.thingIDNumber}:{line.Def?.defName}";
+            }
+
+            public string StableKey { get; }
+            public StructuredTip? Resolve() => Get();
+
+            internal StructuredTip? Get()
+            {
+                if (!built)
+                {
+                    value = SkillSignalPresentation.CreateTooltip(
+                        pawn, line.Def?.defName!, line.Label, line.ValueText,
+                        ColonistStatsState.SkillTextColor(line, view.PassionTier),
+                        view, bucket, baseBucket, line.Level, promotionThreshold);
+                    built = true;
+                }
+                return value;
+            }
+        }
     }
 
     internal sealed class ColonistStatsSnapshot
     {
+        internal static readonly ColonistStatsSnapshot Empty =
+            new ColonistStatsSnapshot(Array.Empty<ColonistSkillPresentation>(), 200f);
+
         internal ColonistStatsSnapshot(
             IReadOnlyList<ColonistSkillPresentation> skills, float skillColumnWidth)
         {
@@ -397,5 +482,21 @@ namespace WorkRoles.UI
 
         internal IReadOnlyList<ColonistSkillPresentation> Skills { get; }
         internal float SkillColumnWidth { get; }
+
+        internal ColonistSkillPresentation? ForSkill(SkillDef skill)
+        {
+            for (int i = 0; i < Skills.Count; i++)
+                if (ReferenceEquals(Skills[i].Line.Def, skill)) return Skills[i];
+            return null;
+        }
+
+        internal bool ContentEquals(ColonistStatsSnapshot other)
+        {
+            if (SkillColumnWidth != other.SkillColumnWidth
+                || Skills.Count != other.Skills.Count) return false;
+            for (int i = 0; i < Skills.Count; i++)
+                if (!ReferenceEquals(Skills[i], other.Skills[i])) return false;
+            return true;
+        }
     }
 }

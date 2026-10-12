@@ -107,9 +107,12 @@ namespace WorkRoles.UI
         // LockedColor family, darkened for body text).
         private static readonly Color WarnColor = new Color(0.9f, 0.6f, 0.25f);
 
-        // Owner: this dialog. Key: RoleStore identity, UiVersion, definition
+        // Owner: this dialog. Key: RoleStore identity, Catalog/Presentation/
+        // Work/History/Capability/Recommendation/RecommendationOrder, definition
         // revision, and language revision. Value: private detached restore rows.
-        // Dependencies: current store drift, seeded defs, and translated labels.
+        // Dependencies: role/template/group identity, labels/colors, work and
+        // blocker coverage, recorded work-type history, holder policy, training paths, recommendation order,
+        // seeded defs, and translations; assignments/activation are not consumed.
         // Refresh: immediate at the next DoWindowContents call. Equality: equal
         // rows preserve list identity; stable item keys preserve user selections
         // within the same store. Teardown: PostClose clears rows and owner refs.
@@ -119,6 +122,10 @@ namespace WorkRoles.UI
         private int rowsUiRevision = -1;
         private int rowsDefinitionRevision = -1;
         private int rowsLanguageRevision = -1;
+        private static int RestoreRevision(RoleStore? store) =>
+            store?.Revisions.For(ModelDomain.Catalog | ModelDomain.RolePresentation
+                | ModelDomain.RoleWork | ModelDomain.RoleHistory | ModelDomain.RoleCapability
+                | ModelDomain.RoleRecommendation | ModelDomain.RecommendationOrder) ?? 0;
         private int includedCount;
         private Vector2 scroll;
 
@@ -128,7 +135,7 @@ namespace WorkRoles.UI
         {
             PublishRows(items, preserveSelections: false);
             rowsOwner = RoleStore.Current;
-            rowsUiRevision = UiVersion.Current;
+            rowsUiRevision = RestoreRevision(rowsOwner);
             rowsDefinitionRevision = DefinitionReloadCoordinator.Revision;
             rowsLanguageRevision = LanguageChangeCoordinator.Revision;
         }
@@ -136,7 +143,7 @@ namespace WorkRoles.UI
         private void EnsureRowsCurrent()
         {
             RoleStore? owner = RoleStore.Current;
-            int uiRevision = UiVersion.Current;
+            int uiRevision = RestoreRevision(owner);
             int definitionRevision = DefinitionReloadCoordinator.Revision;
             int languageRevision = LanguageChangeCoordinator.Revision;
             if (ReferenceEquals(rowsOwner, owner)
@@ -203,20 +210,22 @@ namespace WorkRoles.UI
         // Key: dialog identity, exact available width, and language revision.
         // Value: immutable detached warning text and its measured height.
         // Dependencies: WR_RestoreOverwriteWarning translation,
-        // LanguageChangeCoordinator.Revision, GameFont.Small metrics,
+        // LanguageChangeCoordinator.Revision, UiRevision GameFont.Small metrics,
         // enabled word wrapping, and the exact available width.
-        // Refresh: immediately when the language revision or width changes.
+        // Refresh: immediately when language/UI metrics or width changes.
         // Equality: an equal rebuild preserves snapshot identity.
         // Teardown: closing the dialog releases the instance-owned snapshot.
         private RestoreWarningSnapshot? warningSnapshot;
         private float warningWidth = -1f;
         private int warningLanguageRevision = -1;
+        private int warningMetricRevision = -1;
 
         private RestoreWarningSnapshot WarningSnapshot(float width)
         {
             int languageRevision = LanguageChangeCoordinator.Revision;
             if (warningSnapshot != null
                 && warningWidth == width
+                && warningMetricRevision == UiRevision.Current
                 && warningLanguageRevision == languageRevision)
                 return warningSnapshot;
 
@@ -241,6 +250,7 @@ namespace WorkRoles.UI
                 warningSnapshot = rebuilt;
             warningWidth = width;
             warningLanguageRevision = languageRevision;
+            warningMetricRevision = UiRevision.Current;
             return warningSnapshot;
         }
 
@@ -332,6 +342,7 @@ namespace WorkRoles.UI
             warningSnapshot = null;
             warningWidth = -1f;
             warningLanguageRevision = -1;
+            warningMetricRevision = -1;
             base.PostClose();
         }
 

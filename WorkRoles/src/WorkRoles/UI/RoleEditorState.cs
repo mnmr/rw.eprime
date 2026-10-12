@@ -33,7 +33,7 @@ namespace WorkRoles.UI
         // already releases every owned slot.
         private int observedDefinitionRevision = -1;
 
-        // Owner: Roles window. Key: (UiVersion, definition revision, selected
+        // Owner: Roles window. Key: (per-role RoleWork, definition revision, selected
         // role id). Value:
         // producer-owned immutable skill presentations. Dependencies: role job
         // coverage, definition labels, role revision, and language. Refresh: lazy
@@ -53,10 +53,10 @@ namespace WorkRoles.UI
         private ScopeCacheStamp holdersStamp = ScopeCacheStamp.Invalid;
         private int holdersRoleId = -1;
 
-        // Owner: Roles window. Key: (UiVersion, definition revision, selected
+        // Owner: Roles window. Key: (per-role RoleWork, definition revision, selected
         // role id). Value: private
         // set of selected-entry indexes that compile to no jobs. Dependencies:
-        // role entries and the game job catalog represented by UiVersion.
+        // role entries and the game job catalog's definition revision.
         // Refresh: lazy on first read after key change. Equality: exact keys reuse
         // set identity. Teardown: Reset releases the set and stamps.
         private HashSet<int>? deadEntries;
@@ -80,7 +80,8 @@ namespace WorkRoles.UI
         private float typeTruncationWidth = -1f;
         private float jobTruncationWidth = -1f;
 
-        // Owner: Roles window. Key: UiVersion and definition revision. Value:
+        // Owner: Roles window. Key: Catalog/RoleWork/RoleCapability (blocker
+        // exclusion) and definition revision. Value:
         // private producer-owned sets
         // and immutable RoleCoveragePresentation/warning string. Dependencies:
         // all non-blocker role coverage, job definitions, and language. Refresh:
@@ -101,7 +102,7 @@ namespace WorkRoles.UI
         private float measuredCoverageWarningWidth = -1f;
         private float measuredCoverageWarningHeight;
 
-        // Owner: Roles window. Key: UiVersion, definition revision, selected role
+        // Owner: Roles window. Key: Catalog/RoleWork/RoleCapability, definition revision, selected role
         // id, local expansion revision, and search filter. Value: producer-owned immutable job-tree
         // row projections. Dependencies: role entries, definition/job catalogs,
         // coverage, language, filter, and expansion state. Refresh: immediate on
@@ -119,7 +120,7 @@ namespace WorkRoles.UI
         private readonly HashSet<string> collapsedCandidateSections =
             new HashSet<string>(StringComparer.Ordinal);
 
-        // Owner: Roles window builder. Key: (UiVersion, selected role id). Value:
+        // Owner: Roles window builder. Key: (per-role RoleWork, selected role id). Value:
         // private work-type/work-giver membership indexes. Dependencies: selected
         // role entries only. Refresh: lazy before state derivation after key change.
         // Equality: exact keys reuse both set instances and contents. Teardown:
@@ -131,7 +132,11 @@ namespace WorkRoles.UI
 
         // Owner: window. Key: selected role identity. Value: immutable editor
         // render projection with producer-owned buffers hidden behind indexed
-        // accessors. Dependencies: UiVersion, location and pawn-scope revisions,
+        // accessors. Dependencies: store identity; Catalog/RoleWork/Assignments/
+        // Preferences/RoleCapability (coverage excludes blockers); selected-role
+        // Presentation/Rules/Capability; composite
+        // candidate lists additionally consume all Presentation/Rules/Activation.
+        // Also UI metrics, external pawn facts, location and pawn-scope revisions,
         // editor width, language, filter/expansion state, and local rules
         // disclosure, shared role-icon presentation revision, and definition revision.
         // Refresh: immediate when any
@@ -139,6 +144,7 @@ namespace WorkRoles.UI
         // unchanged dependencies preserve the snapshot identity. Teardown:
         // Reset/language invalidation releases the complete projection.
         private RoleEditorSnapshot? editorSnapshot;
+        private RoleStore? editorOwner;
         private int editorSnapshotStamp = -1;
         private int editorSnapshotRoleId = -1;
         private int editorSnapshotLocationRevision = -1;
@@ -150,6 +156,10 @@ namespace WorkRoles.UI
         private string? editorSnapshotFilter;
         // The composite candidate list mirrors the role list's nested/flat mode.
         private bool editorSnapshotNested;
+        private bool editorSnapshotComposite;
+        private int editorSnapshotExternalRevision = -1;
+        private int holdersExternalRevision = -1;
+        private int metricRevision = -1;
 
         internal string Filter { get; set; } = "";
 
@@ -158,12 +168,20 @@ namespace WorkRoles.UI
             float width, bool rulesRevealed,
             bool revealTreeSelection)
         {
+            if (!ReferenceEquals(editorOwner, store))
+            {
+                Reset();
+                editorOwner = store;
+            }
             ObserveDefinitionRevision();
+            ObserveMetrics();
+            int revision = EditorRevision(store, roleId, editorSnapshotComposite);
             bool sectionsNested = WorkRolesMod.Settings?.nestedRoleTree ?? true;
-            if (!revealTreeSelection && editorSnapshotStamp == UiVersion.Current
+            if (!revealTreeSelection && editorSnapshotStamp == revision
                 && editorSnapshotRoleId == roleId
                 && editorSnapshotLocationRevision == MapClassifications.LocationRevision
                 && editorSnapshotPawnRevision == pawnRevision
+                && editorSnapshotExternalRevision == ExternalPawnFacts.Revisions.Current
                 && editorSnapshotTreeRevision == treeRevision
                 && editorSnapshotRoleIconRevision
                     == RoleIconPresentationCatalog.Revision
@@ -173,10 +191,11 @@ namespace WorkRoles.UI
                 && editorSnapshotNested == sectionsNested)
                 return editorSnapshot;
 
-            editorSnapshotStamp = UiVersion.Current;
+            editorSnapshotStamp = revision;
             editorSnapshotRoleId = roleId;
             editorSnapshotLocationRevision = MapClassifications.LocationRevision;
             editorSnapshotPawnRevision = pawnRevision;
+            editorSnapshotExternalRevision = ExternalPawnFacts.Revisions.Current;
             editorSnapshotRoleIconRevision =
                 RoleIconPresentationCatalog.Revision;
             editorSnapshotWidth = width;
@@ -190,6 +209,8 @@ namespace WorkRoles.UI
                 editorSnapshotTreeRevision = treeRevision;
                 return editorSnapshot = null;
             }
+            editorSnapshotComposite = role.composite;
+            editorSnapshotStamp = EditorRevision(store!, roleId, role.composite);
             bool memberLocked = store!.IsCompositeMember(role.id); // role != null implies store != null
 
             const float TopBoxPadding = 8f;
@@ -386,8 +407,8 @@ namespace WorkRoles.UI
         }
 
         /// Member and candidate projections for the composite editor. Both lists
-        /// re-snapshot with the editor (UiVersion covers membership, labels,
-        /// colors, and enabled/blocker state; commands bump it on every edit;
+        /// re-snapshot with the editor (named domains cover membership, labels,
+        /// colors, and enabled/blocker state;
         /// section collapse toggles bump treeRevision). Candidates come from
         /// the shared role-list section snapshot so their grouping, nesting,
         /// and order match the role tree exactly; sections whose members are
@@ -512,6 +533,11 @@ namespace WorkRoles.UI
 
         internal void Reset()
         {
+            editorOwner = null;
+            editorSnapshotComposite = false;
+            editorSnapshotExternalRevision = -1;
+            holdersExternalRevision = -1;
+            metricRevision = -1;
             Filter = "";
             expandedWorkTypes.Clear();
             collapsedCandidateSections.Clear();
@@ -534,6 +560,8 @@ namespace WorkRoles.UI
 
         internal void InvalidateLanguageCaches()
         {
+            holders = null;
+            holdersStamp = ScopeCacheStamp.Invalid;
             editorSnapshot = null;
             editorSnapshotStamp = -1;
             editorSnapshotRoleId = -1;
@@ -585,6 +613,31 @@ namespace WorkRoles.UI
             treeNodesStamp = -1;
         }
 
+        private static int EditorRevision(RoleStore store, int roleId, bool composite)
+        {
+            ModelDomain global = ModelDomain.Catalog | ModelDomain.RoleWork
+                | ModelDomain.Assignments | ModelDomain.Preferences | ModelDomain.RoleCapability;
+            if (composite)
+                global |= ModelDomain.RolePresentation | ModelDomain.RoleRules
+                    | ModelDomain.RoleActivation;
+            return Math.Max(store.Revisions.For(global), store.Revisions.ForRole(roleId,
+                ModelDomain.RolePresentation | ModelDomain.RoleRules
+                | ModelDomain.RoleCapability));
+        }
+
+        // UI metric changes discard only measured geometry/truncation slots;
+        // job membership, skills, holders and coverage snapshots remain valid.
+        private void ObserveMetrics()
+        {
+            if (metricRevision == UiRevision.Current) return;
+            metricRevision = UiRevision.Current;
+            editorSnapshotStamp = -1;
+            typeTruncations.Clear();
+            jobTruncations.Clear();
+            typeTruncationWidth = jobTruncationWidth = -1f;
+            measuredCoverageWarningWidth = -1f;
+        }
+
         private void EnsureTips()
         {
             int languageRevision = LanguageChangeCoordinator.Revision;
@@ -602,10 +655,10 @@ namespace WorkRoles.UI
         internal IReadOnlyList<RoleSkillPresentation> SkillsUsed(Role role)
         {
             ObserveDefinitionRevision();
-            if (skillsUsed == null || skillsStamp != UiVersion.Current
+            if (skillsUsed == null || skillsStamp != UiVersion.WorkForRole(role.id)
                 || skillsRoleId != role.id)
             {
-                skillsStamp = UiVersion.Current;
+                skillsStamp = UiVersion.WorkForRole(role.id);
                 skillsRoleId = role.id;
                 skillsUsed = RoleWorkSpecs.For(role).Skills
                     .Where(skill => skill.Participates)
@@ -626,11 +679,13 @@ namespace WorkRoles.UI
         internal IReadOnlyList<RoleHolderPresentation> Holders(Role role, RoleStore store,
             IReadOnlyList<Pawn> pawns, int pawnRevision)
         {
-            var stamp = new ScopeCacheStamp(UiVersion.Current, pawnRevision);
-            if (holders == null || holdersStamp != stamp || holdersRoleId != role.id)
+            var stamp = new ScopeCacheStamp(UiVersion.Assignments, pawnRevision);
+            if (holders == null || holdersStamp != stamp || holdersRoleId != role.id
+                || holdersExternalRevision != ExternalPawnFacts.Revisions.Current)
             {
                 holdersStamp = stamp;
                 holdersRoleId = role.id;
+                holdersExternalRevision = ExternalPawnFacts.Revisions.Current;
                 holders = new List<RoleHolderPresentation>();
                 for (int i = 0; i < pawns.Count; i++)
                 {
@@ -649,10 +704,10 @@ namespace WorkRoles.UI
         internal IReadOnlyCollection<int> DeadEntryIndexes(Role role)
         {
             ObserveDefinitionRevision();
-            if (deadEntries == null || deadEntriesStamp != UiVersion.Current
+            if (deadEntries == null || deadEntriesStamp != UiVersion.WorkForRole(role.id)
                 || deadEntriesRoleId != role.id)
             {
-                deadEntriesStamp = UiVersion.Current;
+                deadEntriesStamp = UiVersion.WorkForRole(role.id);
                 deadEntriesRoleId = role.id;
                 deadEntries = JobOrderCompiler.DeadEntryIndexes(
                     role.entries, GameJobCatalog.Instance);
@@ -664,7 +719,8 @@ namespace WorkRoles.UI
             out bool hasDeadEntries)
         {
             ObserveDefinitionRevision();
-            if (deadEntries == null || deadEntriesStamp != UiVersion.Current
+            if (!ReferenceEquals(editorOwner, RoleStore.Current)
+                || deadEntries == null || deadEntriesStamp != UiVersion.WorkForRole(roleId)
                 || deadEntriesRoleId != roleId)
             {
                 hasDeadEntries = false;
@@ -737,10 +793,12 @@ namespace WorkRoles.UI
         internal RoleCoveragePresentation Coverage(RoleStore store)
         {
             ObserveDefinitionRevision();
-            if (uncoveredGivers != null && uncoveredStamp == UiVersion.Current)
+            int revision = store.Revisions.For(ModelDomain.Catalog | ModelDomain.RoleWork
+                | ModelDomain.RoleCapability);
+            if (uncoveredGivers != null && uncoveredStamp == revision)
                 return coverage!; // set together with uncoveredGivers
 
-            uncoveredStamp = UiVersion.Current;
+            uncoveredStamp = revision;
             var covered = new HashSet<string>();
             foreach (Role role in store.roles)
                 if (!role.blocker)
@@ -791,12 +849,14 @@ namespace WorkRoles.UI
             Role role, RoleCoveragePresentation coverage)
         {
             ObserveDefinitionRevision();
-            if (treeNodes != null && treeNodesStamp == UiVersion.Current
+            int revision = Math.Max(UiVersion.Catalog,
+                Math.Max(UiVersion.RoleWork, UiVersion.RoleCapability));
+            if (treeNodes != null && treeNodesStamp == revision
                 && treeNodesRoleId == role.id
                 && treeNodesRevision == treeRevision && treeNodesFilter == Filter)
                 return treeNodes;
 
-            treeNodesStamp = UiVersion.Current;
+            treeNodesStamp = revision;
             treeNodesRoleId = role.id;
             treeNodesRevision = treeRevision;
             treeNodesFilter = Filter;
@@ -934,8 +994,8 @@ namespace WorkRoles.UI
 
         private void EnsureEntrySets(Role role)
         {
-            if (entrySetsStamp == UiVersion.Current && entrySetsRoleId == role.id) return;
-            entrySetsStamp = UiVersion.Current;
+            if (entrySetsStamp == UiVersion.WorkForRole(role.id) && entrySetsRoleId == role.id) return;
+            entrySetsStamp = UiVersion.WorkForRole(role.id);
             entrySetsRoleId = role.id;
             entryTypes.Clear();
             entryGivers.Clear();

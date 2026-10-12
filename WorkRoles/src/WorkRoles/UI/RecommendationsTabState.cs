@@ -19,7 +19,8 @@ namespace WorkRoles.UI
         internal const float FlowGap = 8f;
 
         // Cache contract — Owner: Recommendations tab. Key: RoleStore identity,
-        // UiVersion.Current, available width, and language generation through
+        // Catalog/RolePresentation/RoleWork/RoleRules/RoleCapability/RecommendationOrder,
+        // definition and UI metric revisions, available width, and language through
         // explicit invalidation. Value: one immutable recommendation-order
         // snapshot containing detached chip data, layout, catalog lookup, and
         // add-menu projections. Dependencies: role catalog/order, labels,
@@ -28,6 +29,7 @@ namespace WorkRoles.UI
         // snapshot identity. Teardown: Reset/InvalidateLanguageCaches releases it.
         private RoleStore? orderStore;
         private int orderUiVersion = -1;
+        private int orderDefinitionRevision = -1;
         private int orderGeneration;
         private float orderWidth = -1f;
         private RecOrderSnapshot? orderSnapshot;
@@ -67,9 +69,11 @@ namespace WorkRoles.UI
         private float panelsWidth = -1f;
         private RecRolePanelsSnapshot? panelsSnapshot;
 
-        // Cache contract — Owner: Recommendations tab. Key: (UiVersion.Current,
+        // Cache contract — Owner: Recommendations tab. Key: (Catalog,
+        // RolePresentation, RoleWork, RoleRules and RoleCapability plus this role's
+        // RoleRecommendation/RoleCapability revisions,
         // RoleStore identity, expanded role id, available width, live Small
-        // line height, language generation via explicit invalidation). Value:
+        // UI metric revision, language generation via explicit invalidation). Value:
         // one immutable
         // RecRoleDetailSnapshot (single slot: the accordion expands one panel).
         // Dependencies: the role's category/time/championPenalty/
@@ -87,8 +91,13 @@ namespace WorkRoles.UI
         private RoleStore? detailStore;
         private int detailRoleId = -1;
         private float detailWidth = -1f;
-        private float detailSmallLineHeight = -1f;
         private RecRoleDetailSnapshot? detail;
+
+        // Owner: tab. Key: UiRevision.Current. Value: the measurement generation
+        // for order, help, tuning, panels and details. Dependencies: UI scale,
+        // fonts and language. Refresh: immediate before any geometry read.
+        // Equality: unchanged epochs preserve all snapshots. Teardown: Reset.
+        private int metricRevision = -1;
 
         internal int OrderStamp => orderGeneration;
         internal RecOrderSnapshot? Order => orderSnapshot;
@@ -111,6 +120,7 @@ namespace WorkRoles.UI
         {
             orderStore = null;
             orderUiVersion = -1;
+            orderDefinitionRevision = -1;
             orderWidth = -1f;
             orderSnapshot = null;
 
@@ -135,14 +145,19 @@ namespace WorkRoles.UI
             detailStore = null;
             detailRoleId = -1;
             detailWidth = -1f;
-            detailSmallLineHeight = -1f;
+            metricRevision = -1;
             detail = null;
         }
 
         internal void EnsureOrder(RoleStore store, float width)
         {
+            ObserveMetrics();
+            int revision = store.Revisions.For(ModelDomain.Catalog
+                | ModelDomain.RolePresentation | ModelDomain.RoleWork
+                | ModelDomain.RoleRules | ModelDomain.RoleCapability | ModelDomain.RecommendationOrder);
             if (ReferenceEquals(orderStore, store)
-                && orderUiVersion == UiVersion.Current
+                && orderUiVersion == revision
+                && orderDefinitionRevision == DefinitionReloadCoordinator.Revision
                 && orderWidth == width) return;
             List<RoleView> views = RecsAdapter.RoleViewsOf(store.roles);
             List<int> resolved = OrderTemplate.ResolveTemplate(
@@ -182,12 +197,21 @@ namespace WorkRoles.UI
                 unchecked { orderGeneration++; }
             }
             orderStore = store;
-            orderUiVersion = UiVersion.Current;
+            orderUiVersion = revision;
+            orderDefinitionRevision = DefinitionReloadCoordinator.Revision;
             orderWidth = width;
+        }
+
+        private void ObserveMetrics()
+        {
+            if (metricRevision == UiRevision.Current) return;
+            metricRevision = UiRevision.Current;
+            orderWidth = helpWidth = tuningWidth = panelsWidth = detailWidth = -1f;
         }
 
         internal void EnsureTuning(RoleStore store, float width)
         {
+            ObserveMetrics();
             TinyTextMetrics tinyMetrics = TinyText.Metrics;
             if (ReferenceEquals(tuningStore, store)
                 && tuningRevision == store.RecommendationTuningRevision
@@ -591,6 +615,7 @@ namespace WorkRoles.UI
 
         internal void EnsureHelpLayout(float width)
         {
+            ObserveMetrics();
             if (helpWidth == width) return;
             helpWidth = width;
             Text.Font = GameFont.Small;
@@ -631,6 +656,7 @@ namespace WorkRoles.UI
 
         internal void EnsurePanels(float width)
         {
+            ObserveMetrics();
             if (ReferenceEquals(panelsOrder, orderSnapshot)
                 && panelsWidth == width) return;
             var rebuilt = new List<RecRolePanel>();
@@ -666,23 +692,29 @@ namespace WorkRoles.UI
         internal RecRoleDetailSnapshot? EnsureDetail(
             RoleStore store, int roleId, float width)
         {
-            float smallLineHeight = Text.LineHeightOf(GameFont.Small);
-            if (detailStamp == UiVersion.Current
+            ObserveMetrics();
+            int revision = System.Math.Max(store.Revisions.For(ModelDomain.Catalog
+                | ModelDomain.RolePresentation | ModelDomain.RoleWork | ModelDomain.RoleRules
+                | ModelDomain.RoleCapability),
+                store.Revisions.ForRole(roleId, ModelDomain.RoleRecommendation
+                    | ModelDomain.RoleCapability));
+            if (detailStamp == revision
                 && detailDefinitionRevision == DefinitionReloadCoordinator.Revision
                 && ReferenceEquals(detailStore, store)
-                && detailRoleId == roleId && detailWidth == width
-                && detailSmallLineHeight == smallLineHeight)
+                && detailRoleId == roleId && detailWidth == width)
                 return detail;
-            detailStamp = UiVersion.Current;
+            detailStamp = revision;
             detailDefinitionRevision = DefinitionReloadCoordinator.Revision;
             detailStore = store;
             detailRoleId = roleId;
             detailWidth = width;
-            detailSmallLineHeight = smallLineHeight;
             detail = null;
 
             Role? role = store.RoleById(roleId);
             if (role == null) return null;
+            float smallLineHeight;
+            using (new TextBlock(GameFont.Small))
+                smallLineHeight = Text.LineHeight;
 
             // Skill facts render as compact comma-separated rows in the right
             // half column. Every inline segment keeps its own premeasured hit

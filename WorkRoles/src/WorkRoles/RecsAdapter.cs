@@ -48,7 +48,7 @@ namespace WorkRoles
     /// Projects game state into the Core recommendation engine's views and
     /// resolves the content-based special roles (Hunter, fire blocker). Pure
     /// projection: no UI state, no commands. Callers own caching (the colony
-    /// plan snapshot keys on UiVersion).
+    /// plan snapshots key on the narrow recommendation domains).
     public static class RecsAdapter
     {
         /// Genes that make a pawn terrified of fire (Biotech's pyrophobia;
@@ -67,20 +67,35 @@ namespace WorkRoles
 
         internal static ColonyView BuildColonyView(
             RoleStore store,
-            List<Pawn> pawns,
+            IReadOnlyList<Pawn> pawns,
             Func<Pawn, PawnExternalSnapshot> snapshotFor)
+            => BuildColonyView(store, pawns, snapshotFor, BuildRoleCatalog(store));
+
+        internal static ColonyView BuildColonyView(
+            RoleStore store,
+            IReadOnlyList<Pawn> pawns,
+            Func<Pawn, PawnExternalSnapshot> snapshotFor,
+            RecommendationCatalogProjection catalog,
+            IReadOnlyList<PawnView>? previousPawnViews = null)
         {
             if (snapshotFor == null) throw new ArgumentNullException(nameof(snapshotFor));
-            RecommendationCatalogProjection catalog = BuildRoleCatalog(
-                store.roles, PathViewsOf(store));
-            var pawnViews = new List<PawnView>(pawns.Count);
-            foreach (var pawn in pawns)
-                pawnViews.Add(PawnViewOf(
-                    pawn, store, snapshotFor(pawn)));
+            IReadOnlyList<PawnView> pawnViews;
+            if (previousPawnViews != null) pawnViews = previousPawnViews;
+            else
+            {
+                var projected = new List<PawnView>(pawns.Count);
+                for (int index = 0; index < pawns.Count; index++)
+                    projected.Add(PawnViewOf(pawns[index], store, snapshotFor(pawns[index])));
+                pawnViews = projected;
+            }
             List<int> orderTemplate = OrderTemplate.ResolveTemplate(
                 store.recommendationOrder, catalog.Roles);
             return catalog.CreateColony(orderTemplate, pawnViews);
         }
+
+        internal static RecommendationCatalogProjection BuildRoleCatalog(RoleStore store)
+            => BuildRoleCatalog(store.roles, PathViewsOf(store),
+                reuseWorkSpecs: ReferenceEquals(store, RoleStore.Current));
 
         internal static RoleView RoleViewOf(Role role) =>
             BuildRoleCatalog(new[] { role }).Roles[0];
@@ -91,12 +106,13 @@ namespace WorkRoles
         /// Views with the store's training paths applied, so path-target skill
         /// promotions land exactly as they do in the live recommendation run.
         internal static List<RoleView> RoleViewsOf(RoleStore store)
-            => BuildRoleCatalog(store.roles, PathViewsOf(store))
+            => BuildRoleCatalog(store)
                 .Roles.ToList();
 
         private static RecommendationCatalogProjection BuildRoleCatalog(
             IReadOnlyList<Role> roles,
-            IReadOnlyList<PathView>? paths = null)
+            IReadOnlyList<PathView>? paths = null,
+            bool reuseWorkSpecs = false)
         {
             var sources = new List<RecommendationRoleSource>(roles.Count);
             for (int index = 0; index < roles.Count; index++)
@@ -136,6 +152,11 @@ namespace WorkRoles
                     Enabled = role.enabled,
                     SpecialRole = template?.recommendationSpecialRole
                         ?? RecommendationSpecialRoleKind.None,
+                    // Composite/exclusion projections remain catalog-owned;
+                    // ordinary full work facts are the shared UI producer's
+                    // exact immutable artifact, including assignment gates.
+                    FullWorkSpec = reuseWorkSpecs && !role.composite
+                        && role.skillGatesSeeded ? RoleWorkSpecs.For(role) : null,
                 });
             }
             Dictionary<string, int> naturalPriorities = DefDatabase<WorkTypeDef>

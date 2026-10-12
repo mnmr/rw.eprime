@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using RimShared.Common;
 using RimWorld;
@@ -33,16 +34,34 @@ namespace WorkRoles.UI
     }
 
     /// <summary>
-    /// View-owned capability snapshot cache. Scope changes invalidate by stamp;
-    /// language changes invalidate the whole owner, and a targeted external
-    /// refresh invalidates only the changed pawns' entries.
+    /// View-owned capability snapshots, independent of assignment presentation
+    /// and role activation. External refresh evicts only changed pawns.
     /// </summary>
     internal sealed class ColonistRoleCapabilityState
     {
         private const int ExplicitJobCap = 3;
-        private readonly Dictionary<(Pawn pawn, int roleId), RoleCapabilityPresentation> presentations
-            = new Dictionary<(Pawn pawn, int roleId), RoleCapabilityPresentation>();
-        private ScopeCacheStamp stamp = ScopeCacheStamp.Invalid;
+        private sealed class Entry
+        {
+            internal Role Role = null!;
+            internal PawnExternalSnapshot External = null!;
+            internal int CapabilityRevision;
+            internal int LanguageRevision;
+            internal int DefinitionRevision;
+            internal RoleCapabilityPresentation Presentation = null!;
+        }
+
+        // Owner: Colonists window within RoleStore identity. Key: pawn identity
+        // and role id. Value: immutable severity/tooltip projection. Dependencies:
+        // pawn external snapshot identity, role identity and CapabilityForRole,
+        // language and definitions. Assignment, activation, scope and unrelated
+        // role revisions are excluded. Refresh: first read after a key change;
+        // catalog changes only prune removed roles. Equality: equal severity and
+        // text retain identity within the same store. Teardown: Invalidate on
+        // window release/full external refresh; InvalidatePawn on pawn removal.
+        private readonly Dictionary<(Pawn pawn, int roleId), Entry> presentations
+            = new Dictionary<(Pawn pawn, int roleId), Entry>();
+        private RoleStore? owner;
+        private int catalogRevision = -1;
 
         internal RoleCapabilityPresentation PresentationFor(
             Pawn pawn,
@@ -50,25 +69,62 @@ namespace WorkRoles.UI
             ScopeCacheStamp currentStamp,
             PawnExternalSnapshot externalSnapshot)
         {
-            if (stamp != currentStamp)
-            {
-                presentations.Clear();
-                stamp = currentStamp;
-            }
+            EnsureOwner();
 
             if (pawn == null || role == null || role.blocker)
                 return RoleCapabilityPresentation.Available;
 
             var key = (pawn, role.id);
-            if (!presentations.TryGetValue(key, out RoleCapabilityPresentation presentation))
-                presentations[key] = presentation = Build(pawn, role, externalSnapshot);
-            return presentation;
+            int capability = UiVersion.CapabilityForRole(role.id);
+            int language = LanguageChangeCoordinator.Revision;
+            int definition = DefinitionReloadCoordinator.Revision;
+            bool found = presentations.TryGetValue(key, out Entry entry);
+            if (found && ReferenceEquals(entry.Role, role)
+                && ReferenceEquals(entry.External, externalSnapshot)
+                && entry.CapabilityRevision == capability
+                && entry.LanguageRevision == language
+                && entry.DefinitionRevision == definition)
+                return entry.Presentation;
+            RoleCapabilityPresentation rebuilt = Build(pawn, role, externalSnapshot);
+            if (found && entry.Presentation.WarningSeverity == rebuilt.WarningSeverity
+                && string.Equals(entry.Presentation.Tooltip, rebuilt.Tooltip,
+                    StringComparison.Ordinal))
+                rebuilt = entry.Presentation;
+            presentations[key] = new Entry
+            {
+                Role = role, External = externalSnapshot,
+                CapabilityRevision = capability, LanguageRevision = language,
+                DefinitionRevision = definition, Presentation = rebuilt,
+            };
+            return rebuilt;
+        }
+
+        private void EnsureOwner()
+        {
+            RoleStore? store = RoleStore.Current;
+            if (!ReferenceEquals(owner, store))
+            {
+                presentations.Clear();
+                owner = store;
+                catalogRevision = -1;
+            }
+            if (catalogRevision == UiVersion.Catalog) return;
+            keyBuffer.Clear();
+            foreach (KeyValuePair<(Pawn pawn, int roleId), Entry> pair in presentations)
+                if (store?.RoleById(pair.Key.roleId) == null)
+                    keyBuffer.Add(pair.Key);
+            for (int i = 0; i < keyBuffer.Count; i++)
+                presentations.Remove(keyBuffer[i]);
+            keyBuffer.Clear();
+            catalogRevision = UiVersion.Catalog;
         }
 
         internal void Invalidate()
         {
             presentations.Clear();
-            stamp = ScopeCacheStamp.Invalid;
+            owner = null;
+            catalogRevision = -1;
+            keyBuffer.Clear();
         }
 
         private readonly List<(Pawn pawn, int roleId)> keyBuffer =
@@ -79,7 +135,7 @@ namespace WorkRoles.UI
         internal void InvalidatePawn(Pawn pawn)
         {
             keyBuffer.Clear();
-            foreach (KeyValuePair<(Pawn pawn, int roleId), RoleCapabilityPresentation> pair
+            foreach (KeyValuePair<(Pawn pawn, int roleId), Entry> pair
                 in presentations)
                 if (ReferenceEquals(pair.Key.pawn, pawn))
                     keyBuffer.Add(pair.Key);

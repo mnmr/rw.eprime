@@ -1,8 +1,12 @@
 ﻿# Changelog
 
+## 1.6.7 — 2026-10-12
+
+- Fixed: Reduced role-toggle latency by narrowing cache invalidation and sharing cached data.
+
 ## 1.6.6 — 2026-10-11
 
-- Fixed: Jobs whose bills span many skills (e.g. writing books) now use the job's own skill when recommending colonists.
+- Changed: Jobs whose bills span many skills (e.g. writing books) now use the job's own skill when recommending colonists.
 
 ## 1.6.5 — 2026-10-04
 

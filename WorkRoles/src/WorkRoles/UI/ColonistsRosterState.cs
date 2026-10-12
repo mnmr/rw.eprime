@@ -25,19 +25,22 @@ namespace WorkRoles.UI
         // Owner: Colonists window. Key: current-map identity plus the selected
         // ScopeOption. Value: the current scope options and producer-owned pawn
         // cohort; live Pawn references are stable external identities and the
-        // collection itself is not exposed for mutation. Dependencies: UiVersion,
+        // collection itself is not exposed for mutation. Dependencies: UiVersion.Roster,
         // observed-map/pawn-list revision, map set, selected scope, and language.
         // Refresh: immediate on the next ListedPawns read after invalidation.
         // Equality: matching ScopeCacheStamp and map identity reuse the cohort.
         // Teardown: ReleaseSnapshots clears scope, options, pawns, and stamps.
         private ScopeOption? scope;
         private List<Pawn>? pawns;
+        private RoleStore? pawnsOwner;
         private ScopeCacheStamp pawnsStamp = ScopeCacheStamp.Invalid;
         private int pawnsMapId = -1;
         private List<ScopeOption>? scopeOptions;
         private bool spansMultipleLocations;
 
-        // Owner: Colonists window. Key: RoleStore identity, UiVersion, language,
+        // Owner: Colonists window. Key: RoleStore identity; UiVersion Catalog,
+        // RolePresentation, RoleWork, RoleRules, RoleActivation and RoleCapability
+        // (blocker flags); language,
         // definition, and shared role-icon presentation revisions. Value: an immutable detached role/definition
         // catalog shared by palette, filters, grouping controls, chip labels, and
         // stable externally owned role-icon textures. Dependencies: ordered role
@@ -54,15 +57,20 @@ namespace WorkRoles.UI
         private int catalogRoleIconRevision = -1;
 
         // Owner: Colonists window. Key: pawn-scope stamp, map identity, filters,
-        // grouping/sort preferences, colonist order, and detached catalog identity.
+        // grouping/sort preferences, colonist order, language and definitions.
         // Value: immutable producer-owned grouped display sections. Dependencies:
-        // the complete key plus projected assignments and pawn presentation facts.
+        // the complete key plus pawn presentation facts; active filters also
+        // consume Catalog, RoleWork, RoleCapability (blocker coverage) and
+        // Assignments, and search consumes role
+        // presentation. Activation-only catalog changes never rebuild sections.
         // Refresh: immediate on the next Sections read after a key change. Equality:
         // equal rebuilt contents preserve identity. Teardown: ReleaseSnapshots
         // releases the snapshot and all remembered keys.
         private ColonistSectionsSnapshot? sections;
         private RoleStore? sectionsOwner;
-        private ColonistsRosterCatalogSnapshot? sectionsCatalog;
+        private int sectionsFilterRevision = -1;
+        private int sectionsLanguageRevision = -1;
+        private int sectionsDefinitionRevision = -1;
         private ScopeCacheStamp sectionsStamp = ScopeCacheStamp.Invalid;
         private int sectionsMapId = -1;
         private string? sectionsSearch;
@@ -128,10 +136,11 @@ namespace WorkRoles.UI
             get
             {
                 return pawnListRevisions.Stamp(
-                    UiVersion.Current, Find.CurrentMap?.uniqueID ?? -1);
+                    UiVersion.Roster, Find.CurrentMap?.uniqueID ?? -1);
             }
         }
         internal int PawnListRevision => PawnListStamp.PawnListRevision;
+        private ScopeCacheStamp ListedPawnStamp => PawnListStamp;
         internal ScopeOption? Scope => scope;
         internal IReadOnlyList<ScopeOption> ScopeOptions
         {
@@ -192,13 +201,16 @@ namespace WorkRoles.UI
             JobFilterDefName = null;
             scope = null;
             pawns = null;
+            pawnsOwner = null;
             pawnsStamp = ScopeCacheStamp.Invalid;
             pawnsMapId = -1;
             scopeOptions = null;
             spansMultipleLocations = false;
             sections = null;
             sectionsOwner = null;
-            sectionsCatalog = null;
+            sectionsFilterRevision = -1;
+            sectionsLanguageRevision = -1;
+            sectionsDefinitionRevision = -1;
             InvalidateSections();
             sectionsMapId = -1;
             sectionsSearch = null;
@@ -233,9 +245,10 @@ namespace WorkRoles.UI
 
         internal IReadOnlyList<Pawn> ListedPawns()
         {
-            ScopeCacheStamp stamp = PawnListStamp;
+            ScopeCacheStamp stamp = ListedPawnStamp;
             if (Find.CurrentMap == null) return NoPawns;
-            if (pawns == null || pawnsStamp != stamp)
+            if (pawns == null || pawnsStamp != stamp
+                || !ReferenceEquals(pawnsOwner, RoleStore.Current))
             {
                 pawnsMapId = Find.CurrentMap.uniqueID;
                 scopeOptions = ScopeEngine.BuildOptions(ColonyScope.Locations());
@@ -243,7 +256,8 @@ namespace WorkRoles.UI
                 if (scope != null && !SameScope(scope, revalidated))
                     pawnListRevisions.Invalidate();
                 scope = revalidated;
-                pawnsStamp = PawnListStamp;
+                pawnsStamp = ListedPawnStamp;
+                pawnsOwner = RoleStore.Current;
                 pawns = profile.PawnsIn(scope);
                 spansMultipleLocations = ScopeEngine.SpansMultipleLocations(
                     pawns.Select(ColonyScope.LocationIdOf));
@@ -273,7 +287,10 @@ namespace WorkRoles.UI
 
         internal ColonistsRosterCatalogSnapshot Catalog(RoleStore store)
         {
-            int uiVersion = UiVersion.Current;
+            int uiVersion = Math.Max(Math.Max(UiVersion.Catalog,
+                UiVersion.RolePresentation), Math.Max(UiVersion.RoleWork,
+                Math.Max(UiVersion.RoleRules, Math.Max(UiVersion.RoleActivation,
+                    UiVersion.RoleCapability))));
             int languageRevision = LanguageChangeCoordinator.Revision;
             int definitionRevision = DefinitionReloadCoordinator.Revision;
             int roleIconRevision = RoleIconPresentationCatalog.Revision;
@@ -326,7 +343,14 @@ namespace WorkRoles.UI
             ColonistsRosterCatalogSnapshot currentCatalog = Catalog(store);
             ValidateRoleFilter(currentCatalog);
             ColonistOrder order = profile.GetColonistOrder();
-            ScopeCacheStamp stamp = PawnListStamp;
+            ScopeCacheStamp stamp = ListedPawnStamp;
+            int filterRevision = FiltersActive
+                ? Math.Max(UiVersion.Catalog, Math.Max(UiVersion.RoleWork,
+                    Math.Max(UiVersion.RoleCapability, UiVersion.Assignments))) : 0;
+            if (!string.IsNullOrWhiteSpace(Search))
+                filterRevision = Math.Max(filterRevision, UiVersion.RolePresentation);
+            int languageRevision = LanguageChangeCoordinator.Revision;
+            int definitionRevision = DefinitionReloadCoordinator.Revision;
             if (sections == null || sectionsStamp != stamp
                 || sectionsMapId != pawnsMapId || sectionsSearch != Search
                 || sectionsRoleFilter != RoleFilterId
@@ -334,7 +358,9 @@ namespace WorkRoles.UI
                 || sectionsGroupBy != profile.GetGroupBy()
                 || sectionsSort != profile.GetSortColumn() || sectionsOrder != order
                 || !ReferenceEquals(sectionsOwner, store)
-                || !ReferenceEquals(sectionsCatalog, currentCatalog))
+                || sectionsFilterRevision != filterRevision
+                || sectionsLanguageRevision != languageRevision
+                || sectionsDefinitionRevision != definitionRevision)
             {
                 List<GroupSection<Pawn>> grouped = GroupedSections(
                     OrderedForDisplay(FilteredPawns(listed, store,
@@ -347,7 +373,9 @@ namespace WorkRoles.UI
                     sections = rebuilt;
             }
             sectionsOwner = store;
-            sectionsCatalog = currentCatalog;
+            sectionsFilterRevision = filterRevision;
+            sectionsLanguageRevision = languageRevision;
+            sectionsDefinitionRevision = definitionRevision;
             sectionsStamp = stamp;
             sectionsMapId = pawnsMapId;
             sectionsSearch = Search;

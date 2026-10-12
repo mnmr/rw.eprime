@@ -53,7 +53,8 @@ namespace WorkRoles.UI
 
     internal static class RoleIconPresentationCatalog
     {
-        // Owner: open WorkRoles window. Key: RoleStore identity, UiVersion, and
+        // Owner: open WorkRoles window. Key: RoleStore identity, UiVersion Catalog
+        // and RolePresentation domains, and
         // DefinitionReloadCoordinator.Revision. Value: one immutable-by-
         // publication lookup of effective persisted/template icon paths and
         // resolved externally owned textures for every role. Dependencies: the
@@ -76,7 +77,7 @@ namespace WorkRoles.UI
 
         internal static void Refresh(RoleStore? store)
         {
-            int nextUiVersion = UiVersion.Current;
+            int nextUiVersion = Math.Max(UiVersion.Catalog, UiVersion.RolePresentation);
             int nextDefinitionRevision = DefinitionReloadCoordinator.Revision;
             if (ReferenceEquals(owner, store)
                 && uiVersion == nextUiVersion

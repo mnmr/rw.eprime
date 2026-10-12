@@ -77,9 +77,10 @@ namespace WorkRoles.UI
         internal System.Func<IReadOnlyList<Pawn>> listedPawns = null!;   // injected by MainTabWindow
         internal System.Func<int> pawnListRevision = null!;             // injected by MainTabWindow
 
-        // Unified role tip (TreeRow context), injected by MainTabWindow: the
-        // builder lives on ColonistsTabView (it needs BestFits' pawn snapshot).
-        internal System.Func<Role, StructuredTip?> roleTip = null!;     // injected by MainTabWindow
+        // Delayed shared role tip (TreeRow context), injected by MainTabWindow.
+        // Only the eligible row registers its identity; content is resolved by
+        // ColonistsTabView after the shared hover delay starts a display session.
+        internal System.Action<Rect, int> presentRoleTip = null!;
 
         private readonly RolesListState listState = new RolesListState();
         private readonly RoleEditorState editorState = new RoleEditorState();
@@ -100,6 +101,7 @@ namespace WorkRoles.UI
         private string? chromeJobFilter = "\0";
         private int chromeLanguageRevision = -1;
         private int chromeDefinitionRevision = -1;
+        private int chromeMetricRevision = -1;
 
         // Owner: this Roles-tab view, partitioned by RoleStore identity.
         // Key: store identity, detached role-selection count, and
@@ -116,7 +118,7 @@ namespace WorkRoles.UI
         private float desiredHeightAgeBlockHeight = -1f;
         private float desiredHeight = DefaultDesiredHeight;
 
-        // Owner: this Roles-tab view. Key: UiVersion.Current. Value: the
+        // Owner: this Roles-tab view. Key: UiRevision.Current. Value: the
         // rounded Small-font line height used by the age-band caption.
         // Dependencies: UI scale and active Small font metrics. Refresh:
         // immediate on a UI-metric revision. Equality: exact revision hits
@@ -338,7 +340,8 @@ namespace WorkRoles.UI
                 && string.Equals(chromeJobFilter, jobFilter,
                     System.StringComparison.Ordinal)
                 && chromeLanguageRevision == languageRevision
-                && chromeDefinitionRevision == definitionRevision)
+                && chromeDefinitionRevision == definitionRevision
+                && chromeMetricRevision == UiRevision.Current)
                 return chromeSnapshot;
 
             GameFont oldFont = Text.Font;
@@ -377,6 +380,7 @@ namespace WorkRoles.UI
             chromeJobFilter = jobFilter;
             chromeLanguageRevision = languageRevision;
             chromeDefinitionRevision = definitionRevision;
+            chromeMetricRevision = UiRevision.Current;
             return chromeSnapshot;
         }
 
@@ -543,7 +547,7 @@ namespace WorkRoles.UI
                 }
             }
             RoleListSnapshot snapshot = listState.Snapshot(
-                store, selectedRoleId, revealSelected: scrollToSelected, roleTip);
+                store, selectedRoleId, revealSelected: scrollToSelected);
             DrawListFilterRow(new Rect(rect.x, rect.y, rect.width,
                 ListFilterRowsH - 6f), chrome, snapshot.NestedPreference);
             var scrollRect = new Rect(rect.x, rect.y + ListFilterRowsH, rect.width,
@@ -598,8 +602,8 @@ namespace WorkRoles.UI
                 if (publishedRow.RoleId == selectedRoleId) Widgets.DrawHighlightSelected(row);
                 else if (Mouse.IsOver(row) && !RoleDrag.Active) Widgets.DrawHighlight(row);
 
-                if (Mouse.IsOver(row) && publishedRow.Tooltip != null)
-                    StructuredTipPresenter.TipRegion(row, publishedRow.Tooltip);
+                if (Mouse.IsOver(row) && !RoleDrag.Active)
+                    presentRoleTip(row, publishedRow.RoleId);
 
                 var swatch = new Rect(Mathf.Round(row.x) + 6f + indent, Mathf.Round(row.y) + 6f, 16f, 16f);
                 Widgets.DrawBoxSolid(swatch, publishedRow.HasCustomColor
@@ -1217,7 +1221,7 @@ namespace WorkRoles.UI
 
         private float AgeBandsCaptionHeight()
         {
-            int uiVersion = UiVersion.Current;
+            int uiVersion = UiRevision.Current;
             if (ageBandsMetricsUiVersion == uiVersion)
                 return ageBandsCaptionHeight;
             using (GuiStateScope.Capture())

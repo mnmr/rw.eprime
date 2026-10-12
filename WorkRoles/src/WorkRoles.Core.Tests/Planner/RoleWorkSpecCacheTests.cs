@@ -15,6 +15,24 @@ public class RoleWorkSpecCacheTests
         ], null!);
 
     [Test]
+    public async Task EditingOneRoleKeepsOtherRoleSpecsWarmAcrossDifferentRevisions()
+    {
+        var cache = new RoleWorkSpecCache();
+        var owner = new object();
+        var index = new object();
+        int otherBuilds = 0;
+        RoleWorkSpec first = cache.For(2, owner, 0, index,
+            () => { otherBuilds++; return Spec(2); });
+        cache.For(1, owner, 1, index, () => Spec(1));
+        cache.For(1, owner, 2, index, () => Spec(1, gateMin: 8));
+        RoleWorkSpec other = cache.For(2, owner, 0, index,
+            () => { otherBuilds++; return Spec(2); });
+
+        await Assert.That(otherBuilds).IsEqualTo(1);
+        await Assert.That(ReferenceEquals(first, other)).IsTrue();
+    }
+
+    [Test]
     public async Task RepeatedReadsReuseTheCachedInstanceWithoutRebuilding()
     {
         var cache = new RoleWorkSpecCache();

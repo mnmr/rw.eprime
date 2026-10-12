@@ -20,10 +20,18 @@ namespace WorkRoles.UI
         private readonly int[] sortPriorities;
         private readonly List<WorkTypeDef> workTypes = new List<WorkTypeDef>();
         private readonly RevisionPairGate columnCacheRevisions = new RevisionPairGate();
+        // Owner: dialog. Key: definition/language revisions and UI metrics.
+        // Value: private translated column text and measured Small-font geometry,
+        // immutable between gated rebuilds. Dependencies: work defs, fixed pawn
+        // name text, UiRevision and fixed column/name widths. Refresh: immediate.
+        // Equality: metric-only changes retain column ordering and sort state.
+        // Teardown: dialog close releases these instance-owned arrays.
+        private int columnMetricRevision = int.MinValue;
         private float headerH;
         // Pawn names are fixed for the dialog lifetime. Definition and translated
         // column geometry is replaceable at its authoritative revision boundary.
         private readonly string[] pawnNames;
+        private readonly string[] pawnNameSources;
         // Assigned by EnsureColumnCache, called from the constructor.
         private string[] columnLabels = null!;
         private Vector2[] columnLabelSizes = null!;
@@ -40,9 +48,10 @@ namespace WorkRoles.UI
         /// Local view state only — never written back to the synced setting.
         private bool showVanilla;
 
-        // Owner: priority-grid dialog. Key: RoleStore identity, UiVersion,
+        // Owner: priority-grid dialog. Key: RoleStore identity,
         // definition revision, manual-priority display mode, and the exact
-        // PriorityGridFacts revision of every fixed pawn. Value: one flattened,
+        // PriorityGridFacts and RuntimeForPawn revisions of every fixed pawn;
+        // aggregate revisions only gate scanning that cohort. Value: one flattened,
         // immutable-by-publication snapshot of every repaint-ready cell plus the
         // display mode. Dependencies: role/assignment priority projections,
         // work-type definitions, pawn disabled-work state, whole skill levels,
@@ -56,6 +65,7 @@ namespace WorkRoles.UI
         private int gridDefinitionRevision = int.MinValue;
         private int gridFactsCurrent = int.MinValue;
         private readonly int[] gridPawnFactRevisions;
+        private readonly int[] gridPawnRuntimeRevisions;
         private bool gridFactsReleased;
 
         private const float TitleH = 38f;
@@ -166,13 +176,12 @@ namespace WorkRoles.UI
             sortState = new PriorityGridSortState(pawns.Count);
             sortPriorities = new int[pawns.Count];
             gridPawnFactRevisions = new int[pawns.Count];
+            gridPawnRuntimeRevisions = new int[pawns.Count];
             showVanilla = RoleStore.Current?.reportVanillaPriorities == true;
-            using (new TextBlock(GameFont.Small))
-            {
-                pawnNames = new string[pawns.Count];
-                for (int r = 0; r < pawns.Count; r++)
-                    pawnNames[r] = pawns[r].LabelShortCap.Truncate(NameW - 6f);
-            }
+            pawnNames = new string[pawns.Count];
+            pawnNameSources = new string[pawns.Count];
+            for (int r = 0; r < pawns.Count; r++)
+                pawnNameSources[r] = pawns[r].LabelShortCap;
             EnsureColumnCache();
             for (int r = 0; r < pawns.Count; r++)
                 PriorityGridFacts.Acquire(pawns[r]);
@@ -314,29 +323,42 @@ namespace WorkRoles.UI
         {
             int languageRevision = LanguageChangeCoordinator.Revision;
             int definitionRevision = DefinitionReloadCoordinator.Revision;
-            if (!columnCacheRevisions.ShouldRefresh(languageRevision, definitionRevision)) return;
+            bool columnsChanged = columnCacheRevisions.ShouldRefresh(languageRevision, definitionRevision);
+            int metricRevision = UiRevision.Current;
+            if (!columnsChanged && columnMetricRevision == metricRevision) return;
 
             // Column indices are definition-order dependent. A cache rebuild is
             // rare, so discard the transient sort instead of risking its index
             // now referring to a different work type.
-            sortState.Reset();
-            workTypes.Clear();
-            foreach (WorkTypeDef workType in WorkTypeDefsUtility.WorkTypeDefsInPriorityOrder)
-                if (workType.visible)
-                    workTypes.Add(workType);
-
-            columnLabels = new string[workTypes.Count];
-            columnLabelSizes = new Vector2[workTypes.Count];
-            columnLabelGeometries = new InclinedLabelGeometry[workTypes.Count];
-            columnTips = new string[workTypes.Count];
-            titleLabel = "WR_PriorityGridTitle".Translate();
-            rawModeLabel = "WR_GridModeRaw".Translate();
-            vanillaModeLabel = "WR_GridModeVanilla".Translate();
+            if (columnsChanged)
+            {
+                sortState.Reset();
+                workTypes.Clear();
+                foreach (WorkTypeDef workType in WorkTypeDefsUtility.WorkTypeDefsInPriorityOrder)
+                    if (workType.visible)
+                        workTypes.Add(workType);
+                columnLabels = new string[workTypes.Count];
+                columnLabelSizes = new Vector2[workTypes.Count];
+                columnLabelGeometries = new InclinedLabelGeometry[workTypes.Count];
+                columnTips = new string[workTypes.Count];
+                titleLabel = "WR_PriorityGridTitle".Translate();
+                rawModeLabel = "WR_GridModeRaw".Translate();
+                vanillaModeLabel = "WR_GridModeVanilla".Translate();
+                for (int c = 0; c < workTypes.Count; c++)
+                {
+                    columnLabels[c] = workTypes[c].labelShort.CapitalizeFirst();
+                    columnTips[c] = workTypes[c].gerundLabel.CapitalizeFirst()
+                        + (workTypes[c].description.NullOrEmpty()
+                            ? "" : "\n" + workTypes[c].description);
+                }
+            }
 
             float maxVerticalExtent = 0f;
             float maxRightRunOut = 0f;
             using (new TextBlock(GameFont.Small))
             {
+                for (int r = 0; r < pawnNames.Length; r++)
+                    pawnNames[r] = pawnNameSources[r].Truncate(NameW - 6f);
                 phantomLabelSize = Text.CalcSize("");
                 phantomLabelGeometry = InclinedLabelGeometry.Calculate(
                     phantomLabelSize.x, phantomLabelSize.y, LabelAngle);
@@ -344,11 +366,6 @@ namespace WorkRoles.UI
                     WrText.FitWidth(vanillaModeLabel)) + 24f;
                 for (int c = 0; c < workTypes.Count; c++)
                 {
-                    columnLabels[c] = workTypes[c].labelShort.CapitalizeFirst();
-                    // Vanilla's Work tab shows the type description; match it.
-                    columnTips[c] = workTypes[c].gerundLabel.CapitalizeFirst()
-                        + (workTypes[c].description.NullOrEmpty()
-                            ? "" : "\n" + workTypes[c].description);
                     Vector2 size = Text.CalcSize(columnLabels[c]);
                     size.x = WrText.FitWidth(columnLabels[c]);
                     columnLabelSizes[c] = size;
@@ -363,27 +380,29 @@ namespace WorkRoles.UI
             float separatorRunOut = headerH * Mathf.Cos(Mathf.Deg2Rad * LabelAngle);
             headerRunOut = Mathf.Max(maxRightRunOut, separatorRunOut)
                 + HeaderRunOutPadding;
+            columnMetricRevision = metricRevision;
         }
 
         private void EnsureGridSnapshot()
         {
             RoleStore? store = RoleStore.Current;
-            int uiRevision = UiVersion.Current;
+            int uiRevision = UiVersion.RuntimeRules;
             int definitionRevision = DefinitionReloadCoordinator.Revision;
             int factsCurrent = PriorityGridFacts.Revisions.Current;
             bool numeric = Current.Game?.playSettings?.useWorkPriorities ?? false;
             bool ownerChanged = !ReferenceEquals(gridStore, store);
             bool keyChanged = gridSnapshot == null || ownerChanged
-                || gridUiRevision != uiRevision
                 || gridDefinitionRevision != definitionRevision
                 || gridSnapshot.Numeric != numeric;
 
             bool pawnFactsChanged = gridSnapshot == null;
-            if (!pawnFactsChanged && gridFactsCurrent != factsCurrent)
+            if (!pawnFactsChanged && (gridFactsCurrent != factsCurrent
+                || gridUiRevision != uiRevision))
             {
                 for (int r = 0; r < pawns.Count; r++)
                     if (gridPawnFactRevisions[r]
-                        != PriorityGridFacts.Revisions.RevisionOf(pawns[r]))
+                        != PriorityGridFacts.Revisions.RevisionOf(pawns[r])
+                        || gridPawnRuntimeRevisions[r] != UiVersion.RuntimeForPawn(pawns[r]))
                     {
                         pawnFactsChanged = true;
                         break;
@@ -395,6 +414,7 @@ namespace WorkRoles.UI
                 // An unrelated pawn may have moved the global observation
                 // revision. Record it after proving this fixed cohort unchanged.
                 gridFactsCurrent = factsCurrent;
+                gridUiRevision = uiRevision;
                 return;
             }
 
@@ -419,8 +439,11 @@ namespace WorkRoles.UI
             gridDefinitionRevision = definitionRevision;
             gridFactsCurrent = factsCurrent;
             for (int r = 0; r < pawns.Count; r++)
+            {
                 gridPawnFactRevisions[r] =
                     PriorityGridFacts.Revisions.RevisionOf(pawns[r]);
+                gridPawnRuntimeRevisions[r] = UiVersion.RuntimeForPawn(pawns[r]);
+            }
 
             if (identityChanged) RefreshSort();
         }

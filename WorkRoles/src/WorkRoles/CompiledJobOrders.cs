@@ -55,29 +55,24 @@ namespace WorkRoles
 
         public static void Invalidate(Pawn pawn)
         {
-            // Bump only for pawns the UI can show: this runs on EVERY pawn's
-            // spawn/despawn/death (animals, raiders included), and each bump
-            // tears down the open window's snapshots.
             if (cache.Remove(pawn) || pawn.IsColonist || pawn.IsSlaveOfColony)
-                UiVersion.Bump();
+                UiVersion.RuntimeChanged(pawn);
+        }
+
+        internal static void InvalidateAssignments(Pawn pawn, bool planChanged)
+        {
+            cache.Remove(pawn);
+            using var batch = RoleStore.Current?.Revisions.Batch();
+            UiVersion.PawnChanged(pawn, planChanged);
+            UiVersion.RuntimeChanged(pawn);
         }
 
         internal static void InvalidateBatch(IEnumerable<Pawn> pawns)
         {
             if (pawns == null) return;
-
-            var unique = new HashSet<Pawn>(ReferenceIdentityComparer<Pawn>.Instance);
-            bool invalidateUi = false;
+            using var batch = RoleStore.Current?.Revisions.Batch();
             foreach (var pawn in pawns)
-            {
-                if (pawn == null || !unique.Add(pawn)) continue;
-                bool removed = cache.Remove(pawn);
-                if (removed || pawn.IsColonist || pawn.IsSlaveOfColony)
-                    invalidateUi = true;
-            }
-
-            if (invalidateUi)
-                UiVersion.Bump();
+                if (pawn != null) Invalidate(pawn);
         }
 
         /// A map changed settlement/gravship classification without its pawns
@@ -88,6 +83,7 @@ namespace WorkRoles
             if (map == null) return;
 
             var store = RoleStore.Current;
+            using var batch = store?.Revisions.Batch();
             if (store?.pawnSets != null)
                 foreach (var pair in store.pawnSets)
                 {
@@ -103,12 +99,12 @@ namespace WorkRoles
                         if (role?.locationTokens == null
                             || role.locationTokens.Count == 0) continue;
                         cache.Remove(pawn);
+                        UiVersion.RuntimeChanged(pawn);
                         pendingReconciles.Enqueue(pawn);
                         break;
                     }
                 }
 
-            UiVersion.Bump();
         }
 
         /// Defers a reconcile to the next game-component tick (deterministic,
@@ -137,50 +133,60 @@ namespace WorkRoles
             ReconcileAll(pawns);
         }
 
-        public static void InvalidateRole(int roleId) => InvalidateRole(roleId, UiVersion.Bump);
+        public static void InvalidateRole(int roleId) =>
+            InvalidateRole(roleId, ModelDomain.RoleWork | ModelDomain.RoleCapability);
 
-        internal static void InvalidateRole(int roleId, Action invalidateUi)
+        internal static void InvalidateRole(int roleId, ModelDomain changes,
+            bool memberBlockerChanged = false, bool memberBlockerOnlyCompilationChange = false)
         {
             var store = RoleStore.Current;
-            var role = store?.RoleById(roleId);
-            if (IsBasicsRole(roleId, role))
-            {
-                InvalidateBasics(role, invalidateUi);
-                return;
-            }
-
-            invalidateUi();
             if (store == null) { cache.Clear(); return; }
-            role?.InvalidateCoverage();
-            foreach (var pawn in store.PawnsWithRole(roleId).ToList())
-                cache.Remove(pawn);
-            // A member edit changes every composite bundling the role: their
-            // coverage union and their holders' compiled orders (depth 1 by
-            // policy, so one scan is complete).
-            foreach (var composited in store.CompositesContaining(roleId))
+            using var batch = store.Revisions.Batch();
+            var role = store.RoleById(roleId);
+            bool workChanged = (changes & ModelDomain.RoleWork) != 0;
+            if (workChanged)
             {
-                composited.InvalidateCoverage();
-                foreach (var pawn in store.PawnsWithRole(composited.id).ToList())
-                    cache.Remove(pawn);
+                role?.InvalidateCoverage();
+                changes |= ModelDomain.RoleCapability;
+                if (IsBasicsRole(roleId, role))
+                {
+                    InvalidateProjectionMetadata();
+                    cache.Clear();
+                    foreach (var pawn in store.pawnSets.Keys) UiVersion.RuntimeChanged(pawn);
+                }
             }
+            UiVersion.RoleChanged(roleId, changes);
+            foreach (var pawn in store.PawnsWithRole(roleId)) Invalidate(pawn);
+            // Member activation affects compiled slices, but never coverage or
+            // work specifications; only work/capability changes propagate those.
+            foreach (var composite in store.CompositesContaining(roleId))
+            {
+                ModelDomain dependent = RoleRevisionDependencies.ForComposite(changes,
+                    composite.blocker, role?.blocker == true, memberBlockerChanged);
+                if ((dependent & ModelDomain.RoleWork) != 0) composite.InvalidateCoverage();
+                UiVersion.RoleChanged(composite.id, dependent);
+                // Every member of a blocker composite already contributes a
+                // veto; changing that member's own veto bit cannot change its
+                // holders' compiled orders.
+                if (!composite.blocker || !memberBlockerOnlyCompilationChange)
+                    foreach (var pawn in store.PawnsWithRole(composite.id)) Invalidate(pawn);
+            }
+        }
+
+        internal static void InvalidateRoleWorkFacts(int roleId)
+        {
+            var store = RoleStore.Current;
+            if (store == null) return;
+            using var batch = store.Revisions.Batch();
+            UiVersion.RoleChanged(roleId, ModelDomain.RoleWork | ModelDomain.RoleCapability);
+            foreach (var composite in store.CompositesContaining(roleId))
+                UiVersion.RoleChanged(composite.id, RoleRevisionDependencies.ForComposite(
+                    ModelDomain.RoleWork | ModelDomain.RoleCapability, composite.blocker,
+                    store.RoleById(roleId)?.blocker == true, memberBlockerChanged: false));
         }
 
         private static bool IsBasicsRole(int roleId, Role? role) =>
             role?.templateDefName == BasicsTemplate || roleId == projectionBasicsRoleId;
-
-        private static void InvalidateBasics(Role? role, Action invalidateUi)
-        {
-            role?.InvalidateCoverage();
-            // The full cache clear below covers compiled orders; composites
-            // bundling Basics still need their coverage union refreshed.
-            var store = RoleStore.Current;
-            if (role != null && store != null)
-                foreach (var composited in store.CompositesContaining(role.id))
-                    composited.InvalidateCoverage();
-            InvalidateProjectionMetadata();
-            cache.Clear();
-            invalidateUi();
-        }
 
         private static void InvalidateProjectionMetadata()
         {
@@ -196,15 +202,31 @@ namespace WorkRoles
             InvalidateAll();
         }
 
+        internal static void InvalidateRuntimeAll()
+        {
+            cache.Clear();
+            var store = RoleStore.Current;
+            using var batch = store?.Revisions.Batch();
+            if (store != null)
+                foreach (var pawn in store.pawnSets.Keys) UiVersion.RuntimeChanged(pawn);
+            UiVersion.Changed(ModelDomain.Preferences);
+        }
+
         public static void InvalidateAll()
         {
             InvalidateProjectionMetadata();
-            UiVersion.Bump();
             cache.Clear();
             var store = RoleStore.Current;
-            if (store?.roles != null)
-                foreach (var role in store.roles)
-                    role?.InvalidateCoverage();
+            if (store == null) return;
+            using var batch = store.Revisions.Batch();
+            UiVersion.Bump();
+            foreach (var role in store.roles)
+            {
+                if (role == null) continue;
+                role.InvalidateCoverage();
+                UiVersion.RoleChanged(role.id, ModelDomain.RoleWork | ModelDomain.RoleCapability);
+            }
+            foreach (var pawn in store.pawnSets.Keys) UiVersion.RuntimeChanged(pawn);
         }
 
         /// World teardown must release pawn-keyed compiled snapshots. Definition
@@ -230,7 +252,13 @@ namespace WorkRoles
         {
             var plan = PlanTimeRuled(belongsToContext);
             if (plan == null) return;
-            plan.ApplyRuntime(pawn => cache.Remove(pawn), UiVersion.Bump);
+            using var batch = RoleStore.Current?.Revisions.Batch();
+            if (plan.RoleIds.Count > 0) UiVersion.AggregateChanged(ModelDomain.RuntimeRules);
+            for (int i = 0; i < plan.Pawns.Count; i++)
+            {
+                cache.Remove(plan.Pawns[i]);
+                UiVersion.RuntimeChanged(plan.Pawns[i]);
+            }
             // Plan order is deterministic (thingIDNumber), so the interruption
             // cascade (new job searches, reservations) matches across MP clients.
             for (int i = 0; i < plan.Pawns.Count; i++)
@@ -245,11 +273,15 @@ namespace WorkRoles
             if (map == null) return;
             var plan = PlanTimeRuled(pawn => pawn.MapHeld == map);
             if (plan == null) return;
-            plan.ApplyRuntime(pawn =>
+            using var batch = RoleStore.Current?.Revisions.Batch();
+            if (plan.RoleIds.Count > 0) UiVersion.AggregateChanged(ModelDomain.RuntimeRules);
+            for (int i = 0; i < plan.Pawns.Count; i++)
             {
+                Pawn pawn = plan.Pawns[i];
                 cache.Remove(pawn);
+                UiVersion.RuntimeChanged(pawn);
                 pendingReconciles.Enqueue(pawn);
-            }, UiVersion.Bump);
+            }
         }
 
         private static TimedRoleInvalidationPlan<Pawn>? PlanTimeRuled(

@@ -106,7 +106,7 @@ namespace WorkRoles.Patches
 
         // Cache contract. Owner: process. Key: (font, button label, button
         // width in whole pixels). Value: the truncated button label string
-        // (immutable). Dependencies: UiVersion.Current (UI scale / tiny-font
+        // (immutable). Dependencies: UiRevision.Current (UI scale / tiny-font
         // preference) via the stamp; language changes alter the key text and
         // also clear through WindowDataLifecycle.ReleaseShared. Refresh:
         // immediate on stamp mismatch. Equality: strings; identity irrelevant.
@@ -132,10 +132,10 @@ namespace WorkRoles.Patches
 
         private static string ButtonLabel(string label, float width)
         {
-            if (stamp != UiVersion.Current)
+            if (stamp != UiRevision.Current)
             {
                 buttonLabels.Clear();
-                stamp = UiVersion.Current;
+                stamp = UiRevision.Current;
             }
             var key = (Text.Font, label, (int)width);
             if (!buttonLabels.TryGetValue(key, out string result))

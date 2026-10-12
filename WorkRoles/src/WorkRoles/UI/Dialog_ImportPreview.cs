@@ -136,14 +136,16 @@ namespace WorkRoles.UI
         private int pathIncludedCount;
 
         // Owner: this import-preview dialog instance.
-        // Key: dialog identity, RoleStore identity, UiVersion.Current, exact row
+        // Key: dialog identity, RoleStore identity, Catalog/RolePresentation/
+        // Preferences revisions, exact row
         // width, LayoutState(), merge generation, and language revision; explicit
         // rowLayoutDirty invalidation covers local selection changes.
         // Value: immutable ImportRenderSnapshot with a private transferred row
         // array and copy-owned variable-height viewport layout.
         // Dependencies: imported document section membership, current store
-        // roles/palette through UiVersion, merge/overwrite selections, translated
-        // UI text, Small-font wrapped measurements, constants, and exact width.
+        // role names/template identities and palette slots/colors/names through
+        // those domains, merge/overwrite selections, translated
+        // UI text, Small-font measurements through UiRevision, constants, and width.
         // Refresh: immediately after a store, selection, language, or width change.
         // Equality: exact equal rows and extents preserve snapshot identity.
         // Teardown: closing the dialog releases the instance-owned snapshot.
@@ -151,9 +153,11 @@ namespace WorkRoles.UI
         private float rowLayoutWidth = -1f;
         private int rowLayoutState = -1;
         private int rowLayoutStamp = -1;
+        private int rowLayoutMetricRevision = -1;
         private int rowLayoutMergeGeneration = -1;
         private bool rowLayoutDirty = true;
         private int uiLanguageRevision = -1;
+        private int uiMetricRevision = -1;
         private int uiMergeGeneration = -1;
         private RoleStore? mergeOwner;
         private int mergeUiRevision = -1;
@@ -258,7 +262,8 @@ namespace WorkRoles.UI
         private void EnsureMergeRows()
         {
             RoleStore? store = RoleStore.Current;
-            int uiRevision = UiVersion.Current;
+            int uiRevision = store?.Revisions.For(ModelDomain.Catalog
+                | ModelDomain.RolePresentation | ModelDomain.Preferences) ?? 0;
             if (ReferenceEquals(mergeOwner, store)
                 && mergeUiRevision == uiRevision)
                 return;
@@ -314,6 +319,7 @@ namespace WorkRoles.UI
             EnsureMergeRows();
             int languageRevision = LanguageChangeCoordinator.Revision;
             if (uiLanguageRevision == languageRevision
+                && uiMetricRevision == UiRevision.Current
                 && uiMergeGeneration == mergeGeneration)
                 return;
 
@@ -374,6 +380,7 @@ namespace WorkRoles.UI
                     .Translate(doc.trainingPaths.Count).ToString());
             }
             uiLanguageRevision = languageRevision;
+            uiMetricRevision = UiRevision.Current;
             uiMergeGeneration = mergeGeneration;
             rowLayoutDirty = true;
         }
@@ -387,6 +394,7 @@ namespace WorkRoles.UI
                 && rowLayoutWidth == width
                 && rowLayoutState == state
                 && rowLayoutStamp == languageRevision
+                && rowLayoutMetricRevision == UiRevision.Current
                 && rowLayoutMergeGeneration == mergeGeneration)
                 return;
 
@@ -438,6 +446,7 @@ namespace WorkRoles.UI
             rowLayoutWidth = width;
             rowLayoutState = state;
             rowLayoutStamp = languageRevision;
+            rowLayoutMetricRevision = UiRevision.Current;
             rowLayoutMergeGeneration = mergeGeneration;
             rowLayoutDirty = false;
         }
@@ -700,6 +709,8 @@ namespace WorkRoles.UI
             roleMergeUi?.Clear();
             mergeUiRevision = -1;
             uiLanguageRevision = -1;
+            uiMetricRevision = -1;
+            rowLayoutMetricRevision = -1;
             uiMergeGeneration = -1;
             rowLayoutMergeGeneration = -1;
             base.PostClose();

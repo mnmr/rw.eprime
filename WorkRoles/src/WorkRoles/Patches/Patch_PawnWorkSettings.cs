@@ -140,7 +140,11 @@ namespace WorkRoles.Patches
     [HarmonyPatch(typeof(Pawn), nameof(Pawn.DeSpawn))]
     public static class Patch_Pawn_DeSpawn
     {
-        public static void Postfix(Pawn __instance) => PawnLocationTracker.NotifyDespawned(__instance);
+        public static void Prefix(Pawn __instance, out string? __state) =>
+            __state = PawnLocationTracker.CaptureDeparture(__instance);
+
+        public static void Postfix(Pawn __instance, string? __state) =>
+            PawnLocationTracker.NotifyDespawned(__instance, __state);
     }
 
     /// Evict destroyed pawns from runtime orders and the persistent role store.
@@ -157,8 +161,15 @@ namespace WorkRoles.Patches
             Patch_MultiFloorsWorkScan.NotifyDestroyed(__instance);
             PawnLocationTracker.NotifyDestroyed(__instance);
             JobRankBaseline.NotifyDestroyed(__instance);
-            RoleStore.Current?.pawnSets.Remove(__instance);
-            if (__state) ExternalPawnFacts.Release(__instance);
+            var store = RoleStore.Current;
+            if (store?.pawnSets.Remove(__instance) == true)
+                UiVersion.PawnChanged(__instance, planChanged: true);
+            store?.Revisions.ForgetPawn(__instance.thingIDNumber);
+            if (__state)
+            {
+                UiVersion.RosterChanged();
+                ExternalPawnFacts.Release(__instance);
+            }
             PriorityGridFacts.Release(__instance);
         }
     }
@@ -185,6 +196,7 @@ namespace WorkRoles.Patches
             DefinitionReloadCoordinator.ReleaseForTeardown();
             UI.RoleClipboard.Clear();
             CompiledJobOrders.ReleaseForTeardown();
+            RoleWorkSpecs.Reset();
             Patch_MultiFloorsWorkScan.ReleaseForTeardown();
             PriorityGridFacts.ReleaseForTeardown();
             JobRankBaseline.ReleaseForTeardown();
