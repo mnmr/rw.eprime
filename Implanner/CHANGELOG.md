@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.8 — 2026-10-12
+
+- Changed: RimWorld 1.7 support.
+
 ## 1.1.7 — 2026-10-04
 
 - Changed: Extracted common logic to shared library for easier maintenance.

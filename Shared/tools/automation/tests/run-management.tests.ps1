@@ -19,7 +19,7 @@ New-Item -ItemType Directory -Path $fixture | Out-Null
 try {
     # Real manifests/files and OS locks, without launching a game. Ownership and
     # safe cleanup must be provable even before the runtime/pipe can exist.
-    foreach ($index in 1..3) {
+    foreach ($index in 1..5) {
         $id = [Guid]::NewGuid().ToString('N')
         $path = Assert-RunPath $id
         New-Item -ItemType Directory -Path $path | Out-Null
@@ -37,6 +37,18 @@ try {
     Check (Test-RunCommandLine "game -savedatafolder=`"$path`" -automationtoken=$token" $path $token) 'Exact process must match.'
     Check (-not (Test-RunCommandLine "game -savedatafolder=`"$path-other`" -automationtoken=$token" $path $token)) 'Profile prefixes must not match.'
     Check (-not (Test-RunCommandLine "game -savedatafolder=`"$path`" -automationtoken=$token-other" $path $token)) 'Token prefixes must not match.'
+    foreach ($prefix in @('', '23:07:00 ERROR ')) {
+        Check (Test-RunStartupFailure "$token`n${prefix}SaveableFromNode exception: broken save" $token) 'Both Unity and Waylith fatal startup logs must fail promptly.'
+    }
+    Check (-not (Test-RunStartupFailure "another-token`nSaveableFromNode exception: stale log" $token)) 'A foreign log must not decide this run startup.'
+    Check (-not (Test-RunStartupFailure "$token`n23:07:00 INFO [SharedAutomation] ready for background commands" $token)) 'The readiness marker is not a failure.'
+    $removedAnalyzer = "$token`nSaveableFromNode exception: System.ArgumentException: Can't load abstract class Verse.GameComponent`n[Ref 2FE8A16F]`n  at Verse.ScribeExtractor.SaveableFromNode[T] (System.Xml.XmlNode node) [0x00143] in <fixture>:0`nSubnode:`n<li Class=`"Analyzer.GameComponent_Analyzer`" />`n"
+    Check (Test-RunStartupFailure $removedAnalyzer $token) 'Missing saved components remain failures by default.'
+    Check (-not (Test-RunStartupFailure $removedAnalyzer $token -AllowRecoverableSaveErrors)) 'An explicit compatibility run may continue past caught save-node errors to prove actual runtime readiness.'
+    foreach ($fatal in @('Exception while loading game: broken map', 'Crash!!!', 'Could not find game XML node.', 'Could not execute post-long-event action. Exception: failed')) {
+        Check (Test-RunStartupFailure ($removedAnalyzer + $fatal + "`n") $token -AllowRecoverableSaveErrors) 'The opt-in must never hide crashes or fatal loading errors.'
+    }
+    Check (-not (Test-RunStartupFailure ($removedAnalyzer.Replace('Analyzer.GameComponent_Analyzer','Other.GameComponent')) $token -AllowRecoverableSaveErrors)) 'Compatibility tolerance is a recorded launch choice, not a growing list of mod classes.'
     Rejects { Assert-RunPath '../Shared' } 'Traversal must be rejected.'
     $env:RIMWORLD_AUTOMATION_OWNER = 'different-task'
     Rejects { Set-AutomationRun $runs[0] } 'A foreign run must reject control.'
@@ -60,6 +72,29 @@ try {
     Check (-not (Test-Path -LiteralPath $path)) 'Stopped owned run should be removed.'
     Check ((Get-Content (Join-Path $source 'build.txt') -Raw) -ceq 'subsequent build') 'Removal must not traverse asset junctions.'
     Check (Test-Path -LiteralPath (Assert-RunPath $runs[1])) 'Removing a run must preserve its neighbor.'
+    # Interruption can occur after the snapshot helper and run-local metadata
+    # are gone. The externally retained, owner-checked removal claim must allow
+    # only that owner to finish, including the final directory-delete boundary.
+    $interruptedPath = Assert-RunPath $runs[4]
+    $interruptedRecord = Get-RunRecord $runs[4]
+    $intentPath = Join-Path $script:AutomationRunsRoot ('.removing-' + $runs[4] + '.json')
+    try {
+        Write-RunJson $intentPath @{runId=$runs[4];owner=(Get-AutomationOwner);profile=$interruptedPath}
+        Remove-Item -LiteralPath (Join-Path $interruptedPath 'run.json')
+        $env:RIMWORLD_AUTOMATION_OWNER = 'different-task'
+        Rejects { & (Join-Path $toolsRoot 'remove-run.ps1') -RunId $runs[4] } 'A durable cleanup claim must not grant another owner access.'
+        $env:RIMWORLD_AUTOMATION_OWNER = 'run-management-regression'
+        & (Join-Path $toolsRoot 'remove-run.ps1') -RunId $runs[4]
+        Check (-not (Test-Path -LiteralPath $interruptedPath)) 'Interrupted cleanup must resume without deleted helper/metadata files.'
+        Check (-not (Test-Path -LiteralPath $intentPath)) 'Completed cleanup must release its durable claim.'
+        Write-RunJson $intentPath @{runId=$runs[4];owner=(Get-AutomationOwner);profile=$interruptedPath}
+        & (Join-Path $toolsRoot 'remove-run.ps1') -RunId $runs[4]
+        Check (-not (Test-Path -LiteralPath $intentPath)) 'Retry after directory removal must release a remaining owned claim.'
+    } finally {
+        $env:RIMWORLD_AUTOMATION_OWNER = 'run-management-regression'
+        if (Test-Path -LiteralPath $interruptedPath) { Write-RunJson (Join-Path $interruptedPath 'run.json') $interruptedRecord }
+        if (Test-Path -LiteralPath $intentPath) { Remove-Item -LiteralPath $intentPath }
+    }
     $worktree = Join-Path $fixture 'worktree'
     $about = Join-Path $worktree 'Shared\Automation\mod\About'
     New-Item -ItemType Directory -Path $about -Force | Out-Null
@@ -128,6 +163,85 @@ try {
         $destination = Assert-RunPath $runs[1]
         $copies = New-RunGameSnapshot $destination $worktree
         Check ((Get-Content (Join-Path $destination 'Host\RimWorld.Automation.Host.exe') -Raw) -ceq 'worktree host fixture') 'Runtime and host must come from the same selected source root.'
+        $script:InstalledGameRoot = Join-Path $fixture 'waylith-installation'
+        foreach ($folder in @('Mods','Data','Rendering')) {
+            New-Item -ItemType Directory -Path (Join-Path $script:InstalledGameRoot $folder) -Force | Out-Null
+        }
+        foreach ($file in @('RimWorld.exe','RimWorld.dll','UnityStubs.dll')) {
+            [IO.File]::WriteAllText((Join-Path $script:InstalledGameRoot $file), 'Waylith fixture; never launched')
+        }
+        New-Item -ItemType Directory -Path (Join-Path $worktree 'Shared\Automation\mod\1.7\Assemblies') -Force | Out-Null
+        [IO.File]::WriteAllText((Join-Path $worktree 'Shared\Automation\mod\1.7\Assemblies\RimWorld.Automation.dll'), 'Waylith runtime fixture')
+        $destination = Assert-RunPath $runs[2]
+        $copies = New-RunGameSnapshot $destination $worktree
+        Check ($copies.executable -ceq 'RimWorld.exe' -and $copies.gameVersion -ceq '1.7') 'Waylith snapshot must identify its actual executable and runtime version.'
+        Check (Test-Path -LiteralPath (Join-Path $destination 'Game\Rendering')) 'Waylith renderer assets must be available in the isolated game.'
+        Check (-not (Test-Path -LiteralPath (Join-Path $destination 'Game\RimWorldWin64_Data'))) 'Waylith must not require missing Unity asset folders.'
+        $waylithRecord = Get-RunRecord $runs[2]
+        $waylithRecord | Add-Member -NotePropertyName snapshots -NotePropertyValue $copies
+        Write-RunJson (Join-Path $destination 'run.json') $waylithRecord
+        Set-AutomationRun $runs[2]
+        Check ($script:RimWorldExecutable -ieq (Join-Path $destination 'Game\RimWorld.exe')) 'Run selection must use its copied executable, regardless of the current installation.'
+        $waylithRecord.snapshots.executable = '..\RimWorld.exe'
+        Rejects { Get-RunExecutable $waylithRecord } 'Executable metadata cannot escape the isolated Game folder.'
+
+        $waylithInstallation = $script:InstalledGameRoot
+        $script:InstalledGameRoot = Join-Path $fixture 'linux-installation'
+        foreach ($folder in @('Mods','Data','RimWorldLinux_Data')) {
+            New-Item -ItemType Directory -Path (Join-Path $script:InstalledGameRoot $folder) -Force | Out-Null
+        }
+        [IO.File]::WriteAllText((Join-Path $script:InstalledGameRoot 'RimWorldLinux'), 'Linux fixture; never launched')
+        $workshopRoot = $script:InstalledWorkshopRoot
+        $script:InstalledWorkshopRoot = Join-Path $fixture 'workshop'
+        foreach ($entry in @(@('local','mnmr.eprimereadouts'), @('external','regression.external'))) {
+            $workshopAbout = Join-Path $script:InstalledWorkshopRoot ($entry[0] + '\About')
+            New-Item -ItemType Directory -Path $workshopAbout -Force | Out-Null
+            [IO.File]::WriteAllText((Join-Path $workshopAbout 'About.xml'), ('<ModMetaData><packageId>' + $entry[1] + '</packageId></ModMetaData>'))
+        }
+        $localAbout = Join-Path $worktree 'Readouts\mod\About'
+        New-Item -ItemType Directory -Path $localAbout -Force | Out-Null
+        [IO.File]::WriteAllText((Join-Path $localAbout 'About.xml'), '<ModMetaData><packageId>mnmr.eprimereadouts</packageId></ModMetaData>')
+        $destination = Assert-RunPath $runs[3]
+        New-Item -ItemType Directory -Path (Join-Path $destination 'Config') -Force | Out-Null
+        [IO.File]::WriteAllText((Join-Path $destination 'Config\ModsConfig.xml'), '<ModsConfigData><activeMods><li>mnmr.eprimereadouts</li><li>regression.external</li></activeMods></ModsConfigData>')
+        $copies = New-RunGameSnapshot $destination $worktree
+        $copiedReadouts = @(Get-ChildItem -LiteralPath (Join-Path $destination 'Game\Mods') -Directory | Where-Object {
+            $copiedAbout = Join-Path $_.FullName 'About\About.xml'
+            (Test-Path -LiteralPath $copiedAbout) -and ([xml](Get-Content -LiteralPath $copiedAbout -Raw)).ModMetaData.packageId -ieq 'mnmr.eprimereadouts'
+        })
+        Check ($copiedReadouts.Count -eq 1 -and $copiedReadouts[0].Name -ceq 'EPrimeReadouts') 'Selected source mods must win over duplicate Workshop packages.'
+        Check (Test-Path -LiteralPath (Join-Path $destination 'Game\Mods\Workshop-external\About\About.xml')) 'Active external Workshop dependencies must remain available.'
+        $script:InstalledWorkshopRoot = $workshopRoot
+        Check ($copies.executable -ceq 'RimWorldLinux' -and $copies.gameVersion -ceq '1.6') 'Linux snapshot must select Unity 1.6 and its exact executable.'
+        Check (Test-Path -LiteralPath (Join-Path $destination 'Game\RimWorldLinux_Data')) 'Linux assets must be available in the isolated game.'
+        Check (-not (Test-Path -LiteralPath (Join-Path $destination 'Game\RimWorldWin64_Data'))) 'Linux must not use the Windows Unity assets.'
+        $linuxRecord = Get-RunRecord $runs[3]
+        $linuxRecord | Add-Member -NotePropertyName snapshots -NotePropertyValue $copies
+        Check ((Get-RunExecutable $linuxRecord) -ceq (Join-Path $destination 'Game\RimWorldLinux')) 'Linux selection must retain the copied executable.'
+        $script:InstalledGameRoot = $waylithInstallation
+
+        # Exercise profile preparation using the real baseline and fake save,
+        # isolated even from the repository's canonical save destination.
+        [IO.File]::WriteAllText((Join-Path $script:InstalledGameRoot 'Version.txt'), '1.7.4976 rev1043')
+        [IO.File]::WriteAllText((Join-Path $about 'About.xml'), '<ModMetaData><packageId>eprime.sharedautomation</packageId></ModMetaData>')
+        [xml]$baseline = Get-Content (Join-Path $toolsRoot 'profile-template\Config\ModsConfig.xml') -Raw
+        $saveDirectory = Join-Path $fixture 'saves'
+        New-Item -ItemType Directory -Path $saveDirectory | Out-Null
+        [IO.File]::WriteAllText((Join-Path $saveDirectory 'Fisso-NAM-fixture.rws'), ('<savegame><meta><modIds>' + (($baseline.ModsConfigData.activeMods.li | ForEach-Object { '<li>' + $_ + '</li>' }) -join '') + '</modIds></meta></savegame>'))
+        $repositoryRoot = $script:AutomationRepositoryRoot
+        try {
+            $script:AutomationRepositoryRoot = $fixture
+            $prepared = Initialize-RunProfile $destination $saveDirectory 'Fisso-NAM*.rws' 'own-mods-waylith' $worktree
+            [xml]$preparedConfig = Get-Content (Join-Path $destination 'Config\ModsConfig.xml') -Raw
+            Check ($preparedConfig.ModsConfigData.version -ceq '1.7.4976 rev1043') 'The game must not reset the prepared mod list due to a stale template version.'
+            Check (($preparedConfig.ModsConfigData.activeMods.li -join ',') -ceq ($prepared.activeMods -join ',')) 'Version adaptation must preserve the declared active-mod order.'
+            $legacyBaselinePath = Join-Path $toolsRoot 'profile-template\Config\ModsConfig-1.6.xml'
+            [xml]$legacyBaseline = Get-Content -LiteralPath $legacyBaselinePath -Raw
+            [IO.File]::WriteAllText((Join-Path $saveDirectory 'Fisso-NAM-fixture.rws'), ('<savegame><meta><modIds>' + (($legacyBaseline.ModsConfigData.activeMods.li | ForEach-Object { '<li>' + $_ + '</li>' }) -join '') + '</modIds></meta></savegame>'))
+            Rejects { Initialize-RunProfile $destination $saveDirectory 'Fisso-NAM*.rws' 'own-mods-waylith' $worktree } 'The ordinary baseline must still reject a differently ordered source save.'
+            $legacy = Initialize-RunProfile $destination $saveDirectory 'Fisso-NAM*.rws' 'own-mods-waylith' $worktree $legacyBaselinePath
+            Check (($legacy.activeMods -join ',') -ceq ($prepared.activeMods -join ',')) 'An explicit matching legacy baseline must layer the same clean mod set without weakening default verification.'
+        } finally { $script:AutomationRepositoryRoot = $repositoryRoot }
     } finally { $script:InstalledGameRoot = $installedRoot }
     Write-Output 'PASS run selection, ownership, lease liveness, immutable snapshots, junction-safe removal, independent neighbors.'
 } finally {

@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
+using WorkRoles.Core.Recs;
 
 namespace WorkRoles.Core
 {
     public readonly struct PawnPresentationStamp : IEquatable<PawnPresentationStamp>
     {
         public PawnPresentationStamp(object? store, object externalSnapshot,
-            int tuning, int language, int definition, int metrics)
+            SkillPromotionTuning tuning, int language, int definition, int metrics)
         {
             Store = store;
             ExternalSnapshot = externalSnapshot;
@@ -18,7 +19,7 @@ namespace WorkRoles.Core
 
         public object? Store { get; }
         public object ExternalSnapshot { get; }
-        public int Tuning { get; }
+        public SkillPromotionTuning Tuning { get; }
         public int Language { get; }
         public int Definition { get; }
         public int Metrics { get; }
@@ -26,7 +27,7 @@ namespace WorkRoles.Core
         public bool Equals(PawnPresentationStamp other) =>
             ReferenceEquals(Store, other.Store)
             && ReferenceEquals(ExternalSnapshot, other.ExternalSnapshot)
-            && Tuning == other.Tuning && Language == other.Language
+            && Tuning.Equals(other.Tuning) && Language == other.Language
             && Definition == other.Definition && Metrics == other.Metrics;
     }
 

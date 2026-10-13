@@ -3,6 +3,7 @@ $script:AutomationRepositoryRoot = 'D:\Code\RimWorld'
 $script:AutomationSharedRoot = Join-Path $script:AutomationRepositoryRoot 'AutomationProfiles\Shared'
 $script:AutomationRunsRoot = Join-Path $script:AutomationSharedRoot 'Runs'
 $script:InstalledGameRoot = 'C:\Program Files (x86)\Steam\steamapps\common\RimWorld'
+$script:InstalledWorkshopRoot = 'C:\Program Files (x86)\Steam\steamapps\workshop\content\294100'
 
 function Get-AutomationOwner {
     if ($env:RIMWORLD_AUTOMATION_OWNER) { return $env:RIMWORLD_AUTOMATION_OWNER }
@@ -42,12 +43,13 @@ function Write-RunJson {
     } finally { if (Test-Path -LiteralPath $temporary) { Remove-Item -LiteralPath $temporary -Force } }
 }
 function Get-RunRecord {
-    param([Parameter(Mandatory)][string]$RunId, [switch]$RequireOwner)
+    param([Parameter(Mandatory)][string]$RunId, [switch]$RequireOwner, [switch]$AllowRemoving)
     $path = Assert-RunPath $RunId
     $record = Read-RunJson (Join-Path $path 'run.json')
     if ($null -eq $record -or $record.runId -cne $RunId -or $record.profile -ine $path) { throw "No valid prepared run: $RunId" }
     if ($RequireOwner -and $record.owner -cne (Get-AutomationOwner)) { throw "Run $RunId belongs to '$($record.owner)'; create your own run." }
-    if (Test-Path -LiteralPath (Join-Path $path 'removing.json')) { throw "Run $RunId is being removed." }
+    if (-not $AllowRemoving -and ((Test-Path -LiteralPath (Join-Path $path 'removing.json')) -or
+        (Test-Path -LiteralPath (Join-Path $script:AutomationRunsRoot ('.removing-' + $RunId + '.json'))))) { throw "Run $RunId is being removed." }
     return $record
 }
 function Open-RunLock {
@@ -77,20 +79,77 @@ function Test-RunCommandLine {
     return $CommandLine -match ('(?i)(?:^|\s)-savedatafolder=(?:"' + $path + '"|' + $path + ')(?=\s|$)') -and
         $CommandLine -cmatch ('(?:^|\s)-automationtoken=' + $nonce + '(?=\s|$)')
 }
-function Get-AllRimWorldProcessInfo { @(Get-CimInstance Win32_Process -Filter "name = 'RimWorldWin64.exe'") }
+function Test-RunStartupFailure {
+    param([string]$Content, [string]$Token, [switch]$AllowRecoverableSaveErrors)
+    if (-not $Content.Contains($Token)) { return $false }
+    $caughtSaveNode = if ($AllowRecoverableSaveErrors) { '' } else { 'SaveableFromNode exception:|' }
+    $Content -match ('(?m)^(?:\d{2}:\d{2}:\d{2}\s+\w+\s+)?(?:' + $caughtSaveNode + 'Exception while loading|Crash!!!|Could not find (?:game|world) XML node\.|Called InitSaving\(\) but current mode is|Mods config data is .*Resetting\.)|SharedAutomation.*Exception|Could not execute post-long-event action\. Exception:')
+}
+function Get-GameLayout {
+    param([Parameter(Mandatory)][string]$Root)
+    if (Test-Path -LiteralPath (Join-Path $Root 'RimWorldLinux')) {
+        return [pscustomobject]@{executable='RimWorldLinux';gameVersion='1.6';assetFolders=@('Data','RimWorldLinux_Data')}
+    }
+    if ((Test-Path -LiteralPath (Join-Path $Root 'RimWorld.exe')) -and
+        (Test-Path -LiteralPath (Join-Path $Root 'UnityStubs.dll'))) {
+        return [pscustomobject]@{executable='RimWorld.exe';gameVersion='1.7';assetFolders=@('Data','Rendering')}
+    }
+    if (Test-Path -LiteralPath (Join-Path $Root 'RimWorldWin64.exe')) {
+        return [pscustomobject]@{executable='RimWorldWin64.exe';gameVersion='1.6';assetFolders=@('Data','RimWorldWin64_Data','MonoBleedingEdge')}
+    }
+    throw "No supported RimWorld executable in $Root"
+}
+function Get-RunExecutable {
+    param([Parameter(Mandatory)]$Record)
+    $name = $Record.snapshots.executable
+    if (-not $name) { $name = 'RimWorldWin64.exe' } # Existing 1.6 manifests.
+    if ($name -cnotin @('RimWorldWin64.exe','RimWorld.exe','RimWorldLinux')) { throw 'Invalid run executable.' }
+    Join-Path $Record.profile ('Game\' + $name)
+}
+function Get-AllRimWorldProcessInfo { @(Get-CimInstance Win32_Process -Filter "name = 'RimWorldWin64.exe' OR name = 'RimWorld.exe'") }
 function Get-RunProcesses {
     param([Parameter(Mandatory)]$Record)
+    if ($Record.backend -ceq 'wsl') {
+        $identity = Invoke-WslRunControl $Record 'inspect'
+        if ($identity) {
+            [pscustomobject]@{ProcessId=$identity.pid; ExecutablePath=$identity.executable; CommandLine=($identity.arguments -join ' '); CreationDate=$identity.start}
+        }
+        return
+    }
     @(Get-AllRimWorldProcessInfo | Where-Object {
         (Test-RunCommandLine $_.CommandLine $Record.profile ('rimworld-shared-' + $Record.runId)) -and
-        $_.ExecutablePath -ieq (Join-Path $Record.profile 'Game\RimWorldWin64.exe')
+        $_.ExecutablePath -ieq (Get-RunExecutable $Record)
     })
+}
+function Get-WslRunPath {
+    param([Parameter(Mandatory)]$Record)
+    '/mnt/d/Code/RimWorld/AutomationProfiles/Shared/Runs/' + $Record.runId
+}
+function Invoke-WslRunControl {
+    param([Parameter(Mandatory)]$Record, [Parameter(Mandatory)][string]$Action, [string]$Payload = '')
+    # Run selection and ownership are checked before every Linux process/pipe operation.
+    $checked = Get-RunRecord $Record.runId -RequireOwner:($Action -cnotin @('inspect','idle')) -AllowRemoving:($Action -ceq 'remove')
+    if ($checked.backend -cne 'wsl' -or $checked.wslDistribution -cnotmatch '^[A-Za-z0-9._-]+$') { throw 'Invalid WSL run backend.' }
+    $profile = Get-WslRunPath $checked
+    $start = [Diagnostics.ProcessStartInfo]::new('wsl.exe')
+    $start.UseShellExecute = $false; $start.CreateNoWindow = $true
+    $start.RedirectStandardOutput = $true; $start.RedirectStandardError = $true
+    foreach ($argument in @('--distribution',$checked.wslDistribution,'--exec','python3',($profile + '/Host/linux-host.py'),$Action,$profile,('rimworld-shared-' + $checked.runId),$checked.owner,$Payload)) { $start.ArgumentList.Add($argument) }
+    $process = [Diagnostics.Process]::Start($start)
+    try {
+        $output = $process.StandardOutput.ReadToEndAsync(); $errorText = $process.StandardError.ReadToEndAsync()
+        if (-not $process.WaitForExit(45000)) { $process.Kill(); throw 'Linux control command timed out.' }
+        $result = $output.GetAwaiter().GetResult(); $failure = $errorText.GetAwaiter().GetResult()
+        if ($process.ExitCode -ne 0) { throw "Linux control failed: $failure" }
+        if ($result.Trim()) { $result | ConvertFrom-Json }
+    } finally { $process.Dispose() }
 }
 function Set-AutomationRun {
     param([Parameter(Mandatory)][string]$RunId)
     $record = Get-RunRecord $RunId -RequireOwner
     $script:AutomationRunId = $RunId
     $script:AutomationProfilePath = $record.profile
-    $script:RimWorldExecutable = Join-Path $record.profile 'Game\RimWorldWin64.exe'
+    $script:RimWorldExecutable = Get-RunExecutable $record
     $script:RimWorldPlayerLog = Join-Path $record.profile 'Player.log'
 }
 function Get-SelectedRun {

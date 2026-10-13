@@ -8,6 +8,34 @@ using Verse;
 
 namespace RimWorld.Automation;
 
+#if RIMWORLD_1_7
+// Waylith dispatches managed events and accepts a physical pointer at each pass.
+// Keep its native clipping and input routing; replace only this session's input.
+[HarmonyPatch]
+internal static class PlayerGuiEvent
+{
+    private static MethodBase TargetMethod() => AccessTools.Method(AccessTools.TypeByName("RimWorldWaylith.Imgui.ImguiDispatch"), "Dispatch");
+    private static void Prefix(ref Vector2 physMouse, ref Event? __state)
+    {
+        physMouse = AutomationRunner.Pointer;
+        if (AutomationRunner.PendingEvent == null || AutomationRunner.TargetWindow != null || Event.current.type != EventType.Layout) return;
+        __state = Event.current;
+        Event.current = AutomationRunner.PendingEvent;
+        AutomationRunner.PendingEvent = null;
+        AutomationRunner.LastInjectionFrame = Time.frameCount;
+    }
+    private static void Finalizer(Event? __state)
+    {
+        if (__state == null) return;
+        AutomationRunner.NoteDelivery(Event.current, "the root UI (map, bars, unfocused windows)");
+        Event.current = __state;
+    }
+}
+internal static class VirtualPointerClip
+{
+    internal static void Reapply() { }
+}
+#else
 [HarmonyPatch(typeof(GUIUtility), "BeginGUI")]
 internal static class PlayerGuiEvent
 {
@@ -37,6 +65,7 @@ internal static class PlayerGuiDelivery
         AutomationRunner.NoteDelivery(Event.current, "the root UI (map, bars, unfocused windows)");
     }
 }
+#endif
 
 [HarmonyPatch(typeof(Window), "InnerWindowOnGUI")]
 internal static class WindowGuiEvent
@@ -49,6 +78,11 @@ internal static class WindowGuiEvent
         Window? target = AutomationRunner.TargetWindow;
         if (input == null || target != __instance || Event.current.type != EventType.Repaint) return;
         __state = Event.current;
+#if RIMWORLD_1_7
+        // The backend localized the current pointer before invoking this window.
+        // Its titlebar/close controls read it before another content-group push.
+        input.mousePosition = __state.mousePosition;
+#endif
         Event.current = input;
         VirtualPointerClip.Reapply();
         Active = true;
@@ -59,7 +93,7 @@ internal static class WindowGuiEvent
     {
         if (__state == null) return;
         Active = false;
-        AutomationRunner.NoteDelivery(Event.current, __instance.GetType().FullName);
+        AutomationRunner.NoteDelivery(Event.current, __instance.GetType().FullName ?? __instance.GetType().Name);
         Event.current = __state;
     }
 }
@@ -180,6 +214,7 @@ internal static class PublishWindowDrag
     private static void Postfix(Window __instance) => VirtualWindowDrag.Apply(__instance);
 }
 
+#if !RIMWORLD_1_7
 [HarmonyPatch(typeof(Root), nameof(Root.OnGUI))]
 internal static class VirtualPointerClip
 {
@@ -207,6 +242,7 @@ internal static class VirtualWindowPointerClip
     private static void Prefix(ref bool __state) => VirtualPointerClip.Prefix(ref __state);
     private static void Finalizer(bool __state) => VirtualPointerClip.Finalizer(__state);
 }
+#endif
 
 // These patches are installed only in the canonical isolated automation process.
 // No OS input, focus, clipboard, or other-mod methods are touched.
@@ -221,6 +257,7 @@ internal static class VirtualMousePosition
     }
 }
 
+#if !RIMWORLD_1_7
 [HarmonyPatch(typeof(Event), nameof(Event.mousePosition), MethodType.Getter)]
 internal static class VirtualEventPosition
 {
@@ -232,6 +269,7 @@ internal static class VirtualEventPosition
         return false;
     }
 }
+#endif
 
 internal static class ButtonState
 {

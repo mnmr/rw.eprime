@@ -14,6 +14,8 @@ namespace WorkRoles
         // Patch_WorldObject_SetTile.
         private readonly FixedTickBoundaryGate worldHourBoundary =
             new FixedTickBoundaryGate(2500);
+        private static readonly System.Action updateWorldHour = CompiledJobOrders.InvalidateWorldTimeRuled;
+        private static readonly System.Action reconcileWorld = CompiledJobOrders.DrainWorldPendingReconciles;
 
         public WorkRolesGameComponent(Game game) { }
 
@@ -165,14 +167,13 @@ namespace WorkRoles
         public override void GameComponentTick()
         {
             PawnLocationTracker.ProcessPendingDepartures();
-            CompiledJobOrders.DrainWorldPendingReconciles();
             int now = Find.TickManager.TicksGame;
             if (PrioritySetWatcher.HasPendingWarning)
                 PrioritySetWatcher.ShowPendingWarning(now);
             if (GiverBypassWatcher.HasPendingWarning)
                 GiverBypassWatcher.ShowPendingWarning();
-            if (worldHourBoundary.Observe(GenTicks.TicksAbs))
-                CompiledJobOrders.InvalidateWorldTimeRuled();
+            RuntimeWorkBoundary.Process(worldHourBoundary.Observe(GenTicks.TicksAbs),
+                updateWorldHour, reconcileWorld);
         }
     }
 }

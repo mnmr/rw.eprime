@@ -247,6 +247,7 @@ namespace WorkRoles.UI
             selectedPanelState.Release();
             InvalidateRoleVerdicts();
             chipLayouts.Clear();
+            rowExternalRevisions.Clear();
             chipSequenceStamp = ScopeCacheStamp.Invalid;
 
             roleTipCache.Clear();
@@ -290,7 +291,7 @@ namespace WorkRoles.UI
                     out bool fullGeneration)) return;
 
             // Colony-wide consumers read every pawn (plan, verdicts, best-fit
-            // tips, aggregate widths and sizes, ordering, row geometry) and
+            // tips, sizes and ordering) and
             // rebuild on any refresh. A command can bump UiVersion during an
             // input pass, allowing one of them to rebuild before the next
             // Layout installs the new external generation; clearing after
@@ -298,13 +299,13 @@ namespace WorkRoles.UI
             recommendationState.InvalidateExternalFacts();
             rosterState.InvalidateSnapshotConsumers();
             sizeStamp = ScopeCacheStamp.Invalid;
-            skillColumnsWidthStamp = ScopeCacheStamp.Invalid;
             chipSequenceStamp = ScopeCacheStamp.Invalid;
 
             if (fullGeneration)
             {
                 roleCapabilityState.Invalidate();
                 chipLayouts.Clear();
+                rowExternalRevisions.Clear();
                 roleTipCache.Clear();
             roleTipSources.Clear();
                 roleTipStamp = ScopeCacheStamp.Invalid;
@@ -326,11 +327,17 @@ namespace WorkRoles.UI
             RemoveRoleTips(null);
         }
 
-        /// Drops every per-pawn cache entry the row and its tooltips derive
-        /// from the pawn's external capture.
+        /// Invalidates external consumers while retaining a live pawn's row
+        /// for component-wise reuse. Removed owners release the entire row.
         private void EvictPawn(Pawn pawn)
         {
-            chipLayouts.Remove(pawn);
+            // Retain prior row content/geometry for changed live pawns. Its
+            // external revision refreshes name/downed facts on the next read.
+            if (!statsState.Contains(pawn))
+            {
+                chipLayouts.Remove(pawn);
+                rowExternalRevisions.Remove(pawn);
+            }
             roleCapabilityState.InvalidatePawn(pawn);
             RemoveRoleTips(pawn);
             rulesPassKeyBuffer.Clear();
@@ -391,6 +398,7 @@ namespace WorkRoles.UI
             pawnTips.Clear();
             rosterState.ReleaseSnapshots();
             chipLayouts.Clear();
+            rowExternalRevisions.Clear();
             chipLayoutOwner = null;
             chipSequences.Clear();
             chipSequenceDependencies.Clear();
@@ -1931,15 +1939,16 @@ namespace WorkRoles.UI
         // UI/definition and skill-column revisions. Value: immutable exact width
         // vector plus total, shared by the header, row geometry and size queries.
         // Dependencies: selected definitions, language/UI measurements, and
-        // roster cell-width snapshots (explicit external refresh). Refresh:
+        // roster width-contribution revision (actual disabled/decorator widths). Refresh:
         // immediate on the next width read.
         // Equality: equal vectors preserve identity even after external refresh;
         // equal totals alone do not. Key hits perform no measurements/iteration.
         // Teardown: reset/release drops owner, column and width references;
-        // language/external refresh invalidates the gate while preserving equal values.
+        // language/width changes invalidate the gate while preserving equal values.
         private ScopeCacheStamp skillColumnsWidthStamp =
             ScopeCacheStamp.Invalid;
         private int skillColumnsWidthRevision = -1;
+        private int skillColumnWidthsFactsRevision = -1;
         private RoleStore? skillColumnWidthsOwner;
         private ColonistSkillColumnsSnapshot? skillColumnWidthsColumns;
         private ColumnWidthSnapshot? skillColumnWidths;
@@ -1948,6 +1957,7 @@ namespace WorkRoles.UI
         {
             skillColumnsWidthStamp = ScopeCacheStamp.Invalid;
             skillColumnsWidthRevision = -1;
+            skillColumnWidthsFactsRevision = -1;
             skillColumnWidthsOwner = null;
             skillColumnWidthsColumns = null;
             skillColumnWidths = null;
@@ -1967,7 +1977,8 @@ namespace WorkRoles.UI
             if (skillColumnWidths != null && sameOwner
                 && ReferenceEquals(skillColumnWidthsColumns, columns)
                 && skillColumnsWidthStamp == stamp
-                && skillColumnsWidthRevision == revision)
+                && skillColumnsWidthRevision == revision
+                && skillColumnWidthsFactsRevision == statsState.RosterWidthsRevision)
                 return skillColumnWidths;
             var widths = new float[columns.Count];
             GameFont oldFont = Text.Font;
@@ -1981,6 +1992,7 @@ namespace WorkRoles.UI
                 sameOwner ? skillColumnWidths : null, widths);
             skillColumnsWidthStamp = stamp;
             skillColumnsWidthRevision = revision;
+            skillColumnWidthsFactsRevision = statsState.RosterWidthsRevision;
             skillColumnWidthsOwner = store;
             skillColumnWidthsColumns = columns;
             return skillColumnWidths;
@@ -3077,13 +3089,12 @@ namespace WorkRoles.UI
         {
             RoleStore? store = RoleStore.Current;
             if (store == null || selection.Count == 0) return;
-            Dictionary<int, long>? positions = null;
+            IReadOnlyDictionary<int, long>? positions = null;
             int leadRoleId = -1;
             long leadPosition = long.MinValue;
             if (placement == PalettePlacement.AfterBasics)
             {
-                positions = Ordering.BasePositions(RecsAdapter.RoleViewsOf(store),
-                    RecsAdapter.ResolvedRecommendationOrder(store));
+                positions = RecsAdapter.RecommendationPositions(store);
                 Role? lead = store.RoleByTemplate("WS_Basics")
                     ?? store.RoleByTemplate("WS_Core");
                 if (lead != null && positions.TryGetValue(lead.id, out long at))
@@ -3653,6 +3664,7 @@ namespace WorkRoles.UI
                 {
                     chipSequenceDependencies.Remove(prior);
                     chipLayouts.Remove(prior);
+                    rowExternalRevisions.Remove(prior);
                     RemoveRoleTips(prior);
                     RemoveRoleTipSources(prior);
                 }
@@ -3870,7 +3882,8 @@ namespace WorkRoles.UI
                 ColonistChipSequenceSnapshot sequence,
                 List<RoleChipLayout> chips,
                 float stripHeight, List<RowCaptionSegment> caption,
-                RowTextMetrics lineBoxes, ColonistSkillCellSnapshot[] skills)
+                RowTextMetrics lineBoxes, ColonistSkillCellSnapshot[] skills,
+                ColonistStatsSnapshot stats, SkillCaptionTuning captionTuning)
             {
                 LineBoxes = lineBoxes;
                 this.sequence = sequence;
@@ -3888,6 +3901,8 @@ namespace WorkRoles.UI
                 StripHeight = stripHeight;
                 this.caption = caption;
                 this.skills = skills;
+                Stats = stats;
+                CaptionTuning = captionTuning;
             }
 
             internal Pawn Pawn { get; }
@@ -3899,6 +3914,8 @@ namespace WorkRoles.UI
             internal string CopiedToast { get; }
             internal int ActivityRevision { get; }
             internal int RuntimeRevision { get; }
+            internal ColonistStatsSnapshot Stats { get; }
+            internal SkillCaptionTuning CaptionTuning { get; }
             internal ColonistChipSequenceSnapshot Sequence => sequence;
             internal int ActiveRoleId { get; }
             internal float StripHeight { get; }
@@ -3912,14 +3929,18 @@ namespace WorkRoles.UI
             internal ColonistSkillCellSnapshot SkillAt(int index) =>
                 skills[index];
 
-            internal ColonistRowSnapshot WithChips(
+            internal ColonistRowSnapshot Refresh(
                 ColonistChipSequenceSnapshot nextSequence,
-                List<RoleChipLayout> nextChips, float height,
-                int activityRevision, int runtimeRevision, int activeRoleId) =>
-                new ColonistRowSnapshot(Pawn, Label, NameColor, IsColonist,
-                    Downed, ChipDisplay, CopiedToast, activityRevision,
-                    runtimeRevision, activeRoleId, nextSequence, nextChips,
-                    height, caption, LineBoxes, skills);
+                List<RoleChipLayout>? nextChips, float height,
+                int activityRevision, int runtimeRevision, int activeRoleId,
+                string label, Color nameColor, bool isColonist, bool downed, string copiedToast,
+                ColonistStatsSnapshot stats, SkillCaptionTuning captionTuning,
+                List<RowCaptionSegment>? nextCaption, ColonistSkillCellSnapshot[]? nextSkills) =>
+                new ColonistRowSnapshot(Pawn, label, nameColor, isColonist,
+                    downed, ChipDisplay, copiedToast, activityRevision,
+                    runtimeRevision, activeRoleId, nextSequence, nextChips ?? chips,
+                    height, nextCaption ?? caption, LineBoxes, nextSkills ?? skills,
+                    stats, captionTuning);
 
             internal bool HasRole(int roleId)
             {
@@ -4041,20 +4062,27 @@ namespace WorkRoles.UI
         // draw pass fetches them through vanilla's per-frame PortraitsCache.
         // Dependencies: that pawn's chip sequence identity, scope, external pawn
         // facts, activity and definition revisions, display mode, width, configured skill
-        // columns and their exact widths, recommendation tuning, the skill-caption toggle, font
+        // columns and their exact widths, published skill stats and consumed
+        // champion-caption tuning, the skill-caption toggle, font
         // line boxes/tiny-font support, and
         // language. Refresh: immediate on scope/key change; targeted per pawn
         // on activity change, on that pawn's external capture change, and on
         // its chip sequence changing identity. Equality: exact keys preserve
-        // row identity. Teardown: ReleaseSnapshots/language or full external
+        // row identity. Relevant tuning updates replace only skill/caption
+        // content, preserving chip geometry. Teardown: ReleaseSnapshots/language or full external
         // invalidation clears all rows and backing buffers.
         private readonly Dictionary<Pawn, ColonistRowSnapshot> chipLayouts =
             new Dictionary<Pawn, ColonistRowSnapshot>();
+        // Observed notification metadata shares chipLayouts' window/store and
+        // pawn ownership, dependencies and teardown. Keeping this stamp outside
+        // the immutable row lets equal displayed facts preserve row identity.
+        // Only a changed external revision permits reading live name/downed data.
+        private readonly Dictionary<Pawn, int> rowExternalRevisions =
+            new Dictionary<Pawn, int>();
         private RoleStore? chipLayoutOwner;
         private float chipLayoutWidth = -1f;
         private float chipLayoutGridWidth = -1f;
         private int chipLayoutDisplay = -1;
-        private int chipLayoutTuningRevision = -1;
         private int chipLayoutDefinitionRevision = -1;
         private int chipLayoutSkillColumnsRevision = -1;
         private ColumnWidthSnapshot? chipLayoutSkillWidths;
@@ -4070,7 +4098,6 @@ namespace WorkRoles.UI
             float gridWidth = TableGrid ? chipWidthGrid.WidthFor(0f, true) : 0f;
             int display = TableDisplayKey;
             ChipDisplay chipDisplay = DisplayOfKey(display);
-            int tuningRevision = store.RecommendationTuningRevision;
             int definitionRevision = DefinitionReloadCoordinator.Revision;
             int skillColumnsRevision = rosterState.SkillColumnsRevision;
             ColonistSkillColumnsSnapshot columns = rosterState.SkillColumns;
@@ -4081,7 +4108,6 @@ namespace WorkRoles.UI
                 || chipLayoutWidth != stripWidth
                 || chipLayoutGridWidth != gridWidth
                 || chipLayoutDisplay != display
-                || chipLayoutTuningRevision != tuningRevision
                 || chipLayoutDefinitionRevision != definitionRevision
                 || chipLayoutSkillColumnsRevision != skillColumnsRevision
                 || !ReferenceEquals(chipLayoutSkillWidths, widths)
@@ -4090,11 +4116,11 @@ namespace WorkRoles.UI
                 || !chipLayoutTextMetrics.ContentEquals(textMetrics))
             {
                 chipLayouts.Clear();
+                rowExternalRevisions.Clear();
                 chipLayoutOwner = store;
                 chipLayoutWidth = stripWidth;
                 chipLayoutGridWidth = gridWidth;
                 chipLayoutDisplay = display;
-                chipLayoutTuningRevision = tuningRevision;
                 chipLayoutDefinitionRevision = definitionRevision;
                 chipLayoutSkillColumnsRevision = skillColumnsRevision;
                 chipLayoutSkillWidths = widths;
@@ -4107,16 +4133,41 @@ namespace WorkRoles.UI
             EnsureChipSequences(store);
             int activityRevision = ActivityTracker.RevisionOf(pawn);
             int runtimeRevision = UiVersion.RuntimeForPawn(pawn);
+            int externalRevision = ExternalPawnFacts.Revisions.RevisionOf(pawn);
+            ColonistStatsSnapshot stats = statsState.Snapshot(pawn);
+            SkillCaptionTuning captionTuning = captions
+                ? (store.recommendationTuning ?? RecommendationsTuningOptions.Default).SkillCaption
+                : default;
             ColonistChipSequenceSnapshot sequence = chipSequences[pawn];
-            if (chipLayouts.TryGetValue(pawn, out ColonistRowSnapshot cached)
+            chipLayouts.TryGetValue(pawn, out ColonistRowSnapshot cached);
+            bool sameStats = cached != null && ReferenceEquals(cached.Stats, stats);
+            bool sameCaption = cached != null
+                && (!captions || (ReferenceEquals(cached.Stats.Facts, stats.Facts)
+                    && cached.CaptionTuning.Equals(captionTuning)));
+            bool observedPawnFacts = cached != null
+                && rowExternalRevisions.TryGetValue(pawn, out int observedExternal)
+                && observedExternal == externalRevision;
+            string label = observedPawnFacts ? cached!.Label : pawn.LabelShortCap;
+            Color nameColor = observedPawnFacts ? cached!.NameColor
+                : pawn.IsSlave ? PawnNameColorUtility.PawnNameColorOf(pawn) : Color.white;
+            bool isColonist = observedPawnFacts ? cached!.IsColonist : pawn.IsColonist;
+            bool downed = observedPawnFacts ? cached!.Downed : pawn.Downed;
+            bool samePawnFacts = cached != null && cached.Label == label
+                && cached.NameColor == nameColor && cached.IsColonist == isColonist
+                && cached.Downed == downed;
+            if (!observedPawnFacts) rowExternalRevisions[pawn] = externalRevision;
+            if (cached != null && sameStats && sameCaption && samePawnFacts
                 && cached.ActivityRevision == activityRevision
                 && cached.RuntimeRevision == runtimeRevision
                 && ReferenceEquals(cached.Sequence, sequence))
                 return cached;
-            var layout = new List<RoleChipLayout>();
+            List<RoleChipLayout>? layout = null;
             float height;
-            if (cached != null && cached.Sequence.GeometryEquals(sequence))
+            if (cached != null && ReferenceEquals(cached.Sequence, sequence))
+                height = cached.StripHeight;
+            else if (cached != null && cached.Sequence.GeometryEquals(sequence))
             {
+                layout = new List<RoleChipLayout>(sequence.Count);
                 height = cached.StripHeight;
                 for (int i = 0; i < sequence.Count; i++)
                 {
@@ -4129,28 +4180,36 @@ namespace WorkRoles.UI
                         null, source.PinToggleLabel, source.Verdict));
                 }
             }
-            else height = sequence.Count == 0 ? RoleChipUI.Height
-                : LayoutChips(chipLayoutWidth, sequence, pawn, layout);
+            else
+            {
+                layout = new List<RoleChipLayout>();
+                height = sequence.Count == 0 ? RoleChipUI.Height
+                    : LayoutChips(chipLayoutWidth, sequence, pawn, layout);
+            }
             ActivitySnapshot activity = activityState.For(pawn);
+            string copiedToast = samePawnFacts ? cached!.CopiedToast
+                : "WR_CopiedRoles".Translate(label).ToString();
             if (cached != null)
             {
-                ColonistRowSnapshot updated = cached.WithChips(sequence,
-                    layout, height, activityRevision, runtimeRevision, activity.RoleId);
+                ColonistRowSnapshot updated = cached.Refresh(sequence,
+                    layout, height, activityRevision, runtimeRevision, activity.RoleId,
+                    label, nameColor, isColonist, downed, copiedToast,
+                    stats, captionTuning,
+                    sameCaption ? null : BuildRowCaption(pawn, store, stats),
+                    sameStats ? null : BuildSkillCells(stats, columns, widths));
                 chipLayouts[pawn] = updated;
                 return updated;
             }
-            string label = pawn.LabelShortCap;
-            ColonistStatsSnapshot stats = statsState.Snapshot(pawn);
             var entry = new ColonistRowSnapshot(pawn,
                 label,
-                pawn.IsSlave ? PawnNameColorUtility.PawnNameColorOf(pawn) : Color.white,
-                pawn.IsColonist,
-                pawn.Downed,
+                nameColor,
+                isColonist,
+                downed,
                 chipDisplay,
-                "WR_CopiedRoles".Translate(label).ToString(),
-                activityRevision, runtimeRevision, activity.RoleId, sequence, layout, height,
+                copiedToast,
+                activityRevision, runtimeRevision, activity.RoleId, sequence, layout!, height,
                 BuildRowCaption(pawn, store, stats), textMetrics,
-                BuildSkillCells(stats, columns, widths));
+                BuildSkillCells(stats, columns, widths), stats, captionTuning);
             chipLayouts[pawn] = entry;
             return entry;
         }

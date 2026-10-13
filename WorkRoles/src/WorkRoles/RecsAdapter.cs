@@ -49,7 +49,7 @@ namespace WorkRoles
     /// resolves the content-based special roles (Hunter, fire blocker). Pure
     /// projection: no UI state, no commands. Callers own caching (the colony
     /// plan snapshots key on the narrow recommendation domains).
-    public static class RecsAdapter
+    public static partial class RecsAdapter
     {
         /// Genes that make a pawn terrified of fire (Biotech's pyrophobia;
         /// extend here if mods add equivalents).
@@ -88,14 +88,12 @@ namespace WorkRoles
                     projected.Add(PawnViewOf(pawns[index], store, snapshotFor(pawns[index])));
                 pawnViews = projected;
             }
-            List<int> orderTemplate = OrderTemplate.ResolveTemplate(
-                store.recommendationOrder, catalog.Roles);
+            IReadOnlyList<int> orderTemplate = RecommendationOrdering(store, training: true).Template;
             return catalog.CreateColony(orderTemplate, pawnViews);
         }
 
         internal static RecommendationCatalogProjection BuildRoleCatalog(RoleStore store)
-            => BuildRoleCatalog(store.roles, PathViewsOf(store),
-                reuseWorkSpecs: ReferenceEquals(store, RoleStore.Current));
+            => SharedRoleCatalog(store, training: true);
 
         internal static RoleView RoleViewOf(Role role) =>
             BuildRoleCatalog(new[] { role }).Roles[0];
@@ -105,14 +103,21 @@ namespace WorkRoles
 
         /// Views with the store's training paths applied, so path-target skill
         /// promotions land exactly as they do in the live recommendation run.
-        internal static List<RoleView> RoleViewsOf(RoleStore store)
-            => BuildRoleCatalog(store)
-                .Roles.ToList();
+        internal static IReadOnlyList<RoleView> RoleViewsOf(RoleStore store)
+            => SharedRoleCatalog(store, training: true).Roles;
 
         private static RecommendationCatalogProjection BuildRoleCatalog(
             IReadOnlyList<Role> roles,
             IReadOnlyList<PathView>? paths = null,
             bool reuseWorkSpecs = false)
+        {
+            return RecommendationCatalogBuilder.Build(
+                BuildRoleSources(roles, reuseWorkSpecs), paths ?? Array.Empty<PathView>(),
+                GameJobCatalog.Instance, RoleWorkSpecs.NaturalPriorities(),
+                JobSkillProfiles.RecommendationIndex());
+        }
+
+        private static List<RecommendationRoleSource> BuildRoleSources(IReadOnlyList<Role> roles, bool reuseWorkSpecs)
         {
             var sources = new List<RecommendationRoleSource>(roles.Count);
             for (int index = 0; index < roles.Count; index++)
@@ -145,30 +150,19 @@ namespace WorkRoles
                     MinAge = role.minAge < 0 ? 0 : role.minAge,
                     MaxAge = role.maxAge,
                     DeclaredRequiredSkills = role.skillGatesSeeded
-                        ? role.requiredSkills : null,
+                        ? new List<string>(role.requiredSkills) : null,
                     ColonyMin = role.colonyMin,
                     Coverage = role.coverage,
                     Available = RoleAvailable(role),
                     Enabled = role.enabled,
                     SpecialRole = template?.recommendationSpecialRole
                         ?? RecommendationSpecialRoleKind.None,
-                    // Composite/exclusion projections remain catalog-owned;
-                    // ordinary full work facts are the shared UI producer's
-                    // exact immutable artifact, including assignment gates.
-                    FullWorkSpec = reuseWorkSpecs && !role.composite
-                        && role.skillGatesSeeded ? RoleWorkSpecs.For(role) : null,
+                    // Full ordinary and composite work facts share the UI
+                    // producer's immutable artifact, including assignment gates.
+                    FullWorkSpec = reuseWorkSpecs && role.skillGatesSeeded ? RoleWorkSpecs.For(role) : null,
                 });
             }
-            Dictionary<string, int> naturalPriorities = DefDatabase<WorkTypeDef>
-                .AllDefsListForReading.ToDictionary(
-                    workType => workType.defName,
-                    workType => workType.naturalPriority);
-            return RecommendationCatalogBuilder.Build(
-                sources,
-                paths ?? Array.Empty<PathView>(),
-                GameJobCatalog.Instance,
-                naturalPriorities,
-                JobSkillProfiles.RecommendationIndex());
+            return sources;
         }
 
         /// The role's own training path; PathView.Id is the owning role id.
@@ -279,9 +273,8 @@ namespace WorkRoles
         }
 
         /// The recommendation order template resolved over the live catalog.
-        internal static List<int> ResolvedRecommendationOrder(RoleStore store)
-            => OrderTemplate.ResolveTemplate(
-                store.recommendationOrder, RoleViewsOf(store.roles));
+        internal static IReadOnlyList<int> ResolvedRecommendationOrder(RoleStore store)
+            => RecommendationOrdering(store).Template;
 
         /// The role's measured skill for band gating: the most XP-frequent
         /// skill across its covered givers (accurate per-giver data), ties

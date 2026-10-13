@@ -6,7 +6,7 @@ namespace WorkRoles.Core.Signals
 {
     public enum SignalPassionTier { None, Minor, Major }
 
-    public sealed class SkillSignalView
+    public sealed class SkillSignalView : IEquatable<SkillSignalView>
     {
         public IReadOnlyList<Signal> SkillSignals { get; }
         public IReadOnlyList<Signal> GlobalSignals { get; }
@@ -17,6 +17,32 @@ namespace WorkRoles.Core.Signals
         public IReadOnlyList<Signal> PassiveSignals { get; }
         public bool HasGlobalSignals => GlobalSignals.Count > 0;
         public bool HasTooltip => true;
+
+        // These two ordered inputs determine every derived list and passion
+        // tier. Compare before rebuilding, so an unrelated skill's recapture
+        // does not recreate this skill's projection or resolved icon list.
+        public bool Matches(SignalSnapshot snapshot, string skillDefName) =>
+            SameSignals(SkillSignals, snapshot.ForSkill(skillDefName))
+            && SameSignals(GlobalSignals, snapshot.Global);
+
+        public bool Equals(SkillSignalView? other) => other != null
+            && SameSignals(SkillSignals, other.SkillSignals)
+            && SameSignals(GlobalSignals, other.GlobalSignals);
+
+        public override bool Equals(object? obj) => Equals(obj as SkillSignalView);
+
+        public override int GetHashCode() => SignalHash.WithSequence(
+            SignalHash.WithSequence(0, SkillSignals), GlobalSignals);
+
+        private static bool SameSignals(IReadOnlyList<Signal> left,
+            IReadOnlyList<Signal> right)
+        {
+            if (ReferenceEquals(left, right)) return true;
+            if (left.Count != right.Count) return false;
+            for (int i = 0; i < left.Count; i++)
+                if (!left[i].Equals(right[i])) return false;
+            return true;
+        }
 
         internal SkillSignalView(
             IReadOnlyList<Signal> skillSignals,

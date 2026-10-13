@@ -1,18 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
+    <RimWorldVersion Condition="'$(RimWorldVersion)' == ''">1.6</RimWorldVersion>
+    <TargetFramework Condition="'$(RimWorldVersion)' == '1.6'">net472</TargetFramework>
+    <TargetFramework Condition="'$(RimWorldVersion)' == '1.7'">net10.0</TargetFramework>
+    <DefineConstants Condition="'$(RimWorldVersion)' == '1.7'">$(DefineConstants);RIMWORLD_1_7</DefineConstants>
+    <InstalledGameRoot Condition="'$(InstalledGameRoot)' == ''">C:/Program Files (x86)/Steam/steamapps/common/RimWorld</InstalledGameRoot>
     <LangVersion>10</LangVersion>
     <Nullable>enable</Nullable>
-    <OutputPath>../../mod/1.6/Assemblies/</OutputPath>
+    <OutputPath>../../mod/$(RimWorldVersion)/Assemblies/</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <DebugType>none</DebugType>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" />
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" Condition="'$(RimWorldVersion)' == '1.6'" />
     <PackageReference Include="Lib.Harmony" Version="2.*" ExcludeAssets="runtime" />
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" Condition="'$(RimWorldVersion)' == '1.6'" />
     <ProjectReference Include="../RimWorld.Automation.Core/RimWorld.Automation.Core.csproj" />
-    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Runtime.Serialization" Condition="'$(RimWorldVersion)' == '1.6'" />
+    <Reference Include="Assembly-CSharp" HintPath="$(InstalledGameRoot)/Assembly-CSharp.dll" Private="false" Condition="'$(RimWorldVersion)' == '1.7'" />
+    <Reference Include="UnityStubs" HintPath="$(InstalledGameRoot)/UnityStubs.dll" Private="false" Condition="'$(RimWorldVersion)' == '1.7'" />
   </ItemGroup>
 </Project>

@@ -7,5 +7,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../RimWorld.Automation.Core/RimWorld.Automation.Core.csproj" />
+    <None Include="linux-host.py" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

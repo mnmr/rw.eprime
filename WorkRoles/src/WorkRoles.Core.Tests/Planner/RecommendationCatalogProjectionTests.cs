@@ -9,6 +9,89 @@ namespace WorkRoles.Core.Tests.Planner;
 public class RecommendationCatalogProjectionTests
 {
     [Test]
+    public async Task TrainingBandChangesReuseWorkUntilTheExcludedGiversActuallyChange()
+    {
+        var jobs = new CountedCatalog(new FakeCatalog().WithWorkType("Crafting", "MakeDrug").WithWorkType("Art", "MakeArt"));
+        RecommendationRoleSource[] sources =
+        [
+            new() { Id = 1, Entries = [new(JobEntryKind.WorkGiver, "MakeDrug"), new(JobEntryKind.WorkGiver, "MakeArt")] },
+            new() { Id = 2, Entries = [new(JobEntryKind.WorkGiver, "MakeDrug")] },
+            new() { Id = 3, Entries = [new(JobEntryKind.WorkGiver, "MakeArt")] },
+            new() { Id = 4, MemberRoleIds = [1, 2] },
+        ];
+        var priorities = new Dictionary<string, int> { ["Crafting"] = 400, ["Art"] = 430 };
+        var profiles = Profiles();
+        var full = RecommendationCatalogBuilder.Build(sources, [], jobs, priorities, profiles);
+        var first = RecommendationCatalogBuilder.WithTraining(full, sources,
+            [RecsTestBed.Path(2, (1, 0, 12), (2, 12, 21))], jobs, priorities, profiles);
+        jobs.Reads = 0;
+        var bands = RecommendationCatalogBuilder.WithTraining(full, sources,
+            [RecsTestBed.Path(2, (1, 0, 13), (2, 13, 21))], jobs, priorities, profiles, first);
+        await Assert.That(jobs.Reads).IsEqualTo(0);
+        await Assert.That(bands.Paths[0].BandMins[1]).IsEqualTo(13);
+        for (int i = 0; i < first.Roles.Count; i++)
+            await Assert.That(ReferenceEquals(first.Roles[i].WorkSpec, bands.Roles[i].WorkSpec)).IsTrue();
+        var target = RecommendationCatalogBuilder.WithTraining(full, sources,
+            [RecsTestBed.Path(3, (1, 0, 13), (3, 13, 21))], jobs, priorities, profiles, bands);
+        await Assert.That(jobs.Reads > 0).IsTrue();
+        await Assert.That(string.Join(",", target.Roles[0].Skills.Select(skill => skill.SkillDefName))).IsEqualTo("Crafting");
+        await Assert.That(string.Join(",", bands.Roles[0].Skills.Select(skill => skill.SkillDefName))).IsEqualTo("Artistic");
+        await Assert.That(ReferenceEquals(bands.Roles[1].WorkSpec, target.Roles[1].WorkSpec)).IsTrue();
+        await Assert.That(ReferenceEquals(bands.Roles[2].WorkSpec, target.Roles[2].WorkSpec)).IsTrue();
+    }
+
+    private sealed class CountedCatalog(IJobCatalog source) : IJobCatalog
+    {
+        internal int Reads;
+        public IReadOnlyList<string> WorkGiversOf(string workType) { Reads++; return source.WorkGiversOf(workType); }
+        public string WorkTypeOf(string giver) { Reads++; return source.WorkTypeOf(giver); }
+        public bool IsEmergency(string giver) { Reads++; return source.IsEmergency(giver); }
+    }
+
+    [Test]
+    public async Task CatalogReorderingUpdatesTiedDefaultOrderWithoutReplacingWorkOrPathFacts()
+    {
+        var jobs = new FakeCatalog().WithWorkType("Crafting", "MakeDrug").WithWorkType("Art", "MakeArt");
+        var first = new RecommendationRoleSource { Id = 1, Entries = [new(JobEntryKind.WorkGiver, "MakeDrug")] };
+        var second = new RecommendationRoleSource { Id = 2, Entries = [new(JobEntryKind.WorkGiver, "MakeArt")] };
+        var original = RecommendationCatalogBuilder.Build([first, second],
+            [RecsTestBed.Path(1, (1, 0, 21)), RecsTestBed.Path(2, (2, 0, 21))], jobs,
+            new Dictionary<string, int> { ["Crafting"] = 400, ["Art"] = 400 }, Profiles());
+        var reordered = original.WithRoleOrder([2, 1]);
+        await Assert.That(string.Join(",", OrderTemplate.DeriveTemplate(original.Roles))).IsEqualTo("1,2");
+        await Assert.That(string.Join(",", OrderTemplate.DeriveTemplate(reordered.Roles))).IsEqualTo("2,1");
+        await Assert.That(ReferenceEquals(original.Roles[1], reordered.Roles[0])).IsTrue();
+        await Assert.That(ReferenceEquals(original.Paths[1], reordered.Paths[0])).IsTrue();
+        await Assert.That(ReferenceEquals(reordered, reordered.WithRoleOrder([2, 1]))).IsTrue();
+    }
+
+    [Test]
+    public async Task ScalarPolicyEditsRetainTrainingArtifactAndEqualCatalogIdentity()
+    {
+        var jobs = new FakeCatalog().WithWorkType("Crafting", "MakeDrug").WithWorkType("Art", "MakeArt");
+        var general = new RecommendationRoleSource { Id = 1, Entries = [new(JobEntryKind.WorkGiver, "MakeDrug"), new(JobEntryKind.WorkGiver, "MakeArt")] };
+        var maker = new RecommendationRoleSource { Id = 2, Entries = [new(JobEntryKind.WorkGiver, "MakeDrug")] };
+        var composite = new RecommendationRoleSource { Id = 3, MemberRoleIds = [1, 2] };
+        var original = RecommendationCatalogBuilder.Build([general, maker, composite],
+            [RecsTestBed.Path(2, (1, 0, 12), (2, 12, 21))], jobs,
+            new Dictionary<string, int> { ["Crafting"] = 400, ["Art"] = 430 }, Profiles());
+        var policies = original.Roles.Select(RecommendationRolePolicy.From).ToArray();
+        policies[1].ColonyMin = 5;
+        policies[1].HasRules = true;
+        policies[1].Available = false;
+        var changed = original.WithPolicy(policies);
+        await Assert.That(changed.Roles[1].ColonyMin).IsEqualTo(5);
+        await Assert.That(changed.Roles[1].HasRules).IsTrue();
+        await Assert.That(changed.Roles[1].Available).IsFalse();
+        await Assert.That(original.Roles[1].Available).IsTrue();
+        await Assert.That(ReferenceEquals(original.Paths, changed.Paths)).IsTrue();
+        await Assert.That(ReferenceEquals(original.Roles[0], changed.Roles[0])).IsTrue();
+        for (int i = 0; i < original.Roles.Count; i++)
+            await Assert.That(ReferenceEquals(original.Roles[i].WorkSpec, changed.Roles[i].WorkSpec)).IsTrue();
+        await Assert.That(ReferenceEquals(changed, changed.WithPolicy(policies))).IsTrue();
+    }
+
+    [Test]
     public async Task ActivationChangesRetainTrainingAndCompositeSpecsAndSwitchSpecialFallbacks()
     {
         var jobs = new FakeCatalog().WithWorkType("Crafting", "MakeDrug")

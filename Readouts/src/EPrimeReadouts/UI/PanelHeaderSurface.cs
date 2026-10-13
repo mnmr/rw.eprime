@@ -37,18 +37,8 @@ namespace EPrimeReadouts.UI
                 backend, coverageFromRed: true);
         }
 
-        internal bool HasLostTarget => channel.HasLostTarget
-            || titleChannel.HasLostTarget;
         internal bool CanPresent => hasPublished && channel.Front != null
             && (!ShowsTitle(publishedRevision) || titleChannel.Front != null);
-
-        internal PanelSurfaceChannel Channel => channel;
-        internal PanelSurfaceChannel? VisibleTitleChannel =>
-            hasPublished && ShowsTitle(publishedRevision) ? titleChannel : null;
-
-        internal bool RestoreAfterTargetLoss() =>
-            channel.RestoreAfterTargetLoss()
-            && titleChannel.RestoreAfterTargetLoss();
 
         internal SurfaceEnsureResult Ensure(
             PanelHeaderRevision next, PanelGlyphProduct glyphs)
@@ -222,10 +212,12 @@ namespace EPrimeReadouts.UI
                     header.HeaderWidth - 26f - ClearColumnWidth, 22f);
                 Texture2D? background = style.normal.background;
                 if (background == null) return false;
-                backend.DrawNineSliceToActive(
-                    Scale(fieldRect, rasterScale),
-                    background, Scale(style.border, rasterScale),
-                    Color.white);
+                if (PanelBufferBackend.UsesGuiRenderTargets)
+                    DrawGuiFieldBackground(Scale(fieldRect, rasterScale), rasterScale);
+                else
+                    backend.DrawNineSliceToActive(
+                        Scale(fieldRect, rasterScale),
+                        background, Scale(style.border, rasterScale), Color.white);
                 if (!glyphs.DrawTextIntoActive(
                     header.SearchText, fieldRect,
                     GameFont.Small, style.alignment,
@@ -250,11 +242,25 @@ namespace EPrimeReadouts.UI
                 rect.width * scale,
                 rect.height * scale);
 
+        private void DrawGuiFieldBackground(Rect rect, float border)
+        {
+            // Waylith's unfocused TextField ignores the style's background
+            // artwork and uses these procedural fills. Preserve overlapping
+            // border corners; focused editing still uses the native control.
+            backend.DrawToActive(rect, BaseContent.WhiteTex, new Color(.16f, .16f, .16f, .6f));
+            Color edge = new Color(.5f, .5f, .5f, .6f);
+            backend.DrawToActive(new Rect(rect.x, rect.y, rect.width, border), BaseContent.WhiteTex, edge);
+            backend.DrawToActive(new Rect(rect.x, rect.yMax - border, rect.width, border), BaseContent.WhiteTex, edge);
+            backend.DrawToActive(new Rect(rect.x, rect.y, border, rect.height), BaseContent.WhiteTex, edge);
+            backend.DrawToActive(new Rect(rect.xMax - border, rect.y, border, rect.height), BaseContent.WhiteTex, edge);
+        }
+
         private static RectOffset Scale(RectOffset border, float scale) =>
             new RectOffset(
                 Mathf.RoundToInt(border.left * scale),
                 Mathf.RoundToInt(border.right * scale),
                 Mathf.RoundToInt(border.top * scale),
                 Mathf.RoundToInt(border.bottom * scale));
+
     }
 }

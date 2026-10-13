@@ -745,7 +745,6 @@ namespace WorkRoles
             if (role == null) return;
             role.enabled = !role.enabled;
             CompiledJobOrders.InvalidateRole(roleId, ModelDomain.RoleActivation);
-            ReconcileHolders(roleId);
         }
 
         // Void like CreateRole: MP-deferred execution eats return values.
@@ -1218,9 +1217,7 @@ namespace WorkRoles
             if (assignment == null) return;
             // Fully independent of the global toggle: advances only this pawn's
             // state and never touches the role or other holders.
-            assignment.state = RoleActivation.Next(assignment.state);
-            CompiledJobOrders.InvalidateAssignments(pawn, planChanged: false);
-            CompiledJobOrders.EnqueueReconcile(pawn);
+            ApplyAssignmentState(pawn, assignment, RoleActivation.Next(assignment.state));
         }
 
         /// Restores a specific state (int for sync-primitive safety), e.g. after
@@ -1233,9 +1230,21 @@ namespace WorkRoles
             if (Store == null || pawn == null || !Store.pawnSets.TryGetValue(pawn, out var set)) return;
             var assignment = set.assignments.FirstOrDefault(a => a.roleId == roleId);
             if (assignment == null || assignment.state == (AssignmentState)state) return;
-            assignment.state = (AssignmentState)state;
-            CompiledJobOrders.InvalidateAssignments(pawn, planChanged: false);
-            CompiledJobOrders.EnqueueReconcile(pawn);
+            ApplyAssignmentState(pawn, assignment, (AssignmentState)state);
+        }
+
+        private static void ApplyAssignmentState(Pawn pawn, RoleAssignment assignment, AssignmentState next)
+        {
+            var role = Store.RoleById(assignment.roleId);
+            bool executionChanged = role != null && RoleActivation.ChangesExecution(
+                role.enabled, assignment.state, role.enabled, next);
+            assignment.state = next;
+            if (executionChanged)
+            {
+                CompiledJobOrders.InvalidateAssignments(pawn, planChanged: false);
+                CompiledJobOrders.EnqueueReconcile(pawn);
+            }
+            else UiVersion.PawnChanged(pawn, planChanged: false);
         }
 
         /// Pinned assignments are the player's placement: fixes never touch them.
@@ -1278,8 +1287,8 @@ namespace WorkRoles
                 return;
             bool planChanged = !wasManaged || !AssignmentSequencesEqual(
                 Store.pawnSets[pawn].assignments, assignments, includeState: false, includePins: true);
-            bool compiledChanged = !wasManaged || !AssignmentSequencesEqual(
-                Store.pawnSets[pawn].assignments, assignments, includeState: true, includePins: false);
+            bool compiledChanged = !wasManaged || !AssignmentExecutionEqual(
+                Store.pawnSets[pawn].assignments, assignments);
             Store.SetFor(pawn).assignments = assignments;
             if (!wasManaged) PawnLocationTracker.NotifyManaged(pawn);
             if (compiledChanged)
@@ -1288,6 +1297,30 @@ namespace WorkRoles
                 CompiledJobOrders.EnqueueReconcile(pawn);
             }
             else UiVersion.PawnChanged(pawn, planChanged);
+        }
+
+        private static bool AssignmentExecutionEqual(IReadOnlyList<RoleAssignment> left,
+            IReadOnlyList<RoleAssignment> right)
+        {
+            int leftIndex = 0, rightIndex = 0;
+            while (true)
+            {
+                int leftRole = NextActiveRole(left, ref leftIndex);
+                int rightRole = NextActiveRole(right, ref rightIndex);
+                if (leftRole != rightRole) return false;
+                if (leftRole < 0) return true;
+            }
+        }
+
+        private static int NextActiveRole(IReadOnlyList<RoleAssignment> assignments, ref int index)
+        {
+            while (index < assignments.Count)
+            {
+                RoleAssignment assignment = assignments[index++];
+                Role? role = Store.RoleById(assignment.roleId);
+                if (role != null && RoleActivation.IsActive(role.enabled, assignment.state)) return role.id;
+            }
+            return -1;
         }
 
         private static bool AssignmentSequencesEqual(

@@ -155,7 +155,7 @@ function Get-SaveModIds {
 }
 
 function Initialize-RunProfile {
-    param([string]$Profile, [string]$SourceSaveDirectory, [string]$SavePattern, [string]$ModSet, [string]$ModSourceRoot)
+    param([string]$Profile, [string]$SourceSaveDirectory, [string]$SavePattern, [string]$ModSet, [string]$ModSourceRoot, [string]$BaselineConfigPath = '')
 
 if (-not (Test-Path -LiteralPath $SourceSaveDirectory -PathType Container)) {
     throw "source save directory does not exist: $SourceSaveDirectory"
@@ -177,6 +177,8 @@ New-Item -ItemType Directory -Path $profileConfig, $profileSaves, `
 Get-ChildItem -LiteralPath $templateConfig -File | ForEach-Object {
     Copy-Item -LiteralPath $_.FullName -Destination $profileConfig -Force
 }
+if (-not $BaselineConfigPath) { $BaselineConfigPath = Join-Path $templateConfig 'ModsConfig.xml' }
+$baselineHash = Copy-VerifiedFile $BaselineConfigPath (Join-Path $profileConfig 'ModsConfig.xml')
 
 [xml]$prefs = Get-Content -LiteralPath (Join-Path $profileConfig 'Prefs.xml') -Raw
 if ($prefs.PrefsData.volumeMaster -ne '0' -or
@@ -236,6 +238,18 @@ if (($activeMods -join "`n") -cne ($saveModIds -join "`n")) {
     Write-Host "automation runtime enabled; optional mod set '$ModSet'; $($activeMods.Count) active mod(s), save lists $($saveModIds.Count)"
 }
 
+# The game resets the mod list on a major/minor version mismatch. Keep the
+# verified ordering, but identify the engine this disposable copy will run.
+$versionPath = Join-Path $script:InstalledGameRoot 'Version.txt'
+if (Test-Path -LiteralPath $versionPath -PathType Leaf) {
+    $installedVersion = (Get-Content -LiteralPath $versionPath -Raw).Trim()
+    if ($installedVersion -notmatch '^1\.[67]\.\d+') { throw "Unsupported installed version: $installedVersion" }
+    $profileModsPath = Join-Path $profileConfig 'ModsConfig.xml'
+    [xml]$profileMods = Get-Content -LiteralPath $profileModsPath -Raw
+    $profileMods.ModsConfigData.version = $installedVersion
+    $profileMods.Save($profileModsPath)
+}
+
 $state = [ordered]@{
     sourceSave = $sourceSave.FullName
     sourceLastWriteTimeUtc = $sourceSave.LastWriteTimeUtc.ToString('o')
@@ -243,6 +257,8 @@ $state = [ordered]@{
     sha256 = $autostartHash
     modSet = $ModSet
     activeMods = $activeMods
+    baselineConfig = [IO.Path]::GetFullPath($BaselineConfigPath)
+    baselineSha256 = $baselineHash
 }
 $state | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath `
     (Join-Path $Profile 'profile-state.json') -Encoding utf8

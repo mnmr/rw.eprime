@@ -10,11 +10,11 @@ namespace WorkRoles.UI
     /// cache. All game projection work is behind these explicit domain gates.
     internal sealed class ColonistRecommendationProducer
     {
-        // Owner: Colonists window/store. Key: store identity and role catalog
-        // domains. Value: detached immutable-by-ownership catalog shared across
-        // both cohorts. Dependencies: role work, recommendation policy/path,
-        // global activation, authored-rule presence, definition reload and
-        // research availability (RoleRecommendation advances on completion).
+        // Owner: Colonists window/store. Key: store identity and exact pawn
+        // cohorts. Value: detached immutable-by-ownership pawn inputs, verdicts
+        // and plans. Dependencies: shared role catalog identity, per-pawn
+        // assignment order/pins and external snapshot identities, stored order
+        // and planning tuning. Catalog ownership belongs to RecsAdapter.
         // Refresh: event-driven on the next read.
         // Equality: Core compares exact consumed contents before publishing a
         // new computation; equal refreshes preserve plan/verdict identity.
@@ -24,8 +24,8 @@ namespace WorkRoles.UI
         private readonly Func<IReadOnlyList<Pawn>, IReadOnlyList<PawnView>?, ColonyView> buildColony;
         private RoleStore? owner;
         private RecommendationCatalogProjection? catalog;
-        private int work = -1, recommendation = -1, activation = -1, rules = -1;
-        private int definitions = -1;
+        private static readonly Func<(Pawn pawn, RoleStore store, PawnExternalSnapshot facts), PawnView>
+            BuildPawn = state => RecsAdapter.PawnViewOf(state.pawn, state.store, state.facts);
         private int externalGeneration;
         private Func<Pawn, PawnExternalSnapshot>? currentExternalSnapshot;
 
@@ -37,29 +37,8 @@ namespace WorkRoles.UI
         internal RecommendationSnapshot For(RoleStore store,
             IReadOnlyList<Pawn> pawns, Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
-            int definitionRevision = DefinitionReloadCoordinator.Revision;
-            if (!ReferenceEquals(owner, store) || catalog == null
-                || work != UiVersion.RoleWork
-                || recommendation != UiVersion.RoleRecommendation
-                || rules != UiVersion.RoleRules
-                || definitions != definitionRevision)
-            {
-                catalog = RecsAdapter.BuildRoleCatalog(store);
-                owner = store;
-                work = UiVersion.RoleWork;
-                recommendation = UiVersion.RoleRecommendation;
-                activation = UiVersion.RoleActivation;
-                rules = UiVersion.RoleRules;
-                definitions = definitionRevision;
-            }
-            else if (activation != UiVersion.RoleActivation)
-            {
-                var enabled = new bool[catalog.Roles.Count];
-                for (int index = 0; index < enabled.Length; index++)
-                    enabled[index] = store.RoleById(catalog.Roles[index].Id)?.enabled == true;
-                catalog = catalog.WithActivation(enabled);
-                activation = UiVersion.RoleActivation;
-            }
+            catalog = RecsAdapter.BuildRoleCatalog(store);
+            owner = store;
 
             currentExternalSnapshot = externalSnapshot;
             try
@@ -86,12 +65,25 @@ namespace WorkRoles.UI
             catalog = null;
             owner = null;
             currentExternalSnapshot = null;
-            work = recommendation = activation = rules = definitions = -1;
             externalGeneration = 0;
         }
 
         private ColonyView BuildColony(IReadOnlyList<Pawn> pawns, IReadOnlyList<PawnView>? previous)
-            => RecsAdapter.BuildColonyView(owner!, pawns,
+        {
+            if (previous == null)
+            {
+                var projected = new PawnView[pawns.Count];
+                for (int i = 0; i < pawns.Count; i++)
+                {
+                    Pawn pawn = pawns[i];
+                    PawnExternalSnapshot facts = currentExternalSnapshot!(pawn);
+                    projected[i] = cache.PawnFor(owner!, pawn, UiVersion.AssignmentsForPawn(pawn),
+                        facts, (pawn, owner!, facts), BuildPawn);
+                }
+                previous = projected;
+            }
+            return RecsAdapter.BuildColonyView(owner!, pawns,
                 currentExternalSnapshot!, catalog!, previous);
+        }
     }
 }

@@ -11,8 +11,12 @@ $gameId = [int](Get-Content -LiteralPath (Join-Path $record.profile 'ready.json'
 $tracker = New-RunStallTracker ([DateTime]::UtcNow)
 while ($true) {
     Start-Sleep -Milliseconds 250
-    $game = Get-Process -Id $gameId -ErrorAction SilentlyContinue
-    if (-not $game -or $game.HasExited) { return }
+    if ($record.backend -ceq 'wsl') {
+        if (@(Get-RunProcesses $record | Where-Object ProcessId -eq $gameId).Count -ne 1) { return }
+    } else {
+        $game = Get-Process -Id $gameId -ErrorAction SilentlyContinue
+        if (-not $game -or $game.HasExited) { return }
+    }
     try {
         $heartbeatUtc = [IO.File]::GetLastWriteTimeUtc($statePath)
         # A missing file (mid-replace) reports 1601-01-01: a racing read, not a stall.

@@ -260,6 +260,7 @@ namespace WorkRoles.UI
         /// the no-op command; otherwise the synced command validates the role.
         public void CommitEdits()
         {
+            ResetJobPaint();
             int roleId = selectedRoleId;
             if (roleId < 0) return;
             if (editorState.TryGetPublishedDeadEntryState(
@@ -270,6 +271,7 @@ namespace WorkRoles.UI
 
         public void Reset()
         {
+            ResetJobPaint();
             listScroll = entriesScroll = treeScroll = Vector2.zero;
             entrySelection.Clear();
             memberSelection.Clear();
@@ -2064,6 +2066,8 @@ namespace WorkRoles.UI
                         paintAnchorRow = i;
                         paintTypeDefName = node.TypeDefName;
                         paintAdds = currentState != MultiCheckboxState.On;
+                        paintPressPosition = (Vector2)Input.mousePosition;
+                        paintDragging = false;
                         paintApplied.Clear();
                         PaintGiver(model, node);
                         ge.Use();
@@ -2087,7 +2091,7 @@ namespace WorkRoles.UI
             {
                 Widgets.EndScrollView();
             }
-            if (paintAnchorRow >= 0)
+            if (paintAnchorRow >= 0 && paintDragging)
                 GenUI.DrawMouseAttachment(paintAdds ? Widgets.CheckboxOnTex : Widgets.CheckboxOffTex);
         }
 
@@ -2097,7 +2101,20 @@ namespace WorkRoles.UI
         private int paintAnchorRow = -1;
         private string? paintTypeDefName;
         private bool paintAdds;
+        // Match role-chip drags: six physical pixels, independent of scroll/UI scale.
+        private const float PaintDragStartDistanceSq = 36f;
+        private Vector2 paintPressPosition;
+        private bool paintDragging;
         private readonly HashSet<string> paintApplied = new HashSet<string>();
+
+        private void ResetJobPaint()
+        {
+            paintAnchorRow = -1;
+            paintTypeDefName = null;
+            paintPressPosition = Vector2.zero;
+            paintDragging = false;
+            paintApplied.Clear();
+        }
 
         /// While the paint drag is held, applies the anchor state to every
         /// giver row of the anchor's work type between anchor and cursor. The
@@ -2110,11 +2127,13 @@ namespace WorkRoles.UI
             if (e.rawType == EventType.MouseUp || !Input.GetMouseButton(0)
                 || tree.Count == 0)
             {
-                paintAnchorRow = -1;
-                paintTypeDefName = null;
-                paintApplied.Clear();
+                ResetJobPaint();
                 return;
             }
+            // Latch until release so returning to the press position cannot hide it.
+            if (!paintDragging && ((Vector2)Input.mousePosition - paintPressPosition).sqrMagnitude
+                > PaintDragStartDistanceSq)
+                paintDragging = true;
             int current = Mathf.Clamp((int)(e.mousePosition.y / RowHeight),
                 0, tree.Count - 1);
             int low = Mathf.Min(Mathf.Min(paintAnchorRow, tree.Count - 1), current);

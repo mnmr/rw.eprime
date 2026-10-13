@@ -27,6 +27,10 @@ namespace WorkRoles
             /// runs thousands of times per second — array reads, no hashing.
             public int[] PriorityByIndex = null!;
             public int[] VanillaByIndex = null!;
+            // Cache metadata, not published order data: the last local hour
+            // whose rule outcomes this entry represents. Equal rule results
+            // advance the observation without replacing the order artifact.
+            public int RuleHour;
         }
 
         private sealed class ProjectionDefinitionCache
@@ -47,6 +51,14 @@ namespace WorkRoles
         private static readonly Func<Pawn, string, bool> PawnCanDoJob = CanPawnDoJob;
         private static readonly Func<Pawn, bool> PawnIsManaged =
             pawn => RoleStore.Current?.IsManaged(pawn) == true;
+        private static readonly Func<Pawn, Map?, bool> PawnBelongsToMap =
+            (pawn, map) => pawn.MapHeld == map;
+        private static readonly Action<Pawn> PublishRuntime = UiVersion.RuntimeChanged;
+        private static readonly Action<Pawn> InvalidateTimedOrders = pawn =>
+        {
+            cache.Remove(pawn);
+            pendingReconciles.Enqueue(pawn);
+        };
         private static ProjectionDefinitionCache? projectionDefinitions;
         private static VanillaProjectionMetadata? projectionMetadata;
         private static int basicsRevision;
@@ -121,15 +133,15 @@ namespace WorkRoles
         }
 
         internal static void DrainPendingReconciles(Map map)
-            => DrainPendingReconciles(pawn => pawn.MapHeld == map);
+            => DrainContextPendingReconciles(map);
 
         internal static void DrainWorldPendingReconciles()
-            => DrainPendingReconciles(pawn => pawn.MapHeld == null);
+            => DrainContextPendingReconciles(null);
 
-        private static void DrainPendingReconciles(Func<Pawn, bool> belongsToContext)
+        private static void DrainContextPendingReconciles(Map? map)
         {
             if (pendingReconciles.Count == 0) return;
-            var pawns = pendingReconciles.Drain(belongsToContext);
+            var pawns = pendingReconciles.Drain(map, PawnBelongsToMap);
             ReconcileAll(pawns);
         }
 
@@ -139,6 +151,11 @@ namespace WorkRoles
         internal static void InvalidateRole(int roleId, ModelDomain changes,
             bool memberBlockerChanged = false, bool memberBlockerOnlyCompilationChange = false)
         {
+            if (changes == ModelDomain.RoleActivation)
+            {
+                InvalidateRoleActivation(roleId);
+                return;
+            }
             var store = RoleStore.Current;
             if (store == null) { cache.Clear(); return; }
             using var batch = store.Revisions.Batch();
@@ -170,6 +187,47 @@ namespace WorkRoles
                 // holders' compiled orders.
                 if (!composite.blocker || !memberBlockerOnlyCompilationChange)
                     foreach (var pawn in store.PawnsWithRole(composite.id)) Invalidate(pawn);
+            }
+        }
+
+        private static void InvalidateRoleActivation(int roleId)
+        {
+            var store = RoleStore.Current;
+            var role = store?.RoleById(roleId);
+            if (store == null || role == null) return;
+            using var batch = store.Revisions.Batch();
+            UiVersion.RoleChanged(roleId, ModelDomain.RoleActivation);
+            foreach (var pawn in store.PawnsWithRole(roleId))
+            {
+                var assignments = store.pawnSets[pawn].assignments;
+                for (int i = 0; i < assignments.Count; i++)
+                {
+                    var assignment = assignments[i];
+                    if (assignment.roleId != roleId || !RoleActivation.ChangesExecution(
+                            !role.enabled, assignment.state, role.enabled, assignment.state)) continue;
+                    Invalidate(pawn);
+                    EnqueueReconcile(pawn);
+                    break;
+                }
+            }
+            // A member's enabled bit controls its slice even when the outer
+            // composite assignment is ForceOn. Only the outer assignment's
+            // effective activation can make that member change irrelevant.
+            foreach (var composite in store.CompositesContaining(roleId))
+            {
+                UiVersion.RoleChanged(composite.id, ModelDomain.RoleActivation);
+                foreach (var pawn in store.PawnsWithRole(composite.id))
+                {
+                    var assignments = store.pawnSets[pawn].assignments;
+                    for (int i = 0; i < assignments.Count; i++)
+                        if (assignments[i].roleId == composite.id
+                            && RoleActivation.IsActive(composite.enabled, assignments[i].state))
+                        {
+                            Invalidate(pawn);
+                            EnqueueReconcile(pawn);
+                            break;
+                        }
+                }
             }
         }
 
@@ -238,97 +296,76 @@ namespace WorkRoles
             InvalidateProjectionMetadata();
         }
 
-        /// Recompile every pawn holding a role with a time rule (hour boundary crossed).
+        /// At the explicit hour boundary, compare schedule outcomes against
+        /// each warm order's observation. This never polls between boundaries.
         internal static void InvalidateTimeRuledForMap(Map map)
         {
-            if (map != null)
-                InvalidateTimeRuled(pawn => pawn.MapHeld == map);
+            if (map != null) ApplyTimeRuledPlan(PlanTimeRuled(map, null));
         }
 
-        internal static void InvalidateWorldTimeRuled()
-            => InvalidateTimeRuled(pawn => pawn.MapHeld == null);
+        internal static void InvalidateWorldTimeRuled() =>
+            ApplyTimeRuledPlan(PlanTimeRuled(null, null));
 
-        private static void InvalidateTimeRuled(Func<Pawn, bool> belongsToContext)
+        internal static void InvalidateTimeRuledForMovedMap(Map map) =>
+            InvalidateTimeRuledForMap(map);
+
+        internal static void InvalidateTimeRuledForTravelers(IReadOnlyList<Pawn> pawns) =>
+            ApplyTimeRuledPlan(PlanTimeRuled(null, pawns));
+
+        private static void ApplyTimeRuledPlan(TimedRoleInvalidationPlan<Pawn>? plan)
         {
-            var plan = PlanTimeRuled(belongsToContext);
             if (plan == null) return;
             using var batch = RoleStore.Current?.Revisions.Batch();
-            if (plan.RoleIds.Count > 0) UiVersion.AggregateChanged(ModelDomain.RuntimeRules);
-            for (int i = 0; i < plan.Pawns.Count; i++)
-            {
-                cache.Remove(plan.Pawns[i]);
-                UiVersion.RuntimeChanged(plan.Pawns[i]);
-            }
-            // Plan order is deterministic (thingIDNumber), so the interruption
-            // cascade (new job searches, reservations) matches across MP clients.
-            for (int i = 0; i < plan.Pawns.Count; i++)
-                ReconcileInFlightWork(plan.Pawns[i]);
+            plan.ApplyRuntime(PublishRuntime, InvalidateTimedOrders);
         }
 
-        /// A live map crossed a timezone meridian (dev map moves, modded moving
-        /// map parents): aboard holders' local hours jumped mid-interval. Runs
-        /// inside the tile setter, so reconciles defer to the map component tick.
-        internal static void InvalidateTimeRuledForMovedMap(Map map)
-        {
-            if (map == null) return;
-            var plan = PlanTimeRuled(pawn => pawn.MapHeld == map);
-            if (plan == null) return;
-            using var batch = RoleStore.Current?.Revisions.Batch();
-            if (plan.RoleIds.Count > 0) UiVersion.AggregateChanged(ModelDomain.RuntimeRules);
-            for (int i = 0; i < plan.Pawns.Count; i++)
-            {
-                Pawn pawn = plan.Pawns[i];
-                cache.Remove(pawn);
-                UiVersion.RuntimeChanged(pawn);
-                pendingReconciles.Enqueue(pawn);
-            }
-        }
-
-        private static TimedRoleInvalidationPlan<Pawn>? PlanTimeRuled(
-            Func<Pawn, bool> belongsToContext)
+        private static TimedRoleInvalidationPlan<Pawn>? PlanTimeRuled(Map? map,
+            IReadOnlyList<Pawn>? travelers)
         {
             var store = RoleStore.Current;
             if (store?.roles == null) return null;
-
-            List<TimedRoleInvalidationSource>? roleSources = null;
+            var roleSources = new List<TimedRoleInvalidationSource>();
             for (int i = 0; i < store.roles.Count; i++)
             {
                 var role = store.roles[i];
-                if (role == null) continue;
-                if (role.activeHours != Role.AllHours)
-                {
-                    if (roleSources == null)
-                        roleSources = new List<TimedRoleInvalidationSource>();
-                    roleSources.Add(new TimedRoleInvalidationSource(role.id,
-                        hasTimeRule: true, role.enabled, role.blocker, role.autoAssign));
-                }
+                if (role != null && role.activeHours != Role.AllHours)
+                    roleSources.Add(new TimedRoleInvalidationSource(role.id, role.activeHours, role.enabled));
             }
-            if (roleSources == null) return null;
-
-            var pawnSets = store.pawnSets;
-            IEnumerable<TimedRoleHolderAssignment<Pawn>> AssignmentSources()
+            if (roleSources.Count == 0) return null;
+            var assignments = new List<TimedRoleHolderAssignment<Pawn>>();
+            if (travelers != null)
             {
-                if (pawnSets == null) yield break;
-                foreach (var pair in pawnSets)
-                {
-                    var pawn = pair.Key;
-                    var set = pair.Value;
-                    if (pawn == null || !belongsToContext(pawn)
-                        || set?.assignments == null) continue;
-
-                    foreach (var assignment in set.assignments)
-                    {
-                        if (assignment == null) continue;
-                        yield return new TimedRoleHolderAssignment<Pawn>(pawn,
-                            pawn.thingIDNumber, assignment.roleId,
-                            assignment.state != AssignmentState.Disabled,
-                            assignment.pinned);
-                    }
-                }
+                for (int i = 0; i < travelers.Count; i++)
+                    if (store.pawnSets.TryGetValue(travelers[i], out var set))
+                        AddTimedAssignments(store, travelers[i], set, assignments);
             }
+            else
+                foreach (var pair in store.pawnSets)
+                    if (pair.Key != null && pair.Key.MapHeld == map)
+                        AddTimedAssignments(store, pair.Key, pair.Value, assignments);
+            return TimedRoleInvalidationPlanner.Plan(roleSources, assignments);
+        }
 
-            return TimedRoleInvalidationPlanner.Plan(
-                roleSources, AssignmentSources());
+        private static void AddTimedAssignments(RoleStore store, Pawn pawn, PawnRoleSet set,
+            List<TimedRoleHolderAssignment<Pawn>> result)
+        {
+            if (set?.assignments == null) return;
+            int hour = RoleRules.LocalHour(pawn);
+            bool cached = cache.TryGetCached(pawn, out Entry? entry);
+            int previousHour = cached ? entry!.RuleHour : int.MinValue;
+            for (int i = 0; i < set.assignments.Count; i++)
+            {
+                var assignment = set.assignments[i];
+                var role = assignment == null ? null : store.RoleById(assignment.roleId);
+                if (role == null || role.activeHours == Role.AllHours) continue;
+                bool locationMatches = role.locationTokens.Count == 0
+                    || LocationRules.Matches(role.locationTokens, ColonyScope.PlaceOf(pawn));
+                result.Add(new TimedRoleHolderAssignment<Pawn>(pawn, pawn.thingIDNumber, role.id,
+                    assignment!.state, previousHour, hour, locationMatches));
+            }
+            // Only the freshness metadata moves. If the plan detects a changed
+            // active contribution it evicts this entry before any subsequent read.
+            if (cached) entry!.RuleHour = hour;
         }
 
         /// Deterministic wrapper for callers holding an unordered pawn set:
@@ -630,6 +667,7 @@ namespace WorkRoles
         private static Entry Build(Pawn pawn)
         {
             var store = RoleStore.Current;
+            int ruleHour = RoleRules.LocalHour(pawn);
             var roleEntries = new List<(IReadOnlyList<JobEntry> entries, bool blocker)>();
             List<int>? activeRoleIds = null;
             // Slices contributed by the first EmergencyRoleLimit active roles
@@ -644,7 +682,7 @@ namespace WorkRoles
                     var role = store.RoleById(assignment.roleId);
                     if (role == null
                         || !RoleActivation.IsActive(role.enabled, assignment.state)
-                        || !RoleRules.Pass(role, pawn)) continue;
+                        || RoleRules.FailReason(role, pawn, ruleHour) != RuleFailReason.None) continue;
                     activeRoleIds ??= new List<int>();
                     bool leadingRole = ++activeAssignments <= JobOrderCompiler.EmergencyRoleLimit;
                     if (!role.composite)
@@ -694,6 +732,7 @@ namespace WorkRoles
 
             var entry = new Entry
             {
+                RuleHour = ruleHour,
                 Normal = new List<WorkGiver>(compiled.Normal.Count),
                 Emergency = new List<WorkGiver>(compiled.Emergency.Count),
                 ActiveRoleIds = activeRoleIds?.ToArray() ?? Array.Empty<int>(),

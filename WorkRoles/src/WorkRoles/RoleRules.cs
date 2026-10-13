@@ -21,13 +21,15 @@ namespace WorkRoles
         public static bool Pass(Role role, Pawn pawn) => FailReason(role, pawn) == RuleFailReason.None;
 
         /// Returns the first failing rule (hours before location), or None.
-        public static RuleFailReason FailReason(Role role, Pawn pawn)
+        public static RuleFailReason FailReason(Role role, Pawn pawn) =>
+            FailReason(role, pawn, role.activeHours == Role.AllHours ? -1 : LocalHour(pawn));
+
+        internal static RuleFailReason FailReason(Role role, Pawn pawn, int hour)
         {
             if (!role.HasRules) return RuleFailReason.None;
             if (role.activeHours != Role.AllHours)
             {
-                int hour = LocalHour(pawn);
-                if (hour >= 0 && (role.activeHours & (1 << hour)) == 0) return RuleFailReason.OutsideHours;
+                if (!TimedRoleInvalidationPlanner.HoursPass(role.activeHours, hour)) return RuleFailReason.OutsideHours;
             }
             if (role.locationTokens.Count > 0
                 && !LocationRules.Matches(role.locationTokens, ColonyScope.PlaceOf(pawn)))

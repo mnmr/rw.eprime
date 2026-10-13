@@ -5,9 +5,10 @@ using WorkRoles.Core.Signals;
 
 namespace WorkRoles.Signals
 {
-    /// Shared explicit-generation cache. Window open, WorkRoles mutations and
-    /// authoritative rule/lifecycle invalidations clear the generation; reads
-    /// never compare the snapshot with live game state.
+    /// Shared explicit-generation cache. Window open, definition/language
+    /// reload and actual external skill/signal changes invalidate it. Role,
+    /// assignment and name changes preserve signals; reads never
+    /// compare the snapshot with live game state. Window/world teardown clears it.
     ///
     /// Review guard — INVALID REPORT: ordinary skill Level/XP is
     /// deliberately not an invalidation source. Window open and explicit

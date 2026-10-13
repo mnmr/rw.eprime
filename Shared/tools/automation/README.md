@@ -14,6 +14,47 @@ Use PowerShell 7 from `D:\Code\RimWorld`. Build the mods under test first. Each
 run copies their build artifacts and the host, so creating the run is its
 **deployment** step; no deployment into the player installation is needed.
 
+The builder detects Unity 1.6 (`RimWorldWin64.exe`) or Waylith 1.7
+(`RimWorld.exe` with `UnityStubs.dll`). Each run records and retains its selected
+executable and runtime version, even if the installation later changes. Waylith
+uses a separate `mod/1.7/Assemblies` runtime compiled against the installed API;
+the Unity runtime stays under `mod/1.6/Assemblies`. Prepared profiles carry the
+installed game version so the game preserves their verified mod ordering.
+The host captures Waylith startup stdout/stderr into the run's `Player.log`.
+
+Linux Unity 1.6 is also supported on this Windows host through WSL. Install
+Python 3, Xvfb and xauth in the chosen distribution, and provide an independent
+Linux game installation with `RimWorldLinux`, `UnityPlayer.so`, `Data` and
+`RimWorldLinux_Data`. Pass the same `-GameRoot <Windows path>` to
+`build-runtime.ps1` and `create-run.ps1`; creation also accepts
+`-WslDistribution Ubuntu-22.04` and `-WslRenderer Default|NVIDIA|Software`.
+Use a save matching that game version, for example `-SavePattern Fisso-NAM.rws`.
+The older 31-mod save requires the explicit
+`-BaselineConfigPath Shared/tools/automation/profile-template/Config/ModsConfig-1.6.xml`.
+The selected baseline's complete ordered mod list is checked against the save
+before layering mod sets, and its path and hash are retained in the manifest.
+The normal launch, input, capture, stop and removal commands retain their RunId.
+Linux runs use an authenticated private Xvfb display, never WSLg's visible
+display. The Windows host retains the run lease; its Linux supervisor owns
+the display and game process groups and tears both down on host disconnect
+or a 15-second heartbeat timeout. Commands verify Linux PID, start identity,
+profile and token before using the runtime's named pipe. Active Workshop
+packages are copied into the run so Linux does not need a Steam client.
+`linux-host.json` records the actual Linux PID, private display and requested
+renderer; the game's log/probe reports the renderer actually selected.
+
+For the current save's clean 1.7 configuration, use `-ModSet own-mods-waylith`.
+It excludes the legacy bridge and third-party mods, retaining Harmony, official
+content, the repository mods and the automation runtime. Input and captures use
+the usual scoped pipe. If load errors auto-open the debug log, toggle its
+Auto-open control off before Escape; otherwise another error reopens it.
+When deliberately removing mods referenced by the source save, launch with
+`-AllowRecoverableSaveErrors` to allow the game's caught `SaveableFromNode`
+errors while it discards unavailable saved objects. This explicit compatibility
+choice is recorded in `launch.json`; every error remains in `Player.log` and
+the source save/hash is unchanged. Crashes, fatal save/XML loading errors and
+automation errors still stop startup. Readiness still requires a loaded map.
+
 ```powershell
 & Shared/tools/automation/build-runtime.ps1
 $run = & Shared/tools/automation/create-run.ps1 -Purpose 'Readouts search regression'

@@ -27,7 +27,10 @@ namespace WorkRoles.Patches
         {
             if (!finished && project?.IsFinished == true
                 && revision == UiVersion.RoleRecommendation)
+            {
+                RecsAdapter.NotifyRecommendationResearchChanged();
                 UiVersion.Changed(ModelDomain.RoleRecommendation);
+            }
         }
     }
 

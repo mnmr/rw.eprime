@@ -49,55 +49,39 @@ namespace EPrimeReadouts.UI
         // Teardown: Abandon/Release discard all pending publication state.
         private bool requiresCoverage;
         private bool publishFailed;
-        // Owner/key: this channel's front/back publication. Value: immutable
-        // UV and expected premultiplied pixel. Dependencies: exact converted
-        // pixels and physical dimensions. Refresh: existing publish conversion;
-        // equality: promoted with its texture, never independently refreshed.
-        // Teardown: Release clears samples along with the owned textures.
-        private PanelTextureSample frontSample;
-        private PanelTextureSample backSample;
 
         internal PanelSurfaceChannel(
             PanelBufferBackend backend, bool coverageFromRed = false)
         {
             this.backend = backend;
-            this.coverageFromRed = coverageFromRed;
+            // The native GUI compositor writes correct coverage alpha;
+            // only Unity's font shader needs the red-channel workaround.
+            this.coverageFromRed = coverageFromRed
+                && !PanelBufferBackend.UsesGuiRenderTargets;
         }
 
         internal Texture2D? Front => front;
-        internal PanelTextureSample FrontSample => frontSample;
         internal int FrontWidth => front != null ? front.width : 0;
         internal int FrontHeight => front != null ? front.height : 0;
         internal bool HasWorkInFlight => publishPending || backReady;
-
-        // IsCreated must be observed before the revision/build gate. A
-        // suspend/device reset does not change any CPU model revision, and
-        // checking only in EnsureWorking leaves an idle cache stale forever.
-        // ReferenceEquals distinguishes an unused channel from a destroyed
-        // Unity object, which compares equal to null but also needs recovery.
-        internal bool HasLostTarget => !ReferenceEquals(working, null)
-            && (working == null || !working.IsCreated());
-
-        /// Called for every channel after any target signals device loss.
-        /// Published textures deliberately retain readable CPU pixels: upload
-        /// those exact pixels again instead of rerasterizing an unchanged
-        /// surface. The working target is always redrawn before its next
-        /// publish, so newly created (undefined) pixels are never presented.
-        internal bool RestoreAfterTargetLoss()
-        {
-            if (working == null && !ReferenceEquals(working, null)) return false;
-            if (working != null && !working.IsCreated() && !working.Create())
-                return false;
-            if (front != null)
-                front.Apply(updateMipmaps: false, makeNoLongerReadable: false);
-            return true;
-        }
 
         /// The render target for the next build, recreated only when the
         /// requested pixel size changes and re-created in place after a
         /// device reset dropped it.
         internal RenderTexture? EnsureWorking(int pixelWidth, int pixelHeight)
         {
+            if (PanelBufferBackend.UsesGuiRenderTargets)
+            {
+                // Waylith truncates display * (target / display) to create
+                // its viewport. Pad new builds past an inexact float extent
+                // instead of shrinking the raster or clipping its last row.
+                // Published pixels do not depend on the display thereafter;
+                // a later build resolves its own target and presentation UVs.
+                pixelWidth = EPrimeReadouts.Core.GuiTargetSizing.MinimumExactExtent(pixelWidth, Screen.width);
+                pixelHeight = EPrimeReadouts.Core.GuiTargetSizing.MinimumExactExtent(pixelHeight, Screen.height);
+                if (pixelWidth > SystemInfo.maxTextureSize || pixelHeight > SystemInfo.maxTextureSize)
+                    return null;
+            }
             if (working != null
                 && working.width == pixelWidth
                 && working.height == pixelHeight)
@@ -133,7 +117,7 @@ namespace EPrimeReadouts.UI
             else
             {
                 backReady = PanelBufferBackend.PublishSync(
-                    working, back, coverageFromRed, requiresCoverage, out backSample);
+                    working, back, coverageFromRed, requiresCoverage);
                 publishFailed = !backReady;
             }
         }
@@ -151,7 +135,7 @@ namespace EPrimeReadouts.UI
             if (request.hasError || back == null)
                 return SurfacePublishState.Failed;
             if (!backend.PublishFromReadback(
-                    request, back, coverageFromRed, requiresCoverage, out backSample))
+                    request, back, coverageFromRed, requiresCoverage))
                 return SurfacePublishState.Failed;
             backReady = true;
             return SurfacePublishState.Ready;
@@ -166,7 +150,6 @@ namespace EPrimeReadouts.UI
             Texture2D? previous = front;
             front = back;
             back = previous;
-            frontSample = backSample;
             backReady = false;
             return true;
         }
@@ -188,8 +171,6 @@ namespace EPrimeReadouts.UI
             working = null;
             front = null;
             back = null;
-            frontSample = default;
-            backSample = default;
             Abandon();
         }
 

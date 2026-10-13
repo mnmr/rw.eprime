@@ -1,3 +1,5 @@
+using WorkRoles.Core.Recs;
+
 namespace WorkRoles.Core.Tests.UI;
 
 /// Published output cannot prove whether unchanged presentation work ran again.
@@ -25,7 +27,9 @@ public class PawnPresentationCacheTests
         var secondPawn = new PawnFacts { SkillText = "Crafting 12" };
         PawnPresentationStamp Stamp(PawnFacts pawn, int tuning = 0,
             int language = 0, int definition = 0, int metrics = 0) =>
-            new(store, pawn.External, tuning, language, definition, metrics);
+            new(store, pawn.External, RecommendationsTuningOptions.Default.With(
+                RecommendationTuningOption.OptionalTargetStrongLevel, 10 + tuning).SkillPromotion,
+                language, definition, metrics);
 
         Presentation first = cache.Get(firstPawn, Stamp(firstPawn));
         Presentation second = cache.Get(secondPawn, Stamp(secondPawn));
@@ -70,10 +74,10 @@ public class PawnPresentationCacheTests
             ReferenceEqualityComparer.Instance);
         var pawn = new PawnFacts();
         var store = new object();
-        var stamp = new PawnPresentationStamp(store, pawn.External, 0, 0, 0, 0);
+        var stamp = new PawnPresentationStamp(store, pawn.External, default, 0, 0, 0);
         Presentation first = cache.Get(pawn, stamp);
         var replacementStoreStamp = new PawnPresentationStamp(
-            new object(), pawn.External, 0, 0, 0, 0);
+            new object(), pawn.External, default, 0, 0, 0);
         Presentation replacement = cache.Get(pawn, replacementStoreStamp);
         await Assert.That(ReferenceEquals(first, replacement)).IsFalse();
         cache.Remove(pawn);

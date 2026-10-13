@@ -14,7 +14,9 @@ $results = @(
                 $activity = Read-RunJson (Join-Path $path 'activity.json')
                 $launch = Read-RunJson (Join-Path $path 'launch.json')
                 $games = @($processes | Where-Object { Test-RunCommandLine $_.CommandLine $path ('rimworld-shared-' + $directory.Name) })
+                if ($record.backend -ceq 'wsl') { $games = @(Get-RunProcesses $record) }
                 $locked = Test-RunLocked (Join-Path $path 'run.lock')
+                if ($record.backend -ceq 'wsl') { $locked = $locked -or -not (Invoke-WslRunControl $record 'idle') }
                 $state = if ($games.Count -gt 0) { 'running' }
                     elseif ($locked -and $heartbeat) { 'starting-or-stopping' }
                     elseif ($locked) { 'preparing' }
@@ -32,6 +34,7 @@ $results = @(
                     modSet=$record.configuration.modSet; sourceSave=$record.configuration.sourceSave
                     saveSha256=$record.configuration.sha256; modSourceRoot=$record.modSourceRoot
                     createdUtc=$record.createdUtc
+                    backend=$record.backend; wslDistribution=$record.wslDistribution; wslRenderer=$record.wslRenderer
                 }
                 if ($Detailed) { $item.configuration=$record.configuration; $item.snapshots=$record.snapshots; $item.launch=$launch; $item.host=$heartbeat }
                 [pscustomobject]$item

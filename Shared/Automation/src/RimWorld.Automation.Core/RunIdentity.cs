@@ -14,6 +14,8 @@ public static class RunIdentity
         string id = token.Substring(prefix.Length);
         for (int i = 0; i < id.Length; i++)
             if (!(id[i] >= '0' && id[i] <= '9') && !(id[i] >= 'a' && id[i] <= 'f')) return false;
+        if (profile.StartsWith("/", StringComparison.Ordinal))
+            return string.Equals(profile, "/mnt/d/Code/RimWorld/AutomationProfiles/Shared/Runs/" + id, StringComparison.Ordinal);
         return string.Equals(profile.Replace('/', '\\').TrimEnd('\\'), RunsRoot + "\\" + id,
             StringComparison.OrdinalIgnoreCase);
     }

@@ -90,24 +90,36 @@ public sealed class AutomationRunner : MonoBehaviour
         string name = "rimworld-automation-" + Process.GetCurrentProcess().Id + "-" + AutomationMod.Token;
         while (!shutdown.IsCancellationRequested)
         {
+            string phase = "listen";
             try
             {
                 using var connection = new NamedPipeServerStream(name, PipeDirection.InOut, 1,
                     PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
                 lock (gate) { if (disposed) return; pipe = connection; }
                 await connection.WaitForConnectionAsync(shutdown.Token).ConfigureAwait(false);
+                phase = "read";
                 // Bound connected clients too, including those that never finish sending.
                 using var timeout = CancellationTokenSource.CreateLinkedTokenSource(shutdown.Token);
                 timeout.CancelAfter(30000);
                 using var closeOnTimeout = timeout.Token.Register(connection.Dispose);
                 var work = new Work(Wire.Read(connection));
+                phase = "dispatch";
                 lock (gate) { if (disposed) return; pending = work; }
                 using var cancelWork = timeout.Token.Register(() => work.Completion.TrySetCanceled());
                 Reply reply = await work.Completion.Task.ConfigureAwait(false);
+                phase = "write";
+                // Error replies bypass Status(), but require the same native
+                // process identity as successful replies at the wire boundary.
+                reply.processId = Process.GetCurrentProcess().Id;
                 Wire.Write(connection, reply);
             }
             catch (Exception error) when (error is IOException || error is InvalidDataException || error is OperationCanceledException || error is ObjectDisposedException || error is System.Runtime.Serialization.SerializationException)
             {
+                // At most one detached transport failure artifact per managed
+                // process. It distinguishes framing from main-thread timeout.
+                string failurePath = Path.Combine(AutomationMod.ProfileDirectory, "transport-error.txt");
+                if (!shutdown.IsCancellationRequested && !File.Exists(failurePath))
+                    File.WriteAllText(failurePath, phase + Environment.NewLine + error);
                 // A disconnected/expired transport cancels its request. No Unity access
                 // or retries on this thread; the next Update releases any held input.
             }
@@ -183,6 +195,15 @@ public sealed class AutomationRunner : MonoBehaviour
                     throw new InvalidOperationException("Unexpected dialog " + stack[i].GetType().FullName + " opened since the previous command; it blocks input.");
             UnconsumedKeys.Clear(); UnconsumedClicks.Clear(); KeyPolled = false; RootInjected = false;
             events = BuildEvents(command);
+#if RIMWORLD_1_7
+            for (int i = 0; i < events.Length; i++)
+            {
+                // Waylith keeps these properties separate from type/modifiers.
+                events[i].rawType = events[i].type;
+                events[i].shift = (events[i].modifiers & EventModifiers.Shift) != 0;
+                events[i].alt = (events[i].modifiers & EventModifiers.Alt) != 0;
+            }
+#endif
             TargetWindow = FindTargetWindow(command);
             nextEvent = 0;
             finishAfterFrame = Time.frameCount + 2;
@@ -328,11 +349,11 @@ public sealed class AutomationRunner : MonoBehaviour
             {
                 state.forcePaused = stack.WindowsForcePause;
                 var blockers = new List<string>();
-                for (int i = 0; i < stack.Count; i++) if (IsBlocker(stack[i])) blockers.Add(stack[i].GetType().FullName);
+                for (int i = 0; i < stack.Count; i++) if (IsBlocker(stack[i])) blockers.Add(stack[i].GetType().FullName ?? stack[i].GetType().Name);
                 state.blockers = blockers.ToArray();
                 Window? focused = FocusedWindow(stack);
                 state.focused = focused?.GetType().FullName ?? "";
-                state.top = stack.Count > 0 ? stack[stack.Count - 1].GetType().FullName : "";
+                state.top = stack.Count > 0 ? stack[stack.Count - 1].GetType().FullName ?? "" : "";
             }
             string temporary = heartbeatPath + ".tmp";
             File.WriteAllText(temporary, JsonUtility.ToJson(state));

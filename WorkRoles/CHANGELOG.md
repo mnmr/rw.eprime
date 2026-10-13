@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 1.6.9 — 2026-10-13
+
+- Changed: Performance improvements.
+- Changed: Removed 1.6 marker from preview image.
+- Fixed: Drag indicator was showing on click rather than waiting for drag in Available Jobs.
+
+## 1.6.8 — 2026-10-12
+
+- Changed: RimWorld 1.7 support.
+
 ## 1.6.7 — 2026-10-12
 
 - Fixed: Reduced role-toggle latency by narrowing cache invalidation and sharing cached data.

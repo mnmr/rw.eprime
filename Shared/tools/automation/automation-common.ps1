@@ -34,6 +34,13 @@ function Read-AutomationBytes {
 }
 function Invoke-SharedGameCommand {
     param([Parameter(Mandatory)][hashtable]$Command, [int]$ConnectTimeoutMilliseconds = 5000)
+    $record = Get-SelectedRun
+    if ($record.backend -ceq 'wsl') {
+        $payload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(($Command | ConvertTo-Json -Compress)))
+        $reply = Invoke-WslRunControl $record 'request' $payload
+        Update-RunActivity $Command.command ([bool]$reply.ready)
+        return $reply
+    }
     # Exact process and fresh launch token on every request. No stale endpoint files.
     $process = Get-ExactlyOneSharedRimWorldProcessInfo
     if ($process.CommandLine -notmatch '(?:^|\s)-automationtoken=(rimworld-shared-[a-f0-9]{32})(?=\s|$)') {

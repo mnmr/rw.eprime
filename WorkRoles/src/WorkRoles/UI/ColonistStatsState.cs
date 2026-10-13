@@ -43,39 +43,76 @@ namespace WorkRoles.UI
         {
             // All fields are set by CaptureExternal's object initializer.
             internal PawnExternalSnapshot Snapshot = null!;
-            internal List<SkillLine> SkillLines = null!;
-            internal Dictionary<SkillDef, SkillLine> SkillLinesByDef = null!;
+            internal SkillCapture Skills = null!;
+            internal int FactRevision;
+            internal int FactGeneration;
+        }
+
+        private sealed class SkillInput
+        {
+            internal SkillLine Line;
+            internal SkillSignalView View = null!;
+            internal IReadOnlyList<Texture2D> Icons = null!;
+            internal SignalBucket? Bucket;
+            internal float RosterWidth => Line.Disabled || Icons.Count == 0
+                ? RosterCellMinWidth : Mathf.Max(RosterCellMinWidth,
+                    RosterIconStartX + Icons.Count * DecoratorSize + (Icons.Count - 1) * DecoratorGap);
+        }
+
+        private sealed class SkillCapture
+        {
+            internal SkillInput[] Inputs = null!;
+            internal Dictionary<SkillDef, SkillInput> ByDef = null!;
+            internal int DefinitionRevision;
+            internal int LanguageRevision;
+        }
+
+        private sealed class SkillCaptureEntry
+        {
+            internal SkillCapture Capture = null!;
+            internal int Revision;
+            internal int Generation;
         }
 
         // Owner: Colonists window. Key: Pawn reference identity. Value: immutable
         // game-derived pawn/signal snapshots plus producer-owned skill indexes;
         // only stable external Def references are retained. Dependencies:
-        // ExternalPawnFacts current/full/per-pawn revisions; live skill XP is
-        // deliberately excluded. Refresh: explicit at the window's Repaint
-        // boundary, targeted where possible. Equality: unchanged revision gates
-        // preserve capture identity; an invalidated external capture is replaced.
+        // ExternalPawnFacts broad revisions publish display/grammar notifications;
+        // narrower factual revisions gate actual game reads. Live skill
+        // XP is deliberately excluded. Refresh: explicit at Repaint. Equality:
+        // name-only notifications reuse the exact factual and skill snapshots;
+        // equal skill inputs preserve both per-skill and complete identities.
         // Teardown: Reset/ReleaseSnapshots
         // clears entries and the shared pawn-signal generation.
-        private readonly SelectiveSnapshotCache<Pawn, ExternalCapture> externalSnapshots =
-            new SelectiveSnapshotCache<Pawn, ExternalCapture>(
-                CaptureExternal, ReferenceIdentityComparer<Pawn>.Instance);
+        private readonly SelectiveSnapshotCache<Pawn, ExternalCapture> externalSnapshots;
+
+        // Owner: this window/cohort. Key: pawn, then SkillDef identity. Value:
+        // immutable owned skill inputs (lines, signal views, icon references and
+        // raw buckets). Dependencies: FactRevisions and language/definitions.
+        // Refresh: explicit factual capture; equality preserves each unchanged
+        // input and the whole capture. Teardown: cohort departures, reset/release.
+        private readonly Dictionary<Pawn, SkillCaptureEntry> skillCaptures =
+            new Dictionary<Pawn, SkillCaptureEntry>(ReferenceIdentityComparer<Pawn>.Instance);
+        private readonly List<Pawn> departedSkills = new List<Pawn>();
 
         // Owner: Colonists window external-snapshot generation. Key: SkillDef
         // reference identity. Value: measured maximum roster-cell width.
-        // Dependencies: the published external captures and signal decorators.
-        // Refresh: lazy per skill after external generation refresh. Equality:
-        // repeated reads reuse the stored float. Teardown: external refresh or
-        // ReleaseSnapshots clears every measured width.
+        // Dependencies: actual per-pawn disabled/icon-width contributions only.
+        // Refresh: lazy per affected skill after changed contributions; names,
+        // downed state, levels, tuning and metrics preserve these logical widths
+        // whenever the recaptured disabled/decorator contribution is equal.
+        // Equality: equal contributions retain maxima. Teardown: reset/release.
         private readonly Dictionary<SkillDef, float> rosterCellWidths =
             new Dictionary<SkillDef, float>();
+        internal int RosterWidthsRevision { get; private set; }
 
         // Owner: Colonists window. Key: Pawn reference identity within RoleStore.
         // Value: immutable per-pawn stats and skill presentations, shared by the
         // roster, selected panel, and role tips. Dependencies: external capture
-        // identity, store identity, RecommendationTuningRevision, language,
+        // identity, store identity, the five skill-promotion tuning inputs, language,
         // definitions, and UiRevision metrics. Role/assignment UiVersion is not
         // consumed. Refresh: lazy on changed dependencies; external refresh
-        // removes departed/changed pawns. Equality: unchanged presentation facts
+        // removes departed pawns only. Equality: unchanged presentation facts
         // preserve individual and complete snapshot identities. Teardown:
         // Reset/InvalidatePresentations/ReleaseSnapshots clear all entries.
         private readonly PawnPresentationCache<Pawn, ColonistStatsSnapshot> stats;
@@ -95,6 +132,8 @@ namespace WorkRoles.UI
 
         internal ColonistStatsState()
         {
+            externalSnapshots = new SelectiveSnapshotCache<Pawn, ExternalCapture>(
+                CaptureExternal, ReferenceIdentityComparer<Pawn>.Instance);
             stats = new PawnPresentationCache<Pawn, ColonistStatsSnapshot>(
                 BuildSnapshot, StatsContentEquals, ReferenceIdentityComparer<Pawn>.Instance);
         }
@@ -106,6 +145,9 @@ namespace WorkRoles.UI
         {
             PawnSignalSnapshotCache.Clear();
             externalSnapshots.Clear();
+            skillCaptures.Clear();
+            rosterCellWidths.Clear();
+            RosterWidthsRevision++;
             RefreshExternalSnapshot(pawns, out _);
             InvalidatePresentations();
         }
@@ -119,6 +161,8 @@ namespace WorkRoles.UI
         {
             PawnSignalSnapshotCache.Clear();
             externalSnapshots.Clear();
+            skillCaptures.Clear();
+            departedSkills.Clear();
             rosterCellWidths.Clear();
             changedPawns.Clear();
             InvalidatePresentations();
@@ -141,38 +185,110 @@ namespace WorkRoles.UI
                     changedPawns, out fullGeneration))
                 return false;
 
-            // Widest-cell widths aggregate every pawn: always recomputed.
-            rosterCellWidths.Clear();
-            if (fullGeneration)
+            // Keep previous stats available to compare each refreshed skill.
+            // Only departures release ownership; changed owners retain their
+            // snapshots until the next dependency-gated read.
+            departedSkills.Clear();
+            foreach (var pair in skillCaptures)
+                if (!externalSnapshots.Contains(pair.Key)) departedSkills.Add(pair.Key);
+            for (int i = 0; i < departedSkills.Count; i++)
             {
-                InvalidatePresentations();
-                return true;
+                Pawn pawn = departedSkills[i];
+                InvalidateRosterWidths(skillCaptures[pawn].Capture, null);
+                skillCaptures.Remove(pawn);
+                stats.Remove(pawn);
             }
-            for (int i = 0; i < changedPawns.Count; i++)
-                InvalidatePresentationsFor(changedPawns[i]);
+            departedSkills.Clear();
             return true;
         }
 
-        /// Drops one pawn's owned presentation buffer at an explicit external
-        /// refresh boundary, including removed pawns so none stay rooted.
-        private void InvalidatePresentationsFor(Pawn pawn)
+        internal bool Contains(Pawn pawn) => externalSnapshots.Contains(pawn);
+
+        private ExternalCapture CaptureExternal(Pawn pawn)
         {
-            stats.Remove(pawn);
+            externalSnapshots.TryGet(pawn, out ExternalCapture? previous);
+            SkillCapture skills = CaptureSkills(pawn);
+            int factRevision = ExternalPawnFacts.FactRevisions.RevisionOf(pawn);
+            int factGeneration = ExternalPawnFacts.FactRevisions.FullGeneration;
+            PawnExternalSnapshot snapshot = previous != null
+                && previous.FactRevision == factRevision
+                && previous.FactGeneration == factGeneration
+                ? previous.Snapshot
+                : RecsAdapter.CapturePawnSnapshot(pawn, PawnSignalSnapshotCache.Get(pawn));
+            return new ExternalCapture {
+                Snapshot = snapshot, Skills = skills,
+                FactRevision = factRevision, FactGeneration = factGeneration };
         }
 
-        private static ExternalCapture CaptureExternal(Pawn pawn)
+        private SkillCapture CaptureSkills(Pawn pawn)
         {
+            int revision = ExternalPawnFacts.FactRevisions.RevisionOf(pawn);
+            int generation = ExternalPawnFacts.FactRevisions.FullGeneration;
+            skillCaptures.TryGetValue(pawn, out SkillCaptureEntry? entry);
+            if (entry != null && entry.Revision == revision && entry.Generation == generation)
+                return entry.Capture;
+            SkillCapture? previous = entry?.Capture;
             PawnSignalSnapshot signals = PawnSignalSnapshotCache.Get(pawn);
             List<SkillLine> lines = SkillsTip.Lines(pawn);
-            var byDef = new Dictionary<SkillDef, SkillLine>();
+            var inputs = new SkillInput[lines.Count];
+            var byDef = new Dictionary<SkillDef, SkillInput>();
+            bool equal = previous != null && previous.Inputs.Length == lines.Count;
+            bool sameDefinitions = previous != null
+                && previous.DefinitionRevision == DefinitionReloadCoordinator.Revision
+                && previous.LanguageRevision == LanguageChangeCoordinator.Revision;
             for (int i = 0; i < lines.Count; i++)
-                byDef[lines[i].Def] = lines[i];
-            return new ExternalCapture
             {
-                Snapshot = RecsAdapter.CapturePawnSnapshot(pawn, signals),
-                SkillLines = lines,
-                SkillLinesByDef = byDef,
-            };
+                SkillLine line = lines[i];
+                SkillInput? old = null;
+                previous?.ByDef.TryGetValue(line.Def, out old);
+                bool sameView = sameDefinitions && old != null
+                    && old.View.Matches(signals.Signals, line.Def.defName);
+                SkillSignalView view = sameView ? old!.View
+                    : SignalPresentationPolicy.ForSkill(signals.Signals, line.Def.defName);
+                SignalBucket? bucket = signals.SkillBuckets.ForSkill(line.Def.defName)?.Bucket;
+                SkillInput input = sameView && old!.Bucket == bucket && SameLine(old.Line, line)
+                    ? old : new SkillInput { Line = line, View = view, Bucket = bucket,
+                        Icons = sameView ? old!.Icons : SkillSignalPresentation.ResolveIcons(view) };
+                inputs[i] = input;
+                byDef.Add(line.Def, input);
+                equal &= previous != null && i < previous.Inputs.Length
+                    && ReferenceEquals(previous.Inputs[i], input);
+            }
+            SkillCapture next = equal ? previous! : new SkillCapture { Inputs = inputs,
+                ByDef = byDef, DefinitionRevision = DefinitionReloadCoordinator.Revision,
+                LanguageRevision = LanguageChangeCoordinator.Revision };
+            if (!ReferenceEquals(previous, next)) InvalidateRosterWidths(previous, next);
+            skillCaptures[pawn] = new SkillCaptureEntry {
+                Capture = next, Revision = revision, Generation = generation };
+            return next;
+        }
+
+        private static bool SameLine(SkillLine left, SkillLine right) =>
+            ReferenceEquals(left.Def, right.Def) && left.Label == right.Label
+            && left.ValueText == right.ValueText && left.Passion == right.Passion
+            && left.Aptitude == right.Aptitude && left.Level == right.Level
+            && left.SortValue == right.SortValue && left.Disabled == right.Disabled;
+
+        private void InvalidateRosterWidths(SkillCapture? previous, SkillCapture? next)
+        {
+            bool changed = false;
+            if (previous != null)
+                for (int i = 0; i < previous.Inputs.Length; i++)
+                {
+                    SkillInput old = previous.Inputs[i];
+                    if (next != null && next.ByDef.TryGetValue(old.Line.Def, out SkillInput current)
+                        && old.RosterWidth == current.RosterWidth) continue;
+                    rosterCellWidths.Remove(old.Line.Def);
+                    changed = true;
+                }
+            if (next != null)
+                for (int i = 0; i < next.Inputs.Length; i++)
+                    if (previous == null || !previous.ByDef.ContainsKey(next.Inputs[i].Line.Def))
+                    {
+                        rosterCellWidths.Remove(next.Inputs[i].Line.Def);
+                        changed = true;
+                    }
+            if (changed) RosterWidthsRevision++;
         }
 
         internal PawnExternalSnapshot ExternalSnapshot(Pawn pawn) =>
@@ -187,8 +303,8 @@ namespace WorkRoles.UI
         {
             if (pawn != null && skill != null
                 && externalSnapshots.TryGet(pawn, out ExternalCapture? capture)
-                && capture!.SkillLinesByDef.TryGetValue(skill, out SkillLine line))
-                return line;
+                && capture!.Skills.ByDef.TryGetValue(skill, out SkillInput input))
+                return input.Line;
             return new SkillLine(skill!, // existing behavior: placeholder lines may carry a null def
                 skill?.skillLabel.CapitalizeFirst() ?? "",
                 "-", Passion.None, 0, 0, -1f, disabled: true);
@@ -197,23 +313,18 @@ namespace WorkRoles.UI
         internal float SkillSortValue(Pawn pawn, SkillDef skill) =>
             SkillLineSnapshot(pawn, skill).SortValue;
 
-        /// Widest roster cell for this skill across the whole generation, so a
-        /// third-plus decorator widens the column instead of clipping. Whole
-        /// pixels by construction (48 + 16/2 multiples). Generation-scoped like
-        /// the lines it measures; lazy per skill, so column toggles stay free.
+        /// Widest roster cell for this skill, so a third-plus decorator widens
+        /// the column instead of clipping. Whole logical pixels by construction.
+        /// Only changed width contributions invalidate this lazy per-skill max.
         internal float RosterCellWidth(SkillDef skill)
         {
             if (skill == null) return RosterCellMinWidth;
             if (rosterCellWidths.TryGetValue(skill, out float width)) return width;
             width = RosterCellMinWidth;
-            foreach (Pawn pawn in externalSnapshots.Owners)
+            foreach (SkillCaptureEntry entry in skillCaptures.Values)
             {
-                ColonistSkillPresentation? presentation = Snapshot(pawn).ForSkill(skill);
-                if (presentation == null || presentation.Line.Disabled) continue;
-                int icons = presentation.SignalIcons.Count;
-                if (icons == 0) continue;
-                width = Mathf.Max(width, RosterIconStartX
-                    + icons * DecoratorSize + (icons - 1) * DecoratorGap);
+                if (entry.Capture.ByDef.TryGetValue(skill, out SkillInput input))
+                    width = Mathf.Max(width, input.RosterWidth);
             }
             rosterCellWidths[skill] = width;
             return width;
@@ -256,24 +367,24 @@ namespace WorkRoles.UI
             // A role can mention a skill absent from this pawn's tracker. This
             // placeholder is requested only by the revision-gated role-tip
             // builder; ordinary skill rows use the published snapshot above.
-            return BuildPresentation(pawn, line, ExternalSnapshot(pawn), null);
+            PawnSignalSnapshot signals = SignalSnapshot(pawn);
+            SkillSignalView view = SignalPresentationPolicy.ForSkill(signals.Signals, line.Def?.defName!);
+            return BuildPresentation(pawn, new SkillInput { Line = line, View = view,
+                Icons = SkillSignalPresentation.ResolveIcons(view),
+                Bucket = signals.SkillBuckets.ForSkill(line.Def?.defName!)?.Bucket }, null);
         }
 
-        private ColonistSkillPresentation BuildPresentation(Pawn pawn, SkillLine line,
-            object externalIdentity, ColonistSkillPresentation? previous)
+        private ColonistSkillPresentation BuildPresentation(Pawn pawn, SkillInput input,
+            ColonistSkillPresentation? previous)
         {
-            PawnSignalSnapshot pawnSnapshot = SignalSnapshot(pawn);
+            SkillLine line = input.Line;
             bool sameSource = previous != null && previous.SourceMatches(
-                externalIdentity, LanguageChangeCoordinator.Revision,
+                input, LanguageChangeCoordinator.Revision,
                 DefinitionReloadCoordinator.Revision);
-            SkillSignalView signalView = sameSource ? previous!.SignalView
-                : SignalPresentationPolicy.ForSkill(
-                    pawnSnapshot.Signals, line.Def?.defName!);
-            IReadOnlyList<Texture2D> icons = sameSource ? previous!.SignalIcons
-                : SkillSignalPresentation.ResolveIcons(signalView);
+            SkillSignalView signalView = input.View;
+            IReadOnlyList<Texture2D> icons = input.Icons;
             float labelWidth = LabelWidth(line.Label);
-            SignalBucket? baseBucket = pawnSnapshot.SkillBuckets
-                .ForSkill(line.Def?.defName!)?.Bucket;
+            SignalBucket? baseBucket = input.Bucket;
             SignalBucket? bucket = baseBucket;
             int promotionThreshold = -1;
             if (bucket.HasValue)
@@ -295,7 +406,7 @@ namespace WorkRoles.UI
                     labelWidth, bucket, baseBucket, promotionThreshold))
                 return previous;
             return new ColonistSkillPresentation(
-                pawn, externalIdentity, LanguageChangeCoordinator.Revision,
+                pawn, input, LanguageChangeCoordinator.Revision,
                 DefinitionReloadCoordinator.Revision,
                 line,
                 labelWidth,
@@ -315,7 +426,8 @@ namespace WorkRoles.UI
                 return ColonistStatsSnapshot.Empty;
             RoleStore? store = RoleStore.Current;
             return stats.Get(pawn, new PawnPresentationStamp(
-                store, capture!, store?.RecommendationTuningRevision ?? -1,
+                store, capture!.Skills, (store?.recommendationTuning
+                    ?? RecommendationsTuningOptions.Default).SkillPromotion,
                 LanguageChangeCoordinator.Revision, DefinitionReloadCoordinator.Revision,
                 UiRevision.Current));
         }
@@ -324,15 +436,15 @@ namespace WorkRoles.UI
             ColonistStatsSnapshot? previous)
         {
             ExternalCapture capture = externalSnapshots.Get(pawn);
-            List<SkillLine> lines = capture.SkillLines;
-            var items = new ColonistSkillPresentation[lines.Count];
+            SkillInput[] inputs = capture.Skills.Inputs;
+            var items = new ColonistSkillPresentation[inputs.Length];
             float columnWidth = MinimumSkillColumnWidth;
             using (new TextBlock(GameFont.Small))
             {
-                for (int i = 0; i < lines.Count; i++)
+                for (int i = 0; i < inputs.Length; i++)
                 {
-                    ColonistSkillPresentation item = BuildPresentation(pawn, lines[i],
-                        capture, previous?.ForSkill(lines[i].Def));
+                    ColonistSkillPresentation item = BuildPresentation(pawn, inputs[i],
+                        previous?.ForSkill(inputs[i].Line.Def));
                     items[i] = item;
                     float iconWidth = item.SignalIcons.Count == 0 ? 0f
                         : LabelDecoratorGap + item.SignalIcons.Count * DecoratorSize
@@ -342,7 +454,7 @@ namespace WorkRoles.UI
                     columnWidth = Mathf.Max(columnWidth, Mathf.Ceil(required));
                 }
             }
-            return new ColonistStatsSnapshot(items, columnWidth);
+            return new ColonistStatsSnapshot(items, columnWidth, capture.Skills);
         }
 
         internal static Color SkillTextColor(SkillLine line, SignalPassionTier tier)
@@ -420,7 +532,10 @@ namespace WorkRoles.UI
         // replacements. Key: captured pawn/skill facts, source/language/definition
         // epoch and promoted verdict. Value: immutable tooltip content (including
         // a memoized null). Dependencies: the enclosing presentation's external
-        // capture, language, definitions and consumed tuning result; UI geometry
+        // skill input, language, definitions and consumed tuning result. Pawn
+        // grammar follows its explicit broad external revision on Resolve only;
+        // unchanged skills can therefore retain their presentation across names.
+        // UI geometry
         // belongs to the shared presenter's frozen session. Refresh: first
         // eligible hover request only. Equality: repeated requests reuse content.
         // Teardown: releasing the per-pawn snapshot releases this memo; there are
@@ -436,6 +551,8 @@ namespace WorkRoles.UI
             private readonly int promotionThreshold;
             private bool built;
             private StructuredTip? value;
+            private int grammarRevision;
+            private int grammarGeneration;
 
             internal TooltipContent(Pawn pawn, SkillLine line,
                 SkillSignalView view, SignalBucket? bucket,
@@ -455,12 +572,18 @@ namespace WorkRoles.UI
 
             internal StructuredTip? Get()
             {
-                if (!built)
+                int revision = ExternalPawnFacts.Revisions.RevisionOf(pawn);
+                int generation = ExternalPawnFacts.Revisions.FullGeneration;
+                if (!built || grammarRevision != revision || grammarGeneration != generation)
                 {
-                    value = SkillSignalPresentation.CreateTooltip(
+                    StructuredTip? rebuilt = SkillSignalPresentation.CreateTooltip(
                         pawn, line.Def?.defName!, line.Label, line.ValueText,
                         ColonistStatsState.SkillTextColor(line, view.PassionTier),
                         view, bucket, baseBucket, line.Level, promotionThreshold);
+                    if (value == null || rebuilt == null || !value.ContentEquals(rebuilt))
+                        value = rebuilt;
+                    grammarRevision = revision;
+                    grammarGeneration = generation;
                     built = true;
                 }
                 return value;
@@ -474,12 +597,15 @@ namespace WorkRoles.UI
             new ColonistStatsSnapshot(Array.Empty<ColonistSkillPresentation>(), 200f);
 
         internal ColonistStatsSnapshot(
-            IReadOnlyList<ColonistSkillPresentation> skills, float skillColumnWidth)
+            IReadOnlyList<ColonistSkillPresentation> skills, float skillColumnWidth,
+            object? facts = null)
         {
             Skills = skills;
             SkillColumnWidth = skillColumnWidth;
+            Facts = facts ?? this;
         }
 
+        internal object Facts { get; }
         internal IReadOnlyList<ColonistSkillPresentation> Skills { get; }
         internal float SkillColumnWidth { get; }
 

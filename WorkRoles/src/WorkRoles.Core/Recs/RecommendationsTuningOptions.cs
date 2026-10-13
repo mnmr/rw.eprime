@@ -271,7 +271,12 @@ namespace WorkRoles.Core.Recs
         private RecommendationsTuningOptions(int[] values)
         {
             this.values = values;
+            SkillPromotion = new SkillPromotionTuning(this);
+            SkillCaption = new SkillCaptionTuning(this);
         }
+
+        public SkillPromotionTuning SkillPromotion { get; }
+        public SkillCaptionTuning SkillCaption { get; }
 
         public static IReadOnlyList<RecommendationTuningDescriptor> Descriptors =>
             descriptorList;

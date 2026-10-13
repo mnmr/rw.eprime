@@ -106,7 +106,7 @@ namespace WorkRoles
 
         /// Keyed by the index snapshot identity: a definition reload replaces
         /// the index and rebuilds this map on the next read.
-        private static Dictionary<string, int> NaturalPriorities()
+        internal static Dictionary<string, int> NaturalPriorities()
         {
             JobProfileIndex index = JobSkillProfiles.RecommendationIndex();
             if (naturalPriorities != null

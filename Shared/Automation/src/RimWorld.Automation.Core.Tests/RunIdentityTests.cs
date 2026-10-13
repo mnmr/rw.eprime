@@ -12,6 +12,10 @@ public class RunIdentityTests
         string profile = RunIdentity.RunsRoot + "\\" + a;
         await Assert.That(RunIdentity.Matches(profile, "rimworld-shared-" + a)).IsTrue();
         await Assert.That(RunIdentity.Matches(profile.Replace('\\', '/'), "rimworld-shared-" + a)).IsTrue();
+        string linuxProfile = "/mnt/d/Code/RimWorld/AutomationProfiles/Shared/Runs/" + a;
+        await Assert.That(RunIdentity.Matches(linuxProfile, "rimworld-shared-" + a)).IsTrue();
+        await Assert.That(RunIdentity.Matches(linuxProfile + "/../" + a, "rimworld-shared-" + a)).IsFalse();
+        await Assert.That(RunIdentity.Matches(linuxProfile.ToLowerInvariant(), "rimworld-shared-" + a)).IsFalse();
         foreach (string wrong in new[] { RunIdentity.RunsRoot, profile + "\\child", profile + "-extra",
             RunIdentity.RunsRoot + "\\..\\" + a, @"C:\Users\player\" + a })
             await Assert.That(RunIdentity.Matches(wrong, "rimworld-shared-" + a)).IsFalse();

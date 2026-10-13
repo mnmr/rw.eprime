@@ -159,9 +159,9 @@ namespace WorkRoles.UI
                 && orderUiVersion == revision
                 && orderDefinitionRevision == DefinitionReloadCoordinator.Revision
                 && orderWidth == width) return;
-            List<RoleView> views = RecsAdapter.RoleViewsOf(store.roles);
-            List<int> resolved = OrderTemplate.ResolveTemplate(
-                store.recommendationOrder, views);
+            RecommendationOrderSnapshot ordering = RecsAdapter.RecommendationOrdering(store);
+            IReadOnlyList<RoleView> views = ordering.Roles;
+            IReadOnlyList<int> resolved = ordering.Template;
             var viewsById = views.ToDictionary(role => role.Id);
             var chipsById = new Dictionary<int, RoleChipRenderData>(
                 store.roles.Count);
@@ -176,7 +176,7 @@ namespace WorkRoles.UI
                 out string addLabel);
             string headerLabel = "WR_RecOrderHeader".Translate();
             var addOptions = new List<RecRoleMenuOption>();
-            List<int> candidateIds = OrderTemplate.AddCandidates(views, resolved);
+            IReadOnlyList<int> candidateIds = ordering.AddCandidates;
             for (int i = 0; i < candidateIds.Count; i++)
             {
                 if (!chipsById.TryGetValue(candidateIds[i], out var chip))

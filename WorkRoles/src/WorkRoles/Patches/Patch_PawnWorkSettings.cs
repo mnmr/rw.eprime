@@ -197,8 +197,10 @@ namespace WorkRoles.Patches
             UI.RoleClipboard.Clear();
             CompiledJobOrders.ReleaseForTeardown();
             RoleWorkSpecs.Reset();
+            RecsAdapter.ResetRecommendationCaches();
             Patch_MultiFloorsWorkScan.ReleaseForTeardown();
             PriorityGridFacts.ReleaseForTeardown();
+            ExternalPawnFacts.ReleaseForTeardown();
             JobRankBaseline.ReleaseForTeardown();
             FloorMaps.ReleaseForTeardown();
             PawnLocationTracker.ReleaseForTeardown();

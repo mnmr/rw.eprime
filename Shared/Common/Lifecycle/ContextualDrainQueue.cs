@@ -32,6 +32,18 @@ namespace RimShared.Common
             return result;
         }
 
+        /// Context overload avoids allocating a capturing predicate on tick paths.
+        public List<TOwner> Drain<TContext>(TContext context,
+            Func<TOwner, TContext, bool> belongsToContext)
+        {
+            if (belongsToContext == null) throw new ArgumentNullException(nameof(belongsToContext));
+            var result = new List<TOwner>();
+            foreach (TOwner owner in pending)
+                if (belongsToContext(owner, context)) result.Add(owner);
+            for (int i = 0; i < result.Count; i++) pending.Remove(result[i]);
+            return result;
+        }
+
         public void Clear() => pending.Clear();
     }
 }

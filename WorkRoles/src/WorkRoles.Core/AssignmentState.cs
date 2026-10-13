@@ -19,6 +19,12 @@ namespace WorkRoles.Core
             state == AssignmentState.ForceOn
             || (roleEnabled && state == AssignmentState.Enabled);
 
+        /// Whether a toggle changes the role's contribution to compiled work.
+        /// Presentation still observes the stored state independently.
+        public static bool ChangesExecution(bool beforeEnabled, AssignmentState before,
+            bool afterEnabled, AssignmentState after, bool rulesPass = true) =>
+            rulesPass && IsActive(beforeEnabled, before) != IsActive(afterEnabled, after);
+
         /// Chip click order. Disabling stays a single click; re-enabling passes
         /// through ForceOn, which is harmless and visibly distinct.
         public static AssignmentState Next(AssignmentState state) =>

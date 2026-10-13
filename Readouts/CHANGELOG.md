@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 1.4.0 — 2026-10-13
+
+- Changed: Removed obsolete render health checks and other internal bookkeeping.
+
+## 1.3.9 — 2026-10-12
+
+- Changed: RimWorld 1.7 support.
+
 ## 1.3.8 — 2026-10-04
 
 - Changed: Extracted common logic to shared library for easier maintenance.

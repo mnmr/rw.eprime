@@ -55,6 +55,15 @@ namespace RimShared.Common
             return snapshot;
         }
 
+        /// Observes an existing artifact without acquiring or building it.
+        /// Event-driven dependency checks use this to retain equal projections.
+        public bool TryGetCached(TOwner owner, out TSnapshot? snapshot)
+        {
+            if (owner != null) return snapshots.TryGetValue(owner, out snapshot);
+            snapshot = default;
+            return false;
+        }
+
         public void PublishFresh(TOwner owner)
         {
             Remove(owner);

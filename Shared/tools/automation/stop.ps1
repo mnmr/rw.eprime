@@ -24,6 +24,9 @@ try {
     }
     try {
         if ($games.Count -eq 1) {
+            if ($record.backend -ceq 'wsl') {
+                Invoke-WslRunControl $record 'stop' | Out-Null
+            } else {
             $process = Get-Process -Id $games[0].ProcessId -ErrorAction SilentlyContinue
             if ($process) {
                 try {
@@ -36,8 +39,16 @@ try {
                     if (-not $process.WaitForExit($ForceAfterSeconds * 1000)) { $process.Kill(); $process.WaitForExit(10000) | Out-Null }
                 } finally { $process.Dispose() }
             }
+            }
         }
         if ($hostProcess -and -not $hostProcess.WaitForExit(10000)) { $hostProcess.Kill(); $hostProcess.WaitForExit(10000) | Out-Null }
+        if ($record.backend -ceq 'wsl') {
+            $teardownDeadline = [DateTime]::UtcNow.AddSeconds(20)
+            while (-not (Invoke-WslRunControl $record 'idle')) {
+                if ([DateTime]::UtcNow -ge $teardownDeadline) { throw 'Linux supervisor still owns live resources.' }
+                Start-Sleep -Milliseconds 100
+            }
+        }
         if (@(Get-SharedRimWorldProcessInfo).Count -ne 0 -or (Test-RunLocked (Join-Path $record.profile 'run.lock'))) { throw 'Run still owns live resources.' }
         Update-RunActivity 'stopped'
         Write-Host "stopped run $($record.runId)"

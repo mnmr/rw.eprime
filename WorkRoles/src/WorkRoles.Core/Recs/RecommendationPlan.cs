@@ -608,6 +608,7 @@ namespace WorkRoles.Core.Recs
         // Retained for PlacementIndex: the run's facts, formulas, positions and
         // per-pawn drafts, all immutable once the plan is published.
         private readonly EngineContext facts;
+        internal EngineContext Context => facts;
         private readonly RecommendationFormulaEngine formulas;
         private readonly IReadOnlyDictionary<int, long> positions;
         private readonly PawnDraft[] drafts;
@@ -672,9 +673,15 @@ namespace WorkRoles.Core.Recs
             ColonyView colony,
             RecommendationsTuningOptions options,
             RoleOrderingStrategy ordering = RoleOrderingStrategy.Current)
+            => Build(new EngineContext(colony), options, ordering);
+
+        internal static RecommendationPlan Build(
+            EngineContext facts,
+            RecommendationsTuningOptions options,
+            RoleOrderingStrategy ordering = RoleOrderingStrategy.Current)
         {
             var formulas = new RecommendationFormulaEngine(options);
-            var facts = new EngineContext(colony);
+            ColonyView colony = facts.Colony;
             int pawnCount = colony.Pawns.Count;
             var drafts = new PawnDraft[pawnCount];
             for (int pawnIndex = 0; pawnIndex < pawnCount; pawnIndex++)

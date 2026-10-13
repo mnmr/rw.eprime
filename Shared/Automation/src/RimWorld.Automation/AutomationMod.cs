@@ -13,6 +13,7 @@ public sealed class AutomationMod : Mod
     // Process launch metadata, captured from the actual ModContentPack. It is
     // immutable for this process and does not retain a game/world/map owner.
     internal static string RootDirectory = "";
+    internal static string ProfileDirectory = "";
     internal static Harmony? Patches;
     private static readonly Action InitializeAction = Initialize;
 
@@ -27,6 +28,7 @@ public sealed class AutomationMod : Mod
         if (!RunIdentity.Matches(profile, Token))
         { Token = ""; return; }
         RootDirectory = content.RootDir;
+        ProfileDirectory = profile;
         LongEventHandler.ExecuteWhenFinished(InitializeAction);
     }
 

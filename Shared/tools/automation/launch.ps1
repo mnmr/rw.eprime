@@ -8,7 +8,7 @@
 # stall (10 s without input/ticks, a silent driving script, a frozen game) and
 # stops it -HardCapSeconds (at most 60, the owner's cap) after ready. Load time
 # before readiness is bounded by -TimeoutMinutes.
-param([string]$RunId = $env:RIMWORLD_AUTOMATION_RUN_ID, [int]$TimeoutMinutes = 12, [string[]]$GameArguments = @(), [ValidateRange(1, 60)][int]$HardCapSeconds = 60)
+param([string]$RunId = $env:RIMWORLD_AUTOMATION_RUN_ID, [int]$TimeoutMinutes = 12, [string[]]$GameArguments = @(), [ValidateRange(1, 60)][int]$HardCapSeconds = 60, [switch]$AllowRecoverableSaveErrors)
 $pickle = $GameArguments.Count -gt 0
 . (Join-Path $PSScriptRoot 'automation-common.ps1') -RunId $RunId
 $record = Get-SelectedRun
@@ -58,6 +58,7 @@ try {
         activeMods=@($mods.ModsConfigData.activeMods.li); width=[int]$prefs.PrefsData.screenWidth
         height=[int]$prefs.PrefsData.screenHeight; uiScale=[double]$prefs.PrefsData.uiScale
         gameArguments=$GameArguments; bridgePort=$bridgePort; pickle=$pickle; hardCapSeconds=$HardCapSeconds
+        allowRecoverableSaveErrors=[bool]$AllowRecoverableSaveErrors
     })
     Update-RunActivity 'launch'
     $hostExecutable = Join-Path $record.profile 'Host\RimWorld.Automation.Host.exe'
@@ -84,10 +85,14 @@ try {
         if ($processes.Count -gt 1) { throw 'Multiple games claimed the same run.' }
         if ($processes.Count -eq 1) {
             $content = if (Test-Path -LiteralPath $script:RimWorldPlayerLog) { Read-TextFileWhileOpen $script:RimWorldPlayerLog } else { '' }
-            if ($content.Contains($runToken) -and $content -match '(?m)^SaveableFromNode exception:|^Exception while loading|SharedAutomation.*Exception|^Crash!!!|Could not execute post-long-event action\. Exception:|^Could not find (?:game|world) XML node\.|^Called InitSaving\(\) but current mode is') {
+            if (Test-RunStartupFailure $content $runToken -AllowRecoverableSaveErrors:$AllowRecoverableSaveErrors) {
                 throw 'The run logged an automation or save-load failure; inspect its Player.log.'
             }
-            if ($content.Contains($runToken) -and $content.Contains('[SharedAutomation] ready for background commands')) {
+            # The mod's initialization marker can precede a long synchronous
+            # load. Wait until Update has published its heartbeat before sending
+            # work that has a bounded 30-second main-thread dispatch deadline.
+            $dispatchReady = $record.backend -cne 'wsl' -or (Test-Path -LiteralPath (Join-Path $record.profile 'game-state.json'))
+            if ($dispatchReady -and $content.Contains($runToken) -and $content.Contains('[SharedAutomation] ready for background commands')) {
                 # Pickle may quit the game at any moment; its exit is handled at the loop top.
                 try { $state = Invoke-SharedGameCommand @{command='status'} }
                 catch { if ($pickle -and $hostProcess.WaitForExit(10000)) { continue }; throw }
@@ -100,7 +105,9 @@ try {
                     # Prepatcher loads assemblies from bytes, so Assembly.Location
                     # can be empty. Validate the actual game's ModContentPack root.
                     $expectedRoot = Join-Path $record.profile 'Game\Mods\SharedAutomation'
-                    if ([IO.Path]::GetFullPath($state.runtimeModRoot) -ine $expectedRoot) { throw "Game runtime mod root '$($state.runtimeModRoot)' differs from '$expectedRoot'." }
+                    if ($record.backend -ceq 'wsl') { $expectedRoot = (Get-WslRunPath $record) + '/Game/Mods/SharedAutomation' }
+                    $actualRoot = if ($record.backend -ceq 'wsl') { $state.runtimeModRoot } else { [IO.Path]::GetFullPath($state.runtimeModRoot) }
+                    if ($actualRoot -ine $expectedRoot) { throw "Game runtime mod root '$($state.runtimeModRoot)' differs from '$expectedRoot'." }
                     if ($state.width -ne [int]$prefs.PrefsData.screenWidth -or $state.height -ne [int]$prefs.PrefsData.screenHeight) { throw 'Game frame differs from run preferences.' }
                     if (-not $pickle) { Save-SharedGameCapture 'launch-ready.png' | Out-Null }
                     Write-Host "run $($record.runId) ready in background pid=$($state.processId)"

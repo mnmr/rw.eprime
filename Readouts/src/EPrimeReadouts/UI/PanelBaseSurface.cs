@@ -174,7 +174,10 @@ namespace EPrimeReadouts.UI
         private bool DrawIcon(DrawModel draw, int index, Rect cellRect)
         {
             Texture2D? icon = draw.IconTextures[index];
-            if (icon == null) return false;
+            // The native ThingIcon path deliberately draws nothing for a
+            // missing/bad uiIcon (including some 1.7 mech corpse defs). Our
+            // cached null represents that same result, not a GPU failure.
+            if (icon == null) return PanelBufferBackend.UsesGuiRenderTargets;
 
             Rect fitted = Fit(cellRect, icon, draw.IconFittedScales[index]);
             backend.DrawToActive(

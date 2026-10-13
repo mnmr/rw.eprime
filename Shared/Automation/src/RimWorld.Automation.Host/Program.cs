@@ -48,6 +48,7 @@ internal static class Program
     [DllImport("kernel32.dll", SetLastError = true)] private static extern uint ResumeThread(IntPtr thread);
     [DllImport("kernel32.dll")] private static extern bool TerminateProcess(IntPtr process, uint code);
     [DllImport("kernel32.dll")] private static extern bool GetExitCodeProcess(IntPtr process, out uint code);
+    [DllImport("kernel32.dll", SetLastError = true)] private static extern bool SetHandleInformation(IntPtr handle, uint mask, uint flags);
 
     private static void Main(string[] arguments)
     {
@@ -58,6 +59,7 @@ internal static class Program
         IntPtr job = IntPtr.Zero;
         ProcessInfo process = default;
         FileStream? lease = null;
+        FileStream? consoleLog = null;
         bool ownsRun = false;
         DateTime startedUtc = DateTime.UtcNow;
         void Publish(string state, uint? exitCode = null)
@@ -77,7 +79,9 @@ internal static class Program
         try
         {
             if (!RunIdentity.Matches(profile, token)
-                || !string.Equals(Path.GetFullPath(executable), Path.Combine(profile, "Game", "RimWorldWin64.exe"), StringComparison.OrdinalIgnoreCase)
+                || !(string.Equals(Path.GetFullPath(executable), Path.Combine(profile, "Game", "RimWorldWin64.exe"), StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(Path.GetFullPath(executable), Path.Combine(profile, "Game", "RimWorld.exe"), StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(Path.GetFullPath(executable), Path.Combine(profile, "Game", "RimWorldLinux"), StringComparison.OrdinalIgnoreCase))
                 || !string.Equals(Path.GetFullPath(log), Path.Combine(profile, "Player.log"), StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("The host requires a managed run and its matching session token/executable/log.");
             // Only test-runner flags may ride along; they cannot redirect the
@@ -86,7 +90,8 @@ internal static class Program
                 if (!RunIdentity.IsAllowedGameArgument(argument)) throw new InvalidOperationException("Unsupported game argument: " + argument);
             for (DirectoryInfo? parent = new DirectoryInfo(profile); parent != null; parent = parent.Parent)
                 if ((parent.Attributes & FileAttributes.ReparsePoint) != 0) throw new InvalidOperationException("Run ancestors cannot be links.");
-            if (!File.Exists(Path.Combine(profile, "run.json")) || File.Exists(Path.Combine(profile, "removing.json")))
+            if (!File.Exists(Path.Combine(profile, "run.json")) || File.Exists(Path.Combine(profile, "removing.json"))
+                || File.Exists(Path.Combine(Path.GetDirectoryName(profile)!, ".removing-" + token[16..] + ".json")))
                 throw new InvalidOperationException("Run is not prepared or is being removed.");
             // Discovery briefly probes the lease. Retry sharing violations so
             // an observation racing startup cannot abort a valid run.
@@ -103,6 +108,13 @@ internal static class Program
                 JsonSerializer.Serialize(once, new { token, startedUtc });
             ownsRun = true;
             Publish("starting");
+            if (Path.GetFileName(executable) == "RimWorldLinux")
+            {
+                if (gameArguments.Length != 0) throw new InvalidOperationException("WSL runs do not accept extra game arguments.");
+                int linuxExit = WslHost.Run(profile, token, gameId => { process.Id = gameId; Publish("running"); });
+                Publish(linuxExit == 0 ? "stopped" : "failed", (uint)linuxExit);
+                return;
+            }
             // The test process receives its own Win32 desktop. Never call
             // SwitchDesktop or attach input queues to the user's desktop.
             string name = "RimWorld-" + token;
@@ -115,10 +127,20 @@ internal static class Program
             var limits = new ExtendedLimits { Basic = new BasicLimits { Flags = 0x2000 } };
             if (!SetInformationJobObject(job, 9, ref limits, Marshal.SizeOf<ExtendedLimits>())) throw new Win32Exception();
             var startup = new StartupInfo { Size = Marshal.SizeOf<StartupInfo>(), Desktop = name, Flags = 1, ShowWindow = 1 };
+            bool waylith = Path.GetFileName(executable).Equals("RimWorld.exe", StringComparison.OrdinalIgnoreCase);
+            if (waylith)
+            {
+                // Waylith logs startup to stdout before its profile logger exists.
+                consoleLog = new FileStream(log, FileMode.CreateNew, FileAccess.Write, FileShare.ReadWrite);
+                IntPtr output = consoleLog.SafeFileHandle.DangerousGetHandle();
+                if (!SetHandleInformation(output, 1, 1)) throw new Win32Exception();
+                startup.Flags |= 0x100;
+                startup.StdOutput = startup.StdError = output;
+            }
             var command = new StringBuilder(Quote(executable) + " -savedatafolder=" + Quote(profile) + " -automationtoken=" + token
                 + " -logFile " + Quote(log) + " -screen-fullscreen 0 -screen-width 1920 -screen-height 1080");
             foreach (string argument in gameArguments) command.Append(' ').Append(argument);
-            if (!CreateProcess(executable, command, IntPtr.Zero, IntPtr.Zero, false, 4, IntPtr.Zero,
+            if (!CreateProcess(executable, command, IntPtr.Zero, IntPtr.Zero, waylith, 4, IntPtr.Zero,
                 Path.GetDirectoryName(executable)!, ref startup, out process)) throw new Win32Exception();
             if (!AssignProcessToJobObject(job, process.Process)) throw new Win32Exception();
             if (ResumeThread(process.Thread) == uint.MaxValue) throw new Win32Exception();
@@ -144,6 +166,7 @@ internal static class Program
             if (job != IntPtr.Zero) CloseHandle(job);
             if (desktop != IntPtr.Zero) CloseDesktop(desktop);
             lease?.Dispose();
+            consoleLog?.Dispose();
         }
     }
     private static string Quote(string value)

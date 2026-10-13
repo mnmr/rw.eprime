@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using EPrimeReadouts.Core;
 using RimShared.UiLib;
 using UnityEngine;
@@ -15,7 +17,8 @@ namespace EPrimeReadouts.UI
     // Cache contract:
     // Owner: process/current main readout panel (via ReadoutPanel).
     // Key: draw-model identity, PanelTextRevision (text content, UI metric
-    //      revision, content dimensions), and the raster scale.
+    //      revision, content dimensions), raster scale, and Waylith's font
+    //      atlas revision (Unity retains its existing generation contract).
     // Value: glyph quads in content-local physical pixels (vertices, uvs,
     //        vertex colors), immutable between rebuilds.
     // Dependencies: the keys above; a count refresh changes the text
@@ -23,8 +26,21 @@ namespace EPrimeReadouts.UI
     // Refresh policy: immediate rebuild on the first draw after a key moves.
     // Equality policy: matching keys reuse the geometry lists as they are.
     // Teardown: Release clears the geometry and invalidates the generator.
+    [StaticConstructorOnStartup]
     internal sealed class PanelDirectGlyphs
     {
+        // Waylith's Unity compatibility layer implements GL.Viewport as a
+        // no-op. Its primitives instead honor the enclosing GUI group's clip
+        // rectangle, and GL.LoadIdentity submits absolute screen pixels.
+        // Resolve the immutable engine contract once, never per render pass.
+        internal static readonly bool UsesGuiClip =
+            typeof(GL).Assembly.GetName().Name == "UnityStubs";
+
+        // Engine-owned process service; the compiled getter retains no font,
+        // texture, world or map. Resolve optional APIs once at type startup.
+        // The steady path reads one revision without reflection or allocation.
+        private static readonly Func<int>? ReadAtlasRevision = CreateAtlasReader();
+
         private readonly TextGenerator generator = new TextGenerator();
         private readonly List<Vector3> vertices = new List<Vector3>();
         private readonly List<Vector2> uvs = new List<Vector2>();
@@ -32,6 +48,7 @@ namespace EPrimeReadouts.UI
         private DrawModel? builtDraw;
         private PanelTextRevision builtRevision;
         private float builtScale = -1f;
+        private int builtAtlasRevision = -1;
         private Material? builtMaterial;
 
         /// Rebuilds the geometry when its key moved. Returns false when the
@@ -39,6 +56,10 @@ namespace EPrimeReadouts.UI
         /// labels instead.
         internal bool Ensure(DrawModel draw, int uiRevision, float rasterScale)
         {
+            int atlasRevision = UsesGuiClip ? ReadAtlasRevision?.Invoke() ?? -1 : 0;
+            // If a future compatibility layer omits this contract, use native
+            // labels rather than retain UVs whose lifetime cannot be tracked.
+            if (atlasRevision < 0) return false;
             RenderModel model = draw.Model;
             PanelTextRevision revision = PanelTextRevision.Create(
                 model, uiRevision,
@@ -47,6 +68,7 @@ namespace EPrimeReadouts.UI
             if (ReferenceEquals(builtDraw, draw)
                 && builtRevision.Equals(revision)
                 && builtScale == rasterScale
+                && builtAtlasRevision == atlasRevision
                 && builtMaterial != null)
                 return true;
 
@@ -72,6 +94,7 @@ namespace EPrimeReadouts.UI
                 builtDraw = draw;
                 builtRevision = revision;
                 builtScale = rasterScale;
+                builtAtlasRevision = atlasRevision;
                 builtMaterial = font.material;
                 return true;
             }
@@ -105,10 +128,15 @@ namespace EPrimeReadouts.UI
                 // A viewport the size of the visible window clips the glyphs
                 // exactly like the scroll view clips IMGUI content; the pixel
                 // matrix keeps screen pixel coordinates inside it.
-                GL.Viewport(new Rect(
-                    clipLeft, Screen.height - clipBottom,
-                    clipRight - clipLeft, clipBottom - clipTop));
-                GL.LoadPixelMatrix(clipLeft, clipRight, clipBottom, clipTop);
+                if (UsesGuiClip)
+                    GL.LoadIdentity();
+                else
+                {
+                    GL.Viewport(new Rect(
+                        clipLeft, Screen.height - clipBottom,
+                        clipRight - clipLeft, clipBottom - clipTop));
+                    GL.LoadPixelMatrix(clipLeft, clipRight, clipBottom, clipTop);
+                }
                 GL.Begin(GL.QUADS);
                 try
                 {
@@ -129,7 +157,8 @@ namespace EPrimeReadouts.UI
             finally
             {
                 GL.PopMatrix();
-                GL.Viewport(new Rect(0f, 0f, Screen.width, Screen.height));
+                if (!UsesGuiClip)
+                    GL.Viewport(new Rect(0f, 0f, Screen.width, Screen.height));
             }
         }
 
@@ -141,6 +170,7 @@ namespace EPrimeReadouts.UI
             builtDraw = null;
             builtRevision = default;
             builtScale = -1f;
+            builtAtlasRevision = -1;
             builtMaterial = null;
             generator.Invalidate();
         }
@@ -190,10 +220,13 @@ namespace EPrimeReadouts.UI
                 {
                     font = font,
                     color = CellRenderer.TextColorFor(cell),
-                    fontSize = fontSize,
+                    // Waylith's TextGenerator ignores scaleFactor. Supply
+                    // physical font size/extents explicitly on that engine;
+                    // Unity retains its existing generation contract.
+                    fontSize = UsesGuiClip ? scaledSize : fontSize,
                     lineSpacing = 1f,
                     richText = style.richText,
-                    scaleFactor = rasterScale,
+                    scaleFactor = UsesGuiClip ? 1f : rasterScale,
                     fontStyle = style.fontStyle,
                     textAnchor = anchor,
                     alignByGeometry = false,
@@ -203,7 +236,8 @@ namespace EPrimeReadouts.UI
                     updateBounds = false,
                     verticalOverflow = VerticalWrapMode.Overflow,
                     horizontalOverflow = HorizontalWrapMode.Overflow,
-                    generationExtents = rect.size,
+                    generationExtents = UsesGuiClip
+                        ? rect.size * rasterScale : rect.size,
                     pivot = new Vector2(0f, 1f),
                     generateOutOfBounds = true,
                 };
@@ -227,5 +261,22 @@ namespace EPrimeReadouts.UI
 
         private static float Snap(float value) =>
             (float)System.Math.Round(value, System.MidpointRounding.AwayFromZero);
+
+        private static Func<int>? CreateAtlasReader()
+        {
+            if (!UsesGuiClip) return null;
+            Type? backend = typeof(GL).Assembly.GetType("UnityStubs.Gui.TextMeshProBackend");
+            var current = backend?.GetProperty("Current");
+            var revision = current?.PropertyType.GetProperty("AtlasVersion");
+            if (current?.GetGetMethod() == null || revision?.PropertyType != typeof(int)
+                || revision.GetGetMethod() == null) return null;
+            var instance = Expression.Variable(current.PropertyType, "backend");
+            return Expression.Lambda<Func<int>>(Expression.Block(
+                new[] { instance },
+                Expression.Assign(instance, Expression.Property(null, current)),
+                Expression.Condition(
+                    Expression.Equal(instance, Expression.Constant(null, current.PropertyType)),
+                    Expression.Constant(-1), Expression.Property(instance, revision)))).Compile();
+        }
     }
 }

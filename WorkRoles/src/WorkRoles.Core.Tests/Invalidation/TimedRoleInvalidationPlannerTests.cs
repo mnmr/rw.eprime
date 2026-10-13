@@ -44,20 +44,20 @@ public class TimedRoleInvalidationPlannerTests
         );
         List<string> calls = [];
 
-        plan.ApplyRuntime(pawn => calls.Add("pawn:" + pawn.Name), () => calls.Add("complete"));
+        plan.ApplyRuntime(pawn => calls.Add("runtime:" + pawn.Name), pawn => calls.Add("orders:" + pawn.Name));
 
-        await Assert.That(string.Join(",", calls)).IsEqualTo("pawn:pawn-10,pawn:pawn-20,complete");
+        await Assert.That(string.Join(",", calls)).IsEqualTo("runtime:pawn-10,runtime:pawn-20,orders:pawn-10,orders:pawn-20");
     }
 
     [Test]
-    public async Task RuntimeApplyStillCompletesForATimedRoleWithoutHolders()
+    public async Task RuntimeApplyPublishesNothingForATimedRoleWithoutHolders()
     {
         var plan = TimedRoleInvalidationPlanner.Plan<PawnToken>([new TimedRoleInvalidationSource(9, hasTimeRule: true)], []);
-        int completions = 0;
+        var revisions = new ModelRevisions();
 
-        plan.ApplyRuntime(_ => throw new Exception("no holders expected"), () => completions++);
+        plan.ApplyRuntime(_ => revisions.Changed(ModelDomain.RuntimeRules), _ => throw new Exception("no holders expected"));
 
-        await Assert.That(completions).IsEqualTo(1);
+        await Assert.That(revisions.Current).IsEqualTo(0);
     }
 
     [Test]
@@ -132,7 +132,7 @@ public class TimedRoleInvalidationPlannerTests
     }
 
     [Test]
-    public async Task DisabledBlockerAutoAndPinnedSourcesRemainTimeRuled()
+    public async Task DisabledTimedAssignmentsRefreshTheirRulePresentationOnly()
     {
         var pawn = new PawnToken("pawn");
         var plan = TimedRoleInvalidationPlanner.Plan(
@@ -141,7 +141,8 @@ public class TimedRoleInvalidationPlannerTests
         );
 
         await Assert.That(plan.RoleIds.Single()).IsEqualTo(5);
-        await Assert.That(ReferenceEquals(plan.Pawns.Single(), pawn)).IsTrue();
+        await Assert.That(plan.Pawns).IsEmpty();
+        await Assert.That(ReferenceEquals(plan.PresentationPawns.Single(), pawn)).IsTrue();
     }
 
     [Test]

@@ -155,7 +155,7 @@ namespace WorkRoles.UI
             Map? map = anchor?.MapHeld ?? Find.CurrentMap;
             int mapId = map?.uniqueID ?? -1;
             int tuningRevision = store?.RecommendationTuningRevision ?? -1;
-            int revision = Math.Max(Math.Max(UiVersion.RoleWork, UiVersion.RoleRecommendation),
+            int revision = Math.Max(Math.Max(Math.Max(UiVersion.Catalog, UiVersion.RoleWork), UiVersion.RoleRecommendation),
                 Math.Max(Math.Max(UiVersion.RoleActivation, UiVersion.RoleRules),
                     Math.Max(Math.Max(UiVersion.AssignmentPresentation, UiVersion.RecommendationOrder), UiVersion.Roster)));
             var dependencyStamp = new ScopeCacheStamp(revision, stamp.PawnListRevision);

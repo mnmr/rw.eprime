@@ -13,16 +13,26 @@ namespace WorkRoles
         private readonly FixedTickBoundaryGate hourBoundary =
             new FixedTickBoundaryGate(2500);
 
-        public WorkRolesMapComponent(Map map) : base(map) { }
+        private readonly System.Action hourUpdates;
+        private readonly System.Action reconcile;
+
+        public WorkRolesMapComponent(Map map) : base(map)
+        {
+            hourUpdates = UpdateHour;
+            reconcile = ReconcilePending;
+        }
 
         public override void MapComponentTick()
         {
-            CompiledJobOrders.DrainPendingReconciles(map);
-            if (hourBoundary.Observe(GenTicks.TicksAbs))
-            {
-                CompiledJobOrders.InvalidateTimeRuledForMap(map);
-                AutoOptimizer.RunForMap(map);
-            }
+            RuntimeWorkBoundary.Process(hourBoundary.Observe(GenTicks.TicksAbs), hourUpdates, reconcile);
         }
+
+        private void UpdateHour()
+        {
+            CompiledJobOrders.InvalidateTimeRuledForMap(map);
+            AutoOptimizer.RunForMap(map);
+        }
+
+        private void ReconcilePending() => CompiledJobOrders.DrainPendingReconciles(map);
     }
 }

@@ -12,8 +12,9 @@ namespace EPrimeReadouts.UI
     /// back asynchronously (AsyncGPUReadback), avoiding a synchronous GPU wait;
     /// platforms without async readback fall back to a synchronous
     /// read into the same buffers. The backend is unavailable unless the exact
-    /// runtime shader and publish path pass a literal pixel round-trip probe,
-    /// including readback row orientation.
+    /// runtime compositor and publish path pass a literal pixel round-trip
+    /// probe, including readback row orientation. Waylith's separate screen
+    /// blit is checked by automated direct-reference captures.
     internal sealed class PanelBufferBackend
     {
         private static readonly Rect FullUv = new Rect(0f, 0f, 1f, 1f);
@@ -32,8 +33,16 @@ namespace EPrimeReadouts.UI
 
         internal bool IsAvailable => available && spriteMaterial != null;
 
+        // Immutable engine capability, resolved once at startup. Waylith's
+        // GUI target compositor is available only inside an active repaint;
+        // its Unity command-buffer API is not implemented.
+        internal static bool UsesGuiRenderTargets => PanelDirectGlyphs.UsesGuiClip;
+
         internal static bool AsyncReadbackSupported =>
-            SystemInfo.supportsAsyncGPUReadback;
+            // Waylith advertises async support, but Request waits for the GPU
+            // and GetData allocates an owned array rather than a borrowed view.
+            // Use our existing gated sync publication, with no periodic checks.
+            !UsesGuiRenderTargets && SystemInfo.supportsAsyncGPUReadback;
 
         internal bool TryInitialize()
         {
@@ -41,18 +50,24 @@ namespace EPrimeReadouts.UI
             initializationAttempted = true;
             try
             {
-                Shader shader = Shader.Find("Sprites/Default");
-                if (shader == null)
-                    return Disable("Sprites/Default shader was not found");
-                if (!shader.isSupported)
-                    return Disable("Sprites/Default shader is unsupported");
+                Shader? shader = null;
+                if (!UsesGuiRenderTargets)
+                {
+                    shader = Shader.Find("Sprites/Default");
+                    if (shader == null)
+                        return Disable("Sprites/Default shader was not found");
+                    if (!shader.isSupported)
+                        return Disable("Sprites/Default shader is unsupported");
+                }
 
-                spriteMaterial = new Material(shader)
+                // Waylith GL uses the selected material only as a texture
+                // holder; null selects its native default without Shader.Find.
+                spriteMaterial = new Material(shader!)
                 {
                     name = "EPrimeReadouts.BufferedSprite",
                     color = Color.white,
-                    hideFlags = HideFlags.HideAndDontSave,
                 };
+                if (!UsesGuiRenderTargets) spriteMaterial.hideFlags = HideFlags.HideAndDontSave;
                 if (!ValidateRoundTrip(out string reason))
                     return Disable(
                         "pixel round-trip probe failed: " + reason);
@@ -78,8 +93,8 @@ namespace EPrimeReadouts.UI
                 wrapMode = TextureWrapMode.Clamp,
                 useMipMap = false,
                 autoGenerateMips = false,
-                hideFlags = HideFlags.HideAndDontSave,
             };
+            if (!UsesGuiRenderTargets) texture.hideFlags = HideFlags.HideAndDontSave;
             texture.Create();
             return texture;
         }
@@ -95,8 +110,8 @@ namespace EPrimeReadouts.UI
                 name = "EPrimeReadouts.PanelPublished",
                 filterMode = filterMode,
                 wrapMode = TextureWrapMode.Clamp,
-                hideFlags = HideFlags.HideAndDontSave,
             };
+            if (!UsesGuiRenderTargets) texture.hideFlags = HideFlags.HideAndDontSave;
             return texture;
         }
 
@@ -118,15 +133,7 @@ namespace EPrimeReadouts.UI
             Texture2D destination,
             bool coverageFromRed,
             bool requiresCoverage = false)
-            => PublishFromReadback(request, destination, coverageFromRed,
-                requiresCoverage, out _);
-
-        internal bool PublishFromReadback(
-            AsyncGPUReadbackRequest request, Texture2D destination,
-            bool coverageFromRed, bool requiresCoverage,
-            out PanelTextureSample sample)
         {
-            sample = default;
             int width = destination.width;
             int height = destination.height;
             NativeArray<Color32> source = request.GetData<Color32>();
@@ -134,8 +141,6 @@ namespace EPrimeReadouts.UI
                 destination.GetRawTextureData<Color32>();
             if (source.Length != target.Length) return false;
             int observedCoverage = 0;
-            int sampleIndex = 0;
-            PixelRgba samplePixel = default;
             bool flip = readbackFlipsRows;
             for (int row = 0; row < height; row++)
             {
@@ -150,15 +155,9 @@ namespace EPrimeReadouts.UI
                         pixel.r, pixel.g, pixel.b, coverage);
                     target[targetRow + column] = new Color32(
                         straight.R, straight.G, straight.B, straight.A);
-                    if (straight.A > samplePixel.A)
-                    {
-                        samplePixel = straight;
-                        sampleIndex = targetRow + column;
-                    }
                 }
             }
             if (requiresCoverage && observedCoverage == 0) return false;
-            sample = new PanelTextureSample(sampleIndex, width, height, samplePixel);
             destination.Apply(updateMipmaps: false,
                 makeNoLongerReadable: false);
             return true;
@@ -173,15 +172,7 @@ namespace EPrimeReadouts.UI
             Texture2D destination,
             bool coverageFromRed,
             bool requiresCoverage = false)
-            => PublishSync(working, destination, coverageFromRed,
-                requiresCoverage, out _);
-
-        internal static bool PublishSync(
-            RenderTexture working, Texture2D destination,
-            bool coverageFromRed, bool requiresCoverage,
-            out PanelTextureSample sample)
         {
-            sample = default;
             RenderTexture? previous = RenderTexture.active;
             RenderTexture.active = working;
             try
@@ -197,8 +188,6 @@ namespace EPrimeReadouts.UI
             NativeArray<Color32> pixels =
                 destination.GetRawTextureData<Color32>();
             int observedCoverage = 0;
-            int sampleIndex = 0;
-            PixelRgba samplePixel = default;
             for (int i = 0; i < pixels.Length; i++)
             {
                 Color32 pixel = pixels[i];
@@ -208,15 +197,8 @@ namespace EPrimeReadouts.UI
                     pixel.r, pixel.g, pixel.b, coverage);
                 pixels[i] = new Color32(
                     straight.R, straight.G, straight.B, straight.A);
-                if (straight.A > samplePixel.A)
-                {
-                    samplePixel = straight;
-                    sampleIndex = i;
-                }
             }
             if (requiresCoverage && observedCoverage == 0) return false;
-            sample = new PanelTextureSample(sampleIndex,
-                destination.width, destination.height, samplePixel);
             destination.Apply(updateMipmaps: false,
                 makeNoLongerReadable: false);
             return true;
@@ -236,7 +218,8 @@ namespace EPrimeReadouts.UI
         internal bool Present(Texture2D texture, Rect rect, Rect uv)
         {
             if (!IsAvailable || texture == null) return false;
-            Graphics.DrawTexture(rect, texture, uv, 0, 0, 0, 0, NeutralTint);
+            Graphics.DrawTexture(rect, texture, uv, 0, 0, 0, 0,
+                UsesGuiRenderTargets ? Color.white : NeutralTint);
             return true;
         }
 
@@ -250,6 +233,20 @@ namespace EPrimeReadouts.UI
             if (spriteMaterial == null)
                 throw new System.InvalidOperationException(
                     "Buffered sprite material is unavailable.");
+            if (UsesGuiRenderTargets)
+            {
+                if (texture.width > 2 || texture.height > 2)
+                {
+                    // Match the native GUI image contract inside the already
+                    // pixel-snapped content group. Solid 1x1 fills retain
+                    // their fractional edges, as the native compositor does.
+                    rect = new Rect(Mathf.Floor(rect.x + .51f), Mathf.Floor(rect.y + .51f),
+                        Mathf.Max(1f, Mathf.Floor(rect.width + .5f)),
+                        Mathf.Max(1f, Mathf.Floor(rect.height + .5f)));
+                }
+                DrawGuiQuad(rect, texture, uv, color);
+                return;
+            }
             Graphics.DrawTexture(
                 rect, texture, uv,
                 0, 0, 0, 0, color, spriteMaterial);
@@ -265,6 +262,23 @@ namespace EPrimeReadouts.UI
                 rect, texture, FullUv,
                 border.left, border.right, border.top, border.bottom,
                 color, spriteMaterial);
+        }
+
+        private void DrawGuiQuad(Rect rect, Texture texture, Rect uv, Color color)
+        {
+            spriteMaterial!.mainTexture = texture;
+            if (!spriteMaterial.SetPass(0))
+                throw new System.InvalidOperationException("Buffered texture pass is unavailable.");
+            GL.Begin(GL.QUADS);
+            try
+            {
+                GL.Color(color);
+                GL.TexCoord2(uv.xMin, uv.yMax); GL.Vertex3(rect.xMin, rect.yMin, 0f);
+                GL.TexCoord2(uv.xMax, uv.yMax); GL.Vertex3(rect.xMax, rect.yMin, 0f);
+                GL.TexCoord2(uv.xMax, uv.yMin); GL.Vertex3(rect.xMax, rect.yMax, 0f);
+                GL.TexCoord2(uv.xMin, uv.yMin); GL.Vertex3(rect.xMin, rect.yMax, 0f);
+            }
+            finally { GL.End(); }
         }
 
         internal void DrawQuadsToActive(
@@ -293,6 +307,26 @@ namespace EPrimeReadouts.UI
             if (target == null)
                 throw new System.InvalidOperationException(
                     "Buffered glyph target is unavailable.");
+            if (UsesGuiRenderTargets)
+            {
+                // Establish the target coordinates here as the title caller
+                // has no surrounding GL projection. Do not mutate the game's
+                // font material, whose atlas is owned by the engine.
+                GL.PushMatrix();
+                try
+                {
+                    GL.LoadIdentity();
+                    GL.Clear(true, true, Color.clear);
+                    if (vertices.Count != 0)
+                    {
+                        if (!fontMaterial.SetPass(0))
+                            throw new System.InvalidOperationException("Buffered font pass is unavailable.");
+                        SubmitQuads(vertices, uvs, colors);
+                    }
+                }
+                finally { GL.PopMatrix(); }
+                return;
+            }
             if (glyphMesh == null)
             {
                 glyphMesh = new Mesh
@@ -355,6 +389,12 @@ namespace EPrimeReadouts.UI
             if (!material.SetPass(0))
                 throw new System.InvalidOperationException(
                     "Buffered quad material pass is unavailable.");
+            SubmitQuads(vertices, uvs, colors);
+        }
+
+        private static void SubmitQuads(
+            IList<Vector3> vertices, IList<Vector2> uvs, IList<Color32> colors)
+        {
             GL.Begin(GL.QUADS);
             try
             {
@@ -401,14 +441,16 @@ namespace EPrimeReadouts.UI
             spriteMaterial = null;
         }
 
-        /// Validates the exact production pipeline on a 1x2 surface with two
+        /// Validates composition/publication from a 1x2 source with two
         /// distinct pixels so row order is observable. Stage one draws two
         /// straight-alpha pixels through the sprite material and expects
         /// exact premultiplication (accepting either platform row
         /// convention). Stage two publishes synchronously as the reference,
         /// then calibrates the asynchronous readback's row order against it.
-        /// Stage three presents the published texture over an opaque
-        /// destination and expects exact source-over on both rows.
+        /// Stage three composites the published texture over an opaque
+        /// destination and expects exact source-over on both rows. Unity uses
+        /// its screen presentation call here; Waylith's active-target overload
+        /// is a raw copy, so its screen call needs separate capture validation.
         private bool ValidateRoundTrip(out string reason)
         {
             var pixelA = new PixelRgba(200, 100, 50, 128);
@@ -417,8 +459,8 @@ namespace EPrimeReadouts.UI
                 1, 2, TextureFormat.RGBA32, false, true)
             {
                 filterMode = FilterMode.Point,
-                hideFlags = HideFlags.HideAndDontSave,
             };
+            if (!UsesGuiRenderTargets) source.hideFlags = HideFlags.HideAndDontSave;
             RenderTexture? working = null;
             Texture2D? syncPublished = null;
             Texture2D? asyncPublished = null;
@@ -431,7 +473,11 @@ namespace EPrimeReadouts.UI
                     pixelB.R, pixelB.G, pixelB.B, pixelB.A));
                 source.Apply(false, false);
 
-                working = CreateWorkingSurface(1, 2);
+                int probeWidth = UsesGuiRenderTargets
+                    ? GuiTargetSizing.MinimumExactExtent(1, Screen.width) : 1;
+                int probeHeight = UsesGuiRenderTargets
+                    ? GuiTargetSizing.MinimumExactExtent(2, Screen.height) : 2;
+                working = CreateWorkingSurface(probeWidth, probeHeight);
                 DrawProbe(working, source, Color.clear);
                 PixelRgba observedTop = ReadPixel(working, top: true);
                 PixelRgba observedBottom = ReadPixel(working, top: false);
@@ -459,7 +505,7 @@ namespace EPrimeReadouts.UI
                     observedBottom.B, observedBottom.A);
 
                 syncPublished = CreatePublishedTexture(
-                    1, 2, FilterMode.Point);
+                    probeWidth, probeHeight, FilterMode.Point);
                 PublishSync(working, syncPublished, coverageFromRed: false);
                 if (!Near(ReadPublished(syncPublished, top: true),
                         straightTop, 2)
@@ -482,7 +528,7 @@ namespace EPrimeReadouts.UI
                         return false;
                     }
                     asyncPublished = CreatePublishedTexture(
-                        1, 2, FilterMode.Point);
+                        probeWidth, probeHeight, FilterMode.Point);
                     readbackFlipsRows = false;
                     PublishFromReadback(
                         request, asyncPublished, coverageFromRed: false);
@@ -503,7 +549,7 @@ namespace EPrimeReadouts.UI
                 }
 
                 var destination = new PixelRgba(20, 40, 80, 255);
-                final = CreateWorkingSurface(1, 2);
+                final = CreateWorkingSurface(probeWidth, probeHeight);
                 DrawProbe(final, presented, new Color32(
                     destination.R, destination.G,
                     destination.B, destination.A), present: true);
@@ -533,8 +579,8 @@ namespace EPrimeReadouts.UI
             Near(ReadPublished(published, top: true), top, 2)
             && Near(ReadPublished(published, top: false), bottom, 2);
 
-        /// Stage one composes through the sprite material; stage three draws
-        /// through the actual screen presentation call.
+        /// Stage one composes through the backend; stage three uses Unity's
+        /// presentation call or Waylith's GUI target compositor (see above).
         private void DrawProbe(
             RenderTexture target, Texture2D texture, Color clear,
             bool present = false)
@@ -544,10 +590,18 @@ namespace EPrimeReadouts.UI
             GL.PushMatrix();
             try
             {
-                GL.LoadPixelMatrix(0f, 1f, 2f, 0f);
+                GL.LoadPixelMatrix(0f, target.width, target.height, 0f);
                 GL.Clear(clearDepth: true, clearColor: true, clear);
-                var rect = new Rect(0f, 0f, 1f, 2f);
-                if (present) Graphics.DrawTexture(rect, texture, FullUv, 0, 0, 0, 0, NeutralTint);
+                var rect = new Rect(0f, 0f, target.width, target.height);
+                // Waylith's first offscreen bake initializes its attachment
+                // to transparent after GL.Clear. An explicit background quad
+                // tests source-over on both new and reused attachments.
+                if (UsesGuiRenderTargets)
+                {
+                    if (clear.a != 0f) DrawToActive(rect, BaseContent.WhiteTex, clear);
+                    DrawToActive(rect, texture, Color.white);
+                }
+                else if (present) Graphics.DrawTexture(rect, texture, FullUv, 0, 0, 0, 0, NeutralTint);
                 else DrawToActive(rect, texture, Color.white);
             }
             finally
@@ -559,21 +613,23 @@ namespace EPrimeReadouts.UI
 
         private PixelRgba ReadPixel(RenderTexture texture, bool top)
         {
-            if (probeReader == null)
+            if (probeReader == null || probeReader.width != texture.width
+                || probeReader.height != texture.height)
             {
+                ReleaseTexture(probeReader);
                 probeReader = new Texture2D(
-                    1, 2, TextureFormat.RGBA32, false, true)
+                    texture.width, texture.height, TextureFormat.RGBA32, false, true)
                 {
                     name = "EPrimeReadouts.PanelProbeReadback",
-                    hideFlags = HideFlags.HideAndDontSave,
                 };
+                if (!UsesGuiRenderTargets) probeReader.hideFlags = HideFlags.HideAndDontSave;
             }
             RenderTexture? previous = RenderTexture.active;
             RenderTexture.active = texture;
             try
             {
                 probeReader.ReadPixels(
-                    new Rect(0f, 0f, 1f, 2f), 0, 0, false);
+                    new Rect(0f, 0f, texture.width, texture.height), 0, 0, false);
                 probeReader.Apply(false, false);
                 return ReadPublished(probeReader, top);
             }
@@ -585,7 +641,7 @@ namespace EPrimeReadouts.UI
 
         private static PixelRgba ReadPublished(Texture2D texture, bool top)
         {
-            Color32 pixel = texture.GetPixel(0, top ? 1 : 0);
+            Color32 pixel = texture.GetPixel(0, top ? texture.height - 1 : 0);
             return new PixelRgba(pixel.r, pixel.g, pixel.b, pixel.a);
         }
 

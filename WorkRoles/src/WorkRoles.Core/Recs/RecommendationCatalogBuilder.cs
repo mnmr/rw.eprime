@@ -52,23 +52,72 @@ namespace WorkRoles.Core.Recs
         public RoleWorkSpec? FullWorkSpec;
     }
 
+    public struct RecommendationRolePolicy
+    {
+        public bool AutoAssign, HasRules, Blocker, ChampionPenalty, PartialCapability, Available, Enabled;
+        public RoleCategory Category;
+        public RoleTime Time;
+        public int MinAge, MaxAge, ColonyMin, CoveragePercent;
+
+        public static RecommendationRolePolicy From(RoleView role) => new RecommendationRolePolicy
+        {
+            AutoAssign = role.AutoAssign, HasRules = role.HasRules, Blocker = role.Blocker,
+            ChampionPenalty = role.ChampionPenalty, PartialCapability = role.PartialCapability,
+            Available = role.Available, Enabled = role.Enabled, Category = role.Category,
+            Time = role.Time, MinAge = role.MinAge, MaxAge = role.MaxAge,
+            ColonyMin = role.ColonyMin, CoveragePercent = role.CoveragePercent,
+        };
+
+        internal bool Matches(RoleView role) => AutoAssign == role.AutoAssign && HasRules == role.HasRules
+            && Blocker == role.Blocker && ChampionPenalty == role.ChampionPenalty
+            && PartialCapability == role.PartialCapability && Available == role.Available
+            && Enabled == role.Enabled && Category == role.Category && Time == role.Time
+            && MinAge == role.MinAge && MaxAge == role.MaxAge && ColonyMin == role.ColonyMin
+            && CoveragePercent == role.CoveragePercent;
+
+        internal RoleView Apply(RoleView role) => new RoleView
+        {
+            Id = role.Id, TemplateDefName = role.TemplateDefName,
+            MemberRoleIds = role.MemberRoleIds, Coverage = role.Coverage, OrderedCoverage = role.OrderedCoverage,
+            PreserveRecommendationOrder = role.PreserveRecommendationOrder, RequiresMechanitor = role.RequiresMechanitor,
+            WorkSpec = role.WorkSpec, AutoAssign = AutoAssign, HasRules = HasRules, Blocker = Blocker,
+            ChampionPenalty = ChampionPenalty, PartialCapability = PartialCapability, Available = Available,
+            Enabled = Enabled, Category = Category, Time = Time, MinAge = MinAge, MaxAge = MaxAge,
+            ColonyMin = ColonyMin, CoveragePercent = CoveragePercent,
+        };
+    }
+
     /// Complete role-catalog projection consumed by RecommendationPlan. The
     /// role views and their work specs are owned by this projection.
     public sealed class RecommendationCatalogProjection
     {
         private readonly RecommendationSpecialRoleKind[] specialRoles;
         private readonly int[] entryCounts;
+        // Owner: this detached catalog; key: role id. Immutable training work
+        // inputs retain full-work identity, profile identity and exact excluded
+        // giver sets. Path edits compare these before resolving jobs; equal
+        // exclusions reuse ordinary/composite work identities. Scalar/order
+        // overlays share this metadata. Dropping the catalog releases it.
+        private readonly IReadOnlyList<RoleView>? trainingBaseRoles;
+        private readonly JobProfileIndex? trainingProfiles;
+        private readonly IReadOnlyDictionary<int, HashSet<string>>? trainingExclusions;
 
         internal RecommendationCatalogProjection(
             IReadOnlyList<RoleView> roles,
             IReadOnlyList<PathView> paths,
             RecommendationSpecialRoleKind[] specialRoles,
-            int[] entryCounts)
+            int[] entryCounts,
+            IReadOnlyList<RoleView>? trainingBaseRoles = null,
+            JobProfileIndex? trainingProfiles = null,
+            IReadOnlyDictionary<int, HashSet<string>>? trainingExclusions = null)
         {
             Roles = roles;
             Paths = paths;
             this.specialRoles = specialRoles;
             this.entryCounts = entryCounts;
+            this.trainingBaseRoles = trainingBaseRoles;
+            this.trainingProfiles = trainingProfiles;
+            this.trainingExclusions = trainingExclusions;
             HunterRoleId = RecommendationCatalogBuilder.ResolveHunterRoleId(roles, specialRoles, entryCounts);
             FireBlockerRoleId = RecommendationCatalogBuilder.ResolveFireBlockerRoleId(roles, specialRoles);
         }
@@ -77,6 +126,85 @@ namespace WorkRoles.Core.Recs
         public IReadOnlyList<PathView> Paths { get; }
         public int HunterRoleId { get; }
         public int FireBlockerRoleId { get; }
+
+        internal RecommendationCatalogProjection WithTrainingViews(IReadOnlyList<RoleView> roles, IReadOnlyList<PathView> paths,
+            JobProfileIndex profiles, IReadOnlyDictionary<int, HashSet<string>> exclusions)
+            => new RecommendationCatalogProjection(roles, paths, specialRoles, entryCounts, Roles, profiles, exclusions);
+
+        internal RoleView? PreviousTrainingRole(RoleView fullRole, JobProfileIndex profiles)
+        {
+            if (!ReferenceEquals(profiles, trainingProfiles) || trainingBaseRoles == null) return null;
+            for (int i = 0; i < trainingBaseRoles.Count; i++)
+            {
+                RoleView prior = trainingBaseRoles[i];
+                if (prior.Id != fullRole.Id) continue;
+                if (!ReferenceEquals(prior.WorkSpec, fullRole.WorkSpec)
+                    || !ReferenceEquals(prior.MemberRoleIds, fullRole.MemberRoleIds)
+                    || !ReferenceEquals(prior.Coverage, fullRole.Coverage)) return null;
+                for (int role = 0; role < Roles.Count; role++)
+                    if (Roles[role].Id == fullRole.Id) return Roles[role];
+                return null;
+            }
+            return null;
+        }
+
+        internal bool SameExclusion(int roleId, HashSet<string> excluded)
+            => trainingExclusions != null && trainingExclusions.TryGetValue(roleId, out HashSet<string> prior)
+                && prior.SetEquals(excluded);
+
+        /// Catalog order breaks ties in derived recommendation defaults. Reuse
+        /// each detached role/work/path object when only that order changes.
+        public RecommendationCatalogProjection WithRoleOrder(IReadOnlyList<int> roleIds)
+        {
+            if (roleIds.Count != Roles.Count) throw new ArgumentException("Role count must match the catalog.", nameof(roleIds));
+            bool same = true;
+            for (int i = 0; i < roleIds.Count; i++) if (roleIds[i] != Roles[i].Id) { same = false; break; }
+            if (same) return this;
+            var byId = new Dictionary<int, int>(Roles.Count);
+            for (int i = 0; i < Roles.Count; i++) byId.Add(Roles[i].Id, i);
+            var roles = new RoleView[Roles.Count];
+            var special = new RecommendationSpecialRoleKind[Roles.Count];
+            var counts = new int[Roles.Count];
+            for (int i = 0; i < roleIds.Count; i++)
+            {
+                if (!byId.TryGetValue(roleIds[i], out int previous))
+                    throw new ArgumentException("Role identities must match the catalog.", nameof(roleIds));
+                byId.Remove(roleIds[i]);
+                roles[i] = Roles[previous];
+                special[i] = specialRoles[previous];
+                counts[i] = entryCounts[previous];
+            }
+            var paths = new List<PathView>(Paths.Count);
+            for (int i = 0; i < roleIds.Count; i++)
+                for (int path = 0; path < Paths.Count; path++)
+                    if (Paths[path].Id == roleIds[i]) paths.Add(Paths[path]);
+            for (int path = 0; path < Paths.Count; path++)
+                if (!paths.Contains(Paths[path])) paths.Add(Paths[path]);
+            return new RecommendationCatalogProjection(roles, paths, special, counts,
+                trainingBaseRoles, trainingProfiles, trainingExclusions);
+        }
+
+        /// Policy changes reuse every work/path buffer. Equal policies preserve
+        /// the catalog itself, so unchanged HasRules/research outcomes stop here.
+        public RecommendationCatalogProjection WithPolicy(IReadOnlyList<RecommendationRolePolicy> policies)
+        {
+            if (policies.Count != Roles.Count) throw new ArgumentException("Policy count must match the catalog.", nameof(policies));
+            List<RoleView>? changed = null;
+            for (int index = 0; index < Roles.Count; index++)
+            {
+                RoleView role = Roles[index];
+                if (policies[index].Matches(role)) { changed?.Add(role); continue; }
+                if (changed == null)
+                {
+                    changed = new List<RoleView>(Roles.Count);
+                    for (int prior = 0; prior < index; prior++) changed.Add(Roles[prior]);
+                }
+                changed.Add(policies[index].Apply(role));
+            }
+            return changed == null ? this : new RecommendationCatalogProjection(
+                new ReadOnlyCollection<RoleView>(changed), Paths, specialRoles, entryCounts,
+                trainingBaseRoles, trainingProfiles, trainingExclusions);
+        }
 
         /// Reuse the already-resolved work/training artifact when only global
         /// switches changed. Shared role/path collections are immutable by
@@ -113,7 +241,8 @@ namespace WorkRoles.Core.Recs
                 });
             }
             return changed == null ? this : new RecommendationCatalogProjection(
-                new ReadOnlyCollection<RoleView>(changed), Paths, specialRoles, entryCounts);
+                new ReadOnlyCollection<RoleView>(changed), Paths, specialRoles, entryCounts,
+                trainingBaseRoles, trainingProfiles, trainingExclusions);
         }
 
         public ColonyView CreateColony(
@@ -162,10 +291,6 @@ namespace WorkRoles.Core.Recs
             if (jobProfiles == null)
                 throw new ArgumentNullException(nameof(jobProfiles));
 
-            var ownedPaths = new List<PathView>(paths?.Count ?? 0);
-            if (paths != null)
-                for (int index = 0; index < paths.Count; index++)
-                    ownedPaths.Add(CopyPath(paths[index]));
             var views = new List<RoleView>(sources.Count);
             for (int index = 0; index < sources.Count; index++)
             {
@@ -174,23 +299,9 @@ namespace WorkRoles.Core.Recs
                         "Role sources cannot contain null.", nameof(sources));
                 views.Add(ViewOf(
                     source,
-                    source.FullWorkSpec
-                        ?? SpecOf(source, jobs, naturalPriorities, jobProfiles, null),
+                    source.FullWorkSpec ?? (source.MemberRoleIds != null ? RoleWorkSpec.Empty
+                        : SpecOf(source, jobs, naturalPriorities, jobProfiles, null)),
                     jobs));
-            }
-            ApplyCompositeSpecs(sources, views);
-
-            IReadOnlyDictionary<int, HashSet<string>> excludedByRole =
-                TrainingCoverageExclusion.ExcludedCoverageByRole(
-                    views, ownedPaths);
-            for (int index = 0; index < sources.Count; index++)
-            {
-                RecommendationRoleSource source = sources[index];
-                if (!excludedByRole.TryGetValue(
-                        source.Id, out HashSet<string> excluded))
-                    continue;
-                views[index].WorkSpec = SpecOf(
-                    source, jobs, naturalPriorities, jobProfiles, excluded);
             }
             ApplyCompositeSpecs(sources, views);
 
@@ -201,9 +312,55 @@ namespace WorkRoles.Core.Recs
                 specialRoles[index] = sources[index].SpecialRole;
                 entryCounts[index] = sources[index].Entries.Count;
             }
-            return new RecommendationCatalogProjection(
+            var full = new RecommendationCatalogProjection(
                 new ReadOnlyCollection<RoleView>(views),
-                new ReadOnlyCollection<PathView>(ownedPaths), specialRoles, entryCounts);
+                Array.Empty<PathView>(), specialRoles, entryCounts);
+            return WithTraining(full, sources, paths ?? Array.Empty<PathView>(), jobs, naturalPriorities, jobProfiles);
+        }
+
+        /// Derive only exclusion-dependent work. The full work producer and
+        /// ordering consumers continue to own/share the untouched full catalog.
+        public static RecommendationCatalogProjection WithTraining(RecommendationCatalogProjection full,
+            IReadOnlyList<RecommendationRoleSource> sources, IReadOnlyList<PathView> paths,
+            IJobCatalog jobs, IReadOnlyDictionary<string, int> naturalPriorities, JobProfileIndex profiles,
+            RecommendationCatalogProjection? previous = null)
+        {
+            if (paths.Count == 0) return full;
+            var ownedPaths = new List<PathView>(paths.Count);
+            for (int index = 0; index < paths.Count; index++) ownedPaths.Add(CopyPath(paths[index]));
+            var excluded = TrainingCoverageExclusion.ExcludedCoverageByRole(full.Roles, ownedPaths);
+            var views = new List<RoleView>(full.Roles);
+            bool workChanged = false;
+            for (int index = 0; index < sources.Count; index++)
+            {
+                RoleView? prior = previous?.PreviousTrainingRole(full.Roles[index], profiles);
+                // Composite work is always the union of the adjusted member
+                // work. Building a standalone exclusion spec is discarded by
+                // the merge and must not change composite semantics.
+                if (sources[index].MemberRoleIds != null)
+                {
+                    if (prior != null) views[index] = WithWork(full.Roles[index], prior.WorkSpec, prior);
+                    continue;
+                }
+                if (!excluded.TryGetValue(sources[index].Id, out HashSet<string> givers)) continue;
+                RoleWorkSpec spec = prior != null && previous!.SameExclusion(sources[index].Id, givers)
+                    ? prior.WorkSpec : SpecOf(sources[index], jobs, naturalPriorities, profiles, givers);
+                if (RoleWorkSpec.StructurallyEqual(spec, views[index].WorkSpec)) continue;
+                views[index] = WithWork(full.Roles[index], spec, prior);
+                workChanged = true;
+            }
+            if (workChanged || previous != null) ApplyCompositeSpecs(sources, views, previous?.Roles ?? full.Roles);
+            return full.WithTrainingViews(new ReadOnlyCollection<RoleView>(views), new ReadOnlyCollection<PathView>(ownedPaths), profiles, excluded);
+        }
+
+        private static RoleView WithWork(RoleView full, RoleWorkSpec spec, RoleView? prior)
+        {
+            if (ReferenceEquals(spec, full.WorkSpec)) return full;
+            RecommendationRolePolicy policy = RecommendationRolePolicy.From(full);
+            if (prior != null && ReferenceEquals(spec, prior.WorkSpec) && policy.Matches(prior)) return prior;
+            RoleView changed = policy.Apply(full);
+            changed.WorkSpec = spec;
+            return changed;
         }
 
         private static RoleWorkSpec SpecOf(
@@ -282,16 +439,33 @@ namespace WorkRoles.Core.Recs
         /// gates union the composite's own and every member's gates.
         private static void ApplyCompositeSpecs(
             IReadOnlyList<RecommendationRoleSource> sources,
-            IList<RoleView> views)
+            IList<RoleView> views, IReadOnlyList<RoleView>? previous = null)
         {
             var indexById = new Dictionary<int, int>(sources.Count);
             for (int index = 0; index < sources.Count; index++)
                 indexById[sources[index].Id] = index;
+            Dictionary<int, RoleView>? previousById = null;
+            if (previous != null)
+            {
+                previousById = new Dictionary<int, RoleView>(previous.Count);
+                for (int index = 0; index < previous.Count; index++) previousById[previous[index].Id] = previous[index];
+            }
 
             for (int index = 0; index < sources.Count; index++)
             {
                 RecommendationRoleSource source = sources[index];
                 if (source.MemberRoleIds == null) continue;
+                if (previous == null && source.FullWorkSpec != null) continue;
+                if (previous != null)
+                {
+                    bool changed = !previousById!.TryGetValue(source.Id, out RoleView priorComposite)
+                        || !ReferenceEquals(priorComposite.WorkSpec, views[index].WorkSpec);
+                    for (int member = 0; member < source.MemberRoleIds.Count; member++)
+                        if (indexById.TryGetValue(source.MemberRoleIds[member], out int at)
+                            && (!previousById.TryGetValue(source.MemberRoleIds[member], out RoleView priorMember)
+                                || !ReferenceEquals(priorMember.WorkSpec, views[at].WorkSpec))) { changed = true; break; }
+                    if (!changed) continue;
+                }
                 var memberSpecs = new List<RoleWorkSpec>(
                     source.MemberRoleIds.Count);
                 var gates = new List<string>();
@@ -310,8 +484,11 @@ namespace WorkRoles.Core.Recs
                         gates,
                         seenGates);
                 }
-                views[index].WorkSpec = RoleWorkSpecBuilder.Merge(
-                    source.Id, memberSpecs, gates);
+                RoleWorkSpec merged = RoleWorkSpecBuilder.Merge(source.Id, memberSpecs, gates);
+                if (RoleWorkSpec.StructurallyEqual(merged, views[index].WorkSpec)) continue;
+                RoleView replacement = RecommendationRolePolicy.From(views[index]).Apply(views[index]);
+                replacement.WorkSpec = merged;
+                views[index] = replacement;
             }
         }
 

@@ -9,17 +9,22 @@ namespace WorkRoles.Core.Recs
     {
         /// One roleId-to-verdict map per colony pawn, aligned with Colony.Pawns.
         public static List<Dictionary<int, SignalBucket>> Verdicts(ColonyView colony)
+            => Verdicts(new EngineContext(colony));
+
+        internal static List<Dictionary<int, SignalBucket>> Verdicts(EngineContext context)
         {
-            var context = new EngineContext(colony);
-            var result = new List<Dictionary<int, SignalBucket>>(colony.Pawns.Count);
-            for (int pawnIndex = 0; pawnIndex < colony.Pawns.Count; pawnIndex++)
-            {
-                var verdicts = new Dictionary<int, SignalBucket>(colony.Roles.Count);
-                foreach (RoleView role in colony.Roles)
-                    verdicts[role.Id] = Verdict(context, pawnIndex, role);
-                result.Add(verdicts);
-            }
+            var result = new List<Dictionary<int, SignalBucket>>(context.Colony.Pawns.Count);
+            for (int pawnIndex = 0; pawnIndex < context.Colony.Pawns.Count; pawnIndex++)
+                result.Add(VerdictsForPawn(context, pawnIndex));
             return result;
+        }
+
+        internal static Dictionary<int, SignalBucket> VerdictsForPawn(EngineContext context, int pawnIndex)
+        {
+            var verdicts = new Dictionary<int, SignalBucket>(context.Colony.Roles.Count);
+            foreach (RoleView role in context.Colony.Roles)
+                verdicts[role.Id] = Verdict(context, pawnIndex, role);
+            return verdicts;
         }
 
         private static SignalBucket Verdict(

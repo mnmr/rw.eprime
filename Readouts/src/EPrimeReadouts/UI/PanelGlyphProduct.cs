@@ -123,11 +123,21 @@ namespace EPrimeReadouts.UI
         /// texture shares its dimensions with the base surface, so both use
         /// the same window.
         internal bool PresentWindow(
-            float screenX, float screenY, PanelPresentWindow window)
+            float screenX, float screenY, PanelPresentWindow window, float rasterScale)
         {
             Texture2D? front = channel.Front;
             if (front == null || !hasPublished || !window.Visible)
                 return false;
+            if (PanelBufferBackend.UsesGuiRenderTargets)
+            {
+                // Independent layers can have different transparent padding
+                // after builds at different physical display sizes. Select
+                // the same physical rows from each, never rescale either.
+                return backend.Present(front, new Rect(screenX, screenY,
+                        front.width / rasterScale, window.DestHeight),
+                    new Rect(0f, (front.height - window.TopPixels - window.HeightPixels)
+                        / (float)front.height, 1f, window.HeightPixels / (float)front.height));
+            }
             return backend.Present(front, new Rect(
                     screenX, screenY,
                     window.DestWidth, window.DestHeight),
@@ -243,12 +253,51 @@ namespace EPrimeReadouts.UI
                 text, ScaledFontSize(fontSize, rasterScale),
                 style.fontStyle);
             Rect padded = PaddedRect(rect, style.padding);
+            Rect clip = padded;
+            if (PanelBufferBackend.UsesGuiRenderTargets && styleOverride != null)
+            {
+                // Native single-line fields align vertically in the original
+                // rectangle; padding only restricts their clip and horizontal
+                // origin. They must never draw over the adjacent clear button.
+                padded.y = rect.y;
+                padded.height = rect.height;
+            }
             var settings = Settings(
                 style, font, fontSize, padded.size,
                 anchor, color, rasterScale);
             if (!generator.Populate(text, settings)) return null;
             AppendGenerated(padded, generator.verts, rasterScale);
+            if (PanelBufferBackend.UsesGuiRenderTargets && styleOverride != null)
+                ClipQuads(new Rect(clip.x * rasterScale, clip.y * rasterScale,
+                    clip.width * rasterScale, clip.height * rasterScale));
             return font;
+        }
+
+        private void ClipQuads(Rect clip)
+        {
+            // Builder-only clipping of axis-aligned font quads. Interpolate
+            // UVs with their positions so a partial final glyph stays sharp;
+            // fully outside quads collapse to zero area.
+            for (int i = 0; i + 3 < vertices.Count; i += 4)
+            {
+                Vector3 first = vertices[i];
+                Vector3 opposite = vertices[i + 2];
+                Vector2 firstUv = uvs[i];
+                Vector2 oppositeUv = uvs[i + 2];
+                float dx = opposite.x - first.x;
+                float dy = opposite.y - first.y;
+                if (dx == 0f || dy == 0f) continue;
+                for (int j = 0; j < 4; j++)
+                {
+                    Vector3 point = vertices[i + j];
+                    point.x = Mathf.Clamp(point.x, clip.xMin, clip.xMax);
+                    point.y = Mathf.Clamp(point.y, clip.yMin, clip.yMax);
+                    uvs[i + j] = new Vector2(
+                        firstUv.x + (point.x - first.x) / dx * (oppositeUv.x - firstUv.x),
+                        firstUv.y + (point.y - first.y) / dy * (oppositeUv.y - firstUv.y));
+                    vertices[i + j] = point;
+                }
+            }
         }
 
         internal void Release()
@@ -259,7 +308,7 @@ namespace EPrimeReadouts.UI
             generator.Invalidate();
         }
 
-        private static void RequestCharacters(
+        private void RequestCharacters(
             DrawModel draw, Font font, int fontSize, FontStyle fontStyle)
         {
             var characters = new StringBuilder("0123456789-.kM");
@@ -271,8 +320,17 @@ namespace EPrimeReadouts.UI
                 else if (cell.Kind == CellKind.Label)
                     characters.Append(draw.Labels[i]);
             }
-            font.RequestCharactersInTexture(
-                characters.ToString(), fontSize, fontStyle);
+            string requested = characters.ToString();
+            font.RequestCharactersInTexture(requested, fontSize, fontStyle);
+            if (PanelBufferBackend.UsesGuiRenderTargets)
+            {
+                // RequestCharacters is a no-op on Waylith. Populate the full
+                // alphabet before retaining any UVs, since adding a later run
+                // can otherwise grow the atlas beneath earlier geometry.
+                generator.Populate(requested, Settings(Text.CurFontStyle,
+                    font, fontSize, new Vector2(32768f, fontSize * 2f),
+                    TextAnchor.UpperLeft, Color.white, 1f));
+            }
         }
 
         private bool BuildGeometry(
@@ -363,10 +421,11 @@ namespace EPrimeReadouts.UI
             {
                 font = font,
                 color = color,
-                fontSize = fontSize,
+                fontSize = PanelBufferBackend.UsesGuiRenderTargets
+                    ? ScaledFontSize(fontSize, rasterScale) : fontSize,
                 lineSpacing = 1f,
                 richText = style.richText,
-                scaleFactor = rasterScale,
+                scaleFactor = PanelBufferBackend.UsesGuiRenderTargets ? 1f : rasterScale,
                 fontStyle = style.fontStyle,
                 textAnchor = anchor,
                 alignByGeometry = false,
@@ -376,7 +435,8 @@ namespace EPrimeReadouts.UI
                 updateBounds = false,
                 verticalOverflow = VerticalWrapMode.Overflow,
                 horizontalOverflow = HorizontalWrapMode.Overflow,
-                generationExtents = extents,
+                generationExtents = PanelBufferBackend.UsesGuiRenderTargets
+                    ? extents * rasterScale : extents,
                 pivot = new Vector2(0f, 1f),
                 generateOutOfBounds = true,
             };

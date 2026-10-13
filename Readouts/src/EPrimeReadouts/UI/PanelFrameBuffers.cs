@@ -64,40 +64,9 @@ namespace EPrimeReadouts.UI
 
         internal bool HasSurfaces => hasSurfaces;
         internal bool BuildInFlight => buildInFlight;
-        internal long PublicationVersion { get; private set; }
         internal bool CanPresent => hasSurfaces && backend.IsAvailable
             && baseSurface.CanPresent && glyphProduct.CanPresent
             && headerSurface.CanPresent;
-
-        internal PanelSurfaceChannel? HealthChannel(int index)
-        {
-            switch (index)
-            {
-                case 0: return baseSurface.Channel;
-                case 1: return glyphProduct.Channel;
-                case 2: return headerSurface.Channel;
-                case 3: return headerSurface.VisibleTitleChannel;
-                default: return null;
-            }
-        }
-
-        // A loss in any channel can affect the entire published set and any
-        // pending readback. A non-null front alone cannot prove GPU validity.
-        internal bool HasLostTarget => baseSurface.Channel.HasLostTarget
-            || glyphProduct.Channel.HasLostTarget
-            || headerSurface.HasLostTarget;
-
-        internal bool RestoreAfterTargetLoss()
-        {
-            // Discard readbacks from before the interruption, keeping pending
-            // model changes queued for retry and the published front revisions
-            // intact. The front CPU pixels remain a complete, coherent set.
-            if (buildInFlight) AbortInFlight();
-            PublicationVersion++;
-            return baseSurface.Channel.RestoreAfterTargetLoss()
-                && glyphProduct.Channel.RestoreAfterTargetLoss()
-                && headerSurface.RestoreAfterTargetLoss();
-        }
 
         internal bool BuildBack(
             BufferBuildTicket ticket,
@@ -181,7 +150,6 @@ namespace EPrimeReadouts.UI
             buildInFlight = false;
             inFlightTicket = default;
             hasSurfaces = true;
-            PublicationVersion++;
             consecutivePublishFailures = 0;
             return true;
         }
@@ -206,13 +174,12 @@ namespace EPrimeReadouts.UI
             if (!window.Visible) return true;
             float contentTop = screenY + geometry.HeaderHeight;
             return baseSurface.PresentWindow(screenX, contentTop, window)
-                && glyphProduct.PresentWindow(screenX, contentTop, window);
+                && glyphProduct.PresentWindow(screenX, contentTop, window, geometry.RasterScale);
         }
 
         internal void Release()
         {
             CancelBuild();
-            PublicationVersion++;
             baseSurface.Release();
             glyphProduct.Release();
             headerSurface.Release();

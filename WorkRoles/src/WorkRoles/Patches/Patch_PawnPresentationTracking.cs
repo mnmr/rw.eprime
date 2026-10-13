@@ -10,12 +10,14 @@ namespace WorkRoles.Patches
         {
             Pawn = ExternalPawnFacts.IsRelevant(pawn) ? pawn : null;
             Label = Pawn?.LabelShortCap;
+            FullName = Pawn?.Name?.ToStringFull;
             Revision = Pawn == null
                 ? 0 : ExternalPawnFacts.Revisions.RevisionOf(Pawn);
         }
 
         internal Pawn? Pawn { get; }
         internal string? Label { get; }
+        internal string? FullName { get; }
         internal int Revision { get; }
     }
 
@@ -97,11 +99,13 @@ namespace WorkRoles.Patches
             PawnNameTransitionState __state)
         {
             if (__state.Pawn != null
-                && !string.Equals(__state.Label, __instance.LabelShortCap,
-                    System.StringComparison.Ordinal)
+                && (!string.Equals(__state.Label, __instance.LabelShortCap,
+                        System.StringComparison.Ordinal)
+                    || !string.Equals(__state.FullName, __instance.Name?.ToStringFull,
+                        System.StringComparison.Ordinal))
                 && ExternalPawnFacts.Revisions.RevisionOf(__instance)
                     == __state.Revision)
-                ExternalPawnFacts.Invalidate(__instance);
+                ExternalPawnFacts.InvalidateName(__instance);
         }
     }
 
@@ -113,7 +117,7 @@ namespace WorkRoles.Patches
         public static void Postfix(Pawn ___pawn)
         {
             if (ExternalPawnFacts.IsRelevant(___pawn))
-                ExternalPawnFacts.Invalidate(___pawn);
+                ExternalPawnFacts.InvalidateDowned(___pawn);
         }
     }
 
@@ -123,7 +127,7 @@ namespace WorkRoles.Patches
         public static void Postfix(Pawn ___pawn)
         {
             if (ExternalPawnFacts.IsRelevant(___pawn))
-                ExternalPawnFacts.Invalidate(___pawn);
+                ExternalPawnFacts.InvalidateDowned(___pawn);
         }
     }
 

@@ -7,6 +7,57 @@ namespace WorkRoles.Core.Tests.Planner;
 // exercise a real training path, coverage, demand, and automatic assignments.
 public class RecommendationSnapshotCacheTests
 {
+    [Test]
+    public async Task DeferredOldSnapshotCannotPublishVerdictsIntoTheReplacementOwner()
+    {
+        var cache = new RecommendationSnapshotCache<object>();
+        object[] pawns = [new(), new()];
+        object oldOwner = new(), newOwner = new(), catalog = new();
+        var old = cache.For(oldOwner, pawns, catalog, 0, 0, 0,
+            RecommendationsTuningOptions.Default, (_, _) => Colony());
+        cache.Reset();
+        var current = cache.For(newOwner, pawns, catalog, 0, 0, 0,
+            RecommendationsTuningOptions.Default, (_, _) => Colony());
+        var oldVerdicts = old.Suitability;
+        var currentVerdicts = current.Suitability;
+        await Assert.That(ReferenceEquals(oldVerdicts[0], currentVerdicts[0])).IsFalse();
+        await Assert.That(ReferenceEquals(oldVerdicts[1], currentVerdicts[1])).IsFalse();
+        await Assert.That(currentVerdicts[1][1]).IsEqualTo(SignalBucket.Great);
+        await Assert.That(string.Join(",", Roles(current.Plan))).IsEqualTo("3,2");
+        await Assert.That(ReferenceEquals(current, cache.For(newOwner, pawns, catalog, 0, 0, 0,
+            RecommendationsTuningOptions.Default, (_, _) => Colony()))).IsTrue();
+    }
+
+    [Test]
+    public async Task PlanAndSuitabilityShareLazyContextWhileCachedVerdictsDoNotBuildOne()
+    {
+        var cache = new RecommendationSnapshotCache<object>();
+        object owner = new();
+        object[] pawns = [new(), new()];
+        var first = cache.For(owner, pawns, new object(), 0, 0, 0,
+            RecommendationsTuningOptions.Default, (_, _) => Colony());
+        await Assert.That(first.CachedContext).IsNull();
+        var verdicts = first.Suitability;
+        // Context identity is an independent work-sharing invariant; the same
+        // final plan would not expose an accidentally duplicated constructor.
+        await Assert.That(first.CachedContext).IsNotNull();
+        EngineContext shared = first.CachedContext!;
+        await Assert.That(ReferenceEquals(shared, first.Plan.Context)).IsTrue();
+        await Assert.That(string.Join(",", Roles(first.Plan))).IsEqualTo("3,2");
+        await Assert.That(verdicts[1][1]).IsEqualTo(SignalBucket.Great);
+        var tuning = RecommendationsTuningOptions.Default.With(RecommendationTuningOption.ChampionSkillDivisor,
+            RecommendationsTuningOptions.Default.Get(RecommendationTuningOption.ChampionSkillDivisor) + 1);
+        var retuned = cache.For(owner, pawns, new object(), 0, 0, 0, tuning, (_, _) => Colony());
+        await Assert.That(ReferenceEquals(shared, retuned.CachedContext)).IsTrue();
+        await Assert.That(ReferenceEquals(shared, retuned.Plan.Context)).IsTrue();
+        var disabled = cache.For(owner, pawns, new object(), 0, 0, 0,
+            RecommendationsTuningOptions.Default, (_, _) => Colony(roleEnabled: false));
+        await Assert.That(ReferenceEquals(verdicts, disabled.Suitability)).IsTrue();
+        await Assert.That(disabled.CachedContext).IsNull();
+        await Assert.That(string.Join(",", Roles(disabled.Plan))).IsEqualTo("3");
+        await Assert.That(ReferenceEquals(shared, disabled.Plan.Context)).IsFalse();
+    }
+
     private static ColonyView Colony(bool heldEnabled = true, bool roleEnabled = true,
         bool pinned = false, int skill = 8)
     {
@@ -151,6 +202,46 @@ public class RecommendationSnapshotCacheTests
         await Assert.That(pawnProjections).IsEqualTo(2);
         cache.For(owner, pawns, new object(), 1, 1, 1, RecommendationsTuningOptions.Default, Build);
         await Assert.That(pawnProjections).IsEqualTo(3);
+    }
+
+    [Test]
+    public async Task OverlappingCohortsSharePawnProjectionAndVerdictsAcrossSelectiveChanges()
+    {
+        var cache = new RecommendationSnapshotCache<object>();
+        object owner = new(), catalog = new(), veteran = new(), apprentice = new(), visitor = new();
+        var inputs = new Dictionary<object, PawnView> { [veteran] = Colony().Pawns[0], [apprentice] = Colony().Pawns[1], [visitor] = Colony().Pawns[0] };
+        var revisions = new Dictionary<object, int> { [veteran] = 0, [apprentice] = 0, [visitor] = 0 };
+        int builds = 0;
+        PawnView Project(object pawn) { builds++; return inputs[pawn]; }
+        ColonyView Build(IReadOnlyList<object> cohort, IReadOnlyList<PawnView>? previous)
+        {
+            ColonyView colony = Colony();
+            colony.Pawns.Clear();
+            for (int i = 0; i < cohort.Count; i++)
+                colony.Pawns.Add(cache.PawnFor(owner, cohort[i], revisions[cohort[i]], inputs[cohort[i]], cohort[i], Project));
+            return colony;
+        }
+        RecommendationSnapshot Read(object[] cohort, int revision) => cache.For(owner, cohort, catalog,
+            revision, revision, 0, RecommendationsTuningOptions.Default, Build);
+        RecommendationSnapshot map = Read([veteran, apprentice], 0);
+        var mapVerdicts = map.Suitability;
+        RecommendationSnapshot listed = Read([veteran, apprentice, visitor], 0);
+        await Assert.That(builds).IsEqualTo(3);
+        await Assert.That(ReferenceEquals(mapVerdicts[0], listed.Suitability[0])).IsTrue();
+        await Assert.That(ReferenceEquals(mapVerdicts[1], listed.Suitability[1])).IsTrue();
+
+        revisions[visitor]++;
+        inputs[visitor] = Colony(pinned: true).Pawns[0];
+        await Assert.That(ReferenceEquals(map, Read([veteran, apprentice], 1))).IsTrue();
+        await Assert.That(builds).IsEqualTo(3);
+        inputs[apprentice] = Colony(skill: 14).Pawns[1];
+        RecommendationSnapshot trained = Read([veteran, apprentice], 2);
+        await Assert.That(builds).IsEqualTo(4);
+        await Assert.That(string.Join(",", Roles(trained.Plan))).IsEqualTo("3,1");
+        await Assert.That(ReferenceEquals(mapVerdicts[1], trained.Suitability[1])).IsTrue();
+        cache.Reset();
+        Read([veteran, apprentice], 2);
+        await Assert.That(builds).IsEqualTo(6);
     }
 
     [Test]
