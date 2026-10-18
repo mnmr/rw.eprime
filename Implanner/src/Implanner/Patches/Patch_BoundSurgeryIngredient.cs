@@ -23,6 +23,14 @@ namespace Implanner.Patches
 
         public static void Postfix(Bill __instance, Thing thing, ref bool __result)
         {
+            if (__result && thing.def.isTechHediff && __instance is Bill_Production
+                && SurgeryBindings.ProductionOwns(LoadId(__instance))
+                && (SurgeryBindings.IsReserved(thing.thingIDNumber)
+                    || SurgeryBindings.IsProductionProtected(thing.thingIDNumber)))
+            {
+                __result = false;
+                return;
+            }
             if (!__result || !SurgeryBindings.Any || !thing.def.isTechHediff
                 || !(__instance is Bill_Medical))
                 return;

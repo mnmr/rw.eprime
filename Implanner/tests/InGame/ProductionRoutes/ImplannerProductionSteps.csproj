@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup><TargetFramework>net472</TargetFramework><LangVersion>10</LangVersion><AssemblyName>ImplannerProductionSteps</AssemblyName><OutputPath>bin\</OutputPath><AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath></PropertyGroup>
+ <ItemGroup>
+ <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" />
+ <PackageReference Include="Lib.Harmony" Version="2.*" ExcludeAssets="runtime" />
+ <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+ <Reference Include="Implanner"><HintPath>../../../mod/1.6/Assemblies/Implanner.dll</HintPath><Private>false</Private></Reference>
+ <Reference Include="Implanner.Core"><HintPath>../../../mod/1.6/Assemblies/Implanner.Core.dll</HintPath><Private>false</Private></Reference>
+ <Reference Include="RimWorks.Pickle"><HintPath>C:/Program Files (x86)/Steam/steamapps/workshop/content/294100/3791648678/1.6/Assemblies/RimWorks.Pickle.dll</HintPath><Private>false</Private></Reference>
+ </ItemGroup>
+</Project>
+

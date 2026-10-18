@@ -1,0 +1,9 @@
+# Preserve saved-world content; disable only the Linux-incompatible Prepatcher reload.
+remove zetrith.prepatcher
+remove brrainz.rimbridgeserver
+after brrainz.harmony
+rimworks.rimlogging
+rimworks.pickle
+after ludeon.rimworld.odyssey
+imranfish.xmlextensions
+vat.epoeforked

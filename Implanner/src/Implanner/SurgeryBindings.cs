@@ -19,27 +19,76 @@ namespace Implanner
     // Refresh policy: immediate: the store publishes on every Surgery or
     //   Reservations change (synced command or reconcile pass), on
     //   construction, and after load normalization.
-    // Equality policy: none (a publication follows a real change).
+    // Equality policy: equal maps/sets preserve identity.
     // Teardown: Reset on world teardown.
     internal static class SurgeryBindings
     {
         private static Dictionary<int, int> itemByBill = new Dictionary<int, int>();
+        // Owner/teardown: current store, Reset on world teardown, as above.
+        // Keys/value: thing and bill ids, immutable membership sets.
+        // Dependencies: Reservations for reservedItems; Production for productionBills.
+        // Refresh: only on their domain publication, store construction or load.
+        // Equality: equal sets preserve identity. No live game objects retained.
+        private static HashSet<int> reservedItems = new HashSet<int>();
+        private static HashSet<int> productionBills = new HashSet<int>();
+
+        // Owner: the current ImplannerStore; key: thing id.
+        // Value: immutable publication of authoritative production exclusions.
+        // Dependencies: ProductionProtection only (the reconciler owns changes).
+        // Refresh: immediate publication after deterministic reconciliation,
+        // store construction, and load normalization; no stock reads here.
+        // Equality: equal sets retain identity.
+        // Teardown: Reset releases all ids at world teardown.
+        private static HashSet<int> productionProtectedItems = new HashSet<int>();
 
         internal static bool Any => itemByBill.Count > 0;
 
-        internal static void Publish(PlannerModel model)
+        internal static void Publish(PlannerModel model, PlannerChange change = PlannerChange.All)
         {
-            var map = new Dictionary<int, int>();
-            foreach (KeyValuePair<int, ItemReservation> pair in model.Reservations)
+            if ((change & (PlannerChange.Surgery | PlannerChange.Reservations)) != 0)
             {
-                string? billId = model.OwnedBill(pair.Value.PawnId, pair.Value.GoalKey);
-                if (billId != null && TryParseLoadId(billId, out int loadId))
-                    map[loadId] = pair.Key;
+                var map = new Dictionary<int, int>();
+                foreach (KeyValuePair<int, ItemReservation> pair in model.Reservations)
+                {
+                    string? billId = model.OwnedBill(pair.Value.PawnId, pair.Value.GoalKey);
+                    if (billId != null && TryParseLoadId(billId, out int loadId)) map[loadId] = pair.Key;
+                }
+                bool equal = map.Count == itemByBill.Count;
+                foreach (var pair in map)
+                    if (!itemByBill.TryGetValue(pair.Key, out int id) || id != pair.Value)
+                    { equal = false; break; }
+                if (!equal) itemByBill = map;
             }
-            itemByBill = map;
+            if ((change & PlannerChange.Reservations) != 0
+                && !reservedItems.SetEquals(model.Reservations.Keys))
+                reservedItems = new HashSet<int>(model.Reservations.Keys);
+            if ((change & PlannerChange.Production) != 0)
+            {
+                var production = new HashSet<int>();
+                foreach (string bill in model.OwnedProductionBills.Keys)
+                    if (TryParseLoadId(bill, out int id)) production.Add(id);
+                if (!productionBills.SetEquals(production)) productionBills = production;
+            }
         }
 
-        internal static void Reset() => itemByBill = new Dictionary<int, int>();
+        internal static void Reset()
+        {
+            itemByBill = new Dictionary<int, int>();
+            reservedItems = new HashSet<int>();
+            productionBills = new HashSet<int>();
+            productionProtectedItems = new HashSet<int>();
+        }
+
+        internal static void PublishProductionProtection(PlannerModel model)
+        {
+            if (!productionProtectedItems.SetEquals(model.ProductionProtectedItems))
+                productionProtectedItems = new HashSet<int>(model.ProductionProtectedItems);
+        }
+
+        internal static bool IsProductionProtected(int itemId) => productionProtectedItems.Contains(itemId);
+
+        internal static bool ProductionOwns(int billId) => productionBills.Contains(billId);
+        internal static bool IsReserved(int itemId) => reservedItems.Contains(itemId);
 
         internal static bool TryGetItem(int billLoadId, out int itemId) =>
             itemByBill.TryGetValue(billLoadId, out itemId);

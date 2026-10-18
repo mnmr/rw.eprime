@@ -16,5 +16,7 @@ fits, Implanner removes it and adds it again once the stock is back.
 Reserve one bionic arm and automation only assigns arms beyond the first,
 keeping one free for emergency surgery or trade. Production still counts a
 held-back item as missing, so the stock is replenished.
+Upgrade bills also leave held-back implants and implants needed for planned
+surgeries untouched. Only spare implants can be used as production ingredients.
 
 ![An implant reservation holding one bionic arm back](implant-reservations.png)

@@ -169,6 +169,8 @@ namespace Implanner.UI
                         .CapitalizeFirst();
                 case ProductionRowStatus.WaitingBench:
                     return "IMP_StripWaitingBench".Translate();
+                case ProductionRowStatus.WaitingDispatch:
+                    return "IMP_StripAwaitingProduction".Translate();
                 default:
                     return "";
             }

@@ -59,6 +59,7 @@
   <IMP_StripNothingToCraft>Nothing to craft</IMP_StripNothingToCraft>
   <!-- Bills are ready to place but every capable workbench is occupied -->
   <IMP_StripWaitingBench>Waiting for workbench</IMP_StripWaitingBench>
+  <IMP_StripAwaitingProduction>Waiting for production</IMP_StripAwaitingProduction>
   <!-- {0}=overall installed-implants percent -->
   <IMP_StripSurgery>Surgery: {0}%</IMP_StripSurgery>
   <!-- {0}=installed implant slots, {1}=planned implant slots -->

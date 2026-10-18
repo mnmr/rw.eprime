@@ -32,8 +32,10 @@ namespace Implanner.Core
         /// Benches the player designated for Implanner production, with
         /// the bills that were suspended before designation.
         Benches = 512,
+        /// Reconciled implant items unavailable to owned production bills.
+        ProductionProtection = 1024,
         All = Plans | Assignments | Priorities | Reservations
-            | Options | Rankings | Surgery | Production | Benches,
+            | Options | Rankings | Surgery | Production | Benches | ProductionProtection,
     }
 
     /// Narrow domain revisions published by the store. Consumers depend on
@@ -50,6 +52,7 @@ namespace Implanner.Core
         public int Surgery { get; private set; }
         public int Production { get; private set; }
         public int Benches { get; private set; }
+        public int ProductionProtection { get; private set; }
 
         public void Bump(PlannerChange change)
         {
@@ -64,6 +67,8 @@ namespace Implanner.Core
             if ((change & PlannerChange.Surgery) != 0) Surgery = unchecked(Surgery + 1);
             if ((change & PlannerChange.Production) != 0) Production = unchecked(Production + 1);
             if ((change & PlannerChange.Benches) != 0) Benches = unchecked(Benches + 1);
+            if ((change & PlannerChange.ProductionProtection) != 0)
+                ProductionProtection = unchecked(ProductionProtection + 1);
         }
     }
 
@@ -117,6 +122,10 @@ namespace Implanner.Core
             new Dictionary<string, int>(StringComparer.Ordinal);
         readonly Dictionary<string, string> ownedProductionBills =
             new Dictionary<string, string>(StringComparer.Ordinal);
+        // Authoritative simulation state, not a render cache: ingredient
+        // searches must see the same protected identities after a save/resync
+        // as before it, until deterministic reconciliation replaces them.
+        private HashSet<int> productionProtectedItems = new HashSet<int>();
         readonly Dictionary<int, IReadOnlyList<string>> designatedBenches =
             new Dictionary<int, IReadOnlyList<string>>();
         readonly Dictionary<string, int> productionBillQualities =
@@ -777,6 +786,22 @@ namespace Implanner.Core
         /// the bill object itself is owned by the game.
         public IReadOnlyDictionary<string, string> OwnedProductionBills =>
             ownedProductionBills;
+
+        public IReadOnlyCollection<int> ProductionProtectedItems => productionProtectedItems;
+        public bool IsProductionIngredientProtected(int itemId) => productionProtectedItems.Contains(itemId);
+
+        /// Reconciliation's exact protected identities: equal contents keep
+        /// their identity and report no change. The caller retains its buffer.
+        public PlannerChange ReplaceProductionProtectedItems(IReadOnlyCollection<int> itemIds)
+        {
+            if (productionProtectedItems.SetEquals(itemIds)) return PlannerChange.None;
+            productionProtectedItems = new HashSet<int>(itemIds);
+            return PlannerChange.ProductionProtection;
+        }
+
+        /// Deterministic load restores the host's last reconciled decisions;
+        /// it must not resample current stock independently on a joining client.
+        public void AddLoadedProductionProtectedItem(int itemId) => productionProtectedItems.Add(itemId);
 
         public PlannerChange SetOwnedProductionBill(string billId, string itemDefName)
         {

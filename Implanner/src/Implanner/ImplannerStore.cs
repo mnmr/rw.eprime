@@ -41,6 +41,7 @@ namespace Implanner
         private List<int>? reserveAmounts;
         private List<string>? productionBillIds;
         private List<string>? productionBillDefs;
+        private List<int>? productionProtectedItemIds;
         // Parallel to productionBillIds; absent in older saves (no promise).
         private List<int>? productionBillQualities;
         // Parallel reinstall records, one entry per pushed-out implant.
@@ -101,6 +102,7 @@ namespace Implanner
             Model.SetSlotConflictResolver(ImplantConflicts.Resolver);
             BenchDesignations.Publish(Model);
             SurgeryBindings.Publish(Model);
+            SurgeryBindings.PublishProductionProtection(Model);
         }
 
         public static ImplannerStore? Current => Find.World?.GetComponent<ImplannerStore>();
@@ -140,8 +142,10 @@ namespace Implanner
             revisions.Bump(change);
             if ((change & PlannerChange.Benches) != 0)
                 BenchDesignations.Publish(Model);
-            if ((change & (PlannerChange.Surgery | PlannerChange.Reservations)) != 0)
-                SurgeryBindings.Publish(Model);
+            if ((change & (PlannerChange.Surgery | PlannerChange.Reservations | PlannerChange.Production)) != 0)
+                SurgeryBindings.Publish(Model, change);
+            if ((change & PlannerChange.ProductionProtection) != 0)
+                SurgeryBindings.PublishProductionProtection(Model);
         }
 
         internal void ClearPendingReconcile() => pendingReconcile = false;
@@ -221,6 +225,8 @@ namespace Implanner
 
             if (Scribe.mode == LoadSaveMode.Saving)
             {
+                productionProtectedItemIds = new List<int>(Model.ProductionProtectedItems);
+                productionProtectedItemIds.Sort();
                 planRecords = new List<PlanRecord>();
                 foreach (Plan plan in Model.Plans)
                     planRecords.Add(new PlanRecord(plan));
@@ -396,6 +402,7 @@ namespace Implanner
             Scribe_Collections.Look(ref productionBillIds, "productionBillIds", LookMode.Value);
             Scribe_Collections.Look(ref productionBillDefs, "productionBillDefs", LookMode.Value);
             Scribe_Collections.Look(ref productionBillQualities, "productionBillQualities", LookMode.Value);
+            Scribe_Collections.Look(ref productionProtectedItemIds, "productionProtectedItems", LookMode.Value);
             Scribe_Collections.Look(ref reinstallPawnIds, "reinstallPawns", LookMode.Value);
             Scribe_Collections.Look(ref reinstallWiperKeys, "reinstallWipers", LookMode.Value);
             Scribe_Collections.Look(ref reinstallDefs, "reinstallDefs", LookMode.Value);
@@ -484,6 +491,9 @@ namespace Implanner
                                 Model.AddLoadedReservation(reservationItemIds[i],
                                     reservationPawnIds[i], key);
                         }
+                if (productionProtectedItemIds != null)
+                    for (int i = 0; i < productionProtectedItemIds.Count; i++)
+                        Model.AddLoadedProductionProtectedItem(productionProtectedItemIds[i]);
                 if (implantStarDefs != null && implantStarLevels != null
                     && implantStarDefs.Count == implantStarLevels.Count)
                     for (int i = 0; i < implantStarDefs.Count; i++)
@@ -609,6 +619,7 @@ namespace Implanner
                 productionBillIds = null;
                 productionBillDefs = null;
                 productionBillQualities = null;
+                productionProtectedItemIds = null;
                 reinstallPawnIds = null;
                 reinstallWiperKeys = null;
                 reinstallDefs = null;

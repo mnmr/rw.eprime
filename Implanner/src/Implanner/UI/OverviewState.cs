@@ -109,6 +109,8 @@ namespace Implanner.UI
         WaitingFor = 5,
         /// Ingredients are there; no free capable bench under the cap yet.
         WaitingBench = 6,
+        /// The next synchronized dispatch has not evaluated this demand yet.
+        WaitingDispatch = 7,
     }
 
     /// One implant item kind in the production tooltip, resolved at snapshot
@@ -215,7 +217,7 @@ namespace Implanner.UI
     {
         // Cache contract (overview data):
         // Owner: the Implanner dialog window.
-        // Key: UiRevision.Current, store identity and Version,
+        // Key: UiRevision.Current, store identity and Version, production decision identity,
         //   ExternalPawnFacts.Revision, MapClassifications.LocationRevision, and
         //   the selected grouping (kind + location id). The current map is
         //   NOT a key: it is read only when the grouping selection must be
@@ -250,6 +252,8 @@ namespace Implanner.UI
         private int uiStamp = -1;
         private ImplannerStore? owner;
         private int storeStamp = -1;
+        // Published production decisions can change without a bill/model edit.
+        private object? productionDecisions;
         private int factsStamp = -1;
         private int locationStamp = -1;
         private GroupingKind groupingKindStamp = (GroupingKind)(-1);
@@ -355,6 +359,7 @@ namespace Implanner.UI
             collapsedFlagsRevision = -1;
             uiStamp = -1;
             storeStamp = -1;
+            productionDecisions = null;
             factsStamp = -1;
             locationStamp = -1;
             groupingKindStamp = (GroupingKind)(-1);
@@ -422,6 +427,7 @@ namespace Implanner.UI
                 || uiStamp != UiRevision.Current
                 || !ReferenceEquals(owner, store)
                 || storeStamp != store.Version
+                || !ReferenceEquals(productionDecisions, PlannerProduction.DecisionIdentity)
                 || factsStamp != ExternalPawnFacts.Revision
                 || locationStamp != MapClassifications.LocationRevision
                 || groupingKindStamp != groupingKind
@@ -432,6 +438,7 @@ namespace Implanner.UI
                 uiStamp = UiRevision.Current;
                 owner = store;
                 storeStamp = store.Version;
+                productionDecisions = PlannerProduction.DecisionIdentity;
                 factsStamp = ExternalPawnFacts.Revision;
                 locationStamp = MapClassifications.LocationRevision;
                 // Re-read: Build revalidates the grouping selection.
@@ -988,11 +995,6 @@ namespace Implanner.UI
                     && LocationGrouping.Matches(Grouping!, locationId))
                     maps.Add(allMaps[m]);
             }
-            // Materials Implanner's queued bills have promised: the blocker
-            // text subtracts them from stock exactly like the dispatcher.
-            Dictionary<ThingDef, int> promised =
-                PlannerProduction.PromisedMaterials(model, maps);
-
             // Unforbidden stock of wanted items, less the player's hold-back
             // reserves (production keeps crafting past held-back items, so
             // they do not count as produced here either). Items automation
@@ -1146,7 +1148,7 @@ namespace Implanner.UI
             // The one item intermediary bills are attributed to, shared by
             // the activity line and that item's tooltip row.
             ThingDef? chainTarget = chainWork
-                ? FirstCraftableUncovered(uncovered, needed, stock)
+                ? FirstCraftableUncovered(uncovered, needed, stock, maps)
                 : null;
             var tipRows = new List<ProductionTipRow>(items.Count);
             for (int i = 0; i < items.Count; i++)
@@ -1173,7 +1175,7 @@ namespace Implanner.UI
                 };
                 if (held > 0) result.HeldBackShown = true;
                 if (producing)
-                    ResolveRowStatus(row, item, model, maps, promised, stock,
+                    ResolveRowStatus(row, item, maps, stock,
                         item == chainTarget);
                 tipRows.Add(row);
             }
@@ -1218,7 +1220,13 @@ namespace Implanner.UI
             for (int i = 0; i < uncovered.Count; i++)
             {
                 ThingDef item = uncovered[i];
-                RecipeDef? recipe = PlannerProduction.ProductionRecipeFor(item);
+                PlannerProduction.Decision decision = PlannerProduction.DecisionFor(maps, item);
+                if (!decision.Published && PlannerProduction.ProductionRecipeFor(item) != null)
+                {
+                    result.ProductionSubText = "IMP_StripAwaitingProduction".Translate().ToString();
+                    return;
+                }
+                RecipeDef? recipe = decision.Recipe;
                 if (recipe == null || !recipe.AvailableNow) continue;
                 stock.TryGetValue(item, out int have);
                 int crafts = ProductionMath.CraftsNeeded(needed[item], have, 0,
@@ -1226,9 +1234,7 @@ namespace Implanner.UI
                 if (crafts <= 0) continue;
                 // The dispatcher sizes bills to what stock pays for, so only
                 // the next craft can block.
-                var visited = new HashSet<ThingDef> { item };
-                ThingDef? blocker = FindBlockingIngredient(model, maps, promised,
-                    recipe, 1, model.AllowIntermediaries, visited, 0);
+                ThingDef? blocker = decision.Blocker;
                 result.ProductionSubText = blocker != null
                     ? "IMP_StripWaiting".Translate(blocker.label)
                         .CapitalizeFirst()
@@ -1243,12 +1249,13 @@ namespace Implanner.UI
         /// and crafts outstanding; null when nothing craftable remains.
         private static ThingDef? FirstCraftableUncovered(
             List<ThingDef> uncovered, Dictionary<ThingDef, int> needed,
-            Dictionary<ThingDef, int> stock)
+            Dictionary<ThingDef, int> stock, List<Map> maps)
         {
             for (int i = 0; i < uncovered.Count; i++)
             {
                 ThingDef item = uncovered[i];
-                RecipeDef? recipe = PlannerProduction.ProductionRecipeFor(item);
+                PlannerProduction.Decision decision = PlannerProduction.DecisionFor(maps, item);
+                RecipeDef? recipe = decision.Recipe;
                 if (recipe == null || !recipe.AvailableNow) continue;
                 stock.TryGetValue(item, out int have);
                 if (ProductionMath.CraftsNeeded(needed[item], have, 0,
@@ -1265,7 +1272,7 @@ namespace Implanner.UI
         /// ingredient automation cannot craft for itself, or no bench
         /// under the cap yet.
         private static void ResolveRowStatus(ProductionTipRow row, ThingDef item,
-            PlannerModel model, List<Map> maps, Dictionary<ThingDef, int> promised,
+            List<Map> maps,
             Dictionary<ThingDef, int> stock, bool chainTarget)
         {
             if (row.Queued <= 0)
@@ -1283,7 +1290,13 @@ namespace Implanner.UI
                 row.Status = ProductionRowStatus.MakingMaterials;
                 return;
             }
-            RecipeDef? recipe = PlannerProduction.ProductionRecipeFor(item);
+            PlannerProduction.Decision decision = PlannerProduction.DecisionFor(maps, item);
+            if (!decision.Published && PlannerProduction.ProductionRecipeFor(item) != null)
+            {
+                row.Status = ProductionRowStatus.WaitingDispatch;
+                return;
+            }
+            RecipeDef? recipe = decision.Recipe;
             if (recipe == null || !recipe.AvailableNow)
             {
                 row.Status = ProductionRowStatus.NoRecipe;
@@ -1297,9 +1310,7 @@ namespace Implanner.UI
                 row.Status = ProductionRowStatus.NoRecipe;
                 return;
             }
-            var visited = new HashSet<ThingDef> { item };
-            ThingDef? blocker = FindBlockingIngredient(model, maps, promised,
-                recipe, 1, model.AllowIntermediaries, visited, 0);
+            ThingDef? blocker = decision.Blocker;
             if (blocker != null)
             {
                 row.Status = ProductionRowStatus.WaitingFor;
@@ -1307,52 +1318,6 @@ namespace Implanner.UI
             }
             else
                 row.Status = ProductionRowStatus.WaitingBench;
-        }
-
-        /// The first fixed ingredient down the recipe's production chain
-        /// that blocks crafting and that automation cannot resolve itself:
-        /// short of its reserve after the given crafts' cost plus what
-        /// Implanner's queued bills have promised (callers pass the next
-        /// craft; every bill is one craft), and either outside
-        /// intermediary production or not a craftable manufactured item
-        /// (the dispatcher's whitelist — raw resources are always a real
-        /// wait). With intermediary production active, a short craftable
-        /// manufactured ingredient recurses into its own recipe instead
-        /// (once per resource, depth-capped like the dispatcher's own
-        /// expansion); null when automation will handle every shortfall on
-        /// its own.
-        private static ThingDef? FindBlockingIngredient(PlannerModel model,
-            List<Map> maps, Dictionary<ThingDef, int> promised, RecipeDef recipe,
-            int crafts, bool intermediaries, HashSet<ThingDef> visited, int depth)
-        {
-            List<IngredientCount>? ingredients = recipe.ingredients;
-            if (ingredients == null) return null;
-            for (int i = 0; i < ingredients.Count; i++)
-            {
-                IngredientCount ingredient = ingredients[i];
-                if (!ingredient.IsFixedIngredient) continue;
-                ThingDef def = ingredient.FixedIngredient;
-                int cost = ingredient.CountRequiredOfFor(def, recipe) * crafts;
-                int available = PlannerProduction.ColonyResourceCount(maps, def);
-                promised.TryGetValue(def, out int committed);
-                int reserve = model.ResourceReserveOf(def.defName);
-                if (available - committed - cost >= reserve) continue;
-                RecipeDef? subRecipe =
-                    intermediaries && depth < PlannerProduction.MaxIntermediaryDepth
-                    && PlannerProduction.IsManufactured(def)
-                    && visited.Add(def)
-                        ? PlannerProduction.ProductionRecipeFor(def)
-                        : null;
-                if (subRecipe == null) return def;
-                int output = PlannerProduction.OutputCount(subRecipe, def);
-                if (output <= 0) return def;
-                int shortfall = cost + committed + reserve - available;
-                ThingDef? blocker = FindBlockingIngredient(model, maps, promised,
-                    subRecipe, (shortfall + output - 1) / output,
-                    intermediaries, visited, depth + 1);
-                if (blocker != null) return blocker;
-            }
-            return null;
         }
 
         /// The header sentence: what automation is doing for the colonist

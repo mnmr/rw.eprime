@@ -4,9 +4,15 @@ title: Production options
 With **Automatically add crafting bills for missing implants** switched
 on, Implanner places bills for missing implants at benches that can make
 them, and removes its own bills when the need disappears. Bills you
-created yourself are never removed. Each bill crafts one implant, in the
+created yourself are never removed. Each bill runs one craft, in the
 order the surgeries will install them: with Full sets, a colonist's legs
 come before their arms if legs rank higher in the plan.
+
+When several recipes make the same implant, Implanner prefers an available
+route it can pay for now. A free base implant can be upgraded; otherwise,
+a direct recipe can make the advanced implant from materials. If only the
+upgrade route is enabled, intermediary production can make the base first.
+Recipes must be researched and supported by an eligible bench.
 
 To give implant crafting a bench of its own, check **Implanner bench** on
 the bench's Bills tab. The checkbox appears only on benches that can craft
@@ -38,7 +44,7 @@ to resume its bills yourself.
   down the chain: one advanced component short for the next bionic leg
   means an advanced component bill first. While an implant waits for a raw
   resource such as plasteel, spare benches build the advanced components
-  it will need. Only manufactured items such as components qualify. Raw resources
+  it will need. Manufactured items such as components and base implants qualify. Raw resources
   like steel are never crafted, even when a smelting recipe could produce
   them; you still have to gather them yourself.
 

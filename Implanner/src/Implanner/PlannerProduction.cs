@@ -24,8 +24,8 @@ namespace Implanner
     /// - crafts follow the surgery rollout order (SurgeryPlanner.Order over
     ///   every missing slot: tier batching tier by tier, full sets colonist
     ///   by colonist, each in plan-ranked order); stock, then pending bills,
-    ///   cover the earliest slots and every slot left is one craft
-    ///   (ProductionQueue.UncoveredCrafts);
+    ///   cover the earliest slots; pending output is counted in items using
+    ///   each bill's actual recipe yield (ProductionSupply);
     /// - a craft is queued only when stock covers its cost plus the
     ///   materials promised to queued (not started) Implanner bills plus the
     ///   player's reserve (ProductionBudget); a craft that does not fit is
@@ -35,14 +35,14 @@ namespace Implanner
     /// - queued bills promise their materials oldest first, and one that no
     ///   longer fits (the player spent the stock below a reserve) is
     ///   cancelled until stock allows it again;
-    /// - bench slots left over build the manufactured ingredients the first
+    /// - bench slots left over build the manufactured or implant ingredients the first
     ///   skipped crafts will need (BuildAhead), so advanced components are
     ///   ready when a missing raw resource arrives;
     /// - benches the player designated for Implanner take bills first; the
     ///   others serve only while OnlyDesignatedBenches is off
     ///   (PlannerModel.ChooseProductionBench);
     /// - with AllowIntermediaries, the first craft in rollout order blocked
-    ///   by a manufactured ingredient sets that ingredient's need: enough
+    ///   by a manufactured or implant ingredient sets that ingredient's need: enough
     ///   one-craft bills to cover the shortfall, recursively (depth-capped);
     /// - queued bills nobody needs any more are withdrawn; started ones
     ///   finish.
@@ -60,15 +60,15 @@ namespace Implanner
         // Cache contract:
         // Owner: process/loaded def set.
         // Key: implant item ThingDef identity.
-        // Value: the deterministic production recipe (lowest defName among
-        //   non-surgery recipes producing the item), or null when the item
-        //   cannot be crafted; observed defs are never mutated.
+        // Value: all non-surgery recipes producing the item with at least one
+        //   worktable user, in ordinal defName order; array owned by the cache,
+        //   never mutated or exposed for mutation. Availability is NOT cached.
         // Dependencies: the loaded definition set (static per session).
         // Refresh policy: built lazily per def on first demand.
         // Equality policy: entries never change within a session.
         // Teardown: Reset clears the map (world teardown; defensive only).
-        private static readonly Dictionary<ThingDef, RecipeDef?> productionRecipes =
-            new Dictionary<ThingDef, RecipeDef?>();
+        private static readonly Dictionary<ThingDef, IReadOnlyList<RecipeDef>> productionRecipes =
+            new Dictionary<ThingDef, IReadOnlyList<RecipeDef>>();
 
         // Cache contract:
         // Owner: process/loaded def set.
@@ -85,6 +85,47 @@ namespace Implanner
         private static readonly Dictionary<RecipeDef, HashSet<ThingDef>> recipeUsers =
             new Dictionary<RecipeDef, HashSet<ThingDef>>();
 
+        internal readonly struct Decision
+        {
+            internal Decision(RecipeDef? recipe, ThingDef? blocker)
+            { Recipe = recipe; Blocker = blocker; Published = true; }
+            internal readonly RecipeDef? Recipe;
+            internal readonly ThingDef? Blocker;
+            internal readonly bool Published;
+        }
+
+        // Owner: current ImplannerStore; key: map identity then item def.
+        // Value: immutable published recipe/blocker decisions.
+        // Dependencies: synchronized rollout/goals, reservations, implant/resource
+        // reserves, available stock, pending/started bills, recipe availability,
+        // eligible colony benches, production options and installed definitions.
+        // Refresh: production's approved 1020-tick boundary or pending production pass.
+        // Equality: equal per-colony decisions preserve identity.
+        // Teardown: Reset on world teardown; owner change clears all prior entries;
+        // publication replaces the complete map set, releasing removed maps.
+        private static ImplannerStore? decisionOwner;
+        private static Dictionary<int, IReadOnlyDictionary<ThingDef, Decision>> decisions =
+            new Dictionary<int, IReadOnlyDictionary<ThingDef, Decision>>();
+        internal static object DecisionIdentity => decisions;
+        internal static Decision DecisionFor(List<Map> maps, ThingDef item)
+        {
+            for (int i = 0; i < maps.Count; i++)
+                if (decisions.TryGetValue(maps[i].uniqueID, out var byItem)
+                    && byItem.TryGetValue(item, out Decision choice)) return choice;
+            return default;
+        }
+
+        private static bool SameDecisions(IReadOnlyDictionary<ThingDef, Decision> a,
+            IReadOnlyDictionary<ThingDef, Decision> b)
+        {
+            if (a.Count != b.Count) return false;
+            foreach (var pair in a)
+                if (!b.TryGetValue(pair.Key, out Decision other)
+                    || pair.Value.Recipe != other.Recipe || pair.Value.Blocker != other.Blocker)
+                    return false;
+            return true;
+        }
+
         /// Depth cap for intermediary chains (modded recipe cycles).
         internal const int MaxIntermediaryDepth = 8;
 
@@ -98,27 +139,36 @@ namespace Implanner
             productionRecipes.Clear();
             recipeUsers.Clear();
             implantBenches = null;
+            decisionOwner = null;
+            decisions = new Dictionary<int, IReadOnlyDictionary<ThingDef, Decision>>();
         }
 
-        /// The deterministic crafting recipe for an implant item: the lowest
+        /// Recipe existence, independent of current research: the lowest
         /// defName among non-surgery recipes producing it, or null when the
         /// item cannot be crafted. Builder path only.
         internal static RecipeDef? ProductionRecipeFor(ThingDef itemDef)
         {
-            if (productionRecipes.TryGetValue(itemDef, out RecipeDef? known))
+            IReadOnlyList<RecipeDef> candidates = ProductionRecipesFor(itemDef);
+            return candidates.Count > 0 ? candidates[0] : null;
+        }
+
+        internal static IReadOnlyList<RecipeDef> ProductionRecipesFor(ThingDef itemDef)
+        {
+            if (productionRecipes.TryGetValue(itemDef, out var known))
                 return known;
-            RecipeDef? best = null;
+            var candidates = new List<RecipeDef>();
             List<RecipeDef> recipes = DefDatabase<RecipeDef>.AllDefsListForReading;
             for (int i = 0; i < recipes.Count; i++)
             {
                 RecipeDef recipe = recipes[i];
-                if (recipe.IsSurgery || recipe.ProducedThingDef != itemDef) continue;
-                if (best == null
-                    || string.CompareOrdinal(recipe.defName, best.defName) < 0)
-                    best = recipe;
+                if (recipe.IsSurgery || recipe.ProducedThingDef != itemDef
+                    || RecipeUsersOf(recipe).Count == 0) continue;
+                candidates.Add(recipe);
             }
-            productionRecipes[itemDef] = best;
-            return best;
+            candidates.Sort(static (a, b) => string.CompareOrdinal(a.defName, b.defName));
+            known = candidates.AsReadOnly();
+            productionRecipes[itemDef] = known;
+            return known;
         }
 
         /// The bench defs that can work the recipe, resolved once per
@@ -129,7 +179,8 @@ namespace Implanner
                 return users;
             users = new HashSet<ThingDef>();
             foreach (ThingDef user in recipe.AllRecipeUsers)
-                users.Add(user);
+                if (user.thingClass != null && typeof(Building_WorkTable).IsAssignableFrom(user.thingClass))
+                    users.Add(user);
             recipeUsers.Add(recipe, users);
             return users;
         }
@@ -138,25 +189,35 @@ namespace Implanner
             ImplannerStore store, ReconcilePass pass)
         {
             PlannerModel model = store.Model;
-            if (model.AutomationPaused || !model.AutoProduction)
-                return PlannerChange.None;
-
-            if (!pass.BoundaryHit && !store.PendingProductionPass)
-                return PlannerChange.None;
-            store.ClearPendingProductionPass();
+            if (!ReferenceEquals(decisionOwner, store))
+            {
+                decisions = new Dictionary<int, IReadOnlyDictionary<ThingDef, Decision>>();
+                decisionOwner = store;
+            }
             ColonyIndex index = pass.Index;
             var change = PlannerChange.None;
-
-            // Resolve every owned bill once, per colony, in bench-id then
-            // stack order.
             var colonies = new List<ColonyDispatch>(index.Colonies.Count);
-            var live = new HashSet<string>(StringComparer.Ordinal);
+            Dictionary<ThingDef, int> playerReserves = PlannerSurgery.ImplantItemReserves(model);
+            var protection = new HashSet<int>(model.Reservations.Keys);
+            // Protection changes at the existing synchronized reconciliation
+            // gate, including the first tick after a plan or holdback edit.
+            // It must not wait for the slower production dispatch boundary.
             for (int c = 0; c < index.Colonies.Count; c++)
             {
                 var dispatch = new ColonyDispatch(model, pass, index.Colonies[c]);
-                dispatch.ResolveBenches(live);
+                dispatch.AllocateStock(playerReserves);
+                protection.UnionWith(dispatch.ProtectedItems);
                 colonies.Add(dispatch);
             }
+            change |= model.ReplaceProductionProtectedItems(protection);
+            if (model.AutomationPaused || !model.AutoProduction
+                || (!pass.BoundaryHit && !store.PendingProductionPass)) return change;
+            store.ClearPendingProductionPass();
+
+            // Resolve every owned bill once, per colony, in bench-id then
+            // stack order.
+            var live = new HashSet<string>(StringComparer.Ordinal);
+            for (int c = 0; c < colonies.Count; c++) colonies[c].ResolveBenches(live);
 
             // Records whose bill no longer exists anywhere (completed bills
             // delete themselves at repeat count zero) are forgotten — but
@@ -174,10 +235,17 @@ namespace Implanner
                         change |= model.RemoveOwnedProductionBill(recordIds[i]);
             }
 
-            Dictionary<ThingDef, int> playerReserves =
-                PlannerSurgery.ImplantItemReserves(model);
+            var published = new Dictionary<int, IReadOnlyDictionary<ThingDef, Decision>>();
             for (int c = 0; c < colonies.Count; c++)
-                change |= colonies[c].Run(playerReserves);
+            {
+                change |= colonies[c].Run();
+                colonies[c].PublishDecisions(published);
+            }
+            bool equal = published.Count == decisions.Count;
+            foreach (var pair in published)
+                if (!decisions.TryGetValue(pair.Key, out var previous)
+                    || !ReferenceEquals(pair.Value, previous)) { equal = false; break; }
+            if (!equal) decisions = published;
             return change;
         }
 
@@ -207,8 +275,13 @@ namespace Implanner
             private readonly Dictionary<ThingDef, int> intermediaryNeed =
                 new Dictionary<ThingDef, int>();
             private readonly HashSet<ThingDef> expanded = new HashSet<ThingDef>();
-            private readonly Dictionary<ThingDef, int> pendingCrafts =
-                new Dictionary<ThingDef, int>();
+            private readonly ProductionSupply<ThingDef> supply = new ProductionSupply<ThingDef>();
+            private readonly Dictionary<ThingDef, IReadOnlyList<ProductionRecipe<ThingDef>>> recipeFacts =
+                new Dictionary<ThingDef, IReadOnlyList<ProductionRecipe<ThingDef>>>();
+            private readonly HashSet<ThingDef> intermediaries = new HashSet<ThingDef>();
+            private readonly Dictionary<ThingDef, Decision> choices = new Dictionary<ThingDef, Decision>();
+            internal readonly HashSet<int> ProtectedItems = new HashSet<int>();
+            private readonly List<CraftNeed<ThingDef>> missing = new List<CraftNeed<ThingDef>>();
             private int startedBenches;
             private PlannerChange change;
 
@@ -245,13 +318,55 @@ namespace Implanner
                 }
             }
 
-            internal PlannerChange Run(Dictionary<ThingDef, int> playerReserves)
+            internal void AllocateStock(Dictionary<ThingDef, int> playerReserves)
+            {
+                List<CraftNeed<ThingDef>> rollout = Rollout();
+                var stock = new Dictionary<ThingDef, List<Thing>>();
+                var heldItems = new HashSet<int>();
+                foreach (var pair in model.Reservations) ProtectedItems.Add(pair.Key);
+                // Reserve the player's held-back parts even when that kind is
+                // only an ingredient, not a final goal in this rollout.
+                foreach (var pair in playerReserves)
+                {
+                    List<Thing> things = FreeThings(pair.Key);
+                    things.Sort(ByQualityThenId);
+                    int left = pair.Value;
+                    for (int i = 0; i < things.Count && left > 0; i++)
+                    {
+                        int id = things[i].thingIDNumber;
+                        if (model.Reservations.ContainsKey(id)) continue;
+                        heldItems.Add(id);
+                        ProtectedItems.Add(id);
+                        left--;
+                    }
+                }
+                // Allocate ALL final stocked implants before any ingredient
+                // budget is read. An item can serve a surgery or an upgrade.
+                for (int i = 0; i < rollout.Count; i++)
+                {
+                    var need = rollout[i];
+                    if (!stock.TryGetValue(need.Item, out var things))
+                    {
+                        things = FreeThings(need.Item);
+                        things.Sort(ByQualityThenId);
+                        for (int k = things.Count - 1; k >= 0; k--)
+                            if (heldItems.Contains(things[k].thingIDNumber)) things.RemoveAt(k);
+                        stock.Add(need.Item, things);
+                    }
+                    int pick = things.Count - 1;
+                    if (pick >= 0 && ImplantQualities.QualityOf(things[pick]) >= need.MinQuality)
+                    {
+                        ProtectedItems.Add(things[pick].thingIDNumber);
+                        things.RemoveAt(pick);
+                    }
+                    else missing.Add(need);
+                }
+            }
+
+            internal PlannerChange Run()
             {
                 CollectInProgress(colony.Maps, inProgress);
-
-                // Completed bills: vanilla leaves a finished "do X times"
-                // bill on the bench at 0 (Bill_Production.Notify_IterationCompleted),
-                // where it would hold one of the bench's Implanner slots.
+                // Completed repeat-count bills otherwise retain a bench slot.
                 for (int i = 0; i < owned.Count; i++)
                 {
                     Bill_Production bill = owned[i].Bill;
@@ -260,96 +375,66 @@ namespace Implanner
                     change |= model.RemoveOwnedProductionBill(pass.BillId(bill));
                 }
                 PruneDeleted();
+                for (int i = 0; i < missing.Count; i++) AddRecipeFacts(missing[i].Item);
 
-                // Rollout-ordered demand: one entry per missing slot whose
-                // item the colony can craft, with the lowest item quality
-                // the slot accepts.
-                List<CraftNeed<ThingDef>> rollout = Rollout();
-                var demanded = new HashSet<ThingDef>();
-                for (int i = 0; i < rollout.Count; i++) demanded.Add(rollout[i].Item);
-
-                // Stock as one quality per item (unforbidden, minus the
-                // player's implant reservations: production keeps building
-                // until surgery can proceed without dipping into held-back
-                // stock; allocation takes the best items, so the held-back
-                // ones are the worst), the quality each pending craft
-                // promises, and output per craft.
-                var stock = new Dictionary<ThingDef, List<int>>();
-                var promises = new Dictionary<ThingDef, List<int>>();
-                var output = new Dictionary<ThingDef, int>();
-                foreach (ThingDef item in demanded)
-                {
-                    List<int> qualities = FreeStock(item);
-                    qualities.Sort();
-                    if (playerReserves.TryGetValue(item, out int held))
-                        qualities.RemoveRange(0, Math.Min(held, qualities.Count));
-                    if (qualities.Count > 0) stock[item] = qualities;
-                    RecipeDef? recipe = ProductionRecipeFor(item);
-                    output[item] = recipe != null ? OutputCount(recipe, item) : 0;
-                }
-                for (int i = 0; i < owned.Count; i++)
-                {
-                    ThingDef? produced = owned[i].Bill.recipe.ProducedThingDef;
-                    if (produced == null) continue;
-                    int crafts = Math.Max(owned[i].Bill.repeatCount, 0);
-                    pendingCrafts.TryGetValue(produced, out int pending);
-                    pendingCrafts[produced] = pending + crafts;
-                    if (!promises.TryGetValue(produced, out List<int> list))
-                        promises[produced] = list = new List<int>();
-                    int promise = model.ProductionBillQualityOf(pass.BillId(owned[i].Bill));
-                    for (int n = 0; n < crafts; n++) list.Add(promise);
-                }
-
-                var used = new Dictionary<ThingDef, List<int>>();
-                List<CraftNeed<ThingDef>> queue = ProductionQueue.UncoveredCrafts(
-                    rollout, stock, promises, output, used);
-
-                // Implant bills beyond what the demand uses are withdrawn
-                // before anything is promised or placed.
-                WithdrawImplants(demanded, used);
-
-                // Started bills keep their bench slot and promise nothing:
-                // their materials are already in hand. Queued bills promise
-                // their materials oldest first; one whose materials no
-                // longer fit above the reserves (the player spent them) is
-                // cancelled, and returns once stock allows again.
-                var queued = new List<(Bill_Production Bill, Building_WorkTable Bench)>();
-                for (int i = 0; i < owned.Count; i++)
-                {
-                    if (inProgress.Contains(owned[i].Bill)) TakeSlot(owned[i].Bench);
-                    else queued.Add(owned[i]);
-                }
-                queued.Sort(static (a, b) => LoadId(a.Bill).CompareTo(LoadId(b.Bill)));
-                for (int i = 0; i < queued.Count; i++)
-                {
-                    Bill_Production bill = queued[i].Bill;
-                    if (budget.TryCommit(CostsOf(bill.recipe, Math.Max(bill.repeatCount, 1))))
+                // Each existing bill has its own actual output and quality.
+                // Started work is retained. Queued work must still fit above
+                // reserves and protected surgery stock before it can cover demand.
+                owned.Sort(static (a, b) => LoadId(a.Bill).CompareTo(LoadId(b.Bill)));
+                for (int round = 0; round < 2; round++)
+                    for (int i = 0; i < owned.Count; i++)
                     {
-                        TakeSlot(queued[i].Bench);
-                        continue;
+                        Bill_Production bill = owned[i].Bill;
+                        bool started = inProgress.Contains(bill);
+                        if (started != (round == 0)) continue;
+                        if (!started && (!bill.recipe.AvailableNow
+                            || !budget.TryCommit(CostsOf(bill.recipe, Math.Max(bill.repeatCount, 1)))))
+                        {
+                            bill.billStack.Delete(bill);
+                            change |= model.RemoveOwnedProductionBill(pass.BillId(bill));
+                            continue;
+                        }
+                        TakeSlot(owned[i].Bench);
+                        ThingDef? product = bill.recipe.ProducedThingDef;
+                        if (product != null)
+                            supply.Add(product, pass.BillId(bill), Math.Max(bill.repeatCount, 0)
+                                * OutputCount(bill.recipe, product),
+                                model.ProductionBillQualityOf(pass.BillId(bill)));
                     }
-                    ThingDef? produced = bill.recipe.ProducedThingDef;
-                    if (produced != null && pendingCrafts.TryGetValue(produced, out int left))
-                        pendingCrafts[produced] = left - Math.Max(bill.repeatCount, 0);
+                PruneDeleted();
+                var queue = new List<CraftNeed<ThingDef>>();
+                for (int i = 0; i < missing.Count; i++)
+                    if (supply.Take(missing[i].Item, 1, missing[i].MinQuality) > 0)
+                        queue.Add(missing[i]);
+
+                var skipped = new List<ThingDef>();
+                for (int i = 0; i < queue.Count; i++)
+                {
+                    // A newly placed multi-output bill may cover later slots.
+                    var need = queue[i];
+                    if (supply.Take(need.Item, 1, need.MinQuality) == 0) continue;
+                    Craft result = TryCraft(need.Item, 0, need.MinQuality);
+                    if (result == Craft.Created) supply.Take(need.Item, 1, need.MinQuality);
+                    else if (result == Craft.Blocked) skipped.Add(need.Item);
+                }
+                BuildAhead(skipped);
+                // Final and prerequisite demand share this ledger. A bill
+                // producing a goal item is still needed when an upgrade uses it.
+                for (int i = 0; i < owned.Count; i++)
+                {
+                    Bill_Production bill = owned[i].Bill;
+                    if (inProgress.Contains(bill) || supply.Uses(pass.BillId(bill))) continue;
                     bill.billStack.Delete(bill);
                     change |= model.RemoveOwnedProductionBill(pass.BillId(bill));
                 }
-                PruneDeleted();
-
-                // Dispatch in rollout order. Every craft is examined even
-                // when the benches are full, and an affordable craft
-                // promises its materials even without a free bench, so what
-                // counts as skipped (and every intermediary need) depends
-                // on stock and rollout alone, never on bench capacity.
-                var skipped = new List<ThingDef>();
-                for (int i = 0; i < queue.Count; i++)
-                    if (TryCraft(queue[i].Item, 0, queue[i].MinQuality) == Craft.Blocked)
-                        skipped.Add(queue[i].Item);
-
-                BuildAhead(skipped);
-                Withdraw(demanded, intermediaryNeed, implants: false);
                 return change;
             }
+
+            private static readonly Comparison<Thing> ByQualityThenId = static (a, b) =>
+            {
+                int quality = ImplantQualities.QualityOf(a).CompareTo(ImplantQualities.QualityOf(b));
+                return quality != 0 ? quality : b.thingIDNumber.CompareTo(a.thingIDNumber);
+            };
 
             private void TakeSlot(Building_WorkTable bench)
             {
@@ -379,31 +464,31 @@ namespace Implanner
                 int horizon = Math.Min(skipped.Count, model.ProductionConcurrency);
                 for (int i = 0; i < horizon; i++)
                 {
-                    RecipeDef? recipe = ProductionRecipeFor(skipped[i]);
-                    if (recipe == null) continue;
-                    List<(ThingDef, int)> costs = CostsOf(recipe, 1);
+                    ProductionRoute<ThingDef> route = SelectRoute(skipped[i]);
+                    if (route.Recipe == null) continue;
+                    var costs = route.Recipe.Costs;
                     for (int k = 0; k < costs.Count; k++)
                     {
-                        ThingDef ingredient = costs[k].Item1;
-                        if (!IsManufactured(ingredient)
-                            || ProductionRecipeFor(ingredient) == null) continue;
-                        if (!requirement.TryGetValue(ingredient, out int sum))
-                            order.Add(ingredient);
-                        requirement[ingredient] = sum + costs[k].Item2;
+                        ThingDef ingredient = costs[k].Resource;
+                        if (!intermediaries.Contains(ingredient)) continue;
+                        if (!requirement.TryGetValue(ingredient, out int sum)) order.Add(ingredient);
+                        requirement[ingredient] = sum + costs[k].Count;
                     }
                 }
                 for (int i = 0; i < order.Count; i++)
+                    EnsureIngredient(order[i], budget.Shortfall(order[i], requirement[order[i]]), 1);
+            }
+
+            private void EnsureIngredient(ThingDef item, int wanted, int depth)
+            {
+                intermediaryNeed.TryGetValue(item, out int prior);
+                if (wanted <= prior) return;
+                intermediaryNeed[item] = wanted;
+                int left = supply.Take(item, wanted - prior);
+                while (left > 0)
                 {
-                    ThingDef ingredient = order[i];
-                    int perCraft = OutputCount(ProductionRecipeFor(ingredient)!, ingredient);
-                    if (perCraft <= 0) continue;
-                    int shortfall = budget.Shortfall(ingredient, requirement[ingredient]);
-                    int wanted = (shortfall + perCraft - 1) / perCraft;
-                    intermediaryNeed.TryGetValue(ingredient, out int need);
-                    if (wanted > need) intermediaryNeed[ingredient] = wanted;
-                    pendingCrafts.TryGetValue(ingredient, out int queued);
-                    for (int n = queued; n < wanted; n++)
-                        if (TryCraft(ingredient, 1) != Craft.Created) break;
+                    if (TryCraft(item, depth) != Craft.Created) break;
+                    left = supply.Take(item, left);
                 }
             }
 
@@ -470,15 +555,16 @@ namespace Implanner
             /// storage after its bill completes; counting only spawned items
             /// let that window queue a duplicate bill (observed in-game
             /// 2026-09-26: a second bionic arm crafted).
-            private List<int> FreeStock(ThingDef item)
+            private List<Thing> FreeThings(ThingDef item)
             {
-                var qualities = new List<int>();
+                var things = new List<Thing>();
                 List<int>? ids = colony.ItemIdsOf(item);
                 if (ids != null)
                     for (int i = 0; i < ids.Count; i++)
                     {
                         Thing thing = pass.Index.ItemsById[ids[i]];
-                        if (!thing.IsForbidden(Faction.OfPlayer)) AddItems(qualities, thing);
+                        if (!thing.IsForbidden(Faction.OfPlayer))
+                            for (int n = 0; n < thing.stackCount; n++) things.Add(thing);
                     }
                 Faction faction = PlayerFactions.AuthoritativeFaction;
                 for (int m = 0; m < colony.Maps.Count; m++)
@@ -488,16 +574,10 @@ namespace Implanner
                     {
                         Thing? carried = pawns[p].carryTracker?.CarriedThing;
                         if (carried != null && carried.def == item && pawns[p].Faction == faction)
-                            AddItems(qualities, carried);
+                            for (int n = 0; n < carried.stackCount; n++) things.Add(carried);
                     }
                 }
-                return qualities;
-            }
-
-            private static void AddItems(List<int> qualities, Thing thing)
-            {
-                int quality = ImplantQualities.QualityOf(thing);
-                for (int n = 0; n < thing.stackCount; n++) qualities.Add(quality);
+                return things;
             }
 
             /// Makes the new bill deliver at least the slot's minimum
@@ -520,7 +600,7 @@ namespace Implanner
                     : ProductionQueue.UnknownQuality;
             }
 
-            private enum Craft { Created, NoBench, Blocked }
+            private enum Craft { Created, NoBench, Waiting, Blocked }
 
             /// One craft of the item. When it fits the budget its materials
             /// are promised, and a bill is created if a bench has room
@@ -531,104 +611,128 @@ namespace Implanner
             /// the shortfall, queued right here in rollout order.
             private Craft TryCraft(ThingDef item, int depth, int minQuality = 0)
             {
-                RecipeDef? recipe = ProductionRecipeFor(item);
-                if (recipe == null || !recipe.AvailableNow) return Craft.Blocked;
-                List<(ThingDef, int)> costs = CostsOf(recipe, 1);
-                if (budget.TryCommit(costs))
+                ProductionRoute<ThingDef> route = SelectRoute(item);
+                RecipeDef? recipe = route.Recipe == null ? null
+                    : DefDatabase<RecipeDef>.GetNamedSilentFail(route.Recipe.Id);
+                if (!choices.ContainsKey(item))
                 {
-                    Building_WorkTable? bench = FindFreeBench(recipe);
-                    if (bench == null) return Craft.NoBench;
-                    Bill_Production bill = MakeBill(recipe, 1, model.ProductionSkill);
-                    bench.BillStack.AddBill(bill);
-                    TakeSlot(bench);
-                    pendingCrafts.TryGetValue(item, out int pending);
-                    pendingCrafts[item] = pending + 1;
-                    string billId = pass.BillId(bill);
-                    change |= model.SetOwnedProductionBill(billId, item.defName);
-                    change |= model.SetProductionBillQuality(billId,
-                        PromiseQuality(bill, item, minQuality));
-                    return Craft.Created;
+                    // A researched recipe with no eligible bench is still a
+                    // crafting route. Report waiting for a bench, not no recipe.
+                    RecipeDef? diagnostic = recipe;
+                    if (diagnostic == null)
+                    {
+                        var candidates = ProductionRecipesFor(item);
+                        for (int i = 0; i < candidates.Count; i++)
+                            if (candidates[i].AvailableNow) { diagnostic = candidates[i]; break; }
+                    }
+                    choices[item] = new Decision(diagnostic,
+                        recipe != null && route.Blocked ? route.Blocker : null);
                 }
-                if (!model.AllowIntermediaries || depth >= MaxIntermediaryDepth)
-                    return Craft.Blocked;
+                if (recipe == null) return Craft.Blocked;
+                var costs = CostsOf(recipe, 1);
+                if (budget.TryCommit(costs))
+                    return QueueCraft(recipe, item, minQuality);
+                if (!model.AllowIntermediaries || depth >= MaxIntermediaryDepth
+                    || !expanded.Add(item)) return Craft.Blocked;
+                if (!route.Blocked)
+                {
+                    // Follow the feasible chain's actual recipes. Merely choosing
+                    // the final recipe and reselecting each child independently
+                    // can consume materials the final craft needs.
+                    for (int i = 0; i < route.Crafts.Count; i++)
+                    {
+                        var craft = route.Crafts[i];
+                        for (int k = 0; k < craft.Costs.Count; k++)
+                        {
+                            var cost = craft.Costs[k];
+                            int shortfall = budget.Shortfall(cost.Resource, cost.Count);
+                            if (shortfall <= 0) continue;
+                            supply.Take(cost.Resource, shortfall);
+                            intermediaryNeed.TryGetValue(cost.Resource, out int prior);
+                            intermediaryNeed[cost.Resource] = Math.Max(prior, shortfall);
+                        }
+                        if (i == route.Crafts.Count - 1 || !budget.TryCommit(craft.Costs)) continue;
+                        RecipeDef next = DefDatabase<RecipeDef>.GetNamed(craft.Id);
+                        QueueCraft(next, craft.Item, 0);
+                    }
+                    return Craft.Waiting;
+                }
                 for (int k = 0; k < costs.Count; k++)
                 {
                     ThingDef ingredient = costs[k].Item1;
-                    int shortfall = budget.Shortfall(ingredient, costs[k].Item2);
-                    if (shortfall <= 0 || !IsManufactured(ingredient)) continue;
-                    RecipeDef? sub = ProductionRecipeFor(ingredient);
-                    if (sub == null || !expanded.Add(ingredient)) continue;
-                    int perCraft = OutputCount(sub, ingredient);
-                    if (perCraft <= 0) continue;
-                    int wanted = (shortfall + perCraft - 1) / perCraft;
-                    intermediaryNeed[ingredient] = wanted;
-                    pendingCrafts.TryGetValue(ingredient, out int queued);
-                    for (int n = queued; n < wanted; n++)
-                        if (TryCraft(ingredient, depth + 1) != Craft.Created) break;
+                    if (!intermediaries.Contains(ingredient)) continue;
+                    EnsureIngredient(ingredient, budget.Shortfall(ingredient, costs[k].Item2), depth + 1);
                 }
                 return Craft.Blocked;
             }
 
-            /// Withdraws queued implant bills the rollout did not use: each
-            /// bill is matched by its item and quality promise against the
-            /// pending crafts ProductionQueue.UncoveredCrafts took, started
-            /// bills first. Started bills always finish.
-            private void WithdrawImplants(HashSet<ThingDef> demanded,
-                Dictionary<ThingDef, List<int>> used)
+            private Craft QueueCraft(RecipeDef recipe, ThingDef item, int minQuality)
             {
-                var remaining = new Dictionary<ThingDef, List<int>>();
-                foreach (KeyValuePair<ThingDef, List<int>> pair in used)
-                    remaining[pair.Key] = new List<int>(pair.Value);
-                for (int round = 0; round < 2; round++)
-                    for (int i = 0; i < owned.Count; i++)
-                    {
-                        Bill_Production bill = owned[i].Bill;
-                        bool started = inProgress.Contains(bill);
-                        if (started != (round == 0)) continue;
-                        ThingDef? produced = bill.recipe.ProducedThingDef;
-                        if (produced == null || !demanded.Contains(produced)) continue;
-                        int promise = model.ProductionBillQualityOf(pass.BillId(bill));
-                        remaining.TryGetValue(produced, out List<int>? promises);
-                        int crafts = Math.Max(bill.repeatCount, 0);
-                        bool needed = true;
-                        for (int n = 0; n < crafts && needed; n++)
-                            needed = promises != null && promises.Remove(promise);
-                        if (started || needed) continue;
-                        bill.billStack.Delete(bill);
-                        change |= model.RemoveOwnedProductionBill(pass.BillId(bill));
-                    }
-                PruneDeleted();
+                Building_WorkTable? bench = FindFreeBench(recipe);
+                if (bench == null) return Craft.NoBench;
+                Bill_Production bill = MakeBill(recipe, 1, model.ProductionSkill);
+                bench.BillStack.AddBill(bill);
+                TakeSlot(bench);
+                string billId = pass.BillId(bill);
+                change |= model.SetOwnedProductionBill(billId, item.defName);
+                int quality = PromiseQuality(bill, item, minQuality);
+                change |= model.SetProductionBillQuality(billId, quality);
+                supply.Add(item, billId, OutputCount(recipe, item), quality);
+                return Craft.Created;
             }
 
-            /// Withdraws queued Implanner bills beyond what is needed:
-            /// implant items against the crafts the rollout used,
-            /// intermediaries (items nobody plans to implant) against their
-            /// need this pass. Started bills always finish.
-            private void Withdraw(HashSet<ThingDef> demanded,
-                Dictionary<ThingDef, int> needed, bool implants)
+            private ProductionRoute<ThingDef> SelectRoute(ThingDef item)
             {
-                var remaining = new Dictionary<ThingDef, int>(needed);
-                // Started bills count first, so only queued ones go.
-                for (int round = 0; round < 2; round++)
-                    for (int i = 0; i < owned.Count; i++)
+                AddRecipeFacts(item);
+                ProductionBudget<ThingDef> future = budget.Copy();
+                supply.AddAvailableTo(future);
+                return ProductionRoute<ThingDef>.Select(item, recipeFacts, budget, intermediaries,
+                    MaxIntermediaryDepth, future);
+            }
+
+            private void AddRecipeFacts(ThingDef item)
+            {
+                if (recipeFacts.ContainsKey(item)) return;
+                var facts = new List<ProductionRecipe<ThingDef>>();
+                recipeFacts[item] = facts;
+                var candidates = ProductionRecipesFor(item);
+                for (int i = 0; i < candidates.Count; i++)
+                {
+                    RecipeDef recipe = candidates[i];
+                    var costs = CostsOf(recipe, 1);
+                    facts.Add(new ProductionRecipe<ThingDef>(recipe.defName, item,
+                        OutputCount(recipe, item), costs, recipe.AvailableNow && HasEligibleBench(recipe),
+                        recipe.WorkAmountTotal(null)));
+                    for (int k = 0; k < costs.Count; k++)
                     {
-                        Bill_Production bill = owned[i].Bill;
-                        bool started = inProgress.Contains(bill);
-                        if (started != (round == 0)) continue;
-                        ThingDef? produced = bill.recipe.ProducedThingDef;
-                        if (produced == null || demanded.Contains(produced) != implants)
-                            continue;
-                        remaining.TryGetValue(produced, out int left);
-                        int crafts = Math.Max(bill.repeatCount, 0);
-                        if (started || left >= crafts)
-                        {
-                            remaining[produced] = left - crafts;
-                            continue;
-                        }
-                        bill.billStack.Delete(bill);
-                        change |= model.RemoveOwnedProductionBill(pass.BillId(bill));
+                        ThingDef ingredient = costs[k].Item1;
+                        if (!model.AllowIntermediaries || !CanMakeIntermediate(ingredient)) continue;
+                        intermediaries.Add(ingredient);
+                        AddRecipeFacts(ingredient);
                     }
-                PruneDeleted();
+                }
+            }
+
+            private bool HasEligibleBench(RecipeDef recipe)
+            {
+                var users = RecipeUsersOf(recipe);
+                for (int i = 0; i < benches.Count; i++)
+                {
+                    Building_WorkTable bench = benches[i];
+                    if (!users.Contains(bench.def)) continue;
+                    if (model.IsBenchDesignated(bench.thingIDNumber)) return true;
+                    if (!model.OnlyDesignatedBenches && (!model.OnlyIdleBenches || !HasOtherWork(bench)))
+                        return true;
+                }
+                return false;
+            }
+
+            internal void PublishDecisions(Dictionary<int, IReadOnlyDictionary<ThingDef, Decision>> published)
+            {
+                IReadOnlyDictionary<ThingDef, Decision> value = choices;
+                if (colony.Maps.Count > 0 && decisions.TryGetValue(colony.Maps[0].uniqueID, out var prior)
+                    && SameDecisions(prior, choices)) value = prior;
+                for (int i = 0; i < colony.Maps.Count; i++) published[colony.Maps[i].uniqueID] = value;
             }
 
             /// The bench at the colony that takes a new one-craft bill for
@@ -701,12 +805,21 @@ namespace Implanner
                     if (!ingredient.IsFixedIngredient) continue;
                     ThingDef def = ingredient.FixedIngredient;
                     if (!budget.Tracks(def))
-                        budget.Track(def, ColonyResourceCount(colony.Maps, def),
-                            model.ResourceReserveOf(def.defName));
+                        budget.Track(def, IngredientStock(def), model.ResourceReserveOf(def.defName));
                     costs.Add((def, ingredient.CountRequiredOfFor(def, recipe) * crafts));
                 }
                 return costs;
             }
+            private int IngredientStock(ThingDef item)
+            {
+                if (!item.isTechHediff) return ColonyResourceCount(colony.Maps, item);
+                int count = 0;
+                List<Thing> things = FreeThings(item);
+                for (int i = 0; i < things.Count; i++)
+                    if (!ProtectedItems.Contains(things[i].thingIDNumber)) count++;
+                return count;
+            }
+
         }
 
         /// Bills somebody is working on right now at these maps: a bound
@@ -735,48 +848,6 @@ namespace Implanner
                             into.Add(uft);
                 }
             }
-        }
-
-        /// The materials Implanner's queued (not started) bills at these
-        /// maps have promised, per resource: what the Overview's blocker
-        /// text subtracts from stock, the same way the dispatcher does.
-        internal static Dictionary<ThingDef, int> PromisedMaterials(
-            PlannerModel model, List<Map> maps)
-        {
-            var promised = new Dictionary<ThingDef, int>();
-            if (model.OwnedProductionBills.Count == 0) return promised;
-            var started = new HashSet<Bill>(ReferenceIdentityComparer<Bill>.Instance);
-            CollectInProgress(maps, started);
-            for (int m = 0; m < maps.Count; m++)
-            {
-                List<Building> buildings = maps[m].listerBuildings.allBuildingsColonist;
-                for (int b = 0; b < buildings.Count; b++)
-                {
-                    if (!(buildings[b] is Building_WorkTable bench)) continue;
-                    BillStack bills = bench.BillStack;
-                    for (int i = 0; i < bills.Count; i++)
-                    {
-                        Bill bill = bills[i];
-                        if (started.Contains(bill)
-                            || !model.OwnedProductionBills.ContainsKey(bill.GetUniqueLoadID()))
-                            continue;
-                        int crafts = bill is Bill_Production production
-                            ? Math.Max(production.repeatCount, 1)
-                            : 1;
-                        List<IngredientCount>? ingredients = bill.recipe.ingredients;
-                        if (ingredients == null) continue;
-                        for (int k = 0; k < ingredients.Count; k++)
-                        {
-                            if (!ingredients[k].IsFixedIngredient) continue;
-                            ThingDef def = ingredients[k].FixedIngredient;
-                            promised.TryGetValue(def, out int sum);
-                            promised[def] = sum
-                                + ingredients[k].CountRequiredOfFor(def, bill.recipe) * crafts;
-                        }
-                    }
-                }
-            }
-            return promised;
         }
 
         /// The game's bill object for one Implanner production bill: a
@@ -816,6 +887,9 @@ namespace Implanner
                         return true;
             return false;
         }
+
+        internal static bool CanMakeIntermediate(ThingDef def) =>
+            (IsManufactured(def) || def.isTechHediff) && ProductionRecipesFor(def).Count > 0;
 
         /// Items of def one craft of the recipe yields. Builder path only.
         internal static int OutputCount(RecipeDef recipe, ThingDef def)
@@ -860,8 +934,10 @@ namespace Implanner
                 for (int i = 0; i < catalog.Count; i++)
                 {
                     ThingDef? item = catalog[i].Def.spawnThingOnRemoved;
-                    RecipeDef? recipe = item != null ? ProductionRecipeFor(item) : null;
-                    if (recipe != null) benches.UnionWith(RecipeUsersOf(recipe));
+                    if (item == null) continue;
+                    IReadOnlyList<RecipeDef> candidates = ProductionRecipesFor(item);
+                    for (int r = 0; r < candidates.Count; r++)
+                        benches.UnionWith(RecipeUsersOf(candidates[r]));
                 }
                 implantBenches = benches;
             }

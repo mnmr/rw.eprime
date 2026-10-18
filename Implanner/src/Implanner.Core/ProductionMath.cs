@@ -149,6 +149,21 @@ namespace Implanner.Core
 
         public bool Tracks(TKey resource) => resources.ContainsKey(resource);
 
+        /// A route probe owns its copy; trying an alternative never spends the
+        /// dispatcher's materials. Only the selected, queued craft commits them.
+        public ProductionBudget<TKey> Copy()
+        {
+            var copy = new ProductionBudget<TKey>();
+            foreach (var pair in resources) copy.resources.Add(pair.Key, pair.Value);
+            return copy;
+        }
+
+        public void Supply(TKey resource, int count)
+        {
+            resources.TryGetValue(resource, out var r);
+            resources[resource] = (r.Stock + count, r.Reserve, r.Promised);
+        }
+
         public void Track(TKey resource, int stock, int reserve) =>
             resources[resource] = (stock, reserve, 0);
 

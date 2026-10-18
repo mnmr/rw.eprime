@@ -110,7 +110,7 @@ internal static class Program
             Publish("starting");
             if (Path.GetFileName(executable) == "RimWorldLinux")
             {
-                if (gameArguments.Length != 0) throw new InvalidOperationException("WSL runs do not accept extra game arguments.");
+                // The Linux supervisor reads the same validated flags from launch.json.
                 int linuxExit = WslHost.Run(profile, token, gameId => { process.Id = gameId; Publish("running"); });
                 Publish(linuxExit == 0 ? "stopped" : "failed", (uint)linuxExit);
                 return;

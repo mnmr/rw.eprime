@@ -303,15 +303,18 @@ namespace Implanner.UI
             {
                 ThingDef? item = implants[i].Def.spawnThingOnRemoved;
                 if (item == null) continue;
-                RecipeDef? recipe = PlannerProduction.ProductionRecipeFor(item);
-                List<IngredientCount>? ingredients = recipe?.ingredients;
-                if (ingredients == null) continue;
-                for (int g = 0; g < ingredients.Count; g++)
+                IReadOnlyList<RecipeDef> candidates = PlannerProduction.ProductionRecipesFor(item);
+                for (int r = 0; r < candidates.Count; r++)
                 {
-                    if (!ingredients[g].IsFixedIngredient) continue;
-                    ThingDef def = ingredients[g].FixedIngredient;
-                    if (def == null || !seen.Add(def)) continue;
-                    AddReserveRow(model, rows, def);
+                    List<IngredientCount>? ingredients = candidates[r].ingredients;
+                    if (ingredients == null) continue;
+                    for (int g = 0; g < ingredients.Count; g++)
+                    {
+                        if (!ingredients[g].IsFixedIngredient) continue;
+                        ThingDef def = ingredients[g].FixedIngredient;
+                        if (def == null || !seen.Add(def)) continue;
+                        AddReserveRow(model, rows, def);
+                    }
                 }
             }
             rows.Sort(ByLabelThenDef);

@@ -23,6 +23,17 @@ import time
 RUNS_ROOT = Path('/mnt/d/Code/RimWorld/AutomationProfiles/Shared/Runs')
 
 
+def build_game_arguments(root, token):
+    arguments = [str(root / 'Game/RimWorldLinux'), '-savedatafolder=' + str(root),
+                 '-automationtoken=' + token, '-logFile', str(root / 'Player.log'),
+                 '-screen-fullscreen', '0', '-screen-width', '1920', '-screen-height', '1080']
+    launch = json.loads((root / 'launch.json').read_text(encoding='utf-8-sig'))
+    for argument in launch.get('gameArguments', []):
+        if not isinstance(argument, str) or not re.fullmatch(r'-pickle-[a-z-]+(=[^\s"]*)?', argument):
+            raise ValueError('Unsupported game argument: ' + repr(argument))
+        arguments.append(argument)
+    return arguments
+
 class ChildSession:
     def __init__(self, arguments, **kwargs):
         parent = os.getpid()
@@ -202,9 +213,7 @@ def supervise(root, token, owner):
                         environment['MESA_D3D12_DEFAULT_ADAPTER_NAME'] = 'NVIDIA'
                     environment.pop('WAYLAND_DISPLAY', None)
                     environment.pop('PULSE_SERVER', None)
-                    arguments = [str(root / 'Game/RimWorldLinux'), '-savedatafolder=' + str(root),
-                                 '-automationtoken=' + token, '-logFile', str(root / 'Player.log'),
-                                 '-screen-fullscreen', '0', '-screen-width', '1920', '-screen-height', '1080']
+                    arguments = build_game_arguments(root, token)
                     with (root / 'linux-console.log').open('wb') as game_log:
                         with ChildSession(arguments, cwd=root / 'Game', env=environment,
                                           stdin=subprocess.DEVNULL, stdout=game_log, stderr=game_log) as game:
