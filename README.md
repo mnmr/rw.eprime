@@ -52,6 +52,22 @@ scripts\build-deploy-all.cmd
 
 Building never deploys — installing a mod into the game requires its `scripts/deploy.ps1` and a game restart.
 
+## Workshop publishing
+
+Each mod's `scripts/publish.ps1` uploads through SteamCMD, then synchronizes the
+Workshop category and version tags from the deployed `About.xml` through Steam's
+API. Keep the Steam desktop client logged in as the item owner; the tag step uses
+the installed RimWorld 1.7 Steamworks libraries and PowerShell 7.6 or newer.
+SteamCMD alone leaves existing tags unchanged, even when `supportedVersions` changes.
+
+To repair tags without uploading mod files or changing the description:
+
+```powershell
+pwsh -NoProfile -Command "& ./Shared/tools/deploy/sync-workshop-tags.ps1 -ModPath Readouts/mod,QualityJobs/mod,WorkRoles/mod,Implanner/mod"
+```
+
+Add `-WhatIf` to preview the item IDs and tags without contacting Steam.
+
 ## History
 
 The repo was consolidated from the mods' individual repositories with full history preserved; historical commits are prefixed with their origin (`[ER]` Readouts, `[QJ]` Quality Jobs, `[WR]` WorkRoles).

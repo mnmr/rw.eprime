@@ -173,9 +173,17 @@ if ($firstPublish) {
     }
     Set-Content -LiteralPath $idFile -Value $assigned -NoNewline
     Set-Content -LiteralPath (Join-Path $repo "mod\About\PublishedFileId.txt") -Value $assigned -NoNewline
-    Write-Host "First publish complete: item $assigned (id written to deployed + repo About)."
+    Write-Host "Created item $assigned (id written to deployed + repo About)."
+}
+
+# SteamCMD leaves category/version tags untouched. Use the same Steamworks API
+# as RimWorld's uploader, deriving tags from the exact content just uploaded.
+& "$PSScriptRoot\sync-workshop-tags.ps1" -ModPath $content -RimWorldDir (Split-Path -Parent $RimWorldMods) | Out-Null
+
+if ($firstPublish) {
+    Write-Host "First publish complete: item $assigned; Workshop tags synchronized."
 } else {
     $previewMsg = if ($sendPreview) { "preview updated" } else { "preview unchanged, not sent" }
-    Write-Host "Upload complete. Description updated ($descriptionBytes bytes); $previewMsg; title not modified."
+    Write-Host "Upload complete. Description updated ($descriptionBytes bytes); $previewMsg; title not modified; Workshop tags synchronized."
 }
 exit 0
