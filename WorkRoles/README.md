@@ -68,6 +68,7 @@ In multiplayer, every change (role edits, assignments, toggles) is a synced comm
 - Integrates with More Than Capable when installed: hated work becomes an Awful recommendation signal and is flagged on assigned roles.
 - Integrates with MultiFloors, Strata and "As above, so below" when installed: floors on a single tile are treated as a single location.
 - Integrates with Colony Groups when installed: pawn groups appear as a grouping option for the colonist table.
+- Integrates with RJW's Brothel Colony add-on: its Brothel work appears automatically. Recommendations use Social, or Sex as the primary skill with Social as a secondary skill when Sexperience is installed. WorkRoles leaves service designation, visitor eligibility and job behavior to those mods.
 - Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense, Achtung! and many, many others.
 - Multiplayer compatible.
 
@@ -84,6 +85,12 @@ These are mods I've checked for compatibility:
 - **Colony Groups:** works, and its groups show up in the colonist table's Group dropdown — but avoid its group work-priority presets (they set priorities).
 - **Complex Jobs:** moves jobs to new work types — should work fine.
 - **Keep Building:** auto-creates work bills — should work fine (no public source, so cannot verify that it doesn't also try to set priorities).
+
+RJW integration is optional and adds no mod dependency. Obtain the mods from their upstream projects: [RJW](https://gitgud.io/Ed86/rjw), [Brothel Colony](https://gitgud.io/CalamaBanana/rjw-brothel-colony), and [Sexperience](https://gitgud.io/amevarashi/rjw-sexperience). Brothel Colony requires Ideology. Use Brothel Colony instead of the older RJW Whoring add-on. Installing only RJW does not create a new work type; WorkRoles manages the Brothel work supplied by Brothel Colony. With Sexperience, the job's skill profile includes both Social and Sex as used and trained skills.
+
+In-game checks on RimWorld 1.6 and 1.7 used unchanged RJW 6.2.1, Sexperience 1.6.1.1 and Brothel Colony master downloaded on 2026-10-18. These upstream packages declare support through 1.6. The 1.7 check completed the job, payment and skill gains, but RJW's unused `rjw_test.psd` asset produced an import error.
+
+When more than twelve skills are installed, the selected-colonist panel uses a third skills column and gives the recommendations panel less width. The standard twelve-skill layout keeps its existing size.
 
 ## Check out my other mods
 

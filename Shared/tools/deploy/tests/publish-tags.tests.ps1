@@ -1,3 +1,5 @@
+param([switch]$CheckUnsupportedRuntime)
+
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $deployRoot = Split-Path -Parent $PSScriptRoot
@@ -20,11 +22,36 @@ try {
 param([string[]]$ModPath, [string]$RimWorldDir)
 @{ ModPath = $ModPath; RimWorldDir = $RimWorldDir } | ConvertTo-Json | Set-Content -LiteralPath "$PSScriptRoot\tag-update.json"
 '@
-    function Read-Host { 'yes' }
-    function Invoke-RestMethod { @{ response = @{ publishedfiledetails = @(@{ preview_url = 'https://example.invalid/preview.png' }) } } }
+    $publishActions = [Collections.Generic.List[string]]::new()
+    function Read-Host { $publishActions.Add('prompt'); 'yes' }
+    function Invoke-RestMethod {
+        $publishActions.Add('network')
+        @{ response = @{ publishedfiledetails = @(@{ preview_url = 'https://example.invalid/preview.png' }) } }
+    }
     function Invoke-WebRequest { param($Uri, $OutFile) Set-Content -LiteralPath $OutFile -Value 'preview fixture' }
-    function Invoke-TestSteamCmd { $global:LASTEXITCODE = 0 }
-    & "$fixture\publisher\publish-mod.ps1" -ModRoot "$fixture\repo" -DeployName Example -RimWorldMods "$fixture\installed" -SteamCmd Invoke-TestSteamCmd -Username fixture -ChangeNote 'Version support'
+    function Invoke-TestSteamCmd { $publishActions.Add('SteamCMD'); $global:LASTEXITCODE = 0 }
+    $publishArgs = @{
+        ModRoot = "$fixture\repo"; DeployName = 'Example'; RimWorldMods = "$fixture\installed"
+        SteamCmd = 'Invoke-TestSteamCmd'; Username = 'fixture'; ChangeNote = 'Version support'
+    }
+    if ($CheckUnsupportedRuntime) {
+        Check ($PSVersionTable.PSVersion.Major -eq 5) 'The compatibility regression must run in Windows PowerShell 5.1.'
+        $failure = ''
+        try { & "$fixture\publisher\publish-mod.ps1" @publishArgs } catch { $failure = $_.Exception.Message }
+        Check ($publishActions.Count -eq 0) "Unsupported PowerShell must stop before network access, prompts or uploads. Observed: $($publishActions -join ', ')"
+        Check ($failure -match 'PowerShell 7\.6' -and $failure -match 'pwsh') 'The version error must explain the required runtime and how to launch it.'
+        Check (-not (Test-Path -LiteralPath "$fixture\repo\temp\workshop_item.vdf")) 'Rejected publishing must not prepare an upload.'
+        Check (-not (Test-Path -LiteralPath "$fixture\publisher\tag-update.json")) 'Rejected publishing must not synchronize tags.'
+        Write-Host 'Unsupported PowerShell is rejected before publishing.'
+        return
+    }
+
+    # Exercise the actual legacy host, so a passing modern-host run cannot hide
+    # a late failure after SteamCMD has already uploaded the mod.
+    & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $PSCommandPath -CheckUnsupportedRuntime
+    Check ($LASTEXITCODE -eq 0) 'Windows PowerShell compatibility regression failed.'
+
+    & "$fixture\publisher\publish-mod.ps1" @publishArgs
     Check (Test-Path -LiteralPath "$fixture\publisher\tag-update.json") 'Successful uploads must synchronize Workshop tags; SteamCMD alone leaves the old versions on the listing.'
     $update = Get-Content -LiteralPath "$fixture\publisher\tag-update.json" -Raw | ConvertFrom-Json
     Check ($update.ModPath[0] -eq "$fixture\installed\Example") 'Tags must come from the same deployed mod that was uploaded.'

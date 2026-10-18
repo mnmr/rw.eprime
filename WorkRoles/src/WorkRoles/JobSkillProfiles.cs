@@ -40,8 +40,9 @@ namespace WorkRoles
             public List<string> TrainedSkills = new List<string>();
             /// Same skills as TrainedSkills, by defName (language-independent).
             public List<string> TrainedSkillDefNames = new List<string>();
-            /// The work type's relevant skills, by defName (tier split:
-            /// XP inside vs outside the giver's own discipline).
+            /// Recommendation discipline skills, by defName (normally the
+            /// work type's declared relevant skills; audited optional profiles
+            /// may select their primary discipline without changing live defs).
             public List<string> RelevantSkillDefNames = new List<string>();
             public bool GivesXp;
             /// Vanilla unlock age (years) of the parent work type; 0 = no gate.
@@ -355,19 +356,36 @@ namespace WorkRoles
                     giver.defName, out string[] xpSkills);
                 bool curatedUsed = VanillaUsedSkillBaseline.UsedByGiver.TryGetValue(
                     giver.defName, out IReadOnlyList<string> usedSkills);
+                IReadOnlyList<string>? trainedSkills = xpSkills;
+                List<JobProfileSkillSource> relevantSkills = SkillSources(
+                    giver.workType.relevantSkills, skillIdentities, snapshot);
+                OptionalJobSkillProfile? optional = OptionalBrothelProfile(giver, snapshot);
+                if (optional != null)
+                {
+                    curated = curatedUsed = true;
+                    trainedSkills = optional.TrainedSkills;
+                    usedSkills = optional.UsedSkills;
+                    // This detached giver discipline chooses the recommendation
+                    // primary; upstream WorkTypeDef.relevantSkills stays intact.
+                    if (snapshot.SkillsByName.TryGetValue(
+                            optional.RecommendationSkillDefName, out SkillDef primary))
+                        relevantSkills = new List<JobProfileSkillSource> {
+                            SkillSource(primary, skillIdentities, snapshot) };
+                }
                 builder.AddGiver(
                     giver.defName,
                     workTypeIdentities.Of(giver.workType),
-                    SkillSources(giver.workType.relevantSkills, skillIdentities, snapshot),
+                    relevantSkills,
                     fixedUsers,
                     giver.billGiversAllHumanlikes || giver.billGiversAllHumanlikesCorpses,
                     giver.billGiversAllAnimals || giver.billGiversAllAnimalsCorpses,
                     giver.billGiversAllMechanoids || giver.billGiversAllMechanoidsCorpses,
                     curated,
-                    xpSkills,
+                    trainedSkills,
                     curatedUsed,
                     usedSkills,
-                    CuratedGiverEffects(giver, xpSkills, usedSkills, snapshot));
+                    optional?.Effects
+                        ?? CuratedGiverEffects(giver, trainedSkills, usedSkills, snapshot));
             }
 
             var observedRecipeUsers = new HashSet<ThingDef>(ReferenceIdentityComparer<ThingDef>.Instance);
@@ -534,12 +552,29 @@ namespace WorkRoles
                 StatUsesSkill(surgerySuccess, recipe.workSkill));
         }
 
+        private static OptionalJobSkillProfile? OptionalBrothelProfile(
+            WorkGiverDef giver, DefinitionSnapshot snapshot)
+        {
+            if (giver.defName != "Soliciting") return null;
+            snapshot.SkillsByName.TryGetValue("Sex", out SkillDef sex);
+            Type? giverClass = giver.giverClass;
+            ModContentPack? pack = giver.modContentPack;
+            // Compare already-loaded metadata identities at the definition
+            // build boundary; never link or invoke an optional assembly type.
+            bool classOwned = giverClass != null && pack?.assemblies != null
+                && pack.assemblies.loadedAssemblies.Contains(giverClass.Assembly);
+            return OptionalJobSkillProfile.ForBrothel(giver.defName,
+                pack?.PackageIdPlayerFacing, giverClass?.FullName, classOwned,
+                giver.workType.defName, giver.workType.modContentPack?.PackageIdPlayerFacing,
+                sex?.defName, sex?.modContentPack?.PackageIdPlayerFacing);
+        }
+
         /// Effect kinds for a code-defined giver: the curated giver-to-stat
         /// wiring supplies the stats, each stat's declarative skill need
         /// supplies the skill, so no effect claim exists without both links.
         private static List<JobProfileSkillEffect>? CuratedGiverEffects(
             WorkGiverDef giver,
-            string[]? xpSkills,
+            IReadOnlyList<string>? xpSkills,
             IReadOnlyList<string>? usedSkills,
             DefinitionSnapshot snapshot)
         {

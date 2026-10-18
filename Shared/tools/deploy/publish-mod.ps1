@@ -13,6 +13,12 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+# The post-upload tag synchronizer needs modern PowerShell. Reject unsupported
+# hosts before any network access, prompts or irreversible Workshop upload.
+if ($PSVersionTable.PSVersion -lt [version]'7.6') {
+    throw "Workshop publishing requires PowerShell 7.6 or newer (current: $($PSVersionTable.PSVersion)). Use pwsh to run the publish script."
+}
+
 $repo = $ModRoot
 $content = Join-Path $RimWorldMods $DeployName
 if (-not (Test-Path -LiteralPath $content -PathType Container)) {

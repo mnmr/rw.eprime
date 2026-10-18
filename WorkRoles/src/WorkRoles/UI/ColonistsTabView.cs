@@ -176,12 +176,15 @@ namespace WorkRoles.UI
         private const float ActivitySlotH = 18f;
 
         // Stats panel layout constants
-        private const float SkillColWidth = 200f;   // minimum; signal decorators may widen both columns
-        private const int   SkillCols = 2;
-        private const float CellH = 20f;
+        // Owner: process. Key/dependencies: the fixed vanilla 12-skill geometry
+        // at the 200px minimum width. Value: immutable grid offsets. Refresh:
+        // once at initialization. Equality: one shared identity. Teardown:
+        // process lifetime; contains no game objects or disposable resources.
+        private static readonly ColonistSkillGridLayout DefaultSkillGrid =
+            ColonistSkillGridLayout.Calculate(12, 200f);
+        private const float CellH = ColonistSkillGridLayout.CellHeight;
         private const float StatsPadding = 12f;     // top+bottom padding inside box
         private const float ColSepWidth = 2f;       // separator width
-        private const float ColSepMargin = 12f;     // space on each side of separator
         private const float SkillDecoratorSize = 16f;
         private const float SkillDecoratorGap = 2f;
         private const float SkillLabelDecoratorGap = 4f;
@@ -216,6 +219,7 @@ namespace WorkRoles.UI
             // across a reopen when nothing bumped the version in between).
             sizeStamp = roleTipStamp = rulesPassStamp
                 = ScopeCacheStamp.Invalid;
+            sizeStatsGrid = null;
             ReleaseSkillColumnWidths();
             chipSequenceStamp = ScopeCacheStamp.Invalid;
             paletteSnapshot = null;
@@ -234,6 +238,7 @@ namespace WorkRoles.UI
             InvalidateChromeSnapshot();
             sizeStamp = ScopeCacheStamp.Invalid;
             sizeOwner = null;
+            sizeStatsGrid = null;
             skillColumnsWidthStamp = ScopeCacheStamp.Invalid;
 
             paletteSnapshot = null;
@@ -422,6 +427,7 @@ namespace WorkRoles.UI
             InvalidateChromeSnapshot();
             sizeStamp = ScopeCacheStamp.Invalid;
             sizeOwner = null;
+            sizeStatsGrid = null;
             ReleaseSkillColumnWidths();
 
         }
@@ -442,19 +448,15 @@ namespace WorkRoles.UI
         /// <summary>Height of the stats panel for a given pawn (or generic if null).</summary>
         public float StatsPanelHeight(Pawn? pawn = null)
         {
-            int lineCount = 12;
-            if (pawn != null)
-                lineCount = statsState.Snapshot(pawn).Skills.Count;
-            int rows = (lineCount + SkillCols - 1) / SkillCols;
-            float portraitSection = PortraitDisplaySize + 2f + 20f; // portrait + gap + name label
-            float skillSection = rows * CellH;
-            float contentH = Mathf.Max(portraitSection, skillSection);
-            return contentH + StatsPadding * 2f;
+            ColonistSkillGridLayout grid = pawn == null
+                ? DefaultSkillGrid : statsState.Snapshot(pawn).SkillGrid;
+            return grid.ContentHeight + StatsPadding * 2f;
         }
 
         // Owner: Colonists window. Key: RoleStore/current-map identity,
         // pawn-scope stamp, chip display, palette mode, selected pawn, verdict
-        // preference, ordered skill-column revision, and exact row text metrics.
+        // preference, ordered skill-column revision, selected stats-grid identity,
+        // and exact row text metrics.
         // Value: desired width and height scalars. Dependencies: every key plus
         // cached chip/text measurements. Refresh: immediate on the next size read
         // after key change. Equality: exact keys reuse both scalars. Teardown:
@@ -466,6 +468,7 @@ namespace WorkRoles.UI
         private int sizeCatalogRevision = -1;
         private int sizeMetricRevision = -1;
         private RowTextMetrics sizeTextMetrics;
+        private ColonistSkillGridLayout? sizeStatsGrid;
         private float desiredWidthCache;
         private float desiredHeightCache;
 
@@ -487,10 +490,13 @@ namespace WorkRoles.UI
             int catalogRevision = Latest(UiVersion.Catalog, UiVersion.RolePresentation,
                 UiVersion.RoleWork, UiVersion.RoleCapability, UiVersion.RoleRules);
             RowTextMetrics textMetrics = TextMetrics();
+            ColonistSkillGridLayout statsGrid = selectedPawn == null
+                ? DefaultSkillGrid : statsState.Snapshot(selectedPawn).SkillGrid;
             if (ReferenceEquals(sizeOwner, store) && sizeStamp == stamp
                 && sizeMapId == mapId && sizeKey == key
                 && sizeCatalogRevision == catalogRevision
                 && sizeMetricRevision == UiRevision.Current
+                && ReferenceEquals(sizeStatsGrid, statsGrid)
                 && sizeTextMetrics.ContentEquals(textMetrics)) return;
             sizeOwner = store;
             sizeMapId = mapId;
@@ -498,6 +504,7 @@ namespace WorkRoles.UI
             sizeCatalogRevision = catalogRevision;
             sizeMetricRevision = UiRevision.Current;
             sizeTextMetrics = textMetrics;
+            sizeStatsGrid = statsGrid;
             EnsureChipSequences(store);
             IReadOnlyList<Pawn> pawns = ListedPawns();
             desiredWidthCache = ComputeDesiredWidth(store, pawns);
@@ -527,12 +534,10 @@ namespace WorkRoles.UI
                 if (w > widestStrip) widestStrip = w;
             }
             float tableWidth = fixedLeft + SkillColumnsWidth() + widestStrip;
-            float skillColumnWidth = SkillColWidth;
-            if (selectedPawn != null)
-                skillColumnWidth = statsState.Snapshot(selectedPawn).SkillColumnWidth;
+            ColonistSkillGridLayout skillGrid = selectedPawn == null
+                ? DefaultSkillGrid : statsState.Snapshot(selectedPawn).SkillGrid;
             float statsWidth = StatsPadding * 2f + PortraitDisplaySize + 12f
-                + SkillCols * skillColumnWidth
-                + SkillCols * (ColSepMargin * 2f + ColSepWidth);
+                + skillGrid.RecommendationLeft;
             return Mathf.Max(tableWidth, statsWidth);
         }
 
@@ -4814,26 +4819,19 @@ namespace WorkRoles.UI
 
             ColonistStatsSnapshot statsSnapshot = statsState.Snapshot(selected.Pawn);
             float skillColWidth = statsSnapshot.SkillColumnWidth;
+            ColonistSkillGridLayout skillGrid = statsSnapshot.SkillGrid;
 
-            // Two equally sized skill columns after the portrait, separators
-            // between them and before Recommended Roles.
+            // Snapshot-owned geometry preserves the vanilla two-column grid;
+            // extra skills use a third column and its recommendation space.
             float col1X = rect.x + portraitBoxSize + 12f;
-            float col2X = col1X + skillColWidth + ColSepMargin + ColSepWidth + ColSepMargin;
-
-            float sep12X = col1X + skillColWidth + ColSepMargin;
-            if (sep12X + ColSepWidth <= rect.xMax)
+            for (int i = 0; i < skillGrid.ColumnCount; i++)
             {
-                Widgets.DrawBoxSolid(new Rect(sep12X, rect.y, ColSepWidth, rect.height),
-                    new Color(1f, 1f, 1f, 0.4f));
+                float separatorX = col1X + skillGrid.SeparatorLeft(i);
+                if (separatorX + ColSepWidth <= rect.xMax)
+                    Widgets.DrawBoxSolid(new Rect(separatorX, rect.y,
+                        ColSepWidth, rect.height), new Color(1f, 1f, 1f, 0.4f));
             }
-
-            float sep23X = col2X + skillColWidth + ColSepMargin;
-            float recX = sep23X + ColSepWidth + ColSepMargin;
-            if (sep23X + ColSepWidth <= rect.xMax)
-            {
-                Widgets.DrawBoxSolid(new Rect(sep23X, rect.y, ColSepWidth, rect.height),
-                    new Color(1f, 1f, 1f, 0.4f));
-            }
+            float recX = col1X + skillGrid.RecommendationLeft;
 
             IReadOnlyList<ColonistSkillPresentation> skills = statsSnapshot.Skills;
             if (skills.Count == 0) return;
@@ -4841,18 +4839,14 @@ namespace WorkRoles.UI
             Text.Font = GameFont.Small;
             for (int i = 0; i < skills.Count; i++)
             {
-                int col = i % SkillCols;
-                int row = i / SkillCols;
                 ColonistSkillPresentation presentation = skills[i];
                 SkillLine line = presentation.Line;
                 SkillSignalView signalView = presentation.SignalView;
                 IReadOnlyList<Texture2D> signalIcons = presentation.SignalIcons;
                 int signalIconCount = signalIcons.Count;
 
-                float cellX = (col == 0) ? col1X : col2X;
-                float cellY = rect.y + row * CellH;
-
-                if (col >= SkillCols) continue;
+                float cellX = col1X + skillGrid.CellLeft(i);
+                float cellY = rect.y + skillGrid.CellTop(i);
 
                 Color textColor = ColonistStatsState.SkillTextColor(
                     line, signalView.PassionTier);

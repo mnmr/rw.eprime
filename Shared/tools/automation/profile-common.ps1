@@ -1,10 +1,10 @@
 function Get-InstalledPackageIds {
-    param([string]$ModSourceRoot)
+    param([string]$ModSourceRoot, [string[]]$AdditionalModSource = @())
     $ids = New-Object 'Collections.Generic.HashSet[string]' (
         [StringComparer]::OrdinalIgnoreCase)
     $roots = @(
-        'C:\Program Files (x86)\Steam\steamapps\workshop\content\294100',
-        'C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods'
+        $script:InstalledWorkshopRoot,
+        (Join-Path $script:InstalledGameRoot 'Mods')
     )
     foreach ($root in $roots) {
         if (-not (Test-Path -LiteralPath $root -PathType Container)) { continue }
@@ -28,7 +28,38 @@ function Get-InstalledPackageIds {
             $ids.Add(([string]$meta.ModMetaData.packageId).Trim()) | Out-Null
         }
     }
+    foreach ($source in @(Get-AdditionalModSources -ModSourceRoot $ModSourceRoot -AdditionalModSource $AdditionalModSource)) {
+        $null = $ids.Add($source.packageId)
+    }
     return ,$ids
+}
+
+# Explicit downloaded mod roots are copied into a run, never installed. Reject
+# ambiguity against existing package providers and snapshot folder names before
+# creating any snapshot files. Existing installed/repository precedence is kept.
+function Get-AdditionalModSources {
+    param([string]$ModSourceRoot, [string[]]$AdditionalModSource = @())
+    if ($AdditionalModSource.Count -eq 0) { return }
+    $packages = Get-InstalledPackageIds -ModSourceRoot $ModSourceRoot
+    $folders = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($name in @('EPrimeReadouts', 'WorkRoles', 'QualityJobs', 'Implanner', 'SharedAutomation')) { $null = $folders.Add($name) }
+    $installedMods = Join-Path $script:InstalledGameRoot 'Mods'
+    if (Test-Path -LiteralPath $installedMods -PathType Container) {
+        foreach ($folder in Get-ChildItem -LiteralPath $installedMods -Directory) { $null = $folders.Add($folder.Name) }
+    }
+    foreach ($path in $AdditionalModSource) {
+        if ([string]::IsNullOrWhiteSpace($path)) { throw 'Additional mod source must name a root containing About\About.xml.' }
+        $root = [IO.Path]::GetFullPath($path).TrimEnd('\', '/')
+        $about = Join-Path $root 'About\About.xml'
+        if (-not (Test-Path -LiteralPath $about -PathType Leaf)) { throw "Additional mod source must contain About\About.xml: $root" }
+        [xml]$metadata = Get-Content -LiteralPath $about -Raw
+        $packageId = ([string]$metadata.ModMetaData.packageId).Trim()
+        if (-not $packageId) { throw "Additional mod source has no package ID: $root" }
+        if (-not $packages.Add($packageId)) { throw "Duplicate additional mod package '$packageId': $root" }
+        $name = Split-Path -Leaf $root
+        if (-not $folders.Add($name)) { throw "Additional mod snapshot folder collision '$name': $root" }
+        [pscustomobject]@{ source=$root; folder=$name; packageId=$packageId }
+    }
 }
 
 # Builds the active mod list for a mod set: the save's ids in their saved
@@ -39,9 +70,10 @@ function Build-ModSetList {
     param(
         [Parameter(Mandatory)][string[]]$SaveModIds,
         [Parameter(Mandatory)][string]$SetPath,
-        [Parameter(Mandatory)][string]$ModSourceRoot
+        [Parameter(Mandatory)][string]$ModSourceRoot,
+        [string[]]$AdditionalModSource = @()
     )
-    $installed = Get-InstalledPackageIds $ModSourceRoot
+    $installed = Get-InstalledPackageIds -ModSourceRoot $ModSourceRoot -AdditionalModSource $AdditionalModSource
     $result = New-Object 'Collections.Generic.List[string]'
     $result.AddRange([string[]]$SaveModIds)
     $insertAt = -1
@@ -155,7 +187,7 @@ function Get-SaveModIds {
 }
 
 function Initialize-RunProfile {
-    param([string]$Profile, [string]$SourceSaveDirectory, [string]$SavePattern, [string]$ModSet, [string]$ModSourceRoot, [string]$BaselineConfigPath = '')
+    param([string]$Profile, [string]$SourceSaveDirectory, [string]$SavePattern, [string]$ModSet, [string]$ModSourceRoot, [string]$BaselineConfigPath = '', [string[]]$AdditionalModSource = @())
 
 if (-not (Test-Path -LiteralPath $SourceSaveDirectory -PathType Container)) {
     throw "source save directory does not exist: $SourceSaveDirectory"
@@ -216,13 +248,13 @@ if ($canonicalHash -ne $autostartHash) {
 
 # The template config (verified above to equal the save's list) is the
 # baseline; a mod set rewrites only the profile's copy of ModsConfig.xml.
-$activeMods = @(Build-ModSetList -SaveModIds $saveModIds -SetPath (Join-Path $PSScriptRoot 'modsets\automation-runtime.txt') -ModSourceRoot $ModSourceRoot)
+$activeMods = @(Build-ModSetList -SaveModIds $saveModIds -SetPath (Join-Path $PSScriptRoot 'modsets\automation-runtime.txt') -ModSourceRoot $ModSourceRoot -AdditionalModSource $AdditionalModSource)
 if ($ModSet) {
     $setPath = Join-Path $PSScriptRoot ('modsets\' + $ModSet + '.txt')
     if (-not (Test-Path -LiteralPath $setPath -PathType Leaf)) {
         throw "mod set does not exist: $setPath"
     }
-    $activeMods = @(Build-ModSetList -SaveModIds $activeMods -SetPath $setPath -ModSourceRoot $ModSourceRoot)
+    $activeMods = @(Build-ModSetList -SaveModIds $activeMods -SetPath $setPath -ModSourceRoot $ModSourceRoot -AdditionalModSource $AdditionalModSource)
 }
 if (($activeMods -join "`n") -cne ($saveModIds -join "`n")) {
     $profileModsConfigPath = Join-Path $profileConfig 'ModsConfig.xml'

@@ -9,7 +9,8 @@ param(
     [string]$GameRoot = '',
     [ValidatePattern('^[A-Za-z0-9._-]+$')][string]$WslDistribution = 'Ubuntu-22.04',
     [ValidateSet('Default','NVIDIA','Software')][string]$WslRenderer = 'Default',
-    [string]$BaselineConfigPath = ''
+    [string]$BaselineConfigPath = '',
+    [string[]]$AdditionalModSource = @()
 )
 . (Join-Path $PSScriptRoot 'run-common.ps1')
 . (Join-Path $PSScriptRoot 'profile-common.ps1')
@@ -19,6 +20,8 @@ $layout = Get-GameLayout $script:InstalledGameRoot
 if (-not $Owner) { $Owner = Get-AutomationOwner }
 if ($Owner -cne (Get-AutomationOwner)) { throw 'Create runs with your own owner identity (CODEX_THREAD_ID or RIMWORLD_AUTOMATION_OWNER).' }
 if ($ModSet -and $ModSet -notmatch '^[a-z0-9-]+$') { throw 'Invalid mod set name.' }
+$additionalSources = @(Get-AdditionalModSources -ModSourceRoot $ModSourceRoot -AdditionalModSource $AdditionalModSource)
+$AdditionalModSource = @($additionalSources | ForEach-Object { $_.source })
 $id = [Guid]::NewGuid().ToString('N')
 $profile = Assert-RunPath $id
 New-Item -ItemType Directory -Path $profile | Out-Null
@@ -34,13 +37,14 @@ try {
     try {
         try { $acquired = $mutex.WaitOne(60000) } catch [Threading.AbandonedMutexException] { $acquired = $true }
         if (-not $acquired) { throw 'Another profile preparation did not release its lock.' }
-        $configuration = Initialize-RunProfile $profile $SourceSaveDirectory $SavePattern $ModSet $ModSourceRoot $BaselineConfigPath
-        $snapshots = New-RunGameSnapshot $profile $ModSourceRoot
+        $configuration = Initialize-RunProfile $profile $SourceSaveDirectory $SavePattern $ModSet $ModSourceRoot $BaselineConfigPath -AdditionalModSource $AdditionalModSource
+        $snapshots = New-RunGameSnapshot $profile $ModSourceRoot -AdditionalModSource $AdditionalModSource
     } finally { if ($acquired) { $mutex.ReleaseMutex() }; $mutex.Dispose() }
     $record = [ordered]@{
         schemaVersion=1; runId=$id; owner=$Owner; purpose=$Purpose
         createdUtc=[DateTime]::UtcNow.ToString('o'); profile=$profile
         configuration=$configuration; modSourceRoot=[IO.Path]::GetFullPath($ModSourceRoot)
+        additionalModSources=$additionalSources
         backend=$(if ($layout.executable -ceq 'RimWorldLinux') { 'wsl' } else { 'windows' })
         wslDistribution=$WslDistribution; wslRenderer=$WslRenderer; gameRoot=$script:InstalledGameRoot
         snapshots=$snapshots

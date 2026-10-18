@@ -8,3 +8,7 @@ scale 1.25 matches it exactly.
 A smaller screen still works: the window fills the screen, some labels
 are shortened and the tabs need more scrolling. Lowering the UI scale in
 the game's options gives the window more room.
+
+The selected-colonist panel uses two columns for the usual twelve skills.
+Mods that add skills, such as Sexperience, get a third column with a
+narrower recommendations panel. More than eighteen skills add extra rows.

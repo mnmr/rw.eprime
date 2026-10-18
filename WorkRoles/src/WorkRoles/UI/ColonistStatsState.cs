@@ -107,13 +107,15 @@ namespace WorkRoles.UI
         internal int RosterWidthsRevision { get; private set; }
 
         // Owner: Colonists window. Key: Pawn reference identity within RoleStore.
-        // Value: immutable per-pawn stats and skill presentations, shared by the
+        // Value: immutable per-pawn stats, skill presentations and grid geometry
+        // (privately owned cell/separator offsets), shared by the
         // roster, selected panel, and role tips. Dependencies: external capture
         // identity, store identity, the five skill-promotion tuning inputs, language,
         // definitions, and UiRevision metrics. Role/assignment UiVersion is not
         // consumed. Refresh: lazy on changed dependencies; external refresh
         // removes departed pawns only. Equality: unchanged presentation facts
-        // preserve individual and complete snapshot identities. Teardown:
+        // preserve individual and complete snapshot identities; grid geometry
+        // is reused when skill count and measured column width are equal. Teardown:
         // Reset/InvalidatePresentations/ReleaseSnapshots clear all entries.
         private readonly PawnPresentationCache<Pawn, ColonistStatsSnapshot> stats;
         private static readonly Func<ColonistStatsSnapshot, ColonistStatsSnapshot, bool>
@@ -454,7 +456,11 @@ namespace WorkRoles.UI
                     columnWidth = Mathf.Max(columnWidth, Mathf.Ceil(required));
                 }
             }
-            return new ColonistStatsSnapshot(items, columnWidth, capture.Skills);
+            ColonistSkillGridLayout? grid = previous != null
+                && previous.Skills.Count == items.Length
+                && previous.SkillColumnWidth == columnWidth
+                    ? previous.SkillGrid : null;
+            return new ColonistStatsSnapshot(items, columnWidth, capture.Skills, grid);
         }
 
         internal static Color SkillTextColor(SkillLine line, SignalPassionTier tier)
@@ -598,16 +604,19 @@ namespace WorkRoles.UI
 
         internal ColonistStatsSnapshot(
             IReadOnlyList<ColonistSkillPresentation> skills, float skillColumnWidth,
-            object? facts = null)
+            object? facts = null, ColonistSkillGridLayout? skillGrid = null)
         {
             Skills = skills;
             SkillColumnWidth = skillColumnWidth;
+            SkillGrid = skillGrid ?? ColonistSkillGridLayout.Calculate(
+                skills.Count, skillColumnWidth);
             Facts = facts ?? this;
         }
 
         internal object Facts { get; }
         internal IReadOnlyList<ColonistSkillPresentation> Skills { get; }
         internal float SkillColumnWidth { get; }
+        internal ColonistSkillGridLayout SkillGrid { get; }
 
         internal ColonistSkillPresentation? ForSkill(SkillDef skill)
         {

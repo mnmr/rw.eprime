@@ -24,20 +24,10 @@ function Copy-RunSnapshot {
     [pscustomobject]@{source=$sourceRoot; files=$hashes}
 }
 function New-RunGameSnapshot {
-    param([Parameter(Mandatory)][string]$Profile, [Parameter(Mandatory)][string]$ModSourceRoot)
+    param([Parameter(Mandatory)][string]$Profile, [Parameter(Mandatory)][string]$ModSourceRoot, [string[]]$AdditionalModSource = @())
+    $additionalSources = @(Get-AdditionalModSources -ModSourceRoot $ModSourceRoot -AdditionalModSource $AdditionalModSource)
     $game = Join-Path $Profile 'Game'
     $layout = Get-GameLayout $script:InstalledGameRoot
-    New-Item -ItemType Directory -Path $game | Out-Null
-    # Vanilla locates local mods beside its executable. Copy launch binaries;
-    # only large immutable game assets use junctions.
-    $nativeFiles = @()
-    foreach ($file in Get-ChildItem -LiteralPath $script:InstalledGameRoot -File) {
-        $sha = Copy-VerifiedFile $file.FullName (Join-Path $game $file.Name)
-        $nativeFiles += [pscustomobject]@{path=$file.Name;sha256=$sha}
-    }
-    foreach ($name in $layout.assetFolders) {
-        New-Item -ItemType Junction -Path (Join-Path $game $name) -Target (Join-Path $script:InstalledGameRoot $name) | Out-Null
-    }
     $sources = [ordered]@{}
     foreach ($installed in Get-ChildItem -LiteralPath (Join-Path $script:InstalledGameRoot 'Mods') -Directory) {
         $sources[$installed.Name] = $installed.FullName
@@ -46,6 +36,7 @@ function New-RunGameSnapshot {
         @('Implanner','Implanner'), @('SharedAutomation','Shared\Automation'))) {
         $sources[$pair[0]] = Join-Path $ModSourceRoot ($pair[1] + '\mod')
     }
+    foreach ($source in $additionalSources) { $sources[$source.folder] = $source.source }
     if ($layout.executable -ceq 'RimWorldLinux') {
         # Linux launched outside Steam cannot discover the Windows Workshop.
         # Copy only active Workshop packages into this run's local mod snapshot.
@@ -64,8 +55,24 @@ function New-RunGameSnapshot {
             if (-not (Test-Path -LiteralPath $about)) { continue }
             [xml]$metadata = Get-Content -LiteralPath $about -Raw
             $packageId = [string]$metadata.ModMetaData.packageId
-            if ($active -contains $packageId -and $provided.Add($packageId)) { $sources['Workshop-' + $folder.Name] = $folder.FullName }
+            if ($active -contains $packageId -and $provided.Add($packageId)) {
+                $name = 'Workshop-' + $folder.Name
+                if ($sources.Contains($name)) { throw "Workshop snapshot folder collision '$name'." }
+                $sources[$name] = $folder.FullName
+            }
         }
+    }
+    New-Item -ItemType Directory -Path $game | Out-Null
+    # Vanilla locates local mods beside its executable. Copy launch binaries;
+    # only large immutable game assets use junctions. Resolve all mod source
+    # collisions above before publishing any part of the game snapshot.
+    $nativeFiles = @()
+    foreach ($file in Get-ChildItem -LiteralPath $script:InstalledGameRoot -File) {
+        $sha = Copy-VerifiedFile $file.FullName (Join-Path $game $file.Name)
+        $nativeFiles += [pscustomobject]@{path=$file.Name;sha256=$sha}
+    }
+    foreach ($name in $layout.assetFolders) {
+        New-Item -ItemType Junction -Path (Join-Path $game $name) -Target (Join-Path $script:InstalledGameRoot $name) | Out-Null
     }
     $mods = [ordered]@{}
     foreach ($name in $sources.Keys) {

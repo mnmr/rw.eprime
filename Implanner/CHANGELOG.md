@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.9 — 2026-10-18
+
+- Added: Support for alternate production routes (for mod 'EPOE-Forked: Allow direct crafting').
+
 ## 1.1.8 — 2026-10-12
 
 - Changed: RimWorld 1.7 support.

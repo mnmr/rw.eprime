@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## Unreleased
+
+- Added: Optional Brothel Colony and Sexperience skill profiles for RJW work, including skill-based role recommendations.
+- Changed: Extra skills use a third column in the selected-colonist panel, leaving less width for recommendations while preserving the standard twelve-skill layout.
+
 ## 1.6.9 — 2026-10-13
 
 - Changed: Performance improvements.

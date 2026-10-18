@@ -84,6 +84,17 @@ Our four mods and automation runtime come from that root; other local mods are
 copied from the installation. Build changes after creation do not affect the run.
 `refresh-profile.ps1` accepts the same options and always creates a new run.
 
+For downloaded third-party mods outside the installation, pass
+`-AdditionalModSource @('D:\Downloads\SomeMod', 'D:\Downloads\Dependency')`.
+Each path must be an exact mod root containing `About\About.xml` and a package
+ID. These sources become available to mod sets; use `-ModSet <name>` to activate
+packages absent from the source save. The save's ordered baseline is still
+verified. Each source is copied independently into the run's `Game\Mods` using
+its directory name. Duplicate package IDs against installed or selected sources,
+and case-insensitive snapshot folder collisions, are rejected. `run.json`
+records the additional roots and package IDs; `snapshots.mods` records every
+copied source and file hash. The player's installation is never a staging area.
+
 Every run layers `modsets/automation-runtime.txt`: the automation runtime,
 RimBridgeServer, and `remove dubwise.dubsmintminimap` (the minimap takes keyboard
 focus on load and adds nothing to mod tests). Mod set lines are `after <id>` /

@@ -7,6 +7,13 @@ expertise feed the recommendation signals, More Than Capable's hated work
 becomes an Awful signal, Colony Groups appears as a grouping option, and
 multi-floor mods treat stacked floors as one location.
 
+RJW's Brothel Colony add-on supplies Brothel work, which appears in roles
+automatically. Its recommendations use Social. If Sexperience is also
+installed, Sex becomes the primary recommendation skill and Social stays
+secondary; the job profile shows both as used and trained skills.
+Service designation and visitor eligibility still come from those mods.
+All three mods are optional, and RJW by itself adds no work type to manage.
+
 Two families do clash. Other Work tab replacements (Work Tab forks,
 Better Work Tab and friends) fight over the same UI. Priority-setting
 mods (Free Will, PriorityMaster and similar) fight over the same data:
