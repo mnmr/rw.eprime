@@ -54,11 +54,22 @@ Building never deploys — installing a mod into the game requires its `scripts/
 
 ## Workshop publishing
 
-Each mod's `scripts/publish.ps1` uploads through SteamCMD, then synchronizes the
-Workshop category and version tags from the deployed `About.xml` through Steam's
-API. Keep the Steam desktop client logged in as the item owner; the tag step uses
-the installed RimWorld 1.7 Steamworks libraries and PowerShell 7.6 or newer.
-SteamCMD alone leaves existing tags unchanged, even when `supportedVersions` changes.
+Each mod's `scripts/publish.ps1` uploads content and Workshop category/version tags
+together through the Steam desktop API. Keep the Steam desktop client online and
+logged in as the item owner. Publishing uses the installed RimWorld 1.7 Steamworks
+libraries and PowerShell 7.6 or newer; SteamCMD is no longer required. Legacy
+`-SteamCmd` and `-Username` arguments are accepted with a warning and ignored.
+
+SteamCMD can disconnect the desktop client with "Session Replaced". A local API
+connection still initializes in that state, but Workshop requests can fail with
+`k_EResultFileNotFound`. If you used SteamCMD recently, reconnect or restart Steam
+before publishing. The scripts now check the server connection before submitting.
+
+The publisher retains change-note confirmation, preserves existing titles and
+visibility, and sends the preview only when it changed. New item IDs are saved
+before content submission; if that step fails or needs Workshop agreement
+acceptance, retrying completes the same item. Keep `temp/workshop-created-item.txt`
+until the first publication succeeds.
 
 To repair tags without uploading mod files or changing the description:
 
