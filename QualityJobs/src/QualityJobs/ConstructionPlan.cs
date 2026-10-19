@@ -22,6 +22,10 @@ namespace QualityJobs
         /// <summary>Auto-best mode (auto spec §2): only the colony-wide best
         /// builder may complete the frame; the skill threshold is dynamic.</summary>
         public bool autoBest;
+        // A cancelled replacement retains only these settings until vanilla
+        // finishes it. Such carriers are excluded from management presentation.
+        public bool restoreOnly;
+        public BuildingRebuildSettings? rebuildSettings;
 
         public ResumeCondition Condition => new ResumeCondition(minSkill, requireInspired, requireSpecialist);
 
@@ -42,6 +46,8 @@ namespace QualityJobs
             Scribe_Values.Look(ref requireSpecialist, "requireSpecialist", false);
             Scribe_Values.Look(ref minQuality, "minQuality", 0);
             Scribe_Values.Look(ref autoBest, "autoBest", false);
+            Scribe_Values.Look(ref restoreOnly, "restoreOnly", false);
+            Scribe_Deep.Look(ref rebuildSettings, "rebuildSettings");
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 // A minQuality > 6 would make RetryDecision retry forever

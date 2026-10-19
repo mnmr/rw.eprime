@@ -108,6 +108,7 @@ namespace QualityJobs.Patches
             if (plan.state == ConstructionPlanState.AwaitingRebuild
                 && mode == DestroyMode.Deconstruct && __instance.Spawned)
             {
+                store.CaptureRebuildSettings(plan, __instance);
                 __state.map = __instance.Map;
                 __state.position = __instance.Position;
                 __state.rotation = __instance.Rotation;

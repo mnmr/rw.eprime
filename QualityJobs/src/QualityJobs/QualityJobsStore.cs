@@ -32,7 +32,7 @@ namespace QualityJobs
     /// writing (no-op edits change nothing). Teardown: ReleaseMap and
     /// ReleasePresentation clear owned indices/snapshots before the component
     /// dies; Active re-resolves per call so no static leaks worlds.
-    public class QualityJobsStore : GameComponent
+    public partial class QualityJobsStore : GameComponent
     {
         private readonly struct MapProductKey : IEquatable<MapProductKey>
         {
@@ -279,7 +279,8 @@ namespace QualityJobs
         // Cache contract — Owner: this per-save store. Key: primary target thing
         // ID. Value: reusable Command_QualityJob with no Thing reference plus
         // last-seen audit generation.
-        // Dependencies: plan presence (icon) and language revision (labels).
+        // Dependencies: plan presence (icon), completed-building activation mode
+        // (description/group) and language revision (labels).
         // Refresh: fields updated on access; object allocation only on first key.
         // Equality: the command identity is retained. Teardown: unused entries
         // retire after an audit generation and ReleasePresentation clears all.
@@ -430,7 +431,7 @@ namespace QualityJobs
             revisions[key] = unchecked(revision + 1);
         }
 
-        internal Command_QualityJob ConstructionCommandFor(int thingId, bool enabled)
+        internal Command_QualityJob ConstructionCommandFor(int thingId, bool enabled, bool completed = false)
         {
             if (!constructionCommands.TryGetValue(thingId,
                     out ConstructionCommandEntry? entry))
@@ -441,7 +442,7 @@ namespace QualityJobs
             }
             entry.Generation = constructionCommandGeneration;
             Command_QualityJob command = entry.Command;
-            command.RefreshPresentation(enabled);
+            command.RefreshPresentation(enabled, completed);
             return command;
         }
 
@@ -493,6 +494,7 @@ namespace QualityJobs
 
         internal void NotifyDefinitionsChanged()
         {
+            RebuildCompletedBuildings();
             Bump(ref definitionsRevision);
             InvalidateManagedJobs();
             // A definition reload is an explicit, rare event. Rebuild its derived
@@ -650,6 +652,7 @@ namespace QualityJobs
 
         internal void NotifyPlanTargetLocationChanged(Thing thing)
         {
+            NotifyCompletedBuildingChanged(thing);
             if (!planPresentations.ContainsKey(thing.thingIDNumber)) return;
             NotifyPlanStructureChanged();
         }
@@ -681,8 +684,7 @@ namespace QualityJobs
             {
                 if (plan != null)
                 {
-                    Dispatcher.RemoveOurDeconstructDesignation(plan);
-                    RemovePlan(plan);
+                    ClearPlanSettings(plan);
                 }
                 return;
             }
@@ -693,19 +695,32 @@ namespace QualityJobs
                 if (plan == null) return;
             }
 
-            if (plan.minSkill == minSkill
+            if (plan.state == ConstructionPlanState.AwaitingRebuild
+                && plan.target is Building built
+                && built.TryGetComp<CompQuality>() is CompQuality quality
+                && !RetryDecision.ShouldRetry(true, (QualityLevel)quality.Quality,
+                    (QualityLevel)minQuality))
+            {
+                ClearPlanSettings(plan);
+                return;
+            }
+
+            if (!plan.restoreOnly && plan.minSkill == minSkill
                 && plan.requireInspired == requireInspired
                 && plan.requireSpecialist == requireSpecialist
                 && plan.minQuality == minQuality
                 && plan.autoBest == autoBest)
                 return;
 
+            bool wasRestoreOnly = plan.restoreOnly;
+            plan.restoreOnly = false;
             plan.minSkill = minSkill;
             plan.requireInspired = requireInspired;
             plan.requireSpecialist = requireSpecialist;
             plan.minQuality = minQuality;
             plan.autoBest = autoBest;
-            NotifyPlanConfigurationChanged();
+            if (wasRestoreOnly) NotifyPlanStructureChanged();
+            else NotifyPlanConfigurationChanged();
         }
 
         /// The one home of the rule that only blueprints and frames can be
@@ -886,6 +901,7 @@ namespace QualityJobs
 
         internal void PublishAllPresentation(bool publishManagedJobs = true)
         {
+            RebuildCompletedBuildings();
             PublishSettingsPresentation();
             PublishPlanPresentations(rebuildOverlays: true);
             if (publishManagedJobs) PublishManagedJobsPresentation();
@@ -896,6 +912,7 @@ namespace QualityJobs
             PlanRetargeted = null;
             settingsPresentation = null;
             planPresentations.Clear();
+            completedBuildings.Clear();
             billPresentations.Clear();
             overlayPresentations.Clear();
             constructionCommands.Clear();
@@ -930,6 +947,7 @@ namespace QualityJobs
 
         internal void ReleaseMap(Map map)
         {
+            ReleaseCompletedBuildings(map);
             // Do not retain any handle from the map while Game removes it. The
             // next update republishes the remaining maps from authoritative data.
             managedJobsPresentation = ManagedQualityJobsSnapshot.Empty;
@@ -1241,6 +1259,7 @@ namespace QualityJobs
             for (int i = 0; i < plans.Count; i++)
             {
                 ConstructionPlan plan = plans[i];
+                if (plan.restoreOnly) continue;
                 Thing? target = plan.target;
                 if (target == null || !target.Spawned || target.MapHeld == null)
                     continue;
@@ -1384,6 +1403,7 @@ namespace QualityJobs
             for (int i = 0; i < plans.Count; i++)
             {
                 ConstructionPlan plan = plans[i];
+                if (plan.restoreOnly) continue;
                 Thing? target = plan.target;
                 if (target == null) continue;
                 int thingId = target.thingIDNumber;
@@ -1409,6 +1429,7 @@ namespace QualityJobs
             var grouped = new Dictionary<Map, List<SparkleOverlay.Model>>();
             for (int i = 0; i < plans.Count; i++)
             {
+                if (plans[i].restoreOnly) continue;
                 Thing? target = plans[i].target;
                 if (target == null || target.Destroyed || !target.Spawned
                     || (!(target is Blueprint_Build) && !(target is Frame)))
@@ -2164,7 +2185,7 @@ namespace QualityJobs
                 plan.minSkill = ConfigurationLimits.Skill(plan.minSkill);
                 plan.minQuality = ConfigurationLimits.Quality(plan.minQuality);
                 if (!ModsConfig.IdeologyActive) plan.requireSpecialist = false;
-                if (ConstructionPlan.IsNeutral(plan.minSkill, plan.requireInspired,
+                if (!plan.restoreOnly && ConstructionPlan.IsNeutral(plan.minSkill, plan.requireInspired,
                         plan.requireSpecialist, plan.minQuality, plan.autoBest))
                 {
                     Dispatcher.RemoveOurDeconstructDesignation(plan);

@@ -1,6 +1,6 @@
 # EPrime's Quality Jobs
 
-A RimWorld 1.6 mod that gets you high-quality gear and furniture reliably: work
+A RimWorld 1.6 and 1.7 mod that gets you high-quality gear and furniture reliably: work
 on quality items and buildings is set aside at the last moment and finished by
 your best (or inspired) pawn, capturing their quality roll.
 
@@ -48,6 +48,17 @@ master crafter do the final touch — this mod automates the entire loop.
 - Target quality with retries: builds that roll below your chosen quality are
   automatically marked for deconstruction and rebuilt until you get the
   desired quality (or you clear the build from being a Quality Job).
+- Upgrade completed buildings later: select one or more buildings, open
+  **Quality Job**, choose a target and builder requirements, then click
+  **Start rebuilding**. Configuration alone leaves the buildings untouched.
+  Buildings already meeting the target are kept. Others enter the normal
+  deconstruct-and-rebuild loop, consuming materials and becoming unavailable
+  during construction.
+- Replacements keep their material, orientation, style and paint, plus bed
+  medical/prisoner settings. Original bed owners return when the loop ends if
+  they are still eligible and have not taken another bed. Clear or cancel the
+  deconstruction order to stop; after demolition, Clear lets the replacement
+  finish normally with its saved settings.
 
 **General**
 
@@ -70,7 +81,9 @@ master crafter do the final touch — this mod automates the entire loop.
 - Safe to add mid-game. Clean uninstall: disable in mod settings — items are
   restored to vanilla ownership and subsequent saves carry zero trace of the
   mod. Removing without disabling first leaves unfinished items without an
-  owner (they must be cancelled).
+  owner (they must be cancelled). Finish replacement buildings before disabling
+  or removing the mod to retain their saved bed settings and paint. Other mods'
+  custom building settings follow their normal deconstruct-and-rebuild behavior.
 - No defs are patched and unmanaged bills/builds behave exactly as vanilla;
   integration is a handful of targeted Harmony patches at job boundaries.
 - Designed for performance: cached rendering, no per-frame work, event- and
@@ -101,9 +114,18 @@ dotnet test src/QualityJobs.Core.Tests --no-restore
 pwsh scripts/deploy.ps1                  # deploy to the game's Mods folder
 ```
 
-Building never deploys; in-game verification requires the deploy script and a
-game restart. The game assembly targets net472 against Krafs.Rimworld.Ref;
+Building never deploys. Automated verification uses independent managed runs
+through `Shared/tools/automation`; the deploy script updates the player installation
+and requires a game restart. The game assembly targets net472 against Krafs.Rimworld.Ref;
 Core is netstandard2.0 with no game references so its tests run anywhere.
+
+The completed-building batch is in `tests/InGame/CompletedBuildings`. Build its
+`Probe.csproj` after the mod, then run `run.ps1 -Version 1.6 -Renderer Software` and
+`run.ps1 -Version 1.7` in parallel. The 1.6 batch uses the repository's independent
+Linux game through WSL; software rendering avoids native crashes observed with
+the NVIDIA backend during verification. The 1.7 batch uses the installed Windows game. Each run
+preserves logs and captures under `temp/completed-buildings`, then stops and
+removes its private game profile. `-Clean` verifies loading without the probe.
 
 ## Check out my other mods
 

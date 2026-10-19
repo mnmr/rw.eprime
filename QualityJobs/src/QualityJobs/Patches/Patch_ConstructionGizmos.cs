@@ -57,12 +57,22 @@ namespace QualityJobs.Patches
             if (Find.Selector == null) return result;
             QualityJobsStore? store = QualityJobsStore.Active;
             List<object> sel = Find.Selector.SelectedObjects;
+            bool startingCompleted = store != null
+                && store.TryGetCompletedBuilding(primaryThingId, out _)
+                && !store.TryGetPlanPresentation(primaryThingId, out _);
             // Primary first so the dialog reads values from the initiating thing.
             for (int i = 0; i < sel.Count; i++)
             {
                 object obj = sel[i];
                 if (!(obj is Thing thing) || thing.thingIDNumber == primaryThingId)
                     continue;
+                if (startingCompleted)
+                {
+                    if (store!.TryGetCompletedBuilding(thing.thingIDNumber, out _)
+                        && !store.TryGetPlanPresentation(thing.thingIDNumber, out _))
+                        result.Add(thing.thingIDNumber);
+                    continue;
+                }
                 if (obj is Blueprint_Build bp && IsEligibleBuildable(bp, bp.def.entityDefToBuild as ThingDef))
                     result.Add(bp.thingIDNumber);
                 else if (obj is Frame fr && IsEligibleBuildable(fr, fr.BuildDef))
@@ -109,11 +119,8 @@ namespace QualityJobs.Patches
 
     /// Postfix on Building.GetGizmos (line 401 of Decompiled\Verse\Building.cs):
     ///   public override IEnumerable<Gizmo> GetGizmos()
-    /// Adds the Quality-job gizmo to buildings that are AwaitingRebuild (i.e. they
-    /// have a plan and are waiting for a deconstruct-rebuild cycle). Frames already
-    /// have their own patch; Frame is a Building so we skip it here. We never offer
-    /// plan creation on arbitrary completed buildings — only expose the gizmo when
-    /// a plan already exists for this specific building.
+    /// Adds the gizmo from published completed-building facts. Frames have their
+    /// own patch. No defs, quality components or authoritative plans are read here.
     [HarmonyPatch(typeof(Building), nameof(Building.GetGizmos))]
     public static class Patch_ConstructionGizmos_Building
     {
@@ -128,14 +135,13 @@ namespace QualityJobs.Patches
             if (store == null)
                 return gizmos;
 
-            // Only offer the gizmo when this specific building already has a plan
-            // (AwaitingRebuild state). Never create plans on arbitrary buildings.
-            if (!store.TryGetPlanPresentation(__instance.thingIDNumber, out _))
+            bool enabled = store.TryGetPlanPresentation(__instance.thingIDNumber, out _);
+            if (!enabled && !store.TryGetCompletedBuilding(__instance.thingIDNumber, out _))
                 return gizmos;
 
             // Reuse the same gizmo shape as Blueprint/Frame patches.
             return store.ConstructionCommandFor(
-                __instance.thingIDNumber, enabled: true).AppendTo(gizmos);
+                __instance.thingIDNumber, enabled, completed: true).AppendTo(gizmos);
         }
     }
 }

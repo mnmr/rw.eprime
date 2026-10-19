@@ -527,9 +527,16 @@ namespace QualityJobs
             QualityJobsStore? store = QualityJobsStore.Active;
             ConstructionPlan? plan = store?.FindPlanById(thingId);
             if (store == null || plan == null) return;
-            Dispatcher.RemoveOurDeconstructDesignation(plan);
-            store.RemovePlan(plan);
+            store.ClearPlanSettings(plan);
         }
+
+        /// Starts a quality replacement only for an eligible completed building
+        /// below the requested target. Six primitive arguments are MP-safe.
+        [SyncMethod]
+        public static void StartRebuild(int thingId, int minSkill, bool requireInspired,
+            bool requireSpecialist, int minQuality, bool autoBest)
+            => QualityJobsStore.Active?.StartRebuild(thingId, minSkill,
+                requireInspired, requireSpecialist, minQuality, autoBest);
 
         /// Sets the minimum construction skill for the plan identified by thingId.
         /// If no plan exists and value is non-neutral, implicitly creates one.

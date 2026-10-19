@@ -101,8 +101,11 @@ namespace QualityJobs.Patches
             QualityCategory __state)
         {
             if (__state != __instance.Quality)
+            {
                 QualityJobsStore.Active?.NotifyTargetCountThingChanged(
                     __instance.parent, __instance.parent.MapHeld);
+                QualityJobsStore.Active?.NotifyCompletedBuildingChanged(__instance.parent);
+            }
         }
     }
 

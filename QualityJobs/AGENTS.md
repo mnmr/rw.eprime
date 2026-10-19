@@ -23,6 +23,8 @@ commands. Where this file is silent, the root contract governs.
 |---|---|
 | Store settings presentation (`StoreSettingsSnapshot`) | The fourteen per-save bill, construction, cap, and sharing default fields; command and load/seed invalidation |
 | Construction plan presentation (`PlanPresentationSnapshot`) | Plan target identity/map, configuration, and state; immediate command/lifecycle invalidation |
+| Completed-building facts (`completedBuildings`) | Store identity, spawned target identity/map, player faction, CompQuality value, and construction blueprint/frame defs; immediate spawn/despawn, faction and quality events, load and definition reload; equal facts retain identity; map removal/game disposal release entries |
+| Construction dialog geometry | Window's fixed content width, translated note text, Small/Medium fonts, and shared UI metric revision; measured only behind the revision gate; metric-only changes preserve pawn eligibility data, language changes refresh labels; window-owned |
 | Sparkle overlay maps (`SparkleOverlay.MapSnapshot`) | Plan membership and target identity/map/position/rotation/footprint; immediate structural invalidation plus the 2500-tick audit fallback |
 | Structured tips (shared `RimShared.UiLib` `WrTips`/`StructuredTipPresenter`/`WrTipUI` in `Shared/UiLib/Tips`, per-assembly statics; Quality Jobs' window id, table inset and revisions in `UI/TipHost.cs`) | Stable key + continuous-hover session (0.45s delay); content and geometry frozen per session; registries and geometry cleared when `UiRevision.Current` moves; Begin/EndSuppression pairs from popup owners reset the session |
 | Bill dialog status | `QualityJobsStore.BillStatusRevision`; entry/count/sharing/configuration changes and external pawn facts |
@@ -58,6 +60,13 @@ Canonical verification commands:
 dotnet build -c Release src/QualityJobs.slnx --no-restore
 dotnet test src/QualityJobs.Core.Tests --no-restore
 ```
+
+Completed-building integration verification lives in
+`tests/InGame/CompletedBuildings`. Build `Probe.csproj` after the mod, then run
+its `run.ps1 -Version 1.6 -Renderer Software` and `run.ps1 -Version 1.7` in
+parallel. These batches click the real UI, observe pawns completing rebuilds,
+exercise cancellation and full save/reload, and retain evidence under
+`temp/completed-buildings`. Use `-Clean` for the final load without the probe.
 
 Building never deploys. Automated verification requires creating a fresh managed
 run after building, following the root contract; creation deploys its copies.

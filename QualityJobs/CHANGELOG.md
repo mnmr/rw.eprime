@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.1.9 — 2026-10-19
+
+- Added: Already completed buildings can now be enlisted as a quality job. Rebuilding preserves paint and bed settings.
+
 ## 1.1.8 — 2026-10-12
 
 - Changed: RimWorld 1.7 support.

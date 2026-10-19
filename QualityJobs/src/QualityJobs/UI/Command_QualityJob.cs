@@ -45,6 +45,7 @@ namespace QualityJobs.UI
         IEnumerable<Gizmo>, IEnumerator<Gizmo>
     {
         private readonly int primaryThingId;
+        private bool completed;
         private IEnumerable<Gizmo>? source;
         private IEnumerator<Gizmo>? sourceEnumerator;
         private Gizmo? current;
@@ -70,12 +71,16 @@ namespace QualityJobs.UI
             action = OpenDialog;
         }
 
-        internal void RefreshPresentation(bool enabled)
+        internal void RefreshPresentation(bool enabled, bool completed)
         {
+            this.completed = completed;
             ConstructionGizmoLabels.Ensure();
             defaultLabel = ConstructionGizmoLabels.Label!;
-            defaultDesc = ConstructionGizmoLabels.Description!;
+            defaultDesc = completed && !enabled
+                ? ConstructionGizmoLabels.RebuildDescription! : ConstructionGizmoLabels.Description!;
             icon = enabled ? QualityJobsTex.GizmoEnabled : QualityJobsTex.GizmoDisabled;
+            // Draft activation must not merge with immediate blueprint toggles.
+            groupKey = completed && !enabled ? 1738021 : -1;
         }
 
         internal static void ResetPresentationCache() =>
@@ -139,7 +144,7 @@ namespace QualityJobs.UI
         /// left → toggle management for all selected things with checkbox feedback.
         public override void ProcessInput(Event ev)
         {
-            if (ev.button == 1)
+            if (ev.button == 1 || completed && !CurrentlyEnabled())
             {
                 base.ProcessInput(ev); // plays activate sound + action (OpenDialog)
                 return;
@@ -176,7 +181,8 @@ namespace QualityJobs.UI
             // lastGizmoRect is always populated here (Rect.zero would center).
             Find.WindowStack.Add(new Dialog_ConstructionPlanConfig(
                 ConstructionGizmos.CollectSelectedIds(primaryThingId),
-                ConstructionGizmos.SelectedMapFor(primaryThingId), lastGizmoRect));
+                ConstructionGizmos.SelectedMapFor(primaryThingId), lastGizmoRect,
+                setupCompleted: completed && !CurrentlyEnabled()));
         }
 
         /// Applies the user's construction default options to all eligible
@@ -221,12 +227,13 @@ namespace QualityJobs.UI
         private static class ConstructionGizmoLabels
         {
             // Cache contract — Owner: process. Key: active language identity.
-            // Value: two translated immutable labels. Dependencies: language.
+            // Value: three translated immutable labels. Dependencies: language.
             // Refresh: lazy on language identity change. Equality: cache hits
-            // preserve both strings. Teardown: Reset on game disposal.
+            // preserve all strings. Teardown: Reset on game disposal.
             private static LoadedLanguage? language;
             internal static string? Label;
             internal static string? Description;
+            internal static string? RebuildDescription;
 
             internal static void Ensure()
             {
@@ -235,6 +242,7 @@ namespace QualityJobs.UI
                 language = current;
                 Label = "QJ_GizmoQualityJobLabel".Translate();
                 Description = "QJ_GizmoManageDesc".Translate();
+                RebuildDescription = "QJ_GizmoRebuildDesc".Translate();
             }
 
             internal static void Reset()
@@ -242,6 +250,7 @@ namespace QualityJobs.UI
                 language = null;
                 Label = null;
                 Description = null;
+                RebuildDescription = null;
             }
         }
     }

@@ -39,6 +39,8 @@ namespace QualityJobs.Patches
             __state.position = __instance.Position;
             __state.buildDef = __instance.BuildDef;
 
+            if (plan.restoreOnly) return true;
+
             GateOutcome outcome = plan.autoBest
                 ? Dispatcher.DecideAutoConstructionGate(worker, plan.Condition)
                 : GateDecision.Decide(billManaged: true, debugCompleted: false,
@@ -85,20 +87,7 @@ namespace QualityJobs.Patches
                 return;
             }
 
-            CompQuality? comp = built.TryGetComp<CompQuality>();
-            if (comp == null
-                || !RetryDecision.ShouldRetry(managed: true, // a plan exists only while managed
-                        (QualityLevel)(int)comp.Quality, (QualityLevel)plan.minQuality))
-            {
-                store.RemovePlan(plan); // accepted — plan complete
-                return;
-            }
-
-            // Retry (spec §10): vanilla Deconstruct designation; the rebuild
-            // hook re-places the blueprint when deconstruction finishes.
-            store.RetargetPlan(plan, built, ConstructionPlanState.AwaitingRebuild);
-            __state.map.designationManager.AddDesignation(
-                new Designation(built, DesignationDefOf.Deconstruct));
+            store.CompleteBuiltPlan(plan, built);
         }
     }
 }

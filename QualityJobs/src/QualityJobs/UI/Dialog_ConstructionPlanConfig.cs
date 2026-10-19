@@ -64,6 +64,46 @@ namespace QualityJobs.UI
         private readonly Rect _anchor;
         private QualityJobsStore? subscribedStore;
         private FloatMenu? qualityMenu;
+        private readonly bool setupCompleted;
+        private string? startRebuildLabel, rebuildNote;
+
+        // Cache — Owner/key: this fixed-width window. Value: measured Small and
+        // Medium line bounds and wrapped draft note height. Dependencies: text,
+        // font, 484 logical-pixel content width, UiRevision (scale/tiny/language).
+        // Refresh: immediate revision gate; unchanged dependencies reuse metrics.
+        // Equality: equal measurements retain the same scalar geometry.
+        // Teardown: released with window. No game/model data is invalidated.
+        private int layoutRevision = int.MinValue;
+        private int labelsRevision = int.MinValue;
+        private float smallLineH = 22f, mediumLineH, rebuildNoteHeight;
+
+        private void EnsureLayout()
+        {
+            UiRevision.ObserveCurrentMetrics();
+            if (layoutRevision == UiRevision.Current) return;
+            layoutRevision = UiRevision.Current;
+            if (labelsRevision != UiRevision.LanguageCurrent)
+            {
+                labelsRevision = UiRevision.LanguageCurrent;
+                LoadLabels(null);
+                statusRevision = int.MinValue;
+                statusFinishersLabel = null;
+                minSkillLabelValue = -1;
+            }
+            GameFont previous = Text.Font;
+            bool previousWrap = Text.WordWrap;
+            try
+            {
+                Text.Font = GameFont.Small;
+                Text.WordWrap = true;
+                smallLineH = Mathf.Ceil(Text.LineHeight);
+                rebuildNoteHeight = setupCompleted
+                    ? Mathf.Ceil(Text.CalcHeight(rebuildNote!, 520f - 2f * WinMargin)) : 0f;
+                Text.Font = GameFont.Medium;
+                mediumLineH = Mathf.Ceil(Text.LineHeight);
+            }
+            finally { Text.Font = previous; Text.WordWrap = previousWrap; }
+        }
 
         // Layout constants derived from verified Listing metrics:
         //   Text.LineHeight (GameFont.Small) = 22f (compile-time constant;
@@ -74,7 +114,7 @@ namespace QualityJobs.UI
         //   verticalSpacing = 2f (Listing.cs line 8).
         //   QjUi.MiniHeader height = 30f (label 22f + rule at y+24f; returns y+30f).
         //   Window.Margin = 18f (Window.cs line 104).
-        private const float SmallLineH  = 22f; // Text.LineHeight at GameFont.Small
+        private float SmallLineH => smallLineH;
         private const float SliderH     = 30f; // SliderLabeled GetRect height
         private const float GapH        =  2f; // verticalSpacing
         private const float MiniHeaderH = 27f; // QjUi.MiniHeader consumed height (label 22f, rule at y+21f, returns y+27f)
@@ -108,7 +148,7 @@ namespace QualityJobs.UI
         // the tallest variant so toggling auto-best never resizes the frame.
         // No longer tied to the odds column height — the collapsed odds table
         // (5 rows) is shorter than the options block.
-        private static float LeftPanelH()
+        private float LeftPanelH()
         {
             float options = SmallLineH + GapH   // inspired
                 + SmallLineH + GapH             // auto-best
@@ -139,7 +179,7 @@ namespace QualityJobs.UI
 
         // [Clear] button row reserved unconditionally at the top of the left panel inner area:
         //   row height = SmallLineH; followed by gap when drawing (so the button is drawn at top).
-        private const float ClearRowH = SmallLineH;
+        private float ClearRowH => SmallLineH;
 
         // Left panel frame padding (same as DrawMenuSection inner padding used in bill dialog).
         private const float PanelPad = 6f;
@@ -237,11 +277,13 @@ namespace QualityJobs.UI
         {
             get
             {
-                float medLineH = Text.LineHeightOf(GameFont.Medium);
+                EnsureLayout();
+                float medLineH = mediumLineH;
                 float headerH  = medLineH - TitleLift + TitleGap;
                 float leftH    = headerH + LeftPanelH();
                 float rightH   = RightContentH + StatusGapH + StatusContentH - TitleLift;
-                return new Vector2(520f, Mathf.Max(leftH, rightH) + 2f * WinMargin);
+                return new Vector2(520f, Mathf.Max(leftH, rightH) + 2f * WinMargin
+                    + (setupCompleted ? rebuildNoteHeight + StatusGapH : 0f));
             }
         }
 
@@ -250,8 +292,9 @@ namespace QualityJobs.UI
         /// primary (values displayed come from its plan). When anchor == Rect.zero
         /// the window falls back to centered positioning.
         public Dialog_ConstructionPlanConfig(List<int> thingIds, Map? primaryMap,
-            Rect anchor)
+            Rect anchor, bool setupCompleted = false)
         {
+            this.setupCompleted = setupCompleted;
             targetIds = new TrackedTargetIds(thingIds);
             this.primaryMap = primaryMap;
             _anchor = anchor;
@@ -275,6 +318,15 @@ namespace QualityJobs.UI
             if (minQuality != planQuality) minQuality = planQuality;
             if (autoBest != planAutoBest) autoBest = planAutoBest;
             LoadLabels(plan);
+            if (setupCompleted && store != null)
+            {
+                StoreSettingsSnapshot defaults = store.SettingsPresentation;
+                minSkill = defaults.ConstructionMinSkill;
+                requireInspired = defaults.ConstructionRequireInspired;
+                requireSpecialist = defaults.ConstructionRequireSpecialist;
+                autoBest = defaults.ConstructionAutoBest;
+                minQuality = defaults.ConstructionTargetQuality;
+            }
         }
 
         public override void PreOpen()
@@ -335,6 +387,13 @@ namespace QualityJobs.UI
 
         public override void DoWindowContents(Rect inRect)
         {
+            int previousLayoutRevision = layoutRevision;
+            EnsureLayout();
+            if (previousLayoutRevision != layoutRevision)
+            {
+                SetInitialSizeAndPosition();
+                inRect.height = windowRect.height - 2f * WinMargin;
+            }
             QualityJobsStore? store = QualityJobsStore.Active;
             PlanPresentationSnapshot? plan = null;
             store?.TryGetPlanPresentation(targetIds.Primary, out plan);
@@ -343,12 +402,15 @@ namespace QualityJobs.UI
             bool currentSpecialist = plan?.RequireSpecialist ?? false;
             int currentQuality = plan?.MinQuality ?? 0;
             bool currentAutoBest = plan?.AutoBest ?? false;
-            if (minSkill != currentMinSkill) minSkill = currentMinSkill;
-            if (requireInspired != currentInspired) requireInspired = currentInspired;
-            if (requireSpecialist != currentSpecialist)
-                requireSpecialist = currentSpecialist;
-            if (minQuality != currentQuality) minQuality = currentQuality;
-            if (autoBest != currentAutoBest) autoBest = currentAutoBest;
+            if (!setupCompleted)
+            {
+                if (minSkill != currentMinSkill) minSkill = currentMinSkill;
+                if (requireInspired != currentInspired) requireInspired = currentInspired;
+                if (requireSpecialist != currentSpecialist)
+                    requireSpecialist = currentSpecialist;
+                if (minQuality != currentQuality) minQuality = currentQuality;
+                if (autoBest != currentAutoBest) autoBest = currentAutoBest;
+            }
 
             // Single EnsureAutoBest call site per pass, BEFORE DrawRightPanel,
             // so the odds mirror reads a fresh auto cache in the same pass
@@ -358,12 +420,13 @@ namespace QualityJobs.UI
 
             GameFont prevFont = Text.Font;
             TextAnchor prevAnchor = Text.Anchor;
+            bool prevWrap = Text.WordWrap;
             try
             {
                 // Header: title in medium font, lifted so the visual top margin
                 // matches the side margin (see TitleLift).
                 Text.Font = GameFont.Medium;
-                float medLineH = Text.LineHeight;
+                float medLineH = mediumLineH;
                 float titleY = inRect.y - TitleLift;
                 Widgets.Label(new Rect(inRect.x, titleY, inRect.width, medLineH), title!);
                 Text.Font = GameFont.Small;
@@ -380,11 +443,18 @@ namespace QualityJobs.UI
 
                 DrawRightPanel(rightRect, plan);
                 DrawLeftPanel(leftRect, plan);
+                if (setupCompleted)
+                {
+                    Text.WordWrap = true;
+                    Widgets.Label(new Rect(inRect.x, inRect.yMax - rebuildNoteHeight,
+                        inRect.width, rebuildNoteHeight), rebuildNote!);
+                }
             }
             finally
             {
                 Text.Anchor = prevAnchor;
                 Text.Font = prevFont;
+                Text.WordWrap = prevWrap;
             }
         }
 
@@ -493,7 +563,17 @@ namespace QualityJobs.UI
                 // [Clear] button row: reserved unconditionally at the TOP of inner rect.
                 // Height = SmallLineH. Only drawn when ANY selected thing has a plan.
                 Rect clearRowRect = new Rect(inner.x, inner.y, inner.width, ClearRowH);
-                if (AnyHasPlan())
+                if (setupCompleted)
+                {
+                    bool previousEnabled = GUI.enabled;
+                    try
+                    {
+                        GUI.enabled = previousEnabled && minQuality > 0;
+                        if (Widgets.ButtonText(clearRowRect, startRebuildLabel!)) StartRebuilding();
+                    }
+                    finally { GUI.enabled = previousEnabled; }
+                }
+                else if (AnyHasPlan())
                 {
                     if (Widgets.ButtonText(clearRowRect, clearLabel!))
                     {
@@ -559,11 +639,14 @@ namespace QualityJobs.UI
                 int curMinQuality  = plan?.MinQuality       ?? 0;
                 bool curAutoBest   = plan?.AutoBest         ?? false;
 
-                if (minSkill       != curMinSkill)    minSkill       = curMinSkill;
-                if (requireInspired  != curInspired)  requireInspired  = curInspired;
-                if (requireSpecialist != curSpecialist) requireSpecialist = curSpecialist;
-                if (minQuality     != curMinQuality)  minQuality     = curMinQuality;
-                if (autoBest       != curAutoBest)    autoBest       = curAutoBest;
+                if (!setupCompleted)
+                {
+                    if (minSkill       != curMinSkill)    minSkill       = curMinSkill;
+                    if (requireInspired  != curInspired)  requireInspired  = curInspired;
+                    if (requireSpecialist != curSpecialist) requireSpecialist = curSpecialist;
+                    if (minQuality     != curMinQuality)  minQuality     = curMinQuality;
+                    if (autoBest       != curAutoBest)    autoBest       = curAutoBest;
+                }
 
                 float y = startY;
 
@@ -708,6 +791,8 @@ namespace QualityJobs.UI
             autoBestNoneLabel    = "QJ_AutoBestNone".Translate();
             statusHeaderLabel    = "QJ_StatusHeader".Translate();
             statusStalledLabel   = "QJ_StatusStalledConstruction".Translate();
+            startRebuildLabel = "QJ_StartRebuilding".Translate();
+            rebuildNote = "QJ_RebuildNote".Translate();
 
             qualityLabels = new string[7];
             for (int q = 0; q <= 6; q++)
@@ -724,6 +809,7 @@ namespace QualityJobs.UI
         private void PushMinQuality(int value)
         {
             minQuality = value;
+            if (setupCompleted) return;
             for (int i = 0; i < targetIds.Count; i++)
                 Commands.SetPlanMinQuality(targetIds[i], value);
         }
@@ -795,7 +881,8 @@ namespace QualityJobs.UI
             Dispatcher.CollectEligibleFinishers(map, null, condition, autoBest,
                 statusPawnScratch);
 
-            bool sameIds = statusPawnScratch.Count == statusEligibleIds.Count;
+            bool sameIds = statusFinishersLabel != null
+                && statusPawnScratch.Count == statusEligibleIds.Count;
             if (sameIds)
                 for (int i = 0; i < statusPawnScratch.Count; i++)
                     if (statusPawnScratch[i].thingIDNumber != statusEligibleIds[i])
@@ -843,6 +930,7 @@ namespace QualityJobs.UI
                 statusRevision = int.MinValue;
 
             if (!skillChanged && !inspiredChanged && !specChanged && !autoChanged) return;
+            if (setupCompleted) return;
 
             for (int i = 0; i < targetIds.Count; i++)
             {
@@ -852,6 +940,26 @@ namespace QualityJobs.UI
                 if (specChanged)     Commands.SetPlanRequireSpecialist(thingId, newSpecialist);
                 if (autoChanged)     Commands.SetPlanAutoBest(thingId, newAutoBest);
             }
+        }
+
+        private void StartRebuilding()
+        {
+            bool any = false;
+            for (int i = 0; i < targetIds.Count; i++)
+            {
+                int id = targetIds[i];
+                // Input-event validation gives immediate feedback; the synced
+                // command independently repeats it against authoritative state.
+                if (!(QualityJobsStore.FindSpawnedThing(id) is Building building)
+                    || !CompletedBuilding.CanStart(building)
+                    || (int)building.TryGetComp<CompQuality>()!.Quality >= minQuality)
+                    continue;
+                Commands.StartRebuild(id, minSkill, requireInspired,
+                    requireSpecialist, minQuality, autoBest);
+                any = true;
+            }
+            if (any) Close();
+            else Messages.Message("QJ_NoRebuildNeeded".Translate(), MessageTypeDefOf.RejectInput, false);
         }
     }
 }
