@@ -12,6 +12,7 @@ namespace WorkRoles.Core.Recs
     /// from the pawn signal snapshot before the recommendation engine runs.
     public class PawnView
     {
+        public PawnWorkEvidence WorkEvidence = PawnWorkEvidence.Empty;
         public Dictionary<string, int> SkillLevels = new Dictionary<string, int>();
         public Dictionary<string, SignalBucket> SignalBuckets =
             new Dictionary<string, SignalBucket>();

@@ -13,6 +13,19 @@ primary recommendation skill when the relevant mods are installed.
 WorkRoles leaves job eligibility, designations and execution to the mods
 that provide them. These integrations add no required mod dependencies.
 
+Recommendations also read declared work tags, required capacities, precept
+opposition, and verified ordinary-mining refusals. For audited Humanoid Alien
+Races builds on RimWorld 1.6 and 1.7, they use the framework's actual work-giver
+and recipe restrictions. Different races using those rules benefit from the
+same integration. A blocked recipe does not remove other usable recipes from
+the role or count as a way to train its skill.
+
+Unknown framework builds preserve existing eligibility and report that their
+rules are unsupported. Restrictions hidden inside arbitrary jobs cannot be
+detected safely by trying jobs during recommendation capture. Vivi's
+equipment-dependent gathering and unverified Ratkin-specific rules are not
+covered; no race or xenotype name is used to guess a restriction.
+
 Add-ons that patch existing work givers still use the same roles and job
 ordering. Animal-handling roles, for example, continue to use Animals for
 recommendations. Conditional experience gains in another skill depend on

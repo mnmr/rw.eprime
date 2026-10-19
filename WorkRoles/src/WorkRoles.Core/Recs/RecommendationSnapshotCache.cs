@@ -309,6 +309,7 @@ namespace WorkRoles.Core.Recs
                 || a.FireFear != b.FireFear || a.Incapacitated != b.Incapacitated
                 || a.IsMechanitor != b.IsMechanitor || !a.CapableWorkTypes.SetEquals(b.CapableWorkTypes)
                 || !Dictionary(a.SkillLevels, b.SkillLevels) || !PawnSignals(a, b)
+                || !a.WorkEvidence.ContentEquals(b.WorkEvidence)
                 || a.Existing.Count != b.Existing.Count) return false;
             for (int index = 0; index < a.Existing.Count; index++)
                 if (a.Existing[index].RoleId != b.Existing[index].RoleId

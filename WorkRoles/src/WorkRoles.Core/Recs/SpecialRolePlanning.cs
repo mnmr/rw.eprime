@@ -227,6 +227,7 @@ namespace WorkRoles.Core.Recs
             int firstTier = -1;
             int lowest = -1;
             int lowestShooting = int.MaxValue;
+            int lowestTier = int.MaxValue;
             for (int pawnIndex = 0; pawnIndex < drafts.Length; pawnIndex++)
             {
                 PawnView pawn = facts.Colony.Pawns[pawnIndex];
@@ -236,14 +237,16 @@ namespace WorkRoles.Core.Recs
                     && PawnHasCoverer(
                         facts, drafts[pawnIndex], pawnIndex, hunter))
                     continue;
-                int tier = formulas.HunterTier(pawn.ShootingLevel);
+                int tier = System.Math.Min(5, formulas.HunterTier(pawn.ShootingLevel)
+                    + RecommendationFormulaEngine.AversionPenalty(facts.HasWorkAversion(pawnIndex, hunter)));
                 drafts[pawnIndex].AddHunter(hunter.Id, tier);
                 if (tier == 1) firstTier = pawnIndex;
-                if (pawn.ShootingLevel < lowestShooting
-                    || pawn.ShootingLevel == lowestShooting
-                        && pawnIndex < lowest)
+                if (tier < lowestTier || tier == lowestTier
+                    && (pawn.ShootingLevel < lowestShooting
+                        || pawn.ShootingLevel == lowestShooting && pawnIndex < lowest))
                 {
                     lowest = pawnIndex;
+                    lowestTier = tier;
                     lowestShooting = pawn.ShootingLevel;
                 }
             }

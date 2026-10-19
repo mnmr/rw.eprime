@@ -18,7 +18,8 @@ namespace WorkRoles.Core.Recs
             int skillLevel,
             int championScore,
             int championSignalScore,
-            int gateReadiness)
+            int gateReadiness,
+            int rankPriority)
         {
             PawnIndex = pawnIndex;
             Verdict = verdict;
@@ -26,6 +27,7 @@ namespace WorkRoles.Core.Recs
             ChampionScore = championScore;
             ChampionSignalScore = championSignalScore;
             GateReadiness = gateReadiness;
+            RankPriority = rankPriority;
         }
 
         internal int PawnIndex { get; }
@@ -36,6 +38,7 @@ namespace WorkRoles.Core.Recs
         /// Gate-bearing contents this pawn currently meets: the final
         /// same-role tie-break, never an eligibility input.
         internal int GateReadiness { get; }
+        internal int RankPriority { get; }
     }
 
     internal sealed class RolePlan
@@ -47,6 +50,7 @@ namespace WorkRoles.Core.Recs
         private const byte DirectAssignment = 16;
         private const byte RequiredWaiver = 32;
         private const byte SignalQualifiedSurplus = 64;
+        private const byte AverseSurplusRejected = 128;
 
         private readonly CandidateFact[] candidates;
         private readonly byte[] selectionFlags;
@@ -101,6 +105,13 @@ namespace WorkRoles.Core.Recs
         /// none. Later roles subtract repeat-champion penalties for it.
         internal int ChampionPawnIndex { get; }
         internal int CandidateCount => candidates.Length;
+        internal bool RejectedAverseSurplus(int pawnIndex)
+        {
+            for (int i = 0; i < candidates.Length; i++)
+                if (candidates[i].PawnIndex == pawnIndex)
+                    return (selectionFlags[i] & AverseSurplusRejected) != 0;
+            return false;
+        }
         internal CandidateFact CandidateAt(int index) => candidates[index];
         internal bool IsSelected(int index) =>
             (selectionFlags[index] & Selected) != 0;
@@ -170,7 +181,8 @@ namespace WorkRoles.Core.Recs
             int capacity = System.Math.Max(0, colonySize);
             int protectedDirectHolders = 0;
             for (int pawnIndex = 0; pawnIndex < colonySize; pawnIndex++)
-                if (facts.HasProtectedDirectAssignment(pawnIndex, role.Id))
+                if (facts.HasProtectedDirectAssignment(pawnIndex, role.Id)
+                    && facts.MeetsCapabilityRequirement(pawnIndex, role))
                     protectedDirectHolders++;
             int selectionCapacity = System.Math.Max(
                 0, capacity - protectedDirectHolders);
@@ -216,6 +228,8 @@ namespace WorkRoles.Core.Recs
                     formulas,
                     out int championSignalScore);
                 if (championScore == int.MinValue) continue;
+                bool opposed = facts.HasWorkAversion(pawnIndex, role);
+                championScore -= RecommendationFormulaEngine.ChampionAversionPenalty(opposed);
                 if (priorChampionsByPawn != null)
                     championScore -= RepeatChampionPenalties.PenaltyFor(
                         facts,
@@ -228,7 +242,8 @@ namespace WorkRoles.Core.Recs
                     skillLevel,
                     championScore,
                     championSignalScore,
-                    facts.GateReadinessCount(pawnIndex, role)));
+                    facts.GateReadinessCount(pawnIndex, role),
+                    formulas.CandidatePriority(verdict, opposed)));
             }
 
             // A champion is only forced when no eligible candidate already
@@ -253,6 +268,7 @@ namespace WorkRoles.Core.Recs
             var stageRanks = new int[candidates.Length];
             var selectionSlots = new int[candidates.Length];
             var selectionSignals = new SignalBucket[candidates.Length];
+            var resolvedActivations = new PathActivation?[candidates.Length];
             int minimumPickCount = 0;
             int requiredStageCount = 0;
             int trainingWaiverStageCount = 0;
@@ -321,13 +337,16 @@ namespace WorkRoles.Core.Recs
                 else
                 {
                     bool qualifiedByMultiSkillAptitude = false;
+                    PathActivation? optionalActivation = null;
                     bool qualifiesForTarget = unskilledFill
                         || PathActivation.QualifiesOptionalTarget(
                             facts,
                             candidate.PawnIndex,
                             role,
                             formulas,
-                            out qualifiedByMultiSkillAptitude);
+                            out qualifiedByMultiSkillAptitude,
+                            out optionalActivation);
+                    resolvedActivations[index] = optionalActivation;
                     SignalBucket surplusSignal = SurplusSignal(
                         facts,
                         candidate.PawnIndex,
@@ -335,14 +354,18 @@ namespace WorkRoles.Core.Recs
                         candidate.Verdict,
                         candidate.SkillLevel,
                         formulas);
+                    bool opposedOptional = PathActivation.HasWorkAversion(
+                        facts, candidate.PawnIndex, role, optionalActivation);
+                    int surplusScore = (int)surplusSignal
+                        - RecommendationFormulaEngine.AversionPenalty(opposedOptional);
                     if (qualifiesForTarget
                         && (unskilledFill
-                            || surplusSignal >= formulas.SurplusMinimumSignal
+                            || surplusScore >= (int)formulas.SurplusMinimumSignal
                             || qualifiedByMultiSkillAptitude))
                     {
                         flags[index] = (byte)(Selected
                             | Surplus
-                            | (surplusSignal >= formulas.SurplusMinimumSignal
+                            | (surplusScore >= (int)formulas.SurplusMinimumSignal
                                 ? SignalQualifiedSurplus
                                 : 0));
                         stages[index] = RecommendationSelectionStage.Surplus;
@@ -351,24 +374,26 @@ namespace WorkRoles.Core.Recs
                         selectedCount++;
                         consecutiveSurplusMisses = 0;
                     }
-                    else if (!unskilledFill
-                        && ++consecutiveSurplusMisses >= SurplusMissLimit)
+                    else
                     {
-                        break;
+                        if (opposedOptional)
+                            flags[index] |= AverseSurplusRejected;
+                        if (!unskilledFill && ++consecutiveSurplusMisses >= SurplusMissLimit)
+                            break;
                     }
                 }
             }
             // Resolve the training-path activation each downgraded pick will
             // publish, once, so publish never re-runs path resolution. Direct
             // picks always take the target and carry no activation.
-            var resolvedActivations = new PathActivation?[candidates.Length];
             for (int index = 0; index < candidates.Length; index++)
             {
                 if ((flags[index] & Selected) == 0
                     || (flags[index] & DirectAssignment) != 0)
                     continue;
-                resolvedActivations[index] = PathActivation.Find(
-                    facts, candidates[index].PawnIndex, role, formulas);
+                if (resolvedActivations[index] == null)
+                    resolvedActivations[index] = PathActivation.Find(
+                        facts, candidates[index].PawnIndex, role, formulas);
             }
             return new RolePlan(
                 role.Id,
@@ -500,16 +525,8 @@ namespace WorkRoles.Core.Recs
             CandidateFact right,
             RecommendationFormulaEngine formulas)
         {
-            bool leftStrong = left.Verdict >=
-                formulas.RankedCandidatePrioritySignal;
-            bool rightStrong = right.Verdict >=
-                formulas.RankedCandidatePrioritySignal;
-            if (leftStrong != rightStrong) return leftStrong ? -1 : 1;
-            if (leftStrong)
-            {
-                int verdict = right.Verdict.CompareTo(left.Verdict);
-                if (verdict != 0) return verdict;
-            }
+            int priority = right.RankPriority.CompareTo(left.RankPriority);
+            if (priority != 0) return priority;
             int skill = right.SkillLevel.CompareTo(left.SkillLevel);
             if (skill != 0) return skill;
             int readiness = right.GateReadiness.CompareTo(left.GateReadiness);

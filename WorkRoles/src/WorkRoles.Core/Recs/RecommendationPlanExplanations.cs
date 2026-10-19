@@ -10,7 +10,8 @@ namespace WorkRoles.Core.Recs
                 EngineContext facts,
                 PawnDraft[] drafts,
                 RecommendationFormulaEngine formulas,
-                RecommendationTargetAssignment[] targetAssignments)
+                RecommendationTargetAssignment[] targetAssignments,
+                List<RolePlan> rolePlans)
         {
             var coveredTotals = new Dictionary<int, int>();
             for (int roleIndex = 0;
@@ -80,6 +81,7 @@ namespace WorkRoles.Core.Recs
                         EveryoneCapable =
                             requirementRole.CoveragePercent >= 100,
                         RequiredSkills = RequiredSkillNames(facts, role),
+                        WorkAversions = AversionFacts(facts, pawnIndex, role),
                         SignalBucket = surplusSignal,
                         BaseSignalBucket = rawSignal,
                         SignalSkillLevel = signalSkillLevel,
@@ -141,10 +143,38 @@ namespace WorkRoles.Core.Recs
                             requiredTotal,
                             formulas,
                             explanation);
+                    if (!recommended && (explanation.RejectReason == PickRejectReason.Outqualified
+                            || explanation.RejectReason == PickRejectReason.WeakSignal))
+                        for (int i = 0; i < rolePlans.Count; i++)
+                            if (rolePlans[i].RoleId == roleId && rolePlans[i].RejectedAverseSurplus(pawnIndex))
+                            {
+                                explanation.RejectReason = PickRejectReason.WorkAversion;
+                                break;
+                            }
                     explanations.Add(roleId, explanation);
                 }
             }
             return result;
+        }
+
+        private static IReadOnlyList<WorkAversionFact> AversionFacts(
+            EngineContext facts, int pawnIndex, RoleView role)
+        {
+            PawnView pawn = facts.Colony.Pawns[pawnIndex];
+            if (!facts.HasWorkAversion(pawnIndex, role)) return Array.Empty<WorkAversionFact>();
+            var result = new List<WorkAversionFact>();
+            for (int i = 0; i < pawn.WorkEvidence.AversionCount; i++)
+            {
+                WorkAversionFact aversion = pawn.WorkEvidence.AversionAt(i);
+                for (int typeIndex = 0; typeIndex < role.WorkTypes.Count; typeIndex++)
+                    if (role.WorkTypes[typeIndex] == aversion.WorkTypeDefName
+                        && EngineContext.CanExecuteWorkType(pawn, role, aversion.WorkTypeDefName))
+                    {
+                        result.Add(aversion);
+                        break;
+                    }
+            }
+            return result.ToArray();
         }
 
         private static RecommendationTargetAssignment? FindTargetAssignment(

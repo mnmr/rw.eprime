@@ -1,0 +1,40 @@
+<Defs>
+  <ThingDef ParentName="Human" Class="AlienRace.ThingDef_AlienRace">
+    <defName>WE_RaceA</defName><label>verification race A</label>
+    <alienRace><raceRestriction>
+      <workGiverList><li>WE_MineA</li></workGiverList>
+      <recipeList><li>WE_RecipeA</li></recipeList>
+      <whiteRecipeList><li>WE_RecipeA</li></whiteRecipeList>
+    </raceRestriction></alienRace>
+  </ThingDef>
+  <ThingDef ParentName="Human" Class="AlienRace.ThingDef_AlienRace">
+    <defName>WE_RaceB</defName><label>verification race B</label>
+    <alienRace><raceRestriction>
+      <workGiverList><li>WE_MineB</li></workGiverList>
+      <recipeList><li>WE_RecipeB</li></recipeList>
+      <whiteRecipeList><li>WE_RecipeB</li></whiteRecipeList>
+    </raceRestriction></alienRace>
+  </ThingDef>
+  <PawnKindDef><defName>WE_KindA</defName><label>verification A</label><race>WE_RaceA</race><defaultFactionType>PlayerColony</defaultFactionType><combatPower>100</combatPower><initialResistanceRange>10~10</initialResistanceRange><initialWillRange>1~1</initialWillRange></PawnKindDef>
+  <PawnKindDef><defName>WE_KindB</defName><label>verification B</label><race>WE_RaceB</race><defaultFactionType>PlayerColony</defaultFactionType><combatPower>100</combatPower><initialResistanceRange>10~10</initialResistanceRange><initialWillRange>1~1</initialWillRange></PawnKindDef>
+  <WorkGiverDef Name="WE_MineBase" Abstract="True"><giverClass>WorkGiver_Miner</giverClass><workType>Mining</workType><verb>mine</verb><gerund>mining</gerund><priorityInType>1</priorityInType><requiredCapacities><li>Manipulation</li></requiredCapacities></WorkGiverDef>
+  <WorkGiverDef ParentName="WE_MineBase"><defName>WE_MineA</defName><label>verification mining A</label></WorkGiverDef>
+  <WorkGiverDef ParentName="WE_MineBase"><defName>WE_MineB</defName><label>verification mining B</label></WorkGiverDef>
+  <RecipeDef Name="WE_RecipeBase" Abstract="True"><label>verification product</label><jobString>Making verification product.</jobString><workAmount>5</workAmount><workSpeedStat>GeneralLaborSpeed</workSpeedStat><workSkill>Crafting</workSkill><products><WoodLog>1</WoodLog></products></RecipeDef>
+  <RecipeDef ParentName="WE_RecipeBase"><defName>WE_RecipeA</defName></RecipeDef>
+  <RecipeDef ParentName="WE_RecipeBase"><defName>WE_RecipeB</defName></RecipeDef>
+  <RecipeDef ParentName="WE_RecipeBase"><defName>WE_RecipeOpen</defName></RecipeDef>
+  <ThingDef Name="WE_BenchBase" ParentName="BuildingBase" Abstract="True">
+    <thingClass>Building_WorkTable</thingClass><label>verification bench</label><description>Test-only workbench.</description>
+    <graphicData><texPath>Things/Building/Production/CraftingSpot</texPath><graphicClass>Graphic_Single</graphicClass></graphicData>
+    <statBases><WorkToBuild>0</WorkToBuild><WorkTableWorkSpeedFactor>1</WorkTableWorkSpeedFactor></statBases>
+    <useHitPoints>false</useHitPoints><size>(1,1)</size><passability>Standable</passability><hasInteractionCell>true</hasInteractionCell><interactionCellOffset>(0,0,-1)</interactionCellOffset>
+    <inspectorTabs><li>ITab_Bills</li></inspectorTabs>
+  </ThingDef>
+  <ThingDef ParentName="WE_BenchBase"><defName>WE_BenchA</defName><recipes><li>WE_RecipeA</li></recipes></ThingDef>
+  <ThingDef ParentName="WE_BenchBase"><defName>WE_BenchMixed</defName><recipes><li>WE_RecipeA</li><li>WE_RecipeOpen</li></recipes></ThingDef>
+  <WorkGiverDef Name="WE_BillBase" Abstract="True"><giverClass>WorkGiver_DoBill</giverClass><workType>Crafting</workType><verb>craft</verb><gerund>crafting</gerund><priorityInType>1</priorityInType><requiredCapacities><li>Manipulation</li></requiredCapacities></WorkGiverDef>
+  <WorkGiverDef ParentName="WE_BillBase"><defName>WE_BillA</defName><label>verification restricted crafting</label><fixedBillGiverDefs><li>WE_BenchA</li></fixedBillGiverDefs></WorkGiverDef>
+  <WorkGiverDef ParentName="WE_BillBase"><defName>WE_BillMixed</defName><label>verification mixed crafting</label><fixedBillGiverDefs><li>WE_BenchMixed</li></fixedBillGiverDefs></WorkGiverDef>
+  <WorkGiverDef><defName>WE_QueryCounter</defName><label>query counter</label><giverClass>WorkRolesWorkEvidenceVerification.QueryCounterGiver</giverClass><workType>Crafting</workType><verb>verify</verb><gerund>verifying</gerund><priorityInType>1</priorityInType></WorkGiverDef>
+</Defs>
