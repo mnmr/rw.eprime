@@ -18,7 +18,7 @@ namespace WorkRolesWorkEvidenceVerification
 {
     // Test-only main-thread observer; also runs against the baseline assembly.
     [StaticConstructorOnStartup]
-    public static class Probe
+    public static partial class Probe
     {
         private static int stage, settle;
 #if !BASELINE
@@ -254,6 +254,7 @@ namespace WorkRolesWorkEvidenceVerification
 #else
                     string action = File.ReadAllText(control).Trim();
                     if (action == "features" || action == "har") { includeHar = action == "har"; Features(); }
+                    else if (action == "vivi") Vivi();
                     else { stage = 99; Mark("SUCCESS"); }
 #endif
                 }
@@ -273,6 +274,7 @@ namespace WorkRolesWorkEvidenceVerification
                     if (proofBill.repeatCount == 0) { Find.TickManager.CurTimeSpeed = TimeSpeed.Paused; Assert(true, "recommended race completed the restricted recipe through the game's production job"); stage = 99; Mark("SUCCESS"); }
                     else if (Find.TickManager.TicksGame - startedTick > 5000) throw new InvalidOperationException("restricted crafting did not finish");
                 }
+                else if (stage == 4) ViviUpdate();
 #endif
             }
             catch (Exception ex) { Find.TickManager.CurTimeSpeed = TimeSpeed.Paused; stage = 99; Mark("FAILED " + ex); Log.Error("[WorkEvidenceProbe] " + ex); }

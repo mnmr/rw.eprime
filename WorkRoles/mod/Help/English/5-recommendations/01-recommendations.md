@@ -19,6 +19,13 @@ for aversions and demand.
 These are recommendation inputs. Conditional roles continue to control when
 and where an assigned role is active.
 
+With supported Vivi versions, gathering recommendations use the pawn's actual
+gathering speed and yield. A human with a Vivi straw can gather honey and pollen;
+a multiuse brush enables plant gathering. Equipping or removing these tools
+updates capability while paused. A pawn who can perform some gathering recipes
+remains eligible for gathering; unavailable recipes stay excluded from training
+choices. Unknown Vivi builds or custom gathering rules retain existing behavior.
+
 The engine considers all eligible roles and orders them automatically for
 each colonist. Role Options on the Recommendations tab lists every role
 except those you have excluded. To prevent a role from ever being

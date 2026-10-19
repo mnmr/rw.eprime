@@ -1,7 +1,7 @@
 param(
  [ValidateSet('1.6','1.7')][string]$Version='1.7',
- [ValidateSet('baseline','features','har','clean')][string]$Scenario='features',
- [string]$ModSourceRoot='', [string]$SaveRoot=''
+ [ValidateSet('baseline','capture','features','har','vivi','clean')][string]$Scenario='features',
+ [string]$ModSourceRoot='', [string]$SaveRoot='', [string]$ViviSourceRoot=''
 )
 $ErrorActionPreference='Stop'
 $source=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..\..'))
@@ -13,6 +13,11 @@ if($Scenario -eq 'clean'){$params.ModSet='own-mods-waylith'}
 else{$params.ModSet='work-evidence';$params.AdditionalModSource=@("$PSScriptRoot\Probe")}
 if($Scenario -eq 'baseline'){$params.AdditionalModSource=@("$PSScriptRoot\BaselineProbe")}
 if($Scenario -eq 'har'){$params.ModSet='work-evidence-har';$params.AdditionalModSource+=("$PSScriptRoot\HarFixture")}
+if($Scenario -eq 'vivi'){
+ if(-not (Test-Path -LiteralPath "$ViviSourceRoot\About\About.xml")){throw 'ViviSourceRoot must point to the audited Vivi mod.'}
+ $params.ModSet='work-evidence-vivi';$params.AdditionalModSource+=$ViviSourceRoot
+ $params.Purpose="WorkRoles $Version Vivi capability: paused gear swaps and completed pollen, propolis and honey jobs"
+}
 if($Version -eq '1.6'){
  $params.GameRoot='D:\Code\RimWorld\Readouts\temp\linux-validation\game-1.6'
  $params.WslDistribution='Ubuntu-22.04';$params.WslRenderer='NVIDIA'
@@ -26,14 +31,14 @@ try {
  & "$tools\launch.ps1" -RunId $run.runId -TimeoutMinutes 5 -AllowRecoverableSaveErrors
  . "$tools\automation-common.ps1" -RunId $run.runId
  if($Scenario -ne 'clean'){
-  $deadline=[DateTime]::UtcNow.AddSeconds(40)
+  $deadline=[DateTime]::UtcNow.AddSeconds($(if($Scenario -eq 'vivi'){180}else{40}))
   do {
    Invoke-SharedGameCommand @{command='status'} | Out-Null
    $file=Join-Path $run.profile 'work-evidence-stage.txt'
    $state=if(Test-Path $file){(Get-Content $file -Raw).Trim()}else{''}
    if($state.StartsWith('FAILED')){throw $state}
    if($state -eq 'captured'){
-    $(if($Scenario -in @('features','har')){$Scenario}else{'finish'}) | Set-Content (Join-Path $run.profile 'work-evidence-control.txt')
+    $(if($Scenario -in @('features','har','vivi')){$Scenario}else{'finish'}) | Set-Content (Join-Path $run.profile 'work-evidence-control.txt')
    }
    if($state -eq 'SUCCESS'){break}
    if([DateTime]::UtcNow -gt $deadline){throw "Verification timed out at $state"}

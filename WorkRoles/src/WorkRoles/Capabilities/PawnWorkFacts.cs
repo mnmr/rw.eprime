@@ -16,12 +16,14 @@ namespace WorkRoles.Capabilities
             internal bool[] Capacities = Array.Empty<bool>();
             internal HediffDef[] Nullifiers = Array.Empty<HediffDef>();
             internal bool[] HasNullifiers = Array.Empty<bool>();
+            internal int ViviAvailability;
         }
 
         // Owner: world. Key: pawn identity. Value: detached immutable evidence
         // plus its private capacity observations. Dependencies: pawn race, disabled work,
         // required-capacity booleans, current precepts, faction, nullifying
-        // traits/hediffs and definitions. Refresh: capture and matching events,
+        // traits/hediffs, audited Vivi gathering-stat positivity (including
+        // equipped straw/brush offsets), and definitions. Refresh: capture and matching events,
         // never periodic. Equal evidence keeps identity and publishes no stamp.
         // Teardown: ExternalPawnFacts.Release/InvalidateAll; no map references.
         private static readonly Dictionary<Pawn, Entry> entries = new Dictionary<Pawn, Entry>();
@@ -57,6 +59,7 @@ namespace WorkRoles.Capabilities
                     blocks.Add(new WorkCapabilityFact(giver.defName, null, IdeologyWorkFacts.Source(refusal), refusal.defName));
             }
             HumanoidAlienWorkFacts.Collect(pawn, blocks);
+            int viviAvailability = ViviWorkFacts.Collect(pawn, blocks);
             PawnWorkEvidence evidence = PawnWorkEvidence.Create(blocks, aversions);
             if (entries.TryGetValue(pawn, out Entry old) && old.Evidence.ContentEquals(evidence))
                 evidence = old.Evidence;
@@ -76,7 +79,7 @@ namespace WorkRoles.Capabilities
             var present = new bool[nullifiers.Count];
             for (int i = 0; i < present.Length; i++) present[i] = pawn.health.hediffSet.HasHediff(nullifiers[i]);
             entries[pawn] = new Entry { Evidence = evidence, Capacities = capacities,
-                Nullifiers = nullifiers.ToArray(), HasNullifiers = present };
+                Nullifiers = nullifiers.ToArray(), HasNullifiers = present, ViviAvailability = viviAvailability };
             return evidence;
         }
 
@@ -94,6 +97,10 @@ namespace WorkRoles.Capabilities
                 changed = previous.HasNullifiers[i] != pawn.health.hediffSet.HasHediff(previous.Nullifiers[i]);
             for (int i = 0; i < requiredCapacities.Length && !changed; i++)
                 changed = previous.Capacities[i] != pawn.health.capacities.CapableOf(requiredCapacities[i]);
+            // Vanilla apparel add/remove dirties capacities for stat-offset
+            // gear, including both Vivi tools. Compare only recipe availability,
+            // so health/speed changes that stay positive publish no revision.
+            if (!changed) changed = previous.ViviAvailability != ViviWorkFacts.Observe(pawn);
             if (changed) Refresh(pawn);
         }
 
@@ -123,6 +130,7 @@ namespace WorkRoles.Capabilities
             entries.Clear();
             requiredCapacities = null;
             HumanoidAlienWorkFacts.Reset();
+            ViviWorkFacts.Reset();
         }
     }
 }

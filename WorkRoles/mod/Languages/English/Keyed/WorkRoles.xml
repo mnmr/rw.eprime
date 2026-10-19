@@ -796,6 +796,7 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <WR_WorkBlockedCapacity>missing a required health capacity</WR_WorkBlockedCapacity>
   <WR_WorkBlockedRace>not permitted by this race's work restrictions</WR_WorkBlockedRace>
   <WR_WorkBlockedRecipe>not permitted by this race's recipe restrictions</WR_WorkBlockedRecipe>
+  <WR_WorkBlockedViviGathering>requires positive Vivi gathering speed and yield; suitable gathering tools can enable this work</WR_WorkBlockedViviGathering>
   <WR_WorkBlockedPrecept>refused because of {0}</WR_WorkBlockedPrecept>
   <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
   <WR_RecWorkAversion>{0} opposes {1}; the recommendation score is reduced.</WR_RecWorkAversion>
