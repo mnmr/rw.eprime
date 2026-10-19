@@ -5,10 +5,10 @@ namespace WorkRoles.Core.Recs
 {
     public sealed class RecommendationOrderSnapshot
     {
-        internal RecommendationOrderSnapshot(IReadOnlyList<RoleView> roles, IReadOnlyList<int> stored)
+        internal RecommendationOrderSnapshot(IReadOnlyList<RoleView> roles)
         {
             Roles = roles;
-            Template = OrderTemplate.ResolveTemplate(stored, roles);
+            Template = OrderTemplate.DeriveTemplate(roles);
             Positions = Ordering.BasePositions(roles, Template);
             AddCandidates = OrderTemplate.AddCandidates(roles, Template);
         }
@@ -21,10 +21,11 @@ namespace WorkRoles.Core.Recs
     }
 
     // Owner: store-scoped adapter, at most two full/training input variants. Key:
-    // store identity, detached role projection and recommendation-order revision.
+    // store identity and detached role projection.
     // Value: immutable template/positions/add choices. Dependencies: role ids,
     // template identity, pinnability, coverage, hunting/natural priority and
-    // unskilled placement flags; stored order. Refresh: event-gated read.
+    // unskilled placement flags. Legacy saved orders are not consumed.
+    // Refresh: event-gated read.
     // Equality: equal consumed inputs preserve all derived identities. Teardown:
     // Reset/store replacement drops the prior owner and detached facts.
     public sealed class RecommendationOrderCache
@@ -34,32 +35,34 @@ namespace WorkRoles.Core.Recs
         public RecommendationOrderSnapshot For(object owner, IReadOnlyList<RoleView> roles,
             int revision, IReadOnlyList<int> stored)
         {
+            // Retain the legacy call shape for saved-order consumers, but no
+            // longer let old settings override the automatic template or
+            // invalidate it. In particular, Hunter stays dynamically placed.
             if (!ReferenceEquals(this.owner, owner)) { Reset(); this.owner = owner; }
-            if (recent != null && recent.Revision == revision && ReferenceEquals(recent.Roles, roles))
+            if (recent != null && ReferenceEquals(recent.Roles, roles))
                 return recent.Snapshot;
-            if (other != null && other.Revision == revision && ReferenceEquals(other.Roles, roles))
+            if (other != null && ReferenceEquals(other.Roles, roles))
             {
                 Entry matched = other;
                 other = recent;
                 recent = matched;
                 return matched.Snapshot;
             }
-            RecommendationOrderSnapshot snapshot = recent != null && recent.Revision == revision
+            RecommendationOrderSnapshot snapshot = recent != null
                 && InputsEqual(recent.Roles, roles) ? recent.Snapshot
-                : other != null && other.Revision == revision && InputsEqual(other.Roles, roles) ? other.Snapshot
-                : new RecommendationOrderSnapshot(roles, stored);
+                : other != null && InputsEqual(other.Roles, roles) ? other.Snapshot
+                : new RecommendationOrderSnapshot(roles);
             other = recent;
-            recent = new Entry(roles, revision, snapshot);
+            recent = new Entry(roles, snapshot);
             return snapshot;
         }
         public void Reset() { owner = null; recent = other = null; }
 
         private sealed class Entry
         {
-            internal Entry(IReadOnlyList<RoleView> roles, int revision, RecommendationOrderSnapshot snapshot)
-            { Roles = roles; Revision = revision; Snapshot = snapshot; }
+            internal Entry(IReadOnlyList<RoleView> roles, RecommendationOrderSnapshot snapshot)
+            { Roles = roles; Snapshot = snapshot; }
             internal readonly IReadOnlyList<RoleView> Roles;
-            internal readonly int Revision;
             internal readonly RecommendationOrderSnapshot Snapshot;
         }
 

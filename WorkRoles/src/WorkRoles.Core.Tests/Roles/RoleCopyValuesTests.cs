@@ -3,6 +3,13 @@ namespace WorkRoles.Core.Tests.Roles;
 public class RoleCopyValuesTests
 {
     [Test]
+    public async Task DuplicateRetainsThePlayersRecommendationExclusion()
+    {
+        var source = new RoleCopyValues<int> { ExcludedFromRecommendations = true };
+        await Assert.That(source.ForPlayerDuplicate().ExcludedFromRecommendations).IsTrue();
+    }
+
+    [Test]
     public async Task PlayerDuplicateCopiesEveryValueButDropsTemplateAndAutoOwnership()
     {
         RoleCopyValues<int> source = CompleteSource();

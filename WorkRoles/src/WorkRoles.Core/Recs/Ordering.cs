@@ -86,9 +86,14 @@ namespace WorkRoles.Core.Recs
             EngineContext context,
             int pawnIndex,
             IReadOnlyList<int> recommended)
+            => PreserveProtectedOrder(context.RolesById,
+                context.Colony.Pawns[pawnIndex].Existing, recommended);
+
+        internal static int[] PreserveProtectedOrder(
+            IReadOnlyDictionary<int, RoleView> rolesById,
+            IReadOnlyList<AssignmentView> existing,
+            IReadOnlyList<int> recommended)
         {
-            IReadOnlyList<AssignmentView> existing =
-                context.Colony.Pawns[pawnIndex].Existing;
             if (existing.Count == 0 || recommended.Count == 0)
                 return recommended.ToArray();
 
@@ -97,11 +102,10 @@ namespace WorkRoles.Core.Recs
             for (int index = 0; index < existing.Count; index++)
             {
                 AssignmentView assignment = existing[index];
-                RoleView role = context.RoleOf(assignment.RoleId);
                 // Auto-assign roles are automatic and follow the default order;
                 // only user-placed pins and rule/blocker roles keep their slot.
                 if (recommendedSet.Contains(assignment.RoleId)
-                    && role != null
+                    && rolesById.TryGetValue(assignment.RoleId, out RoleView role)
                     && (assignment.Pinned || role.HasRules || role.Blocker))
                     anchored.Add(assignment.RoleId);
             }

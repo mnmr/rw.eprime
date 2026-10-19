@@ -1,7 +1,8 @@
 ---
 title: Role options
 ---
-Expand a role under Role Options to tune how the engine treats it:
+Role Options lists all roles except those in Excluded roles, in alphabetical
+order. Expand a role to tune how the engine treats it:
 
 ![Smith's role options expanded](role-options-expanded.png)
 

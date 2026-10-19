@@ -5,6 +5,19 @@ namespace WorkRoles.Core.Tests.Persistence;
 public class RoleFileTests
 {
     [Test]
+    public async Task RecommendationExclusionSurvivesExportAndOldFilesRemainEligible()
+    {
+        var document = new RoleFileDocument
+        {
+            roles = { new FileRole { label = "Hunter", hasTuning = true, excludedFromRecommendations = true } },
+        };
+        var parsed = RoleFile.Parse(RoleFile.Build(document));
+        await Assert.That(parsed.roles[0].excludedFromRecommendations).IsTrue();
+        var legacy = RoleFile.Parse("<WorkRoles version=\"13\"><Roles><Role name=\"Hunter\"><Tuning /></Role></Roles></WorkRoles>");
+        await Assert.That(legacy.roles[0].excludedFromRecommendations).IsFalse();
+    }
+
+    [Test]
     public async Task NowhereLocationRoundTripsWithoutBecomingAnywhere()
     {
         var document = new RoleFileDocument

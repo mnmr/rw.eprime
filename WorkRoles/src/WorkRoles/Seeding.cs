@@ -875,13 +875,6 @@ namespace WorkRoles
                         pathDef = def.defName,
                     });
             }
-            if (store.recommendationOrder.Count > 0)
-                result.Add(new RestoreItem
-                {
-                    label = "WR_RestoreRecOrder".Translate(),
-                    explanation = "WR_RestoreExplainRecOrder".Translate(),
-                    recommendationOrder = true,
-                });
             return result;
         }
 

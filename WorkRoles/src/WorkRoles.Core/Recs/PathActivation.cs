@@ -24,6 +24,7 @@ namespace WorkRoles.Core.Recs
             RoleView target,
             RecommendationFormulaEngine formulas)
         {
+            if (facts.IsRecommendationExcluded(target)) return null;
             PathActivation? best = null;
             PathView? bestPath = null;
             for (int pathIndex = 0;
@@ -73,6 +74,7 @@ namespace WorkRoles.Core.Recs
                 // so Never does not exclude it here. A role with an empty
                 // contribution fails InsideBand and cannot substitute.
                 if (role == null
+                    || facts.IsRecommendationExcluded(role)
                     || !role.Available
                     || !role.Enabled
                     || !facts.MeetsCapabilityRequirement(pawnIndex, role)
@@ -227,6 +229,7 @@ namespace WorkRoles.Core.Recs
                     RoleView? higherRole =
                         facts.RoleOf(path.RoleIds[higherEntry]);
                     if (higherRole != null
+                        && !facts.IsRecommendationExcluded(higherRole)
                         && facts.InsideBand(
                             pawnIndex, higherRole, path, higherEntry))
                         higher = true;

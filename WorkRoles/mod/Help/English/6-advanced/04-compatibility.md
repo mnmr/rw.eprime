@@ -7,12 +7,17 @@ expertise feed the recommendation signals, More Than Capable's hated work
 becomes an Awful signal, Colony Groups appears as a grouping option, and
 multi-floor mods treat stacked floors as one location.
 
-RJW's Brothel Colony add-on supplies Brothel work, which appears in roles
-automatically. Its recommendations use Social. If Sexperience is also
-installed, Sex becomes the primary recommendation skill and Social stays
-secondary; the job profile shows both as used and trained skills.
-Service designation and visitor eligibility still come from those mods.
-All three mods are optional, and RJW by itself adds no work type to manage.
+Optional work and skill mods can supply additional job profiles. These
+profiles identify the skills a job uses and trains, and may refine its
+primary recommendation skill when the relevant mods are installed.
+WorkRoles leaves job eligibility, designations and execution to the mods
+that provide them. These integrations add no required mod dependencies.
+
+Add-ons that patch existing work givers still use the same roles and job
+ordering. Animal-handling roles, for example, continue to use Animals for
+recommendations. Conditional experience gains in another skill depend on
+the add-on's eligibility rules; they do not create a general training path
+for every colonist assigned to that work.
 
 Two families do clash. Other Work tab replacements (Work Tab forks,
 Better Work Tab and friends) fight over the same UI. Priority-setting

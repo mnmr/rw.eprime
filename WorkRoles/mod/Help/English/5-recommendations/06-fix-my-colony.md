@@ -10,8 +10,10 @@ first, with a checkbox per colonist to leave individuals out.
 
 ![The Fix My Colony preview](fix-preview.png)
 
-Apply performs exactly what the preview shows. Pinned assignments,
-blockers, and rule-carrying roles stay untouched, as always.
+Apply performs exactly what the preview shows. Pinned assignments are
+preserved, even when their role or a composite member is in
+[Excluded roles](topic:recommendation-order). Unpinned excluded roles
+are removed; blockers and rule-carrying roles are otherwise retained.
 
 Colony planning is per location, so the button asks for a single
 settlement or ship in the [location filter](topic:filters) when the table

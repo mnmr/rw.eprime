@@ -10,38 +10,21 @@ using WorkRoles.Core.Recs;
 
 namespace WorkRoles.UI
 {
-    /// Owns the Recommendations tab's open-window projections: the global
-    /// recommendation order and tuning-parameter caches plus the per-role
+    /// Owns the Recommendations tab's open-window projections: the exclusion
+    /// and tuning-parameter caches plus the per-role
     /// panel list and the single expanded panel's editor snapshot. The view
     /// consumes snapshots and retains only immediate-mode interaction state.
-    internal sealed class RecommendationsTabState
+    internal sealed partial class RecommendationsTabState
     {
         internal const float FlowGap = 8f;
 
-        // Cache contract — Owner: Recommendations tab. Key: RoleStore identity,
-        // Catalog/RolePresentation/RoleWork/RoleRules/RoleCapability/RecommendationOrder,
-        // definition and UI metric revisions, available width, and language through
-        // explicit invalidation. Value: one immutable recommendation-order
-        // snapshot containing detached chip data, layout, catalog lookup, and
-        // add-menu projections. Dependencies: role catalog/order, labels,
-        // colors, role rules, hunting identity, width, font, and language.
-        // Refresh: immediate on a key change. Equality: key hits preserve
-        // snapshot identity. Teardown: Reset/InvalidateLanguageCaches releases it.
-        private RoleStore? orderStore;
-        private int orderUiVersion = -1;
-        private int orderDefinitionRevision = -1;
-        private int orderGeneration;
-        private float orderWidth = -1f;
-        private RecOrderSnapshot? orderSnapshot;
-
-        // Owner: Recommendations window. Key: language revision. Value: two
-        // immutable StructuredTip models. Dependencies: translated tip text.
+        // Owner: Recommendations window. Key: language revision. Value: one
+        // immutable training StructuredTip model. Dependencies: translated tip text.
         // Refresh: lazy on the next read after language changes. Equality:
         // equal rebuilt contents preserve each tip identity. Teardown: Reset
-        // releases both references.
+        // releases the reference.
         private int tipsLanguageRevision = -1;
 
-        private float helpWidth = -1f;
 
         // Cache contract — Owner: Recommendations tab. Key: RoleStore identity,
         // RecommendationTuningRevision, available width, effective Tiny
@@ -58,14 +41,14 @@ namespace WorkRoles.UI
         private TinyTextMetrics tuningTinyMetrics;
         private RecTuningSnapshot? tuningSnapshot;
 
-        // Cache contract — Owner: Recommendations tab. Key: published order
+        // Cache contract — Owner: Recommendations tab. Key: published exclusions
         // snapshot identity and available width. Value: one immutable panel
         // snapshot with detached chip render data and measured help geometry.
-        // Dependencies: resolved order chip projections, width, font, and
-        // language (the order snapshot is replaced on language invalidation).
-        // Refresh: immediate on a key change. Equality: matching key preserves
+        // Dependencies: all non-excluded catalog chip projections, width, font, and
+        // language (the exclusions snapshot is replaced on language invalidation).
+        // Refresh: immediate on a key change. Equality: matching keys and equal rebuilt contents preserve
         // snapshot identity. Teardown: Reset/InvalidateLanguageCaches releases it.
-        private RecOrderSnapshot? panelsOrder;
+        private RecOrderSnapshot? panelsExclusions;
         private float panelsWidth = -1f;
         private RecRolePanelsSnapshot? panelsSnapshot;
 
@@ -94,41 +77,25 @@ namespace WorkRoles.UI
         private RecRoleDetailSnapshot? detail;
 
         // Owner: tab. Key: UiRevision.Current. Value: the measurement generation
-        // for order, help, tuning, panels and details. Dependencies: UI scale,
+        // for tuning, panels and details. Dependencies: UI scale,
         // fonts and language. Refresh: immediate before any geometry read.
         // Equality: unchanged epochs preserve all snapshots. Teardown: Reset.
         private int metricRevision = -1;
 
-        internal int OrderStamp => orderGeneration;
-        internal RecOrderSnapshot? Order => orderSnapshot;
-
-        internal StructuredTip? RecommendationOrderTip { get; private set; }
         internal StructuredTip? TrainingTip { get; private set; }
-        internal string? RecommendationOrderHelp { get; private set; }
-        internal float RecommendationOrderHelpHeight { get; private set; }
         internal RecTuningSnapshot? Tuning => tuningSnapshot;
         internal RecRolePanelsSnapshot? Panels => panelsSnapshot;
 
         internal void Reset()
         {
             InvalidateLanguageCaches();
-            RecommendationOrderTip = null;
             TrainingTip = null;
         }
 
         internal void InvalidateLanguageCaches()
         {
-            orderStore = null;
-            orderUiVersion = -1;
-            orderDefinitionRevision = -1;
-            orderWidth = -1f;
-            orderSnapshot = null;
-
+            ResetExclusions();
             tipsLanguageRevision = -1;
-
-            helpWidth = -1f;
-            RecommendationOrderHelp = null;
-            RecommendationOrderHelpHeight = 0f;
 
             tuningStore = null;
             tuningRevision = -1;
@@ -136,7 +103,7 @@ namespace WorkRoles.UI
             tuningTinyMetrics = default;
             tuningSnapshot = null;
 
-            panelsOrder = null;
+            panelsExclusions = null;
             panelsWidth = -1f;
             panelsSnapshot = null;
 
@@ -149,64 +116,11 @@ namespace WorkRoles.UI
             detail = null;
         }
 
-        internal void EnsureOrder(RoleStore store, float width)
-        {
-            ObserveMetrics();
-            int revision = store.Revisions.For(ModelDomain.Catalog
-                | ModelDomain.RolePresentation | ModelDomain.RoleWork
-                | ModelDomain.RoleRules | ModelDomain.RoleCapability | ModelDomain.RecommendationOrder);
-            if (ReferenceEquals(orderStore, store)
-                && orderUiVersion == revision
-                && orderDefinitionRevision == DefinitionReloadCoordinator.Revision
-                && orderWidth == width) return;
-            RecommendationOrderSnapshot ordering = RecsAdapter.RecommendationOrdering(store);
-            IReadOnlyList<RoleView> views = ordering.Roles;
-            IReadOnlyList<int> resolved = ordering.Template;
-            var viewsById = views.ToDictionary(role => role.Id);
-            var chipsById = new Dictionary<int, RoleChipRenderData>(
-                store.roles.Count);
-            for (int i = 0; i < store.roles.Count; i++)
-            {
-                Role role = store.roles[i];
-                chipsById[role.id] = RoleChipRenderData.From(role);
-            }
-
-            List<RecOrderChip> chips = LayoutOrderChips(width, resolved,
-                chipsById, viewsById, out Rect addRect, out float layoutHeight,
-                out string addLabel);
-            string headerLabel = "WR_RecOrderHeader".Translate();
-            var addOptions = new List<RecRoleMenuOption>();
-            IReadOnlyList<int> candidateIds = ordering.AddCandidates;
-            for (int i = 0; i < candidateIds.Count; i++)
-            {
-                if (!chipsById.TryGetValue(candidateIds[i], out var chip))
-                    continue;
-                addOptions.Add(new RecRoleMenuOption(
-                    chip.RoleId, chip.Label, null));
-            }
-            addOptions.Sort(RecRoleMenuOption.CompareByLabel);
-
-            var rebuilt = new RecOrderSnapshot(
-                chips, chipsById, addOptions, addRect, layoutHeight, addLabel,
-                headerLabel);
-            if (!ReferenceEquals(orderStore, store)
-                || orderSnapshot == null
-                || !orderSnapshot.ContentEquals(rebuilt))
-            {
-                orderSnapshot = rebuilt;
-                unchecked { orderGeneration++; }
-            }
-            orderStore = store;
-            orderUiVersion = revision;
-            orderDefinitionRevision = DefinitionReloadCoordinator.Revision;
-            orderWidth = width;
-        }
-
         private void ObserveMetrics()
         {
             if (metricRevision == UiRevision.Current) return;
             metricRevision = UiRevision.Current;
-            orderWidth = helpWidth = tuningWidth = panelsWidth = detailWidth = -1f;
+            tuningWidth = panelsWidth = detailWidth = -1f;
         }
 
         internal void EnsureTuning(RoleStore store, float width)
@@ -613,34 +527,11 @@ namespace WorkRoles.UI
             return value.ToString(CultureInfo.InvariantCulture);
         }
 
-        internal void EnsureHelpLayout(float width)
-        {
-            ObserveMetrics();
-            if (helpWidth == width) return;
-            helpWidth = width;
-            Text.Font = GameFont.Small;
-            RecommendationOrderHelp = "WR_RecOrderHelp".Translate();
-            RecommendationOrderHelpHeight = Text.CalcHeight(
-                RecommendationOrderHelp, width);
-        }
-
         internal void EnsureTips()
         {
             int languageRevision = LanguageChangeCoordinator.Revision;
             if (tipsLanguageRevision == languageRevision) return;
             tipsLanguageRevision = languageRevision;
-
-            var recommendation = new TipModel { Title = "WR_RecOrderHeader".Translate() };
-            recommendation.AddSection().Text("WR_OptRecOrderTipWhat".Translate());
-            recommendation.AddSection()
-                .Action("WR_ActDrag".Translate(), "WR_ActRecDrag".Translate())
-                .Action("WR_ActX".Translate(), "WR_ActRecX".Translate());
-            recommendation.AddSection().Text("WR_OptRecOrderTipAuto".Translate(), dim: true);
-            var rebuiltRecommendation =
-                new StructuredTip("options:recommendation-order", recommendation);
-            if (RecommendationOrderTip == null
-                || !RecommendationOrderTip.ContentEquals(rebuiltRecommendation))
-                RecommendationOrderTip = rebuiltRecommendation;
 
             var training = new TipModel { Title = "WR_TrainingSection".Translate() };
             training.AddSection().Text("WR_TrainingTipWhat".Translate());
@@ -657,7 +548,7 @@ namespace WorkRoles.UI
         internal void EnsurePanels(float width)
         {
             ObserveMetrics();
-            if (ReferenceEquals(panelsOrder, orderSnapshot)
+            if (ReferenceEquals(panelsExclusions, Exclusions)
                 && panelsWidth == width) return;
             var rebuilt = new List<RecRolePanel>();
             string headerLabel = "WR_RecRolePanel".Translate();
@@ -669,10 +560,11 @@ namespace WorkRoles.UI
                 Text.Font = GameFont.Small;
                 help = "WR_RecRolePanelHelp".Translate();
                 helpHeight = Text.CalcHeight(help, width);
-                if (orderSnapshot != null)
-                    for (int i = 0; i < orderSnapshot.Count; i++)
+                if (Exclusions != null)
+                    for (int i = 0; i < Exclusions.AddOptionCount; i++)
                     {
-                        RoleChipRenderData chip = orderSnapshot.ChipAt(i).Chip;
+                        if (!Exclusions.TryGetCatalogChip(Exclusions.AddOptionAt(i).RoleId,
+                            out RoleChipRenderData chip)) continue;
                         rebuilt.Add(new RecRolePanel(chip,
                             RoleChipUI.WidthFor(chip, showRemove: false)));
                     }
@@ -681,9 +573,10 @@ namespace WorkRoles.UI
             {
                 Text.Font = previousFont;
             }
-            panelsSnapshot = new RecRolePanelsSnapshot(
-                rebuilt, headerLabel, help, helpHeight);
-            panelsOrder = orderSnapshot;
+            var next = new RecRolePanelsSnapshot(rebuilt, headerLabel, help, helpHeight);
+            if (panelsSnapshot == null || !panelsSnapshot.ContentEquals(next))
+                panelsSnapshot = next;
+            panelsExclusions = Exclusions;
             panelsWidth = width;
         }
 
@@ -711,7 +604,7 @@ namespace WorkRoles.UI
             detail = null;
 
             Role? role = store.RoleById(roleId);
-            if (role == null) return null;
+            if (role == null || role.excludedFromRecommendations) return null;
             float smallLineHeight;
             using (new TextBlock(GameFont.Small))
                 smallLineHeight = Text.LineHeight;
@@ -1227,7 +1120,6 @@ namespace WorkRoles.UI
         private static List<RecOrderChip> LayoutOrderChips(float width,
             IReadOnlyList<int> roleIds,
             IReadOnlyDictionary<int, RoleChipRenderData> chipsById,
-            IReadOnlyDictionary<int, RoleView> viewsById,
             out Rect addRect, out float height, out string addLabel)
         {
             var result = new List<RecOrderChip>(roleIds.Count);
@@ -1249,10 +1141,8 @@ namespace WorkRoles.UI
             {
                 int roleId = roleIds[i];
                 if (!chipsById.TryGetValue(roleId, out var chip)) continue;
-                viewsById.TryGetValue(roleId, out RoleView roleView);
                 result.Add(new RecOrderChip(chip,
-                    Place(RoleChipUI.WidthFor(chip, showRemove: true)),
-                    roleView?.Hunting == true));
+                    Place(RoleChipUI.WidthFor(chip, showRemove: true))));
             }
             // Add Role pins to the panel's bottom-right corner, on a fresh row
             // when the last chip row has no room for it.
@@ -1307,30 +1197,25 @@ namespace WorkRoles.UI
 
     internal readonly struct RecOrderChip
     {
-        internal RecOrderChip(RoleChipRenderData chip, Rect rect, bool locked)
+        internal RecOrderChip(RoleChipRenderData chip, Rect rect)
         {
             Chip = chip;
             Rect = rect;
-            Locked = locked;
         }
 
         internal RoleChipRenderData Chip { get; }
         internal Rect Rect { get; }
-        internal bool Locked { get; }
 
         internal bool ContentEquals(RecOrderChip other) =>
             Chip.ContentEquals(other.Chip)
             && Rect.x == other.Rect.x
             && Rect.y == other.Rect.y
             && Rect.width == other.Rect.width
-            && Rect.height == other.Rect.height
-            && Locked == other.Locked;
+            && Rect.height == other.Rect.height;
     }
 
     internal sealed class RecOrderSnapshot
     {
-        private static readonly System.Func<RecOrderChip, Rect> ChipRect =
-            chip => chip.Rect;
         private readonly List<RecOrderChip> chips;
         private readonly Dictionary<int, RoleChipRenderData> catalogChips;
         private readonly List<RecRoleMenuOption> addOptions;
@@ -1357,26 +1242,6 @@ namespace WorkRoles.UI
         internal string HeaderLabel { get; }
         internal int AddOptionCount => addOptions.Count;
         internal RecRoleMenuOption AddOptionAt(int index) => addOptions[index];
-
-        internal bool ContainsRole(int roleId) => IndexOfRole(roleId) >= 0;
-
-        internal int IndexOfRole(int roleId)
-        {
-            for (int i = 0; i < chips.Count; i++)
-                if (chips[i].Chip.RoleId == roleId) return i;
-            return -1;
-        }
-
-        internal int ChipInsertIndex(Vector2 point) =>
-            RoleDrag.ChipInsertIndex(point, chips, ChipRect);
-
-        internal List<int> CopyRoleIds()
-        {
-            var result = new List<int>(chips.Count);
-            for (int i = 0; i < chips.Count; i++)
-                result.Add(chips[i].Chip.RoleId);
-            return result;
-        }
 
         internal bool TryGetCatalogChip(int roleId,
             out RoleChipRenderData chip) =>
@@ -1452,6 +1317,16 @@ namespace WorkRoles.UI
         internal string HeaderLabel { get; }
         internal string Help { get; }
         internal float HelpHeight { get; }
+
+        internal bool ContentEquals(RecRolePanelsSnapshot other)
+        {
+            if (Count != other.Count || HeaderLabel != other.HeaderLabel
+                || Help != other.Help || HelpHeight != other.HelpHeight) return false;
+            for (int i = 0; i < Count; i++)
+                if (!panels[i].Chip.ContentEquals(other.panels[i].Chip)
+                    || panels[i].ChipWidth != other.panels[i].ChipWidth) return false;
+            return true;
+        }
     }
 
     internal sealed class RecTuningSection

@@ -1,9 +1,12 @@
-﻿# Changelog
+# Changelog
 
-## Unreleased
+## 1.7.0 — 2026-10-19
 
-- Added: Optional Brothel Colony and Sexperience skill profiles for RJW work, including skill-based role recommendations.
-- Changed: Extra skills use a third column in the selected-colonist panel, leaving less width for recommendations while preserving the standard twelve-skill layout.
+- Added: Optional profiles for additional modded work and skills.
+- Changed: Clarified compatibility with add-ons that use existing animal-handling jobs, including conditional skill experience.
+- Changed: Removed the top panel on the Recommendations tab in favor of an "Excluded roles" panel. Role options below now automatically lists all non-excluded roles.
+- Changed: The skills panel now shows additional skills added by mods.
+- Fixed: Narrow recommendation panels now scroll to show every proposed role, including removals, instead of silently hiding the overflow.
 
 ## 1.6.9 — 2026-10-13
 

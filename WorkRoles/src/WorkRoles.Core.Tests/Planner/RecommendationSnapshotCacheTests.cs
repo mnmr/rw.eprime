@@ -8,6 +8,40 @@ namespace WorkRoles.Core.Tests.Planner;
 public class RecommendationSnapshotCacheTests
 {
     [Test]
+    public async Task ExclusionRefreshesPlansButReusesWorkOrderingAndSuitability()
+    {
+        var cache = new RecommendationSnapshotCache<object>();
+        var orderingCache = new RecommendationOrderCache();
+        var owner = new object();
+        object[] pawns = [new(), new()];
+        var initialColony = Colony();
+        var first = cache.For(owner, pawns, initialColony.Roles, 0, 0, 0,
+            RecommendationsTuningOptions.Default, (_, _) => initialColony);
+        var ratings = first.Suitability;
+        var originalOrder = orderingCache.For(owner, initialColony.Roles, 0, initialColony.OrderTemplate);
+        await Assert.That(RecsProjection.Holds(first.Plan, 0, 1)).IsTrue();
+        var changed = Colony();
+        for (int i = 0; i < changed.Roles.Count; i++)
+        {
+            var policy = RecommendationRolePolicy.From(initialColony.Roles[i]);
+            policy.ExcludedFromRecommendations = i == 0;
+            changed.Roles[i] = policy.Apply(initialColony.Roles[i]);
+        }
+        var excluded = cache.For(owner, pawns, changed.Roles, 0, 0, 0,
+            RecommendationsTuningOptions.Default, (_, _) => changed);
+        await Assert.That(RecsProjection.Holds(excluded.Plan, 0, 1)).IsFalse();
+        await Assert.That(ReferenceEquals(ratings, excluded.Suitability)).IsTrue();
+        await Assert.That(ReferenceEquals(originalOrder, orderingCache.For(owner, changed.Roles, 0, changed.OrderTemplate))).IsTrue();
+        await Assert.That(ReferenceEquals(initialColony.Roles[0].WorkSpec, changed.Roles[0].WorkSpec)).IsTrue();
+        var equivalent = cache.For(owner, pawns, new object(), 0, 0, 0,
+            RecommendationsTuningOptions.Default, (_, _) => changed);
+        await Assert.That(ReferenceEquals(excluded, equivalent)).IsTrue();
+        var otherWorld = cache.For(new object(), pawns, initialColony.Roles, 0, 0, 0,
+            RecommendationsTuningOptions.Default, (_, _) => initialColony);
+        await Assert.That(RecsProjection.Holds(otherWorld.Plan, 0, 1)).IsTrue();
+    }
+
+    [Test]
     public async Task DeferredOldSnapshotCannotPublishVerdictsIntoTheReplacementOwner()
     {
         var cache = new RecommendationSnapshotCache<object>();

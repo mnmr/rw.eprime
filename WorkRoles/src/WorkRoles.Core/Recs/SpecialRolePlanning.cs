@@ -164,6 +164,7 @@ namespace WorkRoles.Core.Recs
             {
                 RoleView role = facts.Colony.Roles[roleIndex];
                 if (!role.AutoAssign
+                    || facts.IsRecommendationExcluded(role)
                     || role.HasRules
                     || role.Blocker
                     || role.MemberRoleIds != null
@@ -184,7 +185,7 @@ namespace WorkRoles.Core.Recs
                 {
                     AssignmentView assignment = pawn.Existing[assignmentIndex];
                     RoleView role = facts.RoleOf(assignment.RoleId);
-                    if (role == null || role.MemberRoleIds != null)
+                    if (role == null || facts.IsRecommendationExcluded(role) || role.MemberRoleIds != null)
                         continue;
                     // Unskilled roles with demand are planned like any other and
                     // demand-less ones drop out; only an explicit pin, rule, or
@@ -202,7 +203,8 @@ namespace WorkRoles.Core.Recs
             RecommendationFormulaEngine formulas)
         {
             AddHunters(facts, drafts, formulas);
-            if (facts.RoleOf(facts.Colony.FireBlockerRoleId) == null) return;
+            RoleView fireBlocker = facts.RoleOf(facts.Colony.FireBlockerRoleId);
+            if (fireBlocker == null || facts.IsRecommendationExcluded(fireBlocker)) return;
             for (int pawnIndex = 0; pawnIndex < drafts.Length; pawnIndex++)
                 if (facts.Colony.Pawns[pawnIndex].FireFear)
                     drafts[pawnIndex].AddFireBlocker(
@@ -216,6 +218,7 @@ namespace WorkRoles.Core.Recs
         {
             RoleView hunter = facts.RoleOf(facts.Colony.HunterRoleId);
             if (hunter == null
+                || facts.IsRecommendationExcluded(hunter)
                 || hunter.HasRules
                 || hunter.Blocker
                 || !hunter.Enabled

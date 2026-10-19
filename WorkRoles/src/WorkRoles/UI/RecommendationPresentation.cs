@@ -20,6 +20,22 @@ namespace WorkRoles.UI
             SkillBucketSnapshot? skillBuckets)
         {
             var model = new TipModel { Title = role.label };
+            if (state == Dialog_ChangesPreview.ChipState.Kept
+                && (explanation == null || !explanation.Recommended)
+                && store != null && store.pawnSets.TryGetValue(pawn, out PawnRoleSet set))
+                for (int index = 0; index < set.assignments.Count; index++)
+                    if (set.assignments[index].roleId == role.id && set.assignments[index].pinned)
+                    {
+                        model.AddSection().Text("WR_PinnedTip".Translate());
+                        return new StructuredTip(
+                            $"recommendation:{pawn.thingIDNumber}:{role.id}", model);
+                    }
+            if (role.excludedFromRecommendations)
+            {
+                model.AddSection().Text("WR_RecExcludedReason".Translate());
+                return new StructuredTip(
+                    $"recommendation:{pawn.thingIDNumber}:{role.id}", model);
+            }
             if (explanation == null)
             {
                 model.AddSection().Fact("WR_RecTipSelection".Translate(),

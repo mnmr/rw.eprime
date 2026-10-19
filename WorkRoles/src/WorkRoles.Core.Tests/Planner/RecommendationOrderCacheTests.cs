@@ -14,9 +14,11 @@ public class RecommendationOrderCacheTests
         object owner = new();
         RoleView[] full = [RecsTestBed.Unskilled(1, "Hauling"), RecsTestBed.Unskilled(2, "Cleaning")];
         RoleView[] equivalentTraining = [RecsTestBed.Unskilled(1, "Hauling"), RecsTestBed.Unskilled(2, "Cleaning")];
+        full[0].TemplateDefName = equivalentTraining[0].TemplateDefName = "WS_Basics";
         var first = cache.For(owner, full, 0, [1]);
         await Assert.That(ReferenceEquals(first, cache.For(owner, equivalentTraining, 0, [1]))).IsTrue();
         RoleView[] changedTraining = [RecsTestBed.Unskilled(1, "Hauling"), RecsTestBed.Unskilled(2, "Cleaning")];
+        changedTraining[0].TemplateDefName = "WS_Basics";
         changedTraining[1].PreserveRecommendationOrder = true;
         var second = cache.For(owner, changedTraining, 0, [1]);
         await Assert.That(second.Positions[2] < second.Positions[1]).IsTrue();
@@ -26,7 +28,7 @@ public class RecommendationOrderCacheTests
     }
 
     [Test]
-    public async Task OrderingConsumersShareFactsUntilOrderOrPinnabilityChanges()
+    public async Task OrderingConsumersIgnoreLegacyOverridesUntilPinnabilityChanges()
     {
         var cache = new RecommendationOrderCache();
         object owner = new();
@@ -41,8 +43,8 @@ public class RecommendationOrderCacheTests
         otherCraft.ColonyMin = 5;
         await Assert.That(ReferenceEquals(first, cache.For(owner, [basics, otherCraft], 0, [1, 2]))).IsTrue();
         var reordered = cache.For(owner, [basics, otherCraft], 1, [2, 1]);
-        await Assert.That(string.Join(",", reordered.Template)).IsEqualTo("2,1");
-        await Assert.That(ReferenceEquals(first, reordered)).IsFalse();
+        await Assert.That(string.Join(",", reordered.Template)).IsEqualTo("1,2");
+        await Assert.That(ReferenceEquals(first, reordered)).IsTrue();
         var blocked = RecsTestBed.Skilled(2, "Crafting", "Crafting", "Make");
         blocked.Blocker = true;
         var filtered = cache.For(owner, [basics, blocked], 1, [2, 1]);

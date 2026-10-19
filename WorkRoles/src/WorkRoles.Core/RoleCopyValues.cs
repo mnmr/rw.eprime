@@ -22,6 +22,7 @@ namespace WorkRoles.Core
         public RoleTime Time { get; set; }
         public bool ChampionPenalty { get; set; } = true;
         public bool PartialCapability { get; set; }
+        public bool ExcludedFromRecommendations { get; set; }
         public int MinAge { get; set; }
         public int MaxAge { get; set; }
         public int ColonyMin { get; set; }
@@ -60,6 +61,7 @@ namespace WorkRoles.Core
                 Time = Time,
                 ChampionPenalty = ChampionPenalty,
                 PartialCapability = PartialCapability,
+                ExcludedFromRecommendations = ExcludedFromRecommendations,
                 MinAge = MinAge,
                 MaxAge = MaxAge,
                 ColonyMin = ColonyMin,

@@ -46,6 +46,7 @@ namespace WorkRoles.Core.Recs
         public int Coverage;
         public bool Available = true;
         public bool Enabled = true;
+        public bool ExcludedFromRecommendations;
         public RecommendationSpecialRoleKind SpecialRole;
         /// Optional immutable full-fidelity work projection from the shared
         /// producer. Training exclusions derive a separate spec when necessary.
@@ -54,7 +55,7 @@ namespace WorkRoles.Core.Recs
 
     public struct RecommendationRolePolicy
     {
-        public bool AutoAssign, HasRules, Blocker, ChampionPenalty, PartialCapability, Available, Enabled;
+        public bool AutoAssign, HasRules, Blocker, ChampionPenalty, PartialCapability, Available, Enabled, ExcludedFromRecommendations;
         public RoleCategory Category;
         public RoleTime Time;
         public int MinAge, MaxAge, ColonyMin, CoveragePercent;
@@ -64,6 +65,7 @@ namespace WorkRoles.Core.Recs
             AutoAssign = role.AutoAssign, HasRules = role.HasRules, Blocker = role.Blocker,
             ChampionPenalty = role.ChampionPenalty, PartialCapability = role.PartialCapability,
             Available = role.Available, Enabled = role.Enabled, Category = role.Category,
+            ExcludedFromRecommendations = role.ExcludedFromRecommendations,
             Time = role.Time, MinAge = role.MinAge, MaxAge = role.MaxAge,
             ColonyMin = role.ColonyMin, CoveragePercent = role.CoveragePercent,
         };
@@ -72,6 +74,7 @@ namespace WorkRoles.Core.Recs
             && Blocker == role.Blocker && ChampionPenalty == role.ChampionPenalty
             && PartialCapability == role.PartialCapability && Available == role.Available
             && Enabled == role.Enabled && Category == role.Category && Time == role.Time
+            && ExcludedFromRecommendations == role.ExcludedFromRecommendations
             && MinAge == role.MinAge && MaxAge == role.MaxAge && ColonyMin == role.ColonyMin
             && CoveragePercent == role.CoveragePercent;
 
@@ -83,6 +86,7 @@ namespace WorkRoles.Core.Recs
             WorkSpec = role.WorkSpec, AutoAssign = AutoAssign, HasRules = HasRules, Blocker = Blocker,
             ChampionPenalty = ChampionPenalty, PartialCapability = PartialCapability, Available = Available,
             Enabled = Enabled, Category = Category, Time = Time, MinAge = MinAge, MaxAge = MaxAge,
+            ExcludedFromRecommendations = ExcludedFromRecommendations,
             ColonyMin = ColonyMin, CoveragePercent = CoveragePercent,
         };
     }
@@ -237,6 +241,7 @@ namespace WorkRoles.Core.Recs
                     Category = role.Category, Time = role.Time, MinAge = role.MinAge, MaxAge = role.MaxAge,
                     ColonyMin = role.ColonyMin, CoveragePercent = role.CoveragePercent,
                     Available = role.Available, Enabled = enabled[index],
+                    ExcludedFromRecommendations = role.ExcludedFromRecommendations,
                     RequiresMechanitor = role.RequiresMechanitor, WorkSpec = role.WorkSpec,
                 });
             }
@@ -429,6 +434,7 @@ namespace WorkRoles.Core.Recs
                 CoveragePercent = source.Coverage,
                 Available = source.Available,
                 Enabled = source.Enabled,
+                ExcludedFromRecommendations = source.ExcludedFromRecommendations,
                 RequiresMechanitor = source.SpecialRole
                     == RecommendationSpecialRoleKind.Mechanitor,
                 WorkSpec = spec,

@@ -10,5 +10,8 @@ are shortened and the tabs need more scrolling. Lowering the UI scale in
 the game's options gives the window more room.
 
 The selected-colonist panel uses two columns for the usual twelve skills.
-Mods that add skills, such as Sexperience, get a third column with a
-narrower recommendations panel. More than eighteen skills add extra rows.
+Mods that add skills get a third column with a narrower recommendations
+panel. More than eighteen skills add extra rows.
+
+When the recommended roles do not all fit, scroll inside their panel to
+see the rest. The Make It So button stays in view.

@@ -11,6 +11,7 @@ internal sealed class RecsProjection
 {
     private readonly FakeCatalog jobs = new();
     private readonly JobProfileIndexBuilder profiles = new();
+    private JobProfileIndex? builtProfiles;
     private readonly Dictionary<string, int> naturalPriorities = new();
     private readonly List<RecommendationRoleSource> sources = new();
     private readonly List<PathView> paths = new();
@@ -74,10 +75,12 @@ internal sealed class RecsProjection
     }
 
     internal RecommendationPlan Plan(params PawnView[] pawns)
+        => RecommendationPlan.Build(Colony(pawns));
+
+    internal ColonyView Colony(params PawnView[] pawns)
     {
-        RecommendationCatalogProjection projection = RecommendationCatalogBuilder.Build(sources, paths, jobs, naturalPriorities, profiles.Build());
-        ColonyView colony = projection.CreateColony(sources.Select(s => s.Id), pawns);
-        return RecommendationPlan.Build(colony);
+        RecommendationCatalogProjection projection = RecommendationCatalogBuilder.Build(sources, paths, jobs, naturalPriorities, builtProfiles ??= profiles.Build());
+        return projection.CreateColony(sources.Select(s => s.Id), pawns);
     }
 
     internal static bool Holds(RecommendationPlan plan, int pawn, int roleId)

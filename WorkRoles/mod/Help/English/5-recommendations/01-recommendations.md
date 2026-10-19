@@ -9,6 +9,14 @@ skill expertise, and the best skills in the colony. On top of that it
 enforces colony needs, so essential roles like Doctor and Cook always
 land on somebody, ideally the somebody with the talent.
 
+The engine considers all eligible roles and orders them automatically for
+each colonist. Role Options on the Recommendations tab lists every role
+except those you have excluded. To prevent a role from ever being
+recommended, add it to **Excluded roles** at the top of that tab.
+Exclusions take precedence over colony needs and special handling, while
+existing pinned assignments stay protected. See
+[Ordering and exclusions](topic:recommendation-order) for details.
+
 You can see its opinion everywhere. Palette tooltips list the best fits
 for every role:
 

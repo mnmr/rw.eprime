@@ -28,7 +28,7 @@
   <WR_OptAutoOptimizeTipWhat>Runs Fix My Colony automatically for each colony and applies the changes, per savegame.</WR_OptAutoOptimizeTipWhat>
   <WR_OptAutoOptimizeTipOff>Role assignments only change when you edit them</WR_OptAutoOptimizeTipOff>
   <WR_OptAutoOptimizeTipOn>Recommended assignments are applied at the top of every in-game hour</WR_OptAutoOptimizeTipOn>
-  <WR_OptAutoOptimizeTipWhy>Pinned assignments are never touched, and nothing is written when a colonist already matches the recommendation.</WR_OptAutoOptimizeTipWhy>
+  <WR_OptAutoOptimizeTipWhy>Pinned assignments are preserved, including excluded roles. Nothing is written when a colonist already matches the recommendation.</WR_OptAutoOptimizeTipWhy>
   <WR_AutoOptimizeConfirmApply>Apply makes the changes below now and turns hourly auto-optimization on. While it is on, the Fix My Colony and Make It So buttons are hidden; you can still assign, re-order and pin roles as usual.</WR_AutoOptimizeConfirmApply>
   <WR_AutoOptimizeGlobalWarning>You have multiple colonies: auto-optimization is GLOBAL and will change role assignments in ALL of them every hour. The preview below only shows changes for the current colony.</WR_AutoOptimizeGlobalWarning>
   <WR_DisplaySection>Display Settings</WR_DisplaySection>
@@ -41,21 +41,17 @@
   <WR_OptVerdictsRecommendations>Show verdicts on recommended role chips</WR_OptVerdictsRecommendations>
   <WR_OptPaletteGrouping>Role palette grouping</WR_OptPaletteGrouping>
   <WR_OptVerdictsRecommendationsTip>Recommended role chips (stats panel and change previews) show the suitability verdict for the colonist they are recommended to.</WR_OptVerdictsRecommendationsTip>
-  <!-- Recommendations tab (WR_OptRecOrder also labels the import preview section) -->
+  <!-- Recommendations tab -->
   <WR_RecGlobalPanel>Global Options</WR_RecGlobalPanel>
   <WR_RecGlobalPanelHelp>These options modify how the recommendation engine scores/ranks candidates as well as where orders land in the final recommendation list. Use the Reset buttons to restore defaults if you regret your edits.</WR_RecGlobalPanelHelp>
   <WR_RecRolePanel>Role Options</WR_RecRolePanel>
-  <WR_RecRolePanelHelp>Lists the roles from the default recommendation order above. If a role is missing here, first add it to the recommendation order.</WR_RecRolePanelHelp>
-  <WR_RecOrderHeader>Recommended Roles</WR_RecOrderHeader>
-  <WR_RecOrderHelp>This list defines the set of roles that the recommendation engine will consider. Training roles are included through training path membership (configured per role below). The order of roles in this list is used as a tie-breaker when determining the final recommendation order for a colonist.</WR_RecOrderHelp>
-  <WR_OptRecOrder>Recommendation order</WR_OptRecOrder>
-  <WR_OptRecOrderTipWhat>The order recommendations list roles in, derived from the vanilla priority grid (auto-assigned roles included).</WR_OptRecOrderTipWhat>
-  <WR_ActRecDrag>Reorder the chips</WR_ActRecDrag>
-  <WR_ActRecX>Unpin the role so it places dynamically again</WR_ActRecX>
-  <WR_RecOrderChipTip>Drag to reorder (this is only a hint, not a fixed recommendation order). Unlisted roles may still be recommended.</WR_RecOrderChipTip>
-  <WR_RecOrderAddTip>Add a role to provide a placement hint or to enable the role options below.</WR_RecOrderAddTip>
-  <WR_OptRecOrderTipAuto>Unlisted roles slot in automatically: training roles after their target, sub-roles after the role covering them, Hunter after the warden/childcare roles.</WR_OptRecOrderTipAuto>
-  <WR_OptLockedTip>Hunter is now using a fixed recommendation slot. Remove this chip to revert to dynamic positioning based on shooting skill.</WR_OptLockedTip>
+  <WR_RecRolePanelHelp>All roles except those in Excluded roles are listed here. Expand a role to adjust its recommendation options. Roles are ordered automatically for each colonist; Hunter keeps its shooting-skill placement.</WR_RecRolePanelHelp>
+  <WR_RecExcludedHeader>Excluded roles</WR_RecExcludedHeader>
+  <WR_RecExcludedHelp>Roles in this list are never recommended, even through training paths or automatic roles. Existing pinned assignments remain protected. Use Add Role to exclude a role; remove its chip to allow recommendations again.</WR_RecExcludedHelp>
+  <WR_RecExcludedTip>Exclusions apply to recommendations for all colonists in this save, including Fix My Colony and Auto-optimize. You can still assign excluded roles manually. Editing this list does not change current assignments. Applying recommendations removes unpinned excluded roles and preserves pinned assignments.</WR_RecExcludedTip>
+  <WR_RecExcludedChipTip>This role is never recommended. Click its remove icon to allow recommendations again and restore its Role Options entry. Its saved options are kept.</WR_RecExcludedChipTip>
+  <WR_RecExcludedAddTip>Choose a role the recommendation engine should never recommend. Every role is eligible for exclusion, including training, automatic, conditional, blocker, and composite roles.</WR_RecExcludedAddTip>
+  <WR_RecExcludedReason>This role is excluded from recommendations. Remove it from Excluded roles on the Recommendations tab to allow it again.</WR_RecExcludedReason>
 
   <!-- Shared, save-authoritative recommendation formula inputs -->
   <WR_RecTuneReset>Reset</WR_RecTuneReset>
@@ -358,7 +354,7 @@ Lists colonists whose assigned non-blocker roles contain this job. This checks r
   <WR_AutoManaged>Auto-managed</WR_AutoManaged>
   <WR_AutoManagedTip>WorkRoles automatically updates role assignments for every colony at the top of each in-game hour.
 
-Pinned assignments are preserved.
+Pinned assignments are preserved, including excluded roles.
 
 Disable "Auto-optimize colonies every in-game hour" on the Options tab to restore Fix My Colony.</WR_AutoManagedTip>
 
@@ -424,7 +420,7 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <!-- Assignment pinning (chip right-click) -->
   <WR_PinAssignment>Pin</WR_PinAssignment>
   <WR_UnpinAssignment>Unpin</WR_UnpinAssignment>
-  <WR_PinnedTip>Pinned: Fix My Colony and Make It So never touch this assignment.</WR_PinnedTip>
+  <WR_PinnedTip>Pinned: Make It So, Fix My Colony and Auto-optimize preserve this assignment, even if its role or a composite member is excluded from recommendations.</WR_PinnedTip>
 
   <!-- Copy/paste row -->
   <!-- {0} = pawn short name -->
@@ -462,7 +458,7 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <WR_RecDecisionFire>Fire fear requires the firefighting blocker.</WR_RecDecisionFire>
   <WR_RecDecisionRetained>Existing unskilled role retained.</WR_RecDecisionRetained>
   <WR_RecDecisionProtected>Existing protected assignment retained.</WR_RecDecisionProtected>
-  <WR_RecDecisionIncapacitated>This colonist is downed. Their roles are kept as they are and do not count toward colony needs until they recover.</WR_RecDecisionIncapacitated>
+  <WR_RecDecisionIncapacitated>This colonist is downed. Their non-excluded roles and pinned assignments are kept as they are and do not count toward colony needs until they recover.</WR_RecDecisionIncapacitated>
   <WR_RecDecisionNever>This role is configured to receive no recommendations.</WR_RecDecisionNever>
   <WR_RecDecisionControlledByTraining>Controlled by {0}: assigned through its training path, not on its own.</WR_RecDecisionControlledByTraining>
   <WR_RecDecisionDisabled>This role is disabled.</WR_RecDecisionDisabled>
@@ -504,7 +500,7 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
 
   <!-- Restore button (top-right corner, Roles tab) -->
   <WR_RestoreDefaults>Restore Defaults</WR_RestoreDefaults>
-  <WR_RestoreDefaultsTip>Recreate missing pre-made roles and training paths, return pre-made roles to their default groups, colors, and holder settings, and reset the recommendation order. A preview lets you pick what to restore.</WR_RestoreDefaultsTip>
+  <WR_RestoreDefaultsTip>Recreate missing pre-made roles and training paths, and return pre-made roles to their default groups, colors, and holder settings. A preview lets you pick what to restore.</WR_RestoreDefaultsTip>
   <WR_RestoreDefaultsTitle>Restore Defaults</WR_RestoreDefaultsTitle>
 
   <!-- Import/Export (Roles tab, top-right); {0} = file path, or count for messages -->
@@ -546,7 +542,6 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <WR_OverwriteReplaces>Applies all {0} roles from the file. Matching roles (same pre-made role, else same name) keep their colonist assignments.</WR_OverwriteReplaces>
   <WR_OverwriteDeletes>Deletes (not in file): {0} (colonists lose these assignments).</WR_OverwriteDeletes>
   <WR_PathsOverwriteInfo>Replaces all existing training paths with the file's {0} paths.</WR_PathsOverwriteInfo>
-  <WR_RecOrderReplaceInfo>Replaces your recommendation order with the file's ({0} roles).</WR_RecOrderReplaceInfo>
   <!-- {0}-{4} = added/updated/deleted/palette-change/training-path counts -->
   <WR_ImportSummary>Import complete: {0} added, {1} updated, {2} deleted, {3} palette changes, {4} training paths.</WR_ImportSummary>
   <WR_CopiedToClipboard>Copied to clipboard.</WR_CopiedToClipboard>
@@ -586,7 +581,7 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <WR_RestoreExplainHolders>Resets the holder scale to the template default.</WR_RestoreExplainHolders>
   <WR_RestoreExplainRecOrder>Clears your custom order.</WR_RestoreExplainRecOrder>
   <WR_RestoreExplainPath>Creates the training path.</WR_RestoreExplainPath>
-  <WR_NothingToRestore>Nothing to restore: all pre-made roles and training paths are present with their default groups, colors, and holder settings, the recommendation order is the default, and no jobs were moved.</WR_NothingToRestore>
+  <WR_NothingToRestore>Nothing to restore: all pre-made roles and training paths are present with their default groups, colors, and holder settings, and no jobs were moved.</WR_NothingToRestore>
   <!-- {0} = comma-separated role labels -->
   <WR_RolesRestored>Restored: {0}</WR_RolesRestored>
 

@@ -68,7 +68,7 @@ In multiplayer, every change (role edits, assignments, toggles) is a synced comm
 - Integrates with More Than Capable when installed: hated work becomes an Awful recommendation signal and is flagged on assigned roles.
 - Integrates with MultiFloors, Strata and "As above, so below" when installed: floors on a single tile are treated as a single location.
 - Integrates with Colony Groups when installed: pawn groups appear as a grouping option for the colonist table.
-- Integrates with RJW's Brothel Colony add-on: its Brothel work appears automatically. Recommendations use Social, or Sex as the primary skill with Social as a secondary skill when Sexperience is installed. WorkRoles leaves service designation, visitor eligibility and job behavior to those mods.
+- Supports optional work and skill profiles when their mods are installed. Profiles identify used and trained skills and can refine the primary recommendation skill. Job eligibility, designations and execution remain with the mods that provide them.
 - Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense, Achtung! and many, many others.
 - Multiplayer compatible.
 
@@ -86,11 +86,15 @@ These are mods I've checked for compatibility:
 - **Complex Jobs:** moves jobs to new work types — should work fine.
 - **Keep Building:** auto-creates work bills — should work fine (no public source, so cannot verify that it doesn't also try to set priorities).
 
-RJW integration is optional and adds no mod dependency. Obtain the mods from their upstream projects: [RJW](https://gitgud.io/Ed86/rjw), [Brothel Colony](https://gitgud.io/CalamaBanana/rjw-brothel-colony), and [Sexperience](https://gitgud.io/amevarashi/rjw-sexperience). Brothel Colony requires Ideology. Use Brothel Colony instead of the older RJW Whoring add-on. Installing only RJW does not create a new work type; WorkRoles manages the Brothel work supplied by Brothel Colony. With Sexperience, the job's skill profile includes both Social and Sex as used and trained skills.
+Optional work and skill integrations add no required mod dependencies. Added work types appear automatically, and supported job profiles describe the skills they use and train. Where a job uses several skills, its profile can distinguish the primary recommendation skill from secondary skills without changing the source mod's definitions or execution.
 
-In-game checks on RimWorld 1.6 and 1.7 used unchanged RJW 6.2.1, Sexperience 1.6.1.1 and Brothel Colony master downloaded on 2026-10-18. These upstream packages declare support through 1.6. The 1.7 check completed the job, payment and skill gains, but RJW's unused `rjw_test.psd` asset produced an import error.
+Add-ons that patch existing work givers remain covered by the same roles and job ordering. Animal-handling roles continue to use Animals for recommendations. Some eligible activities may award experience in another skill, but conditional gains do not make every handler eligible for a training path in that skill.
 
-When more than twelve skills are installed, the selected-colonist panel uses a third skills column and gives the recommendations panel less width. The standard twelve-skill layout keeps its existing size.
+Unavailable jobs remain in saved WorkRoles roles and become usable again when their mod is reinstalled. This preserves WorkRoles' role configuration, not the removed mod's own saved components or skill experience.
+
+Optional-profile checks on RimWorld 1.6 and 1.7 covered completed jobs, payment and skill gains. The tested upstream packages declare support through 1.6; one unused artwork asset produced an import error on 1.7. Animal-handling checks covered Tame/Train routing, ordering and enabling; conditional replacement activities were source-audited.
+
+When more than twelve skills are installed, the selected-colonist panel uses a third skills column and gives the recommendations panel less width. The standard twelve-skill layout keeps its existing size. When recommendations overflow, their chips scroll while the Make It So button stays visible.
 
 ## Check out my other mods
 

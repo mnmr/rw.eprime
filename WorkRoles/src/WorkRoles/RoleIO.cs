@@ -90,6 +90,7 @@ namespace WorkRoles
                     time = role.time,
                     championPenalty = role.championPenalty,
                     partialCapability = role.partialCapability,
+                    excludedFromRecommendations = role.excludedFromRecommendations,
                     minAge = role.minAge,
                     maxAge = role.maxAge,
                     colonyMin = role.colonyMin,
@@ -106,14 +107,6 @@ namespace WorkRoles
                         .ToList(),
                 });
             }
-            // Only the stored template travels (empty = the derived default).
-            doc.recommendationOrderWithIds = store.recommendationOrder
-                .Select(id => store.RoleById(id))
-                .OfType<Role>()
-                .Select(role => new FileRoleReference(RoleFileId(role.id), role.label))
-                .ToList();
-            doc.recommendationOrder = doc.recommendationOrderWithIds
-                .Select(reference => reference.label).OfType<string>().ToList();
             return RoleFile.Build(doc);
         }
 
@@ -487,6 +480,7 @@ namespace WorkRoles
             private readonly RoleTime time;
             private readonly bool championPenalty;
             private readonly bool partialCapability;
+            private readonly bool excludedFromRecommendations;
             private readonly int minAge;
             private readonly int maxAge;
             private readonly int colonyMin;
@@ -520,6 +514,7 @@ namespace WorkRoles
                 time = role.time;
                 championPenalty = role.championPenalty;
                 partialCapability = role.partialCapability;
+                excludedFromRecommendations = role.excludedFromRecommendations;
                 minAge = role.minAge;
                 maxAge = role.maxAge;
                 colonyMin = role.colonyMin;
@@ -554,6 +549,7 @@ namespace WorkRoles
                 && time == other.time
                 && championPenalty == other.championPenalty
                 && partialCapability == other.partialCapability
+                && excludedFromRecommendations == other.excludedFromRecommendations
                 && minAge == other.minAge
                 && maxAge == other.maxAge
                 && colonyMin == other.colonyMin
@@ -596,7 +592,8 @@ namespace WorkRoles
                     || !trainingRoleIds.SequenceEqual(other.trainingRoleIds)
                     || !trainingMins.SequenceEqual(other.trainingMins) || !trainingMaxes.SequenceEqual(other.trainingMaxes))
                     changed |= ModelDomain.RoleCapability | ModelDomain.RoleRecommendation;
-                if (blocker != other.blocker || templateDefName != other.templateDefName
+                if (excludedFromRecommendations != other.excludedFromRecommendations
+                    || blocker != other.blocker || templateDefName != other.templateDefName
                     || autoAssign != other.autoAssign || category != other.category || time != other.time
                     || championPenalty != other.championPenalty || colonyMin != other.colonyMin || coverage != other.coverage)
                     changed |= ModelDomain.RoleRecommendation;
@@ -821,6 +818,7 @@ namespace WorkRoles
                     target.time = row.role.time;
                     target.championPenalty = row.role.championPenalty;
                     target.partialCapability = row.role.partialCapability;
+                    target.excludedFromRecommendations = row.role.excludedFromRecommendations;
                     // Pre-minAge files carry -1; the migration below derives it.
                     target.minAge = row.role.minAge < 0
                         ? -1 : Mathf.Clamp(row.role.minAge, 0, 18);

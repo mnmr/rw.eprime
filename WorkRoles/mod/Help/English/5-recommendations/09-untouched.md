@@ -1,8 +1,8 @@
 ---
 title: What is never touched
 ---
-Four kinds of assignment are invisible to Make It So, Fix My Colony, and
-Auto-optimize:
+Make It So, Fix My Colony, and Auto-optimize normally preserve four kinds
+of assignment:
 
 - [Pinned](topic:pinning) assignments, your explicit "hands off".
 - [Blocker roles](topic:blocker-roles), because forbidding something was
@@ -11,14 +11,15 @@ a decision.
 already.
 - Every role of a downed colonist.
 
-None of these are suggested, moved, or removed by the engine, so hand
-tuning and automation coexist without stepping on each other.
+**Pinned assignments remain protected even when excluded.** If an unpinned
+role or one of its composite members is excluded, applying recommendations
+removes that assignment. See [Recommendation order](topic:recommendation-order).
 
 A downed colonist shows a red line through their row:
 
 ![A downed colonist's row](downed-row.png)
 
-Their roles stay exactly as they are until they recover, and nothing
+Their non-excluded roles and pinned assignments stay as they are until they recover, and nothing
 they hold counts toward colony needs, so the engine covers those needs
 with other colonists. Every chip in their Recommended Roles list says so:
 

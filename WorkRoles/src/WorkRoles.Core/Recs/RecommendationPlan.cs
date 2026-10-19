@@ -704,6 +704,7 @@ namespace WorkRoles.Core.Recs
                 RoleView role = roles[roleIndex];
                 if (!role.Available
                     || !role.Enabled
+                    || facts.IsRecommendationExcluded(role)
                     || !role.PlannedByDemand
                     // Skill-less roles without demand are retained chores; with
                     // demand they fill every capable pawn (UnskilledFill).
@@ -791,7 +792,7 @@ namespace WorkRoles.Core.Recs
                 BuildExplanations(
                     facts, drafts, formulas, targetAssignments);
             SubstituteComposites(facts, rolesByPawn, explanations);
-            KeepIncapacitatedAssignments(colony, rolesByPawn, pathsByPawn,
+            KeepIncapacitatedAssignments(facts, rolesByPawn, pathsByPawn,
                 activatedPathCountsByPawn, explanations);
             return new RecommendationPlan(
                 rolesByPawn,
@@ -806,25 +807,26 @@ namespace WorkRoles.Core.Recs
         }
 
         /// An incapacitated pawn was no candidate and no holder during the
-        /// run; publish their existing assignments unchanged (so nothing is
-        /// applied to them) with one explanation per role saying why.
+        /// run; retain their existing assignments except explicit exclusions.
         private static void KeepIncapacitatedAssignments(
-            ColonyView colony,
+            EngineContext facts,
             int[][] rolesByPawn,
             int[][] pathsByPawn,
             int[] activatedPathCountsByPawn,
             Dictionary<int, RoleRecommendationExplanation>[] explanationsByPawn)
         {
+            ColonyView colony = facts.Colony;
             for (int pawnIndex = 0; pawnIndex < colony.Pawns.Count; pawnIndex++)
             {
                 PawnView pawn = colony.Pawns[pawnIndex];
                 if (!pawn.Incapacitated) continue;
-                var kept = new int[pawn.Existing.Count];
+                var kept = new List<int>(pawn.Existing.Count);
                 var explanations = new Dictionary<int, RoleRecommendationExplanation>();
-                for (int index = 0; index < kept.Length; index++)
+                for (int index = 0; index < pawn.Existing.Count; index++)
                 {
                     int roleId = pawn.Existing[index].RoleId;
-                    kept[index] = roleId;
+                    if (facts.IsRecommendationExcluded(facts.RoleOf(roleId))) continue;
+                    kept.Add(roleId);
                     explanations[roleId] = new RoleRecommendationExplanation
                     {
                         RoleId = roleId,
@@ -832,7 +834,7 @@ namespace WorkRoles.Core.Recs
                         SpecialPickReason = SpecialPickReason.Incapacitated,
                     };
                 }
-                rolesByPawn[pawnIndex] = kept;
+                rolesByPawn[pawnIndex] = kept.ToArray();
                 pathsByPawn[pawnIndex] = System.Array.Empty<int>();
                 activatedPathCountsByPawn[pawnIndex] = 0;
                 explanationsByPawn[pawnIndex] = explanations;
@@ -935,7 +937,8 @@ namespace WorkRoles.Core.Recs
             for (int index = 0; index < roles.Count; index++)
             {
                 RoleView role = roles[index];
-                if (role.MemberRoleIds == null || role.MemberRoleIds.Count == 0)
+                if (facts.IsRecommendationExcluded(role)
+                    || role.MemberRoleIds == null || role.MemberRoleIds.Count == 0)
                     continue;
                 var members = new int[role.MemberRoleIds.Count];
                 for (int m = 0; m < members.Length; m++)

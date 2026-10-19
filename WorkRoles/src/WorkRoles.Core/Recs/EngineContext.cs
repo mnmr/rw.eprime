@@ -63,6 +63,19 @@ namespace WorkRoles.Core.Recs
         public RoleView RoleOf(int id) =>
             RolesById.TryGetValue(id, out RoleView role) ? role : null!;
 
+        /// Composite members are projected as live non-composite roles. An
+        /// excluded member must not return through a bundle or training step.
+        public bool IsRecommendationExcluded(RoleView? role)
+        {
+            if (role == null) return false;
+            if (role.ExcludedFromRecommendations) return true;
+            if (role.MemberRoleIds != null)
+                for (int i = 0; i < role.MemberRoleIds.Count; i++)
+                    if (RoleOf(role.MemberRoleIds[i])?.ExcludedFromRecommendations == true)
+                        return true;
+            return false;
+        }
+
         public HolderRequirement RequirementOf(int roleId) =>
             requirementByRoleId.TryGetValue(
                 roleId, out HolderRequirement requirement)

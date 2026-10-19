@@ -62,10 +62,14 @@ namespace WorkRoles.UI
         // revisions for referenced roles, map identity, recommendation tuning,
         // UI metrics/definitions/language, verdict preference, panel dimensions.
         // Value: immutable ColonistRecommendationRenderSnapshot with detached
-        // chip facts, local geometry, tooltips, command ids/indices, and a
+        // chip facts, complete local geometry and overflow viewport/content bounds,
+        // measured full-label widths for names bounded to the scroll content,
+        // tooltips, command ids/indices, and a
         // producer-owned target-assignment buffer. Dependencies: the keyed plan,
         // role/assignment presentation, external pawn snapshots, translated
-        // labels/tooltips, verdicts, and dimensions. Refresh: immediate on the
+        // labels/tooltips, verdicts, dimensions and the fixed 16px scrollbar reserve.
+        // Scroll offset is view-local input and never rebuilds this snapshot.
+        // Refresh: immediate on the
         // next read after a key change; plan and external-fact access share their
         // existing producer gates. Equality: equal rebuilt
         // contents preserve the published snapshot identity. Teardown: Reset,
@@ -274,9 +278,7 @@ namespace WorkRoles.UI
                     store, plan, externalSnapshot).lines[0];
                 store.pawnSets.TryGetValue(pawn, out PawnRoleSet set);
                 List<RoleAssignment>? existing = set?.assignments;
-                float chipBottom = height - 28f;
-                float chipX = 0f;
-                float chipY = 28f;
+
                 GameFont previousFont = Text.Font;
                 try
                 {
@@ -294,12 +296,6 @@ namespace WorkRoles.UI
                         float chipWidth = RoleChipUI.WidthFor(chip,
                             showRemove: assigned,
                             verdictSlot: verdict.Shown);
-                        if (chipX + chipWidth > width && chipX > 0f)
-                        {
-                            chipX = 0f;
-                            chipY += RoleChipUI.Height + 4f;
-                            if (chipY + RoleChipUI.Height > chipBottom) break;
-                        }
 
                         AssignmentState assignmentState =
                             AssignmentState.Enabled;
@@ -330,12 +326,11 @@ namespace WorkRoles.UI
                             chip, assigned, style,
                             enabled && source.State
                                 == Dialog_ChangesPreview.ChipState.Removed,
-                            new Rect(chipX, chipY, chipWidth,
+                            new Rect(0f, 0f, chipWidth,
                                 RoleChipUI.Height), verdict, tooltip,
                             fallback,
                             assigned ? -1 : RecommendedInsertIndex(
                                 roleId, plan.Target, existing)));
-                        chipX += chipWidth + 4f;
                     }
                 }
                 finally
@@ -344,10 +339,25 @@ namespace WorkRoles.UI
                 }
             }
 
+            var widths = new float[chips.Count];
+            for (int i = 0; i < chips.Count; i++) widths[i] = chips[i].Rect.width;
+            var viewport = new Rect(0f, 28f, width, Mathf.Max(0f, height - 56f));
+            RecommendationChipLayout layout = RecommendationChipLayout.Calculate(
+                widths, width, viewport.height, RoleChipUI.Height, 4f, 16f);
+            for (int i = 0; i < chips.Count; i++)
+            {
+                float chipWidth = layout.ChipWidth(i);
+                float fadeLabelWidth = chipWidth < widths[i]
+                    ? RoleChipUI.SmallFitWidth(chips[i].Chip.Label) : 0f;
+                chips[i] = chips[i].WithRect(new Rect(layout.ChipLeft(i),
+                    viewport.y + layout.ChipTop(i), chipWidth, RoleChipUI.Height),
+                    fadeLabelWidth);
+            }
+
             return new ColonistRecommendationRenderSnapshot(pawn, chips,
                 target, plan?.HasChanges == true, header, applyLabel,
                 new Rect(0f, 0f, width, 28f),
-                new Rect(width - 110f, height - 26f, 106f, 24f));
+                new Rect(width - 110f, height - 26f, 106f, 24f), viewport, layout);
         }
 
         private static int RecommendedInsertIndex(int roleId,
@@ -638,7 +648,7 @@ namespace WorkRoles.UI
         internal ColonistRecommendationRenderChip(RoleChipRenderData chip,
             bool assigned, ChipStyle style, bool removedOutline, Rect rect,
             RoleChipVerdict verdict, StructuredTip? tooltip, string? fallbackTip,
-            int insertIndex)
+            int insertIndex, float fadeLabelWidth = 0f)
         {
             Chip = chip;
             Assigned = assigned;
@@ -649,6 +659,7 @@ namespace WorkRoles.UI
             Tooltip = tooltip;
             FallbackTip = fallbackTip;
             InsertIndex = insertIndex;
+            FadeLabelWidth = fadeLabelWidth;
         }
 
         internal RoleChipRenderData Chip { get; }
@@ -660,6 +671,11 @@ namespace WorkRoles.UI
         internal StructuredTip? Tooltip { get; }
         internal string? FallbackTip { get; }
         internal int InsertIndex { get; }
+        internal float FadeLabelWidth { get; }
+
+        internal ColonistRecommendationRenderChip WithRect(Rect rect, float fadeLabelWidth) =>
+            new ColonistRecommendationRenderChip(Chip, Assigned, Style,
+                RemovedOutline, rect, Verdict, Tooltip, FallbackTip, InsertIndex, fadeLabelWidth);
 
         internal bool ContentEquals(ColonistRecommendationRenderChip other)
         {
@@ -667,6 +683,7 @@ namespace WorkRoles.UI
                 || Assigned != other.Assigned || Style != other.Style
                 || RemovedOutline != other.RemovedOutline
                 || InsertIndex != other.InsertIndex
+                || FadeLabelWidth != other.FadeLabelWidth
                 || Rect.x != other.Rect.x || Rect.y != other.Rect.y
                 || Rect.width != other.Rect.width
                 || Rect.height != other.Rect.height
@@ -744,7 +761,8 @@ namespace WorkRoles.UI
         internal ColonistRecommendationRenderSnapshot(Pawn pawn,
             List<ColonistRecommendationRenderChip> chips,
             List<RoleAssignment> target, bool hasChanges, string headerLabel,
-            string applyLabel, Rect headerRect, Rect applyRect)
+            string applyLabel, Rect headerRect, Rect applyRect,
+            Rect chipViewport, RecommendationChipLayout chipLayout)
         {
             Pawn = pawn;
             this.chips = chips;
@@ -754,6 +772,10 @@ namespace WorkRoles.UI
             ApplyLabel = applyLabel;
             HeaderRect = headerRect;
             ApplyRect = applyRect;
+            ChipViewport = chipViewport;
+            ChipContentRect = new Rect(0f, 0f, chipLayout.ContentWidth, chipLayout.ContentHeight);
+            Scrollable = chipLayout.Scrollable;
+            MaxChipScroll = chipLayout.ClampScroll(float.MaxValue);
         }
 
         internal Pawn Pawn { get; }
@@ -762,6 +784,10 @@ namespace WorkRoles.UI
         internal string ApplyLabel { get; }
         internal Rect HeaderRect { get; }
         internal Rect ApplyRect { get; }
+        internal Rect ChipViewport { get; }
+        internal Rect ChipContentRect { get; }
+        internal bool Scrollable { get; }
+        internal float MaxChipScroll { get; }
         internal int ChipCount => chips.Count;
         internal ColonistRecommendationRenderChip ChipAt(int index) =>
             chips[index];
@@ -778,6 +804,9 @@ namespace WorkRoles.UI
                     StringComparison.Ordinal)
                 || !RectEquals(HeaderRect, other.HeaderRect)
                 || !RectEquals(ApplyRect, other.ApplyRect)
+                || !RectEquals(ChipViewport, other.ChipViewport)
+                || !RectEquals(ChipContentRect, other.ChipContentRect)
+                || Scrollable != other.Scrollable
                 || chips.Count != other.chips.Count
                 || target.Count != other.target.Count)
                 return false;

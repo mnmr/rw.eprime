@@ -220,6 +220,16 @@ namespace WorkRoles
             UiVersion.Changed(ModelDomain.RecommendationOrder);
         }
 
+        /// Exclude/include one role for every pawn's recommendation plan.
+        [SyncMethod]
+        public static void SetRoleRecommendationExcluded(int roleId, bool excluded)
+        {
+            Role? role = FindRole(roleId);
+            if (role == null || role.excludedFromRecommendations == excluded) return;
+            role.excludedFromRecommendations = excluded;
+            UiVersion.RoleChanged(role.id, ModelDomain.RoleRecommendation);
+        }
+
         /// One shared recommendation-formula edit. The option id is synced as
         /// a primitive stable enum value; Core clamps and normalizes the value.
         [SyncMethod]
@@ -782,6 +792,7 @@ namespace WorkRoles
                 Time = source.time,
                 ChampionPenalty = source.championPenalty,
                 PartialCapability = source.partialCapability,
+                ExcludedFromRecommendations = source.excludedFromRecommendations,
                 MinAge = source.minAge,
                 MaxAge = source.maxAge,
                 ColonyMin = source.colonyMin,
@@ -811,6 +822,7 @@ namespace WorkRoles
                 time = values.Time,
                 championPenalty = values.ChampionPenalty,
                 partialCapability = values.PartialCapability,
+                excludedFromRecommendations = values.ExcludedFromRecommendations,
                 minAge = values.MinAge,
                 maxAge = values.MaxAge,
                 colonyMin = values.ColonyMin,

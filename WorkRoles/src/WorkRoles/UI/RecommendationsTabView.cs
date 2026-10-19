@@ -9,14 +9,12 @@ using WorkRoles.Core.Recs;
 
 namespace WorkRoles.UI
 {
-    /// Recommendations tab: global options on the left (recommendation order
-    /// template, formula tuning parameters), per-role options on the right
+    /// Recommendations tab: excluded roles above the per-role
+    /// options on the left and formula tuning parameters on the right
     /// (an accordion of tuning-eligible roles: category/time/penalty, skills,
     /// holder scale and the role's training paths). Per-save state, MP-synced.
     public class RecommendationsTabView
     {
-        // Hunting chips: pinning them disables the dynamic duty-slot placement.
-        private static readonly Color LockedColor = new Color(0.95f, 0.8f, 0.2f, 0.9f);
         private readonly RecommendationsTabState state = new RecommendationsTabState();
         private Vector2 tabScroll;
 
@@ -24,13 +22,6 @@ namespace WorkRoles.UI
         private int expandedRoleId = -1;
         // Global tuning sections expand independently (no shared editor state).
         private readonly HashSet<int> expandedSections = new HashSet<int>();
-
-        // Drag drop, rebuilt only when the reorder target changes (see p2 in
-        // DrawRecommendationOrder): RoleDrag clears its slot every frame.
-        private int dropStamp = -1;
-        private int dropFrom = -1;
-        private int dropTo = -1;
-        private System.Action? dropAction;
 
         // Band drag in flight: committed as ONE synced command on release.
         private int dragPathId = -1;
@@ -76,8 +67,6 @@ namespace WorkRoles.UI
             state.Reset();
             expandedRoleId = -1;
             expandedSections.Clear();
-            dropStamp = dropFrom = dropTo = -1;
-            dropAction = null;
             ClearBandDrag();
         }
 
@@ -134,29 +123,27 @@ namespace WorkRoles.UI
             if (store == null) return;
             RoleDrag.Update();
 
-            // One scroll view: a full-width recommendation-order panel on top,
+            // One scroll view: a full-width excluded-roles panel on top,
             // the tuning sections and role panels in two columns below. The
             // 16px bar reserve is unconditional so wrap widths never depend on
             // the height they produce.
             float viewW = rect.width - 16f;
             const float flowX = 16f;
-            float orderW = viewW - flowX - 8f;
-            // Equal columns below the order panel, scaling with the window
+            float panelW = viewW - flowX - 8f;
+            // Equal columns below the exclusions panel, scaling with the window
             // like the panel itself; stacked when too narrow.
-            float flowW = (orderW - 24f) / 2f;
+            float flowW = (panelW - 24f) / 2f;
             float rightX = flowX + flowW + 24f;
-            float rightW = orderW - flowW - 24f;
+            float rightW = panelW - flowW - 24f;
             bool sideBySide = rightW >= 240f;
-            if (!sideBySide) flowW = orderW;
+            if (!sideBySide) flowW = panelW;
 
             float gw = sideBySide ? rightW : flowW;
-            state.EnsureOrder(store, orderW - RecPanelPad * 2f);
+            state.EnsureExclusions(store, panelW - RecPanelPad * 2f);
             state.EnsureTuning(store, gw - RecPanelPad * 2f);
             state.EnsureTips();
-            state.EnsureHelpLayout(orderW);
 
             state.EnsurePanels(flowW);
-            RecOrderSnapshot order = state.Order!; // EnsureOrder ran above
             RecRoleDetailSnapshot? detail = expandedRoleId != -1
                 ? state.EnsureDetail(store, expandedRoleId, flowW - PanelPad * 2f)
                 : null;
@@ -172,21 +159,17 @@ namespace WorkRoles.UI
                     ClearBandDrag();
             }
 
-            // Y-flow laid out up front: the scroll view needs contentH before
-            // anything draws. TOP: the full-width order panel, help below the
-            // header like every other section.
-            float y = 12f;
-            float recHeaderY = y;
-            y += 26f;
-            var recOrderHelpRect = new Rect(flowX, y, orderW,
-                state.RecommendationOrderHelpHeight);
-            y = recOrderHelpRect.yMax + 6f;
-            var recPanel = new Rect(flowX, y, orderW,
-                order.LayoutHeight + RecPanelPad * 2f);
-            float columnsTop = recPanel.yMax + 16f;
+            RecOrderSnapshot exclusions = state.Exclusions!;
+            var exclusionsHeader = new Rect(flowX, 12f,
+                panelW, state.ExclusionsHeaderHeight);
+            var exclusionsHelp = new Rect(flowX, exclusionsHeader.yMax + 6f,
+                panelW, state.ExclusionsHelpHeight);
+            var exclusionsPanel = new Rect(flowX, exclusionsHelp.yMax + 6f,
+                panelW, exclusions.LayoutHeight + RecPanelPad * 2f);
+            float columnsTop = exclusionsPanel.yMax + 16f;
 
             // LEFT column: the role panels.
-            y = columnsTop;
+            float y = columnsTop;
             var leftHeader = new Rect(flowX, y, flowW, 28f);
             y += 26f;
             RecRolePanelsSnapshot panels = state.Panels!; // EnsurePanels ran above
@@ -229,10 +212,15 @@ namespace WorkRoles.UI
             try
             {
 
-            MiniHeader(flowX, recHeaderY, orderW, order.HeaderLabel,
-                state.RecommendationOrderTip);
-            DrawRecommendationOrder(recPanel);
-            DrawHelpParagraph(recOrderHelpRect, state.RecommendationOrderHelp);
+            Text.Font = GameFont.Small;
+            GUI.color = new Color(0.85f, 0.85f, 0.85f);
+            Widgets.Label(exclusionsHeader, exclusions.HeaderLabel);
+            GUI.color = new Color(1f, 1f, 1f, 0.25f);
+            WrText.LineHorizontal(exclusionsHeader.x, exclusionsHeader.yMax + 2f, exclusionsHeader.width);
+            GUI.color = Color.white;
+            WrTips.Key("WR_RecExcludedTip").Region(exclusionsHeader);
+            DrawHelpParagraph(exclusionsHelp, state.ExclusionsHelp);
+            DrawExcludedRoles(exclusionsPanel, exclusions);
 
             WrLabels.HeaderLabel(leftHeader, panels.HeaderLabel);
             DrawHelpParagraph(panelsHelpRect, panels.Help);
@@ -692,7 +680,7 @@ namespace WorkRoles.UI
             return y + Mathf.Max(1, count) * pitch;
         }
 
-        /// Menu-click-only def resolution, like the order panel's Add Role.
+        /// Menu-click-only def resolution, like the exclusions panel's Add Role.
         private static void OpenSkillMenu(int roleId,
             RecRoleDetailSnapshot detail)
         {
@@ -852,7 +840,7 @@ namespace WorkRoles.UI
                 rowsY + (view.DisplayRows - 1) * BandRowH,
                 110f, RoleChipUI.Height);
             WrTips.Key("WR_PathAddRoleTip").Region(pathAddRect);
-            if (Widgets.ButtonText(pathAddRect, state.Order!.AddLabel)) // order built before any panel draws
+            if (Widgets.ButtonText(pathAddRect, state.Exclusions!.AddLabel))
                 OpenAddRoleMenu(view);
 
             for (int i = 0; i < view.Count; i++)
@@ -1254,116 +1242,32 @@ namespace WorkRoles.UI
         private static Rect Offset(Rect r, Vector2 by) =>
             new Rect(r.x + by.x, r.y + by.y, r.width, r.height);
 
-        /// The recommendation order template panel: pinned role chips, drag to
-        /// reorder, X to unpin (the role reverts to dynamic placement), Add
-        /// Role to pin unlisted roles at their suggested spot.
-        private void DrawRecommendationOrder(Rect panel)
+        private static void DrawExcludedRoles(Rect panel, RecOrderSnapshot exclusions)
         {
-            Widgets.DrawBoxSolidWithOutline(
-                panel, WrStyle.PanelBackground, WrStyle.PanelOutline);
+            Widgets.DrawBoxSolidWithOutline(panel, WrStyle.PanelBackground, WrStyle.PanelOutline);
             var origin = new Vector2(panel.x + RecPanelPad, panel.y + RecPanelPad);
-            RecOrderSnapshot order = state.Order!; // order built before any panel draws
-
-            Text.Font = GameFont.Small;
-            for (int i = 0; i < order.Count; i++)
+            for (int i = 0; i < exclusions.Count; i++)
             {
-                RecOrderChip published = order.ChipAt(i);
-                RoleChipRenderData chip = published.Chip;
+                RecOrderChip published = exclusions.ChipAt(i);
                 Rect chipRect = Offset(published.Rect, origin);
-                WrTips.Key("WR_RecOrderChipTip").Region(chipRect);
-                ChipClick click = RoleChipUI.Draw(
-                    chipRect, chip, ChipStyle.Normal,
-                    showRemove: true, dragSource: null, onClick: null);
-                if (click == ChipClick.Remove)
-                {
-                    List<int> edited = order.CopyRoleIds();
-                    edited.Remove(chip.RoleId);
-                    RoleCommands.SetRecommendationOrder(edited);
-                }
-                if (published.Locked)
-                {
-                    GUI.color = LockedColor;
-                    Widgets.DrawBox(chipRect);
-                    GUI.color = Color.white;
-                    if (Mouse.IsOver(chipRect))
-                        WrTips.Key("WR_OptLockedTip").Region(chipRect);
-                }
+                WrTips.Key("WR_RecExcludedChipTip").Region(chipRect);
+                if (RoleChipUI.Draw(chipRect, published.Chip, ChipStyle.Normal,
+                        showRemove: true, dragSource: null, onClick: null) == ChipClick.Remove)
+                    RoleCommands.SetRoleRecommendationExcluded(published.Chip.RoleId, false);
             }
-
-            Rect orderAddRect = Offset(order.AddRect, origin);
-            WrTips.Key("WR_RecOrderAddTip").Region(orderAddRect);
-            if (Widgets.ButtonText(orderAddRect, order.AddLabel))
-                OpenAddMenu(order);
-
-            if (RoleDrag.Active && order.ContainsRole(RoleDrag.RoleId)
-                && Mouse.IsOver(panel))
-            {
-                // Layout rects are chips-local: shift the mouse, not the list.
-                int insertIndex = order.ChipInsertIndex(
-                    Event.current.mousePosition - origin);
-
-                float markerX, markerY;
-                if (insertIndex == 0 || order.Count == 0)
-                {
-                    markerX = -RecommendationsTabState.FlowGap / 2f;
-                    markerY = 0f;
-                }
-                else
-                {
-                    Rect prev = order.ChipAt(insertIndex - 1).Rect;
-                    markerX = prev.xMax + RecommendationsTabState.FlowGap / 2f;
-                    markerY = prev.y;
-                }
-                Widgets.DrawBoxSolid(new Rect(origin.x + markerX - 1f, origin.y + markerY + 3f,
-                    2f, RoleChipUI.Height - 6f), new Color(1f, 1f, 1f, 0.9f));
-
-                int draggedId = RoleDrag.RoleId;
-                int from = order.IndexOfRole(draggedId);
-                int to = insertIndex > from ? insertIndex - 1 : insertIndex;
-                if (to != from)
-                {
-                    // RoleDrag clears its slot every frame, so reassignment is
-                    // per pass — but the list copy and closure are rebuilt only
-                    // when the reorder target (or the order itself) changes.
-                    if (dropStamp != state.OrderStamp || dropFrom != from || dropTo != to)
-                    {
-                        dropStamp = state.OrderStamp;
-                        dropFrom = from;
-                        dropTo = to;
-                        List<int> edited = order.CopyRoleIds();
-                        RoleDrag.HoverDropAction = () =>
-                        {
-                            edited.RemoveAt(from);
-                            edited.Insert(to, draggedId);
-                            RoleCommands.SetRecommendationOrder(edited);
-                        };
-                        dropAction = RoleDrag.HoverDropAction;
-                    }
-                    else
-                        RoleDrag.HoverDropAction = dropAction;
-                }
-            }
-        }
-
-        /// Pin an unlisted role: it appends at the end of the list; the player
-        /// drags it into place. Candidate selection is Core logic
-        /// (AddCandidates); this only maps ids to labels.
-        private static void OpenAddMenu(RecOrderSnapshot order)
-        {
+            Rect addRect = Offset(exclusions.AddRect, origin);
+            WrTips.Key("WR_RecExcludedAddTip").Region(addRect);
+            if (!Widgets.ButtonText(addRect, exclusions.AddLabel)) return;
             var options = new List<FloatMenuOption>();
-            for (int i = 0; i < order.AddOptionCount; i++)
+            for (int i = 0; i < exclusions.AddOptionCount; i++)
             {
-                RecRoleMenuOption published = order.AddOptionAt(i);
-                int captured = published.RoleId;
-                List<int> edited = order.CopyRoleIds();
-                options.Add(new FloatMenuOption(published.Label, () =>
-                {
-                    edited.Add(captured);
-                    RoleCommands.SetRecommendationOrder(edited);
-                }));
+                RecRoleMenuOption option = exclusions.AddOptionAt(i);
+                int roleId = option.RoleId;
+                options.Add(new FloatMenuOption(option.Label,
+                    () => RoleCommands.SetRoleRecommendationExcluded(roleId, true)));
             }
-            if (options.Count > 0)
-                Find.WindowStack.Add(new FloatMenu(options));
+            if (options.Count > 0) Find.WindowStack.Add(new FloatMenu(options));
         }
+
     }
 }

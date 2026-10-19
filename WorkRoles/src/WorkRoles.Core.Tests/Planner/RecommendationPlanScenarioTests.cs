@@ -1172,7 +1172,13 @@ public class RecommendationPlanScenarioTests
 
         ColonyView colony = RecsTestBed.Colony([basics, crafter, cook, miner, smith, doctor, grunt, researcher, hunter], pawn, lowShooter);
         colony.HunterRoleId = hunter.Id;
-        colony.OrderTemplate = [basics.Id, crafter.Id, cook.Id, miner.Id, smith.Id, doctor.Id, grunt.Id, researcher.Id];
+        // A legacy saved override placed Hunter first. Automatic ordering must
+        // ignore it and retain every shooting tier's observable placement.
+        for (int i = 0; i < colony.Roles.Count; i++)
+            RecsTestBed.SetNaturalPriority(colony.Roles[i], 100 - i);
+        colony.OrderTemplate = new RecommendationOrderCache().For(new object(),
+            colony.Roles, 1, [hunter.Id, basics.Id, crafter.Id, cook.Id, miner.Id,
+                smith.Id, doctor.Id, grunt.Id, researcher.Id]).Template.ToList();
 
         RecommendationPlan plan = RecommendationPlan.Build(colony);
         string actualAssignmentOrder = string.Join(",", Enumerable.Range(0, plan.RoleCountAt(0)).Select(index => plan.RoleAt(0, index)));

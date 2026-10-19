@@ -27,7 +27,7 @@ namespace WorkRoles.Core.Recs
         /// Downed (comatose, in pain shock, unable to move): the pawn cannot
         /// work right now. The engine never recommends roles to them, never
         /// counts what they hold toward colony needs, and publishes their
-        /// existing assignments untouched for when they recover.
+        /// existing assignments, except excluded roles, for when they recover.
         public bool Incapacitated;
         /// Has a mechlink: the only pawns who can repair or gestate mechs.
         public bool IsMechanitor;
@@ -87,6 +87,8 @@ namespace WorkRoles.Core.Recs
         public int CoveragePercent;
         public bool Available = true;
         public bool Enabled = true;
+        /// Save-authored veto across every recommendation channel.
+        public bool ExcludedFromRecommendations;
         /// Only mechanitors are capable of this role (the game gates its
         /// jobs on the mechlink, not on a work type).
         public bool RequiresMechanitor;

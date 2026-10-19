@@ -8,7 +8,8 @@ For the fully hands-off colony, the Options tab offers hourly automation:
 While it is on, [Fix My Colony](topic:fix-my-colony) runs automatically
 for every colony at the top of each in-game hour. Nothing is written when
 a colonist already matches the recommendation, and
-[pinned](topic:pinning) assignments survive every pass.
+[pinned](topic:pinning) assignments survive every pass, including when their
+role or a composite member is in [Excluded roles](topic:recommendation-order).
 
 Enabling shows a confirmation preview of the first pass. While active,
 the Fix My Colony and Make It So buttons hide (the machine has the

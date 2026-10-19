@@ -45,6 +45,18 @@ namespace WorkRoles.UI
         }
 
         private Vector2 paletteScroll;
+        // Window-local input state. Pawn/store changes and window release reset
+        // the offset; published geometry changes clamp it without rebuilding data.
+        private Vector2 recommendationScroll;
+        private Pawn? recommendationScrollPawn;
+        private RoleStore? recommendationScrollStore;
+
+        private void ResetRecommendationScroll()
+        {
+            recommendationScroll = Vector2.zero;
+            recommendationScrollPawn = null;
+            recommendationScrollStore = null;
+        }
         // Explorer-style row selection (view-local, never synced). The stats
         // panel, palette verdicts, copy/paste and Fix My Colony follow the
         // single selection only; palette Shift/Ctrl+Shift/Alt-click assign to
@@ -198,6 +210,7 @@ namespace WorkRoles.UI
         public void Reset()
         {
             paletteScroll = Vector2.zero;
+            ResetRecommendationScroll();
             tableScroll = Vector2.zero;
             selection.Clear();
             // Opening adopts the player's in-game pawn selection (when listed)
@@ -394,6 +407,7 @@ namespace WorkRoles.UI
 
             selection.Clear();
             recommendationState.ReleaseSnapshots();
+            ResetRecommendationScroll();
             InvalidateRoleVerdicts();
 
             roleTipCache.Clear();
@@ -4939,59 +4953,95 @@ namespace WorkRoles.UI
                     rect.y + localHeader.y, localHeader.width,
                     localHeader.height), preview.HeaderLabel);
 
-                for (int previewIndex = 0;
-                        previewIndex < preview.ChipCount; previewIndex++)
+                if (!ReferenceEquals(recommendationScrollPawn, preview.Pawn)
+                    || !ReferenceEquals(recommendationScrollStore, store))
                 {
-                    ColonistRecommendationRenderChip chip =
-                        preview.ChipAt(previewIndex);
-                    Rect local = chip.Rect;
-                    var chipRect = new Rect(recX + local.x, rect.y + local.y,
-                        local.width, local.height);
-                    if (chip.Assigned)
+                    recommendationScroll = Vector2.zero;
+                    recommendationScrollPawn = preview.Pawn;
+                    recommendationScrollStore = store;
+                }
+                recommendationScroll.x = 0f;
+                recommendationScroll.y = Mathf.Clamp(recommendationScroll.y, 0f,
+                    preview.MaxChipScroll);
+                float chipOriginX = recX;
+                float chipOriginY = rect.y;
+                bool chipInput = true;
+                if (preview.Scrollable)
+                {
+                    Rect viewport = preview.ChipViewport;
+                    var scrollRect = new Rect(recX + viewport.x, rect.y + viewport.y,
+                        viewport.width, viewport.height);
+                    chipInput = Mouse.IsOver(scrollRect);
+                    Widgets.BeginScrollView(scrollRect, ref recommendationScroll,
+                        preview.ChipContentRect);
+                    chipOriginX = -viewport.x;
+                    chipOriginY = -viewport.y;
+                }
+                try
+                {
+                    for (int previewIndex = 0;
+                            previewIndex < preview.ChipCount; previewIndex++)
                     {
-                        // Assigned: Subtle style, remove icon, body click inert.
-                        // Disabled roles dim WITHOUT the strike (this panel
-                        // shows recommendations, not verdicts); the red outline
-                        // marks only enabled roles the plan would remove.
-                        ChipClick click = RoleChipUI.Draw(chipRect, chip.Chip,
-                            chip.Style,
-                            showRemove: true, dragSource: null, onClick: null,
-                            verdict: chip.Verdict);
-                        if (click == ChipClick.Remove)
-                            RoleCommands.RemoveRoleFromPawn(preview.Pawn,
-                                chip.Chip.RoleId);
-                        if (chip.RemovedOutline)
-                            RoleChipUI.DrawRemovedOutline(chipRect);
-                    }
-                    else
-                    {
-                        // Closure only on the pass that can consume it (see the
-                        // chip strip); captures declared inside the gate, or the
-                        // display class would still allocate per iteration.
-                        System.Action? onClick = null;
-                        var pressEvent = Event.current;
-                        if (pressEvent.type == EventType.MouseDown && pressEvent.button == 0
-                            && chipRect.Contains(pressEvent.mousePosition))
+                        ColonistRecommendationRenderChip chip =
+                            preview.ChipAt(previewIndex);
+                        Rect local = chip.Rect;
+                        var chipRect = new Rect(chipOriginX + local.x, chipOriginY + local.y,
+                            local.width, local.height);
+                        if (preview.Scrollable && (chipRect.yMax <= recommendationScroll.y
+                            || chipRect.y >= recommendationScroll.y + preview.ChipViewport.height))
+                            continue;
+                        if (chip.Assigned)
                         {
-                            Pawn clickPawn = preview.Pawn;
-                            int clickId = chip.Chip.RoleId;
-                            int insertIndex = chip.InsertIndex;
-                            onClick = () => RoleCommands.AssignRole(
-                                clickPawn, clickId, insertIndex);
+                            // Assigned: Subtle style, remove icon, body click inert.
+                            // Disabled roles dim WITHOUT the strike (this panel
+                            // shows recommendations, not verdicts); the red outline
+                            // marks only enabled roles the plan would remove.
+                            ChipClick click = RoleChipUI.Draw(chipRect, chip.Chip,
+                                chip.Style,
+                                showRemove: true, dragSource: null, onClick: null,
+                                verdict: chip.Verdict, interactive: chipInput,
+                                fadeLabelWidth: chip.FadeLabelWidth);
+                            if (click == ChipClick.Remove)
+                                RoleCommands.RemoveRoleFromPawn(preview.Pawn,
+                                    chip.Chip.RoleId);
+                            if (chip.RemovedOutline)
+                                RoleChipUI.DrawRemovedOutline(chipRect);
                         }
-                        RoleChipUI.Draw(chipRect, chip.Chip, ChipStyle.Normal,
-                            showRemove: false, dragSource: null,
-                            onClick: onClick, verdict: chip.Verdict);
+                        else
+                        {
+                            // Closure only on the pass that can consume it (see the
+                            // chip strip); captures declared inside the gate, or the
+                            // display class would still allocate per iteration.
+                            System.Action? onClick = null;
+                            var pressEvent = Event.current;
+                            if (chipInput && pressEvent.type == EventType.MouseDown && pressEvent.button == 0
+                                && chipRect.Contains(pressEvent.mousePosition))
+                            {
+                                Pawn clickPawn = preview.Pawn;
+                                int clickId = chip.Chip.RoleId;
+                                int insertIndex = chip.InsertIndex;
+                                onClick = () => RoleCommands.AssignRole(
+                                    clickPawn, clickId, insertIndex);
+                            }
+                            RoleChipUI.Draw(chipRect, chip.Chip, ChipStyle.Normal,
+                                showRemove: false, dragSource: null,
+                                onClick: onClick, verdict: chip.Verdict, interactive: chipInput,
+                                fadeLabelWidth: chip.FadeLabelWidth);
+                        }
+                        if (chipInput && Mouse.IsOver(chipRect))
+                        {
+                            if (chip.Tooltip != null)
+                                StructuredTipPresenter.TipRegion(chipRect,
+                                    chip.Tooltip);
+                            else if (chip.FallbackTip != null)
+                                TooltipHandler.TipRegion(chipRect,
+                                    chip.FallbackTip);
+                        }
                     }
-                    if (Mouse.IsOver(chipRect))
-                    {
-                        if (chip.Tooltip != null)
-                            StructuredTipPresenter.TipRegion(chipRect,
-                                chip.Tooltip);
-                        else if (chip.FallbackTip != null)
-                            TooltipHandler.TipRegion(chipRect,
-                                chip.FallbackTip);
-                    }
+                }
+                finally
+                {
+                    if (preview.Scrollable) Widgets.EndScrollView();
                 }
 
                 // Make It So hides while auto-optimize owns bulk fixes; the

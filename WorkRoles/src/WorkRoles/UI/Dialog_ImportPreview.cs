@@ -33,7 +33,6 @@ namespace WorkRoles.UI
             SectionHeader,
             MergeRow,
             Info,
-            OrderHeader,
             BottomPadding,
         }
 
@@ -130,7 +129,6 @@ namespace WorkRoles.UI
         private bool rolesOverwrite;
         private bool pathsInclude;
         private bool pathsOverwrite;
-        private bool orderInclude;
         private int paletteIncludedCount;
         private int roleIncludedCount;
         private int pathIncludedCount;
@@ -168,11 +166,9 @@ namespace WorkRoles.UI
         private string paletteTitle = null!;
         private string rolesTitle = null!;
         private string pathsTitle = null!;
-        private string orderTitle = null!;
         private string mergeLabel = null!;
         private string overwriteLabel = null!;
         private string nothingToMergeText = null!;
-        private string orderInfoText = null!;
         private float mergeControlWidth;
         private float overwriteControlWidth;
         private Vector2 scroll;
@@ -191,7 +187,6 @@ namespace WorkRoles.UI
             paletteInclude = paletteRows.Count > 0 || doc.palette.Count > 0;
             rolesInclude = roleRows.Count > 0;
             pathsInclude = rolesInclude && doc.trainingPaths.Count > 0;
-            orderInclude = rolesInclude && doc.recommendationOrder.Count > 0;
 
             pathIncludedCount = pathMergeUi.Count;
         }
@@ -235,8 +230,7 @@ namespace WorkRoles.UI
 
             bool canApply = (paletteInclude && (paletteOverwrite || paletteIncludedCount > 0))
                 || (rolesInclude && (rolesOverwrite || roleIncludedCount > 0))
-                || (pathsInclude && (pathsOverwrite || pathIncludedCount > 0))
-                || (orderInclude && doc.recommendationOrder.Count > 0);
+                || (pathsInclude && (pathsOverwrite || pathIncludedCount > 0));
             if (DrawPreviewFooter(inRect, canApply))
             {
                 var selection = new ImportSelection
@@ -248,7 +242,7 @@ namespace WorkRoles.UI
                     rolesOverwrite = rolesOverwrite,
                     paths = pathsInclude,
                     pathsOverwrite = pathsOverwrite,
-                    order = orderInclude,
+                    order = false,
                     paletteRows = SelectedPaletteSourceIndices(),
                     roleRows = SelectedIndices(roleMergeUi),
                     pathRows = SelectedIndices(pathMergeUi),
@@ -329,12 +323,9 @@ namespace WorkRoles.UI
                 paletteTitle = "WR_SectionPalette".Translate();
                 rolesTitle = "WR_SectionRoles".Translate();
                 pathsTitle = "WR_TrainingSection".Translate();
-                orderTitle = "WR_OptRecOrder".Translate();
                 mergeLabel = "WR_ModeMerge".Translate();
                 overwriteLabel = "WR_ModeOverwrite".Translate();
                 nothingToMergeText = "WR_NothingToMerge".Translate();
-                orderInfoText = "WR_RecOrderReplaceInfo"
-                    .Translate(doc.recommendationOrder.Count);
                 mergeControlWidth = WrText.FitWidth(mergeLabel) + 8f + RadioW;
                 overwriteControlWidth = WrText.FitWidth(overwriteLabel) + 8f + RadioW;
 
@@ -421,14 +412,6 @@ namespace WorkRoles.UI
                         pathsTitle,
                         pathsInclude, pathsOverwrite, pathMergeUi,
                         pathsOverwriteInfo);
-                }
-                if (doc.recommendationOrder.Count > 0)
-                {
-                    AddSimpleRow(nextRows, heights, RenderKind.Gap, SectionGap);
-                    AddSimpleRow(nextRows, heights, RenderKind.OrderHeader,
-                        RowH, text: orderTitle);
-                    if (orderInclude)
-                        AddInfoRow(nextRows, heights, width, orderInfoText);
                 }
                 // Preserve MeasureContent's trailing breathing room exactly.
                 AddSimpleRow(nextRows, heights, RenderKind.BottomPadding, RowH);
@@ -539,14 +522,6 @@ namespace WorkRoles.UI
                                 GUI.color = oldColor;
                             }
                             break;
-                        case RenderKind.OrderHeader:
-                            GUI.enabled = oldEnabled && rolesInclude;
-                            bool before = orderInclude;
-                            Widgets.CheckboxLabeled(new Rect(0f, y, width * 0.4f,
-                                RowH - 2f), row.Text, ref orderInclude);
-                            GUI.enabled = oldEnabled;
-                            if (before != orderInclude) rowLayoutDirty = true;
-                            break;
                     }
                 }
             }
@@ -592,9 +567,8 @@ namespace WorkRoles.UI
 
         private void EnforceRoleDependencies()
         {
-            if (rolesInclude || (!pathsInclude && !orderInclude)) return;
+            if (rolesInclude || !pathsInclude) return;
             pathsInclude = false;
-            orderInclude = false;
             rowLayoutDirty = true;
         }
 
@@ -677,7 +651,6 @@ namespace WorkRoles.UI
             if (rolesOverwrite) state |= 8;
             if (pathsInclude) state |= 16;
             if (pathsOverwrite) state |= 32;
-            if (orderInclude) state |= 64;
             return state;
         }
 

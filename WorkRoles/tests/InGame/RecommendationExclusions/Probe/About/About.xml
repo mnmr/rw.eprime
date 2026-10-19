@@ -1,0 +1,7 @@
+<ModMetaData>
+  <name>WorkRoles Exclusion Verification</name>
+  <author>WorkRoles tests</author>
+  <packageId>eprime.workroles.exclusionprobe</packageId>
+  <supportedVersions><li>1.6</li><li>1.7</li></supportedVersions>
+  <modDependencies><li><packageId>mnmr.workroles</packageId><displayName>WorkRoles</displayName><downloadUrl>https://github.com/mnmr/rw.workroles</downloadUrl></li></modDependencies>
+</ModMetaData>

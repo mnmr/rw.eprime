@@ -76,6 +76,7 @@ namespace WorkRoles
                             ChampionPenalty = role.championPenalty, PartialCapability = role.partialCapability,
                             Available = availabilityChanged ? RoleAvailable(role) : fullCatalog!.Roles[i].Available,
                             Enabled = role.enabled, Category = role.category, Time = role.time,
+                            ExcludedFromRecommendations = role.excludedFromRecommendations,
                             MinAge = Math.Max(0, role.minAge), MaxAge = role.maxAge,
                             ColonyMin = role.colonyMin, CoveragePercent = role.coverage,
                         };

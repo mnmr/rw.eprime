@@ -362,6 +362,7 @@ namespace WorkRoles.Core.Recs
             && a.Category == b.Category && a.Time == b.Time && a.MinAge == b.MinAge && a.MaxAge == b.MaxAge
             && a.ColonyMin == b.ColonyMin && a.CoveragePercent == b.CoveragePercent
             && a.Available == b.Available && a.Enabled == b.Enabled && a.RequiresMechanitor == b.RequiresMechanitor
+            && a.ExcludedFromRecommendations == b.ExcludedFromRecommendations
             && RoleWorkSpec.StructurallyEqual(a.WorkSpec, b.WorkSpec);
 
         internal static bool Options(RecommendationsTuningOptions a, RecommendationsTuningOptions b)

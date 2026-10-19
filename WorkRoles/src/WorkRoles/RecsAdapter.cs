@@ -155,6 +155,7 @@ namespace WorkRoles
                     Coverage = role.coverage,
                     Available = RoleAvailable(role),
                     Enabled = role.enabled,
+                    ExcludedFromRecommendations = role.excludedFromRecommendations,
                     SpecialRole = template?.recommendationSpecialRole
                         ?? RecommendationSpecialRoleKind.None,
                     // Full ordinary and composite work facts share the UI

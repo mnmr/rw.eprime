@@ -40,9 +40,8 @@ namespace WorkRoles
         /// mod setting: the schedule mutates shared assignments from
         /// deterministic tick code, so MP clients must agree it is on.
         public bool autoOptimize;
-        /// The user's recommendation order template (role ids); empty = the
-        /// shipped default template. A pure override: unlisted roles are
-        /// not merged in — they place dynamically (RecommendationOrder).
+        /// Legacy saved order, retained for save compatibility. Recommendations
+        /// now use the built-in order and do not consume this override.
         public List<int> recommendationOrder = new List<int>();
         /// Shared, save-authoritative recommendation formula inputs. Mutate
         /// only through RoleCommands so multiplayer clients and cache revisions
