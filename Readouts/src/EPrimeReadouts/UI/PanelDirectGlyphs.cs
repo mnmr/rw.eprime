@@ -244,13 +244,15 @@ namespace EPrimeReadouts.UI
                 if (!generator.Populate(text!, settings)) return false;
                 IList<UIVertex> generated = generator.verts;
                 int usable = GlyphQuadPlan.UsableVertexCount(generated.Count);
+                Vector3 runOrigin = UsesGuiClip && usable > 0
+                    ? generated[0].position : Vector3.zero;
                 for (int v = 0; v < usable; v++)
                 {
                     UIVertex vertex = generated[v];
                     GlyphRasterPoint point = GlyphRasterMath.Place(
                         rect.x, rect.y,
                         vertex.position.x, vertex.position.y,
-                        rasterScale);
+                        rasterScale, runOrigin.x, runOrigin.y);
                     vertices.Add(new Vector3(point.X, point.Y, 0f));
                     uvs.Add(vertex.uv0);
                     colors.Add(vertex.color);

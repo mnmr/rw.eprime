@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.4.1 — 2026-10-19
+
+- Fixed: Font rendering in 1.7 could misalign counters at some UI interface scales. Counters are now pixel-aligned for a more crisp readout.
+
 ## 1.4.0 — 2026-10-13
 
 - Changed: Removed obsolete render health checks and other internal bookkeeping.

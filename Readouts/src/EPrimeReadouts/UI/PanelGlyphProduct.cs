@@ -378,6 +378,10 @@ namespace EPrimeReadouts.UI
             Rect rect, IList<UIVertex> generated, float rasterScale)
         {
             int usable = GlyphQuadPlan.UsableVertexCount(generated.Count);
+            // Waylith leaves centering inside the generated offsets (e.g.
+            // x=13.625 at 125% scale). Snap the run, not individual glyphs.
+            Vector3 runOrigin = PanelBufferBackend.UsesGuiRenderTargets && usable > 0
+                ? generated[0].position : Vector3.zero;
             for (int i = 0; i < usable; i += 4)
             {
                 int start = vertices.Count;
@@ -387,7 +391,7 @@ namespace EPrimeReadouts.UI
                     GlyphRasterPoint point = GlyphRasterMath.Place(
                         rect.x, rect.y,
                         vertex.position.x, vertex.position.y,
-                        rasterScale);
+                        rasterScale, runOrigin.x, runOrigin.y);
                     vertices.Add(new Vector3(
                         point.X, point.Y, 0f));
                     uvs.Add(vertex.uv0);

@@ -84,6 +84,14 @@ RGB and correct alpha, so it does not use Unity's coverage-from-red workaround.
 Published pixels remain independent of later font-atlas changes. Builders warm
 all requested content glyphs before retaining their atlas UVs.
 
+Waylith's generated text retains fractional alignment inside its vertex offsets.
+Both buffered and direct glyph builders must snap one generated run anchor,
+then apply the same translation to every vertex. Snapping only the containing
+rectangle leaves counters blurred; rounding vertices independently changes
+glyph sizes and spacing. Unity retains its existing zero-anchor placement.
+Regression evidence lives in `temp/crispness`: counter pixel comparisons,
+font fallback, atlas growth, hover/scroll return, and search/title captures.
+
 Waylith's reported async readback is synchronous and returns owned buffers;
 use the existing synchronous publication branch only when a surface changes,
 with no periodic health readback. Previous fronts and whole-set promotion are
