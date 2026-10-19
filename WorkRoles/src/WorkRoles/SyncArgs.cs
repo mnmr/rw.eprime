@@ -37,5 +37,6 @@ namespace WorkRoles
         public List<int> entriesRoleIds = new List<int>();
         public List<int> paletteSnapRoleIds = new List<int>();
         public bool recommendationOrder;
+        public bool defaultExclusions;
     }
 }

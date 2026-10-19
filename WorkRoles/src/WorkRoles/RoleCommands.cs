@@ -154,7 +154,7 @@ namespace WorkRoles
         /// recreates missing seeded roles and default training paths, regenerates
         /// coverage for uncovered work types, backfills vanilla jobs that mods
         /// moved out of roles, moves and recolors drifted roles back to their def,
-        /// restores holder defaults, and resets the recommendation order.
+        /// restores holder defaults and missing default exclusions, and resets the recommendation order.
         [SyncMethod]
         public static void RestoreSelected(RestoreSelection selection)
         {

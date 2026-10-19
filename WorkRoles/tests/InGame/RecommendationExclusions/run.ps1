@@ -1,4 +1,4 @@
-param([ValidateSet('1.6','1.7')][string]$Version='1.7', [string]$Label='exclusions', [switch]$Clean)
+param([ValidateSet('1.6','1.7')][string]$Version='1.7', [string]$Label='exclusions', [switch]$Clean, [switch]$RestoreDefaults)
 $ErrorActionPreference='Stop'
 $source=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..\..'))
 $tools=Join-Path $source 'Shared\tools\automation'
@@ -11,6 +11,7 @@ if($Version -eq '1.6') {
  $params.SavePattern='Fisso-NAM.rws';$params.BaselineConfigPath="$tools\profile-template\Config\ModsConfig-1.6.xml"
 }
 $run=& "$tools\create-run.ps1" @params
+if($RestoreDefaults -and -not $Clean){'restore' | Set-Content (Join-Path $run.profile 'restore-default-exclusions-mode.txt')}
 $out=Join-Path $source "WorkRoles\temp\recommendation-exclusions\$Version-$Label-$($run.runId)"
 New-Item -ItemType Directory -Path $out -Force | Out-Null
 $run.runId | Set-Content (Join-Path $out 'run-id.txt')
@@ -42,6 +43,18 @@ try {
  }
  function Capture([string]$Name){ & "$tools\capture.ps1" -RunId $run.runId -OutName "$Name.png" }
  if($Clean) { Capture 'clean-loaded' }
+ elseif($RestoreDefaults) {
+  Wait-Stage 'defaults-preview'
+  Capture 'defaults-preview'
+  Click-Point 'restore-all'
+  Wait-Stage 'defaults-deselected'
+  Click-Point 'restore-defaults'
+  Wait-Stage 'defaults-selected'
+  Capture 'defaults-selected'
+  Click-Point 'apply'
+  Wait-Stage 'SUCCESS'
+  Capture 'defaults-restored'
+ }
  else {
   Wait-Stage 'ready'
   Capture 'initial'

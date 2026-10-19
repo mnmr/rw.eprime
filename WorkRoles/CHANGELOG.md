@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.7.1 — 2026-10-19
+
+- Added: Support for Humanoid Alien Races work restrictions. Vivi gathering recommendations account for gathering tools.
+- Changed: Recommendations consider work colonists dislike because of their ideology.
+
 ## 1.7.0 — 2026-10-19
 
 - Added: Optional profiles for additional modded work and skills.

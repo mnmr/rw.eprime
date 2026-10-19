@@ -8,8 +8,12 @@ brings the factory settings back, piece by piece:
 
 The preview lists everything restorable: missing pre-made roles, your
 own job edits, jobs that other mods moved away, default groups, colors,
-and holder settings. Check only what you want; items that would
+holder settings, and default exclusions. Check only what you want; items that would
 overwrite your own edits are highlighted in warning colors.
+
+**Default excluded roles** adds Rescuer, Firefighter, Patient, Bedrest, and
+Laborer back to the Excluded roles panel if you removed them. Other exclusions
+stay as you set them. You can remove restored exclusions again afterward.
 
 Colonists keep their overall jobs through a restore, so nobody stops
 working while you repent.

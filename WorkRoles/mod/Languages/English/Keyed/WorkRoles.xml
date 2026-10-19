@@ -500,7 +500,7 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
 
   <!-- Restore button (top-right corner, Roles tab) -->
   <WR_RestoreDefaults>Restore Defaults</WR_RestoreDefaults>
-  <WR_RestoreDefaultsTip>Recreate missing pre-made roles and training paths, and return pre-made roles to their default groups, colors, and holder settings. A preview lets you pick what to restore.</WR_RestoreDefaultsTip>
+  <WR_RestoreDefaultsTip>Recreate missing pre-made roles and training paths, restore default exclusions, and return pre-made roles to their default groups, colors, and holder settings. A preview lets you pick what to restore.</WR_RestoreDefaultsTip>
   <WR_RestoreDefaultsTitle>Restore Defaults</WR_RestoreDefaultsTitle>
 
   <!-- Import/Export (Roles tab, top-right); {0} = file path, or count for messages -->
@@ -564,6 +564,8 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <!-- {0} = role label -->
   <WR_RestoreHoldersItem>{0} (restore holder defaults)</WR_RestoreHoldersItem>
   <WR_RestoreRecOrder>Recommendation order (reset to default)</WR_RestoreRecOrder>
+  <WR_RestoreDefaultExclusions>Default excluded roles</WR_RestoreDefaultExclusions>
+  <WR_RestoreExplainDefaultExclusions>Adds missing default exclusions back to the Excluded roles panel. Keeps any other roles you have excluded.</WR_RestoreExplainDefaultExclusions>
   <!-- Restore preview: warning line when highlighted items would undo player changes -->
   <WR_RestoreOverwriteWarning>⚠ Highlighted items will overwrite changes you made.</WR_RestoreOverwriteWarning>
   <!-- Appended to a missing-role item whose label an existing role already uses -->

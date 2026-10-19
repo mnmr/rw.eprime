@@ -621,7 +621,7 @@ namespace WorkRoles
         /// payload fields is set: a missing template to recreate, an uncovered work
         /// type to regenerate, a role whose snapshots gain moved vanilla givers,
         /// a role whose group or color drifted from its def, a missing default
-        /// holder defaults, a missing training path, or the recommendation-order reset.
+        /// holder defaults, a missing training path, default exclusions, or the recommendation-order reset.
         public class RestoreItem
         {
             public string label = null!;       // set at construction
@@ -637,13 +637,14 @@ namespace WorkRoles
             public int paletteSnapRoleId = -1;
             public string? pathDef;
             public bool recommendationOrder;
+            public bool defaultExclusions;
 
             /// Applying would undo a deliberate player change (drift/opt-out
             /// types): the preview highlights these with a warning tint.
             public bool UndoesUserChange =>
                 groupRoleId != -1 || colorRoleId != -1 || holderRoleId != -1
                 || entriesRoleId != -1 || paletteSnapRoleId != -1
-                || recommendationOrder;
+                || recommendationOrder || defaultExclusions;
         }
 
         /// The role's def-declared group differs from where it sits now, by
@@ -741,11 +742,16 @@ namespace WorkRoles
             role.colonyMin != (def.tuning?.colonyMin ?? 0)
             || role.coverage != (def.tuning?.coverage ?? 0);
 
+        private static bool DefaultExclusionMissing(Role role) =>
+            !role.excludedFromRecommendations && role.templateDefName != null
+            && DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName)
+                ?.tuning?.excludedFromRecommendations == true;
+
         /// Everything Restore Defaults could do right now: recreate missing
         /// template roles and default training paths, regenerate coverage for work
         /// types nothing covers, recover vanilla jobs that mods moved out of roles'
         /// work types, return drifted roles to their def's group, color and holder policy, and
-        /// reset the recommendation order.
+        /// restore missing default exclusions.
         public static List<RestoreItem> ComputeRestoreItems()
         {
             var store = RoleStore.Current;
@@ -876,6 +882,13 @@ namespace WorkRoles
                         pathDef = def.defName,
                     });
             }
+            if (store.roles.Any(DefaultExclusionMissing))
+                result.Add(new RestoreItem
+                {
+                    label = "WR_RestoreDefaultExclusions".Translate(),
+                    explanation = "WR_RestoreExplainDefaultExclusions".Translate(),
+                    defaultExclusions = true,
+                });
             return result;
         }
 
@@ -1129,6 +1142,18 @@ namespace WorkRoles
                         result.Add("WR_RestorePathItem".Translate(
                             ResolvePathRole(store, def.defName)?.label ?? def.defName));
                 }
+
+            if (selection.defaultExclusions)
+            {
+                bool changed = false;
+                foreach (Role role in store.roles)
+                {
+                    if (!DefaultExclusionMissing(role)) continue;
+                    role.excludedFromRecommendations = true;
+                    changed = true;
+                }
+                if (changed) result.Add("WR_RestoreDefaultExclusions".Translate());
+            }
 
             if (selection.recommendationOrder && store.recommendationOrder.Count > 0)
             {

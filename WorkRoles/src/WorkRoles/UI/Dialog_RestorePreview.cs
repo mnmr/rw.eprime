@@ -11,7 +11,7 @@ namespace WorkRoles.UI
 {
     /// Selectable preview for Restore Defaults: one checkbox row per restorable
     /// item (missing role or training path, uncovered work type, moved-jobs
-    /// recovery, group or color drift, or the recommendation-order reset), with a select-all toggle —
+    /// recovery, group or color drift, or missing default exclusions), with a select-all toggle —
     /// mirroring the Fix My Colony preview's selection model. Application
     /// self-guards against staleness per item.
     public class Dialog_RestorePreview : Dialog_PreviewBase
@@ -52,6 +52,7 @@ namespace WorkRoles.UI
             private readonly int paletteSnapRoleId;
             private readonly string? pathDef;
             private readonly bool recommendationOrder;
+            private readonly bool defaultExclusions;
 
             internal RestoreItemKey(Seeding.RestoreItem item)
             {
@@ -65,6 +66,7 @@ namespace WorkRoles.UI
                 paletteSnapRoleId = item.paletteSnapRoleId;
                 pathDef = item.pathDef;
                 recommendationOrder = item.recommendationOrder;
+                defaultExclusions = item.defaultExclusions;
             }
 
             public bool Equals(RestoreItemKey other) =>
@@ -77,7 +79,8 @@ namespace WorkRoles.UI
                 && entriesRoleId == other.entriesRoleId
                 && paletteSnapRoleId == other.paletteSnapRoleId
                 && pathDef == other.pathDef
-                && recommendationOrder == other.recommendationOrder;
+                && recommendationOrder == other.recommendationOrder
+                && defaultExclusions == other.defaultExclusions;
 
             public override bool Equals(object obj) =>
                 obj is RestoreItemKey other && Equals(other);
@@ -96,7 +99,8 @@ namespace WorkRoles.UI
                     hash = hash * 31 + entriesRoleId;
                     hash = hash * 31 + paletteSnapRoleId;
                     hash = hash * 31 + (pathDef?.GetHashCode() ?? 0);
-                    return hash * 31 + (recommendationOrder ? 1 : 0);
+                    hash = hash * 31 + (recommendationOrder ? 1 : 0);
+                    return hash * 31 + (defaultExclusions ? 1 : 0);
                 }
             }
         }
@@ -111,7 +115,7 @@ namespace WorkRoles.UI
         // Work/History/Capability/Recommendation/RecommendationOrder, definition
         // revision, and language revision. Value: private detached restore rows.
         // Dependencies: role/template/group identity, labels/colors, work and
-        // blocker coverage, recorded work-type history, holder policy, training paths, recommendation order,
+        // blocker coverage, recorded work-type history, holder policy, training paths, recommendation order/exclusions,
         // seeded defs, and translations; assignments/activation are not consumed.
         // Refresh: immediate at the next DoWindowContents call. Equality: equal
         // rows preserve list identity; stable item keys preserve user selections
@@ -325,6 +329,7 @@ namespace WorkRoles.UI
                     entriesRoleIds = selected.Where(i => i.entriesRoleId != -1).Select(i => i.entriesRoleId).ToList(),
                     paletteSnapRoleIds = selected.Where(i => i.paletteSnapRoleId != -1).Select(i => i.paletteSnapRoleId).ToList(),
                     recommendationOrder = selected.Any(i => i.recommendationOrder),
+                    defaultExclusions = selected.Any(i => i.defaultExclusions),
                 });
                 Close();
             }

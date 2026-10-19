@@ -19,7 +19,7 @@ using WorkRoles.UI;
 namespace WorkRolesExclusionVerification
 {
     [StaticConstructorOnStartup]
-    public static class Probe
+    public static partial class Probe
     {
         private static readonly Harmony Patches = new Harmony("eprime.workroles.exclusionprobe");
         private static MainTabWindow_WorkRoles window;
@@ -39,6 +39,7 @@ namespace WorkRolesExclusionVerification
             Patches.Patch(AccessTools.Method(typeof(RecommendationsTabView), "DrawExcludedRoles"), prefix: new HarmonyMethod(typeof(Probe), nameof(Panel)));
             Patches.Patch(AccessTools.Method(typeof(FloatMenuOption), "DoGUI"), prefix: new HarmonyMethod(typeof(Probe), nameof(Menu)));
             Patches.Patch(AccessTools.Method(typeof(Dialog_PreviewBase), "DrawPreviewFooter"), prefix: new HarmonyMethod(typeof(Probe), nameof(Footer)));
+            Patches.Patch(AccessTools.Method(typeof(Dialog_RestorePreview), "DrawVisibleRows"), prefix: new HarmonyMethod(typeof(Probe), nameof(RestoreRow)));
         }
 
         private static object Read(object value, string name)
@@ -93,7 +94,11 @@ namespace WorkRolesExclusionVerification
             }
         }
         private static void Footer(Dialog_PreviewBase __instance, Rect inRect)
-            => Point("apply", new Vector2(inRect.xMax - 60f, inRect.yMax - 16f));
+        {
+            Point("apply", new Vector2(inRect.xMax - 60f, inRect.yMax - 16f));
+            if (__instance is Dialog_RestorePreview)
+                Point("restore-all", new Vector2(inRect.x + 148f, inRect.y + 50f));
+        }
         private static void SelectTab(string name)
         {
             FieldInfo field = AccessTools.Field(window.GetType(), "curTab");
@@ -115,6 +120,7 @@ namespace WorkRolesExclusionVerification
                 if (settle++ < 6) return;
                 string control = Path.Combine(Root, "exclusion-control.txt");
                 if (File.Exists(control)) requested = File.ReadAllText(control).Trim();
+                if (stage >= 20 && stage < 30) { UpdateRestoreDefaults(); return; }
                 if (stage == 0)
                 {
                     Find.TickManager.CurTimeSpeed = TimeSpeed.Paused;
@@ -123,6 +129,11 @@ namespace WorkRolesExclusionVerification
                     store = RoleStore.Current;
                     Assert(store != null, "real save loaded");
                     pawns = Find.CurrentMap.mapPawns.FreeColonistsSpawned.ToList();
+                    if (File.Exists(Path.Combine(Root, "restore-default-exclusions-mode.txt")))
+                    {
+                        BeginRestoreDefaults();
+                        return;
+                    }
                     VerifySeededDefaults();
                     role = store.roles.Single(r => r.templateDefName == "WS_Hunter");
                     RoleCommands.SetRoleRecommendationExcluded(role.id, false);

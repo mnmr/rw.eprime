@@ -118,6 +118,7 @@ namespace WorkRoles
             BindList(sync, ref selection.entriesRoleIds);
             BindList(sync, ref selection.paletteSnapRoleIds);
             sync.Bind(ref selection.recommendationOrder);
+            sync.Bind(ref selection.defaultExclusions);
         }
     }
 }
