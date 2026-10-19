@@ -30,6 +30,7 @@ namespace WorkRoles
             foreach (var def in defs)
                 RoleCommands.CreateRoleFromDef(def);
             store.seeded = true;
+            store.defaultRecommendationExclusionsSeeded = true;
             SeedTrainingPaths(store);
 
             // Role ranks read as numbers; default vanilla's per-save "manual

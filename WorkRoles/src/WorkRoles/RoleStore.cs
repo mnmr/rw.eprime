@@ -26,6 +26,9 @@ namespace WorkRoles
         /// Default training paths seeded (only ever set alongside role seeding;
         /// pre-existing saves adopt them via Restore Defaults instead).
         public bool pathsSeeded;
+        /// Initial default exclusions adopted once per save. Persist separately
+        /// from the role flags so removing an exclusion survives later loads.
+        public bool defaultRecommendationExclusionsSeeded;
         /// GetPriority reports the vanilla 0-4 projection instead of raw ranks.
         /// World state, not a mod setting: other mods consume the values in
         /// sim-relevant code, so MP clients must agree.
@@ -558,6 +561,8 @@ namespace WorkRoles
             }
             Scribe_Values.Look(ref seeded, "seeded");
             Scribe_Values.Look(ref pathsSeeded, "pathsSeeded");
+            Scribe_Values.Look(ref defaultRecommendationExclusionsSeeded,
+                "defaultRecommendationExclusionsSeeded");
             Scribe_Values.Look(ref reportVanillaPriorities, "reportVanillaPriorities", true);
             Scribe_Values.Look(ref rolePriorityEmergencyRule, "rolePriorityEmergencyRule", true);
             Scribe_Values.Look(ref autoOptimize, "autoOptimize");
@@ -707,6 +712,7 @@ namespace WorkRoles
                 pawnSets.RemoveAll(kv => kv.Value.assignments == null || kv.Value.assignments.Count == 0);
                 lastLocationIds.RemoveAll(kv => !IsManaged(kv.Key));
                 MigrateRoleTuning();
+                MigrateRecommendationExclusions();
                 // A stored order identical to the retired priority-derived
                 // seed was never really edited: clear it so those saves adopt
                 // the shipped default template. Deterministic load code; any
@@ -717,6 +723,25 @@ namespace WorkRoles
                     recommendationOrder = new List<int>();
                 CompiledJobOrders.InvalidateAll();
             }
+        }
+
+        /// Deterministic load-time adoption, before recommendation snapshots
+        /// are published. Only template roles opting into the defaults change;
+        /// unrelated exclusions and all assignments remain as stored.
+        private void MigrateRecommendationExclusions()
+        {
+            if (defaultRecommendationExclusionsSeeded
+                || DefDatabase<RoleDef>.AllDefsListForReading.Count == 0) return;
+            using var batch = Revisions.Batch();
+            foreach (Role role in roles)
+            {
+                if (role.excludedFromRecommendations || role.templateDefName == null) continue;
+                RoleDef? def = DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                if (def?.tuning?.excludedFromRecommendations != true) continue;
+                role.excludedFromRecommendations = true;
+                Revisions.RoleChanged(role.id, ModelDomain.RoleRecommendation);
+            }
+            defaultRecommendationExclusionsSeeded = true;
         }
 
         /// Fills tuning on roles that predate it. Legacy Required/Optional

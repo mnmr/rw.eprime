@@ -69,7 +69,7 @@ try {
  }
 } finally {
  & "$tools\stop.ps1" -RunId $run.runId
- foreach($name in 'Player.log','Player.log.host-error.txt','run.json','launch.json','host.json','linux-host.json','linux-console.log','linux-host.log','stall.json','hard-cap.json','Captures','excluded-role-save.xml','exclusion-stage.txt') {
+ foreach($name in 'Player.log','Player.log.host-error.txt','run.json','launch.json','host.json','linux-host.json','linux-console.log','linux-host.log','stall.json','hard-cap.json','Captures','excluded-role-save.xml','default-exclusions-save.xml','exclusion-stage.txt') {
   $path=Join-Path $run.profile $name
   if(Test-Path $path){Copy-Item -LiteralPath $path -Destination $out -Recurse -Force}
  }

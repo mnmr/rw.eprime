@@ -89,6 +89,7 @@ namespace WorkRoles
                 category = def.tuning.category,
                 time = def.tuning.time,
                 championPenalty = def.tuning.championPenalty,
+                excludedFromRecommendations = def.tuning.excludedFromRecommendations,
                 colonyMin = def.tuning.colonyMin,
                 coverage = def.tuning.coverage,
                 requiredSkills = new List<string>(def.tuning.skills.required),

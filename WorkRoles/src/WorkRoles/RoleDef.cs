@@ -17,6 +17,9 @@ namespace WorkRoles
         public RoleTime time;
         /// False = repeat championships use the occasional-work penalty.
         public bool championPenalty = true;
+        /// Initial recommendation exclusion; copied when the role is seeded.
+        /// Existing saves adopt the defaults once, then keep player choices.
+        public bool excludedFromRecommendations;
         /// Minimum biological age (years) for holding the role; -1 = derive
         /// from the covered work types' lowest vanilla unlock age at seed time.
         public int minAge = -1;
@@ -129,6 +132,7 @@ namespace WorkRoles
                 ((int)(tuning?.category ?? RoleCategory.None)).ToString(),
                 ((int)(tuning?.time ?? RoleTime.None)).ToString(),
                 tuning?.championPenalty == false ? "0" : "1",
+                tuning?.excludedFromRecommendations == true ? "1" : "0",
                 (tuning?.colonyMin ?? 0).ToString(),
                 (tuning?.coverage ?? 0).ToString(),
                 string.Join("|", tuning?.skills?.required ?? new List<string>()),

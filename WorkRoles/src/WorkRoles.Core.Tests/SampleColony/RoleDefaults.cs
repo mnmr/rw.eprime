@@ -11,6 +11,7 @@ public static class RoleDefaults
         public RoleCategory Category;
         public RoleTime Time;
         public bool ChampionPenalty = true;
+        public bool ExcludedFromRecommendations;
         public int ColonyMin;
         public int Coverage;
         public List<string> RequiredSkills = new();
@@ -39,6 +40,7 @@ public static class RoleDefaults
                 tuning.Category = EnumOf(values.Element("category"), tuning.Category);
                 tuning.Time = EnumOf(values.Element("time"), tuning.Time);
                 tuning.ChampionPenalty = BoolOf(values.Element("championPenalty"), tuning.ChampionPenalty);
+                tuning.ExcludedFromRecommendations = BoolOf(values.Element("excludedFromRecommendations"), false);
                 tuning.ColonyMin = IntOf(values.Element("colonyMin"));
                 tuning.Coverage = IntOf(values.Element("coverage"));
                 XElement? skills = values.Element("skills");

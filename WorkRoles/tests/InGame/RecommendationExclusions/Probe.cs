@@ -123,6 +123,7 @@ namespace WorkRolesExclusionVerification
                     store = RoleStore.Current;
                     Assert(store != null, "real save loaded");
                     pawns = Find.CurrentMap.mapPawns.FreeColonistsSpawned.ToList();
+                    VerifySeededDefaults();
                     role = store.roles.Single(r => r.templateDefName == "WS_Hunter");
                     RoleCommands.SetRoleRecommendationExcluded(role.id, false);
                     var ordering = (IReadOnlyList<int>)Call(typeof(RecsAdapter), "ResolvedRecommendationOrder", store);
@@ -213,6 +214,68 @@ namespace WorkRolesExclusionVerification
                 Mark("FAILED " + error);
             }
         }
+        private static void VerifySeededDefaults()
+        {
+            string[] defaults = { "WS_Rescuer", "WS_Firefighter", "WS_Patient", "WS_Bedrest", "WS_Laborer" };
+            var existing = defaults.Select(name => store.roles.Single(r => r.templateDefName == name)).ToArray();
+            Assert(store.defaultRecommendationExclusionsSeeded && existing.All(r => r.excludedFromRecommendations),
+                "existing save adopts all five default exclusions on its first upgraded load");
+            // A saved opt-in must survive the normal load-time seeding guard.
+            foreach (Role saved in existing) RoleCommands.SetRoleRecommendationExcluded(saved.id, false);
+            Call(typeof(RoleStore).Assembly.GetType("WorkRoles.Seeding"), "SeedIfNeeded");
+            Assert(existing.All(r => !r.excludedFromRecommendations), "existing exclusion choices survive default seeding");
+            RoundTripDefaultExclusions(existing);
+
+            // Restoring missing templates exercises the same production creation
+            // path as a newly seeded save, using the game's loaded XML definitions.
+            foreach (Role saved in existing) RoleCommands.DeleteRole(saved.id);
+            RoleCommands.RestoreSelected(new RestoreSelection { templateDefs = defaults.ToList() });
+            foreach (string name in defaults)
+            {
+                Role restored = store.roles.Single(r => r.templateDefName == name);
+                Assert(restored.excludedFromRecommendations, name + " is excluded when seeded from its shipped definition");
+                Assert(!Has(Plan(), restored.id), name + " is absent from recommendations");
+            }
+            RecommendationPlan plan = Plan();
+            Assert(Has(plan, store.roles.Single(r => r.templateDefName == "WS_Core").id)
+                && Has(plan, store.roles.Single(r => r.templateDefName == "WS_Basics").id),
+                "Core and Basics remain recommended with all five defaults excluded");
+        }
+
+        private static void RoundTripDefaultExclusions(Role[] existing)
+        {
+            // A detached store uses real RoleStore serialization and PostLoadInit
+            // without saving unresolved pawn references from the running world.
+            // The source roles already contain the player's removed exclusions.
+            RoleStore saved = new RoleStore(null)
+            {
+                seeded = true,
+                defaultRecommendationExclusionsSeeded = store.defaultRecommendationExclusionsSeeded,
+                roles = new List<Role>(existing),
+            };
+            string path = Path.Combine(Root, "default-exclusions-save.xml");
+            try
+            {
+                Scribe.saver.InitSaving(path, "DefaultExclusionRoundTrip");
+                Scribe_Deep.Look(ref saved, "store", new object[] { null });
+                Scribe.saver.FinalizeSaving();
+                RoleStore loaded = null;
+                Scribe.loader.InitLoading(path);
+                Scribe_Deep.Look(ref loaded, "store", new object[] { null });
+                Scribe.loader.FinalizeLoading();
+                Assert(loaded != null && loaded.defaultRecommendationExclusionsSeeded
+                    && loaded.roles.Count == existing.Length
+                    && loaded.roles.All(r => !r.excludedFromRecommendations),
+                    "save/load preserves the one-time marker and all five player-removed exclusions");
+            }
+            finally
+            {
+                // RoleStore's constructor caches its instance; restore the live
+                // owner through the normal world-identity guard after this fixture.
+                Assert(ReferenceEquals(RoleStore.Current, store), "detached save fixture releases the live store cache");
+            }
+        }
+
         private static RoleAssignment Assignment(Pawn pawn)
             => store.pawnSets.TryGetValue(pawn, out PawnRoleSet set)
                 ? set.assignments.FirstOrDefault(a => a.roleId == role.id) : null;

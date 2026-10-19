@@ -91,6 +91,41 @@ public class SampleColonyTests
     }
 
     [Test]
+    public async Task DefaultExclusionsKeepEssentialWorkInCoreAndBasics()
+    {
+        ColonyView colony = SampleColony.BuildColonyView();
+        string[] excluded = ["Rescuer", "Firefighter", "Patient", "Bedrest", "Laborer"];
+        HashSet<int> excludedIds = [.. excluded.Select(SampleColony.RoleId)];
+        RecommendationPlan plan = RecommendationPlan.Build(colony);
+        for (int pawn = 0; pawn < plan.PawnCount; pawn++)
+        {
+            int[] recommended = [.. Enumerable.Range(0, plan.RoleCountAt(pawn)).Select(i => plan.RoleAt(pawn, i))];
+            await Assert.That(recommended.Contains(SampleColony.RoleId("Core"))).IsTrue();
+            await Assert.That(recommended.Contains(SampleColony.RoleId("Basics"))).IsTrue();
+            await Assert.That(recommended.Any(excludedIds.Contains)).IsFalse();
+        }
+
+        // Incapacitated pawns normally retain existing roles, even with no
+        // demand. Defaults must also exclude these redundant recommendations;
+        // otherwise a healthy-pawn test passes just because their demand is zero.
+        PawnView resting = colony.Pawns[0];
+        resting.Incapacitated = true;
+        string[] assigned = ["Core", "Basics", .. excluded];
+        resting.Existing = [.. assigned.Select(label => new AssignmentView
+        {
+            RoleId = SampleColony.RoleId(label), Enabled = true,
+        })];
+        var target = ColonyFixPlanner.Build(colony)[0];
+        await Assert.That(string.Join(",", target.RoleIds.Select(SampleColony.RoleLabel))).IsEqualTo("Core,Basics");
+
+        // Removing the default exclusions is a supported player choice.
+        foreach (RoleView role in colony.Roles)
+            if (excludedIds.Contains(role.Id)) role.ExcludedFromRecommendations = false;
+        var optedIn = ColonyFixPlanner.Build(colony)[0];
+        await Assert.That(string.Join(",", optedIn.RoleIds.Select(SampleColony.RoleLabel))).IsEqualTo(string.Join(",", assigned));
+    }
+
+    [Test]
     public async Task RecommendationPlanBuildsDeterministically()
     {
         string first = PlanFingerprint(RecommendationPlan.Build(SampleColony.BuildColonyView()));

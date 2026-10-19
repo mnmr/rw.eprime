@@ -19,6 +19,11 @@ The **Excluded roles** panel at the top of the Recommendations tab controls
 which roles must never be recommended. Use Add Role to exclude a role,
 or click its chip's remove icon to allow recommendations again.
 
+Rescuer, Firefighter, Patient, Bedrest, and Laborer are excluded by default
+because Core and Basics already cover their work. Existing saves receive
+these defaults once when updated. Removing a role from the panel is respected
+on later loads.
+
 [Role Options](topic:role-options) below lists all non-excluded roles.
 Excluding a role hides its options without erasing them; removing the
 exclusion makes those options available again.

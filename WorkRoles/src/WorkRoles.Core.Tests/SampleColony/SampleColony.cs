@@ -67,6 +67,7 @@ public static class SampleColony
                     Blocker = role.Blocker,
                     PreserveRecommendationOrder = role.PreserveRecommendationOrder,
                     ChampionPenalty = tuning?.ChampionPenalty ?? true,
+                    ExcludedFromRecommendations = tuning?.ExcludedFromRecommendations ?? false,
                     Category = tuning?.Category ?? default,
                     Time = tuning?.Time ?? default,
                     DeclaredRequiredSkills = tuning == null ? null! : [.. tuning.RequiredSkills],
