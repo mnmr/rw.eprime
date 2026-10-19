@@ -94,6 +94,15 @@ namespace WorkRoles.UI
                     SignalVerdict(skillBuckets, explanation),
                     SkillSignalPresentation.VerdictColor(explanation.SignalBucket));
 
+            for (int i = 0; i < explanation.WorkAversions.Count; i++)
+            {
+                WorkAversionFact aversion = explanation.WorkAversions[i];
+                string precept = DefDatabase<PreceptDef>.GetNamedSilentFail(aversion.PreceptDefName)?.LabelCap
+                    ?? aversion.PreceptDefName;
+                string work = DefDatabase<WorkTypeDef>.GetNamedSilentFail(aversion.WorkTypeDefName)?.LabelCap
+                    ?? aversion.WorkTypeDefName;
+                facts.Text("WR_RecWorkAversion".Translate(precept, work));
+            }
             if (!everyoneCapable)
                 facts.Fact("WR_RecTipSelection".Translate(),
                     RecommendationDecisionText(store, role, explanation));
@@ -196,6 +205,8 @@ namespace WorkRoles.UI
                     return "WR_RecDecisionCoverageFilled".Translate();
                 case PickRejectReason.Outqualified:
                     return "WR_RecDecisionOutqualified".Translate();
+                case PickRejectReason.WorkAversion:
+                    return "WR_RecDecisionWorkAversion".Translate();
                 default:
                     return "WR_RecDecisionNotSelected".Translate();
             }

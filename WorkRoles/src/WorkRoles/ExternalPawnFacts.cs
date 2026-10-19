@@ -24,6 +24,17 @@ namespace WorkRoles
         internal static readonly OwnerInvalidationRevisions<Pawn> FactRevisions =
             new OwnerInvalidationRevisions<Pawn>(ReferenceIdentityComparer<Pawn>.Instance);
 
+        // Same world/pawn ownership and teardown as FactRevisions. Only changed
+        // work evidence advances this stamp; it does not invalidate skill facts.
+        internal static readonly OwnerInvalidationRevisions<Pawn> WorkEvidenceRevisions =
+            new OwnerInvalidationRevisions<Pawn>(ReferenceIdentityComparer<Pawn>.Instance);
+
+        internal static void InvalidateWorkEvidence(Pawn pawn)
+        {
+            WorkEvidenceRevisions.Invalidate(pawn);
+            Revisions.Invalidate(pawn);
+        }
+
         internal static bool IsRelevant(Pawn pawn) => pawn != null
             && (pawn.IsColonist || pawn.IsSlaveOfColony
                 || RoleStore.Current?.IsManaged(pawn) == true);
@@ -34,6 +45,7 @@ namespace WorkRoles
             Revisions.Invalidate(pawn);
             FactRevisions.Invalidate(pawn);
             PawnSignalSnapshotCache.Invalidate(pawn);
+            Capabilities.PawnWorkFacts.Refresh(pawn);
         }
 
         internal static void InvalidateName(Pawn pawn)
@@ -53,6 +65,8 @@ namespace WorkRoles
         {
             Revisions.InvalidateAll();
             FactRevisions.InvalidateAll();
+            WorkEvidenceRevisions.InvalidateAll();
+            Capabilities.PawnWorkFacts.Clear();
             PawnSignalSnapshotCache.Clear();
         }
 
@@ -63,6 +77,8 @@ namespace WorkRoles
             if (pawn == null) return;
             Revisions.Release(pawn);
             FactRevisions.Release(pawn);
+            WorkEvidenceRevisions.Release(pawn);
+            Capabilities.PawnWorkFacts.Release(pawn);
             PawnSignalSnapshotCache.Invalidate(pawn);
         }
     }

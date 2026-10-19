@@ -106,6 +106,7 @@ namespace WorkRoles.Core.Recs
                     for (int at = 0; at < contribution.Length; at++)
                         if (contribution[at] == skill
                             && hasLevel
+                            && facts.CanTrain(pawnIndex, facts.RoleOf(path.RoleIds[entry]), skill)
                             && PathMath.InsideBand(path, entry, level))
                         {
                             coveredByActive = true;
@@ -263,9 +264,11 @@ namespace WorkRoles.Core.Recs
             int pawnIndex,
             RoleView target,
             RecommendationFormulaEngine formulas,
-            out bool qualifiedByMultiSkillAptitude)
+            out bool qualifiedByMultiSkillAptitude,
+            out PathActivation? activation)
         {
             qualifiedByMultiSkillAptitude = false;
+            activation = null;
             bool targetHasPath = false;
             for (int pathIndex = 0;
                  pathIndex < facts.Colony.Paths.Count;
@@ -280,7 +283,7 @@ namespace WorkRoles.Core.Recs
             }
             if (!targetHasPath) return true;
 
-            PathActivation? activation = Find(
+            activation = Find(
                 facts, pawnIndex, target, formulas);
             if (activation == null) return false;
 
@@ -307,9 +310,18 @@ namespace WorkRoles.Core.Recs
                 signal = formulas.PromoteSkillSignal(level, signal);
                 points += signal - formulas.OptionalTargetMinimumSignal;
             }
+            points -= RecommendationFormulaEngine.AversionPenalty(HasWorkAversion(facts, pawnIndex, target, activation));
             qualifiedByMultiSkillAptitude = points >=
                 formulas.OptionalTargetMinimumPoints;
             return qualifiedByMultiSkillAptitude;
+        }
+
+        internal static bool HasWorkAversion(EngineContext facts, int pawnIndex, RoleView target, PathActivation? activation)
+        {
+            if (activation == null) return facts.HasWorkAversion(pawnIndex, target);
+            foreach (int roleId in activation.ActiveRoleIds)
+                if (facts.HasWorkAversion(pawnIndex, facts.RoleOf(roleId))) return true;
+            return false;
         }
 
 

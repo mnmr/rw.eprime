@@ -42,7 +42,8 @@ namespace WorkRoles
         internal bool CanDo(WorkGiverDef giver) => giver != null
             && (giver.workType == null || RecommendationFacts.CapableWorkTypes
                 .Contains(giver.workType.defName))
-            && (DisabledWorkTags & giver.workTags) == WorkTags.None;
+            && (DisabledWorkTags & giver.workTags) == WorkTags.None
+            && !RecommendationFacts.WorkEvidence.Blocks(giver.defName);
     }
 
     /// Projects game state into the Core recommendation engine's views and
@@ -207,6 +208,7 @@ namespace WorkRoles
                 FireFear = facts.FireFear,
                 Incapacitated = facts.Incapacitated,
                 IsMechanitor = facts.IsMechanitor,
+                WorkEvidence = facts.WorkEvidence,
                 SkillLevels = new Dictionary<string, int>(facts.SkillLevels),
                 CapableWorkTypes = new HashSet<string>(facts.CapableWorkTypes),
             };
@@ -261,6 +263,7 @@ namespace WorkRoles
                         [workType.defName] = minAgeRequired;
             }
 
+            facts.WorkEvidence = Capabilities.PawnWorkFacts.Capture(pawn);
             return new PawnExternalSnapshot(
                 signalSnapshot, facts, pawn.CombinedDisabledWorkTags, ageBlocked);
         }

@@ -791,4 +791,13 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <!-- {0}x{1} = the game screen (resolution divided by UI scale), {2}x{3} = the design size -->
   <WR_WelcomeSmallScreen>Your game screen is {0}x{1} (resolution divided by UI scale). WorkRoles is designed for {2}x{3} or larger, for example 1920x1080 at UI scale 1.25. It still works on a smaller screen, but some labels are shortened and the tabs need more scrolling. Lowering the UI scale in the game's options gives the window more room.</WR_WelcomeSmallScreen>
 
+  <WR_RoleWorkAversion>{0}'s precept {1} opposes {2}. Recommendations apply a finite score penalty: two priority steps, or six virtual skill points when choosing a champion. Required coverage can still select this pawn. Hunter priority moves two tiers later, capped at tier five; its existing first-tier fallback still applies.</WR_RoleWorkAversion>
+  <WR_WorkBlockedTags>disabled work tags</WR_WorkBlockedTags>
+  <WR_WorkBlockedCapacity>missing a required health capacity</WR_WorkBlockedCapacity>
+  <WR_WorkBlockedRace>not permitted by this race's work restrictions</WR_WorkBlockedRace>
+  <WR_WorkBlockedRecipe>not permitted by this race's recipe restrictions</WR_WorkBlockedRecipe>
+  <WR_WorkBlockedPrecept>refused because of {0}</WR_WorkBlockedPrecept>
+  <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
+  <WR_RecWorkAversion>{0} opposes {1}; the recommendation score is reduced.</WR_RecWorkAversion>
+  <WR_RecDecisionWorkAversion>Aversion lowers the score below the optional-work threshold.</WR_RecDecisionWorkAversion>
 </LanguageData>

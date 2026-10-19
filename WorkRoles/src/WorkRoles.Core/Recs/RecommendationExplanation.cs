@@ -57,6 +57,7 @@ namespace WorkRoles.Core.Recs
         Outqualified,
         ControlledByTarget,
         ScaleNever,
+        WorkAversion,
     }
 
     public sealed class RecommendationTrainingSkill
@@ -104,6 +105,7 @@ namespace WorkRoles.Core.Recs
         public SignalBucket SurplusMinimumSignalBucket = SignalBucket.Strong;
         public bool SurplusQualifiedBySignal;
         public IReadOnlyList<string> RequiredSkills = Array.Empty<string>();
+        public IReadOnlyList<WorkAversionFact> WorkAversions = Array.Empty<WorkAversionFact>();
         public SignalBucket SignalBucket = SignalBucket.Neutral;
         public SignalBucket BaseSignalBucket = SignalBucket.Neutral;
         public int SignalSkillLevel = -1;

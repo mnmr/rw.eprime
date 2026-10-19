@@ -555,6 +555,11 @@ namespace WorkRoles.Core.Recs
 
     internal sealed class RecommendationFormulaEngine
     {
+        internal const int WorkAversionPenaltySteps = 2;
+        internal static int AversionPenalty(bool opposed) => opposed ? WorkAversionPenaltySteps : 0;
+        internal static int ChampionAversionPenalty(bool opposed) => AversionPenalty(opposed) * 12;
+        internal int CandidatePriority(SignalBucket signal, bool opposed) =>
+            (signal >= RankedCandidatePrioritySignal ? signal - RankedCandidatePrioritySignal + 1 : 0) - AversionPenalty(opposed);
         private readonly RecommendationsTuningOptions options;
 
         internal RecommendationFormulaEngine(

@@ -46,6 +46,8 @@ namespace WorkRoles.UI
             internal SkillCapture Skills = null!;
             internal int FactRevision;
             internal int FactGeneration;
+            internal int WorkRevision;
+            internal int WorkGeneration;
         }
 
         private sealed class SkillInput
@@ -78,7 +80,8 @@ namespace WorkRoles.UI
         // game-derived pawn/signal snapshots plus producer-owned skill indexes;
         // only stable external Def references are retained. Dependencies:
         // ExternalPawnFacts broad revisions publish display/grammar notifications;
-        // narrower factual revisions gate actual game reads. Live skill
+        // narrower factual and work-evidence revisions gate actual game reads;
+        // work-only changes preserve the skill capture. Live skill
         // XP is deliberately excluded. Refresh: explicit at Repaint. Equality:
         // name-only notifications reuse the exact factual and skill snapshots;
         // equal skill inputs preserve both per-skill and complete identities.
@@ -212,14 +215,19 @@ namespace WorkRoles.UI
             SkillCapture skills = CaptureSkills(pawn);
             int factRevision = ExternalPawnFacts.FactRevisions.RevisionOf(pawn);
             int factGeneration = ExternalPawnFacts.FactRevisions.FullGeneration;
+            int workRevision = ExternalPawnFacts.WorkEvidenceRevisions.RevisionOf(pawn);
+            int workGeneration = ExternalPawnFacts.WorkEvidenceRevisions.FullGeneration;
             PawnExternalSnapshot snapshot = previous != null
                 && previous.FactRevision == factRevision
                 && previous.FactGeneration == factGeneration
+                && previous.WorkRevision == workRevision
+                && previous.WorkGeneration == workGeneration
                 ? previous.Snapshot
                 : RecsAdapter.CapturePawnSnapshot(pawn, PawnSignalSnapshotCache.Get(pawn));
             return new ExternalCapture {
                 Snapshot = snapshot, Skills = skills,
-                FactRevision = factRevision, FactGeneration = factGeneration };
+                FactRevision = factRevision, FactGeneration = factGeneration,
+                WorkRevision = workRevision, WorkGeneration = workGeneration };
         }
 
         private SkillCapture CaptureSkills(Pawn pawn)

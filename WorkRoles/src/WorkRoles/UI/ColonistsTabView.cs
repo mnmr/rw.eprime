@@ -2444,6 +2444,7 @@ namespace WorkRoles.UI
         private List<string>? BestFits(Role role, List<SkillDef> skills)
         {
             if (skills.Count == 0) return null;
+            RoleWorkSpec work = RoleWorkSpecs.For(role);
             bool mechanitorOnly = role.templateDefName != null
                 && DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName)
                     ?.recommendationSpecialRole == RecommendationSpecialRoleKind.Mechanitor;
@@ -2453,6 +2454,8 @@ namespace WorkRoles.UI
                 PawnView pawnFacts = ExternalSnapshotFor(pawn).RecommendationFacts;
                 if (pawnFacts.Incapacitated || mechanitorOnly && !pawnFacts.IsMechanitor)
                     continue;
+                if (pawnFacts.WorkEvidence.CapabilityCount > 0
+                    && !EngineContext.MeetsWorkCapability(pawnFacts, work, role.partialCapability)) continue;
                 var candidates = new List<SkillBucketCandidate>(skills.Count);
                 foreach (var skill in skills)
                 {

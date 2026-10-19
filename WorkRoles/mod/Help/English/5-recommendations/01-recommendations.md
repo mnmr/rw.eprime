@@ -9,6 +9,16 @@ skill expertise, and the best skills in the colony. On top of that it
 enforces colony needs, so essential roles like Doctor and Cook always
 land on somebody, ideally the somebody with the talent.
 
+Precepts that oppose work lower its recommendation score. A suitable willing
+colonist is more likely to get it, while an opposed colonist can still cover
+essential work. A verified refusal or missing capability makes that work
+ineligible. Skill ratings still describe aptitude; Best fits lists that raw
+aptitude among capable colonists, while the colony recommendation also accounts
+for aversions and demand.
+
+These are recommendation inputs. Conditional roles continue to control when
+and where an assigned role is active.
+
 The engine considers all eligible roles and orders them automatically for
 each colonist. Role Options on the Recommendations tab lists every role
 except those you have excluded. To prevent a role from ever being
@@ -25,6 +35,7 @@ for every role:
 Two roles get special handling. Hunter is recommended to anyone carrying
 a ranged weapon (hunting trains Shooting), placed earlier for poor shots
 and later for sharpshooters whose time is worth more elsewhere.
+An aversion to hunting also places Hunter later in the row.
 Mechanitor is recommended only to colonists with a mechlink, however
 good the other crafters are, and its Best fits list follows the same
 rule.

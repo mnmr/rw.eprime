@@ -423,7 +423,7 @@ namespace WorkRoles.Core.Recs
                 facts.SkillLevel(pawnIndex, skillDefName),
                 MinimumBonusOf(roleId),
                 role.Category,
-                role.Time);
+                role.Time) - RecommendationFormulaEngine.AversionPenalty(facts.HasWorkAversion(pawnIndex, role));
         }
 
         private static int EligibleTargetMinimum(
@@ -790,7 +790,7 @@ namespace WorkRoles.Core.Recs
                     rolePlans, drafts, rolesByPawn, formulas);
             Dictionary<int, RoleRecommendationExplanation>[] explanations =
                 BuildExplanations(
-                    facts, drafts, formulas, targetAssignments);
+                    facts, drafts, formulas, targetAssignments, rolePlans);
             SubstituteComposites(facts, rolesByPawn, explanations);
             KeepIncapacitatedAssignments(facts, rolesByPawn, pathsByPawn,
                 activatedPathCountsByPawn, explanations);
@@ -1125,8 +1125,9 @@ namespace WorkRoles.Core.Recs
             PawnDraft draft,
             int pawnIndex,
             RoleView role)
-            => draft.ContainsRole(role.Id)
-            || PawnHasCoverer(facts, draft, pawnIndex, role);
+            => facts.MeetsCapabilityRequirement(pawnIndex, role)
+                && (draft.ContainsRole(role.Id)
+                    || PawnHasCoverer(facts, draft, pawnIndex, role));
 
         internal static bool PawnHasCoverer(
             EngineContext facts,

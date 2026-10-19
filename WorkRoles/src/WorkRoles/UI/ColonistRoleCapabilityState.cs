@@ -154,6 +154,8 @@ namespace WorkRoles.UI
             bool hasRangedWeapon = externalSnapshot.HasRangedWeapon;
             int totalJobs = 0;
             var blocked = new List<(string label, string reason)>();
+            var workWarnings = new List<string>();
+            PawnWorkEvidence evidence = externalSnapshot.RecommendationFacts.WorkEvidence;
             SortedSet<string>? awfulWorkTypes = null;
             SortedSet<string>? awfulSkills = null;
             SortedSet<string>? awfulDescriptions = null;
@@ -228,6 +230,32 @@ namespace WorkRoles.UI
                         }
 
                 bool incapable = !externalSnapshot.CanDo(def);
+                for (int i = 0; i < evidence.AversionCount; i++)
+                {
+                    WorkAversionFact fact = evidence.AversionAt(i);
+                    if (incapable || fact.WorkTypeDefName != def.workType?.defName) continue;
+                    PreceptDef precept = DefDatabase<PreceptDef>.GetNamedSilentFail(fact.PreceptDefName);
+                    string warning = "WR_RoleWorkAversion".Translate(pawn.LabelShortCap,
+                        precept?.LabelCap ?? fact.PreceptDefName, def.workType!.labelShort).ToString();
+                    if (!workWarnings.Contains(warning)) workWarnings.Add(warning);
+                }
+                string? evidenceReason = null;
+                for (int i = 0; i < evidence.CapabilityCount; i++)
+                {
+                    WorkCapabilityFact fact = evidence.CapabilityAt(i);
+                    if (fact.GiverDefName != giverName) continue;
+                    PreceptDef precept = DefDatabase<PreceptDef>.GetNamedSilentFail(fact.ReasonKey);
+                    string reasonText = precept != null
+                        ? "WR_WorkBlockedPrecept".Translate(precept.LabelCap).ToString()
+                        : fact.ReasonKey.Translate().ToString();
+                    if (fact.RecipeDefName == null) evidenceReason ??= reasonText;
+                    else
+                    {
+                        RecipeDef recipe = DefDatabase<RecipeDef>.GetNamedSilentFail(fact.RecipeDefName);
+                        string warning = "WR_WorkRecipeWarning".Translate(recipe?.LabelCap ?? fact.RecipeDefName, reasonText).ToString();
+                        if (!workWarnings.Contains(warning)) workWarnings.Add(warning);
+                    }
+                }
                 bool lacksHuntingWeapon = def.workType == WorkTypeDefOf.Hunting
                     && !hasRangedWeapon;
                 if (!incapable && !lacksHuntingWeapon) continue;
@@ -243,11 +271,11 @@ namespace WorkRoles.UI
                             "WR_RoleJobTooYoung".Translate(unlockAge).ToString();
                 }
                 else
-                    reason = incapable
+                    reason = evidenceReason ?? (incapable
                         ? incapableReason ?? (incapableReason =
                             "WR_RoleJobIncapable".Translate().ToString())
                         : noRangedWeaponReason ?? (noRangedWeaponReason =
-                            "WR_RoleJobNoRangedWeapon".Translate().ToString());
+                            "WR_RoleJobNoRangedWeapon".Translate().ToString()));
                 blocked.Add((WorkJobLabels.GiverDisplayName(def), reason));
             }
 
@@ -258,14 +286,18 @@ namespace WorkRoles.UI
             if (!tooYoungForRole && !tooOldForRole
                 && availability == RoleJobAvailability.Available
                 && !hasAwfulSignal
+                && workWarnings.Count == 0
                 && missingRequiredSkills == null)
                 return RoleCapabilityPresentation.Available;
 
             var warnings = new List<string>(3);
+            warnings.AddRange(workWarnings);
             var reasons = new List<string>(2);
             if (incapableReason != null) reasons.Add(incapableReason);
             if (noRangedWeaponReason != null) reasons.Add(noRangedWeaponReason);
             if (tooYoungReasons != null) reasons.AddRange(tooYoungReasons.Values);
+            foreach (var job in blocked)
+                if (!reasons.Contains(job.reason)) reasons.Add(job.reason);
 
             if (tooYoungForRole)
                 warnings.Add("WR_RoleTooYoung".Translate(
@@ -329,6 +361,8 @@ namespace WorkRoles.UI
             // all, whatever the per-job availability worked out to.
             if (tooYoungForRole || tooOldForRole)
                 severity = RoleAssignmentWarningSeverity.Critical;
+            if (severity == RoleAssignmentWarningSeverity.None && workWarnings.Count > 0)
+                severity = RoleAssignmentWarningSeverity.Caution;
             return new RoleCapabilityPresentation(
                 severity, string.Join("\n", warnings));
         }

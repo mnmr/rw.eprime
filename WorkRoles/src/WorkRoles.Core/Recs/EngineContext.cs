@@ -104,7 +104,7 @@ namespace WorkRoles.Core.Recs
                 || !MeetsExplicitRequiredSkills(pawnIndex, role)) return false;
             IReadOnlyList<string> workTypes = role.WorkTypes;
             for (int index = 0; index < workTypes.Count; index++)
-                if (pawn.CapableWorkTypes.Contains(workTypes[index]))
+                if (CanExecuteWorkType(pawn, role, workTypes[index]))
                     return true;
             return false;
         }
@@ -117,7 +117,7 @@ namespace WorkRoles.Core.Recs
                 || !MeetsExplicitRequiredSkills(pawnIndex, role)) return false;
             IReadOnlyList<string> workTypes = role.WorkTypes;
             for (int index = 0; index < workTypes.Count; index++)
-                if (!pawn.CapableWorkTypes.Contains(workTypes[index]))
+                if (!CanExecuteWorkType(pawn, role, workTypes[index]))
                     return false;
             return true;
         }
@@ -141,6 +141,65 @@ namespace WorkRoles.Core.Recs
                     && !pawn.SkillLevels.ContainsKey(required[index]))
                     return false;
             return true;
+        }
+
+        internal static bool CanExecuteWorkType(PawnView pawn, RoleView role, string workType)
+            => CanExecuteWorkType(pawn, role.WorkSpec, workType);
+
+        private static bool CanExecuteWorkType(PawnView pawn, RoleWorkSpec work, string workType)
+        {
+            if (!pawn.CapableWorkTypes.Contains(workType)) return false;
+            foreach (RoleWorkCapabilitySpec group in work.Capabilities)
+                if (group.WorkTypeDefName == workType && group.Givers.Count > 0)
+                {
+                    foreach (RoleWorkGiverSpec giver in group.Givers)
+                        if (!pawn.WorkEvidence.Blocks(giver.WorkGiverDefName)) return true;
+                    return false;
+                }
+            return true;
+        }
+
+        /// Shared with Best fits, which displays truthful aptitude buckets but
+        /// must not present known unavailable work as a suitable assignment.
+        public static bool MeetsWorkCapability(PawnView pawn, RoleWorkSpec work, bool partial)
+        {
+            bool all = !partial && work.CapabilityRequirement == RoleWorkCapabilityRequirement.All;
+            foreach (string type in work.CapabilityWorkTypes)
+                if (CanExecuteWorkType(pawn, work, type) != all) return !all;
+            return all;
+        }
+
+        public bool HasWorkAversion(int pawnIndex, RoleView role)
+        {
+            PawnView pawn = Colony.Pawns[pawnIndex];
+            foreach (string workType in role.WorkTypes)
+                if (pawn.WorkEvidence.Opposes(workType) && CanExecuteWorkType(pawn, role, workType)) return true;
+            return false;
+        }
+
+        internal bool CanTrain(int pawnIndex, RoleView role, string skill)
+        {
+            PawnView pawn = Colony.Pawns[pawnIndex];
+            if (pawn.WorkEvidence.CapabilityCount == 0) return TrainedSkillSet(role).Contains(skill);
+            foreach (RoleWorkCapabilitySpec group in role.WorkSpec.Capabilities)
+            {
+                if (!pawn.CapableWorkTypes.Contains(group.WorkTypeDefName)) continue;
+                foreach (RoleWorkGiverSpec giver in group.Givers)
+                {
+                    if (pawn.WorkEvidence.Blocks(giver.WorkGiverDefName)) continue;
+                    bool recipeSkill = false;
+                    foreach (RoleWorkContentSpec content in giver.Contents)
+                        if (content.Kind == RoleWorkContentKind.Recipe && content.UsedSkillDefName == skill && content.TrainsUsedSkill)
+                        {
+                            recipeSkill = true;
+                            if (!pawn.WorkEvidence.Blocks(giver.WorkGiverDefName, content.DefName)) return true;
+                        }
+                    if (!recipeSkill)
+                        foreach (string trained in giver.TrainedSkillDefNames)
+                            if (trained == skill) return true;
+                }
+            }
+            return false;
         }
 
         public static bool MeetsMechanitorRequirement(PawnView pawn, RoleView role) =>
@@ -366,6 +425,7 @@ namespace WorkRoles.Core.Recs
             for (int index = 0; index < contribution.Length; index++)
                 if (pawn.SkillLevels.TryGetValue(
                         contribution[index], out int level)
+                    && CanTrain(pawnIndex, role, contribution[index])
                     && PathMath.InsideBand(path, entry, level))
                     return true;
             return false;
