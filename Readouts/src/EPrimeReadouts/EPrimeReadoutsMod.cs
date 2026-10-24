@@ -39,6 +39,7 @@ namespace EPrimeReadouts
 
         public EPrimeReadoutsMod(ModContentPack content) : base(content)
         {
+            RimShared.GameLib.Localization.BundledTranslationFallback.Install();
             Settings = GetSettings<ReadoutSettings>();
             ContentPack = content;
             ContentRootDir = content.RootDir;

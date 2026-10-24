@@ -286,7 +286,7 @@ namespace WorkRoles.UI
                 for (int i = 0; i < previous.Inputs.Length; i++)
                 {
                     SkillInput old = previous.Inputs[i];
-                    if (next != null && next.ByDef.TryGetValue(old.Line.Def, out SkillInput current)
+                    if (next != null && next.ByDef.TryGetValue(old.Line.Def, out SkillInput? current)
                         && old.RosterWidth == current.RosterWidth) continue;
                     rosterCellWidths.Remove(old.Line.Def);
                     changed = true;
@@ -313,7 +313,7 @@ namespace WorkRoles.UI
         {
             if (pawn != null && skill != null
                 && externalSnapshots.TryGet(pawn, out ExternalCapture? capture)
-                && capture!.Skills.ByDef.TryGetValue(skill, out SkillInput input))
+                && capture!.Skills.ByDef.TryGetValue(skill, out SkillInput? input))
                 return input.Line;
             return new SkillLine(skill!, // existing behavior: placeholder lines may carry a null def
                 skill?.skillLabel.CapitalizeFirst() ?? "",
@@ -333,7 +333,7 @@ namespace WorkRoles.UI
             width = RosterCellMinWidth;
             foreach (SkillCaptureEntry entry in skillCaptures.Values)
             {
-                if (entry.Capture.ByDef.TryGetValue(skill, out SkillInput input))
+                if (entry.Capture.ByDef.TryGetValue(skill, out SkillInput? input))
                     width = Mathf.Max(width, input.RosterWidth);
             }
             rosterCellWidths[skill] = width;

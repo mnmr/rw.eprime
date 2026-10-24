@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_NoFirefighting.label>Eldrädd</WS_NoFirefighting.label>
+  <WS_NoFirefighting.description>Blockerare: kolonister med denna roll bekämpar aldrig bränder, även när en senare roll (som Grundarbete) innehåller brandbekämpning.</WS_NoFirefighting.description>
+  <WS_Core.label>Kärnuppgifter</WS_Core.label>
+  <WS_Core.description>Nödarbete som alla kolonister måste göra: brandbekämpning, att ta emot vård och räddning.</WS_Core.description>
+  <WS_Basics.label>Grundarbete</WS_Basics.label>
+  <WS_Basics.description>Egenvård och enkelt arbete som alla kolonister bör göra.</WS_Basics.description>
+  <WS_Rescuer.label>Räddare</WS_Rescuer.label>
+  <WS_Rescuer.description>Räddar utslagna kolonister.</WS_Rescuer.description>
+  <WS_Doctor.label>Läkare</WS_Doctor.label>
+  <WS_Doctor.description>Sjukvård för kolonister, fångar och djur.</WS_Doctor.description>
+  <WS_Medic.label>Sjukvårdare</WS_Medic.label>
+  <WS_Medic.description>Medicinskt arbete utom operationer på kolonister.</WS_Medic.description>
+  <WS_Laborer.label>Arbetare</WS_Laborer.label>
+  <WS_Laborer.description>Diverse enkla uppgifter.</WS_Laborer.description>
+  <WS_Childminder.label>Barnskötare</WS_Childminder.label>
+  <WS_Childminder.description>Barnomsorg och undervisning.</WS_Childminder.description>
+  <WS_Firefighter.label>Brandman</WS_Firefighter.label>
+  <WS_Firefighter.description>Bekämpar bränder.</WS_Firefighter.description>
+  <WS_Patient.label>Patient</WS_Patient.label>
+  <WS_Patient.description>Tar emot medicinsk behandling.</WS_Patient.description>
+  <WS_Bedrest.label>Sängvila</WS_Bedrest.label>
+  <WS_Bedrest.description>Vilar i sängen vid sjukdom eller skada.</WS_Bedrest.description>
+  <WS_Jailor.label>Fångvaktare</WS_Jailor.label>
+  <WS_Jailor.description>Fånghantering utom förhör, förslavning och omvändelse: matning, eskort, samtal, förtryck, frigivning och avrättningar.</WS_Jailor.description>
+  <WS_Warden.label>Fångansvarig</WS_Warden.label>
+  <WS_Warden.description>Fångkontakt: rekrytering, omvändelse, matning och frigivning.</WS_Warden.description>
+  <WS_Grunt.label>Grovjobbare</WS_Grunt.label>
+  <WS_Grunt.description>Transport och städning.</WS_Grunt.description>
+  <WS_Hauler.label>Transportör</WS_Hauler.label>
+  <WS_Hauler.description>Transporterar föremål.</WS_Hauler.description>
+  <WS_Cleaner.label>Städare</WS_Cleaner.label>
+  <WS_Cleaner.description>Städning.</WS_Cleaner.description>
+  <WS_Handler.label>Djurskötare</WS_Handler.label>
+  <WS_Handler.description>Tämjning, träning och slakt av djur.</WS_Handler.description>
+  <WS_Cook.label>Kock</WS_Cook.label>
+  <WS_Cook.description>Matlagning och styckning.</WS_Cook.description>
+  <WS_Butcher.label>Slaktare</WS_Butcher.label>
+  <WS_Butcher.description>Styckar varelser.</WS_Butcher.description>
+  <WS_Brewer.label>Bryggare</WS_Brewer.label>
+  <WS_Brewer.description>Brygger vört på bryggeriet.</WS_Brewer.description>
+  <WS_Hunter.label>Jägare</WS_Hunter.label>
+  <WS_Hunter.description>Jagar vilda djur för mat.</WS_Hunter.description>
+  <WS_Fisher.label>Fiskare</WS_Fisher.label>
+  <WS_Fisher.description>Fiske.</WS_Fisher.description>
+  <WS_Builder.label>Byggare</WS_Builder.label>
+  <WS_Builder.description>Byggande, reparation och rivning.</WS_Builder.description>
+  <WS_Repairer.label>Fixare</WS_Repairer.label>
+  <WS_Repairer.description>Allt byggarbete utom att uppföra nya byggnader.</WS_Repairer.description>
+  <WS_Farmer.label>Odlare</WS_Farmer.label>
+  <WS_Farmer.description>Sådd, skörd och växtskärning.</WS_Farmer.description>
+  <WS_Grower.label>Jordbrukare</WS_Grower.label>
+  <WS_Grower.description>Sådd och skörd i odlingszoner.</WS_Grower.description>
+  <WS_PlantCutter.label>Växtskärare</WS_PlantCutter.label>
+  <WS_PlantCutter.description>Skär och skördar vilda växter och träd.</WS_PlantCutter.description>
+  <WS_Miner.label>Gruvarbetare</WS_Miner.label>
+  <WS_Miner.description>Gruvdrift och borrning.</WS_Miner.description>
+  <WS_Tailor.label>Skräddare</WS_Tailor.label>
+  <WS_Tailor.description>Tillverkar kläder.</WS_Tailor.description>
+  <WS_Smith.label>Smed</WS_Smith.label>
+  <WS_Smith.description>Smider vapen och rustningar.</WS_Smith.description>
+  <WS_Fabricator.label>Fabrikör</WS_Fabricator.label>
+  <WS_Fabricator.description>Tillverkar föremål vid fabrikationsbänken.</WS_Fabricator.description>
+  <WS_Mechanitor.label>Mekanitor</WS_Mechanitor.label>
+  <WS_Mechanitor.description>Reparerar mekanoider, odlar nya och kodar underkärnor. Rekommenderas bara till kolonister med meklänk.</WS_Mechanitor.description>
+  <WS_Crafter.label>Hantverkare</WS_Crafter.label>
+  <WS_Crafter.description>Allmänt hantverk: stenhuggning, smältning, droger och komponenter.</WS_Crafter.description>
+  <WS_Researcher.label>Forskare</WS_Researcher.label>
+  <WS_Researcher.description>Forskning vid en forskningsbänk.</WS_Researcher.description>
+  <WS_DarkStudier.label>Anomaliforskare</WS_DarkStudier.label>
+  <WS_DarkStudier.description>Studerar anomala väsen.</WS_DarkStudier.description>
+  <WS_Artist.label>Konstnär</WS_Artist.label>
+  <WS_Artist.description>Skulptering och konstverk.</WS_Artist.description>
+  <WS_Nurse.label>Sjuksköterska</WS_Nurse.label>
+  <WS_Nurse.description>Matar, räddar och besöker patienter; akut egenvård.</WS_Nurse.description>
+  <WS_DrugMaker.label>Drogtillverkare</WS_DrugMaker.label>
+  <WS_DrugMaker.description>Tillverkar droger i droglaboratoriet och serumcentrifugen.</WS_DrugMaker.description>
+  <WS_Painter.label>Målare</WS_Painter.label>
+  <WS_Painter.description>Målning och färgborttagning.</WS_Painter.description>
+  <WS_Herder.label>Herde</WS_Herder.label>
+  <WS_Herder.description>Skötsel av hägndjur: inhägning, matning, mjölkning, klippning och slakt.</WS_Herder.description>
+</LanguageData>

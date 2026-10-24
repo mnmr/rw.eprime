@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using HarmonyLib;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 
@@ -42,8 +43,12 @@ namespace RimShared.UiLib
         /// opening closes.
         public static bool ClaimSave(List<string> shownSaves, Action retry)
         {
+            if (suspendedWindows.IsStopped) return false;
             RimWorld.Planet.World? world = Find.World;
-            if (world == null || Suppressed) return false;
+            if (world == null || Suppressed) { ResetPending(); return false; }
+            string id = world.info.persistentRandomValue.ToString();
+            if (shownSaves.Contains(id)) return false;
+            pendingSaveId = id;
             if (!openingClosing
                 && Find.WindowStack?.SecondsSinceClosedGameStartDialog == 0f)
             {
@@ -51,8 +56,14 @@ namespace RimShared.UiLib
                 return false;
             }
             retryAfterOpening = null;
-            string id = world.info.persistentRandomValue.ToString();
-            if (shownSaves.Contains(id)) return false;
+            int visible = VisibleWelcomeCount();
+            if (WelcomeTileLayout.Create(UI.screenWidth, UI.screenHeight, visible + 1).Count <= visible)
+            {
+                retryAfterSpace = retry;
+                return false;
+            }
+            retryAfterSpace = null;
+            pendingSaveId = null;
             shownSaves.Add(id);
             return true;
         }
@@ -64,6 +75,99 @@ namespace RimShared.UiLib
         // One left over from a game quit mid-opening is harmless: it re-runs
         // the claim against whatever save is current.
         private static Action? retryAfterOpening;
+        // Owner: this assembly's pending welcome. Key: persistent save id.
+        // Value: the caller's cached static retry, never a world/model capture.
+        // Dependencies: the same save, opening state and visible window count.
+        // Refresh: opening-close/window-remove events only. Equality: one retry
+        // per mod/save; replacing it does not enqueue a second operation.
+        // Teardown: successful claim, suppression, game disposal or save change.
+        private static Action? retryAfterSpace;
+        private static string? pendingSaveId;
+        private static readonly WelcomePendingWindows<WelcomeDialog> suspendedWindows =
+            new WelcomePendingWindows<WelcomeDialog>();
+
+        // Owner: process/assembly. Key/value: last observed logical display
+        // dimensions. Dependencies: window pixels and UI scale. Refresh:
+        // dimension change only; steady OnGUI compares two integers. Equality:
+        // unchanged dimensions do no work. Teardown: primitive-only process
+        // stamp; no window/world reference is retained across disposal.
+        private static int observedScreenWidth = -1, observedScreenHeight = -1;
+        private static readonly Comparison<Window> CompareWindowIds =
+            (left, right) => left.ID.CompareTo(right.ID);
+
+        internal static void ResetPending()
+        {
+            retryAfterOpening = null;
+            retryAfterSpace = null;
+            pendingSaveId = null;
+            suspendedWindows.Clear();
+        }
+
+        internal static void BeginGame()
+        {
+            ResetPending();
+            suspendedWindows.Start();
+        }
+
+        internal static void BeginDisposal()
+        {
+            ResetPending();
+            suspendedWindows.Stop();
+        }
+
+        internal static void CloseDisposedWindows()
+        {
+            WindowStack? stack = Find.WindowStack;
+            if (stack == null) return;
+            var owned = new List<WelcomeDialog>();
+            for (int i = 0; i < stack.Count; i++)
+                if (stack[i] is WelcomeDialog welcome) owned.Add(welcome);
+            for (int i = 0; i < owned.Count; i++) owned[i].Close(false);
+        }
+
+        internal static bool IsWelcome(Window window) =>
+            window.GetType().FullName == "RimShared.UiLib.WelcomeDialog";
+
+        private static int VisibleWelcomeCount()
+        {
+            var windows = Find.WindowStack.Windows;
+            int count = 0;
+            for (int i = 0; i < windows.Count; i++)
+                if (IsWelcome(windows[i])) count++;
+            return count;
+        }
+
+        internal static void SpaceAvailable()
+        {
+            if (suspendedWindows.IsStopped) return;
+            RimWorld.Planet.World? world = Find.World;
+            if (world == null || Suppressed) { ResetPending(); return; }
+            string currentSave = world.info.persistentRandomValue.ToString();
+            int visible = VisibleWelcomeCount();
+            bool capacity = WelcomeTileLayout.Create(UI.screenWidth, UI.screenHeight, visible + 1).Count > visible;
+            if (suspendedWindows.TryTake(currentSave, capacity, out WelcomeDialog? suspended))
+            {
+                Find.WindowStack.Add(suspended!);
+                return;
+            }
+            Action? retry = retryAfterSpace;
+            if (retry == null) return;
+            if (currentSave != pendingSaveId)
+            { ResetPending(); return; }
+            retryAfterSpace = null;
+            retry();
+        }
+
+        internal static void ObserveScreen()
+        {
+            if (suspendedWindows.IsStopped) return;
+            int width = UI.screenWidth, height = UI.screenHeight;
+            if (observedScreenWidth == width && observedScreenHeight == height) return;
+            observedScreenWidth = width;
+            observedScreenHeight = height;
+            ReflowWindows();
+            SpaceAvailable();
+        }
 
         // True while OpeningClosed runs the retry: for the rest of the
         // closing frame the stack still reports 0 seconds since the close.
@@ -71,8 +175,12 @@ namespace RimShared.UiLib
 
         internal static void OpeningClosed()
         {
+            if (suspendedWindows.IsStopped) return;
             Action? retry = retryAfterOpening;
             if (retry == null) return;
+            if (Find.World == null || Suppressed
+                || Find.World.info.persistentRandomValue.ToString() != pendingSaveId)
+            { ResetPending(); return; }
             retryAfterOpening = null;
             openingClosing = true;
             try { retry(); }
@@ -122,10 +230,13 @@ namespace RimShared.UiLib
         private Rect previewTexCoords;
         private float previewAspect = 1f;
 
-        // Wrapped-text measurements and the resulting window height,
-        // resolved once per open in PreOpen BEFORE the base call positions
-        // the window (a builder boundary, never the render pass); the
-        // language and UI scale cannot change while the dialog is open.
+        // Owner: window. Key: inner width/height and UiRevision.Current.
+        // Value: immutable published text/control rectangles and dimensions.
+        // Dependencies: those dimensions, active font/UI metrics, constructor
+        // text and pre-open adornment/warning properties, loaded preview aspect.
+        // Refresh: PreOpen, window membership/resolution events, metric revision
+        // in WindowUpdate. Equal keys reuse all geometry. Teardown: window close.
+        // Language selection reloads game data/windows; texts belong to this open.
         private string closeLabel = "";
         private float titleHeight;
         private float bodyHeight;
@@ -137,6 +248,13 @@ namespace RimShared.UiLib
         private float linkWidth;
         private float linkHeight;
         private float windowHeight = 520f;
+        private int metricRevision = -1;
+        private float measuredWidth = -1f, measuredHeight = -1f;
+        private Rect titleRect, viewportRect, contentRect, previewRect, bodyRect;
+        private Rect findPanelRect, adornmentRect, findLabelRect, warningRect;
+        private Rect closeRect, linkRect;
+        private Vector2 scroll;
+        private bool suspendOnClose;
 
         /// previewCrop is the art's ink band in the preview file's pixels
         /// (top-left origin); only that band renders.
@@ -152,7 +270,8 @@ namespace RimShared.UiLib
             this.previewCrop = previewCrop;
             this.open = open;
             forcePause = true;
-            absorbInputAroundWindow = true;
+            absorbInputAroundWindow = false;
+            draggable = true;
             closeOnCancel = true;     // ESC while focused
             doCloseButton = false;
         }
@@ -162,22 +281,106 @@ namespace RimShared.UiLib
 
         public override void PreOpen()
         {
-            closeLabel = "CloseButton".Translate();
-            preview = LoadPreview(previewPath);
-            if (preview != null)
+            suspendOnClose = false;
+            // A suspended instance reloads its owned image. Its availability
+            // and aspect may change, even when the restored tile has the same
+            // dimensions, so every open starts a new geometry lifetime.
+            measuredWidth = measuredHeight = -1f;
+            metricRevision = -1;
+            previewAspect = 1f;
+            try
             {
-                float w = preview.width, h = preview.height;
-                previewTexCoords = new Rect(previewCrop.x / w,
-                    1f - previewCrop.yMax / h,
-                    previewCrop.width / w, previewCrop.height / h);
-                previewAspect = previewCrop.width / previewCrop.height;
+                closeLabel = "CloseButton".Translate();
+                preview = LoadPreview(previewPath);
+                if (preview != null)
+                {
+                    float w = preview.width, h = preview.height;
+                    previewTexCoords = new Rect(previewCrop.x / w,
+                        1f - previewCrop.yMax / h,
+                        previewCrop.width / w, previewCrop.height / h);
+                    previewAspect = previewCrop.width / previewCrop.height;
+                }
+                base.PreOpen();
             }
+            catch { ReleasePreview(); throw; }
+        }
 
-            float width = DialogWidth - Margin * 2f;
+        protected override void SetInitialSizeAndPosition()
+        {
+            // Shared source is compiled into each mod: compare the stable type
+            // name only at this lifecycle boundary, and use Window's virtual API
+            // to reflow copies without reflection or shared static registries.
+            var windows = Find.WindowStack.Windows;
+            int count = 0, index = 0;
+            bool present = false;
+            for (int i = 0; i < windows.Count; i++)
+            {
+                Window window = windows[i];
+                if (!IsWelcome(window)) continue;
+                count++;
+                if (window.ID < ID) index++;
+                if (ReferenceEquals(window, this)) present = true;
+            }
+            if (!present) count++;
+            WelcomeTilePlan tiles = WelcomeTileLayout.Create(UI.screenWidth, UI.screenHeight, count);
+            suspendOnClose = !tiles.TryGetTile(index, out WelcomeTile tile);
+            if (suspendOnClose) return;
+            windowRect = new Rect(tile.X, tile.Y, tile.Width, tile.Height);
+            BuildLayout();
+        }
+
+        public override void PostOpen()
+        {
+            base.PostOpen();
+            ReflowWindows();
+        }
+
+        private static void ReflowWindows()
+        {
+            if (suspendedWindows.IsStopped) return;
+            WindowStack stack = Find.WindowStack;
+            var windows = new List<Window>();
+            for (int i = 0; i < stack.Count; i++)
+                if (IsWelcome(stack[i])) windows.Add(stack[i]);
+            windows.Sort(CompareWindowIds);
+            WelcomeTilePlan tiles = WelcomeTileLayout.Create(UI.screenWidth, UI.screenHeight, windows.Count);
+            // Snapshot before any removals: closing one copy invokes all four
+            // assemblies' removal hooks. Full-capacity checks prevent those
+            // hooks from reopening suspended instances during this batch.
+            for (int i = 0; i < windows.Count; i++) windows[i].Notify_ResolutionChanged();
+            for (int i = windows.Count - 1; i >= tiles.Count; i--) windows[i].Close(false);
+        }
+
+        public override void WindowUpdate()
+        {
+            base.WindowUpdate();
+            UiRevision.ObserveCurrentMetrics();
+            if (metricRevision != UiRevision.Current) BuildLayout();
+        }
+
+        private void BuildLayout()
+        {
+            UiRevision.ObserveCurrentMetrics();
+            float width = windowRect.width - Margin * 2f;
+            float height = windowRect.height - Margin * 2f;
+            int revision = UiRevision.Current;
+            if (measuredWidth == width && measuredHeight == height && metricRevision == revision) return;
+            measuredWidth = width;
+            measuredHeight = height;
+            metricRevision = revision;
+            float contentWidth = Mathf.Max(1f, width - 20f);
+            float buttonHeight, closeWidth;
             using (GuiStateScope.Capture())
             {
+                Text.Font = GameFont.Medium;
+                Text.WordWrap = true;
+                titleHeight = Mathf.Max(Mathf.Ceil(Text.LineHeight), Mathf.Ceil(Text.CalcHeight(title, width)));
                 Text.Font = GameFont.Small;
+                float lineHeight = Mathf.Ceil(Text.LineHeight);
+                buttonHeight = Mathf.Max(ButtonHeight, lineHeight + 12f);
                 Text.WordWrap = false;
+                closeWidth = Mathf.Min(width, Mathf.Max(100f, WrText.MeasureFitWidth(closeLabel) + 24f));
+                adornmentWidth = adornmentHeight = 0f;
                 if (FindIcon != null)
                 {
                     adornmentWidth = IconSize;
@@ -185,121 +388,126 @@ namespace RimShared.UiLib
                 }
                 else if (!string.IsNullOrEmpty(FindButtonLabel))
                 {
-                    adornmentWidth = Mathf.Max(100f,
-                        Mathf.Ceil(Text.CalcSize(FindButtonLabel).x) + 20f);
-                    adornmentHeight = ButtonHeight;
+                    adornmentWidth = Mathf.Min(contentWidth / 2f, Mathf.Max(100f,
+                        Mathf.Ceil(Text.CalcSize(FindButtonLabel).x) + 20f));
+                    adornmentHeight = buttonHeight;
                 }
                 // Fit width: an exact CalcSize rect wraps at fractional UI
                 // scales (seen at 1.5).
                 linkWidth = WrText.MeasureFitWidth(takeMeThere);
-                linkHeight = Mathf.Max(22f,
-                    Mathf.Ceil(Text.LineHeightOf(GameFont.Small)));
-                titleHeight = Mathf.Max(34f,
-                    Mathf.Ceil(Text.LineHeightOf(GameFont.Medium)));
                 Text.WordWrap = true;
-                bodyHeight = Mathf.Ceil(Text.CalcHeight(body, width));
-                findHeight = Mathf.Ceil(Text.CalcHeight(find, FindTextWidth(width)));
+                linkHeight = Mathf.Max(lineHeight, Mathf.Ceil(Text.CalcHeight(takeMeThere, Mathf.Min(linkWidth, width))));
+                bodyHeight = Mathf.Ceil(Text.CalcHeight(body, contentWidth));
+                findHeight = Mathf.Ceil(Text.CalcHeight(find, FindTextWidth(contentWidth)));
                 warningHeight = string.IsNullOrEmpty(Warning) ? 0f
-                    : Mathf.Ceil(Text.CalcHeight(Warning, width - PanelPad * 2f));
+                    : Mathf.Ceil(Text.CalcHeight(Warning, contentWidth - PanelPad * 2f));
             }
+            bool stacked = closeWidth + linkWidth + Gap > width;
+            float footerHeight = stacked ? buttonHeight + Gap + linkHeight : Mathf.Max(buttonHeight, linkHeight);
+            closeRect = new Rect(0f, height - footerHeight, closeWidth, buttonHeight);
+            linkRect = stacked
+                ? new Rect(0f, height - linkHeight, width, linkHeight)
+                : new Rect(width - linkWidth, height - footerHeight + (footerHeight - linkHeight) / 2f, linkWidth, linkHeight);
+            titleRect = new Rect(0f, 0f, width, titleHeight);
+            viewportRect = new Rect(0f, titleHeight + Gap, width,
+                Mathf.Max(24f, height - titleHeight - footerHeight - Gap * 2f));
             findPanelHeight = Mathf.Max(adornmentHeight, findHeight)
                 + PanelPad * 2f;
-            float previewHeight = preview != null
-                ? Mathf.Ceil(Mathf.Min(PreviewWidth, width) / previewAspect) + Gap
-                : 0f;
-            float warningBlock = warningHeight > 0f
-                ? warningHeight + PanelPad * 2f + Gap
-                : 0f;
-            windowHeight = Margin * 2f + 38f + previewHeight
-                + bodyHeight + Gap + findPanelHeight + Gap + warningBlock + 35f;
-
-            base.PreOpen();
+            float y = 0f;
+            if (preview != null)
+            {
+                float h = Mathf.Min(Mathf.Min(PreviewWidth, contentWidth) / previewAspect,
+                    Mathf.Max(64f, viewportRect.height * 0.4f));
+                float w = h * previewAspect;
+                previewRect = new Rect((contentWidth - w) / 2f, y, w, h);
+                y += h + Gap;
+            }
+            bodyRect = new Rect(0f, y, contentWidth, bodyHeight);
+            y += bodyHeight + Gap;
+            findPanelRect = new Rect(0f, y, contentWidth, findPanelHeight);
+            adornmentRect = new Rect(PanelPad, y + (findPanelHeight - adornmentHeight) / 2f,
+                adornmentWidth, adornmentHeight);
+            float findWidth = FindTextWidth(contentWidth);
+            findLabelRect = new Rect(contentWidth - PanelPad - findWidth,
+                y + (findPanelHeight - findHeight) / 2f, findWidth, findHeight);
+            y += findPanelHeight + Gap;
+            warningRect = new Rect(0f, y, contentWidth, warningHeight + PanelPad * 2f);
+            if (warningHeight > 0f) y += warningRect.height + Gap;
+            contentRect = new Rect(0f, 0f, contentWidth, y);
+            scroll.y = Mathf.Clamp(scroll.y, 0f, Mathf.Max(0f, y - viewportRect.height));
         }
 
         public override void PostClose()
         {
             base.PostClose();
-            if (preview != null)
+            ReleasePreview();
+            if (suspendedWindows.IsStopped) return;
+            if (suspendOnClose)
             {
-                UnityEngine.Object.Destroy(preview);
-                preview = null;
+                suspendOnClose = false;
+                RimWorld.Planet.World? world = Find.World;
+                if (world != null && !Suppressed)
+                    suspendedWindows.Add(world.info.persistentRandomValue.ToString(), this);
+                return;
             }
+            ReflowWindows();
+        }
+
+        private void ReleasePreview()
+        {
+            if (preview == null) return;
+            UnityEngine.Object.Destroy(preview);
+            preview = null;
         }
 
         public override void DoWindowContents(Rect inRect)
         {
-            float y = inRect.y;
             using (GuiStateScope.Capture())
             {
                 Text.Font = GameFont.Medium;
-                Widgets.Label(new Rect(inRect.x, y, inRect.width, titleHeight),
-                    title);
+                Text.WordWrap = true;
+                Widgets.Label(titleRect, title);
             }
-            y += 38f;
-
-            if (preview != null)
-            {
-                float drawWidth = Mathf.Min(PreviewWidth, inRect.width);
-                float drawHeight = Mathf.Ceil(drawWidth / previewAspect);
-                GUI.DrawTextureWithTexCoords(new Rect(
-                        inRect.x + (inRect.width - drawWidth) / 2f, y,
-                        drawWidth, drawHeight),
-                    preview, previewTexCoords);
-                y += drawHeight + Gap;
-            }
-
             bool openClicked = false;
             using (GuiStateScope.Capture())
             {
                 Text.Font = GameFont.Small;
                 Text.WordWrap = true;
-                Widgets.Label(new Rect(inRect.x, y, inRect.width, bodyHeight),
-                    body);
-                y += bodyHeight + Gap;
-
-                var findRect = new Rect(inRect.x, y, inRect.width,
-                    findPanelHeight);
-                Widgets.DrawMenuSection(findRect);
-                var adornment = new Rect(findRect.x + PanelPad,
-                    findRect.y + (findRect.height - adornmentHeight) / 2f,
-                    adornmentWidth, adornmentHeight);
-                if (FindIcon != null)
-                    GUI.DrawTexture(adornment, FindIcon);
-                else if (adornmentWidth > 0f)
-                    openClicked = Widgets.ButtonTextSubtle(adornment,
-                        FindButtonLabel!); // width > 0 ⇒ label set
-                float findWidth = FindTextWidth(inRect.width);
-                GUI.color = FindTextColor;
-                Widgets.Label(new Rect(findRect.xMax - PanelPad - findWidth,
-                        findRect.y + (findRect.height - findHeight) / 2f,
-                        findWidth, findHeight),
-                    find);
-                y += findPanelHeight + Gap;
-
-                if (warningHeight > 0f)
+                Widgets.BeginScrollView(viewportRect, ref scroll, contentRect);
+                try
                 {
-                    var warningRect = new Rect(inRect.x, y, inRect.width,
-                        warningHeight + PanelPad * 2f);
-                    Widgets.DrawBoxSolidWithOutline(warningRect,
-                        WarningBackground, WarningOutline);
-                    GUI.color = WarningText;
-                    Widgets.Label(warningRect.ContractedBy(PanelPad), Warning!); // height > 0 ⇒ set
+                    if (preview != null)
+                        GUI.DrawTextureWithTexCoords(previewRect, preview, previewTexCoords);
+                    Widgets.Label(bodyRect, body);
+                    Widgets.DrawMenuSection(findPanelRect);
+                    if (FindIcon != null) GUI.DrawTexture(adornmentRect, FindIcon);
+                    else if (adornmentWidth > 0f)
+                        openClicked = Widgets.ButtonTextSubtle(adornmentRect, FindButtonLabel!);
+                    GUI.color = FindTextColor;
+                    Widgets.Label(findLabelRect, find);
+                    if (warningHeight > 0f)
+                    {
+                        Widgets.DrawBoxSolidWithOutline(warningRect, WarningBackground, WarningOutline);
+                        GUI.color = WarningText;
+                        Widgets.Label(warningRect.ContractedBy(PanelPad), Warning!);
+                    }
                 }
+                finally { Widgets.EndScrollView(); }
             }
 
             // Bottom row: Close on the left, the link on the right.
-            var closeRect = new Rect(inRect.x, inRect.yMax - 35f, 140f, 35f);
-            if (Widgets.ButtonText(closeRect, closeLabel))
-                Close();
+            using (GuiStateScope.Capture())
+            {
+                Text.Font = GameFont.Small;
+                Text.WordWrap = false;
+                if (Widgets.ButtonText(closeRect, closeLabel)) Close();
+            }
 
-            var linkRect = new Rect(inRect.xMax - linkWidth,
-                inRect.yMax - 35f + (35f - linkHeight) / 2f,
-                linkWidth, linkHeight);
             using (GuiStateScope.Capture())
             {
                 Text.Font = GameFont.Small;
                 Text.Anchor = TextAnchor.MiddleRight;
-                Text.WordWrap = false;
+                Text.WordWrap = true;
                 GUI.color = Mouse.IsOver(linkRect) ? LinkHoverColor : LinkColor;
                 Widgets.Label(linkRect, takeMeThere);
             }
@@ -316,25 +524,37 @@ namespace RimShared.UiLib
 
         private static Texture2D? LoadPreview(string path)
         {
+            Texture2D? texture = null;
             try
             {
                 if (!File.Exists(path)) return null;
                 byte[] bytes = File.ReadAllBytes(path);
-                var texture = new Texture2D(2, 2, TextureFormat.RGBA32,
+                texture = new Texture2D(2, 2, TextureFormat.RGBA32,
                     mipChain: false);
                 if (texture.LoadImage(bytes))
                 {
                     texture.name = "WelcomePreview";
-                    return texture;
+                    Texture2D result = texture;
+                    texture = null;
+                    return result;
                 }
-                UnityEngine.Object.Destroy(texture);
             }
             catch (IOException)
             {
                 // Unreadable art degrades to a text-only welcome.
             }
+            finally { if (texture != null) UnityEngine.Object.Destroy(texture); }
             return null;
         }
+    }
+
+    // This runs before vanilla snapshots/iterates the live WindowStack. Each
+    // compiled copy has an allocation-free dimension gate, and resumes only
+    // its own save-scoped queue. No hidden window remains in the live stack.
+    [HarmonyPatch(typeof(WindowStack), nameof(WindowStack.WindowStackOnGUI))]
+    internal static class Patch_WelcomeDisplayChanged
+    {
+        private static void Prefix() => WelcomeDialog.ObserveScreen();
     }
 
     /// Opens the welcome a scenario opening held back, as the opening
@@ -343,5 +563,44 @@ namespace RimShared.UiLib
     internal static class Patch_GameStartDialogClosed
     {
         private static void Postfix() => WelcomeDialog.OpeningClosed();
+    }
+
+    [HarmonyPatch(typeof(WindowStack), nameof(WindowStack.TryRemove), new[] { typeof(Window), typeof(bool) })]
+    internal static class Patch_WelcomeRemoved
+    {
+        private static void Postfix(Window window, bool __result)
+        {
+            if (__result && WelcomeDialog.IsWelcome(window)) WelcomeDialog.SpaceAvailable();
+        }
+    }
+
+    [HarmonyPatch(typeof(Game), nameof(Game.Dispose))]
+    internal static class Patch_WelcomeGameDisposed
+    {
+        // Every assembly stops admission in its prefix before any finalizer
+        // closes a window. Removal hooks in other compiled copies therefore
+        // cannot reopen a queued welcome or claim an unseen one during exit.
+        // Finalizers also release previews if vanilla disposal throws.
+        private static void Prefix(Game __instance, out bool __state)
+        {
+            __state = ReferenceEquals(Current.Game, __instance);
+            if (__state) WelcomeDialog.BeginDisposal();
+        }
+        private static void Finalizer(bool __state)
+        {
+            if (__state) WelcomeDialog.CloseDisposedWindows();
+        }
+    }
+
+    [HarmonyPatch(typeof(Game), nameof(Game.FinalizeInit))]
+    internal static class Patch_WelcomeGameStarted
+    {
+        private static void Prefix(Game __instance)
+        {
+            // FinalizeInit precedes both StartedNewGame and LoadedGame's
+            // deferred welcome actions. This resets primitive/managed state
+            // only and is safe on the game's loading thread.
+            if (ReferenceEquals(Current.Game, __instance)) WelcomeDialog.BeginGame();
+        }
     }
 }

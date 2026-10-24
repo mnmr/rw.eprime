@@ -30,7 +30,7 @@ namespace EPrimeReadouts
                 ReferenceEquals(Destination, other.Destination)
                 && ReferenceEquals(Resource, other.Resource);
 
-            public override bool Equals(object obj) =>
+            public override bool Equals(object? obj) =>
                 obj is CarriedKey other && Equals(other);
 
             public override int GetHashCode() =>

@@ -24,7 +24,7 @@ namespace Implanner
             new Dictionary<ThingDef, List<int>>();
 
         internal List<int>? ItemIdsOf(ThingDef def) =>
-            ItemIdsByDef.TryGetValue(def, out List<int> ids) ? ids : null;
+            ItemIdsByDef.TryGetValue(def, out List<int>? ids) ? ids : null;
     }
 
     /// The reconciliation pass's single source of colony structure: which
@@ -141,7 +141,7 @@ namespace Implanner
                     {
                         List<Thing> things = lister.ThingsOfDef(itemDefs[d]);
                         if (things.Count == 0) continue;
-                        if (!colony.ItemIdsByDef.TryGetValue(itemDefs[d], out List<int> ids))
+                        if (!colony.ItemIdsByDef.TryGetValue(itemDefs[d], out List<int>? ids))
                         {
                             ids = new List<int>(things.Count);
                             colony.ItemIdsByDef.Add(itemDefs[d], ids);

@@ -26,13 +26,25 @@ EPrime's Readouts replaces [RimWorld](https://rimworldgame.com/)'s resource read
 - MultiFloors mod support: readouts show combined resource counts across all floors of a level stack. Other multi-floor mods (Strata, 'As above, so below 2') do not need special support to work.
 - Not compatible with other mods that replace the resource readout (Readouts+, Custom Resource Readout, Toggleable Readouts, and similar).
 
+Newly seeded group and pool names follow the display language without changing
+their saved names. Custom names stay verbatim. Older saves and exports do not
+record whether a group or pool name was seeded, so those names remain as saved;
+matching a shipped name is not enough to identify it safely. Renamed names keep
+their authored spelling through save/load and import/export.
+
 ## Building from source
 
 ```
 dotnet build -c Release src\EPrimeReadouts.slnx
+dotnet build -c Release src/EPrimeReadouts/EPrimeReadouts.csproj -p:RimWorldVersion=1.7
 ```
 
 Three projects: `EPrimeReadouts.Core` (pure logic, netstandard2.0, unit-tested), `EPrimeReadouts` (net472 game assembly; game refs via the `Krafs.Rimworld.Ref` NuGet package), and `EPrimeReadouts.Core.Tests` (.NET 10, TUnit).
+
+The default build produces the 1.6 assemblies. The second command produces the
+net10.0 1.7 assemblies against the installed game and Harmony 3. Build both
+versions before packaging. Override `InstalledGameRoot` and
+`InstalledHarmonyPath` when their locations differ from the shared defaults.
 
 Building never deploys the mod. After building, mirror the current `mod/` folder to your local RimWorld installation with:
 

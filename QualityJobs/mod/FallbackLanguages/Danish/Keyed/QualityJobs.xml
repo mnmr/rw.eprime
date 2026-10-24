@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <QJ_FinishBillLabel>Færdiggør {0} ({1})</QJ_FinishBillLabel>
+  <QJ_AtStockCap>lagergrænsen for ufærdige genstande er nået</QJ_AtStockCap>
+  <QJ_UnfinishedWorkWaiting>denne ordres ufærdige genstand venter på at blive genoptaget</QJ_UnfinishedWorkWaiting>
+  <QJ_QualityPanelTitle>Quality Jobs</QJ_QualityPanelTitle>
+  <QJ_ManageBill>Administrer denne ordre</QJ_ManageBill>
+  <QJ_FinisherSkill>Færdiggørelseskrav: {0}</QJ_FinisherSkill>
+  <QJ_FinisherSkillTip>Kun bønder på dette færdighedsniveau eller derover må afslutte arbejdet. De tidligere trin i fremstillingen må alle udføre.</QJ_FinisherSkillTip>
+  <QJ_AutoBest>Justér færdiggørelseskravet automatisk</QJ_AutoBest>
+  <QJ_AutoBestTip>Slået til: Kun den bedst egnede tilgængelige bonde i kolonien må færdiggøre dette arbejde. Kravet følger automatisk bondens færdighedsniveau. Kolonister, der er væk, ligger hjælpeløse på jorden eller er optaget, regnes stadig som tilgængelige i denne sammenligning.\n\nSlået fra: Enhver bonde, der opfylder det angivne færdiggørelseskrav, må afslutte arbejdet.</QJ_AutoBestTip>
+  <QJ_AutoBestCurrent>Aktuelt: {0}</QJ_AutoBestCurrent>
+  <QJ_AutoBestNone>Ingen egnet kolonist</QJ_AutoBestNone>
+  <QJ_MigrationTitle>Eksisterende kvalitetsordrer</QJ_MigrationTitle>
+  <QJ_MigrationBody>Quality Jobs fandt {0} eksisterende kvalitetsordrer. De administreres ikke, så de kan fortsætte med deres nuværende adfærd. Deling af ufærdigt arbejde er tilgængelig i begge tilfælde.</QJ_MigrationBody>
+  <QJ_MigrationEnableExisting>Aktivér Quality Jobs for eksisterende ordrer til kvalitetsgenstande?</QJ_MigrationEnableExisting>
+  <QJ_MigrationEnableExistingTip>Slået til: Eksisterende ordrer bruger Quality Jobs med automatisk justering af færdiggørelseskravet. Koloniens bedste egnede kolonist færdiggør arbejdet; midlertidigt utilgængelige kolonister tæller stadig med. Krav om inspiration og produktionsspecialist er slået fra, og resultater af lav kvalitet forsøges ikke igen.\n\nSlået fra: Eksisterende ordrer beholder grundspillets færdiggørelse. Deling af ufærdigt arbejde påvirkes ikke.</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationContinue>Fortsæt</QJ_MigrationContinue>
+  <QJ_RequireInspired>Kræv inspireret kreativitet</QJ_RequireInspired>
+  <QJ_RequireSpecialist>Kræv produktionsspecialist</QJ_RequireSpecialist>
+  <QJ_StockCapLabel>Lagergrænse: {0}</QJ_StockCapLabel>
+  <QJ_StockCapTooltip>Det maksimale antal ufærdige genstande af dette produkt. Grænsen gælder samlet for produktet, så alle ordrer, der fremstiller det, tæller med.\n\n0 betyder ubegrænset.</QJ_StockCapTooltip>
+  <QJ_StatusHeader>Status</QJ_StatusHeader>
+  <QJ_StatusQueue>Venter: {0} · Færdiggøres: {1}</QJ_StatusQueue>
+  <QJ_StatusQueueShared>Ufærdige: {0} · Venter: {1} · Færdiggøres: {2}</QJ_StatusQueueShared>
+  <QJ_StatusQueueTip>Ufærdige: Genstande i den fælles pulje, som enhver tilladt håndværker kan fortsætte med. Venter: Genstande sat på pause, som kræver en egnet færdiggører. Færdiggøres: Genstande tildelt en færdiggører.</QJ_StatusQueueTip>
+  <QJ_StatusFinishers>Egnede færdiggørere: {0}</QJ_StatusFinishers>
+  <QJ_StatusFinishersNone>Egnede færdiggørere: ingen</QJ_StatusFinishersNone>
+  <QJ_StatusFinishersTip>Kolonister på dette kort, som i øjeblikket kan lægge sidste hånd på arbejdet, med den bedste kandidat først. En kolonist er egnet, når den nødvendige arbejdstype er aktiveret, og færdiggørelseskravene ovenfor er opfyldt.\n\nUkampdygtige kolonister, kolonister i en mental tilstand og kolonister uden for dette kort tæller ikke med.</QJ_StatusFinishersTip>
+  <QJ_StatusStalled>Ventende genstande har ingen egnet færdiggører</QJ_StatusStalled>
+  <QJ_StatusStalledTip>Ufærdige genstande venter, men ingen kolonist opfylder i øjeblikket kravene til at færdiggøre dem, så der oprettes ingen færdiggørelsesopgaver.\n\nKontrollér færdiggørelseskravet, kravene om inspiration og specialist samt om den ønskede færdiggører har arbejdstypen aktiveret og er på dette kort. Mens arbejdet står stille, kan lagergrænsen også forhindre, at nye genstande påbegyndes.</QJ_StatusStalledTip>
+  <QJ_StatusStalledConstruction>Ingen egnet færdiggører — byggeriet står stille</QJ_StatusStalledConstruction>
+  <QJ_StatusStalledConstructionTip>Denne bygning er sat på pause og venter på de sidste arbejdstrin, men ingen kolonist opfylder i øjeblikket kravene, så den bliver ikke færdig.\n\nKontrollér færdiggørelseskravet, kravene om inspiration og specialist samt om den ønskede bygmester har Byggeri aktiveret og er på dette kort.</QJ_StatusStalledConstructionTip>
+  <QJ_OddsHeader>Kvalitetschancer</QJ_OddsHeader>
+  <QJ_NormalOrWorse>Normal eller dårligere</QJ_NormalOrWorse>
+  <QJ_OddsColConfig>Indstilling</QJ_OddsColConfig>
+  <QJ_OddsColBest>Bedste</QJ_OddsColBest>
+  <QJ_SettingsBillDefaults>Standardindstillinger for ordrer</QJ_SettingsBillDefaults>
+  <QJ_SettingsConstructionDefaults>Standardindstillinger for byggeri</QJ_SettingsConstructionDefaults>
+  <QJ_SettingsGlobalOptions>Globale indstillinger</QJ_SettingsGlobalOptions>
+  <QJ_SettingsManageNewBills>Administrér nye kvalitetsordrer</QJ_SettingsManageNewBills>
+  <QJ_SettingsManageNewBillsTip>Slået til: Quality Jobs administrerer som standard ordrer, der producerer kvalitet, med indstillingerne i denne kolonne. Hver ordre kan tilsidesætte disse indstillinger i ordreindstillingerne.\n\nSlået fra: Ordrer bruger grundspillets adfærd, medmindre Quality Jobs er aktiveret i ordredialogen.</QJ_SettingsManageNewBillsTip>
+  <QJ_SettingsManageNewConstruction>Administrér nyt byggeri</QJ_SettingsManageNewConstruction>
+  <QJ_SettingsManageNewConstructionTip>Slået til: Nye bygninger med kvalitet administreres automatisk med indstillingerne i denne kolonne. Hver bygning kan konfigureres eller frigives med knappen Quality Job.\n\nSlået fra: Nye bygninger bruger grundspillets adfærd, medmindre de aktiveres enkeltvis.</QJ_SettingsManageNewConstructionTip>
+  <QJ_RequireInspiredTip>Slået til: Kun en bonde med Inspireret kreativitet må lægge sidste hånd på arbejdet; andre bønder må udføre det indledende arbejde. Inspirationen forbruges ved færdiggørelsen som i grundspillet.\n\nSlået fra: Inspireret kreativitet er ikke påkrævet.</QJ_RequireInspiredTip>
+  <QJ_RequireSpecialistTip>Slået til: Kun en bonde, hvis ideologirolle giver en bonus til produktionskvalitet, må lægge sidste hånd på arbejdet; andre bønder må udføre det indledende arbejde.\n\nSlået fra: En rolle som produktionsspecialist er ikke påkrævet.</QJ_RequireSpecialistTip>
+  <QJ_SettingsFinisherSkillTip>Kun bønder på eller over dette færdighedsniveau må lægge sidste hånd på arbejdet; andre bønder må udføre det indledende arbejde.\n\nNår automatisk justering af færdiggørelseskravet er slået til, bevares denne værdi som manuel standard, men bruges ikke.</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsShareWork>Del ufærdigt arbejde</QJ_SettingsShareWork>
+  <QJ_SettingsShareWorkTip>Slået til: Ufærdige genstande låses op, så enhver tilladt bonde kan fortsætte arbejde, som en anden har påbegyndt.\n\nSlået fra: Grundspillets adfærd, hvor en ufærdig genstand er bundet til den bonde, der påbegyndte den.</QJ_SettingsShareWorkTip>
+  <QJ_SettingsHighPriorityFinish>Giv færdiggørere en opgave med høj prioritet</QJ_SettingsHighPriorityFinish>
+  <QJ_SettingsHighPriorityFinishTip>Slået til: En kolonist valgt til at færdiggøre en genstand tager opgaven, næste gang vedkommende søger arbejde, før alle andre typer arbejde undtagen brandslukning, lægebehandling, redning og sengeleje. Den igangværende opgave afbrydes ikke.\n\nSlået fra: Færdiggørelsesopgaven er den første opgave inden for sin arbejdstype, men arbejdstyper med højere prioritet kommer stadig først.</QJ_SettingsHighPriorityFinishTip>
+  <QJ_SettingsDefaultCap>Standardgrænse for ufærdig beholdning: {0}</QJ_SettingsDefaultCap>
+  <QJ_SettingsDefaultCapTip>Angiver det højeste antal ufærdige genstande pr. produkt som standard. Alle ordrer, der producerer samme genstand, deler grænsen.\n\nOrdrer holder op med at påbegynde nye genstande, når grænsen nås; igangværende genstande må stadig gøres færdige. 0 betyder ubegrænset.</QJ_SettingsDefaultCapTip>
+  <QJ_SettingsUnlimitedHint>0 = ubegrænset</QJ_SettingsUnlimitedHint>
+  <QJ_SettingsShowToolbarButton>Vis knap på værktøjslinjen</QJ_SettingsShowToolbarButton>
+  <QJ_SettingsShowToolbarButtonTip>Tilføjer en knap ved visningsknapperne i skærmens nederste højre hjørne. Knappen åbner indstillingerne for Quality Jobs.</QJ_SettingsShowToolbarButtonTip>
+  <QJ_ToolbarButtonTip>Åbn indstillingerne for Quality Jobs.</QJ_ToolbarButtonTip>
+  <QJ_SettingsEnabledNote>Knappen gælder det indlæste spil. Deaktivering giver alle genstande grundspillets adfærd igen og sletter konfigurationen for Quality Jobs i dette gemte spil.\n\nHvis moddet forbliver installeret, aktiveres det igen med standardindstillinger, næste gang spillet indlæses. Deaktivering er beregnet som forberedelse til at fjerne moddet.</QJ_SettingsEnabledNote>
+  <QJ_DisableButton>Deaktivér Quality Jobs</QJ_DisableButton>
+  <QJ_EnableButton>Aktivér Quality Jobs</QJ_EnableButton>
+  <QJ_DisableWarning>Når du deaktiverer Quality Jobs, overgår alle genstande, som moddet har lagt til side, igen til grundspillets håndtering, og konfigurationen for dette gemte spil (ordrebetingelser og lagergrænser) slettes permanent. Efterfølgende gemninger indeholder ingen spor af moddet, så dette er en ren måde at forberede en afinstallation på.\n\nLad først erstatningsbygningerne blive færdige, så deres gemte sengeindstillinger og bemaling bevares. Når den oprindelige bygning er skilt ad, kræver disse indstillinger Quality Jobs, indtil erstatningen er færdig.\n\nBemærk: Hvis du lader moddet være installeret, bliver det aktiveret igen med standardindstillinger, næste gang du indlæser dette gemte spil.\n\nDeaktivér Quality Jobs?</QJ_DisableWarning>
+  <QJ_NoGameLoaded>Indlæs et gemt spil for at ændre adfærd pr. spil.</QJ_NoGameLoaded>
+  <QJ_GizmoQualityJobLabel>Quality Job</QJ_GizmoQualityJobLabel>
+  <QJ_GizmoRebuildDesc>Vælg en målkvalitet og krav til bygmesteren for denne færdige bygning. Start genopbygning for at skille den ad og erstatte den, indtil målet er nået.</QJ_GizmoRebuildDesc>
+  <QJ_StartRebuilding>Start genopbygning</QJ_StartRebuilding>
+  <QJ_RebuildNote>Vælg en målkvalitet for at begynde. Bygninger med lavere kvalitet bliver skilt ad og genopført. Det bruger materialer, og bygningerne kan ikke bruges under arbejdet. Bygninger, der allerede opfylder målet, bevares.</QJ_RebuildNote>
+  <QJ_NoRebuildNeeded>Ingen egnede bygninger kræver genopbygning. Bygninger skal være under målet, kunne bygges og være uden andre ordrer om nedrivning eller geninstallation.</QJ_NoRebuildNeeded>
+  <QJ_GizmoManageDesc>Administrér dette byggeri med Quality Jobs: Sæt færdiggørelsen på pause, indtil en egnet bygmester findes, og genopbyg eventuelt, indtil målkvaliteten opnås.\n\nVenstreklik slår det til eller fra. Aktivering anvender dine standardindstillinger for byggeri. Højreklik konfigurerer det.</QJ_GizmoManageDesc>
+  <QJ_MinQualityLabel>Målkvalitet</QJ_MinQualityLabel>
+  <QJ_NoRetries>Ingen nye forsøg</QJ_NoRetries>
+  <QJ_AnyQuality>Enhver</QJ_AnyQuality>
+  <QJ_RetriedUntilTip>Bygningen skilles ad og genopbygges, indtil den opnår den valgte kvalitet eller bedre, undtagen når Ingen nye forsøg er valgt.\n\nDer går materialer tabt ved hvert nyt forsøg.</QJ_RetriedUntilTip>
+  <QJ_BillTargetQualityTip>Hvis en færdig genstand får en kvalitet under dette niveau, øges ordrens antal med én, så der fremstilles en erstatning. Selve genstanden beholdes.\n\nDette gælder ordrer, der er sat til at fremstille et fast antal genstande; de andre gentagelsestilstande afgør allerede selv, hvornår de skal stoppe.</QJ_BillTargetQualityTip>
+  <QJ_Clear>Ryd</QJ_Clear>
+  <QJ_ConstructionPanelTitle>Quality Job</QJ_ConstructionPanelTitle>
+  <QJ_FinishGiverLabel>færdiggør kvalitetsarbejde</QJ_FinishGiverLabel>
+  <QJ_FinishGiverVerb>færdiggør</QJ_FinishGiverVerb>
+  <QJ_FinishGiverGerund>færdiggør kvalitetsarbejde</QJ_FinishGiverGerund>
+  <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
+  <QJ_WelcomeBody>Quality Jobs lader enhver kolonist arbejde på en ufærdig genstand eller bygning, men kun en kolonist, der opfylder dine krav, må gøre den færdig, fordi færdiggøreren alene bestemmer kvaliteten. Det virker både til fremstillingsordrer og byggeri.</QJ_WelcomeBody>
+  <QJ_WelcomeFind>Åbn indstillingerne for Quality Jobs med denne knap ved visningsknapperne i skærmens nederste højre hjørne. Ordrevinduet for en kvalitetsgenstand har en Quality Jobs-sektion, og en valgt byggeplan eller ramme til en kvalitetsbygning har en Quality Job-knap.</QJ_WelcomeFind>
+  <QJ_WelcomeTakeMeThere>Åbn nu</QJ_WelcomeTakeMeThere>
+</LanguageData>

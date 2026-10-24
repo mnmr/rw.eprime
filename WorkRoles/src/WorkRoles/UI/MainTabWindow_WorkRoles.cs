@@ -25,9 +25,6 @@ namespace WorkRoles.UI
 
         /// Top-right action buttons: one 130px button on every tab that has
         /// one, plus two 90px import/export buttons on Roles (8px gaps).
-        private const float ActionBtnW = 130f;
-        private const float IoBtnW = 90f;
-        private const float ActionClusterW = ActionBtnW + 2f * (8f + IoBtnW);
         private static readonly Color AutoManagedColor =
             new Color(0.55f, 0.8f, 0.45f);
         private static readonly Color AutoManagedBackground =
@@ -297,6 +294,7 @@ namespace WorkRoles.UI
             autoManagedGate.Reset();
             autoManagedSnapshot = false;
             tabs = null;
+            actionMetricRevision = actionLanguageRevision = -1;
             StructuredTipPresenter.Reset();
         }
 
@@ -313,6 +311,31 @@ namespace WorkRoles.UI
         private string nothingToRestoreMessage = null!;
         private string exportLabel = null!;
         private string importLabel = null!;
+
+        // Owner: window. Key: language and UI metric revisions. Value: measured
+        // Small-font action widths and line bounds. Dependencies: the five
+        // translated captions and active font metrics. Refresh: immediate at
+        // either revision change. Equality: unchanged keys reuse scalar values.
+        // Teardown: window-owned values; PostClose resets the measurement stamp.
+        private int actionMetricRevision = -1, actionLanguageRevision = -1;
+        private float actionWidth, ioWidth, actionHeight;
+
+        private void EnsureActionMetrics()
+        {
+            int metrics = UiRevision.Current, language = LanguageChangeCoordinator.Revision;
+            if (actionMetricRevision == metrics && actionLanguageRevision == language) return;
+            using (GuiStateScope.Capture())
+            {
+                Text.Font = GameFont.Small;
+                actionWidth = Mathf.Max(130f, Mathf.Max(
+                    Mathf.Max(WrText.FitWidth(restoreDefaultsLabel), WrText.FitWidth(fixMyColonyLabel)) + 24f,
+                    WrText.FitWidth(autoManagedLabel) + 34f));
+                ioWidth = Mathf.Max(90f, Mathf.Max(WrText.FitWidth(importLabel), WrText.FitWidth(exportLabel)) + 24f);
+                actionHeight = Mathf.Max(28f, Mathf.Ceil(Text.LineHeight) + 6f);
+            }
+            actionMetricRevision = metrics;
+            actionLanguageRevision = language;
+        }
 
         // Owner: WorkRoles window. Key: RoleStore identity and the narrow
         // AutoOptimizePresentationRevision. Value: immutable auto-managed
@@ -381,6 +404,8 @@ namespace WorkRoles.UI
 
         private void DrawContents(Rect inRect)
         {
+            Text.Font = GameFont.Small;
+            EnsureActionMetrics();
             // Keyboard navigation runs before any widget sees the event, and
             // only while no text field owns the keyboard (typing in the search
             // box stays typing).
@@ -429,15 +454,14 @@ namespace WorkRoles.UI
             // Roles tab), so narrow windows shrink the tabs instead of
             // burying the last ones under the buttons.
             var tabStrip = new Rect(content.x, content.y,
-                content.width - ActionClusterW - 8f, content.height);
+                content.width - actionWidth - 2f * (8f + ioWidth) - 8f, content.height);
             TabStrip.Draw(tabStrip, tabs, WorkRolesTex.TabAtlas);
             TabStrip.DrawActiveTabSeam(tabStrip, (int)curTab, tabs.Count);
 
             // Per-tab action button in the window's top-right corner, beside the tab
             // strip: Fix My Colony on Colonists, Restore Defaults on Roles.
-            const float ActionBtnH = 28f;
-            float btnY = inRect.y + (TabStrip.TabHeight - ActionBtnH) / 2f;
-            var actionRect = new Rect(inRect.xMax - ActionBtnW, btnY, ActionBtnW, ActionBtnH);
+            float btnY = inRect.y + (TabStrip.TabHeight - actionHeight) / 2f;
+            var actionRect = new Rect(inRect.xMax - actionWidth, btnY, actionWidth, actionHeight);
             if (curTab == Tab.Colonists)
             {
                 if (AutoManagedSnapshot())
@@ -469,7 +493,7 @@ namespace WorkRoles.UI
                         Find.WindowStack.Add(new Dialog_RestorePreview(items));
                 }
 
-                var exportRect = new Rect(actionRect.x - 8f - IoBtnW, btnY, IoBtnW, ActionBtnH);
+                var exportRect = new Rect(actionRect.x - 8f - ioWidth, btnY, ioWidth, actionHeight);
                 WrTips.Key("WR_ExportTip", RoleIO.ExportFile).Region(exportRect);
                 if (Widgets.ButtonText(exportRect, exportLabel))
                 {
@@ -479,7 +503,7 @@ namespace WorkRoles.UI
                             RoleIO.BuildXml(store)));
                 }
 
-                var importRect = new Rect(exportRect.x - 8f - IoBtnW, btnY, IoBtnW, ActionBtnH);
+                var importRect = new Rect(exportRect.x - 8f - ioWidth, btnY, ioWidth, actionHeight);
                 WrTips.Key("WR_ImportTip", RoleIO.ExportFile).Region(importRect);
                 if (Widgets.ButtonText(importRect, importLabel))
                     Find.WindowStack.Add(new Dialog_ImportSource());

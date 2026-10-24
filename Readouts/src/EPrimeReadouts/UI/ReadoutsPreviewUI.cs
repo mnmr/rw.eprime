@@ -93,7 +93,7 @@ namespace EPrimeReadouts.UI
                 {
                     ReadoutSnapshot.Pool pool = snapshot.Pools[i];
                     builtLines.Add("EPR.PreviewPoolRow".Translate(
-                        pool.Name, pool.Members.Count));
+                        SeededReadoutNames.Name(pool), pool.Members.Count));
                     builtHeaders.Add(false);
                 }
             }
@@ -114,7 +114,7 @@ namespace EPrimeReadouts.UI
                     for (int tier = 0; tier < group.Tiers.Count; tier++)
                         slots += group.Tiers[tier].Count;
                     builtLines.Add("EPR.PreviewGroupRow".Translate(
-                        group.Name, group.Tiers.Count, slots));
+                        SeededReadoutNames.Name(group), group.Tiers.Count, slots));
                     builtHeaders.Add(false);
                 }
             }

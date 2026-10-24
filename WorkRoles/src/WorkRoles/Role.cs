@@ -12,12 +12,61 @@ namespace WorkRoles
 
         public int id;
         public string label = null!; // assigned at creation or load
+        // A real rename remains authored even if renamed back to its seed spelling.
+        public bool customName;
+
+        // Owner: this Role; Key: instance identity. Value: immutable display and bill-option labels.
+        // Dependencies: saved label/customName, template/generated work-type defName, language and definition revisions.
+        // Refresh: immediate on a dependency change, never changes saved state.
+        // Equality: an equal rebuild retains the prior string reference.
+        // Teardown: no external resources; instance-owned fields die with the model.
+        private string? displaySource;
+        private bool displayCustomName;
+        private string? displayLabel;
+        private string? billOptionLabel;
+        private string? displayTemplate;
+        private string? displayGeneratedWorkType;
+        private int displayLanguage = -1, displayDefinitions = -1;
+        internal string DisplayLabel
+        {
+            get
+            {
+                int language = LanguageChangeCoordinator.Revision;
+                int definitions = DefinitionReloadCoordinator.Revision;
+                if (displayLabel == null || displaySource != label || displayTemplate != templateDefName
+                    || displayCustomName != customName
+                    || displayGeneratedWorkType != generatedWorkTypeDefName
+                    || displayLanguage != language || displayDefinitions != definitions)
+                {
+                    string next = SeededDisplayNames.Role(this);
+                    if (!string.Equals(displayLabel, next, System.StringComparison.Ordinal))
+                        displayLabel = next;
+                    string option = "WR_BillRoleOption".Translate(next);
+                    if (!string.Equals(billOptionLabel, option, System.StringComparison.Ordinal))
+                        billOptionLabel = option;
+                    displaySource = label;
+                    displayCustomName = customName;
+                    displayTemplate = templateDefName;
+                    displayGeneratedWorkType = generatedWorkTypeDefName;
+                    displayLanguage = language;
+                    displayDefinitions = definitions;
+                }
+                return displayLabel!;
+            }
+        }
+        internal string BillOptionLabel
+        {
+            get { _ = DisplayLabel; return billOptionLabel!; }
+        }
+
         public bool enabled = true;
         public bool hasCustomColor;
         public Color color = Color.white;
         public string? iconPath;
         /// defName of the RoleDef this role was seeded from; null for player-created roles.
         public string? templateDefName;
+        /// Stable name provenance for newly generated work-type roles; old/custom roles stay unnamed.
+        public string? generatedWorkTypeDefName;
         /// Mod version and def fingerprint (RoleDef.StableHash) captured when the
         /// role was created from its template — lets loads detect def drift.
         public string? templateVersion;
@@ -179,6 +228,8 @@ namespace WorkRoles
             Scribe_Values.Look(ref color, "color", Color.white);
             Scribe_Values.Look(ref iconPath, "iconPath");
             Scribe_Values.Look(ref templateDefName, "templateDefName");
+            Scribe_Values.Look(ref generatedWorkTypeDefName, "generatedWorkTypeDefName");
+            Scribe_Values.Look(ref customName, "customName", false);
             Scribe_Values.Look(ref templateVersion, "templateVersion");
             Scribe_Values.Look(ref templateHash, "templateHash");
             Scribe_Values.Look(ref autoAssign, "autoAssign");

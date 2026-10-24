@@ -30,6 +30,7 @@
 
 # Build artifacts shipped into the mod folder
 mod/1.6/Assemblies/
+**/mod/1.7/Assemblies/
 
 /.idea/
 /.claude/

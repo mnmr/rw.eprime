@@ -55,6 +55,7 @@ namespace EPrimeReadouts.UI
         // group name and active Medium GUI style. Refresh: immediate on a key
         // change, before drawing the row. Equality: exact key hits reuse all
         // measurements. Teardown: Reset releases the key and measurements.
+        private string cachedDisplayName = "";
         private float cachedNameWidth = -1f;
         private float cachedNameLineHeight = -1f;
         private float cachedRenameSize = -1f;
@@ -129,7 +130,8 @@ namespace EPrimeReadouts.UI
                 using (GuiStateScope.Capture())
                 {
                     Text.Font = GameFont.Medium;
-                    cachedNameWidth = WrText.FitWidth(group.Name);
+                    cachedDisplayName = SeededReadoutNames.Name(group);
+                    cachedNameWidth = WrText.FitWidth(cachedDisplayName);
                     cachedNameLineHeight = Mathf.Ceil(Text.LineHeight);
                     cachedRenameSize = Mathf.Ceil(
                         Text.CurFontStyle.fontSize);
@@ -184,17 +186,17 @@ namespace EPrimeReadouts.UI
                     Text.Anchor = TextAnchor.MiddleLeft;
                     Text.WordWrap = false;
                     GUI.color = Color.white;
-                    Widgets.Label(labelRect, group.Name);
+                    Widgets.Label(labelRect, cachedDisplayName);
                     if (cachedNameWidth > labelWidth)
-                        TooltipHandler.TipRegion(labelRect, group.Name);
+                        TooltipHandler.TipRegion(labelRect, cachedDisplayName);
                     if (Widgets.ButtonImage(pencilRect, TexButton.Rename))
                     {
                         int capturedId = group.Id;
-                        string capturedName = group.Name;
+                        string capturedName = cachedDisplayName;
                         Find.WindowStack.Add(new Dialog_NameInput(
                             capturedName,
-                            name => ReadoutCommands.RenameGroup(
-                                capturedId, name.Trim()),
+                            name => { if (name.Trim() != capturedName)
+                                ReadoutCommands.RenameGroup(capturedId, name.Trim()); },
                             name => GroupListView.GroupNameProblem(name, capturedId)));
                     }
                 }
@@ -503,6 +505,7 @@ namespace EPrimeReadouts.UI
             {
                 Id = source.Id,
                 Name = source.Name,
+                SeedName = source.SeedName,
                 OrderIndex = source.OrderIndex,
                 DefaultEnabled = source.DefaultEnabled,
                 Tiers = TierOps.Clone(source.Tiers),
@@ -534,7 +537,7 @@ namespace EPrimeReadouts.UI
             {
                 int poolId = SlotToken.PoolId(canonical);
                 var pool = store?.Model.PoolById(poolId);
-                return pool != null ? pool.Name : canonical;
+                return pool != null ? SeededReadoutNames.Name(pool) : canonical;
             }
             if (isPool)
             {
@@ -788,6 +791,7 @@ namespace EPrimeReadouts.UI
             groupSnapshotVersion = -1;
             groupSnapshotId = -1;
             groupSnapshot = null;
+            cachedDisplayName = "";
             cachedNameWidth = -1f;
             cachedNameLineHeight = -1f;
             cachedRenameSize = -1f;

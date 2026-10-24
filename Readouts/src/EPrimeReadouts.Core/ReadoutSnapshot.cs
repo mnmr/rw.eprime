@@ -9,16 +9,18 @@ namespace EPrimeReadouts.Core
     {
         public sealed class Pool
         {
-            internal Pool(int id, string name, string? iconDefName, string[] members)
+            internal Pool(int id, string name, string? iconDefName, string[] members, string? seedName)
             {
                 Id = id;
                 Name = name;
+                SeedName = seedName;
                 IconDefName = iconDefName;
                 Members = Array.AsReadOnly(members);
             }
 
             public int Id { get; }
             public string Name { get; }
+            public string? SeedName { get; }
             public string? IconDefName { get; }
             public IReadOnlyList<string> Members { get; }
         }
@@ -26,10 +28,11 @@ namespace EPrimeReadouts.Core
         public sealed class Group
         {
             internal Group(int id, string name, int orderIndex, bool defaultEnabled,
-                IReadOnlyList<IReadOnlyList<string>> tiers)
+                IReadOnlyList<IReadOnlyList<string>> tiers, string? seedName)
             {
                 Id = id;
                 Name = name;
+                SeedName = seedName;
                 OrderIndex = orderIndex;
                 DefaultEnabled = defaultEnabled;
                 Tiers = new ReadOnlyCollection<IReadOnlyList<string>>(
@@ -38,6 +41,7 @@ namespace EPrimeReadouts.Core
 
             public int Id { get; }
             public string Name { get; }
+            public string? SeedName { get; }
             public int OrderIndex { get; }
             public bool DefaultEnabled { get; }
             public IReadOnlyList<IReadOnlyList<string>> Tiers { get; }
@@ -61,7 +65,7 @@ namespace EPrimeReadouts.Core
             {
                 ResourcePool source = pools![i]; // Non-empty copy => pools exists.
                 string[] members = source.Members?.ToArray() ?? Array.Empty<string>();
-                poolCopy[i] = new Pool(source.Id, source.Name ?? "", source.IconDefName, members);
+                poolCopy[i] = new Pool(source.Id, source.Name ?? "", source.IconDefName, members, source.SeedName);
             }
 
             var groupCopy = new Group[groups?.Count ?? 0];
@@ -74,7 +78,7 @@ namespace EPrimeReadouts.Core
                     tiers[tier] = Array.AsReadOnly(
                         source.Tiers![tier]?.ToArray() ?? Array.Empty<string>());
                 groupCopy[i] = new Group(source.Id, source.Name ?? "", source.OrderIndex,
-                    source.DefaultEnabled, tiers);
+                    source.DefaultEnabled, tiers, source.SeedName);
             }
             return new ReadoutSnapshot(poolCopy, groupCopy);
         }
@@ -89,6 +93,7 @@ namespace EPrimeReadouts.Core
                 {
                     Id = source.Id,
                     Name = source.Name,
+                    SeedName = source.SeedName,
                     IconDefName = source.IconDefName,
                     Members = new List<string>(source.Members),
                 });
@@ -105,6 +110,7 @@ namespace EPrimeReadouts.Core
                 {
                     Id = source.Id,
                     Name = source.Name,
+                    SeedName = source.SeedName,
                     OrderIndex = source.OrderIndex,
                     DefaultEnabled = source.DefaultEnabled,
                     Tiers = tiers,

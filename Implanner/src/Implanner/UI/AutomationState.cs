@@ -187,7 +187,7 @@ namespace Implanner.UI
             for (int i = 0; i < rows.Count; i++)
             {
                 ReserveRow row = rows[i];
-                if (ReserveBuffers.TryGetValue(row.BufferKey, out string retained)
+                if (ReserveBuffers.TryGetValue(row.BufferKey, out string? retained)
                     && seededAmounts.TryGetValue(row.BufferKey, out int seeded)
                     && seeded == row.Amount)
                 {

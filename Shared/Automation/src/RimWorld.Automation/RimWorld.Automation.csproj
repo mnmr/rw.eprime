@@ -14,11 +14,10 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" Condition="'$(RimWorldVersion)' == '1.6'" />
-    <PackageReference Include="Lib.Harmony" Version="2.*" ExcludeAssets="runtime" />
+    <PackageReference Include="Lib.Harmony" Version="2.*" ExcludeAssets="runtime" Condition="'$(RimWorldVersion)' == '1.6'" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" Condition="'$(RimWorldVersion)' == '1.6'" />
     <ProjectReference Include="../RimWorld.Automation.Core/RimWorld.Automation.Core.csproj" />
     <Reference Include="System.Runtime.Serialization" Condition="'$(RimWorldVersion)' == '1.6'" />
-    <Reference Include="Assembly-CSharp" HintPath="$(InstalledGameRoot)/Assembly-CSharp.dll" Private="false" Condition="'$(RimWorldVersion)' == '1.7'" />
-    <Reference Include="UnityStubs" HintPath="$(InstalledGameRoot)/UnityStubs.dll" Private="false" Condition="'$(RimWorldVersion)' == '1.7'" />
   </ItemGroup>
+  <Import Project="../../../Build/RimWorld17.props" Condition="'$(RimWorldVersion)' == '1.7'" />
 </Project>

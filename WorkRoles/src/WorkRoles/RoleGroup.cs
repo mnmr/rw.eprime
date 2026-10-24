@@ -14,11 +14,48 @@ namespace WorkRoles
 
         public int id;
         public string label = null!; // assigned at creation or load
+        // Explicit provenance for newly seeded groups. Never backfill by label:
+        // legacy saves cannot distinguish shipped and player-authored names.
+        public string? nameSourceDef;
+
+        // Owner: this RoleGroup; Key: instance identity. Value: immutable display label.
+        // Dependencies: saved label, nameSourceDef, group identity, language and definition revisions.
+        // Refresh: immediate on a dependency change, never changes saved state.
+        // Equality: an equal rebuild retains the prior string reference.
+        // Teardown: no external resources; instance-owned fields die with the model.
+        private string? displaySource;
+        private string? displayNameSourceDef;
+        private int displayGroupId = -1;
+        private string? displayLabel;
+        private int displayLanguage = -1, displayDefinitions = -1;
+        internal string DisplayLabel
+        {
+            get
+            {
+                int language = LanguageChangeCoordinator.Revision;
+                int definitions = DefinitionReloadCoordinator.Revision;
+                if (displayLabel == null || displaySource != label || displayGroupId != id
+                    || displayNameSourceDef != nameSourceDef
+                    || displayLanguage != language || displayDefinitions != definitions)
+                {
+                    string next = SeededDisplayNames.Group(this);
+                    if (!string.Equals(displayLabel, next, System.StringComparison.Ordinal))
+                        displayLabel = next;
+                    displaySource = label;
+                    displayNameSourceDef = nameSourceDef;
+                    displayGroupId = id;
+                    displayLanguage = language;
+                    displayDefinitions = definitions;
+                }
+                return displayLabel!;
+            }
+        }
 
         public void ExposeData()
         {
             Scribe_Values.Look(ref id, "id");
             Scribe_Values.Look(ref label!, "label");
+            Scribe_Values.Look(ref nameSourceDef, "nameSourceDef");
         }
     }
 }

@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_NoFirefighting.label>Ildskræk</WS_NoFirefighting.label>
+  <WS_NoFirefighting.description>Blokerende: Kolonister med rollen slukker aldrig brande, selv når en senere rolle (som Basis) indeholder brandslukning.</WS_NoFirefighting.description>
+  <WS_Core.label>Kerne</WS_Core.label>
+  <WS_Core.description>Akut arbejde, alle kolonister skal udføre: brandslukning, modtagelse af behandling og redning.</WS_Core.description>
+  <WS_Basics.label>Basis</WS_Basics.label>
+  <WS_Basics.description>Egenomsorg og enkelt arbejde, alle kolonister bør udføre.</WS_Basics.description>
+  <WS_Rescuer.label>Redder</WS_Rescuer.label>
+  <WS_Rescuer.description>Redning af ukampdygtige kolonister.</WS_Rescuer.description>
+  <WS_Doctor.label>Læge</WS_Doctor.label>
+  <WS_Doctor.description>Lægebehandling af kolonister, fanger og dyr.</WS_Doctor.description>
+  <WS_Medic.label>Sanitetsarbejder</WS_Medic.label>
+  <WS_Medic.description>Lægearbejde undtagen operationer på kolonister.</WS_Medic.description>
+  <WS_Laborer.label>Arbejdsmand</WS_Laborer.label>
+  <WS_Laborer.description>Forskellige enkle opgaver.</WS_Laborer.description>
+  <WS_Childminder.label>Omsorgsperson</WS_Childminder.label>
+  <WS_Childminder.description>Børnepasning og undervisning.</WS_Childminder.description>
+  <WS_Firefighter.label>Brandmand</WS_Firefighter.label>
+  <WS_Firefighter.description>Brandslukning.</WS_Firefighter.description>
+  <WS_Patient.label>Patient</WS_Patient.label>
+  <WS_Patient.description>Modtagelse af lægebehandling.</WS_Patient.description>
+  <WS_Bedrest.label>Sengeleje</WS_Bedrest.label>
+  <WS_Bedrest.description>Hvile i seng ved sygdom eller skade.</WS_Bedrest.description>
+  <WS_Jailor.label>Fangevogter</WS_Jailor.label>
+  <WS_Jailor.description>Fangehåndtering undtagen forhør, slavebinding og omvendelse: mad, ledsagelse, samtaler, undertrykkelse, løsladelse og henrettelser.</WS_Jailor.description>
+  <WS_Warden.label>Fangeansvarlig</WS_Warden.label>
+  <WS_Warden.description>Kontakt med fanger: rekruttering, omvendelse, mad og løsladelse.</WS_Warden.description>
+  <WS_Grunt.label>Medhjælper</WS_Grunt.label>
+  <WS_Grunt.description>Transport og rengøring.</WS_Grunt.description>
+  <WS_Hauler.label>Bærer</WS_Hauler.label>
+  <WS_Hauler.description>Transport af genstande.</WS_Hauler.description>
+  <WS_Cleaner.label>Rengører</WS_Cleaner.label>
+  <WS_Cleaner.description>Rengøring.</WS_Cleaner.description>
+  <WS_Handler.label>Dyretræner</WS_Handler.label>
+  <WS_Handler.description>Tæmning, træning og slagtning af dyr.</WS_Handler.description>
+  <WS_Cook.label>Kok</WS_Cook.label>
+  <WS_Cook.description>Madlavning og partering.</WS_Cook.description>
+  <WS_Butcher.label>Slagter</WS_Butcher.label>
+  <WS_Butcher.description>Partering af væsner.</WS_Butcher.description>
+  <WS_Brewer.label>Brygger</WS_Brewer.label>
+  <WS_Brewer.description>Brygning af urt på bryggeriet.</WS_Brewer.description>
+  <WS_Hunter.label>Jæger</WS_Hunter.label>
+  <WS_Hunter.description>Jagt på vilde dyr til føde.</WS_Hunter.description>
+  <WS_Fisher.label>Fisker</WS_Fisher.label>
+  <WS_Fisher.description>Fiskeri.</WS_Fisher.description>
+  <WS_Builder.label>Bygmester</WS_Builder.label>
+  <WS_Builder.description>Byggeri, reparation og nedrivning.</WS_Builder.description>
+  <WS_Repairer.label>Håndværker</WS_Repairer.label>
+  <WS_Repairer.description>Alt byggearbejde undtagen opførelse af nye bygninger.</WS_Repairer.description>
+  <WS_Farmer.label>Landmand</WS_Farmer.label>
+  <WS_Farmer.description>Såning, høst og plantefældning.</WS_Farmer.description>
+  <WS_Grower.label>Dyrker</WS_Grower.label>
+  <WS_Grower.description>Såning og høst i dyrkningszoner.</WS_Grower.description>
+  <WS_PlantCutter.label>Plantefælder</WS_PlantCutter.label>
+  <WS_PlantCutter.description>Fældning og høst af vilde planter og træer.</WS_PlantCutter.description>
+  <WS_Miner.label>Minearbejder</WS_Miner.label>
+  <WS_Miner.description>Minedrift og boring.</WS_Miner.description>
+  <WS_Tailor.label>Skrædder</WS_Tailor.label>
+  <WS_Tailor.description>Fremstilling af tøj.</WS_Tailor.description>
+  <WS_Smith.label>Smed</WS_Smith.label>
+  <WS_Smith.description>Smedning af våben og rustninger.</WS_Smith.description>
+  <WS_Fabricator.label>Fabrikant</WS_Fabricator.label>
+  <WS_Fabricator.description>Fremstilling ved fabrikationsbænken.</WS_Fabricator.description>
+  <WS_Mechanitor.label>Mekanitor</WS_Mechanitor.label>
+  <WS_Mechanitor.description>Reparation af mekanoider, fremavl af nye og kodning af underkerner. Anbefales kun til kolonister med en mechlink.</WS_Mechanitor.description>
+  <WS_Crafter.label>Fremstiller</WS_Crafter.label>
+  <WS_Crafter.description>Almindelig fremstilling: stenhugning, smeltning, rusmidler og komponenter.</WS_Crafter.description>
+  <WS_Researcher.label>Forsker</WS_Researcher.label>
+  <WS_Researcher.description>Forskning ved en forskningsbænk.</WS_Researcher.description>
+  <WS_DarkStudier.label>Anomalist</WS_DarkStudier.label>
+  <WS_DarkStudier.description>Studier af anomale væsner.</WS_DarkStudier.description>
+  <WS_Artist.label>Kunstner</WS_Artist.label>
+  <WS_Artist.description>Skulpturer og kunstværker.</WS_Artist.description>
+  <WS_Nurse.label>Sygeplejer</WS_Nurse.label>
+  <WS_Nurse.description>Mad, redning og besøg til patienter; akut selvbehandling.</WS_Nurse.description>
+  <WS_DrugMaker.label>Rusmiddelfremstiller</WS_DrugMaker.label>
+  <WS_DrugMaker.description>Produktion af rusmidler ved rusmiddellaboratoriet og serumcentrifugen.</WS_DrugMaker.description>
+  <WS_Painter.label>Maler</WS_Painter.label>
+  <WS_Painter.description>Maling og fjernelse af maling.</WS_Painter.description>
+  <WS_Herder.label>Hyrde</WS_Herder.label>
+  <WS_Herder.description>Pasning af indhegnede dyr: indhegning, fodring, malkning, klipning og slagtning.</WS_Herder.description>
+</LanguageData>

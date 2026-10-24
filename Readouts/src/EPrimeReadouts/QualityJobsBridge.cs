@@ -164,7 +164,7 @@ namespace EPrimeReadouts
         private static List<T> ListFor<T>(
             Dictionary<Map, List<T>> byMap, Map map, List<Map> maps)
         {
-            if (byMap.TryGetValue(map, out List<T> list)) return list;
+            if (byMap.TryGetValue(map, out List<T>? list)) return list;
             list = new List<T>();
             byMap.Add(map, list);
             if (!maps.Contains(map)) maps.Add(map);
@@ -193,7 +193,7 @@ namespace EPrimeReadouts
             {
                 const BindingFlags flags = BindingFlags.Public
                     | BindingFlags.Static;
-                MethodInfo get = api.GetMethod("GetManagedJobs", flags);
+                MethodInfo? get = api.GetMethod("GetManagedJobs", flags);
                 if (get == null || get.GetParameters().Length != 0
                     || get.ReturnType == typeof(void))
                     throw new MissingMemberException("GetManagedJobs");
@@ -206,9 +206,9 @@ namespace EPrimeReadouts
                 Type jobType = jobItemProperty.PropertyType;
 
                 Assembly assembly = api.Assembly;
-                billJobType = assembly.GetType("QualityJobs.ManagedBillJob", true);
+                billJobType = assembly.GetType("QualityJobs.ManagedBillJob", true)!;
                 constructionJobType = assembly.GetType(
-                    "QualityJobs.ManagedConstructionJob", true);
+                    "QualityJobs.ManagedConstructionJob", true)!;
                 if (!jobType.IsAssignableFrom(billJobType)
                     || !jobType.IsAssignableFrom(constructionJobType))
                     throw new MissingMemberException("managed job types");
@@ -270,7 +270,7 @@ namespace EPrimeReadouts
 
         private static PropertyInfo Property(Type owner, string name)
         {
-            PropertyInfo property = owner.GetProperty(
+            PropertyInfo? property = owner.GetProperty(
                 name, BindingFlags.Instance | BindingFlags.Public);
             if (property != null) return property;
             Type[] inherited = owner.GetInterfaces();
@@ -285,7 +285,7 @@ namespace EPrimeReadouts
 
         private static PropertyInfo Indexer(Type owner)
         {
-            PropertyInfo property = owner.GetProperty(
+            PropertyInfo? property = owner.GetProperty(
                 "Item", BindingFlags.Instance | BindingFlags.Public);
             if (property == null || property.GetIndexParameters().Length != 1
                 || property.GetIndexParameters()[0].ParameterType != typeof(int))
@@ -319,7 +319,7 @@ namespace EPrimeReadouts
             return Expression.Lambda<Func<object, T>>(
                 Expression.Convert(
                     Expression.Property(
-                        Expression.Convert(instance, property.DeclaringType),
+                        Expression.Convert(instance, property.DeclaringType!),
                         property),
                     typeof(T)),
                 instance).Compile();
@@ -336,7 +336,7 @@ namespace EPrimeReadouts
             return Expression.Lambda<Func<object, int, T>>(
                 Expression.Convert(
                     Expression.Property(
-                        Expression.Convert(instance, property.DeclaringType),
+                        Expression.Convert(instance, property.DeclaringType!),
                         property, index),
                     typeof(T)),
                 instance, index).Compile();

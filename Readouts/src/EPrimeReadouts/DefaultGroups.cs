@@ -139,6 +139,7 @@ namespace EPrimeReadouts
                 if (members.Count == 0) continue;
                 int poolId = takePoolId();
                 var pool = model.CreatePool(poolId, name);
+                pool.SeedName = name;
                 pool.Members.Add(catRef);
                 poolIdByName[name] = poolId;
             }
@@ -160,6 +161,7 @@ namespace EPrimeReadouts
                 }
                 if (layout.Count == 0 || !model.CanUseGroupName(name)) continue;
                 var group = model.CreateGroup(takeGroupId(), name);
+                group.SeedName = name;
                 model.SetTiers(group.Id, layout);
             }
         }

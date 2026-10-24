@@ -103,7 +103,7 @@ namespace WorkRoles
             if (!def.group.NullOrEmpty())
             {
                 RoleGroup? group = ResolveOrCreateGroup(
-                    SeededDefIdentity.GroupLabel(def));
+                    SeededDefIdentity.GroupLabel(def), SeededDefIdentity.GroupDef(def)?.defName);
                 if (group != null) role.groupId = group.id;
             }
             if (def.activeHours is { Length: 24 } activeHours)
@@ -126,7 +126,8 @@ namespace WorkRoles
         }
 
         /// Seeding path for group creation: runs inside the synced simulation.
-        internal static RoleGroup? EnsureGroup(string? label) => ResolveOrCreateGroup(label);
+        internal static RoleGroup? EnsureGroup(string? label, string? nameSourceDef = null) =>
+            ResolveOrCreateGroup(label, nameSourceDef);
 
         /// Applies an import on every client: the raw XML travels with the command
         /// and each client rebuilds the same deterministic plan. Selections use
@@ -504,7 +505,7 @@ namespace WorkRoles
         /// on purpose: command args travel between MP clients, and comparing
         /// against a locally-translated name inside the command body would
         /// resolve differently per language — a guaranteed desync.
-        private static RoleGroup? ResolveOrCreateGroup(string? groupName)
+        private static RoleGroup? ResolveOrCreateGroup(string? groupName, string? nameSourceDef = null)
         {
             groupName = groupName?.Trim();
             if (groupName is not { Length: > 0 }
@@ -514,7 +515,7 @@ namespace WorkRoles
             if (group != null) return group;
             if (!GroupNameRules.IsAvailable(
                     groupName, Store.groups, existing => existing.label)) return null;
-            group = new RoleGroup { id = Store.NextGroupId(), label = groupName };
+            group = new RoleGroup { id = Store.NextGroupId(), label = groupName, nameSourceDef = nameSourceDef };
             Store.groups.Add(group);
             return group;
         }
@@ -601,7 +602,7 @@ namespace WorkRoles
             if (orderChanged)
             {
                 Store.roles.Clear();
-                Store.roles.AddRange(reordered);
+                Store.roles.AddRange(reordered!);
                 Store.InvalidateRoleIndex();
             }
             SweepEmptyGroups();
@@ -622,6 +623,7 @@ namespace WorkRoles
                 || !GroupNameRules.IsAvailable(
                     name, store.groups, existing => existing.label, group)) return;
             group.label = name;
+            group.nameSourceDef = null;
             UiVersion.Changed(ModelDomain.Catalog);
         }
 
@@ -668,6 +670,7 @@ namespace WorkRoles
                 || !CatalogNameRules.IsAvailable(
                     label, Store.roles, existing => existing.label, role)) return;
             role.label = label;
+            role.customName = true;
             UiVersion.RoleChanged(roleId, ModelDomain.RolePresentation);
         }
 
@@ -815,6 +818,9 @@ namespace WorkRoles
                 color = values.Color,
                 iconPath = values.IconPath,
                 templateDefName = values.TemplateDefName,
+                // A player-named duplicate has no seeded-name provenance,
+                // just as ForPlayerDuplicate removes its template identity.
+                generatedWorkTypeDefName = null,
                 templateVersion = values.TemplateVersion,
                 templateHash = values.TemplateHash,
                 autoAssign = values.AutoAssign,
@@ -1295,7 +1301,7 @@ namespace WorkRoles
             }
             bool wasManaged = Store.IsManaged(pawn);
             if (wasManaged && Store.pawnSets.TryGetValue(pawn,
-                    out PawnRoleSet existing)
+                    out PawnRoleSet? existing)
                 && AssignmentSequencesEqual(existing.assignments, assignments))
                 return;
             bool planChanged = !wasManaged || !AssignmentSequencesEqual(

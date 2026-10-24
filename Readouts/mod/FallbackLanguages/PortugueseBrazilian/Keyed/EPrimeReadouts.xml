@@ -1,0 +1,153 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <EPR.Title>EPrime's Readouts</EPR.Title>
+  <EPR.Results>Resultados</EPR.Results>
+  <EPR.NoMatches>Sem correspondências</EPR.NoMatches>
+  <EPR.MoreResults>…e mais {0}</EPR.MoreResults>
+  <EPR.CycleTip>Alternar o número de níveis visíveis</EPR.CycleTip>
+  <EPR.UseVanilla>Usar o painel do jogo original</EPR.UseVanilla>
+  <EPR.OffsetX>Deslocamento horizontal</EPR.OffsetX>
+  <EPR.OffsetY>Deslocamento vertical</EPR.OffsetY>
+  <EPR.PanelWidth>Largura do painel</EPR.PanelWidth>
+  <EPR.BottomMargin>Margem inferior</EPR.BottomMargin>
+  <EPR.Groups>Grupos</EPR.Groups>
+  <EPR.Resources>Recursos</EPR.Resources>
+  <EPR.AllStorableItems>Todos os itens armazenáveis</EPR.AllStorableItems>
+  <EPR.All>Todos</EPR.All>
+  <EPR.Vanilla>Jogo original</EPR.Vanilla>
+  <EPR.SearchFilter>Filtro de pesquisa</EPR.SearchFilter>
+  <EPR.ItemFilter>Filtro de itens</EPR.ItemFilter>
+  <EPR.SourceFilter>Filtro de origem</EPR.SourceFilter>
+  <EPR.NoMatchingItems>Nenhum item correspondente</EPR.NoMatchingItems>
+  <EPR.Editor>Editor</EPR.Editor>
+  <EPR.GroupEditor>Editor de grupos</EPR.GroupEditor>
+  <EPR.Add>Adicionar</EPR.Add>
+  <EPR.DeleteConfirm>Excluir o grupo “{0}”?</EPR.DeleteConfirm>
+  <EPR.SelectGroupHint>Selecione ou crie um grupo para editá-lo.</EPR.SelectGroupHint>
+  <EPR.Thresholds>Limites</EPR.Thresholds>
+  <EPR.Low>Baixo</EPR.Low>
+  <EPR.Critical>Crítico</EPR.Critical>
+  <EPR.Set>Definir</EPR.Set>
+  <EPR.Clear>Limpar</EPR.Clear>
+  <EPR.ShowWhenZero>Mostrar quando zerado</EPR.ShowWhenZero>
+  <EPR.PoolTip>Adicionar como conjunto de recursos: um espaço com a quantidade total de todos os itens desta categoria</EPR.PoolTip>
+  <EPR.EnableTip>Mostrar este grupo no painel de recursos</EPR.EnableTip>
+  <EPR.RestoreDefaults>Restaurar padrões</EPR.RestoreDefaults>
+  <EPR.RestoreConfirm>Substituir TODOS os grupos e limites pelas configurações padrão? Isto afeta todos os jogadores em uma partida multijogador.</EPR.RestoreConfirm>
+  <EPR.Help>Ajuda</EPR.Help>
+  <EPR.HelpGroups>Estes são seus grupos de exibição de recursos. Cada grupo aparece em uma faixa própria.
+
+Clique na marca de seleção para alternar a visibilidade ou em [x] para excluir o grupo.
+
+Adicione grupos usando o campo de nome e o botão Adicionar.</EPR.HelpGroups>
+  <EPR.HelpResources>Explore os recursos e conjuntos de recursos definidos para adicioná-los ao grupo selecionado.
+
+Clique em uma entrada para adicioná-la ao final do grupo ou arraste-a para um espaço específico de um nível. As entradas já atribuídas ficam atenuadas e marcadas; clique nelas com o botão direito ou na respectiva marca para removê-las.</EPR.HelpResources>
+  <EPR.HelpEditor>Este painel mostra os níveis do grupo selecionado.
+
+Um grupo pode ter até três níveis de exibição. Um novo nível fica disponível automaticamente quando o anterior deixa de estar vazio.
+
+Clique nos itens do painel à direita ou arraste-os para adicioná-los ao grupo selecionado.
+
+Clique em um espaço para definir suas opções de exibição. Clique com o botão direito para remover a atribuição. Arraste os itens para reordená-los dentro de um nível ou entre níveis.</EPR.HelpEditor>
+  <EPR.Options>Opções</EPR.Options>
+  <EPR.Overview>Visão geral</EPR.Overview>
+  <EPR.HelpChapterBasics>Conceitos básicos</EPR.HelpChapterBasics>
+  <EPR.HelpChapterGroups>Grupos</EPR.HelpChapterGroups>
+  <EPR.HelpChapterPools>Conjuntos de recursos</EPR.HelpChapterPools>
+  <EPR.HelpChapterOptions>Opções</EPR.HelpChapterOptions>
+  <EPR.HelpReload>Recarregar</EPR.HelpReload>
+  <EPR.WelcomeTitle>EPrime's Readouts</EPR.WelcomeTitle>
+  <EPR.WelcomeBody>Readouts substitui o painel de recursos no canto superior esquerdo por grupos configuráveis. Cada grupo contém até três níveis de recursos ou conjuntos de recursos, e os contadores mudam de cor nos limites que definir.</EPR.WelcomeBody>
+  <EPR.WelcomeFind>Abra o editor com o botão da engrenagem no topo do painel de recursos. A aba Opções contém os ajustes de exibição e a aba Ajuda explica o restante.</EPR.WelcomeFind>
+  <EPR.WelcomeTakeMeThere>Abrir agora</EPR.WelcomeTakeMeThere>
+  <EPR.ShowSearchFilter>Mostrar filtro de pesquisa</EPR.ShowSearchFilter>
+  <EPR.SearchHideZero>Ocultar resultados zerados</EPR.SearchHideZero>
+  <EPR.SearchStorageOnly>Contar apenas itens armazenados</EPR.SearchStorageOnly>
+  <EPR.SearchStorageOnlyTip>Quando ativado, conta apenas itens elegíveis e não apodrecidos em zonas de armazenamento ou edifícios de armazenamento, como estantes. Os itens soltos em outras partes do mapa são excluídos. Itens transportados por personagens, salvos em inventários ou recipientes, ou ocultos em áreas ainda não reveladas nunca são contados. Os itens proibidos são incluídos, exceto se “Ignorar itens proibidos” também estiver ativado.</EPR.SearchStorageOnlyTip>
+  <EPR.SearchHideForbidden>Ignorar itens proibidos</EPR.SearchHideForbidden>
+  <EPR.SelectJumpCamera>Mover a câmera para o recurso clicado</EPR.SelectJumpCamera>
+  <EPR.DisplayOptions>Opções de exibição</EPR.DisplayOptions>
+  <EPR.KeepReadoutToggle>Manter o botão dos recursos na barra de ferramentas</EPR.KeepReadoutToggle>
+  <EPR.KeepReadoutToggleTip>Mantém o botão de recursos do próprio jogo na barra de ferramentas no canto inferior direito. Clicar nele mostra ou oculta os grupos; com os grupos ocultos, o painel conserva apenas a engrenagem e o campo de pesquisa.</EPR.KeepReadoutToggleTip>
+  <EPR.TierLayoutOptions>Disposição dos níveis</EPR.TierLayoutOptions>
+  <EPR.TierLayoutHorizontal>Horizontal</EPR.TierLayoutHorizontal>
+  <EPR.TierLayoutVertical>Vertical</EPR.TierLayoutVertical>
+  <EPR.TierLayoutTip>Como um grupo expandido apresenta os níveis adicionais, quer tenha usado os triângulos, quer tenha passado o mouse sobre ele. Horizontal acrescenta-os à direita mesmo assim linha. Vertical dá uma linha a cada nível e aumenta a altura da faixa.</EPR.TierLayoutTip>
+  <EPR.ExpandOnHover>Expandir ao passar o cursor</EPR.ExpandOnHover>
+  <EPR.CollapseWhenIdle>Recolher ao retirar o cursor</EPR.CollapseWhenIdle>
+  <EPR.ShowModName>Mostrar nome do mod</EPR.ShowModName>
+  <EPR.CountOptions>Opções de contagem</EPR.CountOptions>
+  <EPR.PlannedWorkOptions>Trabalho planejado</EPR.PlannedWorkOptions>
+  <EPR.ReserveForBills>Reservar recursos para ordens de produção</EPR.ReserveForBills>
+  <EPR.ReserveForBillsTip>Subtrai os ingredientes que as ordens pendentes ainda precisam consumir. Uma ordem só reserva um ingrediente quando existe exatamente uma forma de satisfazer essa necessidade. “Qualquer couro” e outras escolhas abertas não reservam nada.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBuildables>Reservar recursos para construções</EPR.ReserveForBuildables>
+  <EPR.ReserveForBuildablesTip>Subtrai os materiais que os projetos e as estruturas em construção ainda precisam. Os materiais já entregues em uma estrutura não são contados novamente, e os projetos proibidos são ignorados.</EPR.ReserveForBuildablesTip>
+  <EPR.ShowNegativeCounts>Mostrar déficits como números negativos</EPR.ShowNegativeCounts>
+  <EPR.ShowNegativeCountsTip>Quando o trabalho planejado precisa de mais do que possui, mostra a quantidade em falta em vez de parar no zero.</EPR.ShowNegativeCountsTip>
+  <EPR.QualityJobsRework>Suporte para Quality Jobs</EPR.QualityJobsRework>
+  <EPR.QualityJobsReworkTip>Para ordens e construções com uma qualidade desejada, estima quantas tentativas serão necessárias e reserva recursos para todas. As estruturas reconstruídas devolvem a proporção de materiais que o jogo original restitui ao desconstruí-las.</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsMissingTip>Requer EPrime's Quality Jobs, que não está instalado.</EPR.QualityJobsMissingTip>
+  <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs está instalado, mas não disponibiliza a integração necessária. Atualize-o para ativar esta opção.</EPR.QualityJobsOutdatedTip>
+  <EPR.TipPlannedWork>Trabalho planejado</EPR.TipPlannedWork>
+  <EPR.TipResource>Recurso</EPR.TipResource>
+  <EPR.TipQueued>Em espera</EPR.TipQueued>
+  <EPR.TipEach>Por unidade</EPR.TipEach>
+  <EPR.TipDrain>Consumo</EPR.TipDrain>
+  <EPR.TipInStock>Em estoque</EPR.TipInStock>
+  <EPR.TipAvailableStock>{0} disponíveis · {1} em estoque</EPR.TipAvailableStock>
+  <EPR.TipOtherPlannedWork>Outro ({0})</EPR.TipOtherPlannedWork>
+  <EPR.TipMixedResources>Diversos</EPR.TipMixedResources>
+  <EPR.ClickOptions>Opções de clique</EPR.ClickOptions>
+  <EPR.SearchOptions>Opções de pesquisa</EPR.SearchOptions>
+  <EPR.HoverOptions>Opções ao passar o cursor</EPR.HoverOptions>
+  <EPR.OptionsFor>Opções de exibição de {0}</EPR.OptionsFor>
+  <EPR.ThresholdCaption>Personalizar os limites de cor dos contadores</EPR.ThresholdCaption>
+  <EPR.CountRuleCaption>Substituir as opções de contagem deste recurso/conjunto</EPR.CountRuleCaption>
+  <EPR.RuleDefault>Padrão</EPR.RuleDefault>
+  <EPR.RuleAlwaysOn>Sempre ativado</EPR.RuleAlwaysOn>
+  <EPR.RuleAlwaysOff>Sempre desativado</EPR.RuleAlwaysOff>
+  <EPR.Pools>Conjuntos de recursos</EPR.Pools>
+  <EPR.ResourcePoolEditor>Editor de conjuntos de recursos</EPR.ResourcePoolEditor>
+  <EPR.HelpPools>Crie um conjunto de recursos e selecione-o aqui para editar o conteúdo no painel Recursos. Use as ações da linha para renomear ou excluir um conjunto.
+
+Para adicionar um conjunto a um grupo, mude para o Editor de grupos e use o ramo Conjuntos de recursos na árvore de recursos.</EPR.HelpPools>
+  <EPR.HelpPoolEditor>Use os filtros compartilhados para reduzir a árvore de recursos. Assinale categorias ou recursos individuais para incluí-los no conjunto selecionado. Clique no ícone de um recurso para usá-lo como ícone do conjunto.</EPR.HelpPoolEditor>
+  <EPR.SelectOrCreatePool>Selecione ou crie um conjunto de recursos para começar.</EPR.SelectOrCreatePool>
+  <EPR.DeletePoolConfirm>Excluir o conjunto “{0}”? Os espaços que o usam serão removidos de todos os grupos.</EPR.DeletePoolConfirm>
+  <EPR.NameLabel>Nome</EPR.NameLabel>
+  <EPR.PoolNameTaken>Já existe um conjunto de recursos com este nome.</EPR.PoolNameTaken>
+  <EPR.GroupNameTaken>Já existe um grupo com este nome.</EPR.GroupNameTaken>
+  <EPR.Export>Exportar</EPR.Export>
+  <EPR.Import>Importar</EPR.Import>
+  <EPR.Exported>Exportado para {0}</EPR.Exported>
+  <EPR.ExportOverwriteConfirm>{0} já existe. Substituir?</EPR.ExportOverwriteConfirm>
+  <EPR.Imported>Importação aplicada com êxito.</EPR.Imported>
+  <EPR.NoFiles>Não foram encontrados arquivos de exportação.</EPR.NoFiles>
+  <EPR.ExportPreviewTitle>Exportar Readouts</EPR.ExportPreviewTitle>
+  <EPR.CopyToClipboard>Copiar para a área de transferência</EPR.CopyToClipboard>
+  <EPR.CopiedToClipboard>Copiado para a área de transferência.</EPR.CopiedToClipboard>
+  <EPR.Save>Salvar</EPR.Save>
+  <EPR.ExportLocationLabel>Local para salvar</EPR.ExportLocationLabel>
+  <EPR.CopyPath>Copiar caminho</EPR.CopyPath>
+  <EPR.LocGameData>Pasta de dados do jogo</EPR.LocGameData>
+  <EPR.LocDesktop>Área de trabalho</EPR.LocDesktop>
+  <EPR.LocUserHome>Pasta do usuário</EPR.LocUserHome>
+  <EPR.LocCustom>Personalizado...</EPR.LocCustom>
+  <EPR.EnterPath>Inserir caminho</EPR.EnterPath>
+  <EPR.BadFileName>Insira um nome de arquivo válido.</EPR.BadFileName>
+  <EPR.BadDirectory>Insira um caminho de pasta válido.</EPR.BadDirectory>
+  <EPR.ImportTitle>Importar Readouts</EPR.ImportTitle>
+  <EPR.ImportLocationLabel>Local de importação</EPR.ImportLocationLabel>
+  <EPR.FromClipboard>Da área de transferência</EPR.FromClipboard>
+  <EPR.ClipboardEmpty>A área de transferência está vazia ou não contém uma exportação Readouts.</EPR.ClipboardEmpty>
+  <EPR.ImportWarning>AVISO: isto irá SUBSTITUIR todos os conjuntos, grupos e limites atuais. Afeta todos os jogadores em uma partida multijogador.</EPR.ImportWarning>
+  <EPR.ImportParseFailed>Não foi possível analisar o XML Readouts: {0}</EPR.ImportParseFailed>
+  <EPR.DeleteFileConfirm>Excluir o arquivo “{0}”? Esta ação não pode ser desfeita.</EPR.DeleteFileConfirm>
+  <EPR.ContentSummary>{0} conjuntos, {1} grupos</EPR.ContentSummary>
+  <EPR.PreviewPoolsHeader>Conjuntos</EPR.PreviewPoolsHeader>
+  <EPR.PreviewGroupsHeader>Grupos</EPR.PreviewGroupsHeader>
+  <EPR.PreviewPoolRow>{0} ({1} membros)</EPR.PreviewPoolRow>
+  <EPR.PreviewGroupRow>{0} ({1} níveis, {2} espaços)</EPR.PreviewGroupRow>
+  <EPR.PreviewNone>(nenhum)</EPR.PreviewNone>
+</LanguageData>

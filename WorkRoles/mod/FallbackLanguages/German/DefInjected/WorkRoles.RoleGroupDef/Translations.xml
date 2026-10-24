@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_GroupEssentials.label>Grundbedarf</WS_GroupEssentials.label>
+  <WS_GroupFood.label>Nahrung</WS_GroupFood.label>
+  <WS_GroupAnimals.label>Tiere</WS_GroupAnimals.label>
+  <WS_GroupIndoors.label>Drinnen</WS_GroupIndoors.label>
+  <WS_GroupOutdoors.label>Draußen</WS_GroupOutdoors.label>
+  <WS_GroupResearch.label>Forschung</WS_GroupResearch.label>
+  <WS_GroupSocial.label>Soziales</WS_GroupSocial.label>
+  <WS_GroupMedical.label>Medizin</WS_GroupMedical.label>
+</LanguageData>

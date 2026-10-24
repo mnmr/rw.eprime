@@ -361,7 +361,7 @@ namespace WorkRoles.UI
                 if (deletes.Count > 0)
                 {
                     var labels = new List<string>(deletes.Count);
-                    for (int i = 0; i < deletes.Count; i++) labels.Add(deletes[i].label);
+                    for (int i = 0; i < deletes.Count; i++) labels.Add(deletes[i].DisplayLabel);
                     rolesOverwriteInfo.Add("WR_OverwriteDeletes"
                         .Translate(labels.ToCommaList()).ToString());
                 }

@@ -1,0 +1,633 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_ColonistsTab>殖民者</WR_ColonistsTab>
+  <WR_RecommendationsTab>推荐</WR_RecommendationsTab>
+  <WR_OptionsTab>选项</WR_OptionsTab>
+  <WR_CompatSection>兼容性设置</WR_CompatSection>
+  <WR_OptNumeric>在表格中显示数字优先级</WR_OptNumeric>
+  <WR_TipOff>关闭</WR_TipOff>
+  <WR_TipOn>开启</WR_TipOn>
+  <WR_OptNumericTipWhat>原版的“手动优先级”开关，按存档保存。</WR_OptNumericTipWhat>
+  <WR_OptNumericTipOff>优先级表格（包括 Numbers 等模组）显示勾号</WR_OptNumericTipOff>
+  <WR_OptNumericTipOn>优先级表格显示数字</WR_OptNumericTipOn>
+  <WR_OptNumericTipWhy>此开关移至此处，因为 WorkRoles 替换了原版的“工作”页。</WR_OptNumericTipWhy>
+  <WR_OptVanillaRange>向其他模组提供原版 0–4 优先级</WR_OptVanillaRange>
+  <WR_OptVanillaRangeTipWhat>WorkRoles 使用唯一优先级排序工作，即从 1 开始的连续数字。</WR_OptVanillaRangeTipWhat>
+  <WR_OptVanillaRangeTipOff>其他模组读取原始优先级</WR_OptVanillaRangeTipOff>
+  <WR_OptVanillaRangeTipOn>优先级映射到原版的 0–4 范围</WR_OptVanillaRangeTipOn>
+  <WR_OptEmergencyRule>仅前 5 个职责可因紧急情况中断工作</WR_OptEmergencyRule>
+  <WR_OptEmergencyRuleTipWhat>决定哪些紧急工作（灭火、紧急治疗和上床接受紧急治疗）可以中断睡眠、进食及其他工作，按存档保存。</WR_OptEmergencyRuleTipWhat>
+  <WR_OptEmergencyRuleTipOff>任何已启用职责中的紧急工作均可中断当前工作</WR_OptEmergencyRuleTipOff>
+  <WR_OptEmergencyRuleTipOn>仅前 5 个已启用职责中的紧急工作可中断；后续职责按正常顺序执行</WR_OptEmergencyRuleTipOn>
+  <WR_OptEmergencyRuleTipWhy>默认开启，让排列末尾的后备职责等待轮到自己：若“医生”排在第六位，殖民者会继续烹饪，由专职医生处理急诊。若希望所有人都响应力所能及的紧急情况，可关闭。</WR_OptEmergencyRuleTipWhy>
+  <WR_AutomationSection>自动化设置</WR_AutomationSection>
+  <WR_OptAutoOptimize>每游戏小时自动优化殖民地</WR_OptAutoOptimize>
+  <WR_OptAutoOptimizeTipWhat>自动对每个殖民地运行“调整殖民地”并应用更改，按存档保存。</WR_OptAutoOptimizeTipWhat>
+  <WR_OptAutoOptimizeTipOff>职责分配仅在你编辑时改变</WR_OptAutoOptimizeTipOff>
+  <WR_OptAutoOptimizeTipOn>每个游戏整点应用推荐分配</WR_OptAutoOptimizeTipOn>
+  <WR_OptAutoOptimizeTipWhy>保留已固定的分配，包括被排除的职责。殖民者已有分配符合推荐时，不写入任何更改。</WR_OptAutoOptimizeTipWhy>
+  <WR_AutoOptimizeConfirmApply>“应用”会立即执行下方更改，并开启每小时自动优化。启用期间会隐藏“调整殖民地”和“就这样安排”按钮；你仍可正常分配、排序和固定职责。</WR_AutoOptimizeConfirmApply>
+  <WR_AutoOptimizeGlobalWarning>你有多个殖民地：自动优化是全局功能，每小时会更改所有殖民地的职责分配。下方预览仅显示当前殖民地的更改。</WR_AutoOptimizeGlobalWarning>
+  <WR_DisplaySection>显示设置</WR_DisplaySection>
+  <WR_OptSkillCaptions>在殖民者姓名下显示最佳技能</WR_OptSkillCaptions>
+  <WR_OptSkillCaptionsTip>每行会在姓名下方用小字显示殖民者最擅长的工作技能与等级，并按适合程度着色。关闭后仅显示姓名。</WR_OptSkillCaptionsTip>
+  <WR_OptVerdictsColonists>在殖民者职责标签上显示适合度</WR_OptVerdictsColonists>
+  <WR_OptVerdictsColonistsTip>职责标签以星标显示该殖民者的适合度，与推荐引擎一致：正面评价为白星（一星适合、二星优秀，金星卓越），负面为红星（一星较差、二星极差），中性为灰色。</WR_OptVerdictsColonistsTip>
+  <WR_OptVerdictsPalette>在职责面板中显示所选殖民者的适合度</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>职责面板中的标签显示每个职责对当前选中殖民者的适合程度。</WR_OptVerdictsPaletteTip>
+  <WR_OptVerdictsRecommendations>在推荐职责标签上显示适合度</WR_OptVerdictsRecommendations>
+  <WR_OptPaletteGrouping>职责面板分组</WR_OptPaletteGrouping>
+  <WR_OptVerdictsRecommendationsTip>推荐标签（技能面板和更改预览中）显示对应殖民者的职责适合度。</WR_OptVerdictsRecommendationsTip>
+  <WR_RecGlobalPanel>全局选项</WR_RecGlobalPanel>
+  <WR_RecGlobalPanelHelp>这些选项影响候选人的评分、排名及职责在最终推荐列表中的位置。若对修改不满意，可用“重置”恢复默认值。</WR_RecGlobalPanelHelp>
+  <WR_RecRolePanel>职责选项</WR_RecRolePanel>
+  <WR_RecRolePanelHelp>此处列出除被排除职责以外的所有职责。展开职责可调整其推荐选项。每名殖民者的职责自动排序；“猎人”仍按射击技能决定位置。</WR_RecRolePanelHelp>
+  <WR_RecExcludedHeader>排除的职责</WR_RecExcludedHeader>
+  <WR_RecExcludedHelp>此列表中的职责绝不推荐，包括通过训练路径或自动职责。现有固定分配仍受保护。使用“添加职责”排除一个职责；移除其标签即可重新允许推荐。</WR_RecExcludedHelp>
+  <WR_RecExcludedTip>排除设置适用于此存档中所有殖民者的推荐，包括“调整殖民地”和自动优化。仍可手动分配被排除的职责。编辑此列表不会改变当前分配；应用推荐时会移除未固定的排除职责，并保留固定分配。</WR_RecExcludedTip>
+  <WR_RecExcludedChipTip>此职责绝不推荐。点击移除图标即可重新允许推荐，并恢复“职责选项”中的条目。其已保存的选项会保留。</WR_RecExcludedChipTip>
+  <WR_RecExcludedAddTip>选择推荐引擎永不推荐的职责。任何职责都可排除，包括训练、自动、条件、阻止和组合职责。</WR_RecExcludedAddTip>
+  <WR_RecExcludedReason>此职责已从推荐中排除。在“推荐”页的“排除的职责”中移除它，即可重新允许推荐。</WR_RecExcludedReason>
+  <WR_RecTuneReset>重置</WR_RecTuneReset>
+  <WR_RecTuneResetTip>恢复本节的默认选项。</WR_RecTuneResetTip>
+  <WR_RecTuneCellHint>点击数值增大，右键点击减小。</WR_RecTuneCellHint>
+  <WR_StepModifiersTip>点击：1 步。\nShift：5 步。\nCtrl：10 步。\nCtrl+Shift：跳至极限。</WR_StepModifiersTip>
+  <WR_SignalLetterAwful>极</WR_SignalLetterAwful>
+  <WR_SignalLetterPoor>差</WR_SignalLetterPoor>
+  <WR_SignalLetterNeutral>中</WR_SignalLetterNeutral>
+  <WR_SignalLetterStrong>适</WR_SignalLetterStrong>
+  <WR_SignalLetterGreat>优</WR_SignalLetterGreat>
+  <WR_SignalLetterExceptional>卓</WR_SignalLetterExceptional>
+  <WR_RecTuneChampionSection>主力人选选项</WR_RecTuneChampionSection>
+  <WR_RecTuneChampionSectionIntro>每个职责先选出一位主力，即最适合承担该职责的殖民者。这些选项决定候选资格，以及如何权衡技能与信号强度。</WR_RecTuneChampionSectionIntro>
+  <WR_RecTuneOrderingSection>职责最终排序选项</WR_RecTuneOrderingSection>
+  <WR_RecTuneOrderingSectionIntro>选定殖民者的职责后，这些选项决定列表顺序，也就是工作优先顺序。</WR_RecTuneOrderingSectionIntro>
+  <WR_RecTuneOptionalSection>训练路径与可选目标选项</WR_RecTuneOptionalSection>
+  <WR_RecTuneOptionalSectionIntro>决定何时为殖民者启用训练路径，以及何时值得推荐涉及多项技能的可选职责。</WR_RecTuneOptionalSectionIntro>
+  <WR_RecTuneLeadSection>负责人分散选项</WR_RecTuneLeadSection>
+  <WR_RecTuneLeadSectionIntro>多条训练路径共享目标时，这些选项将负责职责分配给不同殖民者，避免集中于一人。</WR_RecTuneLeadSectionIntro>
+  <WR_RecTuneHunterSection>猎人排序选项</WR_RecTuneHunterSection>
+  <WR_RecTuneHunterSectionIntro>未固定的“猎人”按射击技能动态插入：射手越好，狩猎优先级越靠后，因为其时间在其他工作上更有价值。</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneCandidateMinimumSignal>候选人最低信号</WR_RecTuneCandidateMinimumSignal>
+  <WR_RecTuneCandidateMinimumSignalDesc>普通职责选择所接受的最低信号。提高后会在选择主力和填补最低人数之前排除较弱候选人。</WR_RecTuneCandidateMinimumSignalDesc>
+  <WR_RecTuneChampionSkillDivisor>主力技能除数</WR_RecTuneChampionSkillDivisor>
+  <WR_RecTuneChampionSkillDivisorDesc>主力技能分值为 ceil(技能等级 ÷ 此值)。提高此值会降低原始技能等级的影响。</WR_RecTuneChampionSkillDivisorDesc>
+  <WR_RecTuneChampionMultiSkillMinimumCount>合并技能门槛</WR_RecTuneChampionMultiSkillMinimumCount>
+  <WR_RecTuneChampionMultiSkillMinimumCountDesc>合计主力分数所需的合格目标技能最少数量。低于此数时，仅对该职责最佳技能评分。</WR_RecTuneChampionMultiSkillMinimumCountDesc>
+  <WR_RecTuneChampionMultiplierRow>信号倍率</WR_RecTuneChampionMultiplierRow>
+  <WR_RecTuneChampionMultiplierRowDesc>选择主力时，将各信号强度的取整技能分值乘以对应倍率。</WR_RecTuneChampionMultiplierRowDesc>
+  <WR_RecTuneMultiplierAwfulTip>极差。仅当候选人最低信号允许“极差”候选人时，此列才生效。</WR_RecTuneMultiplierAwfulTip>
+  <WR_RecTuneChampionTieBreakRow>平分决胜分</WR_RecTuneChampionTieBreakRow>
+  <WR_RecTuneChampionTieBreakRowDesc>主力分数相同时比较的信号分值。多技能职责会合计符合条件的信号分值。</WR_RecTuneChampionTieBreakRowDesc>
+  <WR_RecTuneRankedCandidatePrioritySignal>排序候选人优先信号</WR_RecTuneRankedCandidatePrioritySignal>
+  <WR_RecTuneRankedCandidatePrioritySignalDesc>填补最低人数前，达到此信号的非主力候选人会排在较弱候选人之前。</WR_RecTuneRankedCandidatePrioritySignalDesc>
+  <WR_RecTuneSurplusMinimumSignal>额外分配最低信号</WR_RecTuneSurplusMinimumSignal>
+  <WR_RecTuneSurplusMinimumSignalDesc>填满必需名额后，达到此信号的普通候选人仍可获得该职责。等级提升仅适用于配置训练区间内的单技能职责；多技能目标使用可选目标的适性要求。</WR_RecTuneSurplusMinimumSignalDesc>
+  <WR_RecTuneOrderingSkillDivisor>排序技能除数</WR_RecTuneOrderingSkillDivisor>
+  <WR_RecTuneOrderingSkillDivisorDesc>最终排序的技能分值为 ceil(技能等级 ÷ 此值)。提高此值会降低技能对职责顺序的影响。</WR_RecTuneOrderingSkillDivisorDesc>
+  <WR_RecTuneOrderingPointsRow>信号分值</WR_RecTuneOrderingPointsRow>
+  <WR_RecTuneOrderingPointsRowDesc>最终推荐职责排序时，各信号强度提供的分值。</WR_RecTuneOrderingPointsRowDesc>
+  <WR_RecTuneMinimumPickRow>最低人数入选加分</WR_RecTuneMinimumPickRow>
+  <WR_RecTuneMinimumPickRowDesc>为满足职责最低人数而选中的第一、第二、第三及以后角色获得的排序分值。</WR_RecTuneMinimumPickRowDesc>
+  <WR_RecTuneCategoryPointsRow>类别分值</WR_RecTuneCategoryPointsRow>
+  <WR_RecTuneCategoryPointsRowDesc>按殖民地重要性增加排序分值：“重要”让值勤职责排在同信号的生产工作之前；“可选”则使职责靠后。</WR_RecTuneCategoryPointsRowDesc>
+  <WR_RecTuneTimePointsRow>时间需求分值</WR_RecTuneTimePointsRow>
+  <WR_RecTuneTimePointsRowDesc>按时间需求增加排序分值：“兼职”让短时职责排在同信号的全职工作之前；“见缝插针”使填补空闲的工作靠后。</WR_RecTuneTimePointsRowDesc>
+  <WR_RecTunePathMinimumSignal>训练职责最低信号</WR_RecTunePathMinimumSignal>
+  <WR_RecTunePathMinimumSignalDesc>职责参与已启用训练路径时允许的最低信号。</WR_RecTunePathMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumSkillCount>可选目标技能数量门槛</WR_RecTuneOptionalTargetMinimumSkillCount>
+  <WR_RecTuneOptionalTargetMinimumSkillCountDesc>启用可选目标适性检查所需的合格目标技能数量。合格技能较少的职责跳过此检查。</WR_RecTuneOptionalTargetMinimumSkillCountDesc>
+  <WR_RecTuneOptionalTargetMinimumSignal>可选目标最低信号</WR_RecTuneOptionalTargetMinimumSignal>
+  <WR_RecTuneOptionalTargetMinimumSignalDesc>技能须达到此信号，等级提升才会影响单技能额外分配资格，或为可选目标提供适性分值。</WR_RecTuneOptionalTargetMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetStrongLevel>中段技能提升等级</WR_RecTuneOptionalTargetStrongLevel>
+  <WR_RecTuneOptionalTargetStrongLevelDesc>达到此技能等级后，较弱的合格信号提升至配置的中段信号，用于单技能额外分配资格和可选目标评分。</WR_RecTuneOptionalTargetStrongLevelDesc>
+  <WR_RecTuneOptionalTargetStrongPromotedSignal>中段提升后信号</WR_RecTuneOptionalTargetStrongPromotedSignal>
+  <WR_RecTuneOptionalTargetStrongPromotedSignalDesc>达到中段技能提升等级后，用于单技能额外分配资格和可选目标适性评分的信号。</WR_RecTuneOptionalTargetStrongPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetGreatLevel>高段技能提升等级</WR_RecTuneOptionalTargetGreatLevel>
+  <WR_RecTuneOptionalTargetGreatLevelDesc>达到此技能等级后，较弱的合格信号提升至配置的高段信号，用于单技能额外分配资格和可选目标评分。</WR_RecTuneOptionalTargetGreatLevelDesc>
+  <WR_RecTuneOptionalTargetGreatPromotedSignal>高段提升后信号</WR_RecTuneOptionalTargetGreatPromotedSignal>
+  <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>达到高段技能提升等级后，用于单技能额外分配资格和可选目标适性评分的信号。</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumPoints>可选目标最低分值</WR_RecTuneOptionalTargetMinimumPoints>
+  <WR_RecTuneOptionalTargetMinimumPointsDesc>推荐多技能可选目标时，各信号高于配置底线的级差总和至少须达到此值。</WR_RecTuneOptionalTargetMinimumPointsDesc>
+  <WR_RecTuneLeadMinimumConnectedTargets>触发分散的关联目标数</WR_RecTuneLeadMinimumConnectedTargets>
+  <WR_RecTuneLeadMinimumConnectedTargetsDesc>关联训练目标达到此最少数量后，规划器才尝试把负责职责分配给不同角色。</WR_RecTuneLeadMinimumConnectedTargetsDesc>
+  <WR_RecTuneLeadMinimumSignal>负责人最低信号</WR_RecTuneLeadMinimumSignal>
+  <WR_RecTuneLeadMinimumSignalDesc>选择角色作为分散训练路径负责人时，职责信号必须达到的最低值。</WR_RecTuneLeadMinimumSignalDesc>
+  <WR_RecTuneHunterTiersRow>各档最高射击等级</WR_RecTuneHunterTiersRow>
+  <WR_RecTuneHunterTiersRowDesc>“猎人”动态位置的射击等级分界。第 1 档将猎人放在基础工作之后，第 2、3 档分别放在中间和最后的工作职责之后，超过第 4 档则排在末尾。</WR_RecTuneHunterTiersRowDesc>
+  <WR_TrainingSection>训练路径</WR_TrainingSection>
+  <WR_TrainingHelp>在此定义殖民者如何学习新技能并逐步胜任此职责。训练路径可包含多个区间，职责可以重叠。路径被推荐时，会推荐该殖民者当前技能等级所涵盖的全部职责。</WR_TrainingHelp>
+  <WR_TrainingTipWhat>职责自身的成长路线：每个成员职责都有对应推荐技能区间。目标职责本身始终保留在路径中。</WR_TrainingTipWhat>
+  <WR_TrainingTipBands>重叠区间的职责同时存在；区间不重叠时，后续职责替换前一个。</WR_TrainingTipBands>
+  <WR_TrainingTipOrder>分配优先排列区间下限更高的职责。区间相同时，先按角色最弱的职责技能，再按路径保存顺序排序。</WR_TrainingTipOrder>
+  <WR_AddNew>新增</WR_AddNew>
+  <WR_WhenPanelCaption>职责成长：设置所示职责在哪些技能等级获得推荐。重叠职责会相互补充。</WR_WhenPanelCaption>
+  <WR_AddRole>添加职责</WR_AddRole>
+  <WR_NoContributionRoleTip>不会训练此职责所需的任何技能，因此路径无法将其用作训练阶段。模组可能改变经验来源，所以仍允许添加。</WR_NoContributionRoleTip>
+  <WR_ContributesTip>为此职责训练：{0}。</WR_ContributesTip>
+  <WR_RecClassificationSection>分类</WR_RecClassificationSection>
+  <WR_RecSkillsSection>技能</WR_RecSkillsSection>
+  <WR_RecScalingSection>分配规模</WR_RecScalingSection>
+  <WR_RoleColonyMinLabel>殖民地最低人数：</WR_RoleColonyMinLabel>
+  <WR_RoleColonyMinTip>此职责的最少分配人数。</WR_RoleColonyMinTip>
+  <WR_RoleCoverageLabel>覆盖率：</WR_RoleCoverageLabel>
+  <WR_RoleCoverageTip>理想情况下应获得此职责的殖民者比例。</WR_RoleCoverageTip>
+  <WR_RoleCategoryLabel>殖民地重要性：</WR_RoleCategoryLabel>
+  <WR_RoleCategoryTip>规划殖民地时此职责的重要程度。“未设置”表示不分类。</WR_RoleCategoryTip>
+  <WR_RoleCategoryNone>未设置</WR_RoleCategoryNone>
+  <WR_RoleCategoryImportant>重要</WR_RoleCategoryImportant>
+  <WR_RoleCategoryNormal>普通</WR_RoleCategoryNormal>
+  <WR_RoleCategoryOptional>可选</WR_RoleCategoryOptional>
+  <WR_RoleTimeLabel>时间需求：</WR_RoleTimeLabel>
+  <WR_RoleTimeTip>此职责的工作通常占用殖民者一天中多少时间。</WR_RoleTimeTip>
+  <WR_RoleTimeNone>未设置</WR_RoleTimeNone>
+  <WR_RoleTimePartTime>兼职</WR_RoleTimePartTime>
+  <WR_RoleTimeFullTime>全职</WR_RoleTimeFullTime>
+  <WR_RoleTimeOpportunistic>见缝插针</WR_RoleTimeOpportunistic>
+  <WR_ChampionPenalty>重复主力惩罚</WR_ChampionPenalty>
+  <WR_ChampionPenaltyTip>启用后，已担任其他职责主力的殖民者竞争此职责时会受扣分。对于偶尔执行等允许兼任主力的职责，可关闭。</WR_ChampionPenaltyTip>
+  <WR_PartialCapability>允许部分胜任</WR_PartialCapability>
+  <WR_PartialCapabilityTip>启用后，只能执行其中部分工作的殖民者也可获推荐。完全无法执行其中工作的角色绝不会获推荐。适用于希望人人承担的广泛职责，例如共同的闲暇杂务。</WR_PartialCapabilityTip>
+  <WR_PartialCapabilityLockedTip>此职责已允许只能执行部分工作的殖民者获推荐。无技能工作职责和狩猎职责始终允许此项。</WR_PartialCapabilityLockedTip>
+  <WR_RoleAgeBandsLabel>可分配此职责的年龄组：</WR_RoleAgeBandsLabel>
+  <WR_RoleAgeBandsTip>所选年龄区间外的殖民者不会被分配或推荐此职责。点击范围外区间可延伸选择至该处；点击首末已选区间可移除它；点击中间区间则只选择该区间。区间边界依据游戏解锁工作的年龄。此职责全部工作从 {0} 岁起均可执行。</WR_RoleAgeBandsTip>
+  <WR_WorkTypesLabel>工作类型</WR_WorkTypesLabel>
+  <WR_WorkTypesTip>只有能执行指定工作类型的殖民者才有资格承担此职责。\n\n根据所选工作推导，仅供参考。</WR_WorkTypesTip>
+  <WR_UsedSkillsLabel>使用</WR_UsedSkillsLabel>
+  <WR_UsedSkillsTip>显示影响此职责工作的技能。悬停可查看效果。\n\n根据所选工作推导，仅供参考。</WR_UsedSkillsTip>
+  <WR_TrainedSkillsLabel>训练</WR_TrainedSkillsLabel>
+  <WR_TrainedSkillsTip>显示执行此职责工作时能获得经验的技能。\n\n根据所选工作推导，仅供参考。</WR_TrainedSkillsTip>
+  <WR_GatedSkillsLabel>门槛</WR_GatedSkillsLabel>
+  <WR_GatedSkillsTip>显示执行此职责部分工作所需的技能。最低等级取决于配方、植物或建筑。悬停技能可查看详情。\n\n根据所选工作推导，仅供参考。</WR_GatedSkillsTip>
+  <WR_RecMoreContentGates>另有 {0} 项</WR_RecMoreContentGates>
+  <WR_EffectSpeed>加快工作</WR_EffectSpeed>
+  <WR_EffectQuality>提高品质</WR_EffectQuality>
+  <WR_EffectYield>提高产出</WR_EffectYield>
+  <WR_EffectSuccess>提高成功率</WR_EffectSuccess>
+  <WR_RequiredSkillsLabel>必需</WR_RequiredSkillsLabel>
+  <WR_RequiredSkillsTip>为此职责手动选择的可选硬性要求。殖民者任一必需技能被禁用，就不能获推荐。技能等级不影响此条件，且独立于“门槛”中显示的内容最低要求。</WR_RequiredSkillsTip>
+  <WR_AddSkill>添加技能</WR_AddSkill>
+  <WR_AddSkillTip>添加明确的技能硬性要求。不改变职责推导出的“使用”或“训练”技能。</WR_AddSkillTip>
+  <WR_RemoveSkillTip>移除此技能硬性要求。</WR_RemoveSkillTip>
+  <WR_RoleMissingRequiredSkills>{0} 的必需技能已禁用：{1}。</WR_RoleMissingRequiredSkills>
+  <WR_PathAddRoleTip>将职责加入此路径。</WR_PathAddRoleTip>
+  <WR_BandChipTip>拖动端点调整技能区间大小，拖动中部移动整个区间。</WR_BandChipTip>
+  <WR_PriorityGridTitle>优先级表格</WR_PriorityGridTitle>
+  <WR_ShowPriorityGridTip>显示列表中所有殖民者的优先级表格，遵循当前职责和地点筛选。可在窗口中切换原始排序或原版 0–4 优先级。</WR_ShowPriorityGridTip>
+  <WR_GridModeRaw>WorkRoles 优先级</WR_GridModeRaw>
+  <WR_GridModeVanilla>原版优先级</WR_GridModeVanilla>
+  <WR_ResizeGripTip>拖动调整窗口大小（只能比适合内容的尺寸更大）。双击恢复自动尺寸。</WR_ResizeGripTip>
+  <WR_RolesTab>职责</WR_RolesTab>
+  <WR_HelpTab>帮助</WR_HelpTab>
+  <WR_HelpChapterStart>开始</WR_HelpChapterStart>
+  <WR_HelpChapterBasics>基础</WR_HelpChapterBasics>
+  <WR_HelpChapterEditing>编辑职责</WR_HelpChapterEditing>
+  <WR_HelpChapterOrganizing>组织</WR_HelpChapterOrganizing>
+  <WR_HelpChapterRecommendations>推荐</WR_HelpChapterRecommendations>
+  <WR_HelpChapterAdvanced>进阶</WR_HelpChapterAdvanced>
+  <WR_HelpReload>重新加载</WR_HelpReload>
+  <WR_HelpDemoChipA>医生</WR_HelpDemoChipA>
+  <WR_HelpDemoChipB>农夫</WR_HelpDemoChipB>
+  <WR_HelpDemoChipC>搬运工</WR_HelpDemoChipC>
+  <WR_HelpTourHeader>引导教程</WR_HelpTourHeader>
+  <WR_HelpTourProgress>已阅读 {0} / {1} 个主题</WR_HelpTourProgress>
+  <WR_HelpTourComplete>你已准备就绪！</WR_HelpTourComplete>
+  <WR_HelpTourCompleteHint>你已掌握基础知识。上方章节介绍其余内容。</WR_HelpTourCompleteHint>
+  <WR_ClusterEveryone>所有人</WR_ClusterEveryone>
+  <WR_ClusterUnskilled>无技能要求</WR_ClusterUnskilled>
+  <WR_OddJobsRole>杂务</WR_OddJobsRole>
+  <WR_BlockerRole>阻止职责</WR_BlockerRole>
+  <WR_BlockerRoleTipWhat>阻止职责中的工作不会执行：即使后续职责包含它们，也会被阻止（“不会执行”）。</WR_BlockerRoleTipWhat>
+  <WR_BlockerRoleTipWhy>排在阻止职责之前的职责仍然优先，因此可把例外职责放在更前面。</WR_BlockerRoleTipWhy>
+  <WR_ReasonFireFear>基因导致惧火：阻止灭火。</WR_ReasonFireFear>
+  <WR_RoleTipEnabled>已启用</WR_RoleTipEnabled>
+  <WR_RoleTipDisabled>全局已禁用</WR_RoleTipDisabled>
+  <WR_RoleTipDisabledHere>对此殖民者已禁用</WR_RoleTipDisabledHere>
+  <WR_RoleTipDisabledBoth>全局及对此殖民者均已禁用</WR_RoleTipDisabledBoth>
+  <WR_RoleTipForcedOn>已启用，对此殖民者强制开启</WR_RoleTipForcedOn>
+  <WR_RoleTipForcedOnGlobalOff>对此殖民者强制开启（职责全局已禁用）</WR_RoleTipForcedOnGlobalOff>
+  <WR_BadgeBlocker>阻止</WR_BadgeBlocker>
+  <WR_BadgeHours>限定时段</WR_BadgeHours>
+  <WR_BadgeLocation>限定地点</WR_BadgeLocation>
+  <WR_TipJobsLabel>工作</WR_TipJobsLabel>
+  <WR_TipSkillsLabel>技能</WR_TipSkillsLabel>
+  <WR_TipTrainingHeader>训练</WR_TipTrainingHeader>
+  <WR_TipTrainingRecommend>推荐给技能为 {0} 的殖民者</WR_TipTrainingRecommend>
+  <WR_TipTrainingPath>正在向 {0} 发展</WR_TipTrainingPath>
+  <WR_TipBestFitsLabel>最佳人选</WR_TipBestFitsLabel>
+  <WR_TipWholeType>{0}（全部工作）</WR_TipWholeType>
+  <WR_TipMore>另有 {0} 项</WR_TipMore>
+  <WR_RoleCapNeverDo>{0} 永远不会执行{1}</WR_RoleCapNeverDo>
+  <WR_RoleCapAllJobs>此职责中的任何工作</WR_RoleCapAllJobs>
+  <WR_RoleCapSomeJobs>此职责 {1} 项工作中的 {0} 项</WR_RoleCapSomeJobs>
+  <WR_RoleJobIncapable>无法执行此工作</WR_RoleJobIncapable>
+  <WR_RoleJobNoRangedWeapon>没有远程武器</WR_RoleJobNoRangedWeapon>
+  <WR_RoleJobTooYoung>年龄过小，{0} 岁起可执行</WR_RoleJobTooYoung>
+  <WR_RoleTooYoung>{0} 年龄过小，无法承担此职责（最低年龄 {1}）。</WR_RoleTooYoung>
+  <WR_RoleTooOld>{0} 年龄过大，无法承担此职责（最高年龄 {1}）。</WR_RoleTooOld>
+  <WR_MtcHatedWorkSignalLabel>厌恶 {0}</WR_MtcHatedWorkSignalLabel>
+  <WR_MtcHatedWorkSignalDescription>More Than Capable 允许此工作，但会造成严重且逐步加重的惩罚。</WR_MtcHatedWorkSignalDescription>
+  <WR_RoleAwfulSignal>{0} 对此职责的信号为“极差”：{1}。</WR_RoleAwfulSignal>
+  <WR_ActClick>点击</WR_ActClick>
+  <WR_ActShiftClick>Shift+点击</WR_ActShiftClick>
+  <WR_ActCtrlShiftClick>Ctrl+Shift+点击</WR_ActCtrlShiftClick>
+  <WR_ActAltClick>Alt+点击</WR_ActAltClick>
+  <WR_ActDrag>拖动</WR_ActDrag>
+  <WR_ActRightClick>右键点击</WR_ActRightClick>
+  <WR_ActX>X</WR_ActX>
+  <WR_ActPaletteClick>全局切换职责启用状态</WR_ActPaletteClick>
+  <WR_ActPaletteShiftClick>分配给所选殖民者，放在队列末尾</WR_ActPaletteShiftClick>
+  <WR_ActPaletteCtrlShiftClick>分配给所选殖民者，放在基础工作之后</WR_ActPaletteCtrlShiftClick>
+  <WR_ActPaletteAltClick>分配给所选殖民者，放在推荐引擎指定的位置</WR_ActPaletteAltClick>
+  <WR_ActPaletteDrag>分配给殖民者</WR_ActPaletteDrag>
+  <WR_ActTreeClick>选择并编辑</WR_ActTreeClick>
+  <WR_ActTreeDrag>调整顺序或移至其他分组</WR_ActTreeDrag>
+  <WR_ActTreeRightClick>组合职责（纳入／排除）</WR_ActTreeRightClick>
+  <WR_ActChipClick>循环切换此殖民者的开启、关闭或强制开启状态</WR_ActChipClick>
+  <WR_ActChipRightClick>固定选项</WR_ActChipRightClick>
+  <WR_ActChipDrag>调整顺序或移给其他殖民者</WR_ActChipDrag>
+  <WR_ActChipX>移除</WR_ActChipX>
+  <WR_ColonistNameCaption>殖民者姓名</WR_ColonistNameCaption>
+  <WR_AssignedRoleCaption>已分配职责</WR_AssignedRoleCaption>
+  <WR_CoveredJobCaption>涵盖工作</WR_CoveredJobCaption>
+  <WR_LocationCaption>地点</WR_LocationCaption>
+  <WR_GroupByCaption>分组方式</WR_GroupByCaption>
+  <WR_SkillColumnsCaption>技能列</WR_SkillColumnsCaption>
+  <WR_RoleDisplayCaption>职责显示</WR_RoleDisplayCaption>
+  <WR_ColonistSearchTip>搜索殖民者姓名。用空格分隔条件，须全部匹配。条件前加 r: 或 role: 可搜索已分配职责名称，加 j: 或 job: 可搜索这些职责提供的工作。例如：br r:doc。</WR_ColonistSearchTip>
+  <WR_ColonistRoleFilterTip>列出分配了所选职责的殖民者。若已分配的非阻止职责完全涵盖所选职责的工作，也算匹配。与搜索、工作和地点筛选共同生效。</WR_ColonistRoleFilterTip>
+  <WR_ColonistJobFilterTip>已选择：{0}
+
+列出已分配非阻止职责中包含此工作的殖民者。检查的是职责覆盖范围，而非当前活动或原版工作优先级。</WR_ColonistJobFilterTip>
+  <WR_ColonistScopeTip>选择表格显示哪些殖民地点的殖民者。“当前地点”跟随活动地图；“所有地点”包括定居点、远行队和飞行中的逆重飞船。</WR_ColonistScopeTip>
+  <WR_ColonistGroupTip>按所选特征将可见殖民者分区。分组不改变筛选结果；可折叠分区标题。</WR_ColonistGroupTip>
+  <WR_ColonistSkillColumnsTip>最多选择三个技能列。点击技能标题可按其排序，点击 X 移除该列。</WR_ColonistSkillColumnsTip>
+  <WR_ColonistRoleDisplayTip>选择殖民者表格职责标签显示完整名称、首字母或图标。旁边按钮切换自然宽度排列与网格列。这是每位玩家独立的显示设置。</WR_ColonistRoleDisplayTip>
+  <WR_ChipLayoutGridTip>标签按等宽网格列对齐。较长全名在边缘渐隐，仅在需要区分类似职责名称时增加宽度；提示显示完整名称。点击改用自然宽度排列，右键点击可选择各列容纳多少名称。</WR_ChipLayoutGridTip>
+  <WR_ChipLayoutStackTip>标签按自然宽度排列。点击改为等宽网格列对齐。右键点击可选择网格列容纳多少名称。</WR_ChipLayoutStackTip>
+  <WR_GridNamesAutomatic>自动</WR_GridNamesAutomatic>
+  <WR_GridNamesShort>短</WR_GridNamesShort>
+  <WR_GridNamesMedium>中</WR_GridNamesMedium>
+  <WR_GridNamesLong>长</WR_GridNamesLong>
+  <WR_GridNamesFull>完整</WR_GridNamesFull>
+  <WR_ColonistClearFiltersTip>清除姓名搜索、已分配职责筛选和涵盖工作筛选。不改变地点范围、分组、技能列或职责显示。</WR_ColonistClearFiltersTip>
+  <WR_FilterAllRoles>所有职责</WR_FilterAllRoles>
+  <WR_ScopeAll>所有地点</WR_ScopeAll>
+  <WR_ScopeCurrent>当前地点</WR_ScopeCurrent>
+  <WR_ScopeCurrentNamed>{0}（当前地点）</WR_ScopeCurrentNamed>
+  <WR_ShipFallback>逆重飞船</WR_ShipFallback>
+  <WR_ShipTip>未停靠定居点时的逆重飞船（定居点地块优先）。</WR_ShipTip>
+  <WR_GroupNone>不分组</WR_GroupNone>
+  <WR_GroupFaction>派系</WR_GroupFaction>
+  <WR_GroupRace>种族</WR_GroupRace>
+  <WR_GroupGender>性别</WR_GroupGender>
+  <WR_GroupAge>年龄</WR_GroupAge>
+  <WR_GroupXenotype>异种类型</WR_GroupXenotype>
+  <WR_GroupIdeo>理念</WR_GroupIdeo>
+  <WR_GroupSlaves>奴役状态</WR_GroupSlaves>
+  <WR_GroupTitleColonists>殖民者</WR_GroupTitleColonists>
+  <WR_GroupTitleSlaves>奴隶</WR_GroupTitleSlaves>
+  <WR_GroupColonyGroups>Colony Groups</WR_GroupColonyGroups>
+  <WR_GroupTitleUngrouped>未分组</WR_GroupTitleUngrouped>
+  <WR_ChipsNormal>标签：完整名称</WR_ChipsNormal>
+  <WR_ChipsCompact>标签：首字母</WR_ChipsCompact>
+  <WR_ChipsIcons>标签：图标</WR_ChipsIcons>
+  <WR_OrderSuffixBar>（页签顺序）</WR_OrderSuffixBar>
+  <WR_OrderSuffixAZ>（A-Z）</WR_OrderSuffixAZ>
+  <WR_DisplayButton>显示</WR_DisplayButton>
+  <WR_DisplayOptions>显示选项</WR_DisplayOptions>
+  <WR_CopyRolesTip>复制此殖民者的职责。</WR_CopyRolesTip>
+  <WR_PasteRolesTip>将已复制职责粘贴给此殖民者。</WR_PasteRolesTip>
+  <WR_AddRoleTip>分配职责。</WR_AddRoleTip>
+  <WR_SkillsButton>技能</WR_SkillsButton>
+  <WR_SkillsButtonCount>技能（{0}/{1}）</WR_SkillsButtonCount>
+  <WR_ColColonist>殖民者</WR_ColColonist>
+  <WR_NoFilterMatches>没有符合筛选的殖民者。</WR_NoFilterMatches>
+  <WR_FixMyColony>调整殖民地</WR_FixMyColony>
+  <WR_FixMyColonyTip>将每名殖民者的职责替换为推荐职责。</WR_FixMyColonyTip>
+  <WR_FixNeedsSingleLocation>推荐按地点计算。请将范围缩小到一个定居点或飞船，才能使用“调整殖民地”。</WR_FixNeedsSingleLocation>
+  <WR_AutoManaged>自动管理</WR_AutoManaged>
+  <WR_AutoManagedTip>WorkRoles 在每个游戏整点自动更新所有殖民地的职责分配。
+
+保留已固定分配，包括被排除的职责。
+
+在“选项”页关闭“每游戏小时自动优化殖民地”，即可恢复“调整殖民地”。</WR_AutoManagedTip>
+  <WR_SetPriorityBlockedTitle>WorkRoles 正在管理优先级</WR_SetPriorityBlockedTitle>
+  <WR_SetPriorityBlockedBody>{0} 尝试设置工作优先级（{1}）。
+
+自上次提示或本次游戏会话开始以来，WorkRoles 已阻止 {2} 次优先级写入。
+
+由职责管理的殖民者，其优先级归 WorkRoles 管理，因此此次更改已忽略；该模组的其他功能不受影响。
+
+要通过职责实现类似效果，请在“职责”页创建或编辑包含该工作的职责，并将其放到每名殖民者职责列表中的所需位置；也可使用阻止职责完全禁止该工作。
+
+每个模组在每个存档中仅提示一次。</WR_SetPriorityBlockedBody>
+  <WR_AllWork>全部工作</WR_AllWork>
+  <WR_GiverBypassTitle>某项工作绕过了职责列表</WR_GiverBypassTitle>
+  <WR_GiverBypassBody>{0} 开始了“{1}”，但其已分配职责中没有任何职责包含此工作。
+
+WorkRoles 通过游戏标准方法为受管理殖民者提供工作列表。另一个模组似乎使用自身列表选择工作，绕过职责限制。该模组启用时，殖民者有时可能执行职责之外的工作。
+
+此次工作未被中断。每个存档仅提示一次。</WR_GiverBypassBody>
+  <WR_Apply>应用</WR_Apply>
+  <WR_SelectAll>全选</WR_SelectAll>
+  <WR_PreviewNoChanges>无更改。</WR_PreviewNoChanges>
+  <WR_PreviewStale>预览打开期间殖民地发生变化，未应用任何内容。</WR_PreviewStale>
+  <WR_ReasonEveryone>自动分配给所有人。</WR_ReasonEveryone>
+  <WR_ReasonHunter>携带远程武器；狩猎还能训练射击。</WR_ReasonHunter>
+  <WR_ReasonSignal>推荐信号倾向于 {0}。</WR_ReasonSignal>
+  <WR_ReasonCoverage>殖民地覆盖需求：此工作的最佳可用人选。</WR_ReasonCoverage>
+  <WR_ReasonRemoved>不在推荐列表中。应用前请固定希望保留的职责。</WR_ReasonRemoved>
+  <WR_SignalColSignal>信号</WR_SignalColSignal>
+  <WR_SignalColEffects>效果</WR_SignalColEffects>
+  <WR_SignalCondition>条件</WR_SignalCondition>
+  <WR_SignalSource>来源</WR_SignalSource>
+  <WR_SignalVerdict>评价</WR_SignalVerdict>
+  <WR_SignalSkillPromotion>高技能</WR_SignalSkillPromotion>
+  <WR_SignalSkillPromotionEffect>{0} → {1}</WR_SignalSkillPromotionEffect>
+  <WR_SignalSkillPromotionCondition>等级 {0} 达到门槛 {1}</WR_SignalSkillPromotionCondition>
+  <WR_SignalFromSkill>（来自 {0}）</WR_SignalFromSkill>
+  <WR_SignalAlreadyReflected>已计入显示的技能等级</WR_SignalAlreadyReflected>
+  <WR_SignalDisabled>已禁用</WR_SignalDisabled>
+  <WR_SignalCapabilityOff>{0} 已禁用</WR_SignalCapabilityOff>
+  <WR_SignalCapabilityAwful>{0} 视为极差</WR_SignalCapabilityAwful>
+  <WR_SignalDescriptive>描述信息</WR_SignalDescriptive>
+  <WR_SignalExpertiseScale>基础 {0}，专长等级 {1}，当前 {2}</WR_SignalExpertiseScale>
+  <WR_VerdictAwful>极差</WR_VerdictAwful>
+  <WR_VerdictPoor>较差</WR_VerdictPoor>
+  <WR_VerdictNeutral>中性</WR_VerdictNeutral>
+  <WR_VerdictStrong>适合</WR_VerdictStrong>
+  <WR_VerdictGreat>优秀</WR_VerdictGreat>
+  <WR_VerdictExceptional>卓越</WR_VerdictExceptional>
+  <WR_PinAssignment>固定</WR_PinAssignment>
+  <WR_UnpinAssignment>取消固定</WR_UnpinAssignment>
+  <WR_PinnedTip>已固定：“就这样安排”“调整殖民地”和自动优化都会保留此分配，即使该职责或其组合成员被排除于推荐之外。</WR_PinnedTip>
+  <WR_CopiedRoles>已复制 {0} 的职责。</WR_CopiedRoles>
+  <WR_RecommendedRoles>推荐职责</WR_RecommendedRoles>
+  <WR_AlreadyAssigned>已分配</WR_AlreadyAssigned>
+  <WR_WillBeRemoved>不在推荐列表中。应用前请固定希望保留的职责。</WR_WillBeRemoved>
+  <WR_RecTipColonyNeed>殖民地需求</WR_RecTipColonyNeed>
+  <WR_RecTipSkills>考虑的技能</WR_RecTipSkills>
+  <WR_RecTipSignalVerdict>信号评价</WR_RecTipSignalVerdict>
+  <WR_RecTipSelection>选择</WR_RecTipSelection>
+  <WR_RecTipAssignmentsOne>需要 1 个分配</WR_RecTipAssignmentsOne>
+  <WR_RecTipAssignmentsMany>需要 {0} 个分配</WR_RecTipAssignmentsMany>
+  <WR_RecTipWithWaiverOne>{0}（1 次训练替代）</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0}（{1} 次训练替代）</WR_RecTipWithWaiversMany>
+  <WR_RecTipEveryoneCapable>分配给所有能胜任者</WR_RecTipEveryoneCapable>
+  <WR_RecDecisionAuto>自动分配给所有能胜任的角色。</WR_RecDecisionAuto>
+  <WR_RecDecisionSignals>此角色达到配置的信号门槛。</WR_RecDecisionSignals>
+  <WR_RecDecisionCoverageDraft>选中剩余候选人中的最佳者，以满足必需覆盖人数。</WR_RecDecisionCoverageDraft>
+  <WR_RecDecisionTraining>通过 {0} 的训练路径分配。</WR_RecDecisionTraining>
+  <WR_RecDecisionTrainingUnknown>通过训练路径分配。</WR_RecDecisionTrainingUnknown>
+  <WR_RecDecisionDirectSlot>直接入选，填补 {2} 的 {1} 个名额中的第 {0} 个。</WR_RecDecisionDirectSlot>
+  <WR_RecDecisionTrainingSlot>入选以填补 {2} 的 {1} 个名额中的第 {0} 个。通过训练替代，以 {3} 替代 {2}（{4}；{2} 需要 {5}）。</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>入选以填补 {2} 的 {1} 个名额中的第 {0} 个。通过训练替代，以 {3} 替代 {2}。</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>通过训练替代入选，填补 {1} 个名额中的第 {0} 个，分配 {2}。</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
+  <WR_RecDecisionDirectFallbackSlot>直接入选填补 {2} 的 {1} 个名额中的第 {0} 个，因为没有合格的训练替代职责。</WR_RecDecisionDirectFallbackSlot>
+  <WR_RecDecisionCoverageRepairSlot>直接入选，填补 {2} 的 {1} 个必需名额中剩余的第 {0} 个。</WR_RecDecisionCoverageRepairSlot>
+  <WR_RecDecisionSignalSurplus>根据信号评价，选为额外候选人。</WR_RecDecisionSignalSurplus>
+  <WR_RecDecisionAptitudeSurplus>因综合技能适性达到此职责要求，选为额外候选人。</WR_RecDecisionAptitudeSurplus>
+  <WR_RecDecisionHunter>携带远程武器且能够狩猎。</WR_RecDecisionHunter>
+  <WR_RecDecisionFire>惧火需要灭火阻止职责。</WR_RecDecisionFire>
+  <WR_RecDecisionRetained>保留现有无技能要求职责。</WR_RecDecisionRetained>
+  <WR_RecDecisionProtected>保留现有受保护分配。</WR_RecDecisionProtected>
+  <WR_RecDecisionIncapacitated>此殖民者已倒地。保留其未被排除的职责与固定分配，恢复前不计入殖民地需求覆盖。</WR_RecDecisionIncapacitated>
+  <WR_RecDecisionNever>此职责设置为不接受推荐。</WR_RecDecisionNever>
+  <WR_RecDecisionControlledByTraining>由 {0} 控制：通过其训练路径分配，不单独分配。</WR_RecDecisionControlledByTraining>
+  <WR_RecDecisionDisabled>此职责已禁用。</WR_RecDecisionDisabled>
+  <WR_RecDecisionUnavailable>研究完成前，此职责的工作不可用。</WR_RecDecisionUnavailable>
+  <WR_RecDecisionExcluded>此职责由规则管理，不参与普通推荐。</WR_RecDecisionExcluded>
+  <WR_RecDecisionIncapable>此角色无法执行此职责的工作。</WR_RecDecisionIncapable>
+  <WR_RecDecisionNotMechanitor>此殖民者没有机控中枢，无法执行机械师工作。</WR_RecDecisionNotMechanitor>
+  <WR_RecDecisionHunterRequirements>此角色未携带远程武器。</WR_RecDecisionHunterRequirements>
+  <WR_RecDecisionAwful>“极差”信号使此角色失去资格。</WR_RecDecisionAwful>
+  <WR_RecDecisionCovered>已由推荐职责涵盖：{0}。</WR_RecDecisionCovered>
+  <WR_RecDecisionCoveredUnknown>已由其他推荐职责涵盖。</WR_RecDecisionCoveredUnknown>
+  <WR_RecDecisionCoverageFilled>更高排名候选人已满足必需覆盖人数。</WR_RecDecisionCoverageFilled>
+  <WR_RecDecisionWeakSignal>信号评价低于配置门槛，必需覆盖也未选中此角色。</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionNotSelected>没有任何推荐规则选中此角色。</WR_RecDecisionNotSelected>
+  <WR_RecDecisionOutOfBand>此角色的技能处于训练路径的其他区间。</WR_RecDecisionOutOfBand>
+  <WR_RecDecisionOutqualified>可用名额已选用其他更合格的候选人。</WR_RecDecisionOutqualified>
+  <WR_RecDecisionRecommended>由推荐引擎选中。</WR_RecDecisionRecommended>
+  <WR_MakeItSo>就这样安排</WR_MakeItSo>
+  <WR_AllRolesAssigned>所有职责均已分配</WR_AllRolesAssigned>
+  <WR_NowDrafted>已征召</WR_NowDrafted>
+  <WR_NowMental>精神状态</WR_NowMental>
+  <WR_NowIdle>空闲</WR_NowIdle>
+  <WR_NowForced>玩家命令</WR_NowForced>
+  <WR_NowSleeping>睡眠</WR_NowSleeping>
+  <WR_NowRecreation>娱乐</WR_NowRecreation>
+  <WR_NowNeeds>个人需求</WR_NowNeeds>
+  <WR_NowBusy>忙碌</WR_NowBusy>
+  <WR_NowTip>{0}：{1}</WR_NowTip>
+  <WR_TipActivityLabel>当前活动</WR_TipActivityLabel>
+  <WR_TipActivityValue>{0}：{1}</WR_TipActivityValue>
+  <WR_RestoreDefaults>恢复默认值</WR_RestoreDefaults>
+  <WR_RestoreDefaultsTip>重建缺少的预设职责与训练路径，恢复默认排除项，并将预设职责的分组、颜色和持有人设置恢复默认。可在预览中选择恢复哪些内容。</WR_RestoreDefaultsTip>
+  <WR_RestoreDefaultsTitle>恢复默认值</WR_RestoreDefaultsTitle>
+  <WR_Export>导出</WR_Export>
+  <WR_Import>导入</WR_Import>
+  <WR_ExportTip>将所有职责定义（不含分配）写入：\n{0}</WR_ExportTip>
+  <WR_ImportTip>从以下位置添加职责定义：\n{0}</WR_ImportTip>
+  <WR_ExportTitle>导出职责</WR_ExportTitle>
+  <WR_CopyClipboard>复制到剪贴板</WR_CopyClipboard>
+  <WR_CopyPath>复制路径</WR_CopyPath>
+  <WR_Save>保存</WR_Save>
+  <WR_ExportLocationLabel>导出位置</WR_ExportLocationLabel>
+  <WR_LocGameData>游戏数据文件夹</WR_LocGameData>
+  <WR_LocDesktop>桌面</WR_LocDesktop>
+  <WR_LocUserHome>用户主文件夹</WR_LocUserHome>
+  <WR_LocCustom>自定义…</WR_LocCustom>
+  <WR_EnterPath>输入路径</WR_EnterPath>
+  <WR_BadFileName>请输入有效的文件名。</WR_BadFileName>
+  <WR_BadDirectory>请输入有效的目录路径。</WR_BadDirectory>
+  <WR_ImportTitle>导入职责</WR_ImportTitle>
+  <WR_ImportFromClipboard>从剪贴板</WR_ImportFromClipboard>
+  <WR_ImportLocationLabel>导入位置</WR_ImportLocationLabel>
+  <WR_ImportClipboardInvalid>剪贴板不含 WorkRoles 导出内容。</WR_ImportClipboardInvalid>
+  <WR_ImportFileMissing>在 {0} 未找到文件</WR_ImportFileMissing>
+  <WR_ImportParseFailed>无法读取职责：{0}</WR_ImportParseFailed>
+  <WR_SectionPalette>配色板</WR_SectionPalette>
+  <WR_SectionRoles>职责</WR_SectionRoles>
+  <WR_ModeMerge>合并</WR_ModeMerge>
+  <WR_ModeOverwrite>覆盖</WR_ModeOverwrite>
+  <WR_RowNew>{0}（新增）</WR_RowNew>
+  <WR_RowUpdate>{0}（更新）</WR_RowUpdate>
+  <WR_RowRecolors>{0} → {1}（重新着色：{2}）</WR_RowRecolors>
+  <WR_RowNewColor>{0} {1}（新颜色）</WR_RowNewColor>
+  <WR_NothingToMerge>所有内容均一致：没有可合并项。</WR_NothingToMerge>
+  <WR_PaletteOverwriteInfo>用文件中的 {0} 个配色条目替换全部自定义颜色。</WR_PaletteOverwriteInfo>
+  <WR_OverwriteReplaces>应用文件中的全部 {0} 个职责。匹配职责（相同预设职责，否则按同名匹配）会保留殖民者分配。</WR_OverwriteReplaces>
+  <WR_OverwriteDeletes>删除文件中不存在的职责：{0}（殖民者会失去这些分配）。</WR_OverwriteDeletes>
+  <WR_PathsOverwriteInfo>用文件中的 {0} 条训练路径替换所有现有路径。</WR_PathsOverwriteInfo>
+  <WR_ImportSummary>导入完成：新增 {0}，更新 {1}，删除 {2}，配色更改 {3}，训练路径 {4}。</WR_ImportSummary>
+  <WR_CopiedToClipboard>已复制到剪贴板。</WR_CopiedToClipboard>
+  <WR_ExportSaved>已保存到 {0}</WR_ExportSaved>
+  <WR_ExportFailed>无法保存：{0}</WR_ExportFailed>
+  <WR_ExportOverwriteConfirm>{0} 已存在。要替换吗？</WR_ExportOverwriteConfirm>
+  <WR_RestoreMovedJobs>{0}（恢复 {1} 项被移动的工作）</WR_RestoreMovedJobs>
+  <WR_RestorePathItem>{0}（训练路径）</WR_RestorePathItem>
+  <WR_RestoreGroupItem>{0}（移至“{1}”分组）</WR_RestoreGroupItem>
+  <WR_RestoreColorItem>{0}（恢复默认颜色）</WR_RestoreColorItem>
+  <WR_RestoreJobsItem>{0}（恢复默认工作）</WR_RestoreJobsItem>
+  <WR_RestoreSnapColorItem>{0}（将颜色匹配至配色板）</WR_RestoreSnapColorItem>
+  <WR_RestoreHoldersItem>{0}（恢复默认人数设置）</WR_RestoreHoldersItem>
+  <WR_RestoreRecOrder>推荐顺序（恢复默认）</WR_RestoreRecOrder>
+  <WR_RestoreDefaultExclusions>默认排除职责</WR_RestoreDefaultExclusions>
+  <WR_RestoreExplainDefaultExclusions>将缺少的默认排除项加回“排除的职责”面板。保留你排除的其他职责。</WR_RestoreExplainDefaultExclusions>
+  <WR_RestoreOverwriteWarning>⚠ 高亮项目将覆盖你的更改。</WR_RestoreOverwriteWarning>
+  <WR_RestoreDuplicateHint>（已存在同名职责）</WR_RestoreDuplicateHint>
+  <WR_RestoreExplainRole>根据模组模板创建职责。</WR_RestoreExplainRole>
+  <WR_RestoreExplainCoverage>生成涵盖此工作类型的职责。</WR_RestoreExplainCoverage>
+  <WR_RestoreExplainBackfill>重新加入被模组移动的 {0} 项工作。</WR_RestoreExplainBackfill>
+  <WR_RestoreExplainGroup>将职责移回“{0}”分组。</WR_RestoreExplainGroup>
+  <WR_RestoreExplainColor>恢复模板默认颜色。</WR_RestoreExplainColor>
+  <WR_RestoreExplainJobs>将职责工作列表恢复为模组当前默认值。殖民者的整体工作不变：会自动分配涵盖被移除工作的职责。</WR_RestoreExplainJobs>
+  <WR_RestoreExplainSnapColor>用配色板中最接近的颜色替换生成颜色，使颜色选择器能突出显示它。</WR_RestoreExplainSnapColor>
+  <WR_RestoreExplainHolders>恢复模板默认的职责人数曲线。</WR_RestoreExplainHolders>
+  <WR_RestoreExplainRecOrder>清除自定义顺序。</WR_RestoreExplainRecOrder>
+  <WR_RestoreExplainPath>创建训练路径。</WR_RestoreExplainPath>
+  <WR_NothingToRestore>无须恢复：所有预设职责和训练路径均存在，分组、颜色与人数设置均为默认，且没有工作被移动。</WR_NothingToRestore>
+  <WR_RolesRestored>已恢复：{0}</WR_RolesRestored>
+  <WR_FilterAnyJob>任意工作</WR_FilterAnyJob>
+  <WR_RoleLabelOff>{0}（关闭）</WR_RoleLabelOff>
+  <WR_SelectOrCreateRole>选择或创建职责。</WR_SelectOrCreateRole>
+  <WR_New>新建</WR_New>
+  <WR_Copy>复制</WR_Copy>
+  <WR_Delete>删除</WR_Delete>
+  <WR_NewRoleTitle>新建职责</WR_NewRoleTitle>
+  <WR_CopyRoleTitle>复制职责</WR_CopyRoleTitle>
+  <WR_CopySource>正在复制 {0}</WR_CopySource>
+  <WR_NameTaken>已存在同名职责。</WR_NameTaken>
+  <WR_DeleteConfirm>删除职责“{0}”？将从所有殖民者身上移除。</WR_DeleteConfirm>
+  <WR_AssignedTo>分配给</WR_AssignedTo>
+  <WR_Nobody>无人</WR_Nobody>
+  <WR_PlusOthers>另有 {0} 人</WR_PlusOthers>
+  <WR_AvailableJobs>可用工作</WR_AvailableJobs>
+  <WR_Search>搜索</WR_Search>
+  <WR_WarningPrefix>警告：</WR_WarningPrefix>
+  <WR_UnusedJobsWarning>有工作未包含在任何职责中。</WR_UnusedJobsWarning>
+  <WR_SelectedJobs>已选工作（有序）</WR_SelectedJobs>
+  <WR_TypeColumn>类型</WR_TypeColumn>
+  <WR_JobColumn>工作</WR_JobColumn>
+  <WR_AllJobs>全部工作</WR_AllJobs>
+  <WR_CoveredByTypeTip>已由工作类型涵盖。点击为此工作创建独立、可排序的条目。</WR_CoveredByTypeTip>
+  <WR_AddAllJobs>添加全部工作（独立且可排序）</WR_AddAllJobs>
+  <WR_SelectedRows>已选择 {0} 项</WR_SelectedRows>
+  <WR_MoveSelectedUpTip>将所选行上移一步。点击选择一行，Shift+点击选择连续范围，Ctrl+点击添加或取消单行。</WR_MoveSelectedUpTip>
+  <WR_MoveSelectedDownTip>将所选行下移一步。</WR_MoveSelectedDownTip>
+  <WR_RemoveSelectedTip>移除所选行。</WR_RemoveSelectedTip>
+  <WR_MissingDef>当前模组列表中不存在 {0}（其模组恢复前保持停用）。</WR_MissingDef>
+  <WR_DeadEntryTip>无效果：此条目涵盖的全部工作已被前面的条目涵盖。可上移以提高优先级，或移除。</WR_DeadEntryTip>
+  <WR_CompositeRole>组合职责</WR_CompositeRole>
+  <WR_CompositeRoleTip>组合职责打包其他职责：持有人按成员顺序执行其工作。组合职责没有自身工作列表。</WR_CompositeRoleTip>
+  <WR_CompositeConfirm>将“{0}”转换为组合职责？其已选工作将被移除。</WR_CompositeConfirm>
+  <WR_CompositeRevertConfirm>将“{0}”恢复为普通职责？其成员职责将被移除。</WR_CompositeRevertConfirm>
+  <WR_MemberRoles>成员职责（有序）</WR_MemberRoles>
+  <WR_AvailableRoles>可用职责</WR_AvailableRoles>
+  <WR_NoMembersHint>从左侧列表添加职责。持有人按此处顺序执行成员职责的工作。</WR_NoMembersHint>
+  <WR_NoCandidatesHint>没有可添加的职责。成员必须是没有时段或地点规则的普通职责，组合职责不能包含其他组合职责。</WR_NoCandidatesHint>
+  <WR_MemberLockTip>已锁定：此职责是组合职责的成员。必须先从所有组合中移除，才能更改此设置。</WR_MemberLockTip>
+  <WR_ScaleRenameTip>重命名此人数曲线，引用它的职责会随之更新。</WR_ScaleRenameTip>
+  <WR_ScaleRenameTitle>重命名曲线</WR_ScaleRenameTitle>
+  <WR_ScaleNewTitle>新建曲线（复制当前曲线）</WR_ScaleNewTitle>
+  <WR_ScaleUsedBy>由 {0} 使用</WR_ScaleUsedBy>
+  <WR_ScaleReset>重置</WR_ScaleReset>
+  <WR_ScaleResetTip>恢复自选择此职责或曲线以来、编辑前的值。</WR_ScaleResetTip>
+  <WR_ScaleSaveAs>另存为</WR_ScaleSaveAs>
+  <WR_ScaleDeleteConfirm>删除曲线“{0}”？\n\n{1}。这些职责将改用“从不”。</WR_ScaleDeleteConfirm>
+  <WR_ScaleSaveAsTitle>将更改另存为新曲线（当前曲线恢复为已保存值）</WR_ScaleSaveAsTitle>
+  <WR_ScaleDirectTip>此区间的直接分配最低人数；总需求中的其余名额可由训练替代满足。超过总需求时，总需求也随之提高。点击 +1（到 8 后循环），右键 -1。左键拖动可跨区间复制数值（拖动时右键可按拖动方向微调）。右键拖动产生阶梯：每个区间一步，向右递增，向左递减。</WR_ScaleDirectTip>
+  <WR_ScaleTotalsCaption>所需总人数（含训练替代）</WR_ScaleTotalsCaption>
+  <WR_ScaleMinsCaption>{0} 的直接分配最低人数</WR_ScaleMinsCaption>
+  <WR_ScaleTrainingHelp>此职责是 {0} 的训练职责，因此分配受 {0} 的调节选项控制（即使此处设为“从不”也一样）。但仍可在此强制设置 {1} 的最低分配人数。</WR_ScaleTrainingHelp>
+  <WR_ScaleControlledBy>由 {0} 控制</WR_ScaleControlledBy>
+  <WR_ScaleTotalTip>此区间的总需求，包括训练替代。提高时增加训练替代名额；降低时先消耗这些名额，再降低直接分配最低人数。点击 +1，右键 -1。左键拖动可跨区间复制数值（拖动时右键可按方向微调）。右键拖动产生阶梯：每个区间一步，向右递增，向左递减。</WR_ScaleTotalTip>
+  <WR_SkillsUsedLabel>使用技能：</WR_SkillsUsedLabel>
+  <WR_VirtualRoleTip>由于此职责的工作被上级职责涵盖，因此显示在此。它属于“{0}”分组。</WR_VirtualRoleTip>
+  <WR_TipTrainsLabel>训练</WR_TipTrainsLabel>
+  <WR_TipTrainsNothing>无（不获得技能经验）</WR_TipTrainsNothing>
+  <WR_TipRequiresLabel>要求</WR_TipRequiresLabel>
+  <WR_TipReqBills>{0} {1}（{3} 份清单中 {2} 份有技能门槛）</WR_TipReqBills>
+  <WR_TipReqItems>{0} {1}（{2} 种物品有技能门槛）</WR_TipReqItems>
+  <WR_TipReqJobs>{0} {1}（{2} 项工作有技能门槛）</WR_TipReqJobs>
+  <WR_TipLevelN>等级 {0}</WR_TipLevelN>
+  <WR_TipXpLabel>提供经验</WR_TipXpLabel>
+  <WR_TipXpValue>{1} 项工作中的 {0} 项</WR_TipXpValue>
+  <WR_TipUnlockAgeLabel>最低年龄</WR_TipUnlockAgeLabel>
+  <WR_TipUnlockAgeValue>{0}（更年轻的殖民者无法执行此工作）</WR_TipUnlockAgeValue>
+  <WR_SkillTipGiverSource>工作提供器：{0}（{1}）</WR_SkillTipGiverSource>
+  <WR_SkillTipTypeSource>工作类型：{0}（{1}）</WR_SkillTipTypeSource>
+  <WR_SkillTipUnknownMod>未知模组</WR_SkillTipUnknownMod>
+  <WR_EmergencySuffix>（紧急）</WR_EmergencySuffix>
+  <WR_ConditionalRole>条件职责</WR_ConditionalRole>
+  <WR_ConditionalRoleTip>条件职责根据活动时段和地点规则自行开启或关闭。设置了任意规则的职责即属于条件职责。</WR_ConditionalRoleTip>
+  <WR_AutoAssign>自动分配</WR_AutoAssign>
+  <WR_AutoAssignTip>新加入者（招募者、流浪者）处于此职责年龄范围时，会自动获得此职责。</WR_AutoAssignTip>
+  <WR_CustomSwatchEmpty>空槽：点击选择自定义颜色。所有职责共用自定义颜色。</WR_CustomSwatchEmpty>
+  <WR_CustomSwatchTip>点击使用此颜色。右键点击重新定义此槽。</WR_CustomSwatchTip>
+  <WR_ClearRulesConfirm>移除“{0}”的所有规则？它将恢复为手动职责。</WR_ClearRulesConfirm>
+  <WR_ActiveHours>活动时段</WR_ActiveHours>
+  <WR_HoursActive>启用</WR_HoursActive>
+  <WR_HoursInactive>停用</WR_HoursInactive>
+  <WR_LocationAny>任意地点</WR_LocationAny>
+  <WR_LocationNowhere>无地点</WR_LocationNowhere>
+  <WR_LocationNowhereTip>此职责原先限定的地点已不存在。选择其他地点前保持停用。</WR_LocationNowhereTip>
+  <WR_LocationSettlements>定居点</WR_LocationSettlements>
+  <WR_LocationCaravans>远行队</WR_LocationCaravans>
+  <WR_LocationShipItem>飞船：{0}</WR_LocationShipItem>
+  <WR_LocationSettlementItem>定居点：{0}</WR_LocationSettlementItem>
+  <WR_LocationCount>{0} 个地点</WR_LocationCount>
+  <WR_LocationGone>（已消失）</WR_LocationGone>
+  <WR_InvalidRoleTip>此职责永远无法生效：没有工作，或指定的所有地点均已不存在。</WR_InvalidRoleTip>
+  <WR_GroupDefault>默认</WR_GroupDefault>
+  <WR_GroupConditionalRoles>条件职责</WR_GroupConditionalRoles>
+  <WR_GroupComposites>组合职责</WR_GroupComposites>
+  <WR_GroupLabel>分组</WR_GroupLabel>
+  <WR_GroupButton>分组：{0}</WR_GroupButton>
+  <WR_GroupNewOption>新建…</WR_GroupNewOption>
+  <WR_NewGroupTitle>新建分组</WR_NewGroupTitle>
+  <WR_RenameGroup>重命名分组</WR_RenameGroup>
+  <WR_RenameGroupTitle>重命名分组</WR_RenameGroupTitle>
+  <WR_GroupOverlayTip>有规则的职责显示在“条件职责”中。清除规则后恢复到已保存的分组。</WR_GroupOverlayTip>
+  <WR_GroupCompositeTip>组合职责显示在“组合职责”分组中。</WR_GroupCompositeTip>
+  <WR_TreeNested>嵌套</WR_TreeNested>
+  <WR_TreeFlat>平铺</WR_TreeFlat>
+  <WR_TreeToggleTip>切换是否将被涵盖的职责嵌套在其组合上级下方。</WR_TreeToggleTip>
+  <WR_DisplayModeLabel>显示模式</WR_DisplayModeLabel>
+  <WR_JobFilterLabel>工作筛选</WR_JobFilterLabel>
+  <WR_PaletteBySkills>技能</WR_PaletteBySkills>
+  <WR_PaletteByGroups>分组</WR_PaletteByGroups>
+  <WR_PaletteModeTip>按相关技能或自定义职责分组排列职责面板。</WR_PaletteModeTip>
+  <WR_SuppressedHours>关闭：不在活动时段</WR_SuppressedHours>
+  <WR_SuppressedLocation>关闭：不在此职责指定地点</WR_SuppressedLocation>
+  <WR_BillRoleOption>职责：{0}</WR_BillRoleOption>
+  <WR_BillWorkerRoleTip>仅当前启用此职责的殖民者可执行此清单；条件职责会遵循活动时段等规则。指定工作人员会清除职责限制，反之亦然。</WR_BillWorkerRoleTip>
+  <WR_SurgeryWorkerRoleTip>决定谁可执行此手术。“任何工作人员”表示无职责限制。选择职责后，仅当前启用该职责的殖民者可执行；条件职责遵循活动时段等规则。</WR_SurgeryWorkerRoleTip>
+  <WR_SelectRoleIcon>选择职责图标</WR_SelectRoleIcon>
+  <WR_RenameRoleTitle>重命名职责</WR_RenameRoleTitle>
+  <WR_NewWorkDetected>检测到新工作类型。已创建或扩展职责：{0}</WR_NewWorkDetected>
+  <WR_SeedReportTitle>WorkRoles 设置完成</WR_SeedReportTitle>
+  <WR_SeedReportBody>已创建 {0} 个职责，并根据原工作优先级为 {1} 名殖民者分配职责组合。</WR_SeedReportBody>
+  <WR_SeedReportGenerated>为模组工作生成：{0}。</WR_SeedReportGenerated>
+  <WR_SeedReportFailures>部分工作无法迁移：</WR_SeedReportFailures>
+  <WR_SeedDropFailure>{0}：丢失 {1}（原优先级 {2}）</WR_SeedDropFailure>
+  <WR_SeedPawnFailure>{0}：迁移失败（{1}）</WR_SeedPawnFailure>
+  <WR_WelcomeTitle>WorkRoles</WR_WelcomeTitle>
+  <WR_WelcomeBody>WorkRoles 通过你分配的“医生”“铁匠”“农夫”等具名职责，为殖民者设置工作优先级。</WR_WelcomeBody>
+  <WR_WelcomeFind>点击屏幕底部的“工作”按钮打开 WorkRoles。“帮助”页以引导教程开始。</WR_WelcomeFind>
+  <WR_WelcomeTakeMeThere>立即打开</WR_WelcomeTakeMeThere>
+  <WR_WelcomeSmallScreen>当前游戏界面为 {0}x{1}（分辨率除以界面缩放）。WorkRoles 按 {2}x{3} 或更大尺寸设计，例如 1920x1080、界面缩放 1.25。更小屏幕仍可使用，但部分标签会缩短，页签需要更多滚动。降低游戏选项中的界面缩放可增加窗口空间。</WR_WelcomeSmallScreen>
+  <WR_RoleWorkAversion>{0} 的戒律 {1} 反对 {2}。推荐会施加有限分数惩罚：两个优先级档位，或选择主力时六点虚拟技能分。必需覆盖仍可选中此角色。猎人顺序后移两档，最多至第五档；原有第一档后备规则仍适用。</WR_RoleWorkAversion>
+  <WR_WorkBlockedTags>工作标签已禁用</WR_WorkBlockedTags>
+  <WR_WorkBlockedCapacity>缺少必需的身体能力</WR_WorkBlockedCapacity>
+  <WR_WorkBlockedRace>此种族的工作限制不允许</WR_WorkBlockedRace>
+  <WR_WorkBlockedRecipe>此种族的配方限制不允许</WR_WorkBlockedRecipe>
+  <WR_WorkBlockedViviGathering>需要 Vivi 采集速度和产出均为正；合适的采集工具可启用此工作</WR_WorkBlockedViviGathering>
+  <WR_WorkBlockedPrecept>因 {0} 拒绝执行</WR_WorkBlockedPrecept>
+  <WR_WorkRecipeWarning>{0}：{1}</WR_WorkRecipeWarning>
+  <WR_RecWorkAversion>{0} 反对 {1}；推荐评分降低。</WR_RecWorkAversion>
+  <WR_RecDecisionWorkAversion>厌恶使分数低于可选工作门槛。</WR_RecDecisionWorkAversion>
+</LanguageData>

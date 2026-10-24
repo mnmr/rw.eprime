@@ -236,6 +236,7 @@ namespace EPrimeReadouts
     {
         private int id;
         private string name = "";
+        private string? seedName;
         private string membersBlob = "";
         private string iconDefName = "";
 
@@ -245,6 +246,7 @@ namespace EPrimeReadouts
         {
             id = pool.Id;
             name = pool.Name;
+            seedName = pool.SeedName;
             membersBlob = PoolMembersCodec.Encode(pool.Members);
             iconDefName = pool.IconDefName ?? "";
         }
@@ -253,6 +255,7 @@ namespace EPrimeReadouts
         {
             Id = id,
             Name = name,
+            SeedName = seedName,
             Members = PoolMembersCodec.Decode(membersBlob),
             IconDefName = string.IsNullOrEmpty(iconDefName) ? null : iconDefName,
         };
@@ -261,6 +264,7 @@ namespace EPrimeReadouts
         {
             Scribe_Values.Look(ref id, "id", 0);
             Scribe_Values.Look(ref name, "name", "");
+            Scribe_Values.Look(ref seedName, "seedName");
             Scribe_Values.Look(ref membersBlob, "members", "");
             Scribe_Values.Look(ref iconDefName, "iconDefName", "");
         }
@@ -270,6 +274,7 @@ namespace EPrimeReadouts
     {
         private int id;
         private string name = "";
+        private string? seedName;
         private int orderIndex;
         private string tierBlob = "";
         private bool defaultEnabled = true;
@@ -280,6 +285,7 @@ namespace EPrimeReadouts
         {
             id = group.Id;
             name = group.Name;
+            seedName = group.SeedName;
             orderIndex = group.OrderIndex;
             tierBlob = TierBlobCodec.Encode(group.Tiers);
             defaultEnabled = group.DefaultEnabled;
@@ -289,6 +295,7 @@ namespace EPrimeReadouts
         {
             Id = id,
             Name = name,
+            SeedName = seedName,
             OrderIndex = orderIndex,
             Tiers = TierBlobCodec.Decode(tierBlob),
             DefaultEnabled = defaultEnabled,
@@ -298,6 +305,7 @@ namespace EPrimeReadouts
         {
             Scribe_Values.Look(ref id, "id", 0);
             Scribe_Values.Look(ref name, "name", "");
+            Scribe_Values.Look(ref seedName, "seedName");
             Scribe_Values.Look(ref orderIndex, "orderIndex", 0);
             Scribe_Values.Look(ref tierBlob, "tiers", "");
             Scribe_Values.Look(ref defaultEnabled, "defaultEnabled", true);

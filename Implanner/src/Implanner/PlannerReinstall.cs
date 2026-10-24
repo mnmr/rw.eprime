@@ -34,7 +34,7 @@ namespace Implanner
             for (int p = 0; p < pawnIds.Count; p++)
             {
                 int pawnId = pawnIds[p];
-                if (!index.PawnsById.TryGetValue(pawnId, out Pawn pawn)) continue;
+                if (!index.PawnsById.TryGetValue(pawnId, out Pawn? pawn)) continue;
 
                 // Pending records: the wiper went in (wake them), or its
                 // operation is gone without having run (drop them).

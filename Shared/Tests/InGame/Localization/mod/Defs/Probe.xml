@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <LocalizationProbe.ProbeDef>
+    <defName>LP_Item</defName>
+    <label>English label</label>
+    <description>English description</description>
+    <notes><li>English note</li></notes>
+    <extras><li>English first</li><li>English second</li></extras>
+  </LocalizationProbe.ProbeDef>
+</Defs>

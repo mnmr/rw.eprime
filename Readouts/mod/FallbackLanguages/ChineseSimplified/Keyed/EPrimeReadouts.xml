@@ -1,0 +1,153 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <EPR.Title>EPrime's Readouts</EPR.Title>
+  <EPR.Results>结果</EPR.Results>
+  <EPR.NoMatches>无匹配结果</EPR.NoMatches>
+  <EPR.MoreResults>…另有 {0} 项</EPR.MoreResults>
+  <EPR.CycleTip>切换可见层级</EPR.CycleTip>
+  <EPR.UseVanilla>使用原版资源面板</EPR.UseVanilla>
+  <EPR.OffsetX>水平偏移</EPR.OffsetX>
+  <EPR.OffsetY>垂直偏移</EPR.OffsetY>
+  <EPR.PanelWidth>面板宽度</EPR.PanelWidth>
+  <EPR.BottomMargin>下边距</EPR.BottomMargin>
+  <EPR.Groups>分组</EPR.Groups>
+  <EPR.Resources>资源</EPR.Resources>
+  <EPR.AllStorableItems>所有可储存物品</EPR.AllStorableItems>
+  <EPR.All>全部</EPR.All>
+  <EPR.Vanilla>原版</EPR.Vanilla>
+  <EPR.SearchFilter>搜索筛选</EPR.SearchFilter>
+  <EPR.ItemFilter>物品筛选</EPR.ItemFilter>
+  <EPR.SourceFilter>来源筛选</EPR.SourceFilter>
+  <EPR.NoMatchingItems>无匹配物品</EPR.NoMatchingItems>
+  <EPR.Editor>编辑器</EPR.Editor>
+  <EPR.GroupEditor>分组编辑器</EPR.GroupEditor>
+  <EPR.Add>添加</EPR.Add>
+  <EPR.DeleteConfirm>删除分组“{0}”？</EPR.DeleteConfirm>
+  <EPR.SelectGroupHint>选择或创建一个分组进行编辑。</EPR.SelectGroupHint>
+  <EPR.Thresholds>阈值</EPR.Thresholds>
+  <EPR.Low>偏低</EPR.Low>
+  <EPR.Critical>紧缺</EPR.Critical>
+  <EPR.Set>设置</EPR.Set>
+  <EPR.Clear>清除</EPR.Clear>
+  <EPR.ShowWhenZero>数量为零时显示</EPR.ShowWhenZero>
+  <EPR.PoolTip>添加为资源集合：用一个栏位显示此类别中所有物品的总数</EPR.PoolTip>
+  <EPR.EnableTip>在资源面板中显示此分组</EPR.EnableTip>
+  <EPR.RestoreDefaults>恢复默认值</EPR.RestoreDefaults>
+  <EPR.RestoreConfirm>用默认配置替换所有分组和阈值？多人游戏中会影响所有玩家。</EPR.RestoreConfirm>
+  <EPR.Help>帮助</EPR.Help>
+  <EPR.HelpGroups>这些是资源显示分组，每个分组占一条独立的横带。
+
+点击勾号切换可见性，或点击 [x] 删除分组。
+
+在名称输入框中输入名称，再点击“添加”来新增分组。</EPR.HelpGroups>
+  <EPR.HelpResources>浏览资源和已定义的资源集合，将其加入所选分组。
+
+点击条目将其追加到分组末尾，或拖入某一层级的指定栏位。已分配的条目会变暗并带有标记；右键点击条目或点击其勾号即可移除。</EPR.HelpResources>
+  <EPR.HelpEditor>此面板显示当前分组的层级。
+
+每个分组最多可有三个显示层级。上一层级有内容后，下一层级会自动出现。
+
+点击或拖动右侧面板的物品，将其加入所选分组。
+
+点击栏位可设置显示选项，右键点击可清除分配。拖动物品可在同一层级内或不同层级间调整顺序。</EPR.HelpEditor>
+  <EPR.Options>选项</EPR.Options>
+  <EPR.Overview>概览</EPR.Overview>
+  <EPR.HelpChapterBasics>基础</EPR.HelpChapterBasics>
+  <EPR.HelpChapterGroups>分组</EPR.HelpChapterGroups>
+  <EPR.HelpChapterPools>资源集合</EPR.HelpChapterPools>
+  <EPR.HelpChapterOptions>选项</EPR.HelpChapterOptions>
+  <EPR.HelpReload>重新加载</EPR.HelpReload>
+  <EPR.WelcomeTitle>EPrime's Readouts</EPR.WelcomeTitle>
+  <EPR.WelcomeBody>Readouts 用自定义分组取代左上角的原版资源面板。每组最多容纳三个层级的资源或资源集合，计数器会根据你设置的阈值改变颜色。</EPR.WelcomeBody>
+  <EPR.WelcomeFind>点击资源面板顶部的齿轮按钮打开编辑器。“选项”页提供显示设置，“帮助”页介绍其余功能。</EPR.WelcomeFind>
+  <EPR.WelcomeTakeMeThere>立即打开</EPR.WelcomeTakeMeThere>
+  <EPR.ShowSearchFilter>显示搜索筛选</EPR.ShowSearchFilter>
+  <EPR.SearchHideZero>隐藏数量为零的结果</EPR.SearchHideZero>
+  <EPR.SearchStorageOnly>仅统计储存中的物品</EPR.SearchStorageOnly>
+  <EPR.SearchStorageOnlyTip>启用后，仅统计储存区或货架等储存建筑内符合条件且未腐烂的物品。地图其他位置的散落物品不计入。角色搬运中、物品栏或容器内，以及未探索区域中的物品始终不计入。禁止使用的物品仍会计入，除非同时启用“忽略禁止使用的物品”。</EPR.SearchStorageOnlyTip>
+  <EPR.SearchHideForbidden>忽略禁止使用的物品</EPR.SearchHideForbidden>
+  <EPR.SelectJumpCamera>点击资源时跳转镜头</EPR.SelectJumpCamera>
+  <EPR.DisplayOptions>显示选项</EPR.DisplayOptions>
+  <EPR.KeepReadoutToggle>在工具栏中保留资源面板开关</EPR.KeepReadoutToggle>
+  <EPR.KeepReadoutToggleTip>保留右下方工具栏中的原版资源面板按钮。点击它可显示或隐藏分组；分组隐藏时，面板仅保留齿轮和搜索框。</EPR.KeepReadoutToggleTip>
+  <EPR.TierLayoutOptions>层级排列</EPR.TierLayoutOptions>
+  <EPR.TierLayoutHorizontal>水平</EPR.TierLayoutHorizontal>
+  <EPR.TierLayoutVertical>垂直</EPR.TierLayoutVertical>
+  <EPR.TierLayoutTip>决定展开分组后额外层级的显示方式，适用于三角按钮切换和鼠标悬停展开。水平排列会在同一行右侧追加层级；垂直排列则每层各占一行，增加横带高度。</EPR.TierLayoutTip>
+  <EPR.ExpandOnHover>悬停时展开</EPR.ExpandOnHover>
+  <EPR.CollapseWhenIdle>移开鼠标时折叠</EPR.CollapseWhenIdle>
+  <EPR.ShowModName>显示模组名称</EPR.ShowModName>
+  <EPR.CountOptions>计数选项</EPR.CountOptions>
+  <EPR.PlannedWorkOptions>计划工作</EPR.PlannedWorkOptions>
+  <EPR.ReserveForBills>为生产清单预留资源</EPR.ReserveForBills>
+  <EPR.ReserveForBillsTip>扣除未完成生产清单仍需消耗的原料。只有某项原料恰好有一种满足方式时，才会为其预留资源。“任意皮革”等开放选择不预留任何资源。</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBuildables>为建筑预留资源</EPR.ReserveForBuildables>
+  <EPR.ReserveForBuildablesTip>扣除蓝图和施工框架仍需的材料。已搬入框架的材料不会重复计入，禁止施工的蓝图会被忽略。</EPR.ReserveForBuildablesTip>
+  <EPR.ShowNegativeCounts>以负数显示资源缺口</EPR.ShowNegativeCounts>
+  <EPR.ShowNegativeCountsTip>计划工作所需资源超过现有数量时，显示缺少多少，而不是最低只显示零。</EPR.ShowNegativeCountsTip>
+  <EPR.QualityJobsRework>Quality Jobs 支持</EPR.QualityJobsRework>
+  <EPR.QualityJobsReworkTip>对于设有品质目标的生产清单和建筑，估算达到目标所需的尝试次数，并为所有尝试预留资源。重建建筑在拆除时按原版规则返还部分材料。</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsMissingTip>需要 EPrime's Quality Jobs，但尚未安装。</EPR.QualityJobsMissingTip>
+  <EPR.QualityJobsOutdatedTip>已安装 EPrime's Quality Jobs，但其版本不提供所需的集成功能。请更新后启用此选项。</EPR.QualityJobsOutdatedTip>
+  <EPR.TipPlannedWork>计划工作</EPR.TipPlannedWork>
+  <EPR.TipResource>资源</EPR.TipResource>
+  <EPR.TipQueued>已排队</EPR.TipQueued>
+  <EPR.TipEach>每份</EPR.TipEach>
+  <EPR.TipDrain>消耗</EPR.TipDrain>
+  <EPR.TipInStock>库存</EPR.TipInStock>
+  <EPR.TipAvailableStock>可用 {0} · 库存 {1}</EPR.TipAvailableStock>
+  <EPR.TipOtherPlannedWork>其他（{0}）</EPR.TipOtherPlannedWork>
+  <EPR.TipMixedResources>混合</EPR.TipMixedResources>
+  <EPR.ClickOptions>点击选项</EPR.ClickOptions>
+  <EPR.SearchOptions>搜索选项</EPR.SearchOptions>
+  <EPR.HoverOptions>悬停选项</EPR.HoverOptions>
+  <EPR.OptionsFor>{0} 的显示选项</EPR.OptionsFor>
+  <EPR.ThresholdCaption>自定义计数器变色阈值</EPR.ThresholdCaption>
+  <EPR.CountRuleCaption>覆盖此资源或集合的计数选项</EPR.CountRuleCaption>
+  <EPR.RuleDefault>默认</EPR.RuleDefault>
+  <EPR.RuleAlwaysOn>始终开启</EPR.RuleAlwaysOn>
+  <EPR.RuleAlwaysOff>始终关闭</EPR.RuleAlwaysOff>
+  <EPR.Pools>资源集合</EPR.Pools>
+  <EPR.ResourcePoolEditor>资源集合编辑器</EPR.ResourcePoolEditor>
+  <EPR.HelpPools>创建资源集合后，在此选择它，并在“资源”面板中编辑内容。使用行内操作可重命名或删除集合。
+
+要将集合加入分组，请切换到“分组编辑器”，使用资源树中的“资源集合”分支。</EPR.HelpPools>
+  <EPR.HelpPoolEditor>使用共用筛选器缩小资源树范围。勾选类别或单个资源，将其纳入所选集合。点击资源图标可将其设为集合图标。</EPR.HelpPoolEditor>
+  <EPR.SelectOrCreatePool>选择或创建一个资源集合以开始。</EPR.SelectOrCreatePool>
+  <EPR.DeletePoolConfirm>删除集合“{0}”？所有分组中使用此集合的栏位都会移除。</EPR.DeletePoolConfirm>
+  <EPR.NameLabel>名称</EPR.NameLabel>
+  <EPR.PoolNameTaken>已存在同名资源集合。</EPR.PoolNameTaken>
+  <EPR.GroupNameTaken>已存在同名分组。</EPR.GroupNameTaken>
+  <EPR.Export>导出</EPR.Export>
+  <EPR.Import>导入</EPR.Import>
+  <EPR.Exported>已导出到 {0}</EPR.Exported>
+  <EPR.ExportOverwriteConfirm>{0} 已存在。要替换吗？</EPR.ExportOverwriteConfirm>
+  <EPR.Imported>已成功应用导入内容。</EPR.Imported>
+  <EPR.NoFiles>未找到导出文件。</EPR.NoFiles>
+  <EPR.ExportPreviewTitle>导出 Readouts</EPR.ExportPreviewTitle>
+  <EPR.CopyToClipboard>复制到剪贴板</EPR.CopyToClipboard>
+  <EPR.CopiedToClipboard>已复制到剪贴板。</EPR.CopiedToClipboard>
+  <EPR.Save>保存</EPR.Save>
+  <EPR.ExportLocationLabel>保存位置</EPR.ExportLocationLabel>
+  <EPR.CopyPath>复制路径</EPR.CopyPath>
+  <EPR.LocGameData>游戏数据文件夹</EPR.LocGameData>
+  <EPR.LocDesktop>桌面</EPR.LocDesktop>
+  <EPR.LocUserHome>用户主文件夹</EPR.LocUserHome>
+  <EPR.LocCustom>自定义…</EPR.LocCustom>
+  <EPR.EnterPath>输入路径</EPR.EnterPath>
+  <EPR.BadFileName>请输入有效的文件名。</EPR.BadFileName>
+  <EPR.BadDirectory>请输入有效的目录路径。</EPR.BadDirectory>
+  <EPR.ImportTitle>导入 Readouts</EPR.ImportTitle>
+  <EPR.ImportLocationLabel>导入位置</EPR.ImportLocationLabel>
+  <EPR.FromClipboard>从剪贴板</EPR.FromClipboard>
+  <EPR.ClipboardEmpty>剪贴板为空，或不含 Readouts 导出内容。</EPR.ClipboardEmpty>
+  <EPR.ImportWarning>警告：这将替换当前所有集合、分组和阈值。多人游戏中会影响所有玩家。</EPR.ImportWarning>
+  <EPR.ImportParseFailed>无法解析 Readouts XML：{0}</EPR.ImportParseFailed>
+  <EPR.DeleteFileConfirm>删除文件“{0}”？此操作无法撤销。</EPR.DeleteFileConfirm>
+  <EPR.ContentSummary>{0} 个集合，{1} 个分组</EPR.ContentSummary>
+  <EPR.PreviewPoolsHeader>集合</EPR.PreviewPoolsHeader>
+  <EPR.PreviewGroupsHeader>分组</EPR.PreviewGroupsHeader>
+  <EPR.PreviewPoolRow>{0}（{1} 个成员）</EPR.PreviewPoolRow>
+  <EPR.PreviewGroupRow>{0}（{1} 个层级，{2} 个栏位）</EPR.PreviewGroupRow>
+  <EPR.PreviewNone>（无）</EPR.PreviewNone>
+</LanguageData>

@@ -1,0 +1,633 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_ColonistsTab>殖民者</WR_ColonistsTab>
+  <WR_RecommendationsTab>推薦</WR_RecommendationsTab>
+  <WR_OptionsTab>選項</WR_OptionsTab>
+  <WR_CompatSection>兼容性設定</WR_CompatSection>
+  <WR_OptNumeric>在表格中顯示數字優先級</WR_OptNumeric>
+  <WR_TipOff>關閉</WR_TipOff>
+  <WR_TipOn>開啟</WR_TipOn>
+  <WR_OptNumericTipWhat>原版的“手動優先級”開關，按存檔儲存。</WR_OptNumericTipWhat>
+  <WR_OptNumericTipOff>優先級表格（包括 Numbers 等模組）顯示勾號</WR_OptNumericTipOff>
+  <WR_OptNumericTipOn>優先級表格顯示數字</WR_OptNumericTipOn>
+  <WR_OptNumericTipWhy>此開關移至此處，因為 WorkRoles 替換了原版的“工作”頁。</WR_OptNumericTipWhy>
+  <WR_OptVanillaRange>向其他模組提供原版 0–4 優先級</WR_OptVanillaRange>
+  <WR_OptVanillaRangeTipWhat>WorkRoles 使用唯一優先級排序工作，即從 1 開始的連續數字。</WR_OptVanillaRangeTipWhat>
+  <WR_OptVanillaRangeTipOff>其他模組讀取原始優先級</WR_OptVanillaRangeTipOff>
+  <WR_OptVanillaRangeTipOn>優先級映射到原版的 0–4 范圍</WR_OptVanillaRangeTipOn>
+  <WR_OptEmergencyRule>僅前 5 個職責可因緊急情況中斷工作</WR_OptEmergencyRule>
+  <WR_OptEmergencyRuleTipWhat>決定哪些緊急工作（滅火、緊急治療和上床接受緊急治療）可以中斷睡眠、進食及其他工作，按存檔儲存。</WR_OptEmergencyRuleTipWhat>
+  <WR_OptEmergencyRuleTipOff>任何已啟用職責中的緊急工作均可中斷當前工作</WR_OptEmergencyRuleTipOff>
+  <WR_OptEmergencyRuleTipOn>僅前 5 個已啟用職責中的緊急工作可中斷；后續職責按正常順序執行</WR_OptEmergencyRuleTipOn>
+  <WR_OptEmergencyRuleTipWhy>預設開啟，讓排列末尾的后備職責等待輪到自己：若“醫生”排在第六位，殖民者會繼續烹飪，由專職醫生處理急診。若希望所有人都響應力所能及的緊急情況，可關閉。</WR_OptEmergencyRuleTipWhy>
+  <WR_AutomationSection>自動化設定</WR_AutomationSection>
+  <WR_OptAutoOptimize>每游戲小時自動優化殖民地</WR_OptAutoOptimize>
+  <WR_OptAutoOptimizeTipWhat>自動對每個殖民地運行“調整殖民地”并應用更改，按存檔儲存。</WR_OptAutoOptimizeTipWhat>
+  <WR_OptAutoOptimizeTipOff>職責分配僅在你編輯時改變</WR_OptAutoOptimizeTipOff>
+  <WR_OptAutoOptimizeTipOn>每個游戲整點應用推薦分配</WR_OptAutoOptimizeTipOn>
+  <WR_OptAutoOptimizeTipWhy>保留已固定的分配，包括被排除的職責。殖民者已有分配符合推薦時，不寫入任何更改。</WR_OptAutoOptimizeTipWhy>
+  <WR_AutoOptimizeConfirmApply>“應用”會立即執行下方更改，并開啟每小時自動優化。啟用期間會隱藏“調整殖民地”和“就這樣安排”按鈕；你仍可正常分配、排序和固定職責。</WR_AutoOptimizeConfirmApply>
+  <WR_AutoOptimizeGlobalWarning>你有多個殖民地：自動優化是全局功能，每小時會更改所有殖民地的職責分配。下方預覽僅顯示當前殖民地的更改。</WR_AutoOptimizeGlobalWarning>
+  <WR_DisplaySection>顯示設定</WR_DisplaySection>
+  <WR_OptSkillCaptions>在殖民者姓名下顯示最佳技能</WR_OptSkillCaptions>
+  <WR_OptSkillCaptionsTip>每行會在姓名下方用小字顯示殖民者最擅長的工作技能與等級，并按適合程度著色。關閉后僅顯示姓名。</WR_OptSkillCaptionsTip>
+  <WR_OptVerdictsColonists>在殖民者職責標簽上顯示適合度</WR_OptVerdictsColonists>
+  <WR_OptVerdictsColonistsTip>職責標簽以星標顯示該殖民者的適合度，與推薦引擎一致：正面評價為白星（一星適合、二星優秀，金星卓越），負面為紅星（一星較差、二星極差），中性為灰色。</WR_OptVerdictsColonistsTip>
+  <WR_OptVerdictsPalette>在職責面板中顯示所選殖民者的適合度</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>職責面板中的標簽顯示每個職責對當前選中殖民者的適合程度。</WR_OptVerdictsPaletteTip>
+  <WR_OptVerdictsRecommendations>在推薦職責標簽上顯示適合度</WR_OptVerdictsRecommendations>
+  <WR_OptPaletteGrouping>職責面板分組</WR_OptPaletteGrouping>
+  <WR_OptVerdictsRecommendationsTip>推薦標簽（技能面板和更改預覽中）顯示對應殖民者的職責適合度。</WR_OptVerdictsRecommendationsTip>
+  <WR_RecGlobalPanel>全局選項</WR_RecGlobalPanel>
+  <WR_RecGlobalPanelHelp>這些選項影響候選人的評分、排名及職責在最終推薦列表中的位置。若對修改不滿意，可用“重置”恢復預設值。</WR_RecGlobalPanelHelp>
+  <WR_RecRolePanel>職責選項</WR_RecRolePanel>
+  <WR_RecRolePanelHelp>此處列出除被排除職責以外的所有職責。展開職責可調整其推薦選項。每名殖民者的職責自動排序；“獵人”仍按射擊技能決定位置。</WR_RecRolePanelHelp>
+  <WR_RecExcludedHeader>排除的職責</WR_RecExcludedHeader>
+  <WR_RecExcludedHelp>此列表中的職責絕不推薦，包括通過訓練路徑或自動職責。現有固定分配仍受保護。使用“添加職責”排除一個職責；移除其標簽即可重新允許推薦。</WR_RecExcludedHelp>
+  <WR_RecExcludedTip>排除設定適用于此存檔中所有殖民者的推薦，包括“調整殖民地”和自動優化。仍可手動分配被排除的職責。編輯此列表不會改變當前分配；應用推薦時會移除未固定的排除職責，并保留固定分配。</WR_RecExcludedTip>
+  <WR_RecExcludedChipTip>此職責絕不推薦。點選移除圖標即可重新允許推薦，并恢復“職責選項”中的條目。其已儲存的選項會保留。</WR_RecExcludedChipTip>
+  <WR_RecExcludedAddTip>選擇推薦引擎永不推薦的職責。任何職責都可排除，包括訓練、自動、條件、阻止和組合職責。</WR_RecExcludedAddTip>
+  <WR_RecExcludedReason>此職責已從推薦中排除。在“推薦”頁的“排除的職責”中移除它，即可重新允許推薦。</WR_RecExcludedReason>
+  <WR_RecTuneReset>重置</WR_RecTuneReset>
+  <WR_RecTuneResetTip>恢復本節的預設選項。</WR_RecTuneResetTip>
+  <WR_RecTuneCellHint>點選數值增大，右鍵點選減小。</WR_RecTuneCellHint>
+  <WR_StepModifiersTip>點選：1 步。\nShift：5 步。\nCtrl：10 步。\nCtrl+Shift：跳至極限。</WR_StepModifiersTip>
+  <WR_SignalLetterAwful>極</WR_SignalLetterAwful>
+  <WR_SignalLetterPoor>差</WR_SignalLetterPoor>
+  <WR_SignalLetterNeutral>中</WR_SignalLetterNeutral>
+  <WR_SignalLetterStrong>適</WR_SignalLetterStrong>
+  <WR_SignalLetterGreat>優</WR_SignalLetterGreat>
+  <WR_SignalLetterExceptional>卓</WR_SignalLetterExceptional>
+  <WR_RecTuneChampionSection>主力人選選項</WR_RecTuneChampionSection>
+  <WR_RecTuneChampionSectionIntro>每個職責先選出一位主力，即最適合承擔該職責的殖民者。這些選項決定候選資格，以及如何權衡技能與信號強度。</WR_RecTuneChampionSectionIntro>
+  <WR_RecTuneOrderingSection>職責最終排序選項</WR_RecTuneOrderingSection>
+  <WR_RecTuneOrderingSectionIntro>選定殖民者的職責后，這些選項決定列表順序，也就是工作優先順序。</WR_RecTuneOrderingSectionIntro>
+  <WR_RecTuneOptionalSection>訓練路徑與可選目標選項</WR_RecTuneOptionalSection>
+  <WR_RecTuneOptionalSectionIntro>決定何時為殖民者啟用訓練路徑，以及何時值得推薦涉及多項技能的可選職責。</WR_RecTuneOptionalSectionIntro>
+  <WR_RecTuneLeadSection>負責人分散選項</WR_RecTuneLeadSection>
+  <WR_RecTuneLeadSectionIntro>多條訓練路徑共享目標時，這些選項將負責職責分配給不同殖民者，避免集中于一人。</WR_RecTuneLeadSectionIntro>
+  <WR_RecTuneHunterSection>獵人排序選項</WR_RecTuneHunterSection>
+  <WR_RecTuneHunterSectionIntro>未固定的“獵人”按射擊技能動態插入：射手越好，狩獵優先級越靠后，因為其時間在其他工作上更有價值。</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneCandidateMinimumSignal>候選人最低信號</WR_RecTuneCandidateMinimumSignal>
+  <WR_RecTuneCandidateMinimumSignalDesc>普通職責選擇所接受的最低信號。提高后會在選擇主力和填補最低人數之前排除較弱候選人。</WR_RecTuneCandidateMinimumSignalDesc>
+  <WR_RecTuneChampionSkillDivisor>主力技能除數</WR_RecTuneChampionSkillDivisor>
+  <WR_RecTuneChampionSkillDivisorDesc>主力技能分值為 ceil(技能等級 ÷ 此值)。提高此值會降低原始技能等級的影響。</WR_RecTuneChampionSkillDivisorDesc>
+  <WR_RecTuneChampionMultiSkillMinimumCount>合并技能門檻</WR_RecTuneChampionMultiSkillMinimumCount>
+  <WR_RecTuneChampionMultiSkillMinimumCountDesc>合計主力分數所需的合格目標技能最少數量。低于此數時，僅對該職責最佳技能評分。</WR_RecTuneChampionMultiSkillMinimumCountDesc>
+  <WR_RecTuneChampionMultiplierRow>信號倍率</WR_RecTuneChampionMultiplierRow>
+  <WR_RecTuneChampionMultiplierRowDesc>選擇主力時，將各信號強度的取整技能分值乘以對應倍率。</WR_RecTuneChampionMultiplierRowDesc>
+  <WR_RecTuneMultiplierAwfulTip>極差。僅當候選人最低信號允許“極差”候選人時，此列才生效。</WR_RecTuneMultiplierAwfulTip>
+  <WR_RecTuneChampionTieBreakRow>平分決勝分</WR_RecTuneChampionTieBreakRow>
+  <WR_RecTuneChampionTieBreakRowDesc>主力分數相同時比較的信號分值。多技能職責會合計符合條件的信號分值。</WR_RecTuneChampionTieBreakRowDesc>
+  <WR_RecTuneRankedCandidatePrioritySignal>排序候選人優先信號</WR_RecTuneRankedCandidatePrioritySignal>
+  <WR_RecTuneRankedCandidatePrioritySignalDesc>填補最低人數前，達到此信號的非主力候選人會排在較弱候選人之前。</WR_RecTuneRankedCandidatePrioritySignalDesc>
+  <WR_RecTuneSurplusMinimumSignal>額外分配最低信號</WR_RecTuneSurplusMinimumSignal>
+  <WR_RecTuneSurplusMinimumSignalDesc>填滿必需名額后，達到此信號的普通候選人仍可獲得該職責。等級提升僅適用于配置訓練區間內的單技能職責；多技能目標使用可選目標的適性要求。</WR_RecTuneSurplusMinimumSignalDesc>
+  <WR_RecTuneOrderingSkillDivisor>排序技能除數</WR_RecTuneOrderingSkillDivisor>
+  <WR_RecTuneOrderingSkillDivisorDesc>最終排序的技能分值為 ceil(技能等級 ÷ 此值)。提高此值會降低技能對職責順序的影響。</WR_RecTuneOrderingSkillDivisorDesc>
+  <WR_RecTuneOrderingPointsRow>信號分值</WR_RecTuneOrderingPointsRow>
+  <WR_RecTuneOrderingPointsRowDesc>最終推薦職責排序時，各信號強度提供的分值。</WR_RecTuneOrderingPointsRowDesc>
+  <WR_RecTuneMinimumPickRow>最低人數入選加分</WR_RecTuneMinimumPickRow>
+  <WR_RecTuneMinimumPickRowDesc>為滿足職責最低人數而選中的第一、第二、第三及以后角色獲得的排序分值。</WR_RecTuneMinimumPickRowDesc>
+  <WR_RecTuneCategoryPointsRow>類別分值</WR_RecTuneCategoryPointsRow>
+  <WR_RecTuneCategoryPointsRowDesc>按殖民地重要性增加排序分值：“重要”讓值勤職責排在同信號的生產工作之前；“可選”則使職責靠后。</WR_RecTuneCategoryPointsRowDesc>
+  <WR_RecTuneTimePointsRow>時間需求分值</WR_RecTuneTimePointsRow>
+  <WR_RecTuneTimePointsRowDesc>按時間需求增加排序分值：“兼職”讓短時職責排在同信號的全職工作之前；“見縫插針”使填補空閑的工作靠后。</WR_RecTuneTimePointsRowDesc>
+  <WR_RecTunePathMinimumSignal>訓練職責最低信號</WR_RecTunePathMinimumSignal>
+  <WR_RecTunePathMinimumSignalDesc>職責參與已啟用訓練路徑時允許的最低信號。</WR_RecTunePathMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumSkillCount>可選目標技能數量門檻</WR_RecTuneOptionalTargetMinimumSkillCount>
+  <WR_RecTuneOptionalTargetMinimumSkillCountDesc>啟用可選目標適性檢查所需的合格目標技能數量。合格技能較少的職責跳過此檢查。</WR_RecTuneOptionalTargetMinimumSkillCountDesc>
+  <WR_RecTuneOptionalTargetMinimumSignal>可選目標最低信號</WR_RecTuneOptionalTargetMinimumSignal>
+  <WR_RecTuneOptionalTargetMinimumSignalDesc>技能須達到此信號，等級提升才會影響單技能額外分配資格，或為可選目標提供適性分值。</WR_RecTuneOptionalTargetMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetStrongLevel>中段技能提升等級</WR_RecTuneOptionalTargetStrongLevel>
+  <WR_RecTuneOptionalTargetStrongLevelDesc>達到此技能等級后，較弱的合格信號提升至配置的中段信號，用于單技能額外分配資格和可選目標評分。</WR_RecTuneOptionalTargetStrongLevelDesc>
+  <WR_RecTuneOptionalTargetStrongPromotedSignal>中段提升后信號</WR_RecTuneOptionalTargetStrongPromotedSignal>
+  <WR_RecTuneOptionalTargetStrongPromotedSignalDesc>達到中段技能提升等級后，用于單技能額外分配資格和可選目標適性評分的信號。</WR_RecTuneOptionalTargetStrongPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetGreatLevel>高段技能提升等級</WR_RecTuneOptionalTargetGreatLevel>
+  <WR_RecTuneOptionalTargetGreatLevelDesc>達到此技能等級后，較弱的合格信號提升至配置的高段信號，用于單技能額外分配資格和可選目標評分。</WR_RecTuneOptionalTargetGreatLevelDesc>
+  <WR_RecTuneOptionalTargetGreatPromotedSignal>高段提升后信號</WR_RecTuneOptionalTargetGreatPromotedSignal>
+  <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>達到高段技能提升等級后，用于單技能額外分配資格和可選目標適性評分的信號。</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumPoints>可選目標最低分值</WR_RecTuneOptionalTargetMinimumPoints>
+  <WR_RecTuneOptionalTargetMinimumPointsDesc>推薦多技能可選目標時，各信號高于配置底線的級差總和至少須達到此值。</WR_RecTuneOptionalTargetMinimumPointsDesc>
+  <WR_RecTuneLeadMinimumConnectedTargets>觸發分散的關聯目標數</WR_RecTuneLeadMinimumConnectedTargets>
+  <WR_RecTuneLeadMinimumConnectedTargetsDesc>關聯訓練目標達到此最少數量后，規劃器才嘗試把負責職責分配給不同角色。</WR_RecTuneLeadMinimumConnectedTargetsDesc>
+  <WR_RecTuneLeadMinimumSignal>負責人最低信號</WR_RecTuneLeadMinimumSignal>
+  <WR_RecTuneLeadMinimumSignalDesc>選擇角色作為分散訓練路徑負責人時，職責信號必須達到的最低值。</WR_RecTuneLeadMinimumSignalDesc>
+  <WR_RecTuneHunterTiersRow>各檔最高射擊等級</WR_RecTuneHunterTiersRow>
+  <WR_RecTuneHunterTiersRowDesc>“獵人”動態位置的射擊等級分界。第 1 檔將獵人放在基礎工作之后，第 2、3 檔分別放在中間和最后的工作職責之后，超過第 4 檔則排在末尾。</WR_RecTuneHunterTiersRowDesc>
+  <WR_TrainingSection>訓練路徑</WR_TrainingSection>
+  <WR_TrainingHelp>在此定義殖民者如何學習新技能并逐步勝任此職責。訓練路徑可包含多個區間，職責可以重疊。路徑被推薦時，會推薦該殖民者當前技能等級所涵蓋的全部職責。</WR_TrainingHelp>
+  <WR_TrainingTipWhat>職責自身的成長路線：每個成員職責都有對應推薦技能區間。目標職責本身始終保留在路徑中。</WR_TrainingTipWhat>
+  <WR_TrainingTipBands>重疊區間的職責同時存在；區間不重疊時，后續職責替換前一個。</WR_TrainingTipBands>
+  <WR_TrainingTipOrder>分配優先排列區間下限更高的職責。區間相同時，先按角色最弱的職責技能，再按路徑儲存順序排序。</WR_TrainingTipOrder>
+  <WR_AddNew>新增</WR_AddNew>
+  <WR_WhenPanelCaption>職責成長：設定所示職責在哪些技能等級獲得推薦。重疊職責會相互補充。</WR_WhenPanelCaption>
+  <WR_AddRole>添加職責</WR_AddRole>
+  <WR_NoContributionRoleTip>不會訓練此職責所需的任何技能，因此路徑無法將其用作訓練階段。模組可能改變經驗來源，所以仍允許添加。</WR_NoContributionRoleTip>
+  <WR_ContributesTip>為此職責訓練：{0}。</WR_ContributesTip>
+  <WR_RecClassificationSection>分類</WR_RecClassificationSection>
+  <WR_RecSkillsSection>技能</WR_RecSkillsSection>
+  <WR_RecScalingSection>分配規模</WR_RecScalingSection>
+  <WR_RoleColonyMinLabel>殖民地最低人數：</WR_RoleColonyMinLabel>
+  <WR_RoleColonyMinTip>此職責的最少分配人數。</WR_RoleColonyMinTip>
+  <WR_RoleCoverageLabel>覆蓋率：</WR_RoleCoverageLabel>
+  <WR_RoleCoverageTip>理想情況下應獲得此職責的殖民者比例。</WR_RoleCoverageTip>
+  <WR_RoleCategoryLabel>殖民地重要性：</WR_RoleCategoryLabel>
+  <WR_RoleCategoryTip>規劃殖民地時此職責的重要程度。“未設定”表示不分類。</WR_RoleCategoryTip>
+  <WR_RoleCategoryNone>未設定</WR_RoleCategoryNone>
+  <WR_RoleCategoryImportant>重要</WR_RoleCategoryImportant>
+  <WR_RoleCategoryNormal>普通</WR_RoleCategoryNormal>
+  <WR_RoleCategoryOptional>可選</WR_RoleCategoryOptional>
+  <WR_RoleTimeLabel>時間需求：</WR_RoleTimeLabel>
+  <WR_RoleTimeTip>此職責的工作通常占用殖民者一天中多少時間。</WR_RoleTimeTip>
+  <WR_RoleTimeNone>未設定</WR_RoleTimeNone>
+  <WR_RoleTimePartTime>兼職</WR_RoleTimePartTime>
+  <WR_RoleTimeFullTime>全職</WR_RoleTimeFullTime>
+  <WR_RoleTimeOpportunistic>見縫插針</WR_RoleTimeOpportunistic>
+  <WR_ChampionPenalty>重復主力懲罰</WR_ChampionPenalty>
+  <WR_ChampionPenaltyTip>啟用后，已擔任其他職責主力的殖民者競爭此職責時會受扣分。對于偶爾執行等允許兼任主力的職責，可關閉。</WR_ChampionPenaltyTip>
+  <WR_PartialCapability>允許部分勝任</WR_PartialCapability>
+  <WR_PartialCapabilityTip>啟用后，只能執行其中部分工作的殖民者也可獲推薦。完全無法執行其中工作的角色絕不會獲推薦。適用于希望人人承擔的廣泛職責，例如共同的閑暇雜務。</WR_PartialCapabilityTip>
+  <WR_PartialCapabilityLockedTip>此職責已允許只能執行部分工作的殖民者獲推薦。無技能工作職責和狩獵職責始終允許此項。</WR_PartialCapabilityLockedTip>
+  <WR_RoleAgeBandsLabel>可分配此職責的年齡組：</WR_RoleAgeBandsLabel>
+  <WR_RoleAgeBandsTip>所選年齡區間外的殖民者不會被分配或推薦此職責。點選范圍外區間可延伸選擇至該處；點選首末已選區間可移除它；點選中間區間則只選擇該區間。區間邊界依據游戲解鎖工作的年齡。此職責全部工作從 {0} 歲起均可執行。</WR_RoleAgeBandsTip>
+  <WR_WorkTypesLabel>工作類型</WR_WorkTypesLabel>
+  <WR_WorkTypesTip>只有能執行指定工作類型的殖民者才有資格承擔此職責。\n\n根據所選工作推導，僅供參考。</WR_WorkTypesTip>
+  <WR_UsedSkillsLabel>使用</WR_UsedSkillsLabel>
+  <WR_UsedSkillsTip>顯示影響此職責工作的技能。懸停可查看效果。\n\n根據所選工作推導，僅供參考。</WR_UsedSkillsTip>
+  <WR_TrainedSkillsLabel>訓練</WR_TrainedSkillsLabel>
+  <WR_TrainedSkillsTip>顯示執行此職責工作時能獲得經驗的技能。\n\n根據所選工作推導，僅供參考。</WR_TrainedSkillsTip>
+  <WR_GatedSkillsLabel>門檻</WR_GatedSkillsLabel>
+  <WR_GatedSkillsTip>顯示執行此職責部分工作所需的技能。最低等級取決于配方、植物或建筑。懸停技能可查看詳情。\n\n根據所選工作推導，僅供參考。</WR_GatedSkillsTip>
+  <WR_RecMoreContentGates>另有 {0} 項</WR_RecMoreContentGates>
+  <WR_EffectSpeed>加快工作</WR_EffectSpeed>
+  <WR_EffectQuality>提高品質</WR_EffectQuality>
+  <WR_EffectYield>提高產出</WR_EffectYield>
+  <WR_EffectSuccess>提高成功率</WR_EffectSuccess>
+  <WR_RequiredSkillsLabel>必需</WR_RequiredSkillsLabel>
+  <WR_RequiredSkillsTip>為此職責手動選擇的可選硬性要求。殖民者任一必需技能被禁用，就不能獲推薦。技能等級不影響此條件，且獨立于“門檻”中顯示的內容最低要求。</WR_RequiredSkillsTip>
+  <WR_AddSkill>添加技能</WR_AddSkill>
+  <WR_AddSkillTip>添加明確的技能硬性要求。不改變職責推導出的“使用”或“訓練”技能。</WR_AddSkillTip>
+  <WR_RemoveSkillTip>移除此技能硬性要求。</WR_RemoveSkillTip>
+  <WR_RoleMissingRequiredSkills>{0} 的必需技能已禁用：{1}。</WR_RoleMissingRequiredSkills>
+  <WR_PathAddRoleTip>將職責加入此路徑。</WR_PathAddRoleTip>
+  <WR_BandChipTip>拖動端點調整技能區間大小，拖動中部移動整個區間。</WR_BandChipTip>
+  <WR_PriorityGridTitle>優先級表格</WR_PriorityGridTitle>
+  <WR_ShowPriorityGridTip>顯示列表中所有殖民者的優先級表格，遵循當前職責和地點篩選。可在窗口中切換原始排序或原版 0–4 優先級。</WR_ShowPriorityGridTip>
+  <WR_GridModeRaw>WorkRoles 優先級</WR_GridModeRaw>
+  <WR_GridModeVanilla>原版優先級</WR_GridModeVanilla>
+  <WR_ResizeGripTip>拖動調整窗口大小（只能比適合內容的尺寸更大）。雙擊恢復自動尺寸。</WR_ResizeGripTip>
+  <WR_RolesTab>職責</WR_RolesTab>
+  <WR_HelpTab>幫助</WR_HelpTab>
+  <WR_HelpChapterStart>開始</WR_HelpChapterStart>
+  <WR_HelpChapterBasics>基礎</WR_HelpChapterBasics>
+  <WR_HelpChapterEditing>編輯職責</WR_HelpChapterEditing>
+  <WR_HelpChapterOrganizing>組織</WR_HelpChapterOrganizing>
+  <WR_HelpChapterRecommendations>推薦</WR_HelpChapterRecommendations>
+  <WR_HelpChapterAdvanced>進階</WR_HelpChapterAdvanced>
+  <WR_HelpReload>重新載入</WR_HelpReload>
+  <WR_HelpDemoChipA>醫生</WR_HelpDemoChipA>
+  <WR_HelpDemoChipB>農夫</WR_HelpDemoChipB>
+  <WR_HelpDemoChipC>搬運工</WR_HelpDemoChipC>
+  <WR_HelpTourHeader>引導教程</WR_HelpTourHeader>
+  <WR_HelpTourProgress>已閱讀 {0} / {1} 個主題</WR_HelpTourProgress>
+  <WR_HelpTourComplete>你已準備就緒！</WR_HelpTourComplete>
+  <WR_HelpTourCompleteHint>你已掌握基礎知識。上方章節介紹其余內容。</WR_HelpTourCompleteHint>
+  <WR_ClusterEveryone>所有人</WR_ClusterEveryone>
+  <WR_ClusterUnskilled>無技能要求</WR_ClusterUnskilled>
+  <WR_OddJobsRole>雜務</WR_OddJobsRole>
+  <WR_BlockerRole>阻止職責</WR_BlockerRole>
+  <WR_BlockerRoleTipWhat>阻止職責中的工作不會執行：即使后續職責包含它們，也會被阻止（“不會執行”）。</WR_BlockerRoleTipWhat>
+  <WR_BlockerRoleTipWhy>排在阻止職責之前的職責仍然優先，因此可把例外職責放在更前面。</WR_BlockerRoleTipWhy>
+  <WR_ReasonFireFear>基因導致懼火：阻止滅火。</WR_ReasonFireFear>
+  <WR_RoleTipEnabled>已啟用</WR_RoleTipEnabled>
+  <WR_RoleTipDisabled>全局已禁用</WR_RoleTipDisabled>
+  <WR_RoleTipDisabledHere>對此殖民者已禁用</WR_RoleTipDisabledHere>
+  <WR_RoleTipDisabledBoth>全局及對此殖民者均已禁用</WR_RoleTipDisabledBoth>
+  <WR_RoleTipForcedOn>已啟用，對此殖民者強制開啟</WR_RoleTipForcedOn>
+  <WR_RoleTipForcedOnGlobalOff>對此殖民者強制開啟（職責全局已禁用）</WR_RoleTipForcedOnGlobalOff>
+  <WR_BadgeBlocker>阻止</WR_BadgeBlocker>
+  <WR_BadgeHours>限定時段</WR_BadgeHours>
+  <WR_BadgeLocation>限定地點</WR_BadgeLocation>
+  <WR_TipJobsLabel>工作</WR_TipJobsLabel>
+  <WR_TipSkillsLabel>技能</WR_TipSkillsLabel>
+  <WR_TipTrainingHeader>訓練</WR_TipTrainingHeader>
+  <WR_TipTrainingRecommend>推薦給技能為 {0} 的殖民者</WR_TipTrainingRecommend>
+  <WR_TipTrainingPath>正在向 {0} 發展</WR_TipTrainingPath>
+  <WR_TipBestFitsLabel>最佳人選</WR_TipBestFitsLabel>
+  <WR_TipWholeType>{0}（全部工作）</WR_TipWholeType>
+  <WR_TipMore>另有 {0} 項</WR_TipMore>
+  <WR_RoleCapNeverDo>{0} 永遠不會執行{1}</WR_RoleCapNeverDo>
+  <WR_RoleCapAllJobs>此職責中的任何工作</WR_RoleCapAllJobs>
+  <WR_RoleCapSomeJobs>此職責 {1} 項工作中的 {0} 項</WR_RoleCapSomeJobs>
+  <WR_RoleJobIncapable>無法執行此工作</WR_RoleJobIncapable>
+  <WR_RoleJobNoRangedWeapon>沒有遠程武器</WR_RoleJobNoRangedWeapon>
+  <WR_RoleJobTooYoung>年齡過小，{0} 歲起可執行</WR_RoleJobTooYoung>
+  <WR_RoleTooYoung>{0} 年齡過小，無法承擔此職責（最低年齡 {1}）。</WR_RoleTooYoung>
+  <WR_RoleTooOld>{0} 年齡過大，無法承擔此職責（最高年齡 {1}）。</WR_RoleTooOld>
+  <WR_MtcHatedWorkSignalLabel>厭惡 {0}</WR_MtcHatedWorkSignalLabel>
+  <WR_MtcHatedWorkSignalDescription>More Than Capable 允許此工作，但會造成嚴重且逐步加重的懲罰。</WR_MtcHatedWorkSignalDescription>
+  <WR_RoleAwfulSignal>{0} 對此職責的信號為“極差”：{1}。</WR_RoleAwfulSignal>
+  <WR_ActClick>點選</WR_ActClick>
+  <WR_ActShiftClick>Shift+點選</WR_ActShiftClick>
+  <WR_ActCtrlShiftClick>Ctrl+Shift+點選</WR_ActCtrlShiftClick>
+  <WR_ActAltClick>Alt+點選</WR_ActAltClick>
+  <WR_ActDrag>拖動</WR_ActDrag>
+  <WR_ActRightClick>右鍵點選</WR_ActRightClick>
+  <WR_ActX>X</WR_ActX>
+  <WR_ActPaletteClick>全局切換職責啟用狀態</WR_ActPaletteClick>
+  <WR_ActPaletteShiftClick>分配給所選殖民者，放在隊列末尾</WR_ActPaletteShiftClick>
+  <WR_ActPaletteCtrlShiftClick>分配給所選殖民者，放在基礎工作之后</WR_ActPaletteCtrlShiftClick>
+  <WR_ActPaletteAltClick>分配給所選殖民者，放在推薦引擎指定的位置</WR_ActPaletteAltClick>
+  <WR_ActPaletteDrag>分配給殖民者</WR_ActPaletteDrag>
+  <WR_ActTreeClick>選擇并編輯</WR_ActTreeClick>
+  <WR_ActTreeDrag>調整順序或移至其他分組</WR_ActTreeDrag>
+  <WR_ActTreeRightClick>組合職責（納入／排除）</WR_ActTreeRightClick>
+  <WR_ActChipClick>循環切換此殖民者的開啟、關閉或強制開啟狀態</WR_ActChipClick>
+  <WR_ActChipRightClick>固定選項</WR_ActChipRightClick>
+  <WR_ActChipDrag>調整順序或移給其他殖民者</WR_ActChipDrag>
+  <WR_ActChipX>移除</WR_ActChipX>
+  <WR_ColonistNameCaption>殖民者姓名</WR_ColonistNameCaption>
+  <WR_AssignedRoleCaption>已分配職責</WR_AssignedRoleCaption>
+  <WR_CoveredJobCaption>涵蓋工作</WR_CoveredJobCaption>
+  <WR_LocationCaption>地點</WR_LocationCaption>
+  <WR_GroupByCaption>分組方式</WR_GroupByCaption>
+  <WR_SkillColumnsCaption>技能列</WR_SkillColumnsCaption>
+  <WR_RoleDisplayCaption>職責顯示</WR_RoleDisplayCaption>
+  <WR_ColonistSearchTip>搜索殖民者姓名。用空格分隔條件，須全部匹配。條件前加 r: 或 role: 可搜索已分配職責名稱，加 j: 或 job: 可搜索這些職責提供的工作。例如：br r:doc。</WR_ColonistSearchTip>
+  <WR_ColonistRoleFilterTip>列出分配了所選職責的殖民者。若已分配的非阻止職責完全涵蓋所選職責的工作，也算匹配。與搜索、工作和地點篩選共同生效。</WR_ColonistRoleFilterTip>
+  <WR_ColonistJobFilterTip>已選擇：{0}
+
+列出已分配非阻止職責中包含此工作的殖民者。檢查的是職責覆蓋范圍，而非當前活動或原版工作優先級。</WR_ColonistJobFilterTip>
+  <WR_ColonistScopeTip>選擇表格顯示哪些殖民地點的殖民者。“當前地點”跟隨活動地圖；“所有地點”包括定居點、遠行隊和飛行中的重力船。</WR_ColonistScopeTip>
+  <WR_ColonistGroupTip>按所選特征將可見殖民者分區。分組不改變篩選結果；可折疊分區標題。</WR_ColonistGroupTip>
+  <WR_ColonistSkillColumnsTip>最多選擇三個技能列。點選技能標題可按其排序，點選 X 移除該列。</WR_ColonistSkillColumnsTip>
+  <WR_ColonistRoleDisplayTip>選擇殖民者表格職責標簽顯示完整名稱、首字母或圖標。旁邊按鈕切換自然寬度排列與網格列。這是每位玩家獨立的顯示設定。</WR_ColonistRoleDisplayTip>
+  <WR_ChipLayoutGridTip>標簽按等寬網格列對齊。較長全名在邊緣漸隱，僅在需要區分類似職責名稱時增加寬度；提示顯示完整名稱。點選改用自然寬度排列，右鍵點選可選擇各列容納多少名稱。</WR_ChipLayoutGridTip>
+  <WR_ChipLayoutStackTip>標簽按自然寬度排列。點選改為等寬網格列對齊。右鍵點選可選擇網格列容納多少名稱。</WR_ChipLayoutStackTip>
+  <WR_GridNamesAutomatic>自動</WR_GridNamesAutomatic>
+  <WR_GridNamesShort>短</WR_GridNamesShort>
+  <WR_GridNamesMedium>中</WR_GridNamesMedium>
+  <WR_GridNamesLong>長</WR_GridNamesLong>
+  <WR_GridNamesFull>完整</WR_GridNamesFull>
+  <WR_ColonistClearFiltersTip>清除姓名搜索、已分配職責篩選和涵蓋工作篩選。不改變地點范圍、分組、技能列或職責顯示。</WR_ColonistClearFiltersTip>
+  <WR_FilterAllRoles>所有職責</WR_FilterAllRoles>
+  <WR_ScopeAll>所有地點</WR_ScopeAll>
+  <WR_ScopeCurrent>當前地點</WR_ScopeCurrent>
+  <WR_ScopeCurrentNamed>{0}（當前地點）</WR_ScopeCurrentNamed>
+  <WR_ShipFallback>重力船</WR_ShipFallback>
+  <WR_ShipTip>未停靠定居點時的重力船（定居點地塊優先）。</WR_ShipTip>
+  <WR_GroupNone>不分組</WR_GroupNone>
+  <WR_GroupFaction>派系</WR_GroupFaction>
+  <WR_GroupRace>種族</WR_GroupRace>
+  <WR_GroupGender>性別</WR_GroupGender>
+  <WR_GroupAge>年齡</WR_GroupAge>
+  <WR_GroupXenotype>異種類型</WR_GroupXenotype>
+  <WR_GroupIdeo>理念</WR_GroupIdeo>
+  <WR_GroupSlaves>奴役狀態</WR_GroupSlaves>
+  <WR_GroupTitleColonists>殖民者</WR_GroupTitleColonists>
+  <WR_GroupTitleSlaves>奴隸</WR_GroupTitleSlaves>
+  <WR_GroupColonyGroups>Colony Groups</WR_GroupColonyGroups>
+  <WR_GroupTitleUngrouped>未分組</WR_GroupTitleUngrouped>
+  <WR_ChipsNormal>標簽：完整名稱</WR_ChipsNormal>
+  <WR_ChipsCompact>標簽：首字母</WR_ChipsCompact>
+  <WR_ChipsIcons>標簽：圖標</WR_ChipsIcons>
+  <WR_OrderSuffixBar>（頁簽順序）</WR_OrderSuffixBar>
+  <WR_OrderSuffixAZ>（A-Z）</WR_OrderSuffixAZ>
+  <WR_DisplayButton>顯示</WR_DisplayButton>
+  <WR_DisplayOptions>顯示選項</WR_DisplayOptions>
+  <WR_CopyRolesTip>復制此殖民者的職責。</WR_CopyRolesTip>
+  <WR_PasteRolesTip>將已復制職責粘貼給此殖民者。</WR_PasteRolesTip>
+  <WR_AddRoleTip>分配職責。</WR_AddRoleTip>
+  <WR_SkillsButton>技能</WR_SkillsButton>
+  <WR_SkillsButtonCount>技能（{0}/{1}）</WR_SkillsButtonCount>
+  <WR_ColColonist>殖民者</WR_ColColonist>
+  <WR_NoFilterMatches>沒有符合篩選的殖民者。</WR_NoFilterMatches>
+  <WR_FixMyColony>調整殖民地</WR_FixMyColony>
+  <WR_FixMyColonyTip>將每名殖民者的職責替換為推薦職責。</WR_FixMyColonyTip>
+  <WR_FixNeedsSingleLocation>推薦按地點計算。請將范圍縮小到一個定居點或飛船，才能使用“調整殖民地”。</WR_FixNeedsSingleLocation>
+  <WR_AutoManaged>自動管理</WR_AutoManaged>
+  <WR_AutoManagedTip>WorkRoles 在每個游戲整點自動更新所有殖民地的職責分配。
+
+保留已固定分配，包括被排除的職責。
+
+在“選項”頁關閉“每游戲小時自動優化殖民地”，即可恢復“調整殖民地”。</WR_AutoManagedTip>
+  <WR_SetPriorityBlockedTitle>WorkRoles 正在管理優先級</WR_SetPriorityBlockedTitle>
+  <WR_SetPriorityBlockedBody>{0} 嘗試設定工作優先級（{1}）。
+
+自上次提示或本次游戲會話開始以來，WorkRoles 已阻止 {2} 次優先級寫入。
+
+由職責管理的殖民者，其優先級歸 WorkRoles 管理，因此此次更改已忽略；該模組的其他功能不受影響。
+
+要通過職責實現類似效果，請在“職責”頁創建或編輯包含該工作的職責，并將其放到每名殖民者職責列表中的所需位置；也可使用阻止職責完全禁止該工作。
+
+每個模組在每個存檔中僅提示一次。</WR_SetPriorityBlockedBody>
+  <WR_AllWork>全部工作</WR_AllWork>
+  <WR_GiverBypassTitle>某項工作繞過了職責列表</WR_GiverBypassTitle>
+  <WR_GiverBypassBody>{0} 開始了“{1}”，但其已分配職責中沒有任何職責包含此工作。
+
+WorkRoles 通過游戲標準方法為受管理殖民者提供工作列表。另一個模組似乎使用自身列表選擇工作，繞過職責限制。該模組啟用時，殖民者有時可能執行職責之外的工作。
+
+此次工作未被中斷。每個存檔僅提示一次。</WR_GiverBypassBody>
+  <WR_Apply>應用</WR_Apply>
+  <WR_SelectAll>全選</WR_SelectAll>
+  <WR_PreviewNoChanges>無更改。</WR_PreviewNoChanges>
+  <WR_PreviewStale>預覽打開期間殖民地發生變化，未應用任何內容。</WR_PreviewStale>
+  <WR_ReasonEveryone>自動分配給所有人。</WR_ReasonEveryone>
+  <WR_ReasonHunter>攜帶遠程武器；狩獵還能訓練射擊。</WR_ReasonHunter>
+  <WR_ReasonSignal>推薦信號傾向于 {0}。</WR_ReasonSignal>
+  <WR_ReasonCoverage>殖民地覆蓋需求：此工作的最佳可用人選。</WR_ReasonCoverage>
+  <WR_ReasonRemoved>不在推薦列表中。應用前請固定希望保留的職責。</WR_ReasonRemoved>
+  <WR_SignalColSignal>信號</WR_SignalColSignal>
+  <WR_SignalColEffects>效果</WR_SignalColEffects>
+  <WR_SignalCondition>條件</WR_SignalCondition>
+  <WR_SignalSource>來源</WR_SignalSource>
+  <WR_SignalVerdict>評價</WR_SignalVerdict>
+  <WR_SignalSkillPromotion>高技能</WR_SignalSkillPromotion>
+  <WR_SignalSkillPromotionEffect>{0} → {1}</WR_SignalSkillPromotionEffect>
+  <WR_SignalSkillPromotionCondition>等級 {0} 達到門檻 {1}</WR_SignalSkillPromotionCondition>
+  <WR_SignalFromSkill>（來自 {0}）</WR_SignalFromSkill>
+  <WR_SignalAlreadyReflected>已計入顯示的技能等級</WR_SignalAlreadyReflected>
+  <WR_SignalDisabled>已禁用</WR_SignalDisabled>
+  <WR_SignalCapabilityOff>{0} 已禁用</WR_SignalCapabilityOff>
+  <WR_SignalCapabilityAwful>{0} 視為極差</WR_SignalCapabilityAwful>
+  <WR_SignalDescriptive>描述資訊</WR_SignalDescriptive>
+  <WR_SignalExpertiseScale>基礎 {0}，專長等級 {1}，當前 {2}</WR_SignalExpertiseScale>
+  <WR_VerdictAwful>極差</WR_VerdictAwful>
+  <WR_VerdictPoor>較差</WR_VerdictPoor>
+  <WR_VerdictNeutral>中性</WR_VerdictNeutral>
+  <WR_VerdictStrong>適合</WR_VerdictStrong>
+  <WR_VerdictGreat>優秀</WR_VerdictGreat>
+  <WR_VerdictExceptional>卓越</WR_VerdictExceptional>
+  <WR_PinAssignment>固定</WR_PinAssignment>
+  <WR_UnpinAssignment>取消固定</WR_UnpinAssignment>
+  <WR_PinnedTip>已固定：“就這樣安排”“調整殖民地”和自動優化都會保留此分配，即使該職責或其組合成員被排除于推薦之外。</WR_PinnedTip>
+  <WR_CopiedRoles>已復制 {0} 的職責。</WR_CopiedRoles>
+  <WR_RecommendedRoles>推薦職責</WR_RecommendedRoles>
+  <WR_AlreadyAssigned>已分配</WR_AlreadyAssigned>
+  <WR_WillBeRemoved>不在推薦列表中。應用前請固定希望保留的職責。</WR_WillBeRemoved>
+  <WR_RecTipColonyNeed>殖民地需求</WR_RecTipColonyNeed>
+  <WR_RecTipSkills>考慮的技能</WR_RecTipSkills>
+  <WR_RecTipSignalVerdict>信號評價</WR_RecTipSignalVerdict>
+  <WR_RecTipSelection>選擇</WR_RecTipSelection>
+  <WR_RecTipAssignmentsOne>需要 1 個分配</WR_RecTipAssignmentsOne>
+  <WR_RecTipAssignmentsMany>需要 {0} 個分配</WR_RecTipAssignmentsMany>
+  <WR_RecTipWithWaiverOne>{0}（1 次訓練替代）</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0}（{1} 次訓練替代）</WR_RecTipWithWaiversMany>
+  <WR_RecTipEveryoneCapable>分配給所有能勝任者</WR_RecTipEveryoneCapable>
+  <WR_RecDecisionAuto>自動分配給所有能勝任的角色。</WR_RecDecisionAuto>
+  <WR_RecDecisionSignals>此角色達到配置的信號門檻。</WR_RecDecisionSignals>
+  <WR_RecDecisionCoverageDraft>選中剩余候選人中的最佳者，以滿足必需覆蓋人數。</WR_RecDecisionCoverageDraft>
+  <WR_RecDecisionTraining>通過 {0} 的訓練路徑分配。</WR_RecDecisionTraining>
+  <WR_RecDecisionTrainingUnknown>通過訓練路徑分配。</WR_RecDecisionTrainingUnknown>
+  <WR_RecDecisionDirectSlot>直接入選，填補 {2} 的 {1} 個名額中的第 {0} 個。</WR_RecDecisionDirectSlot>
+  <WR_RecDecisionTrainingSlot>入選以填補 {2} 的 {1} 個名額中的第 {0} 個。通過訓練替代，以 {3} 替代 {2}（{4}；{2} 需要 {5}）。</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>入選以填補 {2} 的 {1} 個名額中的第 {0} 個。通過訓練替代，以 {3} 替代 {2}。</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>通過訓練替代入選，填補 {1} 個名額中的第 {0} 個，分配 {2}。</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
+  <WR_RecDecisionDirectFallbackSlot>直接入選填補 {2} 的 {1} 個名額中的第 {0} 個，因為沒有合格的訓練替代職責。</WR_RecDecisionDirectFallbackSlot>
+  <WR_RecDecisionCoverageRepairSlot>直接入選，填補 {2} 的 {1} 個必需名額中剩余的第 {0} 個。</WR_RecDecisionCoverageRepairSlot>
+  <WR_RecDecisionSignalSurplus>根據信號評價，選為額外候選人。</WR_RecDecisionSignalSurplus>
+  <WR_RecDecisionAptitudeSurplus>因綜合技能適性達到此職責要求，選為額外候選人。</WR_RecDecisionAptitudeSurplus>
+  <WR_RecDecisionHunter>攜帶遠程武器且能夠狩獵。</WR_RecDecisionHunter>
+  <WR_RecDecisionFire>懼火需要滅火阻止職責。</WR_RecDecisionFire>
+  <WR_RecDecisionRetained>保留現有無技能要求職責。</WR_RecDecisionRetained>
+  <WR_RecDecisionProtected>保留現有受保護分配。</WR_RecDecisionProtected>
+  <WR_RecDecisionIncapacitated>此殖民者已倒地。保留其未被排除的職責與固定分配，恢復前不計入殖民地需求覆蓋。</WR_RecDecisionIncapacitated>
+  <WR_RecDecisionNever>此職責設定為不接受推薦。</WR_RecDecisionNever>
+  <WR_RecDecisionControlledByTraining>由 {0} 控制：通過其訓練路徑分配，不單獨分配。</WR_RecDecisionControlledByTraining>
+  <WR_RecDecisionDisabled>此職責已禁用。</WR_RecDecisionDisabled>
+  <WR_RecDecisionUnavailable>研究完成前，此職責的工作不可用。</WR_RecDecisionUnavailable>
+  <WR_RecDecisionExcluded>此職責由規則管理，不參與普通推薦。</WR_RecDecisionExcluded>
+  <WR_RecDecisionIncapable>此角色無法執行此職責的工作。</WR_RecDecisionIncapable>
+  <WR_RecDecisionNotMechanitor>此殖民者沒有機絆，無法執行機械師工作。</WR_RecDecisionNotMechanitor>
+  <WR_RecDecisionHunterRequirements>此角色未攜帶遠程武器。</WR_RecDecisionHunterRequirements>
+  <WR_RecDecisionAwful>“極差”信號使此角色失去資格。</WR_RecDecisionAwful>
+  <WR_RecDecisionCovered>已由推薦職責涵蓋：{0}。</WR_RecDecisionCovered>
+  <WR_RecDecisionCoveredUnknown>已由其他推薦職責涵蓋。</WR_RecDecisionCoveredUnknown>
+  <WR_RecDecisionCoverageFilled>更高排名候選人已滿足必需覆蓋人數。</WR_RecDecisionCoverageFilled>
+  <WR_RecDecisionWeakSignal>信號評價低于配置門檻，必需覆蓋也未選中此角色。</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionNotSelected>沒有任何推薦規則選中此角色。</WR_RecDecisionNotSelected>
+  <WR_RecDecisionOutOfBand>此角色的技能處于訓練路徑的其他區間。</WR_RecDecisionOutOfBand>
+  <WR_RecDecisionOutqualified>可用名額已選用其他更合格的候選人。</WR_RecDecisionOutqualified>
+  <WR_RecDecisionRecommended>由推薦引擎選中。</WR_RecDecisionRecommended>
+  <WR_MakeItSo>就這樣安排</WR_MakeItSo>
+  <WR_AllRolesAssigned>所有職責均已分配</WR_AllRolesAssigned>
+  <WR_NowDrafted>已征召</WR_NowDrafted>
+  <WR_NowMental>精神狀態</WR_NowMental>
+  <WR_NowIdle>空閑</WR_NowIdle>
+  <WR_NowForced>玩家命令</WR_NowForced>
+  <WR_NowSleeping>睡眠</WR_NowSleeping>
+  <WR_NowRecreation>娛樂</WR_NowRecreation>
+  <WR_NowNeeds>個人需求</WR_NowNeeds>
+  <WR_NowBusy>忙碌</WR_NowBusy>
+  <WR_NowTip>{0}：{1}</WR_NowTip>
+  <WR_TipActivityLabel>當前活動</WR_TipActivityLabel>
+  <WR_TipActivityValue>{0}：{1}</WR_TipActivityValue>
+  <WR_RestoreDefaults>恢復預設值</WR_RestoreDefaults>
+  <WR_RestoreDefaultsTip>重建缺少的預設職責與訓練路徑，恢復預設排除項，并將預設職責的分組、顏色和持有人設定恢復預設。可在預覽中選擇恢復哪些內容。</WR_RestoreDefaultsTip>
+  <WR_RestoreDefaultsTitle>恢復預設值</WR_RestoreDefaultsTitle>
+  <WR_Export>導出</WR_Export>
+  <WR_Import>導入</WR_Import>
+  <WR_ExportTip>將所有職責定義（不含分配）寫入：\n{0}</WR_ExportTip>
+  <WR_ImportTip>從以下位置添加職責定義：\n{0}</WR_ImportTip>
+  <WR_ExportTitle>導出職責</WR_ExportTitle>
+  <WR_CopyClipboard>復制到剪貼簿</WR_CopyClipboard>
+  <WR_CopyPath>復制路徑</WR_CopyPath>
+  <WR_Save>儲存</WR_Save>
+  <WR_ExportLocationLabel>導出位置</WR_ExportLocationLabel>
+  <WR_LocGameData>游戲資料資料夾</WR_LocGameData>
+  <WR_LocDesktop>桌面</WR_LocDesktop>
+  <WR_LocUserHome>用戶主資料夾</WR_LocUserHome>
+  <WR_LocCustom>自定義…</WR_LocCustom>
+  <WR_EnterPath>輸入路徑</WR_EnterPath>
+  <WR_BadFileName>請輸入有效的檔案名。</WR_BadFileName>
+  <WR_BadDirectory>請輸入有效的目錄路徑。</WR_BadDirectory>
+  <WR_ImportTitle>導入職責</WR_ImportTitle>
+  <WR_ImportFromClipboard>從剪貼簿</WR_ImportFromClipboard>
+  <WR_ImportLocationLabel>導入位置</WR_ImportLocationLabel>
+  <WR_ImportClipboardInvalid>剪貼簿不含 WorkRoles 導出內容。</WR_ImportClipboardInvalid>
+  <WR_ImportFileMissing>在 {0} 未找到檔案</WR_ImportFileMissing>
+  <WR_ImportParseFailed>無法讀取職責：{0}</WR_ImportParseFailed>
+  <WR_SectionPalette>配色板</WR_SectionPalette>
+  <WR_SectionRoles>職責</WR_SectionRoles>
+  <WR_ModeMerge>合并</WR_ModeMerge>
+  <WR_ModeOverwrite>覆蓋</WR_ModeOverwrite>
+  <WR_RowNew>{0}（新增）</WR_RowNew>
+  <WR_RowUpdate>{0}（更新）</WR_RowUpdate>
+  <WR_RowRecolors>{0} → {1}（重新著色：{2}）</WR_RowRecolors>
+  <WR_RowNewColor>{0} {1}（新顏色）</WR_RowNewColor>
+  <WR_NothingToMerge>所有內容均一致：沒有可合并項。</WR_NothingToMerge>
+  <WR_PaletteOverwriteInfo>用檔案中的 {0} 個配色條目替換全部自定義顏色。</WR_PaletteOverwriteInfo>
+  <WR_OverwriteReplaces>應用檔案中的全部 {0} 個職責。匹配職責（相同預設職責，否則按同名匹配）會保留殖民者分配。</WR_OverwriteReplaces>
+  <WR_OverwriteDeletes>刪除檔案中不存在的職責：{0}（殖民者會失去這些分配）。</WR_OverwriteDeletes>
+  <WR_PathsOverwriteInfo>用檔案中的 {0} 條訓練路徑替換所有現有路徑。</WR_PathsOverwriteInfo>
+  <WR_ImportSummary>導入完成：新增 {0}，更新 {1}，刪除 {2}，配色更改 {3}，訓練路徑 {4}。</WR_ImportSummary>
+  <WR_CopiedToClipboard>已復制到剪貼簿。</WR_CopiedToClipboard>
+  <WR_ExportSaved>已儲存到 {0}</WR_ExportSaved>
+  <WR_ExportFailed>無法儲存：{0}</WR_ExportFailed>
+  <WR_ExportOverwriteConfirm>{0} 已存在。要替換嗎？</WR_ExportOverwriteConfirm>
+  <WR_RestoreMovedJobs>{0}（恢復 {1} 項被移動的工作）</WR_RestoreMovedJobs>
+  <WR_RestorePathItem>{0}（訓練路徑）</WR_RestorePathItem>
+  <WR_RestoreGroupItem>{0}（移至“{1}”分組）</WR_RestoreGroupItem>
+  <WR_RestoreColorItem>{0}（恢復預設顏色）</WR_RestoreColorItem>
+  <WR_RestoreJobsItem>{0}（恢復預設工作）</WR_RestoreJobsItem>
+  <WR_RestoreSnapColorItem>{0}（將顏色匹配至配色板）</WR_RestoreSnapColorItem>
+  <WR_RestoreHoldersItem>{0}（恢復預設人數設定）</WR_RestoreHoldersItem>
+  <WR_RestoreRecOrder>推薦順序（恢復預設）</WR_RestoreRecOrder>
+  <WR_RestoreDefaultExclusions>預設排除職責</WR_RestoreDefaultExclusions>
+  <WR_RestoreExplainDefaultExclusions>將缺少的預設排除項加回“排除的職責”面板。保留你排除的其他職責。</WR_RestoreExplainDefaultExclusions>
+  <WR_RestoreOverwriteWarning>⚠ 高亮項目將覆蓋你的更改。</WR_RestoreOverwriteWarning>
+  <WR_RestoreDuplicateHint>（已存在同名職責）</WR_RestoreDuplicateHint>
+  <WR_RestoreExplainRole>根據模組模板創建職責。</WR_RestoreExplainRole>
+  <WR_RestoreExplainCoverage>生成涵蓋此工作類型的職責。</WR_RestoreExplainCoverage>
+  <WR_RestoreExplainBackfill>重新加入被模組移動的 {0} 項工作。</WR_RestoreExplainBackfill>
+  <WR_RestoreExplainGroup>將職責移回“{0}”分組。</WR_RestoreExplainGroup>
+  <WR_RestoreExplainColor>恢復模板預設顏色。</WR_RestoreExplainColor>
+  <WR_RestoreExplainJobs>將職責工作列表恢復為模組當前預設值。殖民者的整體工作不變：會自動分配涵蓋被移除工作的職責。</WR_RestoreExplainJobs>
+  <WR_RestoreExplainSnapColor>用配色板中最接近的顏色替換生成顏色，使顏色選擇器能突出顯示它。</WR_RestoreExplainSnapColor>
+  <WR_RestoreExplainHolders>恢復模板預設的職責人數曲線。</WR_RestoreExplainHolders>
+  <WR_RestoreExplainRecOrder>清除自定義順序。</WR_RestoreExplainRecOrder>
+  <WR_RestoreExplainPath>創建訓練路徑。</WR_RestoreExplainPath>
+  <WR_NothingToRestore>無須恢復：所有預設職責和訓練路徑均存在，分組、顏色與人數設定均為預設，且沒有工作被移動。</WR_NothingToRestore>
+  <WR_RolesRestored>已恢復：{0}</WR_RolesRestored>
+  <WR_FilterAnyJob>任意工作</WR_FilterAnyJob>
+  <WR_RoleLabelOff>{0}（關閉）</WR_RoleLabelOff>
+  <WR_SelectOrCreateRole>選擇或創建職責。</WR_SelectOrCreateRole>
+  <WR_New>新建</WR_New>
+  <WR_Copy>復制</WR_Copy>
+  <WR_Delete>刪除</WR_Delete>
+  <WR_NewRoleTitle>新建職責</WR_NewRoleTitle>
+  <WR_CopyRoleTitle>復制職責</WR_CopyRoleTitle>
+  <WR_CopySource>正在復制 {0}</WR_CopySource>
+  <WR_NameTaken>已存在同名職責。</WR_NameTaken>
+  <WR_DeleteConfirm>刪除職責“{0}”？將從所有殖民者身上移除。</WR_DeleteConfirm>
+  <WR_AssignedTo>分配給</WR_AssignedTo>
+  <WR_Nobody>無人</WR_Nobody>
+  <WR_PlusOthers>另有 {0} 人</WR_PlusOthers>
+  <WR_AvailableJobs>可用工作</WR_AvailableJobs>
+  <WR_Search>搜索</WR_Search>
+  <WR_WarningPrefix>警告：</WR_WarningPrefix>
+  <WR_UnusedJobsWarning>有工作未包含在任何職責中。</WR_UnusedJobsWarning>
+  <WR_SelectedJobs>已選工作（有序）</WR_SelectedJobs>
+  <WR_TypeColumn>類型</WR_TypeColumn>
+  <WR_JobColumn>工作</WR_JobColumn>
+  <WR_AllJobs>全部工作</WR_AllJobs>
+  <WR_CoveredByTypeTip>已由工作類型涵蓋。點選為此工作創建獨立、可排序的條目。</WR_CoveredByTypeTip>
+  <WR_AddAllJobs>添加全部工作（獨立且可排序）</WR_AddAllJobs>
+  <WR_SelectedRows>已選擇 {0} 項</WR_SelectedRows>
+  <WR_MoveSelectedUpTip>將所選行上移一步。點選選擇一行，Shift+點選選擇連續范圍，Ctrl+點選添加或取消單行。</WR_MoveSelectedUpTip>
+  <WR_MoveSelectedDownTip>將所選行下移一步。</WR_MoveSelectedDownTip>
+  <WR_RemoveSelectedTip>移除所選行。</WR_RemoveSelectedTip>
+  <WR_MissingDef>當前模組列表中不存在 {0}（其模組恢復前保持停用）。</WR_MissingDef>
+  <WR_DeadEntryTip>無效果：此條目涵蓋的全部工作已被前面的條目涵蓋。可上移以提高優先級，或移除。</WR_DeadEntryTip>
+  <WR_CompositeRole>組合職責</WR_CompositeRole>
+  <WR_CompositeRoleTip>組合職責打包其他職責：持有人按成員順序執行其工作。組合職責沒有自身工作列表。</WR_CompositeRoleTip>
+  <WR_CompositeConfirm>將“{0}”轉換為組合職責？其已選工作將被移除。</WR_CompositeConfirm>
+  <WR_CompositeRevertConfirm>將“{0}”恢復為普通職責？其成員職責將被移除。</WR_CompositeRevertConfirm>
+  <WR_MemberRoles>成員職責（有序）</WR_MemberRoles>
+  <WR_AvailableRoles>可用職責</WR_AvailableRoles>
+  <WR_NoMembersHint>從左側列表添加職責。持有人按此處順序執行成員職責的工作。</WR_NoMembersHint>
+  <WR_NoCandidatesHint>沒有可添加的職責。成員必須是沒有時段或地點規則的普通職責，組合職責不能包含其他組合職責。</WR_NoCandidatesHint>
+  <WR_MemberLockTip>已鎖定：此職責是組合職責的成員。必須先從所有組合中移除，才能更改此設定。</WR_MemberLockTip>
+  <WR_ScaleRenameTip>重命名此人數曲線，引用它的職責會隨之更新。</WR_ScaleRenameTip>
+  <WR_ScaleRenameTitle>重命名曲線</WR_ScaleRenameTitle>
+  <WR_ScaleNewTitle>新建曲線（復制當前曲線）</WR_ScaleNewTitle>
+  <WR_ScaleUsedBy>由 {0} 使用</WR_ScaleUsedBy>
+  <WR_ScaleReset>重置</WR_ScaleReset>
+  <WR_ScaleResetTip>恢復自選擇此職責或曲線以來、編輯前的值。</WR_ScaleResetTip>
+  <WR_ScaleSaveAs>另存為</WR_ScaleSaveAs>
+  <WR_ScaleDeleteConfirm>刪除曲線“{0}”？\n\n{1}。這些職責將改用“從不”。</WR_ScaleDeleteConfirm>
+  <WR_ScaleSaveAsTitle>將更改另存為新曲線（當前曲線恢復為已儲存值）</WR_ScaleSaveAsTitle>
+  <WR_ScaleDirectTip>此區間的直接分配最低人數；總需求中的其余名額可由訓練替代滿足。超過總需求時，總需求也隨之提高。點選 +1（到 8 后循環），右鍵 -1。左鍵拖動可跨區間復制數值（拖動時右鍵可按拖動方向微調）。右鍵拖動產生階梯：每個區間一步，向右遞增，向左遞減。</WR_ScaleDirectTip>
+  <WR_ScaleTotalsCaption>所需總人數（含訓練替代）</WR_ScaleTotalsCaption>
+  <WR_ScaleMinsCaption>{0} 的直接分配最低人數</WR_ScaleMinsCaption>
+  <WR_ScaleTrainingHelp>此職責是 {0} 的訓練職責，因此分配受 {0} 的調節選項控制（即使此處設為“從不”也一樣）。但仍可在此強制設定 {1} 的最低分配人數。</WR_ScaleTrainingHelp>
+  <WR_ScaleControlledBy>由 {0} 控制</WR_ScaleControlledBy>
+  <WR_ScaleTotalTip>此區間的總需求，包括訓練替代。提高時增加訓練替代名額；降低時先消耗這些名額，再降低直接分配最低人數。點選 +1，右鍵 -1。左鍵拖動可跨區間復制數值（拖動時右鍵可按方向微調）。右鍵拖動產生階梯：每個區間一步，向右遞增，向左遞減。</WR_ScaleTotalTip>
+  <WR_SkillsUsedLabel>使用技能：</WR_SkillsUsedLabel>
+  <WR_VirtualRoleTip>由于此職責的工作被上級職責涵蓋，因此顯示在此。它屬于“{0}”分組。</WR_VirtualRoleTip>
+  <WR_TipTrainsLabel>訓練</WR_TipTrainsLabel>
+  <WR_TipTrainsNothing>無（不獲得技能經驗）</WR_TipTrainsNothing>
+  <WR_TipRequiresLabel>要求</WR_TipRequiresLabel>
+  <WR_TipReqBills>{0} {1}（{3} 份清單中 {2} 份有技能門檻）</WR_TipReqBills>
+  <WR_TipReqItems>{0} {1}（{2} 種物品有技能門檻）</WR_TipReqItems>
+  <WR_TipReqJobs>{0} {1}（{2} 項工作有技能門檻）</WR_TipReqJobs>
+  <WR_TipLevelN>等級 {0}</WR_TipLevelN>
+  <WR_TipXpLabel>提供經驗</WR_TipXpLabel>
+  <WR_TipXpValue>{1} 項工作中的 {0} 項</WR_TipXpValue>
+  <WR_TipUnlockAgeLabel>最低年齡</WR_TipUnlockAgeLabel>
+  <WR_TipUnlockAgeValue>{0}（更年輕的殖民者無法執行此工作）</WR_TipUnlockAgeValue>
+  <WR_SkillTipGiverSource>工作提供器：{0}（{1}）</WR_SkillTipGiverSource>
+  <WR_SkillTipTypeSource>工作類型：{0}（{1}）</WR_SkillTipTypeSource>
+  <WR_SkillTipUnknownMod>未知模組</WR_SkillTipUnknownMod>
+  <WR_EmergencySuffix>（緊急）</WR_EmergencySuffix>
+  <WR_ConditionalRole>條件職責</WR_ConditionalRole>
+  <WR_ConditionalRoleTip>條件職責根據活動時段和地點規則自行開啟或關閉。設定了任意規則的職責即屬于條件職責。</WR_ConditionalRoleTip>
+  <WR_AutoAssign>自動分配</WR_AutoAssign>
+  <WR_AutoAssignTip>新加入者（招募者、流浪者）處于此職責年齡范圍時，會自動獲得此職責。</WR_AutoAssignTip>
+  <WR_CustomSwatchEmpty>空槽：點選選擇自定義顏色。所有職責共用自定義顏色。</WR_CustomSwatchEmpty>
+  <WR_CustomSwatchTip>點選使用此顏色。右鍵點選重新定義此槽。</WR_CustomSwatchTip>
+  <WR_ClearRulesConfirm>移除“{0}”的所有規則？它將恢復為手動職責。</WR_ClearRulesConfirm>
+  <WR_ActiveHours>活動時段</WR_ActiveHours>
+  <WR_HoursActive>啟用</WR_HoursActive>
+  <WR_HoursInactive>停用</WR_HoursInactive>
+  <WR_LocationAny>任意地點</WR_LocationAny>
+  <WR_LocationNowhere>無地點</WR_LocationNowhere>
+  <WR_LocationNowhereTip>此職責原先限定的地點已不存在。選擇其他地點前保持停用。</WR_LocationNowhereTip>
+  <WR_LocationSettlements>定居點</WR_LocationSettlements>
+  <WR_LocationCaravans>遠行隊</WR_LocationCaravans>
+  <WR_LocationShipItem>飛船：{0}</WR_LocationShipItem>
+  <WR_LocationSettlementItem>定居點：{0}</WR_LocationSettlementItem>
+  <WR_LocationCount>{0} 個地點</WR_LocationCount>
+  <WR_LocationGone>（已消失）</WR_LocationGone>
+  <WR_InvalidRoleTip>此職責永遠無法生效：沒有工作，或指定的所有地點均已不存在。</WR_InvalidRoleTip>
+  <WR_GroupDefault>預設</WR_GroupDefault>
+  <WR_GroupConditionalRoles>條件職責</WR_GroupConditionalRoles>
+  <WR_GroupComposites>組合職責</WR_GroupComposites>
+  <WR_GroupLabel>分組</WR_GroupLabel>
+  <WR_GroupButton>分組：{0}</WR_GroupButton>
+  <WR_GroupNewOption>新建…</WR_GroupNewOption>
+  <WR_NewGroupTitle>新建分組</WR_NewGroupTitle>
+  <WR_RenameGroup>重命名分組</WR_RenameGroup>
+  <WR_RenameGroupTitle>重命名分組</WR_RenameGroupTitle>
+  <WR_GroupOverlayTip>有規則的職責顯示在“條件職責”中。清除規則后恢復到已儲存的分組。</WR_GroupOverlayTip>
+  <WR_GroupCompositeTip>組合職責顯示在“組合職責”分組中。</WR_GroupCompositeTip>
+  <WR_TreeNested>嵌套</WR_TreeNested>
+  <WR_TreeFlat>平鋪</WR_TreeFlat>
+  <WR_TreeToggleTip>切換是否將被涵蓋的職責嵌套在其組合上級下方。</WR_TreeToggleTip>
+  <WR_DisplayModeLabel>顯示模式</WR_DisplayModeLabel>
+  <WR_JobFilterLabel>工作篩選</WR_JobFilterLabel>
+  <WR_PaletteBySkills>技能</WR_PaletteBySkills>
+  <WR_PaletteByGroups>分組</WR_PaletteByGroups>
+  <WR_PaletteModeTip>按相關技能或自定義職責分組排列職責面板。</WR_PaletteModeTip>
+  <WR_SuppressedHours>關閉：不在活動時段</WR_SuppressedHours>
+  <WR_SuppressedLocation>關閉：不在此職責指定地點</WR_SuppressedLocation>
+  <WR_BillRoleOption>職責：{0}</WR_BillRoleOption>
+  <WR_BillWorkerRoleTip>僅當前啟用此職責的殖民者可執行此清單；條件職責會遵循活動時段等規則。指定工作人員會清除職責限制，反之亦然。</WR_BillWorkerRoleTip>
+  <WR_SurgeryWorkerRoleTip>決定誰可執行此手術。“任何工作人員”表示無職責限制。選擇職責后，僅當前啟用該職責的殖民者可執行；條件職責遵循活動時段等規則。</WR_SurgeryWorkerRoleTip>
+  <WR_SelectRoleIcon>選擇職責圖標</WR_SelectRoleIcon>
+  <WR_RenameRoleTitle>重命名職責</WR_RenameRoleTitle>
+  <WR_NewWorkDetected>檢測到新工作類型。已創建或擴展職責：{0}</WR_NewWorkDetected>
+  <WR_SeedReportTitle>WorkRoles 設定完成</WR_SeedReportTitle>
+  <WR_SeedReportBody>已創建 {0} 個職責，并根據原工作優先級為 {1} 名殖民者分配職責組合。</WR_SeedReportBody>
+  <WR_SeedReportGenerated>為模組工作生成：{0}。</WR_SeedReportGenerated>
+  <WR_SeedReportFailures>部分工作無法遷移：</WR_SeedReportFailures>
+  <WR_SeedDropFailure>{0}：丟失 {1}（原優先級 {2}）</WR_SeedDropFailure>
+  <WR_SeedPawnFailure>{0}：遷移失敗（{1}）</WR_SeedPawnFailure>
+  <WR_WelcomeTitle>WorkRoles</WR_WelcomeTitle>
+  <WR_WelcomeBody>WorkRoles 通過你分配的“醫生”“鐵匠”“農夫”等具名職責，為殖民者設定工作優先級。</WR_WelcomeBody>
+  <WR_WelcomeFind>點選螢幕底部的“工作”按鈕打開 WorkRoles。“幫助”頁以引導教程開始。</WR_WelcomeFind>
+  <WR_WelcomeTakeMeThere>立即打開</WR_WelcomeTakeMeThere>
+  <WR_WelcomeSmallScreen>當前游戲介面為 {0}x{1}（分辨率除以介面縮放）。WorkRoles 按 {2}x{3} 或更大尺寸設計，例如 1920x1080、介面縮放 1.25。更小螢幕仍可使用，但部分標簽會縮短，頁簽需要更多滾動。降低游戲選項中的介面縮放可增加窗口空間。</WR_WelcomeSmallScreen>
+  <WR_RoleWorkAversion>{0} 的戒律 {1} 反對 {2}。推薦會施加有限分數懲罰：兩個優先級檔位，或選擇主力時六點虛擬技能分。必需覆蓋仍可選中此角色。獵人順序后移兩檔，最多至第五檔；原有第一檔后備規則仍適用。</WR_RoleWorkAversion>
+  <WR_WorkBlockedTags>工作標簽已禁用</WR_WorkBlockedTags>
+  <WR_WorkBlockedCapacity>缺少必需的身體能力</WR_WorkBlockedCapacity>
+  <WR_WorkBlockedRace>此種族的工作限制不允許</WR_WorkBlockedRace>
+  <WR_WorkBlockedRecipe>此種族的配方限制不允許</WR_WorkBlockedRecipe>
+  <WR_WorkBlockedViviGathering>需要 Vivi 采集速度和產出均為正；合適的采集工具可啟用此工作</WR_WorkBlockedViviGathering>
+  <WR_WorkBlockedPrecept>因 {0} 拒絕執行</WR_WorkBlockedPrecept>
+  <WR_WorkRecipeWarning>{0}：{1}</WR_WorkRecipeWarning>
+  <WR_RecWorkAversion>{0} 反對 {1}；推薦評分降低。</WR_RecWorkAversion>
+  <WR_RecDecisionWorkAversion>厭惡使分數低于可選工作門檻。</WR_RecDecisionWorkAversion>
+</LanguageData>

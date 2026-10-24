@@ -80,7 +80,7 @@ namespace EPrimeReadouts.UI
                 && hideForbidden == other.hideForbidden
                 && showNegative == other.showNegative;
 
-            public override bool Equals(object obj) =>
+            public override bool Equals(object? obj) =>
                 obj is TipRevision other && Equals(other);
 
             public override int GetHashCode() =>
@@ -241,10 +241,10 @@ namespace EPrimeReadouts.UI
                 // First-class pool: look up snapshot for name and members
                 int poolId = SlotToken.PoolId(token!); // isPoolRef implies a token
                 if (state.RenderData != null
-                    && state.RenderData.Structure.TryGet(
-                        poolId, out poolMembers, out _, out string? poolName))
+                    && state.RenderData.Structure.TryGetEntry(poolId, out PoolSnapshotEntry pool))
                 {
-                    title = poolName!; // set on the true path
+                    poolMembers = pool.Members;
+                    title = SeededReadoutNames.Name(pool);
                 }
                 else title = canonical;
             }

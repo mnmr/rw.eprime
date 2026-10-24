@@ -1049,15 +1049,15 @@ namespace WorkRoles.UI
                 List<string> contribution = ContributionTo(
                     neededSkills, ownerSkills, role);
                 bool contributes = contribution.Count > 0;
-                string label = contributes ? role.label
-                    : role.label.Colorize(new Color(0.62f, 0.62f, 0.62f));
+                string label = contributes ? role.DisplayLabel
+                    : role.DisplayLabel.Colorize(new Color(0.62f, 0.62f, 0.62f));
                 string tip = contributes
                     ? "WR_ContributesTip".Translate(
                         contribution.Select(SkillLabel).ToCommaList()).ToString()
                     : noContributionTip;
                 addOptions.Add(new RecRoleMenuOption(
                     role.id, label, tip,
-                    contributes ? 0 : 1, role.label));
+                    contributes ? 0 : 1, role.DisplayLabel));
             }
             addOptions.Sort(RecRoleMenuOption.CompareByLabel);
             return new RecPathView(

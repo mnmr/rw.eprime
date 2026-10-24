@@ -89,6 +89,8 @@ namespace EPrimeReadouts.Core
                 {
                     var poolEl = new XElement("Pool");
                     poolEl.SetAttributeValue("Name", PoolNameRules.Normalize(pool.Name));
+                    if (!string.IsNullOrEmpty(pool.SeedName))
+                        poolEl.SetAttributeValue("SeedName", pool.SeedName);
                     if (!string.IsNullOrEmpty(pool.IconDefName))
                         poolEl.SetAttributeValue("Icon", pool.IconDefName);
 
@@ -135,6 +137,8 @@ namespace EPrimeReadouts.Core
                 {
                     var groupEl = new XElement("Group");
                     groupEl.SetAttributeValue("Name", group.Name ?? "");
+                    if (!string.IsNullOrEmpty(group.SeedName))
+                        groupEl.SetAttributeValue("SeedName", group.SeedName);
                     if (!group.DefaultEnabled)
                         groupEl.SetAttributeValue("DefaultEnabled", "False");
 
@@ -313,6 +317,7 @@ namespace EPrimeReadouts.Core
                     {
                         Id = 0,
                         Name = name,
+                        SeedName = (string?)poolEl.Attribute("SeedName"),
                         IconDefName = string.IsNullOrEmpty(icon) ? null : icon,
                     };
 
@@ -355,6 +360,7 @@ namespace EPrimeReadouts.Core
                     {
                         Id = 0,
                         Name = name,
+                        SeedName = (string?)groupEl.Attribute("SeedName"),
                         OrderIndex = orderIndex++,
                         DefaultEnabled = defaultEnabled,
                     };

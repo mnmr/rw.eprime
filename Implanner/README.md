@@ -16,10 +16,18 @@ implant items and schedule the operations.
 
 ```powershell
 dotnet build -c Release src/Implanner.slnx --no-restore
+dotnet build -c Release src/Implanner/Implanner.csproj -p:RimWorldVersion=1.7
 dotnet test src/Implanner.Core.Tests --no-restore
 ```
 
-Building never deploys: in-game verification requires `pwsh scripts/deploy.ps1` and a game restart.
+The default build produces the 1.6 assemblies. The second command produces the
+net10.0 1.7 assemblies against the installed game and Harmony 3. Build both
+versions before packaging. Override `InstalledGameRoot` and
+`InstalledHarmonyPath` when their locations differ from the shared defaults.
+
+Building never deploys. Automated verification uses independent managed runs
+through `Shared/tools/automation`; `pwsh scripts/deploy.ps1` updates the player
+installation and requires a game restart.
 
 ## Engineering rules
 

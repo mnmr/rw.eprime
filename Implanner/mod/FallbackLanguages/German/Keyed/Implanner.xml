@@ -1,0 +1,215 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <IMP_ToolbarButtonTip>Implanner öffnen</IMP_ToolbarButtonTip>
+  <IMP_TabOverview>Übersicht</IMP_TabOverview>
+  <IMP_TabPlans>Pläne</IMP_TabPlans>
+  <IMP_TabAutomation>Automatisierung</IMP_TabAutomation>
+  <IMP_TabOptions>Optionen</IMP_TabOptions>
+  <IMP_TabHelp>Hilfe</IMP_TabHelp>
+  <IMP_ColColonist>Kolonist</IMP_ColColonist>
+  <IMP_ColPlan>Plan</IMP_ColPlan>
+  <IMP_ColProgress>Fortschritt</IMP_ColProgress>
+  <IMP_ColState>Zustand</IMP_ColState>
+  <IMP_ColShooting>S</IMP_ColShooting>
+  <IMP_ColMelee>N</IMP_ColMelee>
+  <IMP_ColShootingTip>Schießfertigkeit</IMP_ColShootingTip>
+  <IMP_ColMeleeTip>Nahkampffertigkeit</IMP_ColMeleeTip>
+  <IMP_ColPriority>Priorität</IMP_ColPriority>
+  <IMP_Priority0>Zuerst</IMP_Priority0>
+  <IMP_Priority1>Hoch</IMP_Priority1>
+  <IMP_Priority2>Normal</IMP_Priority2>
+  <IMP_Priority3>Niedrig</IMP_Priority3>
+  <IMP_Priority4>Zuletzt</IMP_Priority4>
+  <IMP_GroupByNone>Keine Gruppierung</IMP_GroupByNone>
+  <IMP_GroupByLocation>Nach Ort</IMP_GroupByLocation>
+  <IMP_GroupByFaction>Nach Fraktion</IMP_GroupByFaction>
+  <IMP_GroupByGender>Nach Geschlecht</IMP_GroupByGender>
+  <IMP_GroupByXenotype>Nach Xenotyp</IMP_GroupByXenotype>
+  <IMP_GroupByIdeo>Nach Ideoligion</IMP_GroupByIdeo>
+  <IMP_NoPlan>Keiner</IMP_NoPlan>
+  <IMP_ScopeAll>Überall</IMP_ScopeAll>
+  <IMP_StripColony>Kolonie: {0}</IMP_StripColony>
+  <IMP_AggregateColonists>Kolonisten: {0} / {1}</IMP_AggregateColonists>
+  <IMP_StripAutomationOn>Automatisierung an</IMP_StripAutomationOn>
+  <IMP_StripAutomationOff>Automatisierung aus</IMP_StripAutomationOff>
+  <IMP_StripProduction>Produktion: {0}%</IMP_StripProduction>
+  <IMP_StripStock>{0} auf Lager, {1} in der Warteschlange</IMP_StripStock>
+  <IMP_StripMaking>Stellt {0} her</IMP_StripMaking>
+  <IMP_StripMakingFor>Stellt Materialien für {0} her</IMP_StripMakingFor>
+  <IMP_StripWaiting>Wartet auf {0}</IMP_StripWaiting>
+  <IMP_StripNothingToCraft>Nichts herzustellen</IMP_StripNothingToCraft>
+  <IMP_StripWaitingBench>Wartet auf Werkbank</IMP_StripWaitingBench>
+  <IMP_StripAwaitingProduction>Wartet auf Produktion</IMP_StripAwaitingProduction>
+  <IMP_StripSurgery>Operationen: {0}%</IMP_StripSurgery>
+  <IMP_StripInstalled>{0} / {1} Implantate eingesetzt</IMP_StripInstalled>
+  <IMP_StripBatch>Implantatgruppe wird bei {0} eingesetzt</IMP_StripBatch>
+  <IMP_StripBatchStars>Implantatgruppe wird bei {0} eingesetzt ({1})</IMP_StripBatchStars>
+  <IMP_TipProduction>Produktion</IMP_TipProduction>
+  <IMP_TipSurgery>Operationen</IMP_TipSurgery>
+  <IMP_TipColTier>Stufe</IMP_TipColTier>
+  <IMP_TipColItem>Gegenstand</IMP_TipColItem>
+  <IMP_TipColImplant>Implantat</IMP_TipColImplant>
+  <IMP_TipColNeeded>Benötigt</IMP_TipColNeeded>
+  <IMP_TipColFree>Frei</IMP_TipColFree>
+  <IMP_TipColReserved>Reserviert</IMP_TipColReserved>
+  <IMP_TipColHeldBack>Zurückgehalten</IMP_TipColHeldBack>
+  <IMP_TipColQueued>Eingereiht</IMP_TipColQueued>
+  <IMP_TipColCrafting>In Herstellung</IMP_TipColCrafting>
+  <IMP_TipColStatus>Status</IMP_TipColStatus>
+  <IMP_TipCovered>Gedeckt</IMP_TipCovered>
+  <IMP_TipMaking>In Herstellung</IMP_TipMaking>
+  <IMP_TipMakingMaterials>Stellt Materialien her</IMP_TipMakingMaterials>
+  <IMP_TipNoRecipe>Kein Rezept</IMP_TipNoRecipe>
+  <IMP_TipBenchesInUse>Werkbänke mit Implanner-Aufträgen: {0}</IMP_TipBenchesInUse>
+  <IMP_TipColPlanned>Geplant</IMP_TipColPlanned>
+  <IMP_TipColInstalled>Eingesetzt</IMP_TipColInstalled>
+  <IMP_TipColMissing>Fehlend</IMP_TipColMissing>
+  <IMP_TipColScheduled>Operation geplant</IMP_TipColScheduled>
+  <IMP_TipColonistStates>Kolonisten: {0} wartend, {1} in Vorbereitung, {2} in Operation, {3} fertig, {4} abwesend</IMP_TipColonistStates>
+  <IMP_NextScheduled>Operation für {0} geplant</IMP_NextScheduled>
+  <IMP_ColonistDetails>Kolonistendetails</IMP_ColonistDetails>
+  <IMP_DetailCollecting>Sammelt {0}</IMP_DetailCollecting>
+  <IMP_NoSelection>Wähle einen Kolonisten, um verbleibende Implantate zu sehen.</IMP_NoSelection>
+  <IMP_WelcomeTitle>EPrime's Implanner</IMP_WelcomeTitle>
+  <IMP_WelcomeBody>Implanner plant Implantate für Kolonisten und automatisiert auf Wunsch Herstellung und Einbau.</IMP_WelcomeBody>
+  <IMP_WelcomeFind>Öffne Implanner über diese Schaltfläche in der Werkzeugleiste unten rechts neben den Ansichtsoptionen.</IMP_WelcomeFind>
+  <IMP_WelcomeTakeMeThere>Jetzt öffnen</IMP_WelcomeTakeMeThere>
+  <IMP_StateWaiting>Wartend</IMP_StateWaiting>
+  <IMP_StatePreparing>In Vorbereitung</IMP_StatePreparing>
+  <IMP_StateOperating>In Operation</IMP_StateOperating>
+  <IMP_StateDone>Fertig</IMP_StateDone>
+  <IMP_StateAway>Abwesend</IMP_StateAway>
+  <IMP_GoalComplete>Abgeschlossen</IMP_GoalComplete>
+  <IMP_GoalMissing>Fehlend</IMP_GoalMissing>
+  <IMP_GoalPartial>{0} / {1}</IMP_GoalPartial>
+  <IMP_GoalReserved>Reserviert</IMP_GoalReserved>
+  <IMP_GoalReady>Bereit</IMP_GoalReady>
+  <IMP_GoalScheduled>Operation geplant</IMP_GoalScheduled>
+  <IMP_GoalRecovering>Erholt sich</IMP_GoalRecovering>
+  <IMP_GoalBlockedFloor>Durch Arztmindeststufe blockiert ({0})</IMP_GoalBlockedFloor>
+  <IMP_GoalBlockedLoss>Würde {0} zerstören</IMP_GoalBlockedLoss>
+  <IMP_PlansHeader>Pläne</IMP_PlansHeader>
+  <IMP_AddPlan>Neuer Plan</IMP_AddPlan>
+  <IMP_PlanNameTitle>Planname</IMP_PlanNameTitle>
+  <IMP_ExtendsPlan>Erweitert</IMP_ExtendsPlan>
+  <IMP_ExtendsNothing>Nichts</IMP_ExtendsNothing>
+  <IMP_PlanExtends>erweitert {0}</IMP_PlanExtends>
+  <IMP_Inherited>geerbt</IMP_Inherited>
+  <IMP_Overrides>überschreibt {0}</IMP_Overrides>
+  <IMP_NoPlans>Erstelle einen Plan, um Implantatziele festzulegen.</IMP_NoPlans>
+  <IMP_PlanCounts>{0} Implantate</IMP_PlanCounts>
+  <IMP_PlanColonists>{0} Kolonisten</IMP_PlanColonists>
+  <IMP_DeletePlan>Plan löschen</IMP_DeletePlan>
+  <IMP_PlanMinQuality>Mindestqualität: {0}</IMP_PlanMinQuality>
+  <IMP_PlanMinQualityTip>Implantate für diesen Plan werden mindestens in dieser Qualität eingesetzt und hergestellt. Implantate ohne Qualitätsstufe sind davon nicht betroffen.\n\nEin gesundes Körperteil wird niemals durch ein schlechteres Implantat ersetzt. Bei einem bionischen Implantat von niedriger Qualität wird auf ein besseres Exemplar gewartet, sofern das Körperteil nicht fehlt oder beschädigt ist.</IMP_PlanMinQualityTip>
+  <IMP_PlanMinQualityNoQualityJobs>Quality Jobs ist nicht geladen, daher darf jeder Handwerker ein Implantat fertigstellen. Ein Implantat unter dieser Qualität wird erneut hergestellt.</IMP_PlanMinQualityNoQualityJobs>
+  <IMP_DeletePlanConfirm>Plan „{0}“ löschen? Zugewiesene Kolonisten verlieren ihre Zuweisung; erweiternde Pläne erben nicht mehr davon.</IMP_DeletePlanConfirm>
+  <IMP_ImplantGroupOther>Sonstige</IMP_ImplantGroupOther>
+  <IMP_ReqTitle>Anforderungen</IMP_ReqTitle>
+  <IMP_ReqBody>{0} kann nur an einem künstlichen Körperteil ({1}) eingesetzt werden. Wähle den Ersatz, der zusammen damit zum Plan hinzugefügt wird:</IMP_ReqBody>
+  <IMP_ReqConfirm>Zum Plan hinzufügen</IMP_ReqConfirm>
+  <IMP_TipPartEfficiency>Körperteileffizienz: {0}</IMP_TipPartEfficiency>
+  <IMP_TipCapacity>Körperteil: {0}</IMP_TipCapacity>
+  <IMP_TipPartEfficiencyRange>Körperteileffizienz: {0} bis {1}, je nach Qualität</IMP_TipPartEfficiencyRange>
+  <IMP_TipMaxHp>Maximale Körperteil-HP: {0}</IMP_TipMaxHp>
+  <IMP_RegionLimbs>Gliedmaßen</IMP_RegionLimbs>
+  <IMP_RegionTorso>Rumpf</IMP_RegionTorso>
+  <IMP_RegionHead>Kopf</IMP_RegionHead>
+  <IMP_NoMatchingImplants>Keine Implantate entsprechen der Suche.</IMP_NoMatchingImplants>
+  <IMP_RankTiersTitle>Implantatstufen</IMP_RankTiersTitle>
+  <IMP_Help>Hilfe</IMP_Help>
+  <IMP_RankTiersHelp>Implantate lassen sich in 5 Stufen einteilen. Die Platzierung beeinflusst Produktionsreihenfolge und Operationen, abhängig von den Automatisierungsoptionen.\n\nZiehe Gegenstände zum Umordnen.</IMP_RankTiersHelp>
+  <IMP_TierHighest>Höchste Priorität</IMP_TierHighest>
+  <IMP_TierHigh>Hohe Priorität</IMP_TierHigh>
+  <IMP_TierMedium>Mittlere Priorität</IMP_TierMedium>
+  <IMP_TierNormal>Normale Priorität</IMP_TierNormal>
+  <IMP_TierLow>Niedrige Priorität</IMP_TierLow>
+  <IMP_DragItemsHere>Implantate hierher ziehen</IMP_DragItemsHere>
+  <IMP_OptEnable>Automatisierung aktivieren</IMP_OptEnable>
+  <IMP_OptSurgery>Operationen</IMP_OptSurgery>
+  <IMP_OptIteration>Ablaufstrategie</IMP_OptIteration>
+  <IMP_OptSurgeryConcurrency>Gleichzeitige Operationen</IMP_OptSurgeryConcurrency>
+  <IMP_OptCountHospitalized>Hospitalisierte Bauern mitzählen</IMP_OptCountHospitalized>
+  <IMP_OptUpgradeByPriority>Beste Implantate an Kolonisten mit hoher Priorität geben</IMP_OptUpgradeByPriority>
+  <IMP_IterTier>Stufenweise Gruppen</IMP_IterTier>
+  <IMP_IterColonist>Vollständige Sätze</IMP_IterColonist>
+  <IMP_IterAsap>Sofort</IMP_IterAsap>
+  <IMP_OptManualFloor>Erforderliche Medizinstufe für Operationsaufträge</IMP_OptManualFloor>
+  <IMP_OptAutoFloor>Operationsaufträge dem besten verfügbaren Arzt zuweisen</IMP_OptAutoFloor>
+  <IMP_OptImplantReserves>Implantatreserven</IMP_OptImplantReserves>
+  <IMP_AddImplantReserve>Implantat hinzufügen</IMP_AddImplantReserve>
+  <IMP_OptProduction>Produktion</IMP_OptProduction>
+  <IMP_OptAutoProduction>Fertigungsaufträge für fehlende Implantate automatisch hinzufügen</IMP_OptAutoProduction>
+  <IMP_OptConcurrency>Werkbänke mit erlaubten Aufträgen</IMP_OptConcurrency>
+  <IMP_OptIdleBenches>Aufträge nur an freien Werkbänken erstellen</IMP_OptIdleBenches>
+  <IMP_OptDesignatedBenches>Nur Implanner-Werkbänke verwenden</IMP_OptDesignatedBenches>
+  <IMP_OptProductionSkill>Erforderliche Handwerksstufe für Produktionsaufträge</IMP_OptProductionSkill>
+  <IMP_OptIntermediaries>Produktionsaufträge für fehlende Zwischenprodukte erlauben</IMP_OptIntermediaries>
+  <IMP_OptReserves>Auf Lager behalten (nach Auftragskosten)</IMP_OptReserves>
+  <IMP_OptModCompat>Mod-Kompatibilität</IMP_OptModCompat>
+  <IMP_OptSkillSliderMaximum>Höchstwert der Fertigkeitsregler</IMP_OptSkillSliderMaximum>
+  <IMP_OptSkillSliderMaximumTip>Legt die Obergrenze der Medizin- und Handwerksregler fest. Bestehende Fertigkeitsanforderungen und die automatische Arztwahl bleiben unverändert.</IMP_OptSkillSliderMaximumTip>
+  <IMP_OptAllowMultipleBladders>Mehrere Blasenimplantate erlauben</IMP_OptAllowMultipleBladders>
+  <IMP_OptAllowMultipleHygieneEnhancers>Mehrere Hygieneverbesserer erlauben</IMP_OptAllowMultipleHygieneEnhancers>
+  <IMP_OptCatalog>Katalog</IMP_OptCatalog>
+  <IMP_OptShowPurchaseOnly>Nur erwerbbare Implantate anzeigen</IMP_OptShowPurchaseOnly>
+  <IMP_CleanupTitle>Automatisierung ausschalten?</IMP_CleanupTitle>
+  <IMP_CleanupBody>Implanner hat diese Aufträge erstellt. OK schaltet die Automatisierung aus und entfernt angekreuzte Aufträge. Nicht angekreuzte bleiben bestehen und werden beim erneuten Einschalten wieder übernommen. Reservierte Implantate werden in beiden Fällen freigegeben. Abbrechen lässt die Automatisierung eingeschaltet.</IMP_CleanupBody>
+  <IMP_AutomationOffTitle>Automatisierung ist ausgeschaltet</IMP_AutomationOffTitle>
+  <IMP_AutomationOffBody>{0} verteilt diese Kolonie über mehrere Ebenen. Implanner kann Implantate oder Operationen nicht über Ebenengrenzen hinweg transportieren. Deshalb werden keine Gegenstände mehr reserviert und keine Operationen geplant, statt jeden Plan nur halb umzusetzen.\n\nAlles andere funktioniert weiterhin. Erstelle und weise Pläne zu und ordne Implantate. Füge Operationen selbst hinzu; Implanner verfolgt, was eingesetzt ist und was noch fehlt.</IMP_AutomationOffBody>
+  <IMP_OptEnableTip>Der Hauptschalter für alles, was Implanner selbstständig tut: Implantate reservieren, Operationen planen und Fertigungsaufträge erstellen. Ausgeschaltet verfolgt Implanner weiter Pläne und Fortschritt, handelt aber nicht mehr. Beim Ausschalten kannst du wählen, welche bestehenden Aufträge bleiben.</IMP_OptEnableTip>
+  <IMP_OptIterationTip>Reihenfolge für fehlende Implantate. Die Kolonistenpriorität in der Übersicht entscheidet immer, wer zuerst kommt.\n\nStufenweise Gruppen: Alle erhalten zuerst Implantate der höchsten Stufe, danach geht es abwärts. Ein Kolonist wird operiert, sobald seine ganze Stufe reserviert ist.\n\nVollständige Sätze: Erst den ganzen Plan eines Kolonisten abschließen, dann den nächsten beginnen. Operationen warten auf die Reservierung des gesamten Plans.\n\nSofort: Jedes vorrätige Implantat wird sofort für den höchstpriorisierten Kolonisten eingeplant, dem es fehlt. Bei gleicher Priorität gehen Beine an den langsamsten Kolonisten, Arme zuerst an Nahkämpfer, dann an den besten Handwerker oder Forscher.</IMP_OptIterationTip>
+  <IMP_OptAutoFloorTip>Operationsaufträge sind auf deinen besten verfügbaren Arzt beschränkt, damit kein Anfänger einen bionischen Einbau verpfuscht, nur weil er zuerst am OP-Tisch war. Die Beschränkung folgt dem besten Arzt jeder Kolonie bei Zu- und Abgängen. Niemand kann sich selbst operieren; Operationen am besten Arzt übernimmt der zweitbeste.\n\nDeaktiviere dies, um eine feste Mindeststufe einzustellen.</IMP_OptAutoFloorTip>
+  <IMP_OptSurgeryConcurrencyTip>Wie viele Kolonisten je Kolonie gleichzeitig geplante Operationen haben dürfen. Höhere Werte reihen mehr Kolonisten parallel ein; niedrigere halten Krankenhaus und Ärzte frei. Beginnt bei einem je zehn Kolonisten. Shift beim Klick auf +/- ändert um 10, Ctrl um 5.</IMP_OptSurgeryConcurrencyTip>
+  <IMP_OptCountHospitalizedTip>Kolonisten und Sklaven in Krankenbetten sowie kampfunfähige, behandlungsbedürftige Personen belegen ebenfalls Operationsplätze. Neue Implanner-Operationen warten, bis unter der obigen Grenze Platz ist. Gefangene, Gäste und Besuchspatienten anderer Fraktionen belegen nie einen Platz. Deaktiviert werden Implantatoperationen unabhängig von laufenden Behandlungen geplant.</IMP_OptCountHospitalizedTip>
+  <IMP_OptUpgradeByPriorityTip>Höherwertige Implantate gehen an Kolonisten mit höchster Priorität in der Übersicht. Neue Operationen verwenden die niedrigste vom Plan akzeptierte Qualität, damit bessere Implantate frei bleiben.\n\nWird ein besseres Implantat verfügbar, erhält es der höchstpriorisierte Kolonist mit einem schlechteren derselben Art. Sein altes wird zuerst entfernt und geht an den nächsten Kolonisten. Auch ein für einen niedriger priorisierten Kolonisten reserviertes Implantat wird übertragen, solange dessen Operation noch nicht geplant ist.\n\nJeder Austausch ist eine zusätzliche Operation. Deaktiviert erhält jeder Kolonist bei seinem Zug das beste vorrätige Implantat.</IMP_OptUpgradeByPriorityTip>
+  <IMP_OptManualFloorTip>Die Mindeststufe in Medizin für Implanner-Operationen. Aufträge warten auf einen verfügbaren Arzt mit mindestens dieser Stufe. Beim Ausschalten der automatischen Zuweisung beginnt der Wert beim aktuell besten Arzt.</IMP_OptManualFloorTip>
+  <IMP_OptImplantReservesTip>Implantate, die für die manuelle Verwendung zurückgehalten werden. Die Automatik reserviert nur Bestände oberhalb dieser Mengen. So bleiben von jedem aufgeführten Implantat immer so viele für Notoperationen oder den Handel frei. Zurückgehaltene Gegenstände gelten für die Produktion nicht als verfügbar. Es wird weiter produziert, bis die Automatik ohne sie fortfahren kann.</IMP_OptImplantReservesTip>
+  <IMP_AddImplantReserveTip>Wähle ein Implantat, das der Automatik vorenthalten wird.</IMP_AddImplantReserveTip>
+  <IMP_OptAllowMultipleBladdersTip>Blasenimplantate verschiedener Mods gelten im Spiel als getrennte Implantate. Ein Kolonist kann daher mehrere zugleich tragen, deren Wirkungen sich addieren. Deaktiviere dies, um sie als einen Platz zu behandeln: Eine Auswahl im Plan überschreibt die anderen; wer bereits eines der folgenden Implantate hat, gilt als fertig. Es wird niemals etwas entfernt.\n\nBetroffene Implantate:\n{0}</IMP_OptAllowMultipleBladdersTip>
+  <IMP_OptAllowMultipleHygieneEnhancersTip>Hygieneverbesserer verschiedener Mods gelten im Spiel als getrennte Implantate. Ein Kolonist kann daher mehrere zugleich tragen, deren Wirkungen sich addieren. Deaktiviere dies, um sie als einen Platz zu behandeln: Eine Auswahl im Plan überschreibt die anderen; wer bereits eines der folgenden Implantate hat, gilt als fertig. Es wird niemals etwas entfernt.\n\nBetroffene Implantate:\n{0}</IMP_OptAllowMultipleHygieneEnhancersTip>
+  <IMP_OptShowPurchaseOnlyTip>Zeigt Implantate, die keine Werkbank herstellen kann, etwa Archotech-Teile. Sie kommen nur durch Handel, Quests oder Bergung. Aktiviere dies, um sie trotzdem einzuplanen. Die Automatik reserviert sie, sobald sie vorrätig sind, und setzt sie mit der nächsten Gruppe ein; ein fehlendes hält andere Implantate nie auf. Fügt eine Mod ein Rezept hinzu, wird das Implantat automatisch wie ein gewöhnliches behandelt.\n\nBetroffene Implantate:\n{0}</IMP_OptShowPurchaseOnlyTip>
+  <IMP_OptCompatNoneLoaded>Keine betroffenen Implantate sind geladen.</IMP_OptCompatNoneLoaded>
+  <IMP_OptAutoProductionTip>Fehlende Implantate erhalten automatisch Fertigungsaufträge. Implanner zählt den verbleibenden Planbedarf jeder Kolonie, zieht Vorräte und eingereihte Aufträge ab und erstellt Aufträge an geeigneten Werkbänken. Entfällt der Bedarf, werden die erstellten Aufträge wieder entfernt.</IMP_OptAutoProductionTip>
+  <IMP_OptConcurrencyTip>Wie viele Werkbänke je Kolonie gleichzeitig Implanner-Aufträge halten dürfen. Jeder Auftrag fertigt ein Implantat; eine Bank hält bis zu zwei, damit der nächste schon wartet. Mehr Werkbänke fertigen parallel, binden deine Handwerker aber stärker an Implantate statt andere Arbeiten. Shift beim Klick auf +/- ändert um 10, Ctrl um 5.</IMP_OptConcurrencyTip>
+  <IMP_OptIdleBenchesTip>Nur Werkbänke ohne wartende Arbeit erhalten neue Implanner-Aufträge. Deine eigenen Produktionslisten haben Vorrang; Implantate füllen die Lücken. Deaktiviere dies, damit Implantataufträge hinter deinen eigenen warten dürfen.</IMP_OptIdleBenchesTip>
+  <IMP_OptDesignatedBenchesTip>Fertigungsaufträge gehen nur an Werkbänke mit aktivierter „Implanner-Werkbank“ im Auftragsreiter; ohne eine solche fertigt die Kolonie keine Implantate. Deaktiviert erhalten Implanner-Werkbänke zuerst Aufträge, andere erst, wenn jede davon zwei hat. Die Grenze „Werkbänke mit erlaubten Aufträgen“ gilt in beiden Fällen.</IMP_OptDesignatedBenchesTip>
+  <IMP_BenchToggle>Implanner-Werkbank</IMP_BenchToggle>
+  <IMP_BenchToggleTip>Implanner platziert Fertigungsaufträge zuerst an dieser Werkbank; vorhandene Aufträge werden ausgesetzt. Solange dies aktiviert ist, kannst du hier keine Aufträge hinzufügen, einfügen, aussetzen oder fortsetzen.\n\nDeaktiviere es, um die Werkbank zurückzunehmen. Zuvor bereits ausgesetzte Aufträge bleiben ausgesetzt; die übrigen laufen weiter.</IMP_BenchToggleTip>
+  <IMP_BenchLockedTip>An einer Implanner-Werkbank kannst du keine Aufträge einfügen, aussetzen oder fortsetzen. Deaktiviere „Implanner-Werkbank“ oben im Auftragsreiter, um sie zurückzunehmen.</IMP_BenchLockedTip>
+  <IMP_BenchNoNewBills>„Implanner-Werkbank“ deaktivieren, um hier Aufträge hinzuzufügen</IMP_BenchNoNewBills>
+  <IMP_OptProductionSkillTip>Mindeststufe in Handwerk für Implanner-Produktionsaufträge. Höhere Werte halten teure Komponenten von unerfahrenen Handwerkern fern; niedrigere lassen mehr Kolonisten helfen. Aufträge warten auf einen geeigneten Handwerker.</IMP_OptProductionSkillTip>
+  <IMP_OptIntermediariesTip>Fehlt für einen Implantatauftrag eine Zutat wie Komponenten, kann Implanner auch dafür einen Auftrag einreihen, sofern sie ein herstellbares Erzeugnis ist. Fehlmengen werden durch die gesamte Produktionskette verfolgt. Rohstoffe wie Stahl werden nie hergestellt; du musst sie selbst beschaffen.</IMP_OptIntermediariesTip>
+  <IMP_OptReservesTip>Mindestbestände für automatische Herstellung. Ein Auftrag wird nur hinzugefügt, wenn die Kolonie zusätzlich zum Restbedarf eingereihter Aufträge dafür aufkommen kann und mindestens diese Menge jeder Zutat behält. Erhöhe einen Wert zum Schutz des Vorrats; null erlaubt freien Verbrauch.</IMP_OptReservesTip>
+  <IMP_HelpChapterBasics>Grundlagen</IMP_HelpChapterBasics>
+  <IMP_HelpChapterPlans>Pläne</IMP_HelpChapterPlans>
+  <IMP_HelpChapterAutomation>Automatisierung</IMP_HelpChapterAutomation>
+  <IMP_HelpChapterSharing>Teilen</IMP_HelpChapterSharing>
+  <IMP_HelpChapterMods>Mods</IMP_HelpChapterMods>
+  <IMP_HelpReload>Neu laden</IMP_HelpReload>
+  <IMP_Import>Importieren</IMP_Import>
+  <IMP_Export>Exportieren</IMP_Export>
+  <IMP_ExportPlansTitle>Pläne exportieren</IMP_ExportPlansTitle>
+  <IMP_ImportPlansTitle>Pläne importieren</IMP_ImportPlansTitle>
+  <IMP_ExportSummary>{0} Pläne, {1} Implantate</IMP_ExportSummary>
+  <IMP_PlanGoalCount>{0} Implantate</IMP_PlanGoalCount>
+  <IMP_CopyClipboard>In Zwischenablage kopieren</IMP_CopyClipboard>
+  <IMP_FromClipboard>Aus Zwischenablage</IMP_FromClipboard>
+  <IMP_Save>Speichern</IMP_Save>
+  <IMP_ImportAddNote>Importierte Pläne werden neben bestehenden hinzugefügt; nichts wird ersetzt. Bereits vergebene Namen erhalten eine Nummer.</IMP_ImportAddNote>
+  <IMP_LocGameData>Implanner-Ordner</IMP_LocGameData>
+  <IMP_LocDesktop>Desktop</IMP_LocDesktop>
+  <IMP_LocUserHome>Benutzerordner</IMP_LocUserHome>
+  <IMP_LocCustom>Eigener Ordner</IMP_LocCustom>
+  <IMP_EnterPath>Ordner:</IMP_EnterPath>
+  <IMP_BadFileName>Gib einen gültigen Dateinamen ein.</IMP_BadFileName>
+  <IMP_BadDirectory>Gib einen gültigen Ordner ein.</IMP_BadDirectory>
+  <IMP_SavedTo>Pläne unter {0} gespeichert</IMP_SavedTo>
+  <IMP_SaveFailed>Speichern fehlgeschlagen: {0}</IMP_SaveFailed>
+  <IMP_ReadFailed>Datei konnte nicht gelesen werden: {0}</IMP_ReadFailed>
+  <IMP_ImportInvalid>Kein gültiger Implanner-Planexport: {0}</IMP_ImportInvalid>
+  <IMP_DeleteFileConfirm>„{0}“ löschen?</IMP_DeleteFileConfirm>
+  <IMP_NoFiles>Hier gibt es noch keine exportierten Plandateien.</IMP_NoFiles>
+  <IMP_ShipFallback>Gravschiff</IMP_ShipFallback>
+  <IMP_SettingsShowToolbarButton>Werkzeugleistenschaltfläche anzeigen</IMP_SettingsShowToolbarButton>
+</LanguageData>

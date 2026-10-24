@@ -237,7 +237,7 @@ namespace Implanner
                     // allowance; surgery holds until more items exist.
                     bool capped = allowance.TryGetValue(required, out int left);
                     if (capped && left <= 0) continue;
-                    if (!stockByDef.TryGetValue(required, out List<Thing> stock))
+                    if (!stockByDef.TryGetValue(required, out List<Thing>? stock))
                     {
                         stock = FreeStock(colony, index, required, reservedItems);
                         stockByDef.Add(required, stock);
@@ -788,7 +788,7 @@ namespace Implanner
             for (int i = 0; i < billPawns.Count; i++)
             {
                 int pawnId = billPawns[i];
-                bool present = index.PawnsById.TryGetValue(pawnId, out Pawn pawn);
+                bool present = index.PawnsById.TryGetValue(pawnId, out Pawn? pawn);
                 if (model.AssignedPlan(pawnId) != null && present) continue;
                 IReadOnlyDictionary<string, string>? owned = model.OwnedBillsFor(pawnId);
                 if (owned == null) continue;
@@ -801,7 +801,7 @@ namespace Implanner
                     if (present && model.IsActiveReinstall(pawnId, keys[k])) continue;
                     if (present)
                     {
-                        Bill? bill = pass.FindBill(pawn.BillStack, owned[keys[k]]);
+                        Bill? bill = pass.FindBill(pawn!.BillStack, owned[keys[k]]);
                         if (bill != null) pawn.BillStack.Delete(bill);
                     }
                     change |= model.RemoveOwnedBill(pawnId, keys[k]);

@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_NoFirefighting.label>Pyrophob</WS_NoFirefighting.label>
+  <WS_NoFirefighting.description>Sperre: Kolonisten mit dieser Rolle bekämpfen nie Feuer, auch wenn eine spätere Rolle (etwa Grundlagen) Brandbekämpfung enthält.</WS_NoFirefighting.description>
+  <WS_Core.label>Kern</WS_Core.label>
+  <WS_Core.description>Notfallarbeiten für jeden Kolonisten: Brandbekämpfung, Behandlung erhalten und Rettung.</WS_Core.description>
+  <WS_Basics.label>Grundlagen</WS_Basics.label>
+  <WS_Basics.description>Selbstfürsorge und einfache Arbeiten für jeden Kolonisten.</WS_Basics.description>
+  <WS_Rescuer.label>Retter</WS_Rescuer.label>
+  <WS_Rescuer.description>Rettung kampfunfähiger Kolonisten.</WS_Rescuer.description>
+  <WS_Doctor.label>Arzt</WS_Doctor.label>
+  <WS_Doctor.description>Medizinische Versorgung von Kolonisten, Gefangenen und Tieren.</WS_Doctor.description>
+  <WS_Medic.label>Sanitäter</WS_Medic.label>
+  <WS_Medic.description>Medizinische Arbeit außer Operationen an Kolonisten.</WS_Medic.description>
+  <WS_Laborer.label>Hilfsarbeiter</WS_Laborer.label>
+  <WS_Laborer.description>Verschiedene einfache Aufgaben.</WS_Laborer.description>
+  <WS_Childminder.label>Betreuer</WS_Childminder.label>
+  <WS_Childminder.description>Kinderbetreuung und Unterricht.</WS_Childminder.description>
+  <WS_Firefighter.label>Feuerwehrmann</WS_Firefighter.label>
+  <WS_Firefighter.description>Brandbekämpfung.</WS_Firefighter.description>
+  <WS_Patient.label>Patient</WS_Patient.label>
+  <WS_Patient.description>Medizinische Behandlung erhalten.</WS_Patient.description>
+  <WS_Bedrest.label>Bettruhe</WS_Bedrest.label>
+  <WS_Bedrest.description>Bei Krankheit oder Verletzung im Bett ruhen.</WS_Bedrest.description>
+  <WS_Jailor.label>Gefängniswärter</WS_Jailor.label>
+  <WS_Jailor.description>Gefangenenbetreuung außer Verhör, Versklavung und Bekehrung: Füttern, Begleiten, Gespräche, Unterdrückung, Freilassung und Hinrichtungen.</WS_Jailor.description>
+  <WS_Warden.label>Wärter</WS_Warden.label>
+  <WS_Warden.description>Umgang mit Gefangenen: Rekrutierung, Bekehrung, Füttern und Freilassung.</WS_Warden.description>
+  <WS_Grunt.label>Handlanger</WS_Grunt.label>
+  <WS_Grunt.description>Transportieren und Reinigen.</WS_Grunt.description>
+  <WS_Hauler.label>Transporteur</WS_Hauler.label>
+  <WS_Hauler.description>Gegenstände transportieren.</WS_Hauler.description>
+  <WS_Cleaner.label>Reinigungskraft</WS_Cleaner.label>
+  <WS_Cleaner.description>Reinigen.</WS_Cleaner.description>
+  <WS_Handler.label>Tiertrainer</WS_Handler.label>
+  <WS_Handler.description>Tiere zähmen, trainieren und schlachten.</WS_Handler.description>
+  <WS_Cook.label>Koch</WS_Cook.label>
+  <WS_Cook.description>Kochen und Zerlegen.</WS_Cook.description>
+  <WS_Butcher.label>Fleischer</WS_Butcher.label>
+  <WS_Butcher.description>Kreaturen zerlegen.</WS_Butcher.description>
+  <WS_Brewer.label>Brauer</WS_Brewer.label>
+  <WS_Brewer.description>Würze in der Brauerei brauen.</WS_Brewer.description>
+  <WS_Hunter.label>Jäger</WS_Hunter.label>
+  <WS_Hunter.description>Wildtiere zur Nahrungsgewinnung jagen.</WS_Hunter.description>
+  <WS_Fisher.label>Fischer</WS_Fisher.label>
+  <WS_Fisher.description>Fischen.</WS_Fisher.description>
+  <WS_Builder.label>Baumeister</WS_Builder.label>
+  <WS_Builder.description>Bauen, Reparieren und Abbauen.</WS_Builder.description>
+  <WS_Repairer.label>Hausmeister</WS_Repairer.label>
+  <WS_Repairer.description>Alle Bauarbeiten außer dem Errichten neuer Gebäude.</WS_Repairer.description>
+  <WS_Farmer.label>Landwirt</WS_Farmer.label>
+  <WS_Farmer.description>Säen, Ernten und Pflanzen schneiden.</WS_Farmer.description>
+  <WS_Grower.label>Pflanzer</WS_Grower.label>
+  <WS_Grower.description>Säen und Ernten in Anbauzonen.</WS_Grower.description>
+  <WS_PlantCutter.label>Pflanzenschneider</WS_PlantCutter.label>
+  <WS_PlantCutter.description>Wilde Pflanzen und Bäume schneiden und ernten.</WS_PlantCutter.description>
+  <WS_Miner.label>Bergarbeiter</WS_Miner.label>
+  <WS_Miner.description>Bergbau und Bohren.</WS_Miner.description>
+  <WS_Tailor.label>Schneider</WS_Tailor.label>
+  <WS_Tailor.description>Kleidung herstellen.</WS_Tailor.description>
+  <WS_Smith.label>Schmied</WS_Smith.label>
+  <WS_Smith.description>Waffen und Rüstungen schmieden.</WS_Smith.description>
+  <WS_Fabricator.label>Fabrikator</WS_Fabricator.label>
+  <WS_Fabricator.description>Gegenstände an der Fabrikationsbank herstellen.</WS_Fabricator.description>
+  <WS_Mechanitor.label>Mechanitor</WS_Mechanitor.label>
+  <WS_Mechanitor.description>Mechanoiden reparieren, neue heranzüchten und Subkerne kodieren. Nur für Kolonisten mit Mechlink empfohlen.</WS_Mechanitor.description>
+  <WS_Crafter.label>Handwerker</WS_Crafter.label>
+  <WS_Crafter.description>Allgemeines Handwerk: Steinschneiden, Schmelzen, Drogen und Komponenten.</WS_Crafter.description>
+  <WS_Researcher.label>Forscher</WS_Researcher.label>
+  <WS_Researcher.description>An einer Forschungsbank forschen.</WS_Researcher.description>
+  <WS_DarkStudier.label>Anomalist</WS_DarkStudier.label>
+  <WS_DarkStudier.description>Anomale Wesen studieren.</WS_DarkStudier.description>
+  <WS_Artist.label>Künstler</WS_Artist.label>
+  <WS_Artist.description>Bildhauerei und Kunstwerke.</WS_Artist.description>
+  <WS_Nurse.label>Krankenpfleger</WS_Nurse.label>
+  <WS_Nurse.description>Patienten füttern, retten und besuchen; Notfall-Selbstbehandlung.</WS_Nurse.description>
+  <WS_DrugMaker.label>Drogenhersteller</WS_DrugMaker.label>
+  <WS_DrugMaker.description>Drogenherstellung im Drogenlabor und an der Serumzentrifuge.</WS_DrugMaker.description>
+  <WS_Painter.label>Maler</WS_Painter.label>
+  <WS_Painter.description>Malen und Farbe entfernen.</WS_Painter.description>
+  <WS_Herder.label>Hirte</WS_Herder.label>
+  <WS_Herder.description>Gehegetierhaltung: Einpferchen, Füttern, Melken, Scheren und Schlachten.</WS_Herder.description>
+</LanguageData>

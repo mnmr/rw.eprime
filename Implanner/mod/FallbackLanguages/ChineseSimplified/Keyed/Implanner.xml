@@ -1,0 +1,215 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <IMP_ToolbarButtonTip>打开 Implanner</IMP_ToolbarButtonTip>
+  <IMP_TabOverview>概览</IMP_TabOverview>
+  <IMP_TabPlans>方案</IMP_TabPlans>
+  <IMP_TabAutomation>自动化</IMP_TabAutomation>
+  <IMP_TabOptions>选项</IMP_TabOptions>
+  <IMP_TabHelp>帮助</IMP_TabHelp>
+  <IMP_ColColonist>殖民者</IMP_ColColonist>
+  <IMP_ColPlan>方案</IMP_ColPlan>
+  <IMP_ColProgress>进度</IMP_ColProgress>
+  <IMP_ColState>状态</IMP_ColState>
+  <IMP_ColShooting>射</IMP_ColShooting>
+  <IMP_ColMelee>近</IMP_ColMelee>
+  <IMP_ColShootingTip>射击技能</IMP_ColShootingTip>
+  <IMP_ColMeleeTip>近战技能</IMP_ColMeleeTip>
+  <IMP_ColPriority>优先级</IMP_ColPriority>
+  <IMP_Priority0>最先</IMP_Priority0>
+  <IMP_Priority1>高</IMP_Priority1>
+  <IMP_Priority2>普通</IMP_Priority2>
+  <IMP_Priority3>低</IMP_Priority3>
+  <IMP_Priority4>最后</IMP_Priority4>
+  <IMP_GroupByNone>不分组</IMP_GroupByNone>
+  <IMP_GroupByLocation>按地点</IMP_GroupByLocation>
+  <IMP_GroupByFaction>按派系</IMP_GroupByFaction>
+  <IMP_GroupByGender>按性别</IMP_GroupByGender>
+  <IMP_GroupByXenotype>按异种类型</IMP_GroupByXenotype>
+  <IMP_GroupByIdeo>按理念</IMP_GroupByIdeo>
+  <IMP_NoPlan>无</IMP_NoPlan>
+  <IMP_ScopeAll>所有地点</IMP_ScopeAll>
+  <IMP_StripColony>殖民地：{0}</IMP_StripColony>
+  <IMP_AggregateColonists>殖民者：{0} / {1}</IMP_AggregateColonists>
+  <IMP_StripAutomationOn>自动化已开启</IMP_StripAutomationOn>
+  <IMP_StripAutomationOff>自动化已关闭</IMP_StripAutomationOff>
+  <IMP_StripProduction>生产：{0}%</IMP_StripProduction>
+  <IMP_StripStock>库存 {0}，待生产 {1}</IMP_StripStock>
+  <IMP_StripMaking>正在制作 {0}</IMP_StripMaking>
+  <IMP_StripMakingFor>正在制作 {0} 的材料</IMP_StripMakingFor>
+  <IMP_StripWaiting>等待 {0}</IMP_StripWaiting>
+  <IMP_StripNothingToCraft>无须制作</IMP_StripNothingToCraft>
+  <IMP_StripWaitingBench>等待工作台</IMP_StripWaitingBench>
+  <IMP_StripAwaitingProduction>等待生产</IMP_StripAwaitingProduction>
+  <IMP_StripSurgery>手术：{0}%</IMP_StripSurgery>
+  <IMP_StripInstalled>已安装 {0} / {1} 个植入体</IMP_StripInstalled>
+  <IMP_StripBatch>正在为 {0} 安装此批植入体</IMP_StripBatch>
+  <IMP_StripBatchStars>正在为 {0} 安装此批植入体（{1}）</IMP_StripBatchStars>
+  <IMP_TipProduction>生产</IMP_TipProduction>
+  <IMP_TipSurgery>手术</IMP_TipSurgery>
+  <IMP_TipColTier>层级</IMP_TipColTier>
+  <IMP_TipColItem>物品</IMP_TipColItem>
+  <IMP_TipColImplant>植入体</IMP_TipColImplant>
+  <IMP_TipColNeeded>所需</IMP_TipColNeeded>
+  <IMP_TipColFree>可用</IMP_TipColFree>
+  <IMP_TipColReserved>已分配</IMP_TipColReserved>
+  <IMP_TipColHeldBack>留作手动使用</IMP_TipColHeldBack>
+  <IMP_TipColQueued>待生产</IMP_TipColQueued>
+  <IMP_TipColCrafting>制作中</IMP_TipColCrafting>
+  <IMP_TipColStatus>状态</IMP_TipColStatus>
+  <IMP_TipCovered>已满足</IMP_TipCovered>
+  <IMP_TipMaking>制作中</IMP_TipMaking>
+  <IMP_TipMakingMaterials>正在制作材料</IMP_TipMakingMaterials>
+  <IMP_TipNoRecipe>无配方</IMP_TipNoRecipe>
+  <IMP_TipBenchesInUse>持有 Implanner 清单的工作台：{0}</IMP_TipBenchesInUse>
+  <IMP_TipColPlanned>计划数量</IMP_TipColPlanned>
+  <IMP_TipColInstalled>已安装</IMP_TipColInstalled>
+  <IMP_TipColMissing>缺少</IMP_TipColMissing>
+  <IMP_TipColScheduled>已安排</IMP_TipColScheduled>
+  <IMP_TipColonistStates>殖民者：{0} 人等待，{1} 人准备，{2} 人手术中，{3} 人完成，{4} 人外出</IMP_TipColonistStates>
+  <IMP_NextScheduled>已安排安装 {0} 的手术</IMP_NextScheduled>
+  <IMP_ColonistDetails>殖民者详情</IMP_ColonistDetails>
+  <IMP_DetailCollecting>正在收集 {0}</IMP_DetailCollecting>
+  <IMP_NoSelection>选择一名殖民者，查看尚缺的植入体。</IMP_NoSelection>
+  <IMP_WelcomeTitle>EPrime's Implanner</IMP_WelcomeTitle>
+  <IMP_WelcomeBody>Implanner 可为殖民者规划植入体，并可选择自动完成生产和安装所需的工作。</IMP_WelcomeBody>
+  <IMP_WelcomeFind>点击屏幕右下方工具栏中、显示开关旁的此按钮，可打开 Implanner。</IMP_WelcomeFind>
+  <IMP_WelcomeTakeMeThere>立即打开</IMP_WelcomeTakeMeThere>
+  <IMP_StateWaiting>等待中</IMP_StateWaiting>
+  <IMP_StatePreparing>准备中</IMP_StatePreparing>
+  <IMP_StateOperating>手术中</IMP_StateOperating>
+  <IMP_StateDone>已完成</IMP_StateDone>
+  <IMP_StateAway>外出</IMP_StateAway>
+  <IMP_GoalComplete>已完成</IMP_GoalComplete>
+  <IMP_GoalMissing>缺少</IMP_GoalMissing>
+  <IMP_GoalPartial>{0} / {1}</IMP_GoalPartial>
+  <IMP_GoalReserved>已分配</IMP_GoalReserved>
+  <IMP_GoalReady>已就绪</IMP_GoalReady>
+  <IMP_GoalScheduled>已安排手术</IMP_GoalScheduled>
+  <IMP_GoalRecovering>恢复中</IMP_GoalRecovering>
+  <IMP_GoalBlockedFloor>未达到医生技能下限（{0}）</IMP_GoalBlockedFloor>
+  <IMP_GoalBlockedLoss>将破坏 {0}</IMP_GoalBlockedLoss>
+  <IMP_PlansHeader>方案</IMP_PlansHeader>
+  <IMP_AddPlan>新建方案</IMP_AddPlan>
+  <IMP_PlanNameTitle>方案名称</IMP_PlanNameTitle>
+  <IMP_ExtendsPlan>继承自</IMP_ExtendsPlan>
+  <IMP_ExtendsNothing>无</IMP_ExtendsNothing>
+  <IMP_PlanExtends>继承自 {0}</IMP_PlanExtends>
+  <IMP_Inherited>继承项</IMP_Inherited>
+  <IMP_Overrides>覆盖 {0}</IMP_Overrides>
+  <IMP_NoPlans>创建方案，以定义目标植入体组合。</IMP_NoPlans>
+  <IMP_PlanCounts>{0} 个植入体</IMP_PlanCounts>
+  <IMP_PlanColonists>{0} 名殖民者</IMP_PlanColonists>
+  <IMP_DeletePlan>删除方案</IMP_DeletePlan>
+  <IMP_PlanMinQuality>最低品质：{0}</IMP_PlanMinQuality>
+  <IMP_PlanMinQualityTip>此方案按此品质或更高品质安装和制作植入体。没有品质的植入体不受影响。\n\n不会用更差的植入体替换健康身体部位。低品质仿生体会等待更好的物品，除非该部位已缺失或受损。</IMP_PlanMinQualityTip>
+  <IMP_PlanMinQualityNoQualityJobs>未加载 Quality Jobs，因此任何工匠都可完成植入体。成品低于此品质时，会再次制作。</IMP_PlanMinQualityNoQualityJobs>
+  <IMP_DeletePlanConfirm>删除方案“{0}”？分配了此方案的殖民者将失去分配，继承此方案的其他方案也将停止继承。</IMP_DeletePlanConfirm>
+  <IMP_ImplantGroupOther>其他</IMP_ImplantGroupOther>
+  <IMP_ReqTitle>前置要求</IMP_ReqTitle>
+  <IMP_ReqBody>{0} 只能安装在人工{1}上。请选择要一同加入方案的替换部件：</IMP_ReqBody>
+  <IMP_ReqConfirm>加入方案</IMP_ReqConfirm>
+  <IMP_TipPartEfficiency>部位效率：{0}</IMP_TipPartEfficiency>
+  <IMP_TipCapacity>身体部位：{0}</IMP_TipCapacity>
+  <IMP_TipPartEfficiencyRange>部位效率：{0} 至 {1}，取决于品质</IMP_TipPartEfficiencyRange>
+  <IMP_TipMaxHp>身体部位生命值上限：{0}</IMP_TipMaxHp>
+  <IMP_RegionLimbs>四肢</IMP_RegionLimbs>
+  <IMP_RegionTorso>躯干</IMP_RegionTorso>
+  <IMP_RegionHead>头部</IMP_RegionHead>
+  <IMP_NoMatchingImplants>没有符合搜索条件的植入体。</IMP_NoMatchingImplants>
+  <IMP_RankTiersTitle>植入体层级</IMP_RankTiersTitle>
+  <IMP_Help>帮助</IMP_Help>
+  <IMP_RankTiersHelp>植入体可分为 5 个层级。位置会影响生产和手术顺序，具体取决于自动化选项。\n\n拖动物品可调整顺序。</IMP_RankTiersHelp>
+  <IMP_TierHighest>最高优先级</IMP_TierHighest>
+  <IMP_TierHigh>高优先级</IMP_TierHigh>
+  <IMP_TierMedium>中等优先级</IMP_TierMedium>
+  <IMP_TierNormal>普通优先级</IMP_TierNormal>
+  <IMP_TierLow>低优先级</IMP_TierLow>
+  <IMP_DragItemsHere>将植入体拖到这里</IMP_DragItemsHere>
+  <IMP_OptEnable>启用自动化</IMP_OptEnable>
+  <IMP_OptSurgery>手术</IMP_OptSurgery>
+  <IMP_OptIteration>执行策略</IMP_OptIteration>
+  <IMP_OptSurgeryConcurrency>同时手术人数</IMP_OptSurgeryConcurrency>
+  <IMP_OptCountHospitalized>计入住院角色</IMP_OptCountHospitalized>
+  <IMP_OptUpgradeByPriority>将最佳植入体分配给高优先级殖民者</IMP_OptUpgradeByPriority>
+  <IMP_IterTier>按层级分批</IMP_IterTier>
+  <IMP_IterColonist>整套安装</IMP_IterColonist>
+  <IMP_IterAsap>尽快安装</IMP_IterAsap>
+  <IMP_OptManualFloor>手术清单所需医疗技能</IMP_OptManualFloor>
+  <IMP_OptAutoFloor>将手术分配给当前最佳医生</IMP_OptAutoFloor>
+  <IMP_OptImplantReserves>植入体留存</IMP_OptImplantReserves>
+  <IMP_AddImplantReserve>添加植入体</IMP_AddImplantReserve>
+  <IMP_OptProduction>生产</IMP_OptProduction>
+  <IMP_OptAutoProduction>自动添加缺失植入体的生产清单</IMP_OptAutoProduction>
+  <IMP_OptConcurrency>可持有清单的工作台数</IMP_OptConcurrency>
+  <IMP_OptIdleBenches>仅向空闲工作台添加清单</IMP_OptIdleBenches>
+  <IMP_OptDesignatedBenches>仅使用 Implanner 工作台</IMP_OptDesignatedBenches>
+  <IMP_OptProductionSkill>生产清单所需手工技能</IMP_OptProductionSkill>
+  <IMP_OptIntermediaries>允许为缺少的中间产品添加生产清单</IMP_OptIntermediaries>
+  <IMP_OptReserves>保留库存（扣除清单成本后）</IMP_OptReserves>
+  <IMP_OptModCompat>模组兼容</IMP_OptModCompat>
+  <IMP_OptSkillSliderMaximum>技能滑块最大值</IMP_OptSkillSliderMaximum>
+  <IMP_OptSkillSliderMaximumTip>设置医疗和手工技能滑块的上限。不影响现有技能要求或医生自动选择。</IMP_OptSkillSliderMaximumTip>
+  <IMP_OptAllowMultipleBladders>允许多个膀胱植入体</IMP_OptAllowMultipleBladders>
+  <IMP_OptAllowMultipleHygieneEnhancers>允许多个卫生增强器</IMP_OptAllowMultipleHygieneEnhancers>
+  <IMP_OptCatalog>目录</IMP_OptCatalog>
+  <IMP_OptShowPurchaseOnly>显示仅能购买的植入体</IMP_OptShowPurchaseOnly>
+  <IMP_CleanupTitle>关闭自动化？</IMP_CleanupTitle>
+  <IMP_CleanupBody>这些清单由 Implanner 创建。确认会关闭自动化，并移除已勾选的清单。未勾选的清单会保留，重新启用自动化后继续接管。两种情况下都会释放已分配的植入体物品。取消则保持自动化开启。</IMP_CleanupBody>
+  <IMP_AutomationOffTitle>自动化已关闭</IMP_AutomationOffTitle>
+  <IMP_AutomationOffBody>{0} 将此殖民地分布在多个楼层。Implanner 无法跨楼层运输植入体或执行手术，因此停止分配物品和安排手术，以免每个方案都只能完成一部分。\n\n其他功能仍然可用。你可以继续创建和分配方案，并排序植入体。自行添加手术后，Implanner 会跟踪已安装和仍缺少的植入体。</IMP_AutomationOffBody>
+  <IMP_OptEnableTip>控制 Implanner 所有自动操作的总开关：分配植入体、安排手术和创建生产清单。关闭后仍会跟踪方案与进度，只是不再执行操作。关闭时还会询问保留哪些现有清单。</IMP_OptEnableTip>
+  <IMP_OptIterationTip>决定自动化处理缺失植入体的顺序。“概览”页的殖民者优先级始终决定先后。\n\n按层级分批：先让所有人获得最高层级的植入体，再依次处理较低层级。某殖民者整个层级所需物品都已分配后才进入手术。\n\n整套安装：完成一名殖民者的整个方案后再处理下一名。全部方案物品都已分配后才安排手术。\n\n尽快安装：库存中的每个植入体立即安排给缺少它且优先级最高的殖民者。优先级相同时，腿优先给行动最慢者；手臂先给近战人员，再给最佳工匠或研究员。</IMP_OptIterationTip>
+  <IMP_OptAutoFloorTip>手术清单仅允许当前最佳医生执行，避免新手医生仅因先到手术台就失误损坏仿生体。每个殖民地的要求会随人员来去跟随最佳医生变化。任何人都无法给自己动手术，因此最佳医生本人的手术交给次佳医生。\n\n关闭后可手动设置固定技能下限。</IMP_OptAutoFloorTip>
+  <IMP_OptSurgeryConcurrencyTip>每个殖民地可同时持有已安排手术的殖民者人数。较高值可让更多人并行排队，较低值则为医院和医生保留余力。初始为每十名殖民者一名。点击 +/- 时按住 Shift 可每次调整 10，按住 Ctrl 则调整 5。</IMP_OptSurgeryConcurrencyTip>
+  <IMP_OptCountHospitalizedTip>躺在医疗床上的殖民者和奴隶，以及倒地等待治疗者，也会占用手术名额。新的 Implanner 手术会等待，直到医院占用人数低于上述上限。囚犯、访客和其他派系的来访患者不会占名额。关闭后，安排植入手术时将不考虑已接受治疗的人。</IMP_OptCountHospitalizedTip>
+  <IMP_OptUpgradeByPriorityTip>更高品质的植入体优先给“概览”页中优先级最高的殖民者。新手术使用方案允许的最低品质，以腾出更好的植入体。\n\n有更好的同类植入体时，持有较差植入体且优先级最高的殖民者会获得它。先移除其旧植入体，再把旧件分给下一人。已分配给较低优先级殖民者的植入体也可转交，前提是对方尚未安排手术。\n\n每次交换都要额外手术。关闭时，每名殖民者轮到自己时获得库存中最好的植入体。</IMP_OptUpgradeByPriorityTip>
+  <IMP_OptManualFloorTip>执行 Implanner 手术所需的最低医疗技能。清单会等待达到此等级的医生。关闭自动分配时，初始值设为当前最佳医生的技能。</IMP_OptManualFloorTip>
+  <IMP_OptImplantReservesTip>为手动使用留下的植入体。自动化仅分配超过这些数量的库存，确保始终保留指定数量用于急救或交易。生产不会将留存物品视为可用，并会继续制作，直到不动用它们也能推进自动化。</IMP_OptImplantReservesTip>
+  <IMP_AddImplantReserveTip>选择要留存、不供自动化使用的植入体。</IMP_AddImplantReserveTip>
+  <IMP_OptAllowMultipleBladdersTip>来自不同模组的膀胱植入体在游戏中属于不同植入体，因此殖民者可同时拥有多个，效果也会叠加。关闭后将它们视为同一个栏位：在方案中选择一个会覆盖其他选项，已拥有下列任意一个的殖民者即视为完成。不会移除任何现有植入体。\n\n受影响的植入体：\n{0}</IMP_OptAllowMultipleBladdersTip>
+  <IMP_OptAllowMultipleHygieneEnhancersTip>来自不同模组的卫生增强器在游戏中属于不同植入体，因此殖民者可同时拥有多个，效果也会叠加。关闭后将它们视为同一个栏位：在方案中选择一个会覆盖其他选项，已拥有下列任意一个的殖民者即视为完成。不会移除任何现有植入体。\n\n受影响的植入体：\n{0}</IMP_OptAllowMultipleHygieneEnhancersTip>
+  <IMP_OptShowPurchaseOnlyTip>列出没有工作台能够制作的植入体，例如超凡科技部件。它们只能通过交易、任务或回收获得。启用后仍可将其纳入方案。物品一旦入库，自动化便会分配它，并在下一批安装；缺少此类物品绝不会阻碍其他植入体。如果某个模组添加了制作配方，它会自动变为普通可制作植入体。\n\n受影响的植入体：\n{0}</IMP_OptShowPurchaseOnlyTip>
+  <IMP_OptCompatNoneLoaded>尚未加载任何受影响的植入体。</IMP_OptCompatNoneLoaded>
+  <IMP_OptAutoProductionTip>自动为缺少的植入体添加生产清单。Implanner 统计各殖民地方案的剩余需求，扣除库存和已排队清单，然后向可制作的工作台添加清单。需求消失后，会撤回其创建的清单。</IMP_OptAutoProductionTip>
+  <IMP_OptConcurrencyTip>每个殖民地可同时持有 Implanner 生产清单的工作台数量。每份清单制作一个植入体，每台最多两份，确保首份完成时下一份已在等待。更多工作台可并行制作，但会让工匠把更多时间花在植入体上，减少其他工作。点击 +/- 时按住 Shift 可每次调整 10，按住 Ctrl 则调整 5。</IMP_OptConcurrencyTip>
+  <IMP_OptIdleBenchesTip>仅向没有待执行工作的工作台添加新清单。你自己的生产队列优先，植入体利用空闲时间制作。关闭后，植入体清单可排在你自己的清单之后。</IMP_OptIdleBenchesTip>
+  <IMP_OptDesignatedBenchesTip>仅向“生产清单”页中勾选“Implanner 工作台”的工作台添加生产清单，因此没有专用台的殖民地不会制作植入体。关闭后仍优先使用 Implanner 工作台，所有专用台各有两份清单后才使用其他工作台。两种情况下都适用“可持有清单的工作台数”上限。</IMP_OptDesignatedBenchesTip>
+  <IMP_BenchToggle>Implanner 工作台</IMP_BenchToggle>
+  <IMP_BenchToggleTip>Implanner 优先在此工作台放置生产清单，并暂停原有清单。勾选期间，你无法在此添加、粘贴、暂停或恢复清单。\n\n取消勾选可收回工作台。指定前已暂停的清单仍保持暂停，其余恢复。</IMP_BenchToggleTip>
+  <IMP_BenchLockedTip>无法在 Implanner 工作台粘贴、暂停或恢复清单。取消勾选“生产清单”页顶部的“Implanner 工作台”即可收回。</IMP_BenchLockedTip>
+  <IMP_BenchNoNewBills>取消勾选“Implanner 工作台”后才能在此添加清单</IMP_BenchNoNewBills>
+  <IMP_OptProductionSkillTip>Implanner 生产清单所需的最低手工技能。较高值可避免低技能工匠使用昂贵零部件，较低值则让更多殖民者参与。清单会等待符合要求的工匠接手。</IMP_OptProductionSkillTip>
+  <IMP_OptIntermediariesTip>若因缺少零部件等原料而无法制作植入体，且该原料是可制作的工业产品，Implanner 也可为其添加生产清单。会沿整个生产链追查缺口。钢铁等原材料绝不自动制作，仍需自行收集。</IMP_OptIntermediariesTip>
+  <IMP_OptReservesTip>自动制作的资源保留底线。只有在扣除新清单成本以及已排队清单仍需材料后，各原料库存仍不少于此值，才会添加新清单。提高数值可保护库存；设为零则允许生产自由消耗。</IMP_OptReservesTip>
+  <IMP_HelpChapterBasics>基础</IMP_HelpChapterBasics>
+  <IMP_HelpChapterPlans>方案</IMP_HelpChapterPlans>
+  <IMP_HelpChapterAutomation>自动化</IMP_HelpChapterAutomation>
+  <IMP_HelpChapterSharing>分享</IMP_HelpChapterSharing>
+  <IMP_HelpChapterMods>模组</IMP_HelpChapterMods>
+  <IMP_HelpReload>重新加载</IMP_HelpReload>
+  <IMP_Import>导入</IMP_Import>
+  <IMP_Export>导出</IMP_Export>
+  <IMP_ExportPlansTitle>导出方案</IMP_ExportPlansTitle>
+  <IMP_ImportPlansTitle>导入方案</IMP_ImportPlansTitle>
+  <IMP_ExportSummary>{0} 个方案，{1} 个植入体</IMP_ExportSummary>
+  <IMP_PlanGoalCount>{0} 个植入体</IMP_PlanGoalCount>
+  <IMP_CopyClipboard>复制到剪贴板</IMP_CopyClipboard>
+  <IMP_FromClipboard>从剪贴板</IMP_FromClipboard>
+  <IMP_Save>保存</IMP_Save>
+  <IMP_ImportAddNote>导入的方案会追加到现有方案旁，不替换任何内容。重名方案会自动添加编号。</IMP_ImportAddNote>
+  <IMP_LocGameData>Implanner 文件夹</IMP_LocGameData>
+  <IMP_LocDesktop>桌面</IMP_LocDesktop>
+  <IMP_LocUserHome>用户主文件夹</IMP_LocUserHome>
+  <IMP_LocCustom>自定义文件夹</IMP_LocCustom>
+  <IMP_EnterPath>文件夹：</IMP_EnterPath>
+  <IMP_BadFileName>请输入有效的文件名。</IMP_BadFileName>
+  <IMP_BadDirectory>请输入有效的文件夹。</IMP_BadDirectory>
+  <IMP_SavedTo>方案已保存到 {0}</IMP_SavedTo>
+  <IMP_SaveFailed>无法保存：{0}</IMP_SaveFailed>
+  <IMP_ReadFailed>无法读取文件：{0}</IMP_ReadFailed>
+  <IMP_ImportInvalid>不是有效的 Implanner 方案导出文件：{0}</IMP_ImportInvalid>
+  <IMP_DeleteFileConfirm>删除“{0}”？</IMP_DeleteFileConfirm>
+  <IMP_NoFiles>此处尚无导出的方案文件。</IMP_NoFiles>
+  <IMP_ShipFallback>逆重飞船</IMP_ShipFallback>
+  <IMP_SettingsShowToolbarButton>显示工具栏按钮</IMP_SettingsShowToolbarButton>
+</LanguageData>

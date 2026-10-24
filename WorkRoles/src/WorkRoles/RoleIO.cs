@@ -53,6 +53,7 @@ namespace WorkRoles
                     {
                         fileId = GroupFileId(group.id),
                         name = group.label,
+                        nameSourceDef = group.nameSourceDef,
                     });
                 }
             foreach (var role in store.roles)
@@ -73,6 +74,8 @@ namespace WorkRoles
                     fileId = RoleFileId(role.id),
                     label = role.label,
                     templateDef = role.templateDefName,
+                    generatedWorkTypeDefName = role.generatedWorkTypeDefName,
+                    customName = role.customName,
                     group = role.groupId == RoleGroup.DefaultId ? null
                         : store.GroupById(role.groupId)?.label,
                     groupId = role.groupId == RoleGroup.DefaultId ? null
@@ -424,7 +427,7 @@ namespace WorkRoles
                 var prior = roles.ToDictionary(role => role.Id);
                 foreach (var role in other.roles)
                 {
-                    if (!prior.TryGetValue(role.Id, out RoleState before))
+                    if (!prior.TryGetValue(role.Id, out RoleState? before))
                     {
                         UiVersion.AggregateChanged(ModelDomain.Catalog | ModelDomain.RoleRecommendation);
                         if (RoleStore.Current?.RoleById(role.Id)?.templateDefName == "WS_Basics")
@@ -453,15 +456,17 @@ namespace WorkRoles
         {
             private readonly int id;
             private readonly string label;
+            private readonly string? nameSourceDef;
 
             internal GroupState(RoleGroup group)
             {
                 id = group.id;
                 label = group.label;
+                nameSourceDef = group.nameSourceDef;
             }
 
             internal bool ContentEquals(GroupState other) =>
-                id == other.id && label == other.label;
+                id == other.id && label == other.label && nameSourceDef == other.nameSourceDef;
         }
 
         private sealed class RoleState
@@ -474,6 +479,8 @@ namespace WorkRoles
             private readonly bool hasCustomColor;
             private readonly Color color;
             private readonly string? templateDefName;
+            private readonly string? generatedWorkTypeDefName;
+            private readonly bool customName;
             private readonly bool autoAssign;
             private readonly bool blocker;
             private readonly RoleCategory category;
@@ -508,6 +515,8 @@ namespace WorkRoles
                 hasCustomColor = role.hasCustomColor;
                 color = role.color;
                 templateDefName = role.templateDefName;
+                generatedWorkTypeDefName = role.generatedWorkTypeDefName;
+                customName = role.customName;
                 autoAssign = role.autoAssign;
                 blocker = role.blocker;
                 category = role.category;
@@ -543,6 +552,8 @@ namespace WorkRoles
                 && hasCustomColor == other.hasCustomColor
                 && color.Equals(other.color)
                 && templateDefName == other.templateDefName
+                && generatedWorkTypeDefName == other.generatedWorkTypeDefName
+                && customName == other.customName
                 && autoAssign == other.autoAssign
                 && blocker == other.blocker
                 && category == other.category
@@ -574,6 +585,8 @@ namespace WorkRoles
             {
                 ModelDomain changed = ModelDomain.None;
                 if (label != other.label || iconPath != other.iconPath
+                    || customName != other.customName
+                    || generatedWorkTypeDefName != other.generatedWorkTypeDefName
                     || hasCustomColor != other.hasCustomColor || !color.Equals(other.color))
                     changed |= ModelDomain.RolePresentation;
                 if (autoAssign != other.autoAssign) changed |= ModelDomain.RolePresentation;
@@ -732,10 +745,13 @@ namespace WorkRoles
                         {
                             id = store.NextGroupId(),
                             label = decision.DisplayLabel!, // guarded by NullOrEmpty above
+                            nameSourceDef = fileGroup.nameSourceDef,
                         };
                         store.groups.Add(group);
                     }
                     if (group != null) runtimeGroups[fileGroup] = group;
+                    if (rolesOverwrite && group != null && group.id != RoleGroup.DefaultId)
+                        group.nameSourceDef = fileGroup.nameSourceDef;
                 }
                 if (rolesOverwrite)
                 {
@@ -806,6 +822,14 @@ namespace WorkRoles
                     {
                         updated++;
                     }
+                    target.generatedWorkTypeDefName = row.role.generatedWorkTypeDefName;
+                    // An authored import can match an existing template role by
+                    // label; retaining that role's template metadata must not
+                    // turn the imported name into a translated seed name.
+                    target.customName = row.role.customName
+                        || (!target.templateDefName.NullOrEmpty()
+                            && row.role.templateDef.NullOrEmpty()
+                            && row.role.generatedWorkTypeDefName.NullOrEmpty());
                     target.label = row.displayLabel!; // planner always yields a label for applied rows
                     target.hasCustomColor = hasColor;
                     if (hasColor) target.color = color;

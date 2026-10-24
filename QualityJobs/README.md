@@ -110,6 +110,7 @@ cached render paths, MP-safe commands, tests-first). The design spec is at
 
 ```powershell
 dotnet build -c Release src/QualityJobs.slnx --no-restore     # zero warnings required
+dotnet build -c Release src/QualityJobs/QualityJobs.csproj -p:RimWorldVersion=1.7
 dotnet test src/QualityJobs.Core.Tests --no-restore
 pwsh scripts/deploy.ps1                  # deploy to the game's Mods folder
 ```
@@ -118,6 +119,11 @@ Building never deploys. Automated verification uses independent managed runs
 through `Shared/tools/automation`; the deploy script updates the player installation
 and requires a game restart. The game assembly targets net472 against Krafs.Rimworld.Ref;
 Core is netstandard2.0 with no game references so its tests run anywhere.
+
+The default build produces the 1.6 assemblies. The second command produces the
+net10.0 1.7 assemblies against the installed game and Harmony 3. Build both
+versions before packaging. Override `InstalledGameRoot` and
+`InstalledHarmonyPath` when their locations differ from the shared defaults.
 
 The completed-building batch is in `tests/InGame/CompletedBuildings`. Build its
 `Probe.csproj` after the mod, then run `run.ps1 -Version 1.6 -Renderer Software` and

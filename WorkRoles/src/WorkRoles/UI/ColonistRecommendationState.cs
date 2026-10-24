@@ -276,7 +276,7 @@ namespace WorkRoles.UI
             {
                 Dialog_ChangesPreview.Line line = BuildPreviewEntry(
                     store, plan, externalSnapshot).lines[0];
-                store.pawnSets.TryGetValue(pawn, out PawnRoleSet set);
+                store.pawnSets.TryGetValue(pawn, out PawnRoleSet? set);
                 List<RoleAssignment>? existing = set?.assignments;
 
                 GameFont previousFont = Text.Font;
@@ -404,7 +404,7 @@ namespace WorkRoles.UI
 
         private RoleChipVerdict VerdictFor(Pawn pawn, int roleId) =>
             planSuitability.TryGetValue(
-                pawn, out Dictionary<int, SignalBucket> buckets)
+                pawn, out Dictionary<int, SignalBucket>? buckets)
             && buckets.TryGetValue(roleId, out SignalBucket bucket)
                 ? SkillSignalPresentation.VerdictBadge(bucket)
                 : default;
@@ -413,7 +413,7 @@ namespace WorkRoles.UI
             RoleStore store, PawnFixPlan plan,
             Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
-            store.pawnSets.TryGetValue(plan.Pawn, out PawnRoleSet set);
+            store.pawnSets.TryGetValue(plan.Pawn, out PawnRoleSet? set);
             List<RoleAssignment> existing = set?.assignments ?? new List<RoleAssignment>();
             var existingIds = new HashSet<int>(existing.Select(a => a.roleId));
             var targetIds = new HashSet<int>(plan.Target.Select(a => a.roleId));
@@ -521,7 +521,7 @@ namespace WorkRoles.UI
                 RoleStore store = planOwner!;
                 Pawn pawn = planPawns![i];
                 RecommendationPlan recommendations = this.recommendations!;
-                store.pawnSets.TryGetValue(pawn, out PawnRoleSet set);
+                store.pawnSets.TryGetValue(pawn, out PawnRoleSet? set);
                 List<RoleAssignment> existing =
                     set?.assignments ?? new List<RoleAssignment>();
                 PawnFixTarget fixTarget = planSnapshot!.FixTargets[i];

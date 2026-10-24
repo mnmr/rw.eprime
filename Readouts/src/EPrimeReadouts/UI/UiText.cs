@@ -26,7 +26,7 @@ namespace EPrimeReadouts.UI
                 text.Clear();
                 languageVersion = UiRevision.LanguageCurrent;
             }
-            if (!text.TryGetValue(key, out string value))
+            if (!text.TryGetValue(key, out string? value))
             {
                 value = key.Translate().ToString();
                 text.Add(key, value);

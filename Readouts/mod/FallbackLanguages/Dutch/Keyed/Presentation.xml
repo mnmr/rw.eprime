@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <EPR.SeedEggs>Eieren</EPR.SeedEggs>
+  <EPR.SeedFertilizedeggs>Bevruchte eieren</EPR.SeedFertilizedeggs>
+  <EPR.SeedHardDrugs>Harddrugs</EPR.SeedHardDrugs>
+  <EPR.SeedLeathers>Leer</EPR.SeedLeathers>
+  <EPR.SeedMeals>Maaltijden</EPR.SeedMeals>
+  <EPR.SeedMeats>Vlees</EPR.SeedMeats>
+  <EPR.SeedMechs>Mechs</EPR.SeedMechs>
+  <EPR.SeedMortarshells>Mortiergranaten</EPR.SeedMortarshells>
+  <EPR.SeedPlantfood>Plantaardig voedsel</EPR.SeedPlantfood>
+  <EPR.SeedSera>Serums</EPR.SeedSera>
+  <EPR.SeedSocialDrugs>Sociale drugs</EPR.SeedSocialDrugs>
+  <EPR.SeedStoneblocks>Steenblokken</EPR.SeedStoneblocks>
+  <EPR.SeedStonechunks>Steenbrokken</EPR.SeedStonechunks>
+  <EPR.SeedWools>Wol</EPR.SeedWools>
+  <EPR.SeedFood>Voedsel</EPR.SeedFood>
+  <EPR.SeedRaw>Rauw</EPR.SeedRaw>
+  <EPR.SeedMedicine>Medicijnen</EPR.SeedMedicine>
+  <EPR.SeedDrugs>Drugs</EPR.SeedDrugs>
+  <EPR.SeedTextiles>Textiel</EPR.SeedTextiles>
+  <EPR.SeedMaterials>Materialen</EPR.SeedMaterials>
+  <EPR.SeedWealth>Rijkdom</EPR.SeedWealth>
+</LanguageData>

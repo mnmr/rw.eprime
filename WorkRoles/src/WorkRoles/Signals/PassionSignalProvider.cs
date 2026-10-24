@@ -28,7 +28,7 @@ namespace WorkRoles.Signals
                     : skill.passion == Passion.Major ? "Major" : null;
                 if (vanilla != null)
                 {
-                    SignalDefinition definition = catalog.Find(SignalSourceKind.Passion, vanilla).FirstOrDefault();
+                    SignalDefinition? definition = catalog.Find(SignalSourceKind.Passion, vanilla).FirstOrDefault();
                     if (definition != null)
                         result.Add(SignalFactory.Instantiate(definition, skill.def.defName));
                     continue;
@@ -39,7 +39,7 @@ namespace WorkRoles.Signals
                 string? packageId = SignalUiFactory.PackageId(fact.Def);
                 if (PassionSignalDefinitions.IsExcludedTransientIdentity(packageId!, fact.Def.defName))
                     continue;
-                SignalDefinition known = catalog.Find(SignalSourceKind.Passion, fact.Def.defName)
+                SignalDefinition? known = catalog.Find(SignalSourceKind.Passion, fact.Def.defName)
                     .FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Equals(x.Source.PackageId, packageId));
                 if (known != null)
                 {
@@ -76,7 +76,7 @@ namespace WorkRoles.Signals
                     new[] { new SignalCondition("author:is-bad", "The source mod marks this passion as bad") }));
 
             string packageId = SignalUiFactory.PackageId(fact.Def) ?? "unknown";
-            string displayName = fact.Def.modContentPack?.Name ?? "Unknown mod";
+            string displayName = fact.Def.modContentPack?.Name ?? "WR_SignalUnknownMod".Translate().ToString();
             return new PawnSignal(
                 SignalType.Passive,
                 new SignalSource(SignalSourceKind.Passion, fact.Def.defName, packageId),

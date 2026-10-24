@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <QJ_FinishBillLabel>Terminer {0} ({1})</QJ_FinishBillLabel>
+  <QJ_AtStockCap>limite de stock d'objets inachevés atteinte</QJ_AtStockCap>
+  <QJ_UnfinishedWorkWaiting>l'objet inachevé de cet ordre attend la reprise du travail</QJ_UnfinishedWorkWaiting>
+  <QJ_QualityPanelTitle>Quality Jobs</QJ_QualityPanelTitle>
+  <QJ_ManageBill>Gérer cet ordre</QJ_ManageBill>
+  <QJ_FinisherSkill>Compétence requise pour terminer : {0}</QJ_FinisherSkill>
+  <QJ_FinisherSkillTip>Seuls les personnages ayant au moins ce niveau de compétence peuvent terminer le travail. Tout le monde peut effectuer les étapes précédentes.</QJ_FinisherSkillTip>
+  <QJ_AutoBest>Ajuster automatiquement la compétence de finition</QJ_AutoBest>
+  <QJ_AutoBestTip>Coché : seul le meilleur personnage disponible de la colonie peut terminer ce travail ; la compétence requise suit automatiquement son niveau. Les colons absents, à terre ou occupés restent considérés comme disponibles pour cette comparaison.\n\nDécoché : tout personnage satisfaisant à la compétence de finition choisie peut terminer le travail.</QJ_AutoBestTip>
+  <QJ_AutoBestCurrent>Actuellement : {0}</QJ_AutoBestCurrent>
+  <QJ_AutoBestNone>Aucun colon admissible</QJ_AutoBestNone>
+  <QJ_MigrationTitle>Ordres de qualité existants</QJ_MigrationTitle>
+  <QJ_MigrationBody>Quality Jobs a trouvé {0} ordre(s) de qualité existant(s). Ils restent non gérés pour conserver leur fonctionnement actuel. Le partage du travail inachevé reste disponible dans les deux cas.</QJ_MigrationBody>
+  <QJ_MigrationEnableExisting>Activer Quality Jobs pour les ordres d'objets de qualité existants ?</QJ_MigrationEnableExisting>
+  <QJ_MigrationEnableExistingTip>Coché : les ordres existants utilisent Quality Jobs avec l'ajustement automatique de la compétence de finition. Le meilleur colon admissible de la colonie apporte la touche finale ; les colons temporairement indisponibles comptent toujours. L'inspiration et le rôle de spécialiste de la production ne sont pas exigés, et les résultats de faible qualité ne sont pas retentés.\n\nDécoché : les ordres existants conservent le fonctionnement du jeu de base pour leur achèvement. Le partage du travail inachevé reste inchangé.</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationContinue>Continuer</QJ_MigrationContinue>
+  <QJ_RequireInspired>Exiger la créativité inspirée</QJ_RequireInspired>
+  <QJ_RequireSpecialist>Exiger un spécialiste de la production</QJ_RequireSpecialist>
+  <QJ_StockCapLabel>Limite de stock : {0}</QJ_StockCapLabel>
+  <QJ_StockCapTooltip>Nombre maximal d'objets inachevés de ce produit. Cette limite est commune au produit : tous les ordres qui le fabriquent y contribuent.\n\n0 signifie illimité.</QJ_StockCapTooltip>
+  <QJ_StatusHeader>État</QJ_StatusHeader>
+  <QJ_StatusQueue>En attente : {0} · En finition : {1}</QJ_StatusQueue>
+  <QJ_StatusQueueShared>Inachevés : {0} · En attente : {1} · En finition : {2}</QJ_StatusQueueShared>
+  <QJ_StatusQueueTip>Inachevés : objets partagés que tout artisan autorisé peut reprendre. En attente : objets mis en pause nécessitant un personnage qualifié pour la finition. En finition : objets attribués à un tel personnage.</QJ_StatusQueueTip>
+  <QJ_StatusFinishers>Personnages admissibles à la finition : {0}</QJ_StatusFinishers>
+  <QJ_StatusFinishersNone>Personnages admissibles à la finition : aucun</QJ_StatusFinishersNone>
+  <QJ_StatusFinishersTip>Colons de cette carte actuellement qualifiés pour apporter la touche finale, meilleur candidat en premier. Le type de travail requis doit être activé et les conditions de finition ci-dessus doivent être remplies.\n\nLes colons à terre, en crise mentale ou absents de cette carte ne comptent pas.</QJ_StatusFinishersTip>
+  <QJ_StatusStalled>Aucun personnage admissible pour terminer les objets en attente</QJ_StatusStalled>
+  <QJ_StatusStalledTip>Des objets inachevés attendent, mais aucun colon n'est actuellement qualifié pour les terminer ; aucune tâche de finition n'est donc créée.\n\nVérifiez le niveau de compétence, les exigences d'inspiration et de spécialisation, et assurez-vous que le personnage prévu a ce type de travail activé et se trouve sur cette carte. Pendant ce blocage, la limite de stock peut aussi empêcher de commencer de nouveaux objets.</QJ_StatusStalledTip>
+  <QJ_StatusStalledConstruction>Aucun personnage admissible à la finition — construction bloquée</QJ_StatusStalledConstruction>
+  <QJ_StatusStalledConstructionTip>Ce bâtiment attend sa touche finale, mais aucun colon n'est actuellement qualifié ; il ne sera donc pas terminé.\n\nVérifiez le niveau de compétence, les exigences d'inspiration et de spécialisation, et assurez-vous que le constructeur prévu a la Construction activée et se trouve sur cette carte.</QJ_StatusStalledConstructionTip>
+  <QJ_OddsHeader>Probabilités de qualité</QJ_OddsHeader>
+  <QJ_NormalOrWorse>Normale ou inférieure</QJ_NormalOrWorse>
+  <QJ_OddsColConfig>Configuration</QJ_OddsColConfig>
+  <QJ_OddsColBest>Meilleur</QJ_OddsColBest>
+  <QJ_SettingsBillDefaults>Options par défaut des ordres</QJ_SettingsBillDefaults>
+  <QJ_SettingsConstructionDefaults>Options par défaut des constructions</QJ_SettingsConstructionDefaults>
+  <QJ_SettingsGlobalOptions>Options générales</QJ_SettingsGlobalOptions>
+  <QJ_SettingsManageNewBills>Gérer les nouveaux ordres de qualité</QJ_SettingsManageNewBills>
+  <QJ_SettingsManageNewBillsTip>Coché : Quality Jobs gère par défaut les ordres produisant des objets de qualité avec les options de cette colonne. Les réglages de chaque ordre permettent de remplacer ces options.\n\nDécoché : les ordres suivent le jeu de base, sauf si Quality Jobs a été activé dans leur fenêtre de réglages.</QJ_SettingsManageNewBillsTip>
+  <QJ_SettingsManageNewConstruction>Gérer les nouvelles constructions</QJ_SettingsManageNewConstruction>
+  <QJ_SettingsManageNewConstructionTip>Coché : les nouveaux bâtiments ayant une qualité sont automatiquement gérés avec les options de cette colonne. Le bouton Travail de qualité permet de configurer chaque bâtiment ou d'en retirer les réglages.\n\nDécoché : les nouveaux bâtiments suivent le jeu de base, sauf activation individuelle.</QJ_SettingsManageNewConstructionTip>
+  <QJ_RequireInspiredTip>Coché : seul un personnage avec la créativité inspirée peut apporter la touche finale ; les autres peuvent effectuer le travail précédent. L'inspiration est consommée à l'achèvement, comme dans le jeu de base.\n\nDécoché : la créativité inspirée n'est pas requise.</QJ_RequireInspiredTip>
+  <QJ_RequireSpecialistTip>Coché : seul un personnage dont le rôle d'Ideology donne un bonus de qualité de production peut apporter la touche finale ; les autres peuvent effectuer le travail précédent.\n\nDécoché : le rôle de spécialiste de la production n'est pas requis.</QJ_RequireSpecialistTip>
+  <QJ_SettingsFinisherSkillTip>Seuls les personnages ayant au moins ce niveau de compétence peuvent apporter la touche finale ; les autres peuvent effectuer le travail précédent.\n\nLorsque l'ajustement automatique de la compétence de finition est coché, cette valeur est conservée comme valeur manuelle par défaut, mais n'est pas utilisée.</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsShareWork>Partager le travail inachevé</QJ_SettingsShareWork>
+  <QJ_SettingsShareWorkTip>Coché : les objets inachevés sont déverrouillés pour que tout personnage autorisé puisse reprendre le travail commencé par un autre.\n\nDécoché : comportement du jeu de base ; un objet inachevé reste lié au personnage qui l'a commencé.</QJ_SettingsShareWorkTip>
+  <QJ_SettingsHighPriorityFinish>Donner une priorité élevée aux tâches de finition</QJ_SettingsHighPriorityFinish>
+  <QJ_SettingsHighPriorityFinishTip>Coché : un colon choisi pour terminer un objet prend cette tâche à sa prochaine recherche de travail, avant tout autre travail sauf la lutte contre les incendies, les soins médicaux, le sauvetage et le repos au lit. Sa tâche actuelle n'est pas interrompue.\n\nDécoché : la finition passe en premier dans son type de travail, mais les types de travail que le colon classe plus haut restent prioritaires.</QJ_SettingsHighPriorityFinishTip>
+  <QJ_SettingsDefaultCap>Limite de stock inachevé par défaut : {0}</QJ_SettingsDefaultCap>
+  <QJ_SettingsDefaultCapTip>Définit le nombre maximal par défaut d'objets inachevés par produit. Tous les ordres produisant le même objet partagent cette limite.\n\nLes ordres cessent de commencer de nouveaux objets lorsque la limite est atteinte ; les objets en cours peuvent toujours être terminés. 0 signifie illimité.</QJ_SettingsDefaultCapTip>
+  <QJ_SettingsUnlimitedHint>0 = illimité</QJ_SettingsUnlimitedHint>
+  <QJ_SettingsShowToolbarButton>Afficher le bouton de la barre d'outils</QJ_SettingsShowToolbarButton>
+  <QJ_SettingsShowToolbarButtonTip>Ajoute un bouton près des commandes d'affichage en bas à droite de l'écran. Il ouvre les réglages de Quality Jobs.</QJ_SettingsShowToolbarButtonTip>
+  <QJ_ToolbarButtonTip>Ouvrir les réglages de Quality Jobs.</QJ_ToolbarButtonTip>
+  <QJ_SettingsEnabledNote>Ce réglage s'applique à la sauvegarde chargée. La désactivation rend tous les objets au fonctionnement du jeu de base et supprime la configuration Quality Jobs de cette sauvegarde.\n\nSi le mod reste installé, il se réactive avec les réglages par défaut au prochain chargement de la sauvegarde. La désactivation sert à préparer le retrait du mod.</QJ_SettingsEnabledNote>
+  <QJ_DisableButton>Désactiver Quality Jobs</QJ_DisableButton>
+  <QJ_EnableButton>Activer Quality Jobs</QJ_EnableButton>
+  <QJ_DisableWarning>La désactivation rend tous les objets mis de côté à la gestion du jeu de base et supprime définitivement la configuration Quality Jobs de cette sauvegarde (conditions des ordres, limites de stock). Les sauvegardes ultérieures ne contiendront aucune trace du mod ; c'est donc la méthode propre pour préparer sa désinstallation.\n\nTerminez d'abord les bâtiments de remplacement pour conserver leurs réglages de lits et leur peinture. Une fois le bâtiment d'origine déconstruit, ces réglages ont besoin de Quality Jobs jusqu'à l'achèvement du remplacement.\n\nRemarque : si le mod reste installé, il se réactivera avec les réglages par défaut au prochain chargement de cette sauvegarde.\n\nDésactiver Quality Jobs ?</QJ_DisableWarning>
+  <QJ_NoGameLoaded>Chargez une sauvegarde pour modifier les réglages propres à la partie.</QJ_NoGameLoaded>
+  <QJ_GizmoQualityJobLabel>Travail de qualité</QJ_GizmoQualityJobLabel>
+  <QJ_GizmoRebuildDesc>Choisissez une qualité cible et des conditions pour les constructeurs de ce bâtiment terminé. Lancez la reconstruction pour le déconstruire et le remplacer jusqu'à atteindre la cible.</QJ_GizmoRebuildDesc>
+  <QJ_StartRebuilding>Lancer la reconstruction</QJ_StartRebuilding>
+  <QJ_RebuildNote>Choisissez une qualité cible pour commencer. Les bâtiments de qualité inférieure seront déconstruits puis reconstruits, ce qui consomme des matériaux et les rend indisponibles pendant les travaux. Les bâtiments atteignant déjà la cible sont conservés.</QJ_RebuildNote>
+  <QJ_NoRebuildNeeded>Aucun bâtiment admissible ne nécessite de reconstruction. Les bâtiments doivent être sous la qualité cible, disponibles à la construction et sans autre ordre de déconstruction ou de réinstallation.</QJ_NoRebuildNeeded>
+  <QJ_GizmoManageDesc>Gérer cette construction avec Quality Jobs : suspendre l'achèvement jusqu'à ce qu'un constructeur qualifié soit disponible et, éventuellement, reconstruire jusqu'à obtenir la qualité cible.\n\nLe clic gauche active ou désactive la gestion. L'activation applique vos réglages de construction par défaut. Le clic droit ouvre la configuration.</QJ_GizmoManageDesc>
+  <QJ_MinQualityLabel>Qualité cible</QJ_MinQualityLabel>
+  <QJ_NoRetries>Aucun nouvel essai</QJ_NoRetries>
+  <QJ_AnyQuality>Toutes</QJ_AnyQuality>
+  <QJ_RetriedUntilTip>La construction est déconstruite puis reconstruite jusqu'à obtenir la qualité choisie ou mieux, sauf si Aucun nouvel essai est sélectionné.\n\nUne partie des matériaux est perdue à chaque nouvel essai.</QJ_RetriedUntilTip>
+  <QJ_BillTargetQualityTip>Si un objet terminé obtient une qualité inférieure à celle-ci, la quantité de l'ordre augmente d'une unité pour produire un remplacement. L'objet lui-même est conservé.\n\nCela s'applique aux ordres demandant une quantité fixe ; les autres modes de répétition déterminent déjà eux-mêmes quand s'arrêter.</QJ_BillTargetQualityTip>
+  <QJ_Clear>Effacer</QJ_Clear>
+  <QJ_ConstructionPanelTitle>Travail de qualité</QJ_ConstructionPanelTitle>
+  <QJ_FinishGiverLabel>terminer un travail de qualité</QJ_FinishGiverLabel>
+  <QJ_FinishGiverVerb>terminer</QJ_FinishGiverVerb>
+  <QJ_FinishGiverGerund>finition d'un travail de qualité</QJ_FinishGiverGerund>
+  <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
+  <QJ_WelcomeBody>Quality Jobs permet à tout colon de travailler sur un objet ou un bâtiment inachevé, mais seul un colon satisfaisant à vos conditions peut le terminer, car sa compétence seule détermine la qualité. Cela fonctionne pour les ordres de fabrication et la construction.</QJ_WelcomeBody>
+  <QJ_WelcomeFind>Ouvrez les réglages de Quality Jobs avec ce bouton près des commandes d'affichage en bas à droite de l'écran. La fenêtre d'ordre d'un objet de qualité comporte une section Quality Jobs ; sélectionner le plan ou la structure inachevée d'un bâtiment de qualité fait apparaître un bouton Travail de qualité.</QJ_WelcomeFind>
+  <QJ_WelcomeTakeMeThere>Y accéder maintenant</QJ_WelcomeTakeMeThere>
+</LanguageData>

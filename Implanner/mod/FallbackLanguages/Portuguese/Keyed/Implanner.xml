@@ -1,0 +1,215 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <IMP_ToolbarButtonTip>Abrir Implanner</IMP_ToolbarButtonTip>
+  <IMP_TabOverview>Visão geral</IMP_TabOverview>
+  <IMP_TabPlans>Planos</IMP_TabPlans>
+  <IMP_TabAutomation>Automatização</IMP_TabAutomation>
+  <IMP_TabOptions>Opções</IMP_TabOptions>
+  <IMP_TabHelp>Ajuda</IMP_TabHelp>
+  <IMP_ColColonist>Colono</IMP_ColColonist>
+  <IMP_ColPlan>Plano</IMP_ColPlan>
+  <IMP_ColProgress>Progresso</IMP_ColProgress>
+  <IMP_ColState>Estado</IMP_ColState>
+  <IMP_ColShooting>T</IMP_ColShooting>
+  <IMP_ColMelee>C</IMP_ColMelee>
+  <IMP_ColShootingTip>Competência de tiro</IMP_ColShootingTip>
+  <IMP_ColMeleeTip>Competência de combate corpo a corpo</IMP_ColMeleeTip>
+  <IMP_ColPriority>Prioridade</IMP_ColPriority>
+  <IMP_Priority0>Primeiro</IMP_Priority0>
+  <IMP_Priority1>Alta</IMP_Priority1>
+  <IMP_Priority2>Normal</IMP_Priority2>
+  <IMP_Priority3>Baixa</IMP_Priority3>
+  <IMP_Priority4>Último</IMP_Priority4>
+  <IMP_GroupByNone>Sem agrupamento</IMP_GroupByNone>
+  <IMP_GroupByLocation>Por localização</IMP_GroupByLocation>
+  <IMP_GroupByFaction>Por fação</IMP_GroupByFaction>
+  <IMP_GroupByGender>Por género</IMP_GroupByGender>
+  <IMP_GroupByXenotype>Por xenótipo</IMP_GroupByXenotype>
+  <IMP_GroupByIdeo>Por ideoligião</IMP_GroupByIdeo>
+  <IMP_NoPlan>Nenhum</IMP_NoPlan>
+  <IMP_ScopeAll>Em todo o lado</IMP_ScopeAll>
+  <IMP_StripColony>Colónia: {0}</IMP_StripColony>
+  <IMP_AggregateColonists>Colonos: {0} / {1}</IMP_AggregateColonists>
+  <IMP_StripAutomationOn>Automatização ativada</IMP_StripAutomationOn>
+  <IMP_StripAutomationOff>Automatização desativada</IMP_StripAutomationOff>
+  <IMP_StripProduction>Produção: {0}%</IMP_StripProduction>
+  <IMP_StripStock>{0} em armazém, {1} em espera</IMP_StripStock>
+  <IMP_StripMaking>A fabricar {0}</IMP_StripMaking>
+  <IMP_StripMakingFor>A fabricar materiais para {0}</IMP_StripMakingFor>
+  <IMP_StripWaiting>À espera de {0}</IMP_StripWaiting>
+  <IMP_StripNothingToCraft>Nada para fabricar</IMP_StripNothingToCraft>
+  <IMP_StripWaitingBench>À espera de uma bancada</IMP_StripWaitingBench>
+  <IMP_StripAwaitingProduction>À espera de produção</IMP_StripAwaitingProduction>
+  <IMP_StripSurgery>Cirurgia: {0}%</IMP_StripSurgery>
+  <IMP_StripInstalled>{0} / {1} implantes instalados</IMP_StripInstalled>
+  <IMP_StripBatch>A instalar um conjunto de implantes em {0}</IMP_StripBatch>
+  <IMP_StripBatchStars>A instalar um conjunto de implantes em {0} ({1})</IMP_StripBatchStars>
+  <IMP_TipProduction>Produção</IMP_TipProduction>
+  <IMP_TipSurgery>Cirurgia</IMP_TipSurgery>
+  <IMP_TipColTier>Nível</IMP_TipColTier>
+  <IMP_TipColItem>Objeto</IMP_TipColItem>
+  <IMP_TipColImplant>Implante</IMP_TipColImplant>
+  <IMP_TipColNeeded>Necessários</IMP_TipColNeeded>
+  <IMP_TipColFree>Livres</IMP_TipColFree>
+  <IMP_TipColReserved>Reservados</IMP_TipColReserved>
+  <IMP_TipColHeldBack>Postos de parte</IMP_TipColHeldBack>
+  <IMP_TipColQueued>Em espera</IMP_TipColQueued>
+  <IMP_TipColCrafting>Em fabrico</IMP_TipColCrafting>
+  <IMP_TipColStatus>Estado</IMP_TipColStatus>
+  <IMP_TipCovered>Coberto</IMP_TipCovered>
+  <IMP_TipMaking>Em fabrico</IMP_TipMaking>
+  <IMP_TipMakingMaterials>A fabricar materiais</IMP_TipMakingMaterials>
+  <IMP_TipNoRecipe>Sem receita</IMP_TipNoRecipe>
+  <IMP_TipBenchesInUse>Bancadas com ordens de Implanner: {0}</IMP_TipBenchesInUse>
+  <IMP_TipColPlanned>Planeados</IMP_TipColPlanned>
+  <IMP_TipColInstalled>Instalados</IMP_TipColInstalled>
+  <IMP_TipColMissing>Em falta</IMP_TipColMissing>
+  <IMP_TipColScheduled>Agendados</IMP_TipColScheduled>
+  <IMP_TipColonistStates>Colonos: {0} à espera, {1} em preparação, {2} em cirurgia, {3} concluídos, {4} ausentes</IMP_TipColonistStates>
+  <IMP_NextScheduled>Cirurgia agendada para {0}</IMP_NextScheduled>
+  <IMP_ColonistDetails>Detalhes do colono</IMP_ColonistDetails>
+  <IMP_DetailCollecting>A reunir {0}</IMP_DetailCollecting>
+  <IMP_NoSelection>Selecione um colono para ver os implantes em falta.</IMP_NoSelection>
+  <IMP_WelcomeTitle>EPrime's Implanner</IMP_WelcomeTitle>
+  <IMP_WelcomeBody>Implanner planeia os implantes dos colonos e pode automatizar o trabalho necessário para os produzir e instalar.</IMP_WelcomeBody>
+  <IMP_WelcomeFind>Abra Implanner com este botão na barra de ferramentas no canto inferior direito do ecrã, junto dos controlos de visualização.</IMP_WelcomeFind>
+  <IMP_WelcomeTakeMeThere>Abrir agora</IMP_WelcomeTakeMeThere>
+  <IMP_StateWaiting>À espera</IMP_StateWaiting>
+  <IMP_StatePreparing>Em preparação</IMP_StatePreparing>
+  <IMP_StateOperating>Em cirurgia</IMP_StateOperating>
+  <IMP_StateDone>Concluído</IMP_StateDone>
+  <IMP_StateAway>Ausente</IMP_StateAway>
+  <IMP_GoalComplete>Concluído</IMP_GoalComplete>
+  <IMP_GoalMissing>Em falta</IMP_GoalMissing>
+  <IMP_GoalPartial>{0} / {1}</IMP_GoalPartial>
+  <IMP_GoalReserved>Reservado</IMP_GoalReserved>
+  <IMP_GoalReady>Pronto</IMP_GoalReady>
+  <IMP_GoalScheduled>Cirurgia agendada</IMP_GoalScheduled>
+  <IMP_GoalRecovering>Em recuperação</IMP_GoalRecovering>
+  <IMP_GoalBlockedFloor>Bloqueado pelo nível médico mínimo ({0})</IMP_GoalBlockedFloor>
+  <IMP_GoalBlockedLoss>Destruiria {0}</IMP_GoalBlockedLoss>
+  <IMP_PlansHeader>Planos</IMP_PlansHeader>
+  <IMP_AddPlan>Novo plano</IMP_AddPlan>
+  <IMP_PlanNameTitle>Nome do plano</IMP_PlanNameTitle>
+  <IMP_ExtendsPlan>Prolonga</IMP_ExtendsPlan>
+  <IMP_ExtendsNothing>Nenhum</IMP_ExtendsNothing>
+  <IMP_PlanExtends>prolonga {0}</IMP_PlanExtends>
+  <IMP_Inherited>herdado</IMP_Inherited>
+  <IMP_Overrides>substitui {0}</IMP_Overrides>
+  <IMP_NoPlans>Crie um plano para definir um conjunto de implantes pretendidos.</IMP_NoPlans>
+  <IMP_PlanCounts>{0} implantes</IMP_PlanCounts>
+  <IMP_PlanColonists>{0} colonos</IMP_PlanColonists>
+  <IMP_DeletePlan>Eliminar plano</IMP_DeletePlan>
+  <IMP_PlanMinQuality>Qualidade mínima: {0}</IMP_PlanMinQuality>
+  <IMP_PlanMinQualityTip>Os implantes deste plano são instalados e fabricados com esta qualidade ou superior. Os implantes sem qualidade não são afetados.\n\nUm implante nunca substitui uma parte saudável do corpo por outra pior. Um biónico de baixa qualidade espera por um objeto melhor, exceto se a parte do corpo estiver em falta ou danificada.</IMP_PlanMinQualityTip>
+  <IMP_PlanMinQualityNoQualityJobs>Quality Jobs não está carregado, pelo que qualquer artesão pode terminar um implante. Se ficar abaixo desta qualidade, será fabricado novamente.</IMP_PlanMinQualityNoQualityJobs>
+  <IMP_DeletePlanConfirm>Eliminar o plano «{0}»? Os colonos que o usam perderão a atribuição, e os planos que o prolongam deixarão de herdar dele.</IMP_DeletePlanConfirm>
+  <IMP_ImplantGroupOther>Outros</IMP_ImplantGroupOther>
+  <IMP_ReqTitle>Requisitos</IMP_ReqTitle>
+  <IMP_ReqBody>{0} só pode ser instalado numa parte artificial do tipo {1}. Escolha a substituição a adicionar ao plano juntamente com este implante:</IMP_ReqBody>
+  <IMP_ReqConfirm>Adicionar ao plano</IMP_ReqConfirm>
+  <IMP_TipPartEfficiency>Eficiência da parte: {0}</IMP_TipPartEfficiency>
+  <IMP_TipCapacity>Parte do corpo: {0}</IMP_TipCapacity>
+  <IMP_TipPartEfficiencyRange>Eficiência da parte: de {0} a {1}, consoante a qualidade</IMP_TipPartEfficiencyRange>
+  <IMP_TipMaxHp>Vida máxima da parte do corpo: {0}</IMP_TipMaxHp>
+  <IMP_RegionLimbs>Membros</IMP_RegionLimbs>
+  <IMP_RegionTorso>Tronco</IMP_RegionTorso>
+  <IMP_RegionHead>Cabeça</IMP_RegionHead>
+  <IMP_NoMatchingImplants>Nenhum implante corresponde à pesquisa.</IMP_NoMatchingImplants>
+  <IMP_RankTiersTitle>Níveis de implantes</IMP_RankTiersTitle>
+  <IMP_Help>Ajuda</IMP_Help>
+  <IMP_RankTiersHelp>Os implantes podem ser agrupados em 5 níveis. A posição afeta a ordem de produção e as cirurgias (consoante as opções de automatização).\n\nArraste os objetos para os reordenar.</IMP_RankTiersHelp>
+  <IMP_TierHighest>Prioridade máxima</IMP_TierHighest>
+  <IMP_TierHigh>Prioridade alta</IMP_TierHigh>
+  <IMP_TierMedium>Prioridade média</IMP_TierMedium>
+  <IMP_TierNormal>Prioridade normal</IMP_TierNormal>
+  <IMP_TierLow>Prioridade baixa</IMP_TierLow>
+  <IMP_DragItemsHere>Arraste implantes para aqui</IMP_DragItemsHere>
+  <IMP_OptEnable>Ativar automatização</IMP_OptEnable>
+  <IMP_OptSurgery>Cirurgia</IMP_OptSurgery>
+  <IMP_OptIteration>Estratégia de progressão</IMP_OptIteration>
+  <IMP_OptSurgeryConcurrency>Cirurgias simultâneas</IMP_OptSurgeryConcurrency>
+  <IMP_OptCountHospitalized>Contar personagens hospitalizadas</IMP_OptCountHospitalized>
+  <IMP_OptUpgradeByPriority>Dar os melhores implantes aos colonos mais prioritários</IMP_OptUpgradeByPriority>
+  <IMP_IterTier>Conjuntos por nível</IMP_IterTier>
+  <IMP_IterColonist>Conjuntos completos</IMP_IterColonist>
+  <IMP_IterAsap>Logo que possível</IMP_IterAsap>
+  <IMP_OptManualFloor>Competência médica exigida nas ordens de cirurgia</IMP_OptManualFloor>
+  <IMP_OptAutoFloor>Atribuir as cirurgias ao melhor médico disponível</IMP_OptAutoFloor>
+  <IMP_OptImplantReserves>Implantes postos de parte</IMP_OptImplantReserves>
+  <IMP_AddImplantReserve>Adicionar implante</IMP_AddImplantReserve>
+  <IMP_OptProduction>Produção</IMP_OptProduction>
+  <IMP_OptAutoProduction>Adicionar automaticamente ordens de fabrico para implantes em falta</IMP_OptAutoProduction>
+  <IMP_OptConcurrency>Bancadas que podem receber ordens</IMP_OptConcurrency>
+  <IMP_OptIdleBenches>Criar ordens apenas em bancadas desocupadas</IMP_OptIdleBenches>
+  <IMP_OptDesignatedBenches>Usar apenas bancadas Implanner</IMP_OptDesignatedBenches>
+  <IMP_OptProductionSkill>Competência de fabrico exigida nas ordens de produção</IMP_OptProductionSkill>
+  <IMP_OptIntermediaries>Permitir ordens de produção de intermediários em falta</IMP_OptIntermediaries>
+  <IMP_OptReserves>Manter em armazém (após os custos das ordens)</IMP_OptReserves>
+  <IMP_OptModCompat>Compatibilidade com mods</IMP_OptModCompat>
+  <IMP_OptSkillSliderMaximum>Valor máximo dos seletores de competência</IMP_OptSkillSliderMaximum>
+  <IMP_OptSkillSliderMaximumTip>Define o extremo superior dos seletores de Medicina e Fabrico. Os requisitos existentes e a seleção automática do médico não são afetados.</IMP_OptSkillSliderMaximumTip>
+  <IMP_OptAllowMultipleBladders>Permitir vários implantes de bexiga</IMP_OptAllowMultipleBladders>
+  <IMP_OptAllowMultipleHygieneEnhancers>Permitir vários melhoradores de higiene</IMP_OptAllowMultipleHygieneEnhancers>
+  <IMP_OptCatalog>Catálogo</IMP_OptCatalog>
+  <IMP_OptShowPurchaseOnly>Mostrar implantes apenas disponíveis por compra</IMP_OptShowPurchaseOnly>
+  <IMP_CleanupTitle>Desativar a automatização?</IMP_CleanupTitle>
+  <IMP_CleanupBody>Implanner criou estas ordens. OK desativa a automatização e remove as ordens assinaladas. As desmarcadas permanecem e voltam a ser geridas quando a automatização for reativada. Os implantes reservados são libertados em ambos os casos. Cancelar mantém a automatização ativa.</IMP_CleanupBody>
+  <IMP_AutomationOffTitle>A automatização está desativada</IMP_AutomationOffTitle>
+  <IMP_AutomationOffBody>{0} distribui esta colónia por vários pisos. Implanner não consegue transportar um implante ou uma operação entre pisos, pelo que deixa de reservar objetos e agendar cirurgias, evitando executar apenas metade de cada plano.\n\nTudo o resto continua a funcionar. Continue a criar planos, atribuí-los e ordenar os implantes. Adicione as operações manualmente e Implanner acompanhará o que está instalado e o que ainda falta.</IMP_AutomationOffBody>
+  <IMP_OptEnableTip>Controlo principal de tudo o que Implanner faz sozinho: reservar implantes, agendar operações e criar ordens de fabrico. Desativado, Implanner continua a acompanhar os planos e o progresso, mas deixa de agir sobre eles. Ao desativar, também pergunta quais das ordens existentes pretende manter.</IMP_OptEnableTip>
+  <IMP_OptIterationTip>A ordem pela qual a automatização trata os implantes em falta. A prioridade dos colonos no separador Visão geral decide sempre quem vai primeiro.\n\nConjuntos por nível: todos recebem primeiro os implantes do nível mais elevado, seguindo-se os níveis inferiores. Um colono entra em cirurgia quando todo o seu nível estiver reservado.\n\nConjuntos completos: terminar o plano inteiro de um colono antes de começar o seguinte. A cirurgia espera até todo o plano estar reservado.\n\nLogo que possível: cada implante em armazém é agendado imediatamente para o colono mais prioritário que ainda não o tem. Com prioridade igual, as pernas vão para o colono mais lento, e os braços primeiro para os combatentes corpo a corpo, depois para o melhor artesão ou investigador.</IMP_OptIterationTip>
+  <IMP_OptAutoFloorTip>As ordens de cirurgia ficam limitadas ao melhor médico disponível, para que um principiante não falhe a instalação de um biónico apenas por ter chegado primeiro à mesa de operações. A restrição acompanha o melhor médico de cada colónia à medida que as pessoas chegam e partem. Ninguém pode operar-se a si próprio, pelo que as cirurgias do melhor médico vão para o segundo melhor.\n\nDesative para definir manualmente uma competência mínima fixa.</IMP_OptAutoFloorTip>
+  <IMP_OptSurgeryConcurrencyTip>Quantos colonos por colónia podem ter cirurgias planeadas em simultâneo. Valores mais altos colocam mais colonos em espera paralela; valores mais baixos deixam o hospital e os médicos disponíveis. Começa em um por cada dez colonos. Mantenha Shift ao clicar em +/- para alterar em 10, ou Ctrl para alterar em 5.</IMP_OptSurgeryConcurrencyTip>
+  <IMP_OptCountHospitalizedTip>Colonos e escravos em camas médicas, ou incapacitados no chão à espera de tratamento, também ocupam vagas de cirurgia. As novas cirurgias de Implanner esperam até haver espaço no hospital dentro do limite acima. Prisioneiros, hóspedes e pacientes visitantes de outras fações nunca ocupam vagas. Desative para agendar cirurgias de implantes independentemente de quem já está a ser tratado.</IMP_OptCountHospitalizedTip>
+  <IMP_OptUpgradeByPriorityTip>Os implantes de melhor qualidade vão para os colonos com prioridade mais alta no separador Visão geral. As novas cirurgias usam a qualidade mais baixa aceite pelo plano, deixando livres os melhores implantes.\n\nQuando fica disponível um implante melhor, recebe-o o colono mais prioritário que tenha um pior do mesmo tipo. O implante antigo é removido primeiro e segue para o próximo colono. Um implante já reservado para um colono menos prioritário também é transferido, desde que a cirurgia ainda não esteja agendada.\n\nCada troca exige uma cirurgia adicional. Desativado, cada colono recebe o melhor implante em armazém quando chega a sua vez.</IMP_OptUpgradeByPriorityTip>
+  <IMP_OptManualFloorTip>Competência mínima de Medicina necessária para efetuar cirurgias de Implanner. As ordens esperam até existir um médico disponível com este nível ou superior. Ao desativar a atribuição automática, o valor inicial corresponde ao melhor médico atual.</IMP_OptManualFloorTip>
+  <IMP_OptImplantReservesTip>Implantes postos de parte para uso manual. A automatização só reserva existências acima destas quantidades, mantendo sempre este número de cada implante listado livre para cirurgias urgentes ou comércio. A produção não conta os objetos postos de parte como disponíveis e continua a fabricar até a automatização poder avançar sem eles.</IMP_OptImplantReservesTip>
+  <IMP_AddImplantReserveTip>Escolha um implante para pôr de parte, fora da automatização.</IMP_AddImplantReserveTip>
+  <IMP_OptAllowMultipleBladdersTip>O jogo considera os implantes de bexiga de mods diferentes como implantes separados, pelo que um colono pode ter vários e acumular os seus efeitos. Desative para os tratar como uma única posição: escolher um num plano substitui os outros, e um colono que já tenha qualquer dos implantes abaixo conta como concluído. Nunca se remove nada.\n\nImplantes afetados:\n{0}</IMP_OptAllowMultipleBladdersTip>
+  <IMP_OptAllowMultipleHygieneEnhancersTip>O jogo considera os melhoradores de higiene de mods diferentes como implantes separados, pelo que um colono pode ter vários e acumular os seus efeitos. Desative para os tratar como uma única posição: escolher um num plano substitui os outros, e um colono que já tenha qualquer dos implantes abaixo conta como concluído. Nunca se remove nada.\n\nImplantes afetados:\n{0}</IMP_OptAllowMultipleHygieneEnhancersTip>
+  <IMP_OptShowPurchaseOnlyTip>Lista implantes que nenhuma bancada consegue fabricar, como partes arcotecnológicas. Só chegam através de comércio, missões ou salvados. Ative para os planear na mesma. A automatização reserva o objeto assim que estiver em armazém e instala-o com o conjunto seguinte; um implante em falta nunca atrasa os restantes. Um mod que adicione uma receita de fabrico transforma-o automaticamente num implante normal.\n\nImplantes afetados:\n{0}</IMP_OptShowPurchaseOnlyTip>
+  <IMP_OptCompatNoneLoaded>Nenhum dos implantes afetados está carregado.</IMP_OptCompatNoneLoaded>
+  <IMP_OptAutoProductionTip>Os implantes em falta recebem automaticamente ordens de fabrico. Implanner conta as necessidades restantes dos planos de cada colónia, subtrai as existências e as ordens já em espera e coloca ordens em bancadas adequadas. As ordens criadas são removidas quando a necessidade desaparece.</IMP_OptAutoProductionTip>
+  <IMP_OptConcurrencyTip>Quantas bancadas por colónia podem ter ordens de fabrico de Implanner em simultâneo. Cada ordem fabrica um implante, e uma bancada recebe até duas para a próxima já estar à espera quando a primeira terminar. Mais bancadas fabricam em paralelo, mas os artesãos dedicam mais tempo aos implantes e menos ao restante trabalho. Mantenha Shift ao clicar em +/- para alterar em 10, ou Ctrl para alterar em 5.</IMP_OptConcurrencyTip>
+  <IMP_OptIdleBenchesTip>Só as bancadas sem trabalho em espera recebem novas ordens de Implanner. As suas filas de produção mantêm a prioridade e os implantes preenchem os períodos livres. Desative para permitir que as ordens de implantes fiquem em espera atrás das suas.</IMP_OptIdleBenchesTip>
+  <IMP_OptDesignatedBenchesTip>As ordens de fabrico vão apenas para bancadas com «Bancada Implanner» assinalado no separador Ordens, pelo que uma colónia sem uma não fabrica implantes. Desativado, as bancadas Implanner recebem ordens primeiro; as outras só são usadas quando cada bancada Implanner já tem duas ordens. O limite «Bancadas que podem receber ordens» aplica-se em ambos os casos.</IMP_OptDesignatedBenchesTip>
+  <IMP_BenchToggle>Bancada Implanner</IMP_BenchToggle>
+  <IMP_BenchToggleTip>Implanner coloca as suas ordens de fabrico nesta bancada antes de qualquer outra, e as ordens já presentes são suspensas. Enquanto estiver assinalado, não pode adicionar, colar, suspender ou retomar ordens aqui.\n\nDesmarque para recuperar a bancada. As ordens que já estavam suspensas quando assinalou a opção continuam suspensas; as restantes retomam.</IMP_BenchToggleTip>
+  <IMP_BenchLockedTip>Não pode colar, suspender ou retomar ordens numa bancada Implanner. Desmarque «Bancada Implanner» no topo do separador Ordens para recuperar a bancada.</IMP_BenchLockedTip>
+  <IMP_BenchNoNewBills>Desmarque «Bancada Implanner» para adicionar ordens aqui</IMP_BenchNoNewBills>
+  <IMP_OptProductionSkillTip>Competência mínima de Fabrico para as ordens de produção de Implanner. Valores mais altos afastam os componentes caros dos artesãos inexperientes; valores mais baixos permitem que mais colonos ajudem. As ordens esperam até serem aceites por um artesão qualificado.</IMP_OptProductionSkillTip>
+  <IMP_OptIntermediariesTip>Quando não há materiais para uma ordem de implante por faltar um ingrediente, como componentes, Implanner também pode criar uma ordem para esse ingrediente, se for um produto manufaturado fabricável. As faltas são seguidas por toda a cadeia de produção. Recursos em bruto, como aço, nunca são fabricados; continua a ter de os recolher.</IMP_OptIntermediariesTip>
+  <IMP_OptReservesTip>Quantidades mínimas de recursos para o fabrico automático. Só é adicionada uma ordem quando a colónia consegue pagar o seu custo, além dos materiais ainda necessários às ordens em espera, mantendo pelo menos esta quantidade de cada ingrediente. Aumente um número para proteger existências; defina zero para deixar a produção gastar livremente.</IMP_OptReservesTip>
+  <IMP_HelpChapterBasics>Conceitos básicos</IMP_HelpChapterBasics>
+  <IMP_HelpChapterPlans>Planos</IMP_HelpChapterPlans>
+  <IMP_HelpChapterAutomation>Automatização</IMP_HelpChapterAutomation>
+  <IMP_HelpChapterSharing>Partilha</IMP_HelpChapterSharing>
+  <IMP_HelpChapterMods>Mods</IMP_HelpChapterMods>
+  <IMP_HelpReload>Recarregar</IMP_HelpReload>
+  <IMP_Import>Importar</IMP_Import>
+  <IMP_Export>Exportar</IMP_Export>
+  <IMP_ExportPlansTitle>Exportar planos</IMP_ExportPlansTitle>
+  <IMP_ImportPlansTitle>Importar planos</IMP_ImportPlansTitle>
+  <IMP_ExportSummary>{0} planos, {1} implantes</IMP_ExportSummary>
+  <IMP_PlanGoalCount>{0} implantes</IMP_PlanGoalCount>
+  <IMP_CopyClipboard>Copiar para a área de transferência</IMP_CopyClipboard>
+  <IMP_FromClipboard>Da área de transferência</IMP_FromClipboard>
+  <IMP_Save>Guardar</IMP_Save>
+  <IMP_ImportAddNote>Os planos importados são acrescentados aos existentes; nada é substituído. Um nome já utilizado recebe um número.</IMP_ImportAddNote>
+  <IMP_LocGameData>Pasta Implanner</IMP_LocGameData>
+  <IMP_LocDesktop>Ambiente de trabalho</IMP_LocDesktop>
+  <IMP_LocUserHome>Pasta pessoal</IMP_LocUserHome>
+  <IMP_LocCustom>Pasta personalizada</IMP_LocCustom>
+  <IMP_EnterPath>Pasta:</IMP_EnterPath>
+  <IMP_BadFileName>Introduza um nome de ficheiro válido.</IMP_BadFileName>
+  <IMP_BadDirectory>Introduza uma pasta válida.</IMP_BadDirectory>
+  <IMP_SavedTo>Planos guardados em {0}</IMP_SavedTo>
+  <IMP_SaveFailed>Não foi possível guardar: {0}</IMP_SaveFailed>
+  <IMP_ReadFailed>Não foi possível ler o ficheiro: {0}</IMP_ReadFailed>
+  <IMP_ImportInvalid>Não é uma exportação válida de planos Implanner: {0}</IMP_ImportInvalid>
+  <IMP_DeleteFileConfirm>Eliminar «{0}»?</IMP_DeleteFileConfirm>
+  <IMP_NoFiles>Ainda não há ficheiros de planos exportados aqui.</IMP_NoFiles>
+  <IMP_ShipFallback>Nave gravitacional</IMP_ShipFallback>
+  <IMP_SettingsShowToolbarButton>Mostrar botão na barra de ferramentas</IMP_SettingsShowToolbarButton>
+</LanguageData>

@@ -34,6 +34,10 @@ namespace Implanner.UI
         private readonly SkillSliderState skillSliders = new SkillSliderState();
         private SkillSliderSnapshot? skillSliderFront;
         private bool skillSliderSettingsDirty;
+        // The conservative shared label width reserves both the scrolling gutter
+        // and the manual-floor indent, so each control fits the same cached row.
+        private float SkillLabelWidth => Mathf.Max(1f,
+            Mathf.Floor((windowRect.width - 2f * Margin - 2f * Pad - 16f - ColumnGap) / 2f) - 12f - 202f);
         private readonly HelpTabView help = new HelpTabView(ImplannerHelpHost.Instance);
         private readonly StripTipSource productionTip =
             new StripTipSource(StripTipKind.Production);
@@ -331,7 +335,7 @@ namespace Implanner.UI
             // here: WindowUpdate runs before the first draw of a new window.
             PlannerLabels.Ensure();
             if (curTab == Tab.Automation || curTab == Tab.Options)
-                skillSliderFront = skillSliders.Current();
+                skillSliderFront = skillSliders.Current(SkillLabelWidth);
             switch (curTab)
             {
                 case Tab.Overview: overviewFront = overview.Current(store); break;
@@ -794,7 +798,7 @@ namespace Implanner.UI
             internal readonly int Id;
             internal PlanChoice(int id) => Id = id;
             public bool Equals(PlanChoice other) => Id == other.Id;
-            public override bool Equals(object obj) => obj is PlanChoice o && Equals(o);
+            public override bool Equals(object? obj) => obj is PlanChoice o && Equals(o);
             public override int GetHashCode() => Id;
         }
 
@@ -804,7 +808,7 @@ namespace Implanner.UI
             internal readonly int Level;
             internal PriorityChoice(int level) => Level = level;
             public bool Equals(PriorityChoice other) => Level == other.Level;
-            public override bool Equals(object obj) => obj is PriorityChoice o && Equals(o);
+            public override bool Equals(object? obj) => obj is PriorityChoice o && Equals(o);
             public override int GetHashCode() => Level;
         }
 
@@ -1662,7 +1666,7 @@ namespace Implanner.UI
             AutomationSnapshot snapshot = automationFront ??= automation.Current(store);
             automationTips.Ensure();
             AutomationTips tips = automationTips;
-            SkillSliderSnapshot slider = skillSliderFront ??= skillSliders.Current();
+            SkillSliderSnapshot slider = skillSliderFront ??= skillSliders.Current(SkillLabelWidth);
 
             float leftHeight = ProductionColumnHeight(snapshot, slider.RowHeight);
             float rightHeight = SurgeryColumnHeight(snapshot, slider.RowHeight);
@@ -2025,7 +2029,7 @@ namespace Implanner.UI
             OptionsSnapshot snapshot = optionsFront ??= options.Current(store);
             optionsTips.Ensure();
             OptionsTips tips = optionsTips;
-            SkillSliderSnapshot slider = skillSliderFront ??= skillSliders.Current();
+            SkillSliderSnapshot slider = skillSliderFront ??= skillSliders.Current(SkillLabelWidth);
 
             float width = Mathf.Floor((rect.width - ColumnGap) / 2f);
             float y = rect.y;
@@ -2073,8 +2077,9 @@ namespace Implanner.UI
             {
                 Text.Font = GameFont.Small;
                 Text.Anchor = TextAnchor.MiddleLeft;
-                Text.WordWrap = false;
+                Text.WordWrap = true;
                 Widgets.Label(new Rect(x, y, width - 202f, height), label);
+                Text.WordWrap = false;
                 // No slider label: vanilla measures its label on every draw.
                 // Passing the stored value through preserves values above a
                 // newly lowered UI bound until the player actually edits them.

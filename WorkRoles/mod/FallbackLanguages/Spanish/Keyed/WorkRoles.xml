@@ -1,0 +1,633 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_ColonistsTab>Colonos</WR_ColonistsTab>
+  <WR_RecommendationsTab>Recomendaciones</WR_RecommendationsTab>
+  <WR_OptionsTab>Opciones</WR_OptionsTab>
+  <WR_CompatSection>Ajustes de compatibilidad</WR_CompatSection>
+  <WR_OptNumeric>Mostrar prioridades numéricas en las tablas</WR_OptNumeric>
+  <WR_TipOff>Desactivado</WR_TipOff>
+  <WR_TipOn>Activado</WR_TipOn>
+  <WR_OptNumericTipWhat>El interruptor de «prioridades manuales» del juego original, por partida.</WR_OptNumericTipWhat>
+  <WR_OptNumericTipOff>Las tablas de prioridades (incluidas las de mods como Numbers) muestran marcas</WR_OptNumericTipOff>
+  <WR_OptNumericTipOn>Las tablas de prioridades muestran números</WR_OptNumericTipOn>
+  <WR_OptNumericTipWhy>Está aquí porque WorkRoles sustituye la pestaña Trabajo que lo contenía.</WR_OptNumericTipWhy>
+  <WR_OptVanillaRange>Comunicar prioridades originales de 0 a 4 a otros mods</WR_OptVanillaRange>
+  <WR_OptVanillaRangeTipWhat>WorkRoles ordena el trabajo con prioridades únicas: números consecutivos desde 1.</WR_OptVanillaRangeTipWhat>
+  <WR_OptVanillaRangeTipOff>Los demás mods ven las prioridades tal cual</WR_OptVanillaRangeTipOff>
+  <WR_OptVanillaRangeTipOn>Las prioridades se convierten al intervalo original de 0 a 4</WR_OptVanillaRangeTipOn>
+  <WR_OptEmergencyRule>Solo los 5 primeros roles interrumpen por emergencias</WR_OptEmergencyRule>
+  <WR_OptEmergencyRuleTipWhat>Decide qué trabajos de emergencia (apagar incendios, atender urgencias y acostarse para tratamiento urgente) pueden interrumpir el sueño, las comidas y cualquier otro trabajo, por partida.</WR_OptEmergencyRuleTipWhat>
+  <WR_OptEmergencyRuleTipOff>Cualquier emergencia de un rol activado interrumpe el trabajo actual del colono</WR_OptEmergencyRuleTipOff>
+  <WR_OptEmergencyRuleTipOn>Solo interrumpen las emergencias de los 5 primeros roles activados; los posteriores las realizan en su orden normal</WR_OptEmergencyRuleTipOn>
+  <WR_OptEmergencyRuleTipWhy>Activado por defecto, permite esperar a los roles de respaldo al final de la fila: un colono con Médico como sexto rol sigue cocinando mientras el médico principal atiende al paciente urgente. Desactívalo si todos deben responder a cualquier emergencia que puedan atender.</WR_OptEmergencyRuleTipWhy>
+  <WR_AutomationSection>Ajustes de automatización</WR_AutomationSection>
+  <WR_OptAutoOptimize>Optimizar las colonias cada hora del juego</WR_OptAutoOptimize>
+  <WR_OptAutoOptimizeTipWhat>Ejecuta Arreglar mi colonia automáticamente en cada colonia y aplica los cambios, por partida.</WR_OptAutoOptimizeTipWhat>
+  <WR_OptAutoOptimizeTipOff>Las asignaciones solo cambian cuando las editas</WR_OptAutoOptimizeTipOff>
+  <WR_OptAutoOptimizeTipOn>Las asignaciones recomendadas se aplican al inicio de cada hora del juego</WR_OptAutoOptimizeTipOn>
+  <WR_OptAutoOptimizeTipWhy>Se conservan las asignaciones fijadas, incluso de roles excluidos. No se cambia nada cuando el colono ya coincide con la recomendación.</WR_OptAutoOptimizeTipWhy>
+  <WR_AutoOptimizeConfirmApply>Aplicar realiza ahora los cambios de abajo y activa la optimización horaria. Mientras esté activa, se ocultan Arreglar mi colonia y Así sea; puedes seguir asignando, reordenando y fijando roles normalmente.</WR_AutoOptimizeConfirmApply>
+  <WR_AutoOptimizeGlobalWarning>Tienes varias colonias: la optimización es GLOBAL y cambiará las asignaciones de TODAS cada hora. La vista previa solo muestra los cambios de la colonia actual.</WR_AutoOptimizeGlobalWarning>
+  <WR_DisplaySection>Ajustes de visualización</WR_DisplaySection>
+  <WR_OptSkillCaptions>Mostrar las mejores habilidades bajo los nombres</WR_OptSkillCaptions>
+  <WR_OptSkillCaptionsTip>Cada fila muestra bajo el nombre las mejores habilidades laborales del colono y sus niveles, con colores según su aptitud. Desactívalo para mostrar solo el nombre.</WR_OptSkillCaptionsTip>
+  <WR_OptVerdictsColonists>Mostrar valoraciones en las fichas de roles de los colonos</WR_OptVerdictsColonists>
+  <WR_OptVerdictsColonistsTip>Cada ficha muestra un par de estrellas de aptitud para el colono, según el motor de recomendaciones: blancas para valoraciones positivas (una buena, dos excelente, doradas excepcional), rojas para negativas (una mala, dos pésima) y grises para neutral.</WR_OptVerdictsColonistsTip>
+  <WR_OptVerdictsPalette>Mostrar valoraciones para el colono seleccionado en la paleta de roles</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>Las fichas de la paleta indican lo adecuado que es cada rol para el colono seleccionado.</WR_OptVerdictsPaletteTip>
+  <WR_OptVerdictsRecommendations>Mostrar valoraciones en los roles recomendados</WR_OptVerdictsRecommendations>
+  <WR_OptPaletteGrouping>Agrupación de la paleta de roles</WR_OptPaletteGrouping>
+  <WR_OptVerdictsRecommendationsTip>Las fichas recomendadas (panel de estadísticas y vistas previas de cambios) muestran la aptitud del colono al que se recomiendan.</WR_OptVerdictsRecommendationsTip>
+  <WR_RecGlobalPanel>Opciones globales</WR_RecGlobalPanel>
+  <WR_RecGlobalPanelHelp>Estas opciones modifican la puntuación y clasificación de candidatos y la posición final de los roles recomendados. Usa Restablecer para recuperar los valores predeterminados si no te convencen los cambios.</WR_RecGlobalPanelHelp>
+  <WR_RecRolePanel>Opciones de roles</WR_RecRolePanel>
+  <WR_RecRolePanelHelp>Aquí aparecen todos los roles salvo los excluidos. Expande uno para ajustar sus recomendaciones. Los roles se ordenan automáticamente por colono; Cazador conserva su posición según Disparo.</WR_RecRolePanelHelp>
+  <WR_RecExcludedHeader>Roles excluidos</WR_RecExcludedHeader>
+  <WR_RecExcludedHelp>Los roles de esta lista nunca se recomiendan, ni mediante rutas de formación ni roles automáticos. Las asignaciones fijadas existentes se conservan. Usa Añadir rol para excluir uno; elimina su ficha para volver a permitirlo.</WR_RecExcludedHelp>
+  <WR_RecExcludedTip>Las exclusiones afectan a las recomendaciones de todos los colonos de esta partida, incluidas Arreglar mi colonia y la optimización automática. Puedes seguir asignándolos manualmente. Editar esta lista no cambia asignaciones actuales. Aplicar recomendaciones elimina los roles excluidos no fijados y conserva los fijados.</WR_RecExcludedTip>
+  <WR_RecExcludedChipTip>Este rol nunca se recomienda. Pulsa su icono de quitar para volver a permitirlo y recuperar su entrada en Opciones de roles. Sus opciones guardadas se conservan.</WR_RecExcludedChipTip>
+  <WR_RecExcludedAddTip>Elige un rol que nunca deba recomendarse. Puedes excluir cualquiera: de formación, automático, condicional, de bloqueo o compuesto.</WR_RecExcludedAddTip>
+  <WR_RecExcludedReason>Este rol está excluido de las recomendaciones. Quítalo de Roles excluidos en Recomendaciones para volver a permitirlo.</WR_RecExcludedReason>
+  <WR_RecTuneReset>Restablecer</WR_RecTuneReset>
+  <WR_RecTuneResetTip>Restaura los valores predeterminados de esta sección.</WR_RecTuneResetTip>
+  <WR_RecTuneCellHint>Pulsa un valor para aumentarlo; clic derecho para reducirlo.</WR_RecTuneCellHint>
+  <WR_StepModifiersTip>Clic: 1 paso.\nMayús: 5 pasos.\nCtrl: 10 pasos.\nCtrl+Mayús: ir al límite.</WR_StepModifiersTip>
+  <WR_SignalLetterAwful>P</WR_SignalLetterAwful>
+  <WR_SignalLetterPoor>M</WR_SignalLetterPoor>
+  <WR_SignalLetterNeutral>N</WR_SignalLetterNeutral>
+  <WR_SignalLetterStrong>B</WR_SignalLetterStrong>
+  <WR_SignalLetterGreat>E</WR_SignalLetterGreat>
+  <WR_SignalLetterExceptional>X</WR_SignalLetterExceptional>
+  <WR_RecTuneChampionSection>Opciones de selección de principales</WR_RecTuneChampionSection>
+  <WR_RecTuneChampionSectionIntro>Cada rol recibe primero un principal: el colono más apto para sostenerlo. Estas opciones deciden quién cumple los requisitos y cómo se ponderan la habilidad y la fuerza de las señales.</WR_RecTuneChampionSectionIntro>
+  <WR_RecTuneOrderingSection>Opciones de orden final de roles</WR_RecTuneOrderingSection>
+  <WR_RecTuneOrderingSectionIntro>Tras elegir los roles de un colono, estas opciones deciden su orden, que también será su prioridad de trabajo.</WR_RecTuneOrderingSectionIntro>
+  <WR_RecTuneOptionalSection>Opciones de rutas de formación y objetivos opcionales</WR_RecTuneOptionalSection>
+  <WR_RecTuneOptionalSectionIntro>Deciden cuándo se activa una ruta de formación para un colono y cuándo merece la pena recomendar un rol opcional de varias habilidades.</WR_RecTuneOptionalSectionIntro>
+  <WR_RecTuneLeadSection>Opciones de diversificación de responsables</WR_RecTuneLeadSection>
+  <WR_RecTuneLeadSectionIntro>Cuando varias rutas comparten un objetivo, estas opciones reparten los roles principales entre distintos colonos en vez de acumularlos en uno.</WR_RecTuneLeadSectionIntro>
+  <WR_RecTuneHunterSection>Opciones de posición del Cazador</WR_RecTuneHunterSection>
+  <WR_RecTuneHunterSectionIntro>Un rol Cazador no fijado se coloca según Disparo: los mejores tiradores cazan más tarde en el orden de prioridades porque su tiempo resulta más valioso en otros trabajos.</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneCandidateMinimumSignal>Señal mínima de candidatos</WR_RecTuneCandidateMinimumSignal>
+  <WR_RecTuneCandidateMinimumSignalDesc>Señal mínima admitida en la selección normal. Subirla descarta candidatos débiles antes de elegir principales y cubrir el mínimo de titulares.</WR_RecTuneCandidateMinimumSignalDesc>
+  <WR_RecTuneChampionSkillDivisor>Divisor de habilidad del principal</WR_RecTuneChampionSkillDivisor>
+  <WR_RecTuneChampionSkillDivisorDesc>La contribución de habilidad es ceil(nivel ÷ este valor). Aumentarlo reduce el peso del nivel de habilidad.</WR_RecTuneChampionSkillDivisorDesc>
+  <WR_RecTuneChampionMultiSkillMinimumCount>Umbral de habilidades combinadas</WR_RecTuneChampionMultiSkillMinimumCount>
+  <WR_RecTuneChampionMultiSkillMinimumCountDesc>Número mínimo de habilidades objetivo válidas para sumar las puntuaciones del principal. Por debajo, solo puntúa la mejor habilidad del rol.</WR_RecTuneChampionMultiSkillMinimumCountDesc>
+  <WR_RecTuneChampionMultiplierRow>Multiplicador de señal</WR_RecTuneChampionMultiplierRow>
+  <WR_RecTuneChampionMultiplierRowDesc>Multiplica la contribución de habilidad redondeada de cada fuerza de señal al elegir al principal.</WR_RecTuneChampionMultiplierRowDesc>
+  <WR_RecTuneMultiplierAwfulTip>Pésima. Solo influye si la señal mínima admite candidatos con esta valoración.</WR_RecTuneMultiplierAwfulTip>
+  <WR_RecTuneChampionTieBreakRow>Puntos de desempate</WR_RecTuneChampionTieBreakRow>
+  <WR_RecTuneChampionTieBreakRowDesc>Puntos de señal comparados cuando empata la puntuación de principales. En roles de varias habilidades se suman las señales válidas.</WR_RecTuneChampionTieBreakRowDesc>
+  <WR_RecTuneRankedCandidatePrioritySignal>Señal prioritaria de candidatos clasificados</WR_RecTuneRankedCandidatePrioritySignal>
+  <WR_RecTuneRankedCandidatePrioritySignalDesc>Los candidatos no principales con esta señal o superior se colocan antes que los más débiles al cubrir las plazas mínimas.</WR_RecTuneRankedCandidatePrioritySignalDesc>
+  <WR_RecTuneSurplusMinimumSignal>Señal mínima de asignaciones extra</WR_RecTuneSurplusMinimumSignal>
+  <WR_RecTuneSurplusMinimumSignalDesc>Tras cubrir las plazas obligatorias, los candidatos normales con esta señal o superior aún pueden recibir el rol. La promoción por nivel se aplica a roles de una habilidad dentro de su banda de formación; los de varias habilidades usan los requisitos de aptitud de objetivos opcionales.</WR_RecTuneSurplusMinimumSignalDesc>
+  <WR_RecTuneOrderingSkillDivisor>Divisor de habilidad para el orden</WR_RecTuneOrderingSkillDivisor>
+  <WR_RecTuneOrderingSkillDivisorDesc>Los puntos de habilidad del orden final son ceil(nivel ÷ este valor). Aumentarlo reduce su efecto en el orden de los roles.</WR_RecTuneOrderingSkillDivisorDesc>
+  <WR_RecTuneOrderingPointsRow>Puntos de señal</WR_RecTuneOrderingPointsRow>
+  <WR_RecTuneOrderingPointsRowDesc>Puntos que aporta cada fuerza de señal al ordenar los roles recomendados.</WR_RecTuneOrderingPointsRowDesc>
+  <WR_RecTuneMinimumPickRow>Bonificación por cubrir mínimos</WR_RecTuneMinimumPickRow>
+  <WR_RecTuneMinimumPickRowDesc>Puntos de orden para el primer, segundo, tercer y posteriores personajes elegidos para cubrir el mínimo de titulares del rol.</WR_RecTuneMinimumPickRowDesc>
+  <WR_RecTuneCategoryPointsRow>Puntos de categoría</WR_RecTuneCategoryPointsRow>
+  <WR_RecTuneCategoryPointsRowDesc>Puntos según la importancia para la colonia: Importante antepone deberes al trabajo productivo con igual señal; Opcional desplaza roles hacia el final.</WR_RecTuneCategoryPointsRowDesc>
+  <WR_RecTuneTimePointsRow>Puntos de dedicación</WR_RecTuneTimePointsRow>
+  <WR_RecTuneTimePointsRowDesc>Puntos según el tiempo necesario: A tiempo parcial antepone deberes rápidos al trabajo completo con igual señal; Ocasional lleva los trabajos de relleno al final.</WR_RecTuneTimePointsRowDesc>
+  <WR_RecTunePathMinimumSignal>Señal mínima del rol de formación</WR_RecTunePathMinimumSignal>
+  <WR_RecTunePathMinimumSignalDesc>Señal mínima que puede tener un rol al participar en una ruta de formación activada.</WR_RecTunePathMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumSkillCount>Umbral de habilidades del objetivo opcional</WR_RecTuneOptionalTargetMinimumSkillCount>
+  <WR_RecTuneOptionalTargetMinimumSkillCountDesc>Número de habilidades objetivo válidas para aplicar la prueba de aptitud opcional. Los roles con menos habilidades válidas se saltan esta prueba.</WR_RecTuneOptionalTargetMinimumSkillCountDesc>
+  <WR_RecTuneOptionalTargetMinimumSignal>Señal mínima del objetivo opcional</WR_RecTuneOptionalTargetMinimumSignal>
+  <WR_RecTuneOptionalTargetMinimumSignalDesc>Una habilidad debe alcanzar esta señal para que la promoción por nivel influya en las asignaciones extra de una habilidad o aporte puntos de aptitud a un objetivo opcional.</WR_RecTuneOptionalTargetMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetStrongLevel>Nivel de promoción intermedia</WR_RecTuneOptionalTargetStrongLevel>
+  <WR_RecTuneOptionalTargetStrongLevelDesc>A este nivel, una señal válida más débil asciende a la señal intermedia configurada para asignaciones extra de una habilidad y puntuación de objetivos opcionales.</WR_RecTuneOptionalTargetStrongLevelDesc>
+  <WR_RecTuneOptionalTargetStrongPromotedSignal>Señal promovida intermedia</WR_RecTuneOptionalTargetStrongPromotedSignal>
+  <WR_RecTuneOptionalTargetStrongPromotedSignalDesc>Señal usada para asignaciones extra de una habilidad y aptitud de objetivos opcionales al alcanzar el nivel de promoción intermedia.</WR_RecTuneOptionalTargetStrongPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetGreatLevel>Nivel de promoción alta</WR_RecTuneOptionalTargetGreatLevel>
+  <WR_RecTuneOptionalTargetGreatLevelDesc>A este nivel, una señal válida más débil asciende a la señal alta configurada para asignaciones extra de una habilidad y puntuación de objetivos opcionales.</WR_RecTuneOptionalTargetGreatLevelDesc>
+  <WR_RecTuneOptionalTargetGreatPromotedSignal>Señal promovida alta</WR_RecTuneOptionalTargetGreatPromotedSignal>
+  <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>Señal usada para asignaciones extra de una habilidad y aptitud de objetivos opcionales al alcanzar el nivel de promoción alta.</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumPoints>Puntos mínimos del objetivo opcional</WR_RecTuneOptionalTargetMinimumPoints>
+  <WR_RecTuneOptionalTargetMinimumPointsDesc>Suma mínima de escalones de señal por encima del mínimo configurado para recomendar un objetivo opcional de varias habilidades.</WR_RecTuneOptionalTargetMinimumPointsDesc>
+  <WR_RecTuneLeadMinimumConnectedTargets>Objetivos conectados para diversificar</WR_RecTuneLeadMinimumConnectedTargets>
+  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Mínimo de objetivos de formación conectados antes de intentar repartir sus roles responsables entre distintos personajes.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
+  <WR_RecTuneLeadMinimumSignal>Señal mínima del responsable</WR_RecTuneLeadMinimumSignal>
+  <WR_RecTuneLeadMinimumSignalDesc>Señal mínima del rol para elegir a un personaje como responsable diversificado de una ruta.</WR_RecTuneLeadMinimumSignalDesc>
+  <WR_RecTuneHunterTiersRow>Disparo máximo de cada nivel</WR_RecTuneHunterTiersRow>
+  <WR_RecTuneHunterTiersRowDesc>Límites de Disparo para la posición dinámica del Cazador. El nivel 1 lo coloca justo tras el trabajo básico; los niveles 2 y 3, tras los roles laborales intermedios y finales; por encima del nivel 4 queda el último.</WR_RecTuneHunterTiersRowDesc>
+  <WR_TrainingSection>Ruta de formación</WR_TrainingSection>
+  <WR_TrainingHelp>Define cómo aprenden los colonos y avanzan hacia este rol. Una ruta puede tener varias bandas y roles solapados. Si se recomienda la ruta a un colono, recibe todos los roles correspondientes a su nivel actual.</WR_TrainingHelp>
+  <WR_TrainingTipWhat>Progresión propia del rol: cada miembro tiene una banda de habilidad en la que se recomienda. El propio rol siempre permanece en su ruta.</WR_TrainingTipWhat>
+  <WR_TrainingTipBands>Las bandas solapadas coexisten; donde no se solapan, el rol posterior sustituye al anterior.</WR_TrainingTipBands>
+  <WR_TrainingTipOrder>Se priorizan los mínimos de banda más altos. A igualdad de banda, va primero la habilidad más débil del personaje y luego el orden guardado de la ruta.</WR_TrainingTipOrder>
+  <WR_AddNew>Añadir nuevo</WR_AddNew>
+  <WR_WhenPanelCaption>Progresión del rol: define a qué niveles se recomiendan los roles mostrados. Los solapados se complementan.</WR_WhenPanelCaption>
+  <WR_AddRole>Añadir rol</WR_AddRole>
+  <WR_NoContributionRoleTip>No entrena ninguna habilidad necesaria para este rol, así que la ruta no puede usarlo como etapa de formación. Los mods pueden cambiar qué otorga experiencia, por lo que puedes añadirlo de todas formas.</WR_NoContributionRoleTip>
+  <WR_ContributesTip>Entrena para este rol: {0}.</WR_ContributesTip>
+  <WR_RecClassificationSection>Clasificación</WR_RecClassificationSection>
+  <WR_RecSkillsSection>Habilidades</WR_RecSkillsSection>
+  <WR_RecScalingSection>Escala de asignaciones</WR_RecScalingSection>
+  <WR_RoleColonyMinLabel>Mínimo de la colonia:</WR_RoleColonyMinLabel>
+  <WR_RoleColonyMinTip>Número mínimo de asignaciones de este rol.</WR_RoleColonyMinTip>
+  <WR_RoleCoverageLabel>Cobertura:</WR_RoleCoverageLabel>
+  <WR_RoleCoverageTip>Porcentaje ideal de colonos que deberían recibir este rol.</WR_RoleCoverageTip>
+  <WR_RoleCategoryLabel>Importancia para la colonia:</WR_RoleCategoryLabel>
+  <WR_RoleCategoryTip>Importancia de cubrir este rol al planificar la colonia. «Sin definir» deja el rol sin clasificar.</WR_RoleCategoryTip>
+  <WR_RoleCategoryNone>Sin definir</WR_RoleCategoryNone>
+  <WR_RoleCategoryImportant>Importante</WR_RoleCategoryImportant>
+  <WR_RoleCategoryNormal>Normal</WR_RoleCategoryNormal>
+  <WR_RoleCategoryOptional>Opcional</WR_RoleCategoryOptional>
+  <WR_RoleTimeLabel>Dedicación:</WR_RoleTimeLabel>
+  <WR_RoleTimeTip>Cuánto tiempo del día suele ocupar el trabajo de este rol.</WR_RoleTimeTip>
+  <WR_RoleTimeNone>Sin definir</WR_RoleTimeNone>
+  <WR_RoleTimePartTime>A tiempo parcial</WR_RoleTimePartTime>
+  <WR_RoleTimeFullTime>A tiempo completo</WR_RoleTimeFullTime>
+  <WR_RoleTimeOpportunistic>Ocasional</WR_RoleTimeOpportunistic>
+  <WR_ChampionPenalty>Penalizar principales repetidos</WR_ChampionPenalty>
+  <WR_ChampionPenaltyTip>Si se activa, un colono que ya es principal en otros roles recibe una penalización al competir por este. Desactívalo donde repetir sea aceptable, como en trabajos ocasionales.</WR_ChampionPenaltyTip>
+  <WR_PartialCapability>Permitir capacidad parcial</WR_PartialCapability>
+  <WR_PartialCapabilityTip>Permite recomendarlo a colonos capaces de hacer parte de sus trabajos, aunque no todos. Nunca se recomienda a quien no puede hacer ninguno. Útil en roles amplios para todos, como las tareas para ratos libres.</WR_PartialCapabilityTip>
+  <WR_PartialCapabilityLockedTip>Este rol ya admite colonos capaces de realizar solo parte de sus trabajos. Los roles sin trabajo especializado y los de caza siempre lo permiten.</WR_PartialCapabilityLockedTip>
+  <WR_RoleAgeBandsLabel>Grupos de edad que pueden recibir este rol:</WR_RoleAgeBandsLabel>
+  <WR_RoleAgeBandsTip>Fuera de las bandas elegidas, el rol nunca se asigna ni recomienda. Pulsa una banda exterior para incluir hasta ella, la primera o última seleccionada para quitarla, o una intermedia para seleccionar solo esa. Los límites siguen las edades de desbloqueo del juego. Todos los trabajos del rol son posibles desde los {0} años.</WR_RoleAgeBandsTip>
+  <WR_WorkTypesLabel>Tipos de trabajo</WR_WorkTypesLabel>
+  <WR_WorkTypesTip>Solo son aptos los colonos capaces de realizar los tipos de trabajo indicados.\n\nSe deduce de los trabajos elegidos y se muestra como información.</WR_WorkTypesTip>
+  <WR_UsedSkillsLabel>Utilizadas</WR_UsedSkillsLabel>
+  <WR_UsedSkillsTip>Habilidades que influyen en los trabajos del rol. Pasa el cursor para ver su efecto.\n\nSe deducen de los trabajos elegidos y se muestran como información.</WR_UsedSkillsTip>
+  <WR_TrainedSkillsLabel>Entrenadas</WR_TrainedSkillsLabel>
+  <WR_TrainedSkillsTip>Habilidades que ganan experiencia con los trabajos de este rol.\n\nSe deducen de los trabajos elegidos y se muestran como información.</WR_TrainedSkillsTip>
+  <WR_GatedSkillsLabel>Con mínimo</WR_GatedSkillsLabel>
+  <WR_GatedSkillsTip>Habilidades necesarias para ciertos trabajos del rol. El nivel mínimo depende de la receta, planta o edificio. Pasa el cursor para ver detalles.\n\nSe deducen de los trabajos elegidos y se muestran como información.</WR_GatedSkillsTip>
+  <WR_RecMoreContentGates>{0} más</WR_RecMoreContentGates>
+  <WR_EffectSpeed>Acelera el trabajo</WR_EffectSpeed>
+  <WR_EffectQuality>Mejora la calidad</WR_EffectQuality>
+  <WR_EffectYield>Aumenta el rendimiento</WR_EffectYield>
+  <WR_EffectSuccess>Mejora la probabilidad de éxito</WR_EffectSuccess>
+  <WR_RequiredSkillsLabel>Obligatorias</WR_RequiredSkillsLabel>
+  <WR_RequiredSkillsTip>Requisitos estrictos opcionales de este rol. Si el colono tiene desactivada cualquiera de estas habilidades, no se le recomienda. El nivel no influye; es independiente de los mínimos de contenido mostrados en Con mínimo.</WR_RequiredSkillsTip>
+  <WR_AddSkill>Añadir habilidad</WR_AddSkill>
+  <WR_AddSkillTip>Añade un requisito estricto de habilidad. No cambia las habilidades Utilizadas ni Entrenadas deducidas del rol.</WR_AddSkillTip>
+  <WR_RemoveSkillTip>Quita este requisito estricto de habilidad.</WR_RemoveSkillTip>
+  <WR_RoleMissingRequiredSkills>Habilidades obligatorias desactivadas para {0}: {1}.</WR_RoleMissingRequiredSkills>
+  <WR_PathAddRoleTip>Añade un rol a esta ruta.</WR_PathAddRoleTip>
+  <WR_BandChipTip>Arrastra un extremo para cambiar la banda; arrastra el centro para moverla.</WR_BandChipTip>
+  <WR_PriorityGridTitle>Tabla de prioridades</WR_PriorityGridTitle>
+  <WR_ShowPriorityGridTip>Muestra las prioridades de los colonos listados respetando los filtros de rol y ubicación activos; el diálogo permite elegir rangos propios o el intervalo original 0–4.</WR_ShowPriorityGridTip>
+  <WR_GridModeRaw>Prioridades de WorkRoles</WR_GridModeRaw>
+  <WR_GridModeVanilla>Prioridades originales</WR_GridModeVanilla>
+  <WR_ResizeGripTip>Arrastra para ampliar la ventana desde su tamaño ajustado al contenido. Doble clic para volver al tamaño automático.</WR_ResizeGripTip>
+  <WR_RolesTab>Roles</WR_RolesTab>
+  <WR_HelpTab>Ayuda</WR_HelpTab>
+  <WR_HelpChapterStart>Inicio</WR_HelpChapterStart>
+  <WR_HelpChapterBasics>Conceptos básicos</WR_HelpChapterBasics>
+  <WR_HelpChapterEditing>Editar roles</WR_HelpChapterEditing>
+  <WR_HelpChapterOrganizing>Organización</WR_HelpChapterOrganizing>
+  <WR_HelpChapterRecommendations>Recomendaciones</WR_HelpChapterRecommendations>
+  <WR_HelpChapterAdvanced>Avanzado</WR_HelpChapterAdvanced>
+  <WR_HelpReload>Recargar</WR_HelpReload>
+  <WR_HelpDemoChipA>Médico</WR_HelpDemoChipA>
+  <WR_HelpDemoChipB>Agricultor</WR_HelpDemoChipB>
+  <WR_HelpDemoChipC>Transportista</WR_HelpDemoChipC>
+  <WR_HelpTourHeader>Visita guiada</WR_HelpTourHeader>
+  <WR_HelpTourProgress>{0} de {1} temas leídos</WR_HelpTourProgress>
+  <WR_HelpTourComplete>¡Todo listo!</WR_HelpTourComplete>
+  <WR_HelpTourCompleteHint>Ya conoces lo esencial. Los capítulos anteriores explican el resto.</WR_HelpTourCompleteHint>
+  <WR_ClusterEveryone>Todos</WR_ClusterEveryone>
+  <WR_ClusterUnskilled>Sin especialización</WR_ClusterUnskilled>
+  <WR_OddJobsRole>Tareas diversas</WR_OddJobsRole>
+  <WR_BlockerRole>Rol de bloqueo</WR_BlockerRole>
+  <WR_BlockerRoleTipWhat>Los trabajos de un rol de bloqueo nunca se realizan: quedan bloqueados («no hará») aunque los incluya un rol posterior.</WR_BlockerRoleTipWhat>
+  <WR_BlockerRoleTipWhy>Los roles anteriores al bloqueo tienen preferencia; puedes permitir excepciones colocando un rol más arriba.</WR_BlockerRoleTipWhy>
+  <WR_ReasonFireFear>Terror genético al fuego: impide apagar incendios.</WR_ReasonFireFear>
+  <WR_RoleTipEnabled>activado</WR_RoleTipEnabled>
+  <WR_RoleTipDisabled>DESACTIVADO globalmente</WR_RoleTipDisabled>
+  <WR_RoleTipDisabledHere>DESACTIVADO para este colono</WR_RoleTipDisabledHere>
+  <WR_RoleTipDisabledBoth>DESACTIVADO globalmente y para este colono</WR_RoleTipDisabledBoth>
+  <WR_RoleTipForcedOn>activado, forzado para este colono</WR_RoleTipForcedOn>
+  <WR_RoleTipForcedOnGlobalOff>FORZADO para este colono (rol DESACTIVADO globalmente)</WR_RoleTipForcedOnGlobalOff>
+  <WR_BadgeBlocker>bloqueo</WR_BadgeBlocker>
+  <WR_BadgeHours>horario limitado</WR_BadgeHours>
+  <WR_BadgeLocation>ubicaciones limitadas</WR_BadgeLocation>
+  <WR_TipJobsLabel>Trabajos</WR_TipJobsLabel>
+  <WR_TipSkillsLabel>Habilidades</WR_TipSkillsLabel>
+  <WR_TipTrainingHeader>Formación</WR_TipTrainingHeader>
+  <WR_TipTrainingRecommend>Recomendado para colonos con habilidad {0}</WR_TipTrainingRecommend>
+  <WR_TipTrainingPath>en su camino hacia {0}</WR_TipTrainingPath>
+  <WR_TipBestFitsLabel>Mejores candidatos</WR_TipBestFitsLabel>
+  <WR_TipWholeType>{0} (todos los trabajos)</WR_TipWholeType>
+  <WR_TipMore>+{0} más</WR_TipMore>
+  <WR_RoleCapNeverDo>{0} nunca realizará {1}</WR_RoleCapNeverDo>
+  <WR_RoleCapAllJobs>ninguno de los trabajos de este rol</WR_RoleCapAllJobs>
+  <WR_RoleCapSomeJobs>{0} de los {1} trabajos de este rol</WR_RoleCapSomeJobs>
+  <WR_RoleJobIncapable>incapaz de realizar este trabajo</WR_RoleJobIncapable>
+  <WR_RoleJobNoRangedWeapon>sin arma a distancia</WR_RoleJobNoRangedWeapon>
+  <WR_RoleJobTooYoung>demasiado joven; posible desde los {0} años</WR_RoleJobTooYoung>
+  <WR_RoleTooYoung>{0} es demasiado joven para este rol (edad mínima: {1}).</WR_RoleTooYoung>
+  <WR_RoleTooOld>{0} es demasiado mayor para este rol (edad máxima: {1}).</WR_RoleTooOld>
+  <WR_MtcHatedWorkSignalLabel>Odia {0}</WR_MtcHatedWorkSignalLabel>
+  <WR_MtcHatedWorkSignalDescription>More Than Capable permite este trabajo, pero provoca penalizaciones graves y crecientes.</WR_MtcHatedWorkSignalDescription>
+  <WR_RoleAwfulSignal>{0} tiene una señal Pésima para este rol: {1}.</WR_RoleAwfulSignal>
+  <WR_ActClick>Clic</WR_ActClick>
+  <WR_ActShiftClick>Mayús+clic</WR_ActShiftClick>
+  <WR_ActCtrlShiftClick>Ctrl+Mayús+clic</WR_ActCtrlShiftClick>
+  <WR_ActAltClick>Alt+clic</WR_ActAltClick>
+  <WR_ActDrag>Arrastrar</WR_ActDrag>
+  <WR_ActRightClick>Clic derecho</WR_ActRightClick>
+  <WR_ActX>X</WR_ActX>
+  <WR_ActPaletteClick>Activar o desactivar el rol globalmente</WR_ActPaletteClick>
+  <WR_ActPaletteShiftClick>Asignar a los colonos seleccionados al final de la fila</WR_ActPaletteShiftClick>
+  <WR_ActPaletteCtrlShiftClick>Asignar a los colonos seleccionados justo después de Básicos</WR_ActPaletteCtrlShiftClick>
+  <WR_ActPaletteAltClick>Asignar a los colonos seleccionados donde lo sitúe el motor de recomendaciones</WR_ActPaletteAltClick>
+  <WR_ActPaletteDrag>Asignar a un colono</WR_ActPaletteDrag>
+  <WR_ActTreeClick>Seleccionar para editar</WR_ActTreeClick>
+  <WR_ActTreeDrag>Reordenar o mover entre grupos</WR_ActTreeDrag>
+  <WR_ActTreeRightClick>Componer el rol (incluir/excluir)</WR_ActTreeRightClick>
+  <WR_ActChipClick>Alternar activado, desactivado o forzado para este colono</WR_ActChipClick>
+  <WR_ActChipRightClick>Opciones de fijación</WR_ActChipRightClick>
+  <WR_ActChipDrag>Reordenar o mover a otro colono</WR_ActChipDrag>
+  <WR_ActChipX>Quitar</WR_ActChipX>
+  <WR_ColonistNameCaption>Nombre del colono</WR_ColonistNameCaption>
+  <WR_AssignedRoleCaption>Rol asignado</WR_AssignedRoleCaption>
+  <WR_CoveredJobCaption>Trabajo cubierto</WR_CoveredJobCaption>
+  <WR_LocationCaption>Ubicación</WR_LocationCaption>
+  <WR_GroupByCaption>Agrupar por</WR_GroupByCaption>
+  <WR_SkillColumnsCaption>Columnas de habilidades</WR_SkillColumnsCaption>
+  <WR_RoleDisplayCaption>Visualización de roles</WR_RoleDisplayCaption>
+  <WR_ColonistSearchTip>Busca nombres de colonos. Separa términos con espacios: deben coincidir todos. Usa r: o role: para buscar roles asignados, o j: o job: para buscar trabajos aportados por esos roles. Ejemplo: br r:doc.</WR_ColonistSearchTip>
+  <WR_ColonistRoleFilterTip>Lista los colonos asignados al rol seleccionado. También coincide un rol asignado no bloqueador si sus trabajos cubren por completo el rol seleccionado. Se combina con los filtros de búsqueda, trabajo y ubicación.</WR_ColonistRoleFilterTip>
+  <WR_ColonistJobFilterTip>Seleccionado: {0}
+
+Lista los colonos cuyos roles asignados no bloqueadores contienen este trabajo. Comprueba la cobertura de roles, no la actividad actual ni la prioridad de trabajo original.</WR_ColonistJobFilterTip>
+  <WR_ColonistScopeTip>Elige de qué ubicaciones proceden los colonos de la tabla. Ubicación actual sigue el mapa activo; Todas partes incluye asentamientos, caravanas y una gravinave en viaje.</WR_ColonistScopeTip>
+  <WR_ColonistGroupTip>Divide los colonos visibles según la característica elegida. No cambia qué colonos cumplen los filtros; las cabeceras de sección pueden contraerse.</WR_ColonistGroupTip>
+  <WR_ColonistSkillColumnsTip>Elige hasta tres columnas de habilidades. Pulsa una cabecera para ordenar por ella o su X para quitar la columna.</WR_ColonistSkillColumnsTip>
+  <WR_ColonistRoleDisplayTip>Elige qué muestran las fichas de roles: nombres completos, iniciales o iconos. El botón contiguo alterna entre fichas apiladas y columnas en cuadrícula. Es un ajuste de visualización por jugador.</WR_ColonistRoleDisplayTip>
+  <WR_ChipLayoutGridTip>Las fichas se alinean en columnas de igual anchura. Los nombres largos se desvanecen al borde; solo reciben más espacio si hay nombres similares que distinguir. La descripción muestra el nombre completo. Pulsa para usar anchuras naturales. Clic derecho para elegir cuánto nombre cabe en las columnas.</WR_ChipLayoutGridTip>
+  <WR_ChipLayoutStackTip>Las fichas se apilan con su anchura natural. Pulsa para alinearlas en columnas iguales. Clic derecho para elegir cuánto nombre cabe en las columnas.</WR_ChipLayoutStackTip>
+  <WR_GridNamesAutomatic>Automático</WR_GridNamesAutomatic>
+  <WR_GridNamesShort>Corto</WR_GridNamesShort>
+  <WR_GridNamesMedium>Medio</WR_GridNamesMedium>
+  <WR_GridNamesLong>Largo</WR_GridNamesLong>
+  <WR_GridNamesFull>Completo</WR_GridNamesFull>
+  <WR_ColonistClearFiltersTip>Borra la búsqueda de nombres y los filtros de rol asignado y trabajo cubierto. Mantiene ubicación, agrupación, columnas de habilidades y visualización de roles.</WR_ColonistClearFiltersTip>
+  <WR_FilterAllRoles>Todos los roles</WR_FilterAllRoles>
+  <WR_ScopeAll>Todas partes</WR_ScopeAll>
+  <WR_ScopeCurrent>Ubicación actual</WR_ScopeCurrent>
+  <WR_ScopeCurrentNamed>{0} (ubicación actual)</WR_ScopeCurrentNamed>
+  <WR_ShipFallback>Gravinave</WR_ShipFallback>
+  <WR_ShipTip>La gravinave mientras no esté estacionada en un asentamiento; la casilla de asentamiento tiene prioridad.</WR_ShipTip>
+  <WR_GroupNone>Sin agrupar</WR_GroupNone>
+  <WR_GroupFaction>Facción</WR_GroupFaction>
+  <WR_GroupRace>Raza</WR_GroupRace>
+  <WR_GroupGender>Género</WR_GroupGender>
+  <WR_GroupAge>Edad</WR_GroupAge>
+  <WR_GroupXenotype>Xenotipo</WR_GroupXenotype>
+  <WR_GroupIdeo>Ideología</WR_GroupIdeo>
+  <WR_GroupSlaves>Esclavitud</WR_GroupSlaves>
+  <WR_GroupTitleColonists>Colonos</WR_GroupTitleColonists>
+  <WR_GroupTitleSlaves>Esclavos</WR_GroupTitleSlaves>
+  <WR_GroupColonyGroups>Colony Groups</WR_GroupColonyGroups>
+  <WR_GroupTitleUngrouped>Sin grupo</WR_GroupTitleUngrouped>
+  <WR_ChipsNormal>Fichas: nombres completos</WR_ChipsNormal>
+  <WR_ChipsCompact>Fichas: iniciales</WR_ChipsCompact>
+  <WR_ChipsIcons>Fichas: iconos</WR_ChipsIcons>
+  <WR_OrderSuffixBar>(orden de pestaña)</WR_OrderSuffixBar>
+  <WR_OrderSuffixAZ>(A-Z)</WR_OrderSuffixAZ>
+  <WR_DisplayButton>Visualización</WR_DisplayButton>
+  <WR_DisplayOptions>Opciones de visualización</WR_DisplayOptions>
+  <WR_CopyRolesTip>Copiar los roles de este colono.</WR_CopyRolesTip>
+  <WR_PasteRolesTip>Pegar los roles copiados en este colono.</WR_PasteRolesTip>
+  <WR_AddRoleTip>Asignar un rol.</WR_AddRoleTip>
+  <WR_SkillsButton>Habilidades</WR_SkillsButton>
+  <WR_SkillsButtonCount>Habilidades ({0}/{1})</WR_SkillsButtonCount>
+  <WR_ColColonist>Colono</WR_ColColonist>
+  <WR_NoFilterMatches>Ningún colono coincide con el filtro.</WR_NoFilterMatches>
+  <WR_FixMyColony>Arreglar mi colonia</WR_FixMyColony>
+  <WR_FixMyColonyTip>Sustituir los roles de cada colono por los recomendados.</WR_FixMyColonyTip>
+  <WR_FixNeedsSingleLocation>Las recomendaciones se calculan por ubicación. Limita el ámbito a un asentamiento o nave para usar Arreglar mi colonia.</WR_FixNeedsSingleLocation>
+  <WR_AutoManaged>Gestión automática</WR_AutoManaged>
+  <WR_AutoManagedTip>WorkRoles actualiza las asignaciones de todas las colonias al inicio de cada hora del juego.
+
+Se conservan las asignaciones fijadas, incluso de roles excluidos.
+
+Desactiva «Optimizar las colonias cada hora del juego» en Opciones para recuperar Arreglar mi colonia.</WR_AutoManagedTip>
+  <WR_SetPriorityBlockedTitle>WorkRoles gestiona las prioridades</WR_SetPriorityBlockedTitle>
+  <WR_SetPriorityBlockedBody>{0} intentó establecer prioridades de trabajo ({1}).
+
+WorkRoles ha bloqueado {2} escrituras de prioridades desde el aviso anterior o el inicio de esta sesión.
+
+WorkRoles controla las prioridades de los colonos gestionados por roles, así que se ignoró el cambio. Las demás funciones del mod no se ven afectadas.
+
+Para lograr algo similar, crea o edita un rol con ese trabajo en Roles y sitúalo donde quieras en la lista de cada colono, o usa un rol de bloqueo para prohibirlo por completo.
+
+Este aviso aparece una vez por mod y partida.</WR_SetPriorityBlockedBody>
+  <WR_AllWork>todo el trabajo</WR_AllWork>
+  <WR_GiverBypassTitle>Un trabajo ha eludido las listas de roles</WR_GiverBypassTitle>
+  <WR_GiverBypassBody>{0} empezó «{1}», pero ninguno de sus roles incluye ese trabajo.
+
+WorkRoles entrega la lista de trabajos de cada colono gestionado mediante los métodos estándar del juego. Parece que otro mod elige trabajos con su propia lista y evita las restricciones. Mientras esté activo, los colonos pueden realizar a veces trabajos ajenos a sus roles.
+
+No se interrumpió el trabajo. Este aviso aparece una vez por partida.</WR_GiverBypassBody>
+  <WR_Apply>Aplicar</WR_Apply>
+  <WR_SelectAll>Seleccionar todo</WR_SelectAll>
+  <WR_PreviewNoChanges>Sin cambios.</WR_PreviewNoChanges>
+  <WR_PreviewStale>La colonia cambió mientras la vista previa estaba abierta; no se aplicó nada.</WR_PreviewStale>
+  <WR_ReasonEveryone>Asignado automáticamente a todos.</WR_ReasonEveryone>
+  <WR_ReasonHunter>Lleva un arma a distancia; la caza también entrena Disparo.</WR_ReasonHunter>
+  <WR_ReasonSignal>Las señales de recomendación favorecen a {0}.</WR_ReasonSignal>
+  <WR_ReasonCoverage>Cobertura de la colonia: el mejor disponible para este trabajo.</WR_ReasonCoverage>
+  <WR_ReasonRemoved>No figura entre las recomendaciones. Fija los roles que quieras conservar antes de aplicar.</WR_ReasonRemoved>
+  <WR_SignalColSignal>Señal</WR_SignalColSignal>
+  <WR_SignalColEffects>Efectos</WR_SignalColEffects>
+  <WR_SignalCondition>Condición</WR_SignalCondition>
+  <WR_SignalSource>Origen</WR_SignalSource>
+  <WR_SignalVerdict>Valoración</WR_SignalVerdict>
+  <WR_SignalSkillPromotion>Habilidad alta</WR_SignalSkillPromotion>
+  <WR_SignalSkillPromotionEffect>{0} → {1}</WR_SignalSkillPromotionEffect>
+  <WR_SignalSkillPromotionCondition>El nivel {0} alcanza el umbral {1}</WR_SignalSkillPromotionCondition>
+  <WR_SignalFromSkill>(de {0})</WR_SignalFromSkill>
+  <WR_SignalAlreadyReflected>Ya incluido en el nivel de habilidad mostrado</WR_SignalAlreadyReflected>
+  <WR_SignalDisabled>Desactivada</WR_SignalDisabled>
+  <WR_SignalCapabilityOff>{0} desactivado</WR_SignalCapabilityOff>
+  <WR_SignalCapabilityAwful>{0} se considera pésimo</WR_SignalCapabilityAwful>
+  <WR_SignalDescriptive>Descriptivo</WR_SignalDescriptive>
+  <WR_SignalExpertiseScale>base {0}, nivel de pericia {1}, actual {2}</WR_SignalExpertiseScale>
+  <WR_VerdictAwful>Pésima</WR_VerdictAwful>
+  <WR_VerdictPoor>Mala</WR_VerdictPoor>
+  <WR_VerdictNeutral>Neutral</WR_VerdictNeutral>
+  <WR_VerdictStrong>Buena</WR_VerdictStrong>
+  <WR_VerdictGreat>Excelente</WR_VerdictGreat>
+  <WR_VerdictExceptional>Excepcional</WR_VerdictExceptional>
+  <WR_PinAssignment>Fijar</WR_PinAssignment>
+  <WR_UnpinAssignment>Desfijar</WR_UnpinAssignment>
+  <WR_PinnedTip>Fijado: Así sea, Arreglar mi colonia y la optimización automática conservan esta asignación, aunque el rol o un miembro compuesto estén excluidos de las recomendaciones.</WR_PinnedTip>
+  <WR_CopiedRoles>Roles de {0} copiados.</WR_CopiedRoles>
+  <WR_RecommendedRoles>Roles recomendados</WR_RecommendedRoles>
+  <WR_AlreadyAssigned>Ya asignado</WR_AlreadyAssigned>
+  <WR_WillBeRemoved>No figura entre las recomendaciones. Fija los roles que quieras conservar antes de aplicar.</WR_WillBeRemoved>
+  <WR_RecTipColonyNeed>Necesidades de la colonia</WR_RecTipColonyNeed>
+  <WR_RecTipSkills>Habilidades consideradas</WR_RecTipSkills>
+  <WR_RecTipSignalVerdict>Valoración de señales</WR_RecTipSignalVerdict>
+  <WR_RecTipSelection>Selección</WR_RecTipSelection>
+  <WR_RecTipAssignmentsOne>Se solicita 1 asignación</WR_RecTipAssignmentsOne>
+  <WR_RecTipAssignmentsMany>Se solicitan {0} asignaciones</WR_RecTipAssignmentsMany>
+  <WR_RecTipWithWaiverOne>{0} (1 sustitución por formación)</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0} ({1} sustituciones por formación)</WR_RecTipWithWaiversMany>
+  <WR_RecTipEveryoneCapable>Asignado a todos los capaces</WR_RecTipEveryoneCapable>
+  <WR_RecDecisionAuto>Asignado automáticamente a todo personaje capaz.</WR_RecDecisionAuto>
+  <WR_RecDecisionSignals>El personaje alcanza el umbral de señal configurado.</WR_RecDecisionSignals>
+  <WR_RecDecisionCoverageDraft>Mejor candidato restante elegido para cumplir la cobertura necesaria.</WR_RecDecisionCoverageDraft>
+  <WR_RecDecisionTraining>Asignado mediante la ruta de formación de {0}.</WR_RecDecisionTraining>
+  <WR_RecDecisionTrainingUnknown>Asignado mediante una ruta de formación.</WR_RecDecisionTrainingUnknown>
+  <WR_RecDecisionDirectSlot>Elegido directamente para cubrir la plaza {0} de {1} de {2}.</WR_RecDecisionDirectSlot>
+  <WR_RecDecisionTrainingSlot>Elegido para cubrir la plaza {0} de {1} de {2}. Una sustitución por formación cambió {2} por {3} ({4}; {2} requiere {5}).</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>Elegido para cubrir la plaza {0} de {1} de {2}. Una sustitución por formación cambió {2} por {3}.</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>Elegido para cubrir la plaza {0} de {1} mediante formación, asignando {2}.</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
+  <WR_RecDecisionDirectFallbackSlot>Elegido directamente para cubrir la plaza {0} de {1} de {2} porque ningún sustituto de formación cumplía los requisitos.</WR_RecDecisionDirectFallbackSlot>
+  <WR_RecDecisionCoverageRepairSlot>Elegido directamente para cubrir la plaza obligatoria restante {0} de {1} de {2}.</WR_RecDecisionCoverageRepairSlot>
+  <WR_RecDecisionSignalSurplus>Elegido como candidato adicional según la valoración de señales.</WR_RecDecisionSignalSurplus>
+  <WR_RecDecisionAptitudeSurplus>Elegido como candidato adicional porque su aptitud combinada alcanza o supera la exigida por el rol.</WR_RecDecisionAptitudeSurplus>
+  <WR_RecDecisionHunter>Lleva un arma a distancia y puede cazar.</WR_RecDecisionHunter>
+  <WR_RecDecisionFire>El miedo al fuego exige bloquear la extinción de incendios.</WR_RecDecisionFire>
+  <WR_RecDecisionRetained>Se conserva el rol existente sin especialización.</WR_RecDecisionRetained>
+  <WR_RecDecisionProtected>Se conserva la asignación protegida existente.</WR_RecDecisionProtected>
+  <WR_RecDecisionIncapacitated>El colono está incapacitado. Sus roles no excluidos y asignaciones fijadas se conservan y no cuentan para las necesidades de la colonia hasta que se recupere.</WR_RecDecisionIncapacitated>
+  <WR_RecDecisionNever>Este rol está configurado para no recomendarse.</WR_RecDecisionNever>
+  <WR_RecDecisionControlledByTraining>Controlado por {0}: se asigna mediante su ruta de formación, no por separado.</WR_RecDecisionControlledByTraining>
+  <WR_RecDecisionDisabled>Este rol está desactivado.</WR_RecDecisionDisabled>
+  <WR_RecDecisionUnavailable>El trabajo del rol no está disponible hasta completar la investigación.</WR_RecDecisionUnavailable>
+  <WR_RecDecisionExcluded>Este rol se gestiona mediante reglas y no entra en las recomendaciones normales.</WR_RecDecisionExcluded>
+  <WR_RecDecisionIncapable>El personaje no puede realizar el trabajo de este rol.</WR_RecDecisionIncapable>
+  <WR_RecDecisionNotMechanitor>El colono no tiene un mecaenlace y no puede realizar el trabajo de mecanitor.</WR_RecDecisionNotMechanitor>
+  <WR_RecDecisionHunterRequirements>El personaje no lleva un arma a distancia.</WR_RecDecisionHunterRequirements>
+  <WR_RecDecisionAwful>Una señal Pésima descarta al personaje.</WR_RecDecisionAwful>
+  <WR_RecDecisionCovered>Cubierto por el rol recomendado: {0}.</WR_RecDecisionCovered>
+  <WR_RecDecisionCoveredUnknown>Cubierto por otro rol recomendado.</WR_RecDecisionCoveredUnknown>
+  <WR_RecDecisionCoverageFilled>La cobertura necesaria se completó con candidatos mejor clasificados.</WR_RecDecisionCoverageFilled>
+  <WR_RecDecisionWeakSignal>La valoración está por debajo del umbral y la cobertura necesaria no eligió al personaje.</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionNotSelected>Ninguna regla de recomendación eligió al personaje.</WR_RecDecisionNotSelected>
+  <WR_RecDecisionOutOfBand>La habilidad del personaje corresponde a otra banda de la ruta de formación.</WR_RecDecisionOutOfBand>
+  <WR_RecDecisionOutqualified>Se eligieron candidatos más cualificados para las plazas disponibles.</WR_RecDecisionOutqualified>
+  <WR_RecDecisionRecommended>Elegido por el motor de recomendaciones.</WR_RecDecisionRecommended>
+  <WR_MakeItSo>Así sea</WR_MakeItSo>
+  <WR_AllRolesAssigned>Todos los roles asignados</WR_AllRolesAssigned>
+  <WR_NowDrafted>Reclutado</WR_NowDrafted>
+  <WR_NowMental>Crisis mental</WR_NowMental>
+  <WR_NowIdle>Inactivo</WR_NowIdle>
+  <WR_NowForced>Orden del jugador</WR_NowForced>
+  <WR_NowSleeping>Durmiendo</WR_NowSleeping>
+  <WR_NowRecreation>Recreación</WR_NowRecreation>
+  <WR_NowNeeds>Necesidades personales</WR_NowNeeds>
+  <WR_NowBusy>Ocupado</WR_NowBusy>
+  <WR_NowTip>{0}: {1}</WR_NowTip>
+  <WR_TipActivityLabel>Actividad actual</WR_TipActivityLabel>
+  <WR_TipActivityValue>{0} está {1}</WR_TipActivityValue>
+  <WR_RestoreDefaults>Restaurar valores predeterminados</WR_RestoreDefaults>
+  <WR_RestoreDefaultsTip>Recrea roles y rutas predefinidos que falten, restaura exclusiones y devuelve los roles predefinidos a sus grupos, colores y opciones de titulares predeterminados. Una vista previa permite elegir qué restaurar.</WR_RestoreDefaultsTip>
+  <WR_RestoreDefaultsTitle>Restaurar valores predeterminados</WR_RestoreDefaultsTitle>
+  <WR_Export>Exportar</WR_Export>
+  <WR_Import>Importar</WR_Import>
+  <WR_ExportTip>Escribir todas las definiciones de roles (no asignaciones) en:\n{0}</WR_ExportTip>
+  <WR_ImportTip>Añadir las definiciones de roles de:\n{0}</WR_ImportTip>
+  <WR_ExportTitle>Exportar roles</WR_ExportTitle>
+  <WR_CopyClipboard>Copiar al portapapeles</WR_CopyClipboard>
+  <WR_CopyPath>Copiar ruta</WR_CopyPath>
+  <WR_Save>Guardar</WR_Save>
+  <WR_ExportLocationLabel>Ubicación de exportación</WR_ExportLocationLabel>
+  <WR_LocGameData>Carpeta de datos del juego</WR_LocGameData>
+  <WR_LocDesktop>Escritorio</WR_LocDesktop>
+  <WR_LocUserHome>Carpeta personal</WR_LocUserHome>
+  <WR_LocCustom>Personalizada...</WR_LocCustom>
+  <WR_EnterPath>Introducir ruta</WR_EnterPath>
+  <WR_BadFileName>Introduce un nombre de fichero válido.</WR_BadFileName>
+  <WR_BadDirectory>Introduce una ruta de directorio válida.</WR_BadDirectory>
+  <WR_ImportTitle>Importar roles</WR_ImportTitle>
+  <WR_ImportFromClipboard>Desde el portapapeles</WR_ImportFromClipboard>
+  <WR_ImportLocationLabel>Ubicación de importación</WR_ImportLocationLabel>
+  <WR_ImportClipboardInvalid>El portapapeles no contiene una exportación de WorkRoles.</WR_ImportClipboardInvalid>
+  <WR_ImportFileMissing>No se ha encontrado ningún fichero en {0}</WR_ImportFileMissing>
+  <WR_ImportParseFailed>No se han podido leer los roles: {0}</WR_ImportParseFailed>
+  <WR_SectionPalette>Paleta</WR_SectionPalette>
+  <WR_SectionRoles>Roles</WR_SectionRoles>
+  <WR_ModeMerge>Combinar</WR_ModeMerge>
+  <WR_ModeOverwrite>Sobrescribir</WR_ModeOverwrite>
+  <WR_RowNew>{0} (nuevo)</WR_RowNew>
+  <WR_RowUpdate>{0} (actualizar)</WR_RowUpdate>
+  <WR_RowRecolors>{0} → {1} (cambia el color de: {2})</WR_RowRecolors>
+  <WR_RowNewColor>{0} {1} (color nuevo)</WR_RowNewColor>
+  <WR_NothingToMerge>Todo coincide: no hay nada que combinar.</WR_NothingToMerge>
+  <WR_PaletteOverwriteInfo>Sustituye todos los colores personalizados por las {0} entradas de paleta del fichero.</WR_PaletteOverwriteInfo>
+  <WR_OverwriteReplaces>Aplica los {0} roles del fichero. Los roles coincidentes (mismo rol predefinido o, en su defecto, mismo nombre) conservan sus asignaciones.</WR_OverwriteReplaces>
+  <WR_OverwriteDeletes>Elimina (no están en el fichero): {0}. Los colonos pierden estas asignaciones.</WR_OverwriteDeletes>
+  <WR_PathsOverwriteInfo>Sustituye todas las rutas de formación por las {0} del fichero.</WR_PathsOverwriteInfo>
+  <WR_ImportSummary>Importación completada: {0} añadidos, {1} actualizados, {2} eliminados, {3} cambios de paleta, {4} rutas de formación.</WR_ImportSummary>
+  <WR_CopiedToClipboard>Copiado al portapapeles.</WR_CopiedToClipboard>
+  <WR_ExportSaved>Guardado en {0}</WR_ExportSaved>
+  <WR_ExportFailed>No se ha podido guardar: {0}</WR_ExportFailed>
+  <WR_ExportOverwriteConfirm>{0} ya existe. ¿Sustituirlo?</WR_ExportOverwriteConfirm>
+  <WR_RestoreMovedJobs>{0} (recuperar {1} trabajos trasladados)</WR_RestoreMovedJobs>
+  <WR_RestorePathItem>{0} (ruta de formación)</WR_RestorePathItem>
+  <WR_RestoreGroupItem>{0} (mover al grupo «{1}»)</WR_RestoreGroupItem>
+  <WR_RestoreColorItem>{0} (restaurar color predeterminado)</WR_RestoreColorItem>
+  <WR_RestoreJobsItem>{0} (restablecer trabajos predeterminados)</WR_RestoreJobsItem>
+  <WR_RestoreSnapColorItem>{0} (ajustar color a la paleta)</WR_RestoreSnapColorItem>
+  <WR_RestoreHoldersItem>{0} (restaurar titulares predeterminados)</WR_RestoreHoldersItem>
+  <WR_RestoreRecOrder>Orden de recomendaciones (restaurar predeterminado)</WR_RestoreRecOrder>
+  <WR_RestoreDefaultExclusions>Roles excluidos predeterminados</WR_RestoreDefaultExclusions>
+  <WR_RestoreExplainDefaultExclusions>Vuelve a añadir las exclusiones predeterminadas que falten. Conserva los demás roles que hayas excluido.</WR_RestoreExplainDefaultExclusions>
+  <WR_RestoreOverwriteWarning>⚠ Los elementos resaltados sobrescribirán tus cambios.</WR_RestoreOverwriteWarning>
+  <WR_RestoreDuplicateHint>(ya existe un rol con este nombre)</WR_RestoreDuplicateHint>
+  <WR_RestoreExplainRole>Crea el rol desde la plantilla del mod.</WR_RestoreExplainRole>
+  <WR_RestoreExplainCoverage>Genera un rol que cubre este tipo de trabajo.</WR_RestoreExplainCoverage>
+  <WR_RestoreExplainBackfill>Vuelve a añadir {0} trabajos trasladados por mods.</WR_RestoreExplainBackfill>
+  <WR_RestoreExplainGroup>Devuelve el rol al grupo «{0}».</WR_RestoreExplainGroup>
+  <WR_RestoreExplainColor>Restaura el color predeterminado de la plantilla.</WR_RestoreExplainColor>
+  <WR_RestoreExplainJobs>Restaura los trabajos predeterminados actuales del mod. Los colonos conservan el conjunto de trabajos: se les asignan automáticamente roles que cubran los trabajos retirados.</WR_RestoreExplainJobs>
+  <WR_RestoreExplainSnapColor>Sustituye el color generado por el más cercano de la paleta, para que el selector lo resalte.</WR_RestoreExplainSnapColor>
+  <WR_RestoreExplainHolders>Restaura la escala de titulares predeterminada de la plantilla.</WR_RestoreExplainHolders>
+  <WR_RestoreExplainRecOrder>Borra tu orden personalizado.</WR_RestoreExplainRecOrder>
+  <WR_RestoreExplainPath>Crea la ruta de formación.</WR_RestoreExplainPath>
+  <WR_NothingToRestore>Nada que restaurar: están todos los roles y rutas predefinidos con sus grupos, colores y opciones de titulares predeterminados, y no se ha trasladado ningún trabajo.</WR_NothingToRestore>
+  <WR_RolesRestored>Restaurado: {0}</WR_RolesRestored>
+  <WR_FilterAnyJob>Cualquier trabajo</WR_FilterAnyJob>
+  <WR_RoleLabelOff>{0} (desactivado)</WR_RoleLabelOff>
+  <WR_SelectOrCreateRole>Selecciona o crea un rol.</WR_SelectOrCreateRole>
+  <WR_New>Nuevo</WR_New>
+  <WR_Copy>Copiar</WR_Copy>
+  <WR_Delete>Eliminar</WR_Delete>
+  <WR_NewRoleTitle>Nuevo rol</WR_NewRoleTitle>
+  <WR_CopyRoleTitle>Copiar rol</WR_CopyRoleTitle>
+  <WR_CopySource>Copiando {0}</WR_CopySource>
+  <WR_NameTaken>Ya existe un rol con este nombre.</WR_NameTaken>
+  <WR_DeleteConfirm>¿Eliminar el rol «{0}»? Se quitará de todos los colonos.</WR_DeleteConfirm>
+  <WR_AssignedTo>Asignado a</WR_AssignedTo>
+  <WR_Nobody>Nadie</WR_Nobody>
+  <WR_PlusOthers>+{0} más</WR_PlusOthers>
+  <WR_AvailableJobs>Trabajos disponibles</WR_AvailableJobs>
+  <WR_Search>Buscar</WR_Search>
+  <WR_WarningPrefix>Aviso:</WR_WarningPrefix>
+  <WR_UnusedJobsWarning>Hay trabajos que no pertenecen a ningún rol.</WR_UnusedJobsWarning>
+  <WR_SelectedJobs>Trabajos seleccionados (ordenados)</WR_SelectedJobs>
+  <WR_TypeColumn>Tipo</WR_TypeColumn>
+  <WR_JobColumn>Trabajo</WR_JobColumn>
+  <WR_AllJobs>Todos los trabajos</WR_AllJobs>
+  <WR_CoveredByTypeTip>Cubierto por el tipo de trabajo. Pulsa para darle una entrada propia que puedas reordenar.</WR_CoveredByTypeTip>
+  <WR_AddAllJobs>Añadir todos los trabajos (individuales y ordenables)</WR_AddAllJobs>
+  <WR_SelectedRows>{0} seleccionados</WR_SelectedRows>
+  <WR_MoveSelectedUpTip>Sube las filas seleccionadas un paso. Clic para seleccionar, Mayús+clic para un intervalo, Ctrl+clic para añadir o quitar una fila.</WR_MoveSelectedUpTip>
+  <WR_MoveSelectedDownTip>Baja las filas seleccionadas un paso.</WR_MoveSelectedDownTip>
+  <WR_RemoveSelectedTip>Quita las filas seleccionadas.</WR_RemoveSelectedTip>
+  <WR_MissingDef>{0} no está disponible con los mods actuales; permanece inactivo hasta que vuelva su mod.</WR_MissingDef>
+  <WR_DeadEntryTip>Sin efecto: todo lo que cubre esta entrada ya está cubierto por las anteriores. Súbela para darle prioridad o elimínala.</WR_DeadEntryTip>
+  <WR_CompositeRole>Rol compuesto</WR_CompositeRole>
+  <WR_CompositeRoleTip>Agrupa otros roles: sus titulares hacen los trabajos de los miembros en el orden de estos. No tiene lista de trabajos propia.</WR_CompositeRoleTip>
+  <WR_CompositeConfirm>¿Convertir «{0}» en un rol compuesto? Se eliminarán sus trabajos seleccionados.</WR_CompositeConfirm>
+  <WR_CompositeRevertConfirm>¿Convertir «{0}» de nuevo en un rol normal? Se eliminarán sus roles miembros.</WR_CompositeRevertConfirm>
+  <WR_MemberRoles>Roles miembros (ordenados)</WR_MemberRoles>
+  <WR_AvailableRoles>Roles disponibles</WR_AvailableRoles>
+  <WR_NoMembersHint>Añade roles de la lista izquierda. Los titulares ejecutan los trabajos de los miembros en el orden mostrado.</WR_NoMembersHint>
+  <WR_NoCandidatesHint>No se puede añadir ningún rol. Los miembros deben ser roles normales sin reglas de horario o ubicación; un compuesto no puede contener otro compuesto.</WR_NoCandidatesHint>
+  <WR_MemberLockTip>Bloqueado: este rol pertenece a un compuesto. Quítalo de todos los compuestos para cambiar esta opción.</WR_MemberLockTip>
+  <WR_ScaleRenameTip>Renombra esta escala; los roles que la usan siguen vinculados.</WR_ScaleRenameTip>
+  <WR_ScaleRenameTitle>Renombrar escala</WR_ScaleRenameTitle>
+  <WR_ScaleNewTitle>Nueva escala (copia la actual)</WR_ScaleNewTitle>
+  <WR_ScaleUsedBy>Usada por {0}</WR_ScaleUsedBy>
+  <WR_ScaleReset>Restablecer</WR_ScaleReset>
+  <WR_ScaleResetTip>Restaura los valores anteriores a tus cambios desde que seleccionaste este rol o escala.</WR_ScaleResetTip>
+  <WR_ScaleSaveAs>Guardar como</WR_ScaleSaveAs>
+  <WR_ScaleDeleteConfirm>¿Eliminar la escala «{0}»?\n\n{1}. Estos roles pasarán a usar Nunca.</WR_ScaleDeleteConfirm>
+  <WR_ScaleSaveAsTitle>Guardar cambios como una escala nueva (esta vuelve a sus valores guardados)</WR_ScaleSaveAsTitle>
+  <WR_ScaleDirectTip>Mínimo directo de esta banda; el resto del total puede cubrirse con sustituciones por formación. Subirlo por encima del total también eleva el total. Clic +1 (vuelve al inicio tras 8), clic derecho -1. Arrastra con el izquierdo para copiar entre bandas; el clic derecho durante el arrastre ajusta el valor en la dirección del movimiento. Arrastra con el derecho para una rampa: un paso por banda, subiendo hacia la derecha y bajando hacia la izquierda.</WR_ScaleDirectTip>
+  <WR_ScaleTotalsCaption>Total necesario (incluye formación)</WR_ScaleTotalsCaption>
+  <WR_ScaleMinsCaption>Mínimo directo de {0}</WR_ScaleMinsCaption>
+  <WR_ScaleTrainingHelp>Este rol sirve de formación para {0}, por lo que sus asignaciones dependen de las opciones de {0}, incluso si aquí dice Nunca. Aun así, puedes forzar aquí el mínimo de asignaciones de {1}.</WR_ScaleTrainingHelp>
+  <WR_ScaleControlledBy>Controlado por {0}</WR_ScaleControlledBy>
+  <WR_ScaleTotalTip>Total necesario de esta banda, incluidas las sustituciones por formación. Aumentarlo crea plazas de formación; reducirlo consume esas plazas antes de bajar el mínimo directo. Clic +1, clic derecho -1. Arrastra con el izquierdo para copiar entre bandas; el clic derecho durante el arrastre ajusta el valor según la dirección. Arrastra con el derecho para una rampa: un paso por banda, subiendo hacia la derecha y bajando hacia la izquierda.</WR_ScaleTotalTip>
+  <WR_SkillsUsedLabel>Habilidades utilizadas:</WR_SkillsUsedLabel>
+  <WR_VirtualRoleTip>Aparece aquí porque sus trabajos están cubiertos por el rol superior. Pertenece al grupo «{0}».</WR_VirtualRoleTip>
+  <WR_TipTrainsLabel>Entrena</WR_TipTrainsLabel>
+  <WR_TipTrainsNothing>Ninguna (sin experiencia de habilidad)</WR_TipTrainsNothing>
+  <WR_TipRequiresLabel>Requiere</WR_TipRequiresLabel>
+  <WR_TipReqBills>{0} {1} ({2} de {3} tareas exigen habilidad)</WR_TipReqBills>
+  <WR_TipReqItems>{0} {1} ({2} objetos exigen habilidad)</WR_TipReqItems>
+  <WR_TipReqJobs>{0} {1} ({2} trabajos exigen habilidad)</WR_TipReqJobs>
+  <WR_TipLevelN>Nivel {0}</WR_TipLevelN>
+  <WR_TipXpLabel>Otorga experiencia</WR_TipXpLabel>
+  <WR_TipXpValue>{0} de {1} trabajos</WR_TipXpValue>
+  <WR_TipUnlockAgeLabel>Edad mínima</WR_TipUnlockAgeLabel>
+  <WR_TipUnlockAgeValue>{0} (los colonos más jóvenes no pueden realizarlo)</WR_TipUnlockAgeValue>
+  <WR_SkillTipGiverSource>Proveedor de trabajo: {0} ({1})</WR_SkillTipGiverSource>
+  <WR_SkillTipTypeSource>Tipo de trabajo: {0} ({1})</WR_SkillTipTypeSource>
+  <WR_SkillTipUnknownMod>mod desconocido</WR_SkillTipUnknownMod>
+  <WR_EmergencySuffix> (emergencia)</WR_EmergencySuffix>
+  <WR_ConditionalRole>Rol condicional</WR_ConditionalRole>
+  <WR_ConditionalRoleTip>Se activa o desactiva según reglas de horario y ubicación. Un rol es condicional siempre que tenga alguna regla.</WR_ConditionalRoleTip>
+  <WR_AutoAssign>Asignar automáticamente</WR_AutoAssign>
+  <WR_AutoAssignTip>Los recién llegados (reclutas y vagabundos) reciben este rol si están en sus grupos de edad.</WR_AutoAssignTip>
+  <WR_CustomSwatchEmpty>Casilla vacía: pulsa para elegir un color personalizado. Los colores personalizados se comparten entre todos los roles.</WR_CustomSwatchEmpty>
+  <WR_CustomSwatchTip>Pulsa para usar este color. Clic derecho para redefinir la casilla.</WR_CustomSwatchTip>
+  <WR_ClearRulesConfirm>¿Quitar todas las reglas de «{0}»? Volverá a ser un rol manual.</WR_ClearRulesConfirm>
+  <WR_ActiveHours>Horario activo</WR_ActiveHours>
+  <WR_HoursActive>Activo</WR_HoursActive>
+  <WR_HoursInactive>Inactivo</WR_HoursInactive>
+  <WR_LocationAny>Cualquier lugar</WR_LocationAny>
+  <WR_LocationNowhere>Ningún lugar</WR_LocationNowhere>
+  <WR_LocationNowhereTip>El rol estaba limitado a ubicaciones que ya no existen. Seguirá desactivado hasta que elijas otra.</WR_LocationNowhereTip>
+  <WR_LocationSettlements>Asentamientos</WR_LocationSettlements>
+  <WR_LocationCaravans>Caravanas</WR_LocationCaravans>
+  <WR_LocationShipItem>Nave: {0}</WR_LocationShipItem>
+  <WR_LocationSettlementItem>Asentamiento: {0}</WR_LocationSettlementItem>
+  <WR_LocationCount>{0} ubicaciones</WR_LocationCount>
+  <WR_LocationGone>(desaparecido)</WR_LocationGone>
+  <WR_InvalidRoleTip>Este rol nunca puede aplicarse: no tiene trabajos o ya no existe ninguna de sus ubicaciones.</WR_InvalidRoleTip>
+  <WR_GroupDefault>Predeterminado</WR_GroupDefault>
+  <WR_GroupConditionalRoles>Roles condicionales</WR_GroupConditionalRoles>
+  <WR_GroupComposites>Roles compuestos</WR_GroupComposites>
+  <WR_GroupLabel>Grupo</WR_GroupLabel>
+  <WR_GroupButton>Grupo: {0}</WR_GroupButton>
+  <WR_GroupNewOption>Nuevo...</WR_GroupNewOption>
+  <WR_NewGroupTitle>Nuevo grupo</WR_NewGroupTitle>
+  <WR_RenameGroup>Renombrar grupo</WR_RenameGroup>
+  <WR_RenameGroupTitle>Renombrar grupo</WR_RenameGroupTitle>
+  <WR_GroupOverlayTip>Los roles con reglas aparecen en Roles condicionales. Al borrar las reglas vuelven a su grupo guardado.</WR_GroupOverlayTip>
+  <WR_GroupCompositeTip>Los roles compuestos aparecen en Roles compuestos.</WR_GroupCompositeTip>
+  <WR_TreeNested>Anidado</WR_TreeNested>
+  <WR_TreeFlat>Plano</WR_TreeFlat>
+  <WR_TreeToggleTip>Alterna si los roles cubiertos se anidan bajo el rol que los combina.</WR_TreeToggleTip>
+  <WR_DisplayModeLabel>Modo de visualización</WR_DisplayModeLabel>
+  <WR_JobFilterLabel>Filtro de trabajo</WR_JobFilterLabel>
+  <WR_PaletteBySkills>Habilidades</WR_PaletteBySkills>
+  <WR_PaletteByGroups>Grupos</WR_PaletteByGroups>
+  <WR_PaletteModeTip>Ordena la paleta por habilidades relevantes o por tus grupos de roles.</WR_PaletteModeTip>
+  <WR_SuppressedHours>Desactivado: fuera del horario activo</WR_SuppressedHours>
+  <WR_SuppressedLocation>Desactivado: fuera de las ubicaciones del rol</WR_SuppressedLocation>
+  <WR_BillRoleOption>Rol: {0}</WR_BillRoleOption>
+  <WR_BillWorkerRoleTip>Solo trabajan en esta tarea los colonos que tengan activo este rol; los condicionales aplican sus reglas, como el horario. Elegir un trabajador borra la restricción de rol y viceversa.</WR_BillWorkerRoleTip>
+  <WR_SurgeryWorkerRoleTip>Quién puede realizar esta operación. Cualquier trabajador no impone restricción de rol. Elegir uno limita la operación a colonos con ese rol activo; los condicionales aplican sus reglas, como el horario.</WR_SurgeryWorkerRoleTip>
+  <WR_SelectRoleIcon>Elegir icono de rol</WR_SelectRoleIcon>
+  <WR_RenameRoleTitle>Renombrar rol</WR_RenameRoleTitle>
+  <WR_NewWorkDetected>Se han detectado tipos de trabajo nuevos. Roles creados o ampliados: {0}</WR_NewWorkDetected>
+  <WR_SeedReportTitle>WorkRoles configurado</WR_SeedReportTitle>
+  <WR_SeedReportBody>Se han creado {0} roles y asignado conjuntos a {1} colono(s) según sus prioridades de trabajo.</WR_SeedReportBody>
+  <WR_SeedReportGenerated>Generados para trabajos de mods: {0}.</WR_SeedReportGenerated>
+  <WR_SeedReportFailures>No se han podido migrar algunos trabajos:</WR_SeedReportFailures>
+  <WR_SeedDropFailure>{0}: perdió {1} (tenía prioridad {2})</WR_SeedDropFailure>
+  <WR_SeedPawnFailure>{0}: error de migración ({1})</WR_SeedPawnFailure>
+  <WR_WelcomeTitle>WorkRoles</WR_WelcomeTitle>
+  <WR_WelcomeBody>WorkRoles establece las prioridades laborales de tus colonos mediante roles con nombre, como Médico, Herrero o Agricultor, que tú les asignas.</WR_WelcomeBody>
+  <WR_WelcomeFind>Abre WorkRoles con el botón Trabajo en la parte inferior. La pestaña Ayuda empieza con una visita guiada.</WR_WelcomeFind>
+  <WR_WelcomeTakeMeThere>Abrir ahora</WR_WelcomeTakeMeThere>
+  <WR_WelcomeSmallScreen>Tu pantalla de juego es de {0}x{1} (resolución dividida por escala de interfaz). WorkRoles está diseñado para {2}x{3} o más, por ejemplo 1920x1080 con escala 1.25. Funciona en pantallas menores, pero acorta algunas etiquetas y requiere más desplazamiento. Reducir la escala de interfaz en las opciones del juego deja más espacio.</WR_WelcomeSmallScreen>
+  <WR_RoleWorkAversion>El precepto {1} de {0} se opone a {2}. Las recomendaciones aplican una penalización limitada: dos pasos de prioridad o seis puntos virtuales de habilidad al elegir principales. La cobertura obligatoria aún puede elegir al personaje. Cazador baja dos niveles, hasta un máximo del quinto; sigue aplicándose su alternativa existente del primer nivel.</WR_RoleWorkAversion>
+  <WR_WorkBlockedTags>etiquetas de trabajo desactivadas</WR_WorkBlockedTags>
+  <WR_WorkBlockedCapacity>falta una capacidad de salud necesaria</WR_WorkBlockedCapacity>
+  <WR_WorkBlockedRace>las restricciones laborales de esta raza no lo permiten</WR_WorkBlockedRace>
+  <WR_WorkBlockedRecipe>las restricciones de recetas de esta raza no lo permiten</WR_WorkBlockedRecipe>
+  <WR_WorkBlockedViviGathering>requiere velocidad y rendimiento positivos de recolección Vivi; las herramientas adecuadas pueden habilitarlo</WR_WorkBlockedViviGathering>
+  <WR_WorkBlockedPrecept>rechazado debido a {0}</WR_WorkBlockedPrecept>
+  <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
+  <WR_RecWorkAversion>{0} se opone a {1}; se reduce la puntuación de recomendación.</WR_RecWorkAversion>
+  <WR_RecDecisionWorkAversion>La aversión reduce la puntuación por debajo del umbral de trabajo opcional.</WR_RecDecisionWorkAversion>
+</LanguageData>

@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_GroupEssentials.label>必需工作</WS_GroupEssentials.label>
+  <WS_GroupFood.label>食物</WS_GroupFood.label>
+  <WS_GroupAnimals.label>動物</WS_GroupAnimals.label>
+  <WS_GroupIndoors.label>室內</WS_GroupIndoors.label>
+  <WS_GroupOutdoors.label>室外</WS_GroupOutdoors.label>
+  <WS_GroupResearch.label>研究</WS_GroupResearch.label>
+  <WS_GroupSocial.label>社交</WS_GroupSocial.label>
+  <WS_GroupMedical.label>醫療</WS_GroupMedical.label>
+</LanguageData>

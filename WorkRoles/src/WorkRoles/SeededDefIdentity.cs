@@ -30,7 +30,7 @@ namespace WorkRoles
         internal static string? GroupIdentity(RoleDef? def) =>
             GroupDef(def)?.defName ?? def?.group?.Trim();
 
-        private static RoleGroupDef? GroupDef(RoleDef? roleDef)
+        internal static RoleGroupDef? GroupDef(RoleDef? roleDef)
         {
             string? name = roleDef?.group?.Trim();
             if (name.NullOrEmpty()) return null;

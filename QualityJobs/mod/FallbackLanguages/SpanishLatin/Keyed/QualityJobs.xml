@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <QJ_FinishBillLabel>Terminar {0} ({1})</QJ_FinishBillLabel>
+  <QJ_AtStockCap>límite de productos sin terminar alcanzado</QJ_AtStockCap>
+  <QJ_UnfinishedWorkWaiting>el objeto sin terminar de esta tarea está esperando a que se reanude el trabajo</QJ_UnfinishedWorkWaiting>
+  <QJ_QualityPanelTitle>Quality Jobs</QJ_QualityPanelTitle>
+  <QJ_ManageBill>Gestionar esta tarea</QJ_ManageBill>
+  <QJ_FinisherSkill>Habilidad de acabado: {0}</QJ_FinisherSkill>
+  <QJ_FinisherSkillTip>Solo los personajes con este nivel de habilidad o superior pueden terminar el trabajo. Cualquiera puede realizar la fabricación previa.</QJ_FinisherSkillTip>
+  <QJ_AutoBest>Ajustar automáticamente la habilidad de acabado</QJ_AutoBest>
+  <QJ_AutoBestTip>Activado: Solo el mejor especialista disponible de la colonia puede terminar el trabajo, y el requisito de habilidad se ajusta automáticamente a ese colono. Los colonos ausentes, incapacitados u ocupados siguen contando como disponibles en esta comparación.\n\nDesactivado: Cualquier personaje que alcance la habilidad de acabado indicada puede terminar el trabajo.</QJ_AutoBestTip>
+  <QJ_AutoBestCurrent>Actualmente: {0}</QJ_AutoBestCurrent>
+  <QJ_AutoBestNone>Ningún colono apto</QJ_AutoBestNone>
+  <QJ_MigrationTitle>Tareas de calidad existentes</QJ_MigrationTitle>
+  <QJ_MigrationBody>Quality Jobs ha encontrado {0} tarea(s) existente(s) de objetos con calidad. Se han dejado sin gestionar para que mantengan su comportamiento actual. Compartir el trabajo sin terminar sigue disponible en ambos casos.</QJ_MigrationBody>
+  <QJ_MigrationEnableExisting>¿Activar Quality Jobs en las tareas existentes de objetos con calidad?</QJ_MigrationEnableExisting>
+  <QJ_MigrationEnableExistingTip>Activado: Las tareas existentes usan Quality Jobs con el ajuste automático de habilidad de acabado. El mejor colono apto de la colonia da el toque final; los temporalmente indisponibles también cuentan. No se exige inspiración ni ser especialista en producción, y no se repiten los resultados de baja calidad.\n\nDesactivado: Las tareas existentes conservan el acabado del juego original. No afecta al trabajo sin terminar compartido.</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationContinue>Continuar</QJ_MigrationContinue>
+  <QJ_RequireInspired>Exigir creatividad inspirada</QJ_RequireInspired>
+  <QJ_RequireSpecialist>Exigir especialista en producción</QJ_RequireSpecialist>
+  <QJ_StockCapLabel>Límite de existencias: {0}</QJ_StockCapLabel>
+  <QJ_StockCapTooltip>Número máximo de objetos sin terminar de este producto. El límite se comparte por producto: todas las tareas que lo fabrican cuentan para él.\n\n0 significa sin límite.</QJ_StockCapTooltip>
+  <QJ_StatusHeader>Estado</QJ_StatusHeader>
+  <QJ_StatusQueue>En espera: {0} · En acabado: {1}</QJ_StatusQueue>
+  <QJ_StatusQueueShared>Sin terminar: {0} · En espera: {1} · En acabado: {2}</QJ_StatusQueueShared>
+  <QJ_StatusQueueTip>Sin terminar: objetos del conjunto compartido que cualquier artesano autorizado puede continuar. En espera: objetos pausados que necesitan un especialista de acabado apto. En acabado: objetos asignados a quien los terminará.</QJ_StatusQueueTip>
+  <QJ_StatusFinishers>Especialistas de acabado aptos: {0}</QJ_StatusFinishers>
+  <QJ_StatusFinishersNone>Especialistas de acabado aptos: ninguno</QJ_StatusFinishersNone>
+  <QJ_StatusFinishersTip>Colonos de este mapa que pueden dar el toque final ahora, con el mejor candidato primero. Deben tener activado el tipo de trabajo necesario y cumplir los requisitos de acabado de arriba.\n\nNo cuentan los colonos incapacitados, en crisis mental o fuera de este mapa.</QJ_StatusFinishersTip>
+  <QJ_StatusStalled>Los objetos en espera no tienen un especialista de acabado apto</QJ_StatusStalled>
+  <QJ_StatusStalledTip>Hay objetos sin terminar esperando, pero ningún colono cumple los requisitos para acabarlos, así que no se crean trabajos de acabado.\n\nComprueba la habilidad, la inspiración y la especialización exigidas, y que el colono previsto tenga activado el trabajo y esté en este mapa. Mientras dure el bloqueo, el límite de existencias también puede impedir empezar objetos nuevos.</QJ_StatusStalledTip>
+  <QJ_StatusStalledConstruction>Nadie cumple los requisitos de acabado: construcción detenida</QJ_StatusStalledConstruction>
+  <QJ_StatusStalledConstructionTip>El edificio está pausado a la espera del toque final, pero ningún colono cumple los requisitos, por lo que no se terminará.\n\nComprueba la habilidad, la inspiración y la especialización exigidas, y que el constructor previsto tenga activada Construcción y esté en este mapa.</QJ_StatusStalledConstructionTip>
+  <QJ_OddsHeader>Probabilidades de calidad</QJ_OddsHeader>
+  <QJ_NormalOrWorse>Normal o inferior</QJ_NormalOrWorse>
+  <QJ_OddsColConfig>Configuración</QJ_OddsColConfig>
+  <QJ_OddsColBest>Mejor</QJ_OddsColBest>
+  <QJ_SettingsBillDefaults>Opciones predeterminadas de tareas</QJ_SettingsBillDefaults>
+  <QJ_SettingsConstructionDefaults>Opciones predeterminadas de construcción</QJ_SettingsConstructionDefaults>
+  <QJ_SettingsGlobalOptions>Opciones globales</QJ_SettingsGlobalOptions>
+  <QJ_SettingsManageNewBills>Gestionar nuevas tareas de calidad</QJ_SettingsManageNewBills>
+  <QJ_SettingsManageNewBillsTip>Activado: Quality Jobs gestiona por defecto las tareas que producen objetos con calidad usando las opciones de esta columna. Cada tarea puede sustituir estas opciones desde su configuración.\n\nDesactivado: Las tareas usan el comportamiento original, salvo que se active Quality Jobs en su ventana de configuración.</QJ_SettingsManageNewBillsTip>
+  <QJ_SettingsManageNewConstruction>Gestionar nuevas construcciones</QJ_SettingsManageNewConstruction>
+  <QJ_SettingsManageNewConstructionTip>Activado: Los edificios nuevos con calidad se gestionan automáticamente con las opciones de esta columna. El botón Quality Job permite configurar cada edificio o quitar su gestión.\n\nDesactivado: Los edificios nuevos usan el comportamiento original salvo que se activen individualmente.</QJ_SettingsManageNewConstructionTip>
+  <QJ_RequireInspiredTip>Activado: Solo un personaje con creatividad inspirada puede dar el toque final; otros pueden hacer el trabajo previo. La inspiración se consume al terminar, como en el juego original.\n\nDesactivado: No se exige creatividad inspirada.</QJ_RequireInspiredTip>
+  <QJ_RequireSpecialistTip>Activado: Solo un personaje cuyo rol ideológico otorgue una bonificación de calidad de producción puede dar el toque final; otros pueden hacer el trabajo previo.\n\nDesactivado: No se exige un rol de especialista en producción.</QJ_RequireSpecialistTip>
+  <QJ_SettingsFinisherSkillTip>Solo los personajes con este nivel de habilidad o superior pueden dar el toque final; otros pueden realizar el trabajo previo.\n\nCon el ajuste automático de habilidad activado, este valor se conserva como predeterminado manual, pero no se utiliza.</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsShareWork>Compartir trabajo sin terminar</QJ_SettingsShareWork>
+  <QJ_SettingsShareWorkTip>Activado: Los objetos sin terminar se desbloquean para que cualquier personaje autorizado continúe lo que empezó otro.\n\nDesactivado: Comportamiento original: cada objeto sin terminar sigue vinculado a quien lo empezó.</QJ_SettingsShareWorkTip>
+  <QJ_SettingsHighPriorityFinish>Dar alta prioridad al trabajo de acabado</QJ_SettingsHighPriorityFinish>
+  <QJ_SettingsHighPriorityFinishTip>Activado: El colono elegido para terminar un objeto toma ese trabajo la próxima vez que busque una tarea, antes de todo salvo apagar incendios, atención médica, rescate y reposo en cama. No interrumpe su trabajo actual.\n\nDesactivado: El acabado es la primera tarea de su tipo de trabajo, pero siguen teniendo preferencia los tipos que el colono tenga por delante.</QJ_SettingsHighPriorityFinishTip>
+  <QJ_SettingsDefaultCap>Límite predeterminado de productos sin terminar: {0}</QJ_SettingsDefaultCap>
+  <QJ_SettingsDefaultCapTip>Establece el máximo predeterminado de objetos sin terminar por producto. Todas las tareas que producen el mismo objeto comparten el límite.\n\nAl alcanzarlo no se empiezan objetos nuevos; los ya iniciados pueden terminarse. 0 significa sin límite.</QJ_SettingsDefaultCapTip>
+  <QJ_SettingsUnlimitedHint>0 = sin límite</QJ_SettingsUnlimitedHint>
+  <QJ_SettingsShowToolbarButton>Mostrar botón en la barra de herramientas</QJ_SettingsShowToolbarButton>
+  <QJ_SettingsShowToolbarButtonTip>Añade un botón junto a los controles de visualización de la esquina inferior derecha. Abre los configuración de Quality Jobs.</QJ_SettingsShowToolbarButtonTip>
+  <QJ_ToolbarButtonTip>Abrir los configuración de Quality Jobs.</QJ_ToolbarButtonTip>
+  <QJ_SettingsEnabledNote>El interruptor afecta a la partida cargada. Desactivarlo devuelve los objetos al comportamiento original y descarta la configuración de Quality Jobs de esta partida.\n\nSi el mod sigue instalado, volverá a activarse con los valores predeterminados al cargarla de nuevo. La desactivación sirve para preparar la retirada del mod.</QJ_SettingsEnabledNote>
+  <QJ_DisableButton>Desactivar Quality Jobs</QJ_DisableButton>
+  <QJ_EnableButton>Activar Quality Jobs</QJ_EnableButton>
+  <QJ_DisableWarning>Desactivarlo devuelve todos los objetos apartados a la propiedad original y elimina permanentemente la configuración de Quality Jobs de esta partida (condiciones de tareas y límites de existencias). Las partidas guardadas después no contendrán rastros del mod, por lo que esta es la forma limpia de preparar su desinstalación.\n\nTermina primero los edificios de sustitución para conservar la configuración de camas y la pintura guardadas. Una vez desmantelado el original, esos datos necesitan Quality Jobs hasta que termine su sustituto.\n\nNota: si el mod sigue instalado, se reactivará con los valores predeterminados la próxima vez que cargues esta partida.\n\n¿Desactivar Quality Jobs?</QJ_DisableWarning>
+  <QJ_NoGameLoaded>Carga una partida para cambiar su comportamiento.</QJ_NoGameLoaded>
+  <QJ_GizmoQualityJobLabel>Trabajo de calidad</QJ_GizmoQualityJobLabel>
+  <QJ_GizmoRebuildDesc>Elige un objetivo de calidad y requisitos del constructor para este edificio terminado. Inicia la reconstrucción para desmantelarlo y sustituirlo hasta alcanzar el objetivo.</QJ_GizmoRebuildDesc>
+  <QJ_StartRebuilding>Iniciar reconstrucción</QJ_StartRebuilding>
+  <QJ_RebuildNote>Elige un objetivo de calidad para empezar. Los edificios de calidad inferior se desmantelan y reconstruyen, consumiendo materiales y quedando inutilizables durante el trabajo. Se conservan los que ya cumplen el objetivo.</QJ_RebuildNote>
+  <QJ_NoRebuildNeeded>Ningún edificio apto necesita reconstrucción. Deben estar por debajo del objetivo, poder construirse y no tener otras órdenes de desmantelado o reinstalación.</QJ_NoRebuildNeeded>
+  <QJ_GizmoManageDesc>Gestiona esta construcción con Quality Jobs: pausa su finalización hasta que haya un constructor apto y, si quieres, reconstruye hasta obtener la calidad deseada.\n\nEl clic izquierdo activa o desactiva la gestión. Al activarla se aplican tus opciones predeterminadas de construcción. El clic derecho permite configurarla.</QJ_GizmoManageDesc>
+  <QJ_MinQualityLabel>Objetivo de calidad</QJ_MinQualityLabel>
+  <QJ_NoRetries>Sin reintentos</QJ_NoRetries>
+  <QJ_AnyQuality>Cualquiera</QJ_AnyQuality>
+  <QJ_RetriedUntilTip>Se desmantela y reconstruye el edificio hasta obtener la calidad seleccionada o superior, salvo que se elija Sin reintentos.\n\nCada intento pierde parte de los materiales.</QJ_RetriedUntilTip>
+  <QJ_BillTargetQualityTip>Si el objeto terminado tiene una calidad inferior, se aumenta en uno el contador de la tarea para producir un sustituto. El objeto original se conserva.\n\nSolo se aplica a tareas con un número fijo de objetos; los demás modos de repetición ya deciden cuándo detenerse.</QJ_BillTargetQualityTip>
+  <QJ_Clear>Borrar</QJ_Clear>
+  <QJ_ConstructionPanelTitle>Trabajo de calidad</QJ_ConstructionPanelTitle>
+  <QJ_FinishGiverLabel>terminar trabajo de calidad</QJ_FinishGiverLabel>
+  <QJ_FinishGiverVerb>terminar</QJ_FinishGiverVerb>
+  <QJ_FinishGiverGerund>terminando trabajo de calidad</QJ_FinishGiverGerund>
+  <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
+  <QJ_WelcomeBody>Quality Jobs permite que cualquier colono trabaje en un objeto o edificio sin terminar, pero solo alguien que cumpla tus requisitos puede finalizarlo, porque quien lo termina es quien determina la calidad. Funciona tanto con tareas de fabricación como con construcciones.</QJ_WelcomeBody>
+  <QJ_WelcomeFind>Abre los configuración de Quality Jobs con este botón, junto a los controles de visualización de la esquina inferior derecha. La ventana de tareas de un objeto con calidad incluye una sección Quality Jobs, y los planos o estructuras en construcción de edificios con calidad muestran un botón Trabajo de calidad al seleccionarlos.</QJ_WelcomeFind>
+  <QJ_WelcomeTakeMeThere>Abrir ahora</QJ_WelcomeTakeMeThere>
+</LanguageData>

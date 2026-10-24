@@ -252,8 +252,8 @@ namespace WorkRoles.UI
             for (int i = 0; i < store.roles.Count; i++)
             {
                 Role role = store.roles[i];
-                labels.Add((role.id, role.label));
-                plainLabels.Add(role.label);
+                labels.Add((role.id, role.DisplayLabel));
+                plainLabels.Add(role.DisplayLabel);
             }
             Dictionary<int, string> abbreviations =
                 RoleAbbreviations.Build(labels);
@@ -269,7 +269,7 @@ namespace WorkRoles.UI
             {
                 Role role = store.roles[i];
                 string abbreviation = abbreviations.TryGetValue(role.id,
-                    out string value) ? value : role.label;
+                    out string? value) ? value : role.DisplayLabel;
                 RoleChipRenderData chip = RoleChipRenderData.From(role);
                 RoleIconPresentation icon =
                     RoleIconPresentationCatalog.For(role.id);
@@ -280,7 +280,7 @@ namespace WorkRoles.UI
                     new HashSet<string>(role.Coverage(),
                         StringComparer.Ordinal));
                 roleOptions.Add(new ColonistRoleFilterOption(role.id,
-                    role.label));
+                    role.DisplayLabel));
             }
             roleOptions.Sort((left, right) =>
                 StringComparer.OrdinalIgnoreCase.Compare(left.Label,
@@ -397,7 +397,7 @@ namespace WorkRoles.UI
                 (Role role, _, int depth, bool virtualRow) = tree[i];
                 if (depth == 0) root = role;
                 if (virtualRow || !seen.Add(role.id) || root == null
-                    || !roles.TryGetValue(role.id, out RoleFacts facts))
+                    || !roles.TryGetValue(role.id, out RoleFacts? facts))
                     continue;
                 RolesFor(depth == 0 ? role : root).Add(
                     new ColonistPaletteRole(facts.Chip, facts.Enabled));
@@ -435,7 +435,7 @@ namespace WorkRoles.UI
                     var row = section.rows[rowIndex];
                     if (row.virtualRow || !seen.Add(row.role.id)
                         || !roles.TryGetValue(row.role.id,
-                            out RoleFacts facts))
+                            out RoleFacts? facts))
                         continue;
                     clusterRoles.Add(new ColonistPaletteRole(facts.Chip,
                         facts.Enabled));
@@ -460,34 +460,34 @@ namespace WorkRoles.UI
         internal ColonistChipCatalogSnapshot ChipCatalog => chipCatalog;
 
         internal bool IsRoleEnabled(int roleId) =>
-            roles.TryGetValue(roleId, out RoleFacts facts) && facts.Enabled;
+            roles.TryGetValue(roleId, out RoleFacts? facts) && facts.Enabled;
 
         internal string? AbbreviationFor(int roleId) =>
-            roles.TryGetValue(roleId, out RoleFacts facts)
+            roles.TryGetValue(roleId, out RoleFacts? facts)
                 ? facts.Abbreviation : null;
 
         /// Fewest leading characters keeping the role's label distinct from
         /// the other roles (before the player's floor); full-name grid chips
         /// truncate to it. One for unknown roles: nothing to collide with.
         internal int GridPrefixRequirementFor(int roleId) =>
-            roles.TryGetValue(roleId, out RoleFacts facts)
+            roles.TryGetValue(roleId, out RoleFacts? facts)
                 ? facts.GridPrefixRequirement : 1;
 
         internal Texture2D? IconFor(int roleId) =>
-            roles.TryGetValue(roleId, out RoleFacts facts)
+            roles.TryGetValue(roleId, out RoleFacts? facts)
                 ? facts.Icon : null;
 
         internal bool ContainsRole(int roleId) => roles.ContainsKey(roleId);
 
         internal bool RoleCoversJob(int roleId, string giverDefName) =>
-            roles.TryGetValue(roleId, out RoleFacts facts)
+            roles.TryGetValue(roleId, out RoleFacts? facts)
             && !facts.Chip.Blocker && facts.Coverage.Contains(giverDefName);
 
         internal void AddRolesCovering(int selectedRoleId,
             HashSet<int> result)
         {
             if (!roles.TryGetValue(selectedRoleId,
-                    out RoleFacts selected)) return;
+                    out RoleFacts? selected)) return;
             foreach (KeyValuePair<int, RoleFacts> pair in roles)
                 if (pair.Key != selectedRoleId && !pair.Value.Chip.Blocker
                     && selected.Coverage.Count > 0
@@ -500,7 +500,7 @@ namespace WorkRoles.UI
             roleOptions[index];
 
         internal string? RoleLabelOrNull(int roleId) =>
-            roles.TryGetValue(roleId, out RoleFacts facts)
+            roles.TryGetValue(roleId, out RoleFacts? facts)
                 ? facts.Chip.Label : null;
 
         internal HashSet<int>? SearchMatchingRoles(string term)
@@ -509,7 +509,7 @@ namespace WorkRoles.UI
             for (int i = 0; i < roleOptions.Count; i++)
             {
                 ColonistRoleFilterOption option = roleOptions[i];
-                if (option.Label.IndexOf(term,
+                if (option.Label.IndexOf(term!,
                         StringComparison.OrdinalIgnoreCase) < 0)
                     continue;
                 (result ?? (result = new HashSet<int>())).Add(option.RoleId);
@@ -537,10 +537,10 @@ namespace WorkRoles.UI
             for (int i = 0; i < jobOptions.Count; i++)
             {
                 ColonistJobFilterOption option = jobOptions[i];
-                if (option.Label.IndexOf(term,
+                if (option.Label.IndexOf(term!,
                         StringComparison.OrdinalIgnoreCase) < 0
                     && (option.GerundLabel == null
-                        || option.GerundLabel.IndexOf(term,
+                        || option.GerundLabel.IndexOf(term!,
                             StringComparison.OrdinalIgnoreCase) < 0))
                     continue;
                 (result ?? (result = new HashSet<string>(
@@ -555,14 +555,14 @@ namespace WorkRoles.UI
 
         internal SkillDef? SkillOrNull(string? defName)
             => !defName.NullOrEmpty() && skillsByName.TryGetValue(defName!,
-                out SkillDef skill) ? skill : null;
+                out SkillDef? skill) ? skill : null;
 
         internal int GroupOptionCount => groupOptions.Count;
         internal ColonistGroupOption GroupOptionAt(int index) =>
             groupOptions[index];
 
         internal string? GroupLabelOrNull(string? key)
-            => key != null && groupLabels.TryGetValue(key, out string label)
+            => key != null && groupLabels.TryGetValue(key, out string? label)
                 ? label : null;
 
         internal bool ContentEquals(ColonistsRosterCatalogSnapshot other)
@@ -576,7 +576,7 @@ namespace WorkRoles.UI
                 || groupOptions.Count != other.groupOptions.Count)
                 return false;
             foreach (KeyValuePair<int, RoleFacts> pair in roles)
-                if (!other.roles.TryGetValue(pair.Key, out RoleFacts value)
+                if (!other.roles.TryGetValue(pair.Key, out RoleFacts? value)
                     || !pair.Value.ContentEquals(value)) return false;
             for (int i = 0; i < skillClusters.Count; i++)
                 if (!skillClusters[i].ContentEquals(other.skillClusters[i]))

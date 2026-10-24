@@ -1,0 +1,215 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <IMP_ToolbarButtonTip>Apri Implanner</IMP_ToolbarButtonTip>
+  <IMP_TabOverview>Panoramica</IMP_TabOverview>
+  <IMP_TabPlans>Piani</IMP_TabPlans>
+  <IMP_TabAutomation>Automazione</IMP_TabAutomation>
+  <IMP_TabOptions>Opzioni</IMP_TabOptions>
+  <IMP_TabHelp>Aiuto</IMP_TabHelp>
+  <IMP_ColColonist>Colono</IMP_ColColonist>
+  <IMP_ColPlan>Piano</IMP_ColPlan>
+  <IMP_ColProgress>Avanzamento</IMP_ColProgress>
+  <IMP_ColState>Stato</IMP_ColState>
+  <IMP_ColShooting>T</IMP_ColShooting>
+  <IMP_ColMelee>M</IMP_ColMelee>
+  <IMP_ColShootingTip>Abilità Tiro</IMP_ColShootingTip>
+  <IMP_ColMeleeTip>Abilità Mischia</IMP_ColMeleeTip>
+  <IMP_ColPriority>Priorità</IMP_ColPriority>
+  <IMP_Priority0>Prima</IMP_Priority0>
+  <IMP_Priority1>Alta</IMP_Priority1>
+  <IMP_Priority2>Normale</IMP_Priority2>
+  <IMP_Priority3>Bassa</IMP_Priority3>
+  <IMP_Priority4>Ultima</IMP_Priority4>
+  <IMP_GroupByNone>Nessun raggruppamento</IMP_GroupByNone>
+  <IMP_GroupByLocation>Per luogo</IMP_GroupByLocation>
+  <IMP_GroupByFaction>Per fazione</IMP_GroupByFaction>
+  <IMP_GroupByGender>Per genere</IMP_GroupByGender>
+  <IMP_GroupByXenotype>Per xenotipo</IMP_GroupByXenotype>
+  <IMP_GroupByIdeo>Per ideoligione</IMP_GroupByIdeo>
+  <IMP_NoPlan>Nessuno</IMP_NoPlan>
+  <IMP_ScopeAll>Ovunque</IMP_ScopeAll>
+  <IMP_StripColony>Colonia: {0}</IMP_StripColony>
+  <IMP_AggregateColonists>Coloni: {0} / {1}</IMP_AggregateColonists>
+  <IMP_StripAutomationOn>Automazione attiva</IMP_StripAutomationOn>
+  <IMP_StripAutomationOff>Automazione disattivata</IMP_StripAutomationOff>
+  <IMP_StripProduction>Produzione: {0}%</IMP_StripProduction>
+  <IMP_StripStock>{0} in magazzino, {1} in coda</IMP_StripStock>
+  <IMP_StripMaking>Produzione di {0}</IMP_StripMaking>
+  <IMP_StripMakingFor>Produzione dei materiali per {0}</IMP_StripMakingFor>
+  <IMP_StripWaiting>In attesa di {0}</IMP_StripWaiting>
+  <IMP_StripNothingToCraft>Nulla da produrre</IMP_StripNothingToCraft>
+  <IMP_StripWaitingBench>In attesa di un banco da lavoro</IMP_StripWaitingBench>
+  <IMP_StripAwaitingProduction>In attesa della produzione</IMP_StripAwaitingProduction>
+  <IMP_StripSurgery>Chirurgia: {0}%</IMP_StripSurgery>
+  <IMP_StripInstalled>{0} / {1} impianti installati</IMP_StripInstalled>
+  <IMP_StripBatch>Installazione di un gruppo di impianti su {0}</IMP_StripBatch>
+  <IMP_StripBatchStars>Installazione di un gruppo di impianti su {0} ({1})</IMP_StripBatchStars>
+  <IMP_TipProduction>Produzione</IMP_TipProduction>
+  <IMP_TipSurgery>Chirurgia</IMP_TipSurgery>
+  <IMP_TipColTier>Fascia</IMP_TipColTier>
+  <IMP_TipColItem>Oggetto</IMP_TipColItem>
+  <IMP_TipColImplant>Impianto</IMP_TipColImplant>
+  <IMP_TipColNeeded>Necessari</IMP_TipColNeeded>
+  <IMP_TipColFree>Liberi</IMP_TipColFree>
+  <IMP_TipColReserved>Assegnati</IMP_TipColReserved>
+  <IMP_TipColHeldBack>Accantonati</IMP_TipColHeldBack>
+  <IMP_TipColQueued>In coda</IMP_TipColQueued>
+  <IMP_TipColCrafting>In produzione</IMP_TipColCrafting>
+  <IMP_TipColStatus>Stato</IMP_TipColStatus>
+  <IMP_TipCovered>Coperto</IMP_TipCovered>
+  <IMP_TipMaking>In produzione</IMP_TipMaking>
+  <IMP_TipMakingMaterials>Produzione dei materiali</IMP_TipMakingMaterials>
+  <IMP_TipNoRecipe>Nessuna ricetta</IMP_TipNoRecipe>
+  <IMP_TipBenchesInUse>Banchi con ordini di Implanner: {0}</IMP_TipBenchesInUse>
+  <IMP_TipColPlanned>Pianificati</IMP_TipColPlanned>
+  <IMP_TipColInstalled>Installati</IMP_TipColInstalled>
+  <IMP_TipColMissing>Mancanti</IMP_TipColMissing>
+  <IMP_TipColScheduled>Programmati</IMP_TipColScheduled>
+  <IMP_TipColonistStates>Coloni: {0} in attesa, {1} in preparazione, {2} sotto intervento, {3} completati, {4} assenti</IMP_TipColonistStates>
+  <IMP_NextScheduled>Intervento programmato per {0}</IMP_NextScheduled>
+  <IMP_ColonistDetails>Dettagli del colono</IMP_ColonistDetails>
+  <IMP_DetailCollecting>Raccolta di {0}</IMP_DetailCollecting>
+  <IMP_NoSelection>Seleziona un colono per vedere gli impianti rimanenti.</IMP_NoSelection>
+  <IMP_WelcomeTitle>EPrime's Implanner</IMP_WelcomeTitle>
+  <IMP_WelcomeBody>Implanner pianifica gli impianti dei coloni e può automatizzare il lavoro necessario a produrli e installarli.</IMP_WelcomeBody>
+  <IMP_WelcomeFind>Apri Implanner con questo pulsante nella barra in basso a destra, accanto ai comandi di visualizzazione.</IMP_WelcomeFind>
+  <IMP_WelcomeTakeMeThere>Apri subito</IMP_WelcomeTakeMeThere>
+  <IMP_StateWaiting>In attesa</IMP_StateWaiting>
+  <IMP_StatePreparing>In preparazione</IMP_StatePreparing>
+  <IMP_StateOperating>Sotto intervento</IMP_StateOperating>
+  <IMP_StateDone>Completato</IMP_StateDone>
+  <IMP_StateAway>Assente</IMP_StateAway>
+  <IMP_GoalComplete>Completo</IMP_GoalComplete>
+  <IMP_GoalMissing>Mancante</IMP_GoalMissing>
+  <IMP_GoalPartial>{0} / {1}</IMP_GoalPartial>
+  <IMP_GoalReserved>Assegnato</IMP_GoalReserved>
+  <IMP_GoalReady>Pronto</IMP_GoalReady>
+  <IMP_GoalScheduled>Intervento programmato</IMP_GoalScheduled>
+  <IMP_GoalRecovering>In convalescenza</IMP_GoalRecovering>
+  <IMP_GoalBlockedFloor>Bloccato dal livello medico minimo ({0})</IMP_GoalBlockedFloor>
+  <IMP_GoalBlockedLoss>Distruggerebbe {0}</IMP_GoalBlockedLoss>
+  <IMP_PlansHeader>Piani</IMP_PlansHeader>
+  <IMP_AddPlan>Nuovo piano</IMP_AddPlan>
+  <IMP_PlanNameTitle>Nome del piano</IMP_PlanNameTitle>
+  <IMP_ExtendsPlan>Estende</IMP_ExtendsPlan>
+  <IMP_ExtendsNothing>Nessuno</IMP_ExtendsNothing>
+  <IMP_PlanExtends>estende {0}</IMP_PlanExtends>
+  <IMP_Inherited>ereditato</IMP_Inherited>
+  <IMP_Overrides>sostituisce {0}</IMP_Overrides>
+  <IMP_NoPlans>Crea un piano per definire un insieme di impianti da ottenere.</IMP_NoPlans>
+  <IMP_PlanCounts>{0} impianti</IMP_PlanCounts>
+  <IMP_PlanColonists>{0} coloni</IMP_PlanColonists>
+  <IMP_DeletePlan>Elimina piano</IMP_DeletePlan>
+  <IMP_PlanMinQuality>Qualità minima: {0}</IMP_PlanMinQuality>
+  <IMP_PlanMinQualityTip>Gli impianti di questo piano vengono installati e prodotti con questa qualità o superiore. Gli impianti privi di qualità non sono interessati.\n\nUn impianto non sostituisce mai una parte sana del corpo con una peggiore. Un impianto bionico di bassa qualità attende un esemplare migliore, salvo che la parte del corpo sia mancante o danneggiata.</IMP_PlanMinQualityTip>
+  <IMP_PlanMinQualityNoQualityJobs>Quality Jobs non è caricato, quindi qualsiasi artigiano può completare un impianto. Un impianto prodotto con qualità inferiore a questa viene fabbricato di nuovo.</IMP_PlanMinQualityNoQualityJobs>
+  <IMP_DeletePlanConfirm>Eliminare il piano "{0}"? I coloni assegnati perderanno l'assegnazione e i piani che lo estendono smetteranno di ereditarne gli impianti.</IMP_DeletePlanConfirm>
+  <IMP_ImplantGroupOther>Altro</IMP_ImplantGroupOther>
+  <IMP_ReqTitle>Requisiti</IMP_ReqTitle>
+  <IMP_ReqBody>{0} può essere installato solo su una parte artificiale di tipo {1}. Scegli la sostituzione da aggiungere al piano insieme all'impianto:</IMP_ReqBody>
+  <IMP_ReqConfirm>Aggiungi al piano</IMP_ReqConfirm>
+  <IMP_TipPartEfficiency>Efficienza della parte: {0}</IMP_TipPartEfficiency>
+  <IMP_TipCapacity>Parte del corpo: {0}</IMP_TipCapacity>
+  <IMP_TipPartEfficiencyRange>Efficienza della parte: da {0} a {1}, secondo la qualità</IMP_TipPartEfficiencyRange>
+  <IMP_TipMaxHp>Punti salute massimi della parte: {0}</IMP_TipMaxHp>
+  <IMP_RegionLimbs>Arti</IMP_RegionLimbs>
+  <IMP_RegionTorso>Torso</IMP_RegionTorso>
+  <IMP_RegionHead>Testa</IMP_RegionHead>
+  <IMP_NoMatchingImplants>Nessun impianto corrisponde alla ricerca.</IMP_NoMatchingImplants>
+  <IMP_RankTiersTitle>Fasce degli impianti</IMP_RankTiersTitle>
+  <IMP_Help>Aiuto</IMP_Help>
+  <IMP_RankTiersHelp>Gli impianti possono essere suddivisi in 5 fasce. La posizione influisce sull'ordine di produzione e sulla chirurgia, secondo le opzioni di automazione.\n\nTrascina gli oggetti per riordinarli.</IMP_RankTiersHelp>
+  <IMP_TierHighest>Priorità massima</IMP_TierHighest>
+  <IMP_TierHigh>Priorità alta</IMP_TierHigh>
+  <IMP_TierMedium>Priorità media</IMP_TierMedium>
+  <IMP_TierNormal>Priorità normale</IMP_TierNormal>
+  <IMP_TierLow>Priorità bassa</IMP_TierLow>
+  <IMP_DragItemsHere>Trascina qui gli impianti</IMP_DragItemsHere>
+  <IMP_OptEnable>Attiva automazione</IMP_OptEnable>
+  <IMP_OptSurgery>Chirurgia</IMP_OptSurgery>
+  <IMP_OptIteration>Strategia di avanzamento</IMP_OptIteration>
+  <IMP_OptSurgeryConcurrency>Interventi contemporanei</IMP_OptSurgeryConcurrency>
+  <IMP_OptCountHospitalized>Conta le pedine ricoverate</IMP_OptCountHospitalized>
+  <IMP_OptUpgradeByPriority>Dai gli impianti migliori ai coloni con priorità alta</IMP_OptUpgradeByPriority>
+  <IMP_IterTier>Gruppi per fascia</IMP_IterTier>
+  <IMP_IterColonist>Set completi</IMP_IterColonist>
+  <IMP_IterAsap>Appena possibile</IMP_IterAsap>
+  <IMP_OptManualFloor>Abilità medica richiesta per gli interventi</IMP_OptManualFloor>
+  <IMP_OptAutoFloor>Assegna gli interventi al miglior medico disponibile</IMP_OptAutoFloor>
+  <IMP_OptImplantReserves>Scorte di impianti accantonate</IMP_OptImplantReserves>
+  <IMP_AddImplantReserve>Aggiungi impianto</IMP_AddImplantReserve>
+  <IMP_OptProduction>Produzione</IMP_OptProduction>
+  <IMP_OptAutoProduction>Aggiungi automaticamente ordini per gli impianti mancanti</IMP_OptAutoProduction>
+  <IMP_OptConcurrency>Banchi che possono ricevere ordini</IMP_OptConcurrency>
+  <IMP_OptIdleBenches>Crea ordini solo sui banchi inattivi</IMP_OptIdleBenches>
+  <IMP_OptDesignatedBenches>Usa solo banchi Implanner</IMP_OptDesignatedBenches>
+  <IMP_OptProductionSkill>Abilità Artigianato richiesta per gli ordini di produzione</IMP_OptProductionSkill>
+  <IMP_OptIntermediaries>Consenti ordini per i prodotti intermedi mancanti</IMP_OptIntermediaries>
+  <IMP_OptReserves>Conserva in magazzino (dopo i costi degli ordini)</IMP_OptReserves>
+  <IMP_OptModCompat>Compatibilità con le mod</IMP_OptModCompat>
+  <IMP_OptSkillSliderMaximum>Valore massimo dei cursori delle abilità</IMP_OptSkillSliderMaximum>
+  <IMP_OptSkillSliderMaximumTip>Imposta il limite superiore dei cursori Medicina e Artigianato. Non modifica i requisiti già impostati né la selezione automatica del medico.</IMP_OptSkillSliderMaximumTip>
+  <IMP_OptAllowMultipleBladders>Consenti più impianti della vescica</IMP_OptAllowMultipleBladders>
+  <IMP_OptAllowMultipleHygieneEnhancers>Consenti più potenziatori igienici</IMP_OptAllowMultipleHygieneEnhancers>
+  <IMP_OptCatalog>Catalogo</IMP_OptCatalog>
+  <IMP_OptShowPurchaseOnly>Mostra gli impianti non fabbricabili</IMP_OptShowPurchaseOnly>
+  <IMP_CleanupTitle>Disattivare l'automazione?</IMP_CleanupTitle>
+  <IMP_CleanupBody>Questi ordini sono stati creati da Implanner. OK disattiva l'automazione e rimuove gli ordini selezionati. Quelli non selezionati restano e saranno nuovamente gestiti quando riattiverai l'automazione. Gli impianti assegnati vengono liberati in entrambi i casi. Annulla mantiene attiva l'automazione.</IMP_CleanupBody>
+  <IMP_AutomationOffTitle>L'automazione è disattivata</IMP_AutomationOffTitle>
+  <IMP_AutomationOffBody>{0} distribuisce questa colonia su più piani. Implanner non può trasportare un impianto o un intervento oltre il confine tra piani, quindi smette di assegnare oggetti e programmare interventi per evitare di realizzare solo metà di ogni piano.\n\nTutto il resto continua a funzionare. Puoi creare piani, assegnarli e ordinare gli impianti. Aggiungi gli interventi manualmente e Implanner terrà traccia degli impianti installati e di quelli mancanti.</IMP_AutomationOffBody>
+  <IMP_OptEnableTip>L'interruttore principale di tutto ciò che Implanner fa autonomamente: assegnare impianti, programmare interventi e creare ordini di produzione. Se disattivo, Implanner continua a seguire piani e avanzamento, ma smette di agire su di essi. Disattivandolo, puoi anche scegliere quali ordini esistenti conservare.</IMP_OptEnableTip>
+  <IMP_OptIterationTip>L'ordine in cui l'automazione affronta gli impianti mancanti. La priorità dei coloni nella scheda Panoramica decide sempre chi viene prima.\n\nGruppi per fascia: tutti ricevono prima gli impianti della fascia più alta, poi si scende alle successive. Un colono va in chirurgia quando tutti gli impianti della sua fascia sono assegnati.\n\nSet completi: completa l'intero piano di un colono prima di iniziare il successivo. La chirurgia attende che siano assegnati tutti gli impianti del piano.\n\nAppena possibile: ogni impianto in magazzino viene subito programmato per il colono con la priorità più alta a cui manca. A parità di priorità, le gambe vanno al colono più lento e le braccia prima ai combattenti in mischia, poi al migliore artigiano o ricercatore.</IMP_OptIterationTip>
+  <IMP_OptAutoFloorTip>Gli interventi sono riservati al miglior medico disponibile, così un principiante non rovina un'installazione bionica solo perché arriva per primo al tavolo operatorio. Il requisito segue il miglior medico di ogni colonia quando le persone arrivano o partono. Nessuno può operare sé stesso, quindi gli interventi sul miglior medico spettano al secondo migliore.\n\nDisattiva questa opzione per impostare un livello minimo fisso.</IMP_OptAutoFloorTip>
+  <IMP_OptSurgeryConcurrencyTip>Quanti coloni per colonia possono avere interventi programmati contemporaneamente. Valori più alti mettono in coda più coloni in parallelo; valori più bassi lasciano liberi l'ospedale e i medici. Il valore iniziale è uno ogni dieci coloni. Tieni premuto Shift mentre fai clic su +/- per cambiare di 10, oppure Ctrl per cambiare di 5.</IMP_OptSurgeryConcurrencyTip>
+  <IMP_OptCountHospitalizedTip>Anche i coloni e gli schiavi nei letti medici, oppure a terra in attesa di cure, occupano posti chirurgici. I nuovi interventi di Implanner attendono che l'ospedale abbia spazio entro il limite indicato sopra. Prigionieri, ospiti e pazienti in visita di altre fazioni non occupano mai un posto. Disattiva l'opzione per programmare gli impianti indipendentemente da chi sta già ricevendo cure.</IMP_OptCountHospitalizedTip>
+  <IMP_OptUpgradeByPriorityTip>Gli impianti di qualità superiore vanno ai coloni con priorità più alta nella scheda Panoramica. I nuovi interventi usano la qualità minima accettata dal piano, lasciando liberi gli impianti migliori.\n\nQuando è disponibile un impianto migliore, lo riceve il colono con priorità più alta che ne possiede uno peggiore dello stesso tipo. Il vecchio impianto viene prima rimosso e poi passa al colono successivo. Anche un impianto già assegnato a un colono con priorità inferiore viene ceduto, purché l'intervento non sia ancora programmato.\n\nOgni scambio richiede un intervento aggiuntivo. Se disattivo, ogni colono riceve il miglior impianto disponibile quando arriva il suo turno.</IMP_OptUpgradeByPriorityTip>
+  <IMP_OptManualFloorTip>L'abilità Medicina minima richiesta per eseguire gli interventi di Implanner. Gli ordini attendono un medico con questo livello o superiore. Quando disattivi l'assegnazione automatica, il valore iniziale corrisponde al tuo miglior medico attuale.</IMP_OptManualFloorTip>
+  <IMP_OptImplantReservesTip>Impianti accantonati per l'uso manuale. L'automazione assegna solo le quantità eccedenti questi valori, lasciando sempre libero questo numero di ciascun impianto per interventi urgenti o commercio. La produzione non considera disponibili gli oggetti accantonati e continua a fabbricare finché l'automazione può procedere senza di essi.</IMP_OptImplantReservesTip>
+  <IMP_AddImplantReserveTip>Scegli un impianto da accantonare per impedirne l'uso automatico.</IMP_AddImplantReserveTip>
+  <IMP_OptAllowMultipleBladdersTip>Per il gioco, gli impianti della vescica di mod diverse sono impianti separati: un colono può averne più di uno e gli effetti si sommano. Disattiva questa opzione per trattarli come un unico alloggiamento: sceglierne uno nel piano sostituisce gli altri e un colono che possiede già uno degli impianti elencati sotto risulta completo. Non viene mai rimosso nulla.\n\nImpianti interessati:\n{0}</IMP_OptAllowMultipleBladdersTip>
+  <IMP_OptAllowMultipleHygieneEnhancersTip>Per il gioco, i potenziatori igienici di mod diverse sono impianti separati: un colono può averne più di uno e gli effetti si sommano. Disattiva questa opzione per trattarli come un unico alloggiamento: sceglierne uno nel piano sostituisce gli altri e un colono che possiede già uno degli impianti elencati sotto risulta completo. Non viene mai rimosso nulla.\n\nImpianti interessati:\n{0}</IMP_OptAllowMultipleHygieneEnhancersTip>
+  <IMP_OptShowPurchaseOnlyTip>Elenca gli impianti che nessun banco può fabbricare, come le parti arcotecnologiche. Si ottengono soltanto tramite commercio, missioni o recupero. Attiva l'opzione per pianificarli comunque. L'automazione assegna l'oggetto appena entra in magazzino e lo installa con il gruppo successivo; se manca, non blocca mai gli altri impianti. Una mod che aggiunge una ricetta di produzione lo rende automaticamente un impianto ordinario.\n\nImpianti interessati:\n{0}</IMP_OptShowPurchaseOnlyTip>
+  <IMP_OptCompatNoneLoaded>Nessuno degli impianti interessati è caricato.</IMP_OptCompatNoneLoaded>
+  <IMP_OptAutoProductionTip>Gli impianti mancanti ricevono automaticamente ordini di produzione. Implanner conta ciò che serve ancora ai piani di ogni colonia, sottrae scorte e ordini già in coda, e aggiunge gli ordini ai banchi adatti. Gli ordini creati vengono rimossi quando il bisogno scompare.</IMP_OptAutoProductionTip>
+  <IMP_OptConcurrencyTip>Quanti banchi per colonia possono contenere contemporaneamente ordini di produzione di Implanner. Ogni ordine produce un impianto e un banco ne contiene fino a due, così il successivo è già in attesa quando termina il primo. Più banchi producono impianti in parallelo, ma gli artigiani dedicano più tempo agli impianti e meno al resto. Tieni premuto Shift mentre fai clic su +/- per cambiare di 10, oppure Ctrl per cambiare di 5.</IMP_OptConcurrencyTip>
+  <IMP_OptIdleBenchesTip>Solo i banchi senza lavori in attesa ricevono nuovi ordini di Implanner. Le tue code di produzione mantengono la priorità e gli impianti riempiono gli intervalli liberi. Disattiva questa opzione per accodare gli impianti dopo i tuoi ordini.</IMP_OptIdleBenchesTip>
+  <IMP_OptDesignatedBenchesTip>Gli ordini di produzione vanno solo ai banchi con “Banco Implanner” attivo nella scheda Ordini: una colonia senza questi banchi non produce impianti. Se disattivo, i banchi Implanner ricevono per primi gli ordini; gli altri vengono usati quando ogni banco Implanner ne contiene due. Il limite “Banchi che possono ricevere ordini” vale in entrambi i casi.</IMP_OptDesignatedBenchesTip>
+  <IMP_BenchToggle>Banco Implanner</IMP_BenchToggle>
+  <IMP_BenchToggleTip>Implanner aggiunge i propri ordini a questo banco prima che agli altri, sospendendo quelli già presenti. Finché l'opzione è attiva, non puoi aggiungere, incollare, sospendere o riprendere ordini su questo banco.\n\nDisattivala per riprendere il controllo del banco. Gli ordini già sospesi prima dell'attivazione restano sospesi; gli altri riprendono.</IMP_BenchToggleTip>
+  <IMP_BenchLockedTip>Non puoi incollare, sospendere o riprendere ordini su un banco Implanner. Disattiva “Banco Implanner” in cima alla scheda Ordini per riprenderne il controllo.</IMP_BenchLockedTip>
+  <IMP_BenchNoNewBills>Disattiva “Banco Implanner” per aggiungere ordini qui</IMP_BenchNoNewBills>
+  <IMP_OptProductionSkillTip>L'abilità Artigianato minima per gli ordini di produzione di Implanner. Valori alti tengono i componenti costosi lontani dagli artigiani inesperti; valori bassi permettono a più coloni di aiutare. Gli ordini attendono che un artigiano idoneo se ne occupi.</IMP_OptProductionSkillTip>
+  <IMP_OptIntermediariesTip>Quando mancano ingredienti, come i componenti, per un ordine di impianti, Implanner può accodare anche un ordine per quell'ingrediente, se è un prodotto fabbricabile. Le carenze vengono seguite lungo tutta la catena produttiva. Le risorse grezze, come l'acciaio, non vengono mai fabbricate: devi comunque procurarle tu.</IMP_OptIntermediariesTip>
+  <IMP_OptReservesTip>Scorte minime per la produzione automatica. Un ordine viene aggiunto solo se la colonia può pagarne i materiali, oltre a quelli ancora necessari agli ordini già in coda, e conservare almeno questa quantità di ogni ingrediente. Aumenta un valore per proteggere una scorta; impostalo a zero per consentire alla produzione di consumarla liberamente.</IMP_OptReservesTip>
+  <IMP_HelpChapterBasics>Nozioni di base</IMP_HelpChapterBasics>
+  <IMP_HelpChapterPlans>Piani</IMP_HelpChapterPlans>
+  <IMP_HelpChapterAutomation>Automazione</IMP_HelpChapterAutomation>
+  <IMP_HelpChapterSharing>Condivisione</IMP_HelpChapterSharing>
+  <IMP_HelpChapterMods>Mod</IMP_HelpChapterMods>
+  <IMP_HelpReload>Ricarica</IMP_HelpReload>
+  <IMP_Import>Importa</IMP_Import>
+  <IMP_Export>Esporta</IMP_Export>
+  <IMP_ExportPlansTitle>Esporta piani</IMP_ExportPlansTitle>
+  <IMP_ImportPlansTitle>Importa piani</IMP_ImportPlansTitle>
+  <IMP_ExportSummary>{0} piani, {1} impianti</IMP_ExportSummary>
+  <IMP_PlanGoalCount>{0} impianti</IMP_PlanGoalCount>
+  <IMP_CopyClipboard>Copia negli appunti</IMP_CopyClipboard>
+  <IMP_FromClipboard>Dagli appunti</IMP_FromClipboard>
+  <IMP_Save>Salva</IMP_Save>
+  <IMP_ImportAddNote>I piani importati vengono aggiunti a quelli esistenti senza sostituire nulla. Ai nomi già utilizzati viene aggiunto un numero.</IMP_ImportAddNote>
+  <IMP_LocGameData>Cartella Implanner</IMP_LocGameData>
+  <IMP_LocDesktop>Desktop</IMP_LocDesktop>
+  <IMP_LocUserHome>Cartella personale</IMP_LocUserHome>
+  <IMP_LocCustom>Cartella personalizzata</IMP_LocCustom>
+  <IMP_EnterPath>Cartella:</IMP_EnterPath>
+  <IMP_BadFileName>Inserisci un nome di file valido.</IMP_BadFileName>
+  <IMP_BadDirectory>Inserisci una cartella valida.</IMP_BadDirectory>
+  <IMP_SavedTo>Piani salvati in {0}</IMP_SavedTo>
+  <IMP_SaveFailed>Impossibile salvare: {0}</IMP_SaveFailed>
+  <IMP_ReadFailed>Impossibile leggere il file: {0}</IMP_ReadFailed>
+  <IMP_ImportInvalid>Esportazione dei piani di Implanner non valida: {0}</IMP_ImportInvalid>
+  <IMP_DeleteFileConfirm>Eliminare "{0}"?</IMP_DeleteFileConfirm>
+  <IMP_NoFiles>Qui non ci sono ancora file di piani esportati.</IMP_NoFiles>
+  <IMP_ShipFallback>Gravonave</IMP_ShipFallback>
+  <IMP_SettingsShowToolbarButton>Mostra il pulsante nella barra</IMP_SettingsShowToolbarButton>
+</LanguageData>

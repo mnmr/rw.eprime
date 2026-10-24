@@ -206,8 +206,9 @@ namespace RimShared.UiLib
     // arrays, two HelpDrawModels (demo instances borrowed from the host,
     // never owned), and textures (file-loaded ones owned and destroyed here;
     // "tex:" references borrowed from game content and never destroyed).
-    // Dependencies: the on-disk Help folder (read on explicit user actions
-    // only), the host's language revision, UI metric revision, content
+    // Dependencies: the host HelpRoot, fixed active mod list and their Help
+    // folders (read on explicit user actions only), the host's language
+    // revision, UI metric revision, content
     // width, and the host's fixed demo set. Refresh: lazy on first access
     // after a stamp mismatch; language change drops everything via
     // Release(), which advances Generation. Equality: unchanged stamps reuse
@@ -218,6 +219,29 @@ namespace RimShared.UiLib
     {
         private readonly IHelpHost host;
         private readonly HelpTopicData[]?[] chapters;
+
+        // Owner: window. Key: host HelpRoot and language revision. Value:
+        // privately owned, immutable-after-publication priority-ordered topic
+        // and image directories. Dependencies: selected language canonical/
+        // legacy names, active mod order, package IDs, load folders, HelpRoot.
+        // Refresh: first help access after language change or explicit Reload;
+        // mod changes restart play data/windows. Equality: unchanged revision
+        // preserves arrays. Teardown: Release clears both arrays on close,
+        // language change and explicit Reload. No game/mod objects retained.
+        private HelpSourceDirectory[]? sourceDirectories;
+        private string[]? imageDirectories;
+
+        private readonly struct HelpSourceDirectory
+        {
+            internal HelpSourceDirectory(string path, bool english)
+            {
+                Path = path;
+                English = english;
+            }
+
+            internal string Path { get; }
+            internal bool English { get; }
+        }
 
         private readonly struct TextureEntry
         {
@@ -305,6 +329,8 @@ namespace RimShared.UiLib
             }
             modelAge = 0;
             languageStamp = -1;
+            sourceDirectories = null;
+            imageDirectories = null;
         }
 
         /// <summary>Observes the language revision; on change everything is
@@ -455,25 +481,19 @@ namespace RimShared.UiLib
 
         private HelpTopicData[] LoadChapter(string folder)
         {
-            string helpRoot = host.HelpRoot;
-            string languageFolder =
-                LanguageDatabase.activeLanguage?.folderName ?? "English";
-            string languageDir = Path.Combine(
-                Path.Combine(helpRoot, languageFolder), folder);
-            string englishDir = Path.Combine(
-                Path.Combine(helpRoot, "English"), folder);
-
-            HelpTopicEntry[] plan = HelpIndexPlanner.PlanChapter(
-                ListMarkdownFiles(languageDir),
-                string.Equals(languageFolder, "English",
-                    StringComparison.OrdinalIgnoreCase)
-                    ? Array.Empty<string>()
-                    : ListMarkdownFiles(englishDir));
+            EnsureSourceDirectories();
+            HelpSourceDirectory[] directories = sourceDirectories!;
+            var sources = new HelpTopicSource[directories.Length];
+            for (int s = 0; s < sources.Length; s++)
+                sources[s] = new HelpTopicSource(
+                    ListMarkdownFiles(Path.Combine(directories[s].Path, folder)),
+                    directories[s].English);
+            HelpTopicEntry[] plan = HelpIndexPlanner.PlanChapter(sources);
 
             var topics = new List<HelpTopicData>(plan.Length);
             for (int i = 0; i < plan.Length; i++)
             {
-                string dir = plan[i].FromFallback ? englishDir : languageDir;
+                string dir = Path.Combine(directories[plan[i].SourceIndex].Path, folder);
                 string path = Path.Combine(dir, plan[i].FileName);
                 string text;
                 try
@@ -492,6 +512,58 @@ namespace RimShared.UiLib
                         ? document.Title : plan[i].Slug));
             }
             return topics.ToArray();
+        }
+
+        private void EnsureSourceDirectories()
+        {
+            if (sourceDirectories != null) return;
+            LoadedLanguage? language = LanguageDatabase.activeLanguage;
+            string[] languages = LanguageFolders.Candidates(language?.folderName, language?.LegacyFolderName);
+            var topics = new List<HelpSourceDirectory>();
+            var images = new List<string>();
+            string helpRoot = host.HelpRoot;
+            List<ModContentPack> mods = LoadedModManager.RunningModsListForReading;
+            string? ownerPackage = null;
+            for (int m = 0; m < mods.Count; m++)
+                if (string.Equals(Path.GetFullPath(Path.Combine(mods[m].RootDir, "Help")),
+                    Path.GetFullPath(helpRoot), StringComparison.OrdinalIgnoreCase))
+                {
+                    ownerPackage = mods[m].PackageIdPlayerFacing.ToLowerInvariant();
+                    break;
+                }
+
+            // A translation companion opts in by target package ID, without
+            // declaring a hardcoded translator package name or load-order rule:
+            // <companion>/Help/<target-package-id>/<language>/<chapter>/*.md.
+            // Among companions the last mod wins, matching normal keyed text.
+            if (ownerPackage != null)
+                for (int m = mods.Count - 1; m >= 0; m--)
+                    for (int f = 0; f < mods[m].foldersToLoadDescendingOrder.Count; f++)
+                        AddSourceRoot(Path.Combine(mods[m].foldersToLoadDescendingOrder[f],
+                            "Help", ownerPackage), languages, topics, images);
+
+            AddSourceRoot(helpRoot, languages, topics, images);
+            if (!string.Equals(languages[0], "English", StringComparison.OrdinalIgnoreCase))
+            {
+                topics.Add(new HelpSourceDirectory(Path.Combine(helpRoot, "English"), true));
+                // English-specific artwork precedes the existing shared image
+                // directory; localized artwork is optional at every level.
+                images.Insert(images.Count - 1, Path.Combine(helpRoot, "English", "Images"));
+            }
+            sourceDirectories = topics.ToArray();
+            imageDirectories = images.ToArray();
+        }
+
+        private static void AddSourceRoot(string root, string[] languages,
+            List<HelpSourceDirectory> topics, List<string> images)
+        {
+            for (int l = 0; l < languages.Length; l++)
+            {
+                string localized = Path.Combine(root, languages[l]);
+                topics.Add(new HelpSourceDirectory(localized, false));
+                images.Add(Path.Combine(localized, "Images"));
+            }
+            images.Add(Path.Combine(root, "Images"));
         }
 
         private string[] ListMarkdownFiles(string directory)
@@ -569,8 +641,9 @@ namespace RimShared.UiLib
             return true;
         }
 
-        /// <summary>Loads a help image. File paths resolve under
-        /// Help/Images and are owned (destroyed on Release); "tex:Path"
+        /// <summary>Loads a help image. File paths resolve through companion,
+        /// bundled language, English, then shared image directories. Textures
+        /// are owned (destroyed on Release); "tex:Path"
         /// references borrow a game texture via ContentFinder and are never
         /// destroyed here. Cached by the full reference including any "|N"
         /// suffix.</summary>
@@ -597,9 +670,16 @@ namespace RimShared.UiLib
                 return borrowed;
             }
 
+            EnsureSourceDirectories();
             Texture2D? loaded = null;
-            string fullPath = Path.Combine(
-                Path.Combine(host.HelpRoot, "Images"), basePath);
+            string fullPath = Path.Combine(imageDirectories![imageDirectories.Length - 1], basePath);
+            for (int d = 0; d < imageDirectories.Length; d++)
+            {
+                string candidate = Path.Combine(imageDirectories[d], basePath);
+                if (!File.Exists(candidate)) continue;
+                fullPath = candidate;
+                break;
+            }
             try
             {
                 if (File.Exists(fullPath))

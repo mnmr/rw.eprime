@@ -65,7 +65,7 @@ namespace WorkRoles
         private static void RecordCurrentLocation(RoleStore store, Pawn pawn)
         {
             string? id = ColonyScope.PlaceOf(pawn).LocationId;
-            if (store.lastLocationIds.TryGetValue(pawn, out string previous)
+            if (store.lastLocationIds.TryGetValue(pawn, out string? previous)
                 && previous == id)
                 return;
             if (id == null) store.lastLocationIds.Remove(pawn);
@@ -131,7 +131,7 @@ namespace WorkRoles
             if (held != null) return ColonyScope.PlaceOf(pawn).LocationId;
             var store = CurrentStore();
             return store != null
-                && store.lastLocationIds.TryGetValue(pawn, out string id)
+                && store.lastLocationIds.TryGetValue(pawn, out string? id)
                 ? id : null;
         }
 

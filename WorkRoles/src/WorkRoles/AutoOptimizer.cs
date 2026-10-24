@@ -74,7 +74,7 @@ namespace WorkRoles
         private static List<RoleAssignment> MaterializeAssignments(
             RoleStore store, Pawn pawn, PawnFixTarget target)
         {
-            store.pawnSets.TryGetValue(pawn, out PawnRoleSet set);
+            store.pawnSets.TryGetValue(pawn, out PawnRoleSet? set);
             List<RoleAssignment>? existing = set?.assignments;
             var result = new List<RoleAssignment>(target.RoleIds.Count);
             for (int index = 0; index < target.RoleIds.Count; index++)

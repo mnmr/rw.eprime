@@ -19,10 +19,10 @@ namespace WorkRoles.UI
             RoleRecommendationExplanation? explanation,
             SkillBucketSnapshot? skillBuckets)
         {
-            var model = new TipModel { Title = role.label };
+            var model = new TipModel { Title = role.DisplayLabel };
             if (state == Dialog_ChangesPreview.ChipState.Kept
                 && (explanation == null || !explanation.Recommended)
-                && store != null && store.pawnSets.TryGetValue(pawn, out PawnRoleSet set))
+                && store != null && store.pawnSets.TryGetValue(pawn, out PawnRoleSet? set))
                 for (int index = 0; index < set.assignments.Count; index++)
                     if (set.assignments[index].roleId == role.id && set.assignments[index].pinned)
                     {
@@ -56,7 +56,7 @@ namespace WorkRoles.UI
                     Role? memberRole = store?.RoleById(member.RoleId);
                     if (memberRole == null) continue;
                     PopulateFacts(
-                        model.AddSection(memberRole.label),
+                        model.AddSection(memberRole.DisplayLabel),
                         store, memberRole, member, skillBuckets);
                 }
             }
@@ -177,7 +177,7 @@ namespace WorkRoles.UI
                     return controller == null
                         ? "WR_RecDecisionNever".Translate().ToString()
                         : "WR_RecDecisionControlledByTraining".Translate(
-                            controller.label).ToString();
+                            controller.DisplayLabel).ToString();
                 }
                 case PickRejectReason.ScaleNever:
                     return "WR_RecDecisionNever".Translate();
@@ -199,7 +199,7 @@ namespace WorkRoles.UI
                     return covering == null
                         ? "WR_RecDecisionCoveredUnknown".Translate().ToString()
                         : "WR_RecDecisionCovered".Translate(
-                            covering.label).ToString();
+                            covering.DisplayLabel).ToString();
                 }
                 case PickRejectReason.RequiredCoverageFilled:
                     return "WR_RecDecisionCoverageFilled".Translate();
@@ -239,7 +239,7 @@ namespace WorkRoles.UI
                         ? "WR_RecDecisionDirectSlot".Translate(
                             explanation.SelectionSlot,
                             explanation.SelectionSlotCount,
-                            role.label).ToString()
+                            role.DisplayLabel).ToString()
                         : null;
                 case RecommendationSelectionStage.TrainingWaiver:
                 {
@@ -249,14 +249,14 @@ namespace WorkRoles.UI
                         return "WR_RecDecisionTrainingSlotUnknown".Translate(
                             explanation.SelectionSlot,
                             explanation.SelectionSlotCount,
-                            role.label).ToString();
-                    string targetLabel = target.label;
+                            role.DisplayLabel).ToString();
+                    string targetLabel = target.DisplayLabel;
                     if (explanation.TrainingSkills.Count == 0)
                         return "WR_RecDecisionTrainingSlotSimple".Translate(
                             explanation.SelectionSlot,
                             explanation.SelectionSlotCount,
                             targetLabel,
-                            role.label).ToString();
+                            role.DisplayLabel).ToString();
                     string skills = explanation.TrainingSkills
                         .Select(skill => "WR_RecTrainingSkill".Translate(
                             SkillLabel(skill.SkillDefName),
@@ -266,7 +266,7 @@ namespace WorkRoles.UI
                         explanation.SelectionSlot,
                         explanation.SelectionSlotCount,
                         targetLabel,
-                        role.label,
+                        role.DisplayLabel,
                         skills,
                         explanation.TrainingSkills[0].TargetMinimum).ToString();
                 }
@@ -275,7 +275,7 @@ namespace WorkRoles.UI
                         ? "WR_RecDecisionCoverageRepairSlot".Translate(
                             explanation.SelectionSlot,
                             explanation.SelectionSlotCount,
-                            role.label).ToString()
+                            role.DisplayLabel).ToString()
                         : null;
                 case RecommendationSelectionStage.Surplus:
                     return explanation.SurplusQualifiedBySignal

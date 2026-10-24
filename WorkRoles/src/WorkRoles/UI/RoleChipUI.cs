@@ -49,7 +49,7 @@ namespace WorkRoles.UI
         }
 
         internal static RoleChipRenderData From(Role role) =>
-            new RoleChipRenderData(role.id, role.label,
+            new RoleChipRenderData(role.id, role.DisplayLabel,
                 role.hasCustomColor ? role.color : RoleChipUI.DefaultChipColor,
                 role.blocker, role.activeHours != Role.AllHours,
                 role.locationTokens.Count > 0, role.HasRules);

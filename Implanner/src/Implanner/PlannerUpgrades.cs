@@ -70,7 +70,7 @@ namespace Implanner
                     model.TryGetReservation(itemId, out ItemReservation reservation);
                     int pawnId = reservation.PawnId;
                     if (index.ColonyOfPawn(pawnId) != colony
-                        || !index.ItemsById.TryGetValue(itemId, out Thing thing)
+                        || !index.ItemsById.TryGetValue(itemId, out Thing? thing)
                         || !index.SameColony(pawnId, itemId)
                         || !ImplantQualities.HasQuality(thing.def))
                         continue;
@@ -207,7 +207,7 @@ namespace Implanner
             Colony colony, ColonyIndex index, ThingDef def,
             Dictionary<ThingDef, int> playerReserves, PlannerModel model)
         {
-            if (kinds.TryGetValue(def, out Kind kind)) return kind;
+            if (kinds.TryGetValue(def, out Kind? kind)) return kind;
             kind = new Kind();
             kinds.Add(def, kind);
             order.Add(def);

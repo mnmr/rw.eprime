@@ -20,10 +20,30 @@ namespace EPrimeReadouts.UI
         private int pendingSelectId = -1;
         private string? pendingSelectName;
 
+        // Owner: group-list view. Key: UiRevision.Current. Value: measured Small
+        // Add-button bounds. Dependencies: translated Add caption and font
+        // metrics. Refresh: immediate after revision changes. Equality: stable
+        // revision reuses scalars. Teardown: Reset invalidates the stamp.
+        private int footerMetricStamp = -1;
+        private float addWidth, addHeight;
+
+        private void EnsureFooterMetrics()
+        {
+            if (footerMetricStamp == UiRevision.Current) return;
+            using (GuiStateScope.Capture())
+            {
+                Text.Font = GameFont.Small;
+                addWidth = Mathf.Max(56f, WrText.FitWidth(UiText.Get("EPR.Add")) + 20f);
+                addHeight = Mathf.Max(24f, Mathf.Ceil(Text.LineHeight) + 2f);
+            }
+            footerMetricStamp = UiRevision.Current;
+        }
+
         private struct GroupRow
         {
             internal int Id;
             internal string Name;
+            internal string OriginalName;
             internal string DepthKey;
             internal bool Enabled;
         }
@@ -33,13 +53,14 @@ namespace EPrimeReadouts.UI
         // Key: store identity plus GroupsVersion.
         // Value: immutable display-ordered group row array.
         // Dependencies: group structure, owning world's depth-key prefix and
-        // the exact enabled-group presentation revision.
+        // the exact enabled-group presentation revision and language revision.
         // Refresh policy: immediate on store/version change.
-        // Equality policy: unchanged dependencies preserve row-array identity.
+        // Equality policy: unchanged dependencies and equal rows preserve row-array identity.
         // Teardown: view becomes collectible with its dialog; Reset drops rows.
         private ReadoutStore? builtStore;
         private int builtGroupsVersion = -1;
         private int builtPresentationVersion = -1;
+        private int builtLanguageVersion = -1;
         private static int presentationVersion;
         private GroupRow[]? rows;
 
@@ -65,11 +86,12 @@ namespace EPrimeReadouts.UI
                 EPrimeReadoutsMod.Persist(s => s.helpGroupsFolded = folded);
 
             EnsureRows(store);
+            EnsureFooterMetrics();
 
             if (pendingSelectId < 0 && pendingSelectName != null)
             {
                 for (int i = 0; i < rows!.Length; i++) // built by EnsureRows above
-                    if (ReadoutGroupNames.Comparer.Equals(rows[i].Name, pendingSelectName))
+                    if (ReadoutGroupNames.Comparer.Equals(rows[i].OriginalName, pendingSelectName))
                     {
                         pendingSelectId = rows[i].Id;
                         pendingSelectName = null;
@@ -93,7 +115,7 @@ namespace EPrimeReadouts.UI
             }
 
             var listRect = new Rect(rect.x, rect.y + headerUsed, rect.width,
-                rect.height - headerUsed - FooterH);
+                rect.height - headerUsed - Mathf.Max(FooterH, addHeight + 4f));
             var viewRect = new Rect(0f, 0f, listRect.width - 16f, rows!.Length * RowH); // built by EnsureRows above
             Widgets.BeginScrollView(listRect, ref scroll, viewRect);
             try
@@ -183,12 +205,12 @@ namespace EPrimeReadouts.UI
             // fills the available space.
             float footerY = Mathf.Min(
                 listRect.y + rows.Length * RowH + 8f,
-                rect.yMax - FooterH + 4f);
-            var footer = new Rect(rect.x, footerY, rect.width, FooterH - 4f);
+                rect.yMax - addHeight);
+            var footer = new Rect(rect.x, footerY, rect.width, addHeight);
             GUI.SetNextControlName("EPR.NewGroupName");
             newName = Widgets.TextField(
-                new Rect(footer.x, footer.y, footer.width - 60f, 24f), newName);
-            if (Widgets.ButtonText(new Rect(footer.xMax - 56f, footer.y, 56f, 24f),
+                new Rect(footer.x, footer.y, footer.width - addWidth - 4f, addHeight), newName);
+            if (Widgets.ButtonText(new Rect(footer.xMax - addWidth, footer.y, addWidth, addHeight),
                     UiText.Get("EPR.Add")))
                 TryCreate(store);
         }
@@ -230,6 +252,7 @@ namespace EPrimeReadouts.UI
             if (ReferenceEquals(builtStore, store)
                 && builtGroupsVersion == store.GroupsVersion
                 && builtPresentationVersion == presentationVersion
+                && builtLanguageVersion == UiRevision.LanguageCurrent
                 && rows != null)
                 return;
 
@@ -241,7 +264,8 @@ namespace EPrimeReadouts.UI
                 built[i] = new GroupRow
                 {
                     Id = group.Id,
-                    Name = group.Name,
+                    Name = SeededReadoutNames.Name(group),
+                    OriginalName = group.Name,
                     DepthKey = store.DepthKey(group.Id),
                     Enabled = EPrimeReadoutsMod.Settings.enabledGroups.TryGetValue(
                         store.DepthKey(group.Id), out bool enabled)
@@ -251,14 +275,22 @@ namespace EPrimeReadouts.UI
             builtStore = store;
             builtGroupsVersion = store.GroupsVersion;
             builtPresentationVersion = presentationVersion;
-            rows = built;
+            builtLanguageVersion = UiRevision.LanguageCurrent;
+            bool equal = rows != null && rows.Length == built.Length;
+            for (int i = 0; equal && i < built.Length; i++)
+                equal = rows![i].Id == built[i].Id && rows[i].Name == built[i].Name
+                    && rows[i].OriginalName == built[i].OriginalName
+                    && rows[i].DepthKey == built[i].DepthKey && rows[i].Enabled == built[i].Enabled;
+            if (!equal) rows = built;
         }
 
         internal void Reset()
         {
+            footerMetricStamp = -1;
             builtStore = null;
             builtGroupsVersion = -1;
             builtPresentationVersion = -1;
+            builtLanguageVersion = -1;
             rows = null;
             pendingSelectId = -1;
             pendingSelectName = null;

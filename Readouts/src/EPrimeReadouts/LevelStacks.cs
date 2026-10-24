@@ -73,10 +73,10 @@ namespace EPrimeReadouts
                 canonicalCache.Clear();
                 cachedStamp = mapSetStamp;
             }
-            if (canonicalCache.TryGetValue(map, out Map canonical)) return canonical;
+            if (canonicalCache.TryGetValue(map, out Map? canonical)) return canonical;
             Dictionary<int, Map>? levels = LevelsOf(map);
             canonical = levels != null
-                && levels.TryGetValue(0, out Map ground)
+                && levels.TryGetValue(0, out Map? ground)
                 && ground != null
                 ? ground
                 : map;
@@ -112,10 +112,10 @@ namespace EPrimeReadouts
             Type comp = GenTypes.GetTypeInAnyAssembly("MultiFloors.MF_LevelMapComp");
             if (utility == null || comp == null) return;
             const BindingFlags flags = BindingFlags.Public | BindingFlags.Static;
-            MethodInfo tryGet =
+            MethodInfo? tryGet =
                 utility.GetMethod("TryGetLevelControllerOnCurrentTileAlways", flags)
                 ?? utility.GetMethod("TryGetLevelControllerOnCurrentTile", flags);
-            PropertyInfo mapByLevel = comp.GetProperty("MapByLevel");
+            PropertyInfo? mapByLevel = comp.GetProperty("MapByLevel");
             if (tryGet == null
                 || tryGet.ReturnType != typeof(bool)
                 || mapByLevel == null

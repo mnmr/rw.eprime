@@ -17,11 +17,13 @@ namespace EPrimeReadouts.UI
 
         private Vector2 scroll;
         private PoolSnapshot? builtSnapshot;
+        private int builtLanguageVersion = -1;
 
         private struct PoolRow
         {
             internal int Id;
             internal string Name;
+            internal string OriginalName;
             internal ThingDef? IconDef;
         }
 
@@ -29,9 +31,9 @@ namespace EPrimeReadouts.UI
         // Owner: this dialog view.
         // Key: shared PoolSnapshot identity.
         // Value: immutable pool rows with resolved icon defs.
-        // Dependencies: pool snapshot id/name/icon data.
+        // Dependencies: pool snapshot id/name/icon data and language revision.
         // Refresh policy: immediate when the shared snapshot changes.
-        // Equality policy: unchanged snapshot identity preserves row identity.
+        // Equality policy: unchanged dependencies and equal contents preserve row identity.
         // Teardown: Reset releases row, snapshot, and def references.
         private PoolRow[]? cachedRows;
         private int pendingSelectId = -1;
@@ -66,7 +68,7 @@ namespace EPrimeReadouts.UI
                 for (int i = 0; i < cachedRows!.Length; i++)
                 {
                     if (!PoolNameRules.Comparer.Equals(
-                        cachedRows[i].Name, pendingSelectName)) continue;
+                        cachedRows[i].OriginalName, pendingSelectName)) continue;
                     pendingSelectId = cachedRows[i].Id;
                     pendingSelectName = null;
                     break;
@@ -167,7 +169,7 @@ namespace EPrimeReadouts.UI
                 string capturedName = row.Name;
                 Find.WindowStack.Add(new Dialog_NameInput(
                     capturedName,
-                    name => ReadoutCommands.RenamePool(capturedId, name),
+                    name => { if (name != capturedName) ReadoutCommands.RenamePool(capturedId, name); },
                     name => PoolNameProblem(name, capturedId)));
             }
 
@@ -217,10 +219,12 @@ namespace EPrimeReadouts.UI
 
         private void EnsureRows(PoolSnapshot? snapshot)
         {
-            if (ReferenceEquals(builtSnapshot, snapshot) && cachedRows != null)
+            if (ReferenceEquals(builtSnapshot, snapshot) && cachedRows != null
+                && builtLanguageVersion == UiRevision.LanguageCurrent)
                 return;
 
             builtSnapshot = snapshot;
+            builtLanguageVersion = UiRevision.LanguageCurrent;
             int count = snapshot?.Count ?? 0;
             var built = new PoolRow[count];
             for (int i = 0; i < count; i++)
@@ -232,16 +236,23 @@ namespace EPrimeReadouts.UI
                 built[i] = new PoolRow
                 {
                     Id = entry.Id,
-                    Name = entry.Name,
+                    Name = SeededReadoutNames.Name(entry),
+                    OriginalName = entry.Name,
                     IconDef = iconDef,
                 };
             }
-            cachedRows = built;
+            bool equal = cachedRows != null && cachedRows.Length == built.Length;
+            for (int i = 0; equal && i < built.Length; i++)
+                equal = cachedRows![i].Id == built[i].Id && cachedRows[i].Name == built[i].Name
+                    && cachedRows[i].OriginalName == built[i].OriginalName
+                    && ReferenceEquals(cachedRows[i].IconDef, built[i].IconDef);
+            if (!equal) cachedRows = built;
         }
 
         internal void Reset()
         {
             builtSnapshot = null;
+            builtLanguageVersion = -1;
             cachedRows = null;
             pendingSelectId = -1;
             pendingSelectName = null;

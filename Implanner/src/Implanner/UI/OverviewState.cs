@@ -566,7 +566,7 @@ namespace Implanner.UI
             {
                 reservedPawns.Add(pair.Value.PawnId);
                 if (!reservedKeysByPawn.TryGetValue(pair.Value.PawnId,
-                        out List<string> keys))
+                        out List<string>? keys))
                 {
                     keys = new List<string>();
                     reservedKeysByPawn.Add(pair.Value.PawnId, keys);
@@ -606,7 +606,7 @@ namespace Implanner.UI
                 {
                     bool away = !ColonyScope.PlaceOf(pawn).IsServiceable;
                     if (!goalsByPlan.TryGetValue(plan.Id,
-                            out IReadOnlyList<ImplantGoal> goals))
+                            out IReadOnlyList<ImplantGoal>? goals))
                     {
                         // Copied once per plan: for a base-less plan the
                         // model hands back its own live goal list, and a
@@ -803,7 +803,7 @@ namespace Implanner.UI
                 case "location":
                 {
                     string? id = row.GroupingId;
-                    if (id != null && locationLabels.TryGetValue(id, out string label))
+                    if (id != null && locationLabels.TryGetValue(id, out string? label))
                         return ("location|" + label, label);
                     // U+FFFF sorts after every label, non-ASCII ones too
                     // ('~' did not), so Away is the last section.
@@ -1589,7 +1589,7 @@ namespace Implanner.UI
                     ThingRequestGroup.HaulableEver);
                 for (int i = 0; i < haulables.Count; i++)
                     if (reservedItems.TryGetValue(
-                            haulables[i].thingIDNumber, out string goalKey))
+                            haulables[i].thingIDNumber, out string? goalKey))
                         reservedByGoal[goalKey] =
                             !haulables[i].IsForbidden(RimWorld.Faction.OfPlayer);
             }

@@ -1,0 +1,15 @@
+---
+title: Options des rôles
+---
+Les Options des rôles listent tous les rôles sauf les Rôles exclus, par ordre alphabétique. Développez un rôle pour régler son traitement par le moteur :
+
+![Options du rôle Forgeron développées](role-options-expanded.png)
+
+- **Importance pour la colonie** : Important place le rôle avant la production à signal égal ; Facultatif le repousse vers la fin.
+- **Temps requis** : les tâches à temps partiel précèdent le travail à temps plein de force égale ; les tâches occasionnelles passent en dernier.
+- **Pénalité de champion multiple** : évite qu'un seul colon très doué soit le pilier de tous les rôles ; désactivez-la lorsque ce cumul convient.
+- **Échelle des affectations** : le minimum de la colonie est l'effectif que le moteur doit trouver ; la couverture est le pourcentage de colons à viser.
+- **Compétences** : les types de travail et compétences utilisées, entraînées et à seuil sont déduits des tâches. Ajouter une compétence impose une condition : le rôle n'est jamais recommandé à un colon dont cette compétence est désactivée.
+- **Parcours de formation** : décrit dans [son propre sujet](topic:training-paths).
+
+Les rôles prédéfinis sont déjà réglés ; ces options vous permettent de faire autrement.

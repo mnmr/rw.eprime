@@ -18,6 +18,7 @@ namespace WorkRoles
 
         public WorkRolesMod(ModContentPack content) : base(content)
         {
+            RimShared.GameLib.Localization.BundledTranslationFallback.Install();
             var sw = System.Diagnostics.Stopwatch.StartNew();
             Version = content.ModMetaData?.ModVersion;
             ContentRootDir = content.RootDir;

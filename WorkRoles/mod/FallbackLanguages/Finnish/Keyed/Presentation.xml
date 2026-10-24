@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_SignalCondition_after_mental_break>Hermoromahduksen jälkeen</WR_SignalCondition_after_mental_break>
+  <WR_SignalCondition_age_min_18>Vähintään 18-vuotias</WR_SignalCondition_age_min_18>
+  <WR_SignalCondition_apparel_not_nude>Vaatteet päällä</WR_SignalCondition_apparel_not_nude>
+  <WR_SignalCondition_apparel_nude>Alaston</WR_SignalCondition_apparel_nude>
+  <WR_SignalCondition_author_is_bad>Lähdemodi merkitsee tämän intohimon huonoksi</WR_SignalCondition_author_is_bad>
+  <WR_SignalCondition_body_artificial_parts>Keinotekoisia ruumiinosia</WR_SignalCondition_body_artificial_parts>
+  <WR_SignalCondition_body_no_artificial_parts>Ei keinotekoisia ruumiinosia</WR_SignalCondition_body_no_artificial_parts>
+  <WR_SignalCondition_colony_best_at_skill>Siirtokunnan paras tässä taidossa</WR_SignalCondition_colony_best_at_skill>
+  <WR_SignalCondition_colony_loss_within_3_days>Siirtolainen menetettiin viimeisten 3 päivän aikana</WR_SignalCondition_colony_loss_within_3_days>
+  <WR_SignalCondition_colony_no_recent_loss>Ei äskettäisiä siirtolaismenetyksiä</WR_SignalCondition_colony_no_recent_loss>
+  <WR_SignalCondition_colony_not_best_at_skill>Ei siirtokunnan paras tässä taidossa</WR_SignalCondition_colony_not_best_at_skill>
+  <WR_SignalCondition_cycle_daily>Muuttuu päivittäin</WR_SignalCondition_cycle_daily>
+  <WR_SignalCondition_environment_near_fire>Tulen lähellä</WR_SignalCondition_environment_near_fire>
+  <WR_SignalCondition_equipment_ranged_weapon>Etäase varustettuna</WR_SignalCondition_equipment_ranged_weapon>
+  <WR_SignalCondition_location_away_from_home>Poissa kotoa</WR_SignalCondition_location_away_from_home>
+  <WR_SignalCondition_location_home>Kotona</WR_SignalCondition_location_home>
+  <WR_SignalCondition_mood_tier_apathetic>Apaattinen vaihe</WR_SignalCondition_mood_tier_apathetic>
+  <WR_SignalCondition_mood_tier_greater>Intohimoinen vaihe</WR_SignalCondition_mood_tier_greater>
+  <WR_SignalCondition_mood_tier_interested>Kiinnostunut vaihe</WR_SignalCondition_mood_tier_interested>
+  <WR_SignalCondition_mood_tier_major>Erittäin kiinnostunut vaihe</WR_SignalCondition_mood_tier_major>
+  <WR_SignalCondition_mood_tier_none>Intohimoton vaihe</WR_SignalCondition_mood_tier_none>
+  <WR_SignalCondition_pain_max_0_3>Kipua enintään 30%</WR_SignalCondition_pain_max_0_3>
+  <WR_SignalCondition_pain_min_0_3>Kipua vähintään 30%</WR_SignalCondition_pain_min_0_3>
+  <WR_SignalCondition_passion_conflicting>Ampumisintohimo on ristiriidassa tämän piirteen kanssa</WR_SignalCondition_passion_conflicting>
+  <WR_SignalCondition_psychic_sensitivity_tier_critical>Kriittinen psyykkinen herkkyys</WR_SignalCondition_psychic_sensitivity_tier_critical>
+  <WR_SignalCondition_psychic_sensitivity_tier_major>Suuri psyykkinen herkkyys</WR_SignalCondition_psychic_sensitivity_tier_major>
+  <WR_SignalCondition_psychic_sensitivity_tier_minor>Pieni psyykkinen herkkyys</WR_SignalCondition_psychic_sensitivity_tier_minor>
+  <WR_SignalCondition_psychic_sensitivity_tier_normal>Tavallinen psyykkinen herkkyys</WR_SignalCondition_psychic_sensitivity_tier_normal>
+  <WR_SignalCondition_psychic_sensitivity_tier_nullified>Psyykkinen herkkyys kumottu</WR_SignalCondition_psychic_sensitivity_tier_nullified>
+  <WR_SignalCondition_range_long>Pitkällä etäisyydellä</WR_SignalCondition_range_long>
+  <WR_SignalCondition_range_medium>Keskipitkällä etäisyydellä</WR_SignalCondition_range_medium>
+  <WR_SignalCondition_ritual_no_recent_quality_outcome>Ei äskettäistä onnistunutta rituaalia</WR_SignalCondition_ritual_no_recent_quality_outcome>
+  <WR_SignalCondition_ritual_recent_quality_outcome>Äskettäinen onnistunut rituaali</WR_SignalCondition_ritual_recent_quality_outcome>
+  <WR_SignalCondition_setting_vse_critical_affects_other_skills>Kriittinen intohimo vaikuttaa muihin taitoihin modin asetuksissa</WR_SignalCondition_setting_vse_critical_affects_other_skills>
+  <WR_SignalCondition_sight_blind>Sokea</WR_SignalCondition_sight_blind>
+  <WR_SignalCondition_sight_not_blind>Ei sokea</WR_SignalCondition_sight_not_blind>
+  <WR_SignalCondition_social_same_passion_opinion>Parantaa mielipidettä saman intohimon jakavista henkilöistä</WR_SignalCondition_social_same_passion_opinion>
+  <WR_SignalCondition_state_drunk>Humalassa</WR_SignalCondition_state_drunk>
+  <WR_SignalCondition_state_no_recent_lovin>Ei äskettäistä lemmenleikkiä</WR_SignalCondition_state_no_recent_lovin>
+  <WR_SignalCondition_state_not_drunk>Ei humalassa</WR_SignalCondition_state_not_drunk>
+  <WR_SignalCondition_state_not_smokeleaf_high>Ei savulehden vaikutuksen alaisena</WR_SignalCondition_state_not_smokeleaf_high>
+  <WR_SignalCondition_state_recent_lovin>Äskettäistä lemmenleikkiä</WR_SignalCondition_state_recent_lovin>
+  <WR_SignalCondition_state_smokeleaf_high>Savulehden vaikutuksen alaisena</WR_SignalCondition_state_smokeleaf_high>
+  <WR_SignalCondition_time_20_5>Kello 20.00–05.00</WR_SignalCondition_time_20_5>
+  <WR_SignalCondition_time_day>Päiväsaikaan</WR_SignalCondition_time_day>
+  <WR_SignalCondition_weather_not_raining>Ei sada</WR_SignalCondition_weather_not_raining>
+  <WR_SignalCondition_weather_raining>Sataa</WR_SignalCondition_weather_raining>
+  <WR_SignalCondition_work_type_hated>Vihattu työ</WR_SignalCondition_work_type_hated>
+  <WR_SignalCondition_work_compelled_aversion>Vihaa taitoa mutta tuntee pakkoa oppia sen</WR_SignalCondition_work_compelled_aversion>
+  <WR_SignalCondition_work_enjoyment>Suuri nautinto vastaavasta työstä</WR_SignalCondition_work_enjoyment>
+  <WR_SignalCondition_work_passionate>Mieliala intohimoisesta työstä</WR_SignalCondition_work_passionate>
+  <WR_SignalEffect_SkillLevel>Taitotaso</WR_SignalEffect_SkillLevel>
+  <WR_SignalEffect_Passion>Intohimo</WR_SignalEffect_Passion>
+  <WR_SignalEffect_LearningRate>Oppimisnopeus</WR_SignalEffect_LearningRate>
+  <WR_SignalEffect_SkillDecay>Taidon heikkeneminen</WR_SignalEffect_SkillDecay>
+  <WR_SignalEffect_WorkSpeed>Työnopeus</WR_SignalEffect_WorkSpeed>
+  <WR_SignalEffect_Accuracy>Tarkkuus</WR_SignalEffect_Accuracy>
+  <WR_SignalEffect_AimingDelay>Tähtäysviive</WR_SignalEffect_AimingDelay>
+  <WR_SignalEffect_Quality>Laatu</WR_SignalEffect_Quality>
+  <WR_SignalEffect_Yield>Tuotto</WR_SignalEffect_Yield>
+  <WR_SignalEffect_Damage>Vahinko</WR_SignalEffect_Damage>
+  <WR_SignalEffect_HitChance>Osumismahdollisuus</WR_SignalEffect_HitChance>
+  <WR_SignalEffect_Dodge>Väistö</WR_SignalEffect_Dodge>
+  <WR_SignalEffect_Mood>Mieliala</WR_SignalEffect_Mood>
+  <WR_SignalEffect_WorkPreference>Työmieltymys</WR_SignalEffect_WorkPreference>
+  <WR_SignalEffect_Capability>Kyky</WR_SignalEffect_Capability>
+  <WR_SignalEffect_MentalBreak>Hermoromahdus</WR_SignalEffect_MentalBreak>
+  <WR_SignalEffect_StatModifier>Ominaisuusmuutos</WR_SignalEffect_StatModifier>
+  <WR_SignalUnit_Scalar>pistettä</WR_SignalUnit_Scalar>
+  <WR_SignalUnit_StatValue>ominaisuusarvo</WR_SignalUnit_StatValue>
+  <WR_SignalUnit_SkillLevels>taitotasoa</WR_SignalUnit_SkillLevels>
+  <WR_SignalUnit_PassionLevels>intohimotasoa</WR_SignalUnit_PassionLevels>
+  <WR_SignalUnit_MoodPoints>mielialapistettä</WR_SignalUnit_MoodPoints>
+  <WR_SignalUnit_Days>päivää</WR_SignalUnit_Days>
+  <WR_SignalMinorPassion>Lievä intohimo</WR_SignalMinorPassion>
+  <WR_SignalMajorPassion>Palava intohimo</WR_SignalMajorPassion>
+  <WR_SignalOtherSkills>Muut taidot</WR_SignalOtherSkills>
+  <WR_SignalCurrentSkill>Nykyinen taito</WR_SignalCurrentSkill>
+  <WR_SignalUnknownMod>Tuntematon modi</WR_SignalUnknownMod>
+  <WR_SignalConditionHediff>Terveydentila: {0}</WR_SignalConditionHediff>
+  <WR_SignalConditionPrecept>Periaate: {0}</WR_SignalConditionPrecept>
+  <WR_SignalConditionTrait>Piirre: {0}</WR_SignalConditionTrait>
+  <WR_SignalEffectSubject>{0}: {1}</WR_SignalEffectSubject>
+  <WR_SignalTargetViolentWork>Väkivaltainen työ</WR_SignalTargetViolentWork>
+  <WR_SignalTargetRangedWeapon>Etäaseet</WR_SignalTargetRangedWeapon>
+  <WR_SignalTargetConstantDebuff>Jatkuva mielialahaitta</WR_SignalTargetConstantDebuff>
+</LanguageData>

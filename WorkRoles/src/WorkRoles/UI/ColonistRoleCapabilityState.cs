@@ -78,15 +78,15 @@ namespace WorkRoles.UI
             int capability = UiVersion.CapabilityForRole(role.id);
             int language = LanguageChangeCoordinator.Revision;
             int definition = DefinitionReloadCoordinator.Revision;
-            bool found = presentations.TryGetValue(key, out Entry entry);
-            if (found && ReferenceEquals(entry.Role, role)
+            bool found = presentations.TryGetValue(key, out Entry? entry);
+            if (found && ReferenceEquals(entry!.Role, role)
                 && ReferenceEquals(entry.External, externalSnapshot)
                 && entry.CapabilityRevision == capability
                 && entry.LanguageRevision == language
                 && entry.DefinitionRevision == definition)
                 return entry.Presentation;
             RoleCapabilityPresentation rebuilt = Build(pawn, role, externalSnapshot);
-            if (found && entry.Presentation.WarningSeverity == rebuilt.WarningSeverity
+            if (found && entry!.Presentation.WarningSeverity == rebuilt.WarningSeverity
                 && string.Equals(entry.Presentation.Tooltip, rebuilt.Tooltip,
                     StringComparison.Ordinal))
                 rebuilt = entry.Presentation;
@@ -260,7 +260,7 @@ namespace WorkRoles.UI
                     && !hasRangedWeapon;
                 if (!incapable && !lacksHuntingWeapon) continue;
 
-                string reason;
+                string? reason;
                 if (incapable && def.workType != null
                     && externalSnapshot.AgeBlockedWorkTypes.TryGetValue(
                         def.workType.defName, out int unlockAge))

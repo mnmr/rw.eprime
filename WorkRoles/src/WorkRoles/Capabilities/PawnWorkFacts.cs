@@ -61,7 +61,7 @@ namespace WorkRoles.Capabilities
             HumanoidAlienWorkFacts.Collect(pawn, blocks);
             int viviAvailability = ViviWorkFacts.Collect(pawn, blocks);
             PawnWorkEvidence evidence = PawnWorkEvidence.Create(blocks, aversions);
-            if (entries.TryGetValue(pawn, out Entry old) && old.Evidence.ContentEquals(evidence))
+            if (entries.TryGetValue(pawn, out Entry? old) && old.Evidence.ContentEquals(evidence))
                 evidence = old.Evidence;
             var capacities = new bool[requiredCapacities!.Length];
             for (int i = 0; i < capacities.Length; i++) capacities[i] = pawn.health.capacities.CapableOf(requiredCapacities[i]);
@@ -85,13 +85,13 @@ namespace WorkRoles.Capabilities
 
         internal static void Refresh(Pawn pawn)
         {
-            if (!entries.TryGetValue(pawn, out Entry previous)) return;
+            if (!entries.TryGetValue(pawn, out Entry? previous)) return;
             if (!ReferenceEquals(previous.Evidence, Capture(pawn))) ExternalPawnFacts.InvalidateWorkEvidence(pawn);
         }
 
         internal static void HealthChanged(Pawn pawn)
         {
-            if (requiredCapacities == null || !entries.TryGetValue(pawn, out Entry previous)) return;
+            if (requiredCapacities == null || !entries.TryGetValue(pawn, out Entry? previous)) return;
             bool changed = false;
             for (int i = 0; i < previous.Nullifiers.Length && !changed; i++)
                 changed = previous.HasNullifiers[i] != pawn.health.hediffSet.HasHediff(previous.Nullifiers[i]);

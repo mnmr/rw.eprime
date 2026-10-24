@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_PrevColonist.label>vorige kolonist</WR_PrevColonist.label>
+  <WR_NextColonist.label>volgende kolonist</WR_NextColonist.label>
+  <WR_FirstColonist.label>eerste kolonist (Ctrl: groepen negeren)</WR_FirstColonist.label>
+  <WR_LastColonist.label>laatste kolonist (Ctrl: groepen negeren)</WR_LastColonist.label>
+  <WR_PrevPage.label>vorige pagina/groep</WR_PrevPage.label>
+  <WR_NextPage.label>volgende pagina/groep</WR_NextPage.label>
+</LanguageData>

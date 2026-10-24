@@ -1,0 +1,153 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <EPR.Title>EPrime's Readouts</EPR.Title>
+  <EPR.Results>Resultater</EPR.Results>
+  <EPR.NoMatches>Ingen resultater</EPR.NoMatches>
+  <EPR.MoreResults>…og {0} flere</EPR.MoreResults>
+  <EPR.CycleTip>Skift antal synlige visningsniveauer</EPR.CycleTip>
+  <EPR.UseVanilla>Brug grundspillets ressourceoversigt</EPR.UseVanilla>
+  <EPR.OffsetX>Vandret forskydning</EPR.OffsetX>
+  <EPR.OffsetY>Lodret forskydning</EPR.OffsetY>
+  <EPR.PanelWidth>Panelbredde</EPR.PanelWidth>
+  <EPR.BottomMargin>Bundmargen</EPR.BottomMargin>
+  <EPR.Groups>Grupper</EPR.Groups>
+  <EPR.Resources>Ressourcer</EPR.Resources>
+  <EPR.AllStorableItems>Alle genstande, der kan lagres</EPR.AllStorableItems>
+  <EPR.All>Alle</EPR.All>
+  <EPR.Vanilla>Grundspil</EPR.Vanilla>
+  <EPR.SearchFilter>Søgefilter</EPR.SearchFilter>
+  <EPR.ItemFilter>Genstandsfilter</EPR.ItemFilter>
+  <EPR.SourceFilter>Kildefilter</EPR.SourceFilter>
+  <EPR.NoMatchingItems>Ingen matchende genstande</EPR.NoMatchingItems>
+  <EPR.Editor>Editor</EPR.Editor>
+  <EPR.GroupEditor>Gruppeeditor</EPR.GroupEditor>
+  <EPR.Add>Tilføj</EPR.Add>
+  <EPR.DeleteConfirm>Slet gruppen »{0}«?</EPR.DeleteConfirm>
+  <EPR.SelectGroupHint>Vælg eller opret en gruppe for at redigere den.</EPR.SelectGroupHint>
+  <EPR.Thresholds>Grænseværdier</EPR.Thresholds>
+  <EPR.Low>Lav</EPR.Low>
+  <EPR.Critical>Kritisk</EPR.Critical>
+  <EPR.Set>Angiv</EPR.Set>
+  <EPR.Clear>Ryd</EPR.Clear>
+  <EPR.ShowWhenZero>Vis ved nul</EPR.ShowWhenZero>
+  <EPR.PoolTip>Tilføj som en ressourcepulje: ét felt, der viser det samlede antal af alle ressourcer i denne kategori</EPR.PoolTip>
+  <EPR.EnableTip>Vis denne gruppe i ressourceoversigten</EPR.EnableTip>
+  <EPR.RestoreDefaults>Gendan standarder</EPR.RestoreDefaults>
+  <EPR.RestoreConfirm>Erstat ALLE grupper og grænseværdier med standardsættet? Det påvirker alle spillere i multiplayer.</EPR.RestoreConfirm>
+  <EPR.Help>Hjælp</EPR.Help>
+  <EPR.HelpGroups>Dette er dine grupper til ressourcevisning. Hver gruppe vises som et separat bånd.
+
+Klik på fluebenet for at skifte synlighed eller på [x] for at slette gruppen.
+
+Tilføj nye grupper med navnefeltet og knappen Tilføj.</EPR.HelpGroups>
+  <EPR.HelpResources>Gennemse ressourcer og definerede ressourcepuljer for at føje dem til den valgte gruppe.
+
+Klik på en post for at tilføje den sidst i gruppen, eller træk den til et bestemt felt på et visningsniveau. Tildelte poster er nedtonede og markerede; højreklik på dem eller klik på fluebenet for at fjerne dem.</EPR.HelpResources>
+  <EPR.HelpEditor>Dette panel viser den valgte gruppes visningsniveauer.
+
+En gruppe kan have op til tre visningsniveauer. Et nyt niveau bliver automatisk tilgængeligt, når det foregående ikke er tomt.
+
+Klik eller træk genstande fra panelet til højre for at føje dem til den valgte gruppe.
+
+Klik på et felt for at indstille visningen. Højreklik på et felt for at fjerne tildelingen. Træk genstande for at flytte dem inden for eller mellem niveauer.</EPR.HelpEditor>
+  <EPR.Options>Indstillinger</EPR.Options>
+  <EPR.Overview>Oversigt</EPR.Overview>
+  <EPR.HelpChapterBasics>Grundlæggende</EPR.HelpChapterBasics>
+  <EPR.HelpChapterGroups>Grupper</EPR.HelpChapterGroups>
+  <EPR.HelpChapterPools>Ressourcepuljer</EPR.HelpChapterPools>
+  <EPR.HelpChapterOptions>Indstillinger</EPR.HelpChapterOptions>
+  <EPR.HelpReload>Genindlæs</EPR.HelpReload>
+  <EPR.WelcomeTitle>EPrime's Readouts</EPR.WelcomeTitle>
+  <EPR.WelcomeBody>Readouts erstatter ressourceoversigten i øverste venstre hjørne med grupper, som du selv konfigurerer. Hver gruppe kan have op til tre visningsniveauer med ressourcer eller ressourcepuljer, og tællerne skifter farve ved de grænseværdier, du angiver.</EPR.WelcomeBody>
+  <EPR.WelcomeFind>Åbn editoren med tandhjulsknappen øverst i ressourcepanelet. Fanen Indstillinger indeholder visningsindstillinger, og fanen Hjælp forklarer resten.</EPR.WelcomeFind>
+  <EPR.WelcomeTakeMeThere>Åbn nu</EPR.WelcomeTakeMeThere>
+  <EPR.ShowSearchFilter>Vis søgefilter</EPR.ShowSearchFilter>
+  <EPR.SearchHideZero>Skjul resultater med nul</EPR.SearchHideZero>
+  <EPR.SearchStorageOnly>Tæl kun genstande på lager</EPR.SearchStorageOnly>
+  <EPR.SearchStorageOnlyTip>Når indstillingen er slået til, medregnes kun genstande, der opfylder tællekriterierne og ikke er rådne, i lagerzoner eller lagerbygninger såsom reoler. Genstande, der ligger løst andre steder på kortet, udelades. Genstande, som bæres af bønder, befinder sig i inventarer eller beholdere eller er skjult i endnu ikke afdækkede områder, tælles aldrig med. Forbudte genstande tælles med, medmindre »Ignorer forbudte genstande« også er slået til.</EPR.SearchStorageOnlyTip>
+  <EPR.SearchHideForbidden>Ignorer forbudte genstande</EPR.SearchHideForbidden>
+  <EPR.SelectJumpCamera>Flyt kameraet til den ressource, du klikker på</EPR.SelectJumpCamera>
+  <EPR.DisplayOptions>Visningsindstillinger</EPR.DisplayOptions>
+  <EPR.KeepReadoutToggle>Behold ressourceknappen på værktøjslinjen</EPR.KeepReadoutToggle>
+  <EPR.KeepReadoutToggleTip>Beholder spillets egen knap til ressourceoversigten på værktøjslinjen nederst til højre. Klik på den viser eller skjuler grupperne; når grupperne er skjult, beholder panelet kun tandhjulet og søgefeltet.</EPR.KeepReadoutToggleTip>
+  <EPR.TierLayoutOptions>Niveaulayout</EPR.TierLayoutOptions>
+  <EPR.TierLayoutHorizontal>Vandret</EPR.TierLayoutHorizontal>
+  <EPR.TierLayoutVertical>Lodret</EPR.TierLayoutVertical>
+  <EPR.TierLayoutTip>Bestemmer, hvordan en udvidet gruppe viser sine ekstra niveauer, uanset om du har skiftet dem med trekanterne eller ved at holde markøren over. Vandret tilføjer dem til højre på samme række. Lodret giver hvert niveau sin egen række og gør båndet højere.</EPR.TierLayoutTip>
+  <EPR.ExpandOnHover>Udvid under markøren</EPR.ExpandOnHover>
+  <EPR.CollapseWhenIdle>Fold sammen uden markør</EPR.CollapseWhenIdle>
+  <EPR.ShowModName>Vis modnavn</EPR.ShowModName>
+  <EPR.CountOptions>Optællingsindstillinger</EPR.CountOptions>
+  <EPR.PlannedWorkOptions>Planlagt arbejde</EPR.PlannedWorkOptions>
+  <EPR.ReserveForBills>Reserver ressourcer til ordrer</EPR.ReserveForBills>
+  <EPR.ReserveForBillsTip>Trækker de ingredienser fra, som dine udestående ordrer stadig skal bruge. En ordre reserverer kun en ingrediens, hvis behovet kan dækkes på præcis én måde. »Alle lædertyper« og lignende åbne valg reserverer intet.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBuildables>Reserver ressourcer til byggeri</EPR.ReserveForBuildables>
+  <EPR.ReserveForBuildablesTip>Trækker de materialer fra, som dine byggeplaner og delvist byggede rammer stadig mangler. Materialer, der allerede er båret til en ramme, tælles ikke igen, og forbudte byggeplaner ignoreres.</EPR.ReserveForBuildablesTip>
+  <EPR.ShowNegativeCounts>Vis underskud som negative tal</EPR.ShowNegativeCounts>
+  <EPR.ShowNegativeCountsTip>Når planlagt arbejde kræver mere, end du har, vises hvor meget du mangler i stedet for at stoppe ved nul.</EPR.ShowNegativeCountsTip>
+  <EPR.QualityJobsRework>Understøttelse af Quality Jobs</EPR.QualityJobsRework>
+  <EPR.QualityJobsReworkTip>For ordrer og byggeri med en målkvalitet anslås antallet af nødvendige forsøg, og der reserveres til dem alle. Ved genopbygning tilbageleveres den andel, grundspillet giver tilbage ved nedrivning.</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsMissingTip>Kræver EPrime's Quality Jobs, som ikke er installeret.</EPR.QualityJobsMissingTip>
+  <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs er installeret, men tilbyder ikke den nødvendige integration. Opdatér det for at aktivere denne indstilling.</EPR.QualityJobsOutdatedTip>
+  <EPR.TipPlannedWork>Planlagt arbejde</EPR.TipPlannedWork>
+  <EPR.TipResource>Ressource</EPR.TipResource>
+  <EPR.TipQueued>I kø</EPR.TipQueued>
+  <EPR.TipEach>Pr. stk.</EPR.TipEach>
+  <EPR.TipDrain>Forbrug</EPR.TipDrain>
+  <EPR.TipInStock>På lager</EPR.TipInStock>
+  <EPR.TipAvailableStock>{0} tilgængelige · {1} på lager</EPR.TipAvailableStock>
+  <EPR.TipOtherPlannedWork>Andet ({0})</EPR.TipOtherPlannedWork>
+  <EPR.TipMixedResources>Blandet</EPR.TipMixedResources>
+  <EPR.ClickOptions>Klikindstillinger</EPR.ClickOptions>
+  <EPR.SearchOptions>Søgeindstillinger</EPR.SearchOptions>
+  <EPR.HoverOptions>Markørindstillinger</EPR.HoverOptions>
+  <EPR.OptionsFor>Visningsindstillinger for {0}</EPR.OptionsFor>
+  <EPR.ThresholdCaption>Tilpas grænser for farvede tællere</EPR.ThresholdCaption>
+  <EPR.CountRuleCaption>Tilsidesæt optælling for denne ressource/pulje</EPR.CountRuleCaption>
+  <EPR.RuleDefault>Standard</EPR.RuleDefault>
+  <EPR.RuleAlwaysOn>Altid til</EPR.RuleAlwaysOn>
+  <EPR.RuleAlwaysOff>Altid fra</EPR.RuleAlwaysOff>
+  <EPR.Pools>Ressourcepuljer</EPR.Pools>
+  <EPR.ResourcePoolEditor>Editor til ressourcepuljer</EPR.ResourcePoolEditor>
+  <EPR.HelpPools>Opret en ressourcepulje, og vælg den her for at redigere indholdet i panelet Ressourcer. Brug handlingerne på rækken til at omdøbe eller slette en pulje.
+
+Skift til Gruppeeditor, og brug grenen Ressourcepuljer i ressourcetræet for at tilføje en pulje til en gruppe.</EPR.HelpPools>
+  <EPR.HelpPoolEditor>Brug de fælles filtre til at indsnævre ressourcetræet. Markér kategorier eller enkelte ressourcer for at medtage dem i den valgte pulje. Klik på en ressources ikon for at bruge det som puljeikon.</EPR.HelpPoolEditor>
+  <EPR.SelectOrCreatePool>Vælg eller opret en ressourcepulje for at begynde.</EPR.SelectOrCreatePool>
+  <EPR.DeletePoolConfirm>Slet puljen »{0}«? Felter, der bruger den, fjernes fra alle grupper.</EPR.DeletePoolConfirm>
+  <EPR.NameLabel>Navn</EPR.NameLabel>
+  <EPR.PoolNameTaken>Der findes allerede en ressourcepulje med dette navn.</EPR.PoolNameTaken>
+  <EPR.GroupNameTaken>Der findes allerede en gruppe med dette navn.</EPR.GroupNameTaken>
+  <EPR.Export>Eksportér</EPR.Export>
+  <EPR.Import>Importér</EPR.Import>
+  <EPR.Exported>Eksporteret til {0}</EPR.Exported>
+  <EPR.ExportOverwriteConfirm>{0} findes allerede. Erstat filen?</EPR.ExportOverwriteConfirm>
+  <EPR.Imported>Importen blev anvendt.</EPR.Imported>
+  <EPR.NoFiles>Ingen eksportfiler fundet.</EPR.NoFiles>
+  <EPR.ExportPreviewTitle>Eksportér Readouts</EPR.ExportPreviewTitle>
+  <EPR.CopyToClipboard>Kopiér til udklipsholder</EPR.CopyToClipboard>
+  <EPR.CopiedToClipboard>Kopieret til udklipsholderen.</EPR.CopiedToClipboard>
+  <EPR.Save>Gem</EPR.Save>
+  <EPR.ExportLocationLabel>Gem i</EPR.ExportLocationLabel>
+  <EPR.CopyPath>Kopiér sti</EPR.CopyPath>
+  <EPR.LocGameData>Mappe med spildata</EPR.LocGameData>
+  <EPR.LocDesktop>Skrivebord</EPR.LocDesktop>
+  <EPR.LocUserHome>Brugermappe</EPR.LocUserHome>
+  <EPR.LocCustom>Brugerdefineret...</EPR.LocCustom>
+  <EPR.EnterPath>Angiv sti</EPR.EnterPath>
+  <EPR.BadFileName>Angiv et gyldigt filnavn.</EPR.BadFileName>
+  <EPR.BadDirectory>Angiv en gyldig mappesti.</EPR.BadDirectory>
+  <EPR.ImportTitle>Importér Readouts</EPR.ImportTitle>
+  <EPR.ImportLocationLabel>Importér fra</EPR.ImportLocationLabel>
+  <EPR.FromClipboard>Fra udklipsholder</EPR.FromClipboard>
+  <EPR.ClipboardEmpty>Udklipsholderen er tom eller indeholder ikke en Readouts-eksport.</EPR.ClipboardEmpty>
+  <EPR.ImportWarning>ADVARSEL: Dette ERSTATTER alle nuværende puljer, grupper og grænseværdier. Det påvirker alle spillere i multiplayer.</EPR.ImportWarning>
+  <EPR.ImportParseFailed>Kunne ikke læse Readouts-XML: {0}</EPR.ImportParseFailed>
+  <EPR.DeleteFileConfirm>Slet filen »{0}«? Dette kan ikke fortrydes.</EPR.DeleteFileConfirm>
+  <EPR.ContentSummary>{0} puljer, {1} grupper</EPR.ContentSummary>
+  <EPR.PreviewPoolsHeader>Puljer</EPR.PreviewPoolsHeader>
+  <EPR.PreviewGroupsHeader>Grupper</EPR.PreviewGroupsHeader>
+  <EPR.PreviewPoolRow>{0} ({1} medlemmer)</EPR.PreviewPoolRow>
+  <EPR.PreviewGroupRow>{0} ({1} niveauer, {2} felter)</EPR.PreviewGroupRow>
+  <EPR.PreviewNone>(ingen)</EPR.PreviewNone>
+</LanguageData>

@@ -175,7 +175,7 @@ namespace Implanner
         /// recipe per session. Builder path only.
         private static HashSet<ThingDef> RecipeUsersOf(RecipeDef recipe)
         {
-            if (recipeUsers.TryGetValue(recipe, out HashSet<ThingDef> users))
+            if (recipeUsers.TryGetValue(recipe, out HashSet<ThingDef>? users))
                 return users;
             users = new HashSet<ThingDef>();
             foreach (ThingDef user in recipe.AllRecipeUsers)

@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_NoFirefighting.label>Pirófobo</WS_NoFirefighting.label>
+  <WS_NoFirefighting.description>Bloqueadora: os colonos com esta função nunca combatem incêndios, mesmo quando uma função posterior (como Básicos) inclui esse trabalho.</WS_NoFirefighting.description>
+  <WS_Core.label>Urgências</WS_Core.label>
+  <WS_Core.description>Trabalho urgente que todos os colonos devem fazer: combater incêndios, receber tratamento e resgatar.</WS_Core.description>
+  <WS_Basics.label>Básicos</WS_Basics.label>
+  <WS_Basics.description>Cuidados pessoais e trabalho simples que todos os colonos devem fazer.</WS_Basics.description>
+  <WS_Rescuer.label>Socorrista</WS_Rescuer.label>
+  <WS_Rescuer.description>Resgatar colonos incapacitados no chão.</WS_Rescuer.description>
+  <WS_Doctor.label>Médico</WS_Doctor.label>
+  <WS_Doctor.description>Cuidados médicos a colonos, prisioneiros e animais.</WS_Doctor.description>
+  <WS_Medic.label>Paramédico</WS_Medic.label>
+  <WS_Medic.description>Trabalho médico, exceto operar colonos.</WS_Medic.description>
+  <WS_Laborer.label>Trabalhador</WS_Laborer.label>
+  <WS_Laborer.description>Diversas tarefas simples.</WS_Laborer.description>
+  <WS_Childminder.label>Cuidador</WS_Childminder.label>
+  <WS_Childminder.description>Cuidar de crianças e ensinar.</WS_Childminder.description>
+  <WS_Firefighter.label>Bombeiro</WS_Firefighter.label>
+  <WS_Firefighter.description>Combater incêndios.</WS_Firefighter.description>
+  <WS_Patient.label>Paciente</WS_Patient.label>
+  <WS_Patient.description>Receber tratamento médico.</WS_Patient.description>
+  <WS_Bedrest.label>Repouso na cama</WS_Bedrest.label>
+  <WS_Bedrest.description>Repousar na cama quando doente ou ferido.</WS_Bedrest.description>
+  <WS_Jailor.label>Carcereiro</WS_Jailor.label>
+  <WS_Jailor.description>Tratar de prisioneiros, exceto interrogar, escravizar e converter: alimentar, escoltar, conversar, reprimir, libertar e executar.</WS_Jailor.description>
+  <WS_Warden.label>Guarda</WS_Warden.label>
+  <WS_Warden.description>Interação com prisioneiros: recrutamento, conversão, alimentação e libertação.</WS_Warden.description>
+  <WS_Grunt.label>Ajudante</WS_Grunt.label>
+  <WS_Grunt.description>Transporte e limpeza.</WS_Grunt.description>
+  <WS_Hauler.label>Transportador</WS_Hauler.label>
+  <WS_Hauler.description>Transportar objetos.</WS_Hauler.description>
+  <WS_Cleaner.label>Responsável pela limpeza</WS_Cleaner.label>
+  <WS_Cleaner.description>Limpar.</WS_Cleaner.description>
+  <WS_Handler.label>Domador</WS_Handler.label>
+  <WS_Handler.description>Domesticar, treinar e abater animais.</WS_Handler.description>
+  <WS_Cook.label>Cozinheiro</WS_Cook.label>
+  <WS_Cook.description>Preparar refeições e talhar carcaças.</WS_Cook.description>
+  <WS_Butcher.label>Talhante</WS_Butcher.label>
+  <WS_Butcher.description>Talhar carcaças de criaturas.</WS_Butcher.description>
+  <WS_Brewer.label>Cervejeiro</WS_Brewer.label>
+  <WS_Brewer.description>Preparar mosto na cervejaria.</WS_Brewer.description>
+  <WS_Hunter.label>Caçador</WS_Hunter.label>
+  <WS_Hunter.description>Caçar animais selvagens para obter comida.</WS_Hunter.description>
+  <WS_Fisher.label>Pescador</WS_Fisher.label>
+  <WS_Fisher.description>Pescar.</WS_Fisher.description>
+  <WS_Builder.label>Construtor</WS_Builder.label>
+  <WS_Builder.description>Construção, reparação e desconstrução.</WS_Builder.description>
+  <WS_Repairer.label>Faz-tudo</WS_Repairer.label>
+  <WS_Repairer.description>Todo o trabalho de construção, exceto construir novos edifícios.</WS_Repairer.description>
+  <WS_Farmer.label>Agricultor</WS_Farmer.label>
+  <WS_Farmer.description>Semear, colher e cortar plantas.</WS_Farmer.description>
+  <WS_Grower.label>Cultivador</WS_Grower.label>
+  <WS_Grower.description>Semear e colher nas zonas de cultivo.</WS_Grower.description>
+  <WS_PlantCutter.label>Cortador de plantas</WS_PlantCutter.label>
+  <WS_PlantCutter.description>Cortar e colher plantas selvagens e árvores.</WS_PlantCutter.description>
+  <WS_Miner.label>Mineiro</WS_Miner.label>
+  <WS_Miner.description>Mineração e perfuração.</WS_Miner.description>
+  <WS_Tailor.label>Alfaiate</WS_Tailor.label>
+  <WS_Tailor.description>Criação de vestuário.</WS_Tailor.description>
+  <WS_Smith.label>Ferreiro</WS_Smith.label>
+  <WS_Smith.description>Forjar armas e armaduras.</WS_Smith.description>
+  <WS_Fabricator.label>Fabricante</WS_Fabricator.label>
+  <WS_Fabricator.description>Fabricar objetos na bancada de fabrico.</WS_Fabricator.description>
+  <WS_Mechanitor.label>Mecanitor</WS_Mechanitor.label>
+  <WS_Mechanitor.description>Reparar mecanoides, gestar novos e codificar subnúcleos. Recomendado apenas a colonos com uma mecanoligação.</WS_Mechanitor.description>
+  <WS_Crafter.label>Artesão</WS_Crafter.label>
+  <WS_Crafter.description>Artesanato geral: corte de pedra, fundição, drogas e componentes.</WS_Crafter.description>
+  <WS_Researcher.label>Investigador</WS_Researcher.label>
+  <WS_Researcher.description>Investigação numa bancada de investigação.</WS_Researcher.description>
+  <WS_DarkStudier.label>Anomalista</WS_DarkStudier.label>
+  <WS_DarkStudier.description>Estudo de entidades anómalas.</WS_DarkStudier.description>
+  <WS_Artist.label>Artista</WS_Artist.label>
+  <WS_Artist.description>Escultura e obras de arte.</WS_Artist.description>
+  <WS_Nurse.label>Enfermeiro</WS_Nurse.label>
+  <WS_Nurse.description>Alimentar, resgatar e visitar pacientes; tratar-se a si próprio em emergências.</WS_Nurse.description>
+  <WS_DrugMaker.label>Fabricante de drogas</WS_DrugMaker.label>
+  <WS_DrugMaker.description>Produzir drogas no laboratório e na centrífuga de soros.</WS_DrugMaker.description>
+  <WS_Painter.label>Pintor</WS_Painter.label>
+  <WS_Painter.description>Pintar e remover tinta.</WS_Painter.description>
+  <WS_Herder.label>Pastor</WS_Herder.label>
+  <WS_Herder.description>Tratar de animais de curral: encurralar, alimentar, ordenhar, tosquiar e abater.</WS_Herder.description>
+</LanguageData>

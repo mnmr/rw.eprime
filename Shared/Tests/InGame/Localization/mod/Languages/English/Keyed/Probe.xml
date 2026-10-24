@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <LP_Override>English override</LP_Override>
+  <LP_Fallback>English fallback</LP_Fallback>
+  <LP_Placeholder>English placeholder</LP_Placeholder>
+  <LP_Empty>English empty</LP_Empty>
+  <LP_EnglishOnly>English-only fallback</LP_EnglishOnly>
+</LanguageData>

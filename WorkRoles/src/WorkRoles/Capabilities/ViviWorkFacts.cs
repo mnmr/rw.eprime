@@ -134,8 +134,8 @@ namespace WorkRoles.Capabilities
                 {
                     if (need.GetType() == typeof(SkillNeed_BaseBonus))
                     {
-                        float start = (float)AccessTools.Field(typeof(SkillNeed_BaseBonus), "baseValue").GetValue(need);
-                        float bonus = (float)AccessTools.Field(typeof(SkillNeed_BaseBonus), "bonusPerLevel").GetValue(need);
+                        float start = (float)AccessTools.Field(typeof(SkillNeed_BaseBonus), "baseValue").GetValue(need)!;
+                        float bonus = (float)AccessTools.Field(typeof(SkillNeed_BaseBonus), "bonusPerLevel").GetValue(need)!;
                         if (start <= 0f || start + 20f * bonus <= 0f) return false;
                     }
                     else if (need.GetType() == typeof(SkillNeed_Direct))

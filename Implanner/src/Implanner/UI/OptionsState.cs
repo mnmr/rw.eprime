@@ -24,32 +24,41 @@ namespace Implanner.UI
     {
         // Cache contract:
         // Owner: dialog window; shared by Options and both skill controls.
-        // Key/dependencies: UiRevision.Current and the local slider maximum.
-        // Value: immutable presentation bounds, value text and Small line box.
+        // Key/dependencies: UiRevision.Current, local slider maximum and the
+        // narrowest label width (window/column geometry, scrollbar gutter and
+        // manual-row indent). Value: immutable bounds, value text and the
+        // Small-font height of all three translated slider captions when wrapped.
         // Refresh policy: immediate in WindowUpdate; gated tab-switch fallback.
         // Equality policy: unchanged or equal rebuilt contents preserve identity.
         // Teardown: Release on window close; owns no game resources.
         private SkillSliderSnapshot? snapshot;
         private int uiStamp = -1;
+        private float measuredWidth = -1f;
 
-        internal SkillSliderSnapshot Current()
+        internal SkillSliderSnapshot Current(float labelWidth)
         {
             int maximum = ImplannerMod.Settings.skillSliderMaximum;
-            if (snapshot == null || snapshot.Maximum != maximum || uiStamp != UiRevision.Current)
+            if (snapshot == null || snapshot.Maximum != maximum || uiStamp != UiRevision.Current
+                || measuredWidth != labelWidth)
             {
                 using (GuiStateScope.Capture())
                 {
                     Text.Font = GameFont.Small;
+                    Text.WordWrap = true;
                     float height = Mathf.Ceil(Text.LineHeight);
+                    height = Mathf.Max(height, Mathf.Ceil(Text.CalcHeight(PlannerLabels.OptProductionSkill, labelWidth)));
+                    height = Mathf.Max(height, Mathf.Ceil(Text.CalcHeight(PlannerLabels.OptManualFloor, labelWidth)));
+                    height = Mathf.Max(height, Mathf.Ceil(Text.CalcHeight(PlannerLabels.OptSkillSliderMaximum, labelWidth)));
                     if (snapshot == null || snapshot.Maximum != maximum || snapshot.TextHeight != height)
                         snapshot = new SkillSliderSnapshot(maximum, height);
                 }
                 uiStamp = UiRevision.Current;
+                measuredWidth = labelWidth;
             }
             return snapshot;
         }
 
-        internal void Release() { snapshot = null; uiStamp = -1; }
+        internal void Release() { snapshot = null; uiStamp = -1; measuredWidth = -1f; }
     }
 
     internal sealed class OptionsSnapshot

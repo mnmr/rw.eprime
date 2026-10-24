@@ -15,7 +15,7 @@ namespace WorkRoles.UI
         {
             if (giverDisplayCache == null)
                 giverDisplayCache = BuildGiverDisplayCache();
-            return giverDisplayCache.TryGetValue(giver, out string name)
+            return giverDisplayCache.TryGetValue(giver, out string? name)
                 ? name
                 : (giver.label ?? giver.defName).CapitalizeFirst();
         }
@@ -33,7 +33,7 @@ namespace WorkRoles.UI
                 foreach (WorkGiverDef giver in type.workGiversByPriority)
                 {
                     string baseName = BaseName(giver);
-                    if (!byLabel.TryGetValue(baseName, out List<WorkGiverDef> siblings))
+                    if (!byLabel.TryGetValue(baseName, out List<WorkGiverDef>? siblings))
                         byLabel[baseName] = siblings = new List<WorkGiverDef>();
                     siblings.Add(giver);
                 }

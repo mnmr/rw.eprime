@@ -48,7 +48,7 @@ namespace EPrimeReadouts
             return true;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
             => Equals(obj as QualityJobsPlannedWorkSnapshot);
 
         public override int GetHashCode() => Maps.Length;
@@ -107,7 +107,7 @@ namespace EPrimeReadouts
             return true;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
             => Equals(obj as QualityJobsMapWorkSnapshot);
 
         public override int GetHashCode() => RuntimeHelpers.GetHashCode(Map);

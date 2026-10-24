@@ -56,10 +56,10 @@ namespace WorkRoles.UI
         private string? displayJobFilter;
 
         // Owner: this Roles-list state for one open Work Roles window.
-        // Key: RoleStore identity and Catalog/RolePresentation revisions.
+        // Key: RoleStore identity, Catalog/RolePresentation, language and definition revisions.
         // Value: immutable detached ordered role IDs and labels used only for
         // presentation selection and command payload lookup.
-        // Dependencies: ordered role-catalog membership, role IDs, and labels.
+        // Dependencies: ordered role-catalog membership, role IDs, saved labels and translated definitions.
         // Refresh: immediately on the next selection-snapshot read after the
         // store identity or UI revision changes.
         // Equality: exact equal contents preserve identity within one store;
@@ -68,6 +68,8 @@ namespace WorkRoles.UI
         private RoleSelectionSnapshot? selectionSnapshot;
         private RoleStore? selectionOwner;
         private int selectionStamp = -1;
+        private int selectionLanguageRevision = -1;
+        private int selectionDefinitionRevision = -1;
 
         internal string RoleSearch { get; set; } = "";
         internal string? JobFilterDefName { get; set; }
@@ -91,6 +93,8 @@ namespace WorkRoles.UI
             selectionSnapshot = null;
             selectionOwner = null;
             selectionStamp = -1;
+            selectionLanguageRevision = -1;
+            selectionDefinitionRevision = -1;
         }
 
         internal void InvalidateLanguageCaches()
@@ -193,14 +197,16 @@ namespace WorkRoles.UI
             int stamp = store.Revisions.For(ModelDomain.Catalog | ModelDomain.RolePresentation);
             bool ownerChanged = !ReferenceEquals(selectionOwner, store);
             if (!ownerChanged && selectionSnapshot != null
-                && selectionStamp == stamp)
+                && selectionStamp == stamp
+                && selectionLanguageRevision == LanguageChangeCoordinator.Revision
+                && selectionDefinitionRevision == DefinitionReloadCoordinator.Revision)
                 return selectionSnapshot;
 
             var entries = new RoleSelectionEntry[store.roles.Count];
             for (int i = 0; i < entries.Length; i++)
             {
                 Role role = store.roles[i];
-                entries[i] = new RoleSelectionEntry(role.id, role.label);
+                entries[i] = new RoleSelectionEntry(role.id, role.DisplayLabel);
             }
             var rebuilt = new RoleSelectionSnapshot(entries);
             if (ownerChanged || selectionSnapshot == null
@@ -208,6 +214,8 @@ namespace WorkRoles.UI
                 selectionSnapshot = rebuilt;
             selectionOwner = store;
             selectionStamp = stamp;
+            selectionLanguageRevision = LanguageChangeCoordinator.Revision;
+            selectionDefinitionRevision = DefinitionReloadCoordinator.Revision;
             return selectionSnapshot;
         }
 
@@ -217,7 +225,7 @@ namespace WorkRoles.UI
         {
             string? originGroupLabel = null;
             if (virtualRow)
-                originGroupLabel = store.GroupById(role.groupId)?.label
+                originGroupLabel = store.GroupById(role.groupId)?.DisplayLabel
                     ?? "WR_GroupDefault".Translate().ToString();
             return new RoleListRowSnapshot(section,
                 RoleChipRenderData.From(role), depth, virtualRow,
@@ -225,8 +233,8 @@ namespace WorkRoles.UI
                     role.composite ? role.memberRoleIds.Count : role.entries.Count,
                     role.locationTokens, liveLocationIds),
                 role.enabled
-                    ? role.label
-                    : "WR_RoleLabelOff".Translate(role.label).ToString(),
+                    ? role.DisplayLabel
+                    : "WR_RoleLabelOff".Translate(role.DisplayLabel).ToString(),
                 role.enabled, role.hasCustomColor,
                 role.color, role.blocker, role.activeHours != Role.AllHours,
                 role.locationTokens.Count > 0, role.composite, originGroupLabel);
@@ -258,8 +266,8 @@ namespace WorkRoles.UI
         private bool MatchesFilters(Role role)
         {
             if (!RoleSearch.NullOrEmpty()
-                && (role.label == null
-                    || role.label.IndexOf(RoleSearch,
+                && (role.DisplayLabel == null
+                    || role.DisplayLabel.IndexOf(RoleSearch,
                         System.StringComparison.OrdinalIgnoreCase) < 0))
                 return false;
             if (JobFilterDefName == null) return true;
@@ -421,14 +429,14 @@ namespace WorkRoles.UI
 
             RoleSection SectionOf(int groupId)
             {
-                if (byGroupId.TryGetValue(groupId, out RoleSection section)) return section;
+                if (byGroupId.TryGetValue(groupId, out RoleSection? section)) return section;
                 RoleGroup group = store.GroupById(groupId);
                 section = group == null || group.id == RoleGroup.DefaultId
                     ? Default()
                     : new RoleSection
                     {
                         key = "g" + group.id,
-                        title = group.label,
+                        title = group.DisplayLabel,
                         commandName = group.label,
                         group = group,
                         renamable = true,
@@ -460,7 +468,7 @@ namespace WorkRoles.UI
             foreach (RoleGroup group in store.groups)
             {
                 if (group.id == RoleGroup.DefaultId) continue;
-                if (byGroupId.TryGetValue(group.id, out RoleSection section)
+                if (byGroupId.TryGetValue(group.id, out RoleSection? section)
                     && section.members.Count > 0 && !sections.Contains(section))
                     sections.Add(section);
             }

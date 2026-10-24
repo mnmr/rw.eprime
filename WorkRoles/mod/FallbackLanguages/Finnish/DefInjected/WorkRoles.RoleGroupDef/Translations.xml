@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_GroupEssentials.label>Välttämättömät</WS_GroupEssentials.label>
+  <WS_GroupFood.label>Ruoka</WS_GroupFood.label>
+  <WS_GroupAnimals.label>Eläimet</WS_GroupAnimals.label>
+  <WS_GroupIndoors.label>Sisätyöt</WS_GroupIndoors.label>
+  <WS_GroupOutdoors.label>Ulkotyöt</WS_GroupOutdoors.label>
+  <WS_GroupResearch.label>Tutkimus</WS_GroupResearch.label>
+  <WS_GroupSocial.label>Sosiaaliset</WS_GroupSocial.label>
+  <WS_GroupMedical.label>Lääkintä</WS_GroupMedical.label>
+</LanguageData>

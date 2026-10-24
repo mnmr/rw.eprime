@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using RimShared.Common;
 using RimShared.UiLib;
+using RimWorld;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
@@ -11,6 +12,7 @@ using PawnSignal = WorkRoles.Core.Signals.Signal;
 
 namespace WorkRoles.Signals
 {
+    [StaticConstructorOnStartup]
     internal static class SkillSignalPresentation
     {
         private static readonly Dictionary<string, Texture2D?> IconCache =
@@ -118,12 +120,15 @@ namespace WorkRoles.Signals
 
         private static void AddSignalRows(TipSection table, PawnSignal signal, Color? rowColor, Pawn pawn)
         {
-            string name = signal.Ui.Label is { Length: > 0 } label
-                ? label
-                : InvariantDefName.Humanize(signal.Source.DefName);
+            string name = signal.Source.Kind == SignalSourceKind.Passion
+                && signal.Source.PackageId == "Ludeon.RimWorld"
+                ? (signal.Source.DefName == "Major"
+                    ? "WR_SignalMajorPassion" : "WR_SignalMinorPassion").Translate().ToString()
+                : signal.Ui.Label is { Length: > 0 } label
+                    ? label : DefinitionLabel(signal.Source.DefName);
             if (signal.Relation == SignalRelation.Spillover)
                 name += " " + "WR_SignalFromSkill".Translate(
-                    InvariantDefName.Humanize(signal.OriginSkillDefName));
+                    DefinitionLabel(signal.OriginSkillDefName));
             Texture2D? icon = ResolveIcon(signal.Ui.IconKey);
             string source = signal.Ui.SourceDisplayName ?? "";
 
@@ -172,7 +177,7 @@ namespace WorkRoles.Signals
         {
             if (effect.Kind == SignalEffectKind.Capability)
             {
-                string subject = SentenceCase(InvariantDefName.Humanize(effect.TargetDefName));
+                string subject = DefinitionLabel(effect.TargetDefName);
                 // With More Than Capable loaded, "incapable" work is merely
                 // hated (treated as Awful), never blocked outright.
                 return MoreThanCapableSignalProvider.Available
@@ -181,14 +186,14 @@ namespace WorkRoles.Signals
             }
             if (effect.Operation == SignalOperation.Descriptive)
             {
-                string label = InvariantDefName.Humanize(effect.Kind.ToString());
+                string label = ("WR_SignalEffect_" + effect.Kind).Translate().ToString();
                 string? subject = DescriptiveSubject(signal, effect);
-                return subject == null ? label : label + ": " + subject.ToLowerInvariant();
+                return subject == null ? label : "WR_SignalEffectSubject".Translate(label, subject).ToString();
             }
             string head = effect.Kind == SignalEffectKind.StatModifier
                 && !string.IsNullOrWhiteSpace(effect.TargetDefName)
-                ? InvariantDefName.Humanize(effect.TargetDefName)
-                : InvariantDefName.Humanize(effect.Kind.ToString());
+                ? DefinitionLabel(effect.TargetDefName)
+                : ("WR_SignalEffect_" + effect.Kind).Translate().ToString();
             return head + " " + EffectValue(effect);
         }
 
@@ -200,12 +205,30 @@ namespace WorkRoles.Signals
             if (string.IsNullOrWhiteSpace(target) || target == "CurrentSkill"
                 || string.Equals(target, signal.SkillDefName, StringComparison.Ordinal))
                 return null;
-            return InvariantDefName.Humanize(target);
+            return DefinitionLabel(target);
         }
 
-        private static string SentenceCase(string text) =>
-            string.IsNullOrEmpty(text) ? text
-            : char.ToUpperInvariant(text[0]) + text.Substring(1).ToLowerInvariant();
+        /// Only called while opening a frozen tooltip session; resolved game
+        /// definitions supply their own localized labels, including other mods.
+        private static string DefinitionLabel(string? defName)
+        {
+            if (string.IsNullOrEmpty(defName)) return "";
+            switch (defName)
+            {
+                case "CurrentSkill": return "WR_SignalCurrentSkill".Translate();
+                case "OtherSkills": return "WR_SignalOtherSkills".Translate();
+                case "ViolentWork": return "WR_SignalTargetViolentWork".Translate();
+                case "RangedWeapon": return "WR_SignalTargetRangedWeapon".Translate();
+                case "ConstantDebuff": return "WR_SignalTargetConstantDebuff".Translate();
+            }
+            Def? def = DefDatabase<SkillDef>.GetNamedSilentFail(defName);
+            def ??= DefDatabase<StatDef>.GetNamedSilentFail(defName);
+            def ??= DefDatabase<WorkTypeDef>.GetNamedSilentFail(defName);
+            def ??= DefDatabase<MentalBreakDef>.GetNamedSilentFail(defName);
+            def ??= DefDatabase<InspirationDef>.GetNamedSilentFail(defName);
+            def ??= DefDatabase<ThingDef>.GetNamedSilentFail(defName);
+            return def?.LabelCap.ToString() ?? InvariantDefName.Humanize(defName);
+        }
 
         private static string ConditionText(SignalEffect effect)
         {
@@ -320,8 +343,7 @@ namespace WorkRoles.Signals
 
             if (effect.Unit != SignalValueUnit.None && effect.Unit != SignalValueUnit.Factor
                 && displayedMagnitude.HasValue)
-                value += " " + InvariantDefName.Humanize(
-                    effect.Unit.ToString()).ToLowerInvariant();
+                value += " " + ("WR_SignalUnit_" + effect.Unit).Translate();
 
             if (effect.ScaleKind == SignalScaleKind.ExpertiseLevel)
             {
@@ -336,13 +358,77 @@ namespace WorkRoles.Signals
 
         private static string ConditionDisplay(SignalCondition condition)
         {
-            string text = string.IsNullOrWhiteSpace(condition.Description)
-                ? condition.Key
-                : condition.Description;
-            const string prefix = "package:";
-            if (text != null && text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                return ModDisplayName(text.Substring(prefix.Length));
-            return text!; // non-null per SignalCondition contract; check above is defensive
+            string key = condition.Key;
+            if (key.StartsWith("package:", StringComparison.OrdinalIgnoreCase))
+                return ModDisplayName(key.Substring(8));
+            if (key.StartsWith("hediff:", StringComparison.Ordinal))
+                return "WR_SignalConditionHediff".Translate(
+                    DefDatabase<HediffDef>.GetNamedSilentFail(key.Substring(7))?.LabelCap
+                    ?? InvariantDefName.Humanize(key.Substring(7))).ToString();
+            if (key.StartsWith("precept:", StringComparison.Ordinal))
+                return "WR_SignalConditionPrecept".Translate(
+                    DefDatabase<PreceptDef>.GetNamedSilentFail(key.Substring(8))?.LabelCap
+                    ?? InvariantDefName.Humanize(key.Substring(8))).ToString();
+            if (key.StartsWith("trait:", StringComparison.Ordinal))
+                return "WR_SignalConditionTrait".Translate(
+                    DefDatabase<TraitDef>.GetNamedSilentFail(key.Substring(6))?.degreeDatas[0].label
+                    ?? InvariantDefName.Humanize(key.Substring(6))).ToString();
+            switch (key)
+            {
+                case "after:mental-break": return "WR_SignalCondition_after_mental_break".Translate();
+                case "age:min:18": return "WR_SignalCondition_age_min_18".Translate();
+                case "apparel:not-nude": return "WR_SignalCondition_apparel_not_nude".Translate();
+                case "apparel:nude": return "WR_SignalCondition_apparel_nude".Translate();
+                case "author:is-bad": return "WR_SignalCondition_author_is_bad".Translate();
+                case "body:artificial-parts": return "WR_SignalCondition_body_artificial_parts".Translate();
+                case "body:no-artificial-parts": return "WR_SignalCondition_body_no_artificial_parts".Translate();
+                case "colony:best-at-skill": return "WR_SignalCondition_colony_best_at_skill".Translate();
+                case "colony:loss-within-3-days": return "WR_SignalCondition_colony_loss_within_3_days".Translate();
+                case "colony:no-recent-loss": return "WR_SignalCondition_colony_no_recent_loss".Translate();
+                case "colony:not-best-at-skill": return "WR_SignalCondition_colony_not_best_at_skill".Translate();
+                case "cycle:daily": return "WR_SignalCondition_cycle_daily".Translate();
+                case "environment:near-fire": return "WR_SignalCondition_environment_near_fire".Translate();
+                case "equipment:ranged-weapon": return "WR_SignalCondition_equipment_ranged_weapon".Translate();
+                case "location:away-from-home": return "WR_SignalCondition_location_away_from_home".Translate();
+                case "location:home": return "WR_SignalCondition_location_home".Translate();
+                case "mood-tier:apathetic": return "WR_SignalCondition_mood_tier_apathetic".Translate();
+                case "mood-tier:greater": return "WR_SignalCondition_mood_tier_greater".Translate();
+                case "mood-tier:interested": return "WR_SignalCondition_mood_tier_interested".Translate();
+                case "mood-tier:major": return "WR_SignalCondition_mood_tier_major".Translate();
+                case "mood-tier:none": return "WR_SignalCondition_mood_tier_none".Translate();
+                case "pain:max:0.3": return "WR_SignalCondition_pain_max_0_3".Translate();
+                case "pain:min:0.3": return "WR_SignalCondition_pain_min_0_3".Translate();
+                case "passion:conflicting": return "WR_SignalCondition_passion_conflicting".Translate();
+                case "psychic-sensitivity:tier:critical": return "WR_SignalCondition_psychic_sensitivity_tier_critical".Translate();
+                case "psychic-sensitivity:tier:major": return "WR_SignalCondition_psychic_sensitivity_tier_major".Translate();
+                case "psychic-sensitivity:tier:minor": return "WR_SignalCondition_psychic_sensitivity_tier_minor".Translate();
+                case "psychic-sensitivity:tier:normal": return "WR_SignalCondition_psychic_sensitivity_tier_normal".Translate();
+                case "psychic-sensitivity:tier:nullified": return "WR_SignalCondition_psychic_sensitivity_tier_nullified".Translate();
+                case "range:long": return "WR_SignalCondition_range_long".Translate();
+                case "range:medium": return "WR_SignalCondition_range_medium".Translate();
+                case "ritual:no-recent-quality-outcome": return "WR_SignalCondition_ritual_no_recent_quality_outcome".Translate();
+                case "ritual:recent-quality-outcome": return "WR_SignalCondition_ritual_recent_quality_outcome".Translate();
+                case "setting:vse-critical-affects-other-skills": return "WR_SignalCondition_setting_vse_critical_affects_other_skills".Translate();
+                case "sight:blind": return "WR_SignalCondition_sight_blind".Translate();
+                case "sight:not-blind": return "WR_SignalCondition_sight_not_blind".Translate();
+                case "social:same-passion-opinion": return "WR_SignalCondition_social_same_passion_opinion".Translate();
+                case "state:drunk": return "WR_SignalCondition_state_drunk".Translate();
+                case "state:no-recent-lovin": return "WR_SignalCondition_state_no_recent_lovin".Translate();
+                case "state:not-drunk": return "WR_SignalCondition_state_not_drunk".Translate();
+                case "state:not-smokeleaf-high": return "WR_SignalCondition_state_not_smokeleaf_high".Translate();
+                case "state:recent-lovin": return "WR_SignalCondition_state_recent_lovin".Translate();
+                case "state:smokeleaf-high": return "WR_SignalCondition_state_smokeleaf_high".Translate();
+                case "time:20-5": return "WR_SignalCondition_time_20_5".Translate();
+                case "time:day": return "WR_SignalCondition_time_day".Translate();
+                case "weather:not-raining": return "WR_SignalCondition_weather_not_raining".Translate();
+                case "weather:raining": return "WR_SignalCondition_weather_raining".Translate();
+                case "work-type:hated": return "WR_SignalCondition_work_type_hated".Translate();
+                case "work:compelled-aversion": return "WR_SignalCondition_work_compelled_aversion".Translate();
+                case "work:enjoyment": return "WR_SignalCondition_work_enjoyment".Translate();
+                case "work:passionate": return "WR_SignalCondition_work_passionate".Translate();
+                default: return string.IsNullOrWhiteSpace(condition.Description)
+                    ? key : condition.Description;
+            }
         }
 
         private static string ModDisplayName(string packageId)

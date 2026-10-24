@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_SignalCondition_after_mental_break>Efter ett mentalt sammanbrott</WR_SignalCondition_after_mental_break>
+  <WR_SignalCondition_age_min_18>18 år eller äldre</WR_SignalCondition_age_min_18>
+  <WR_SignalCondition_apparel_not_nude>Klädd</WR_SignalCondition_apparel_not_nude>
+  <WR_SignalCondition_apparel_nude>Naken</WR_SignalCondition_apparel_nude>
+  <WR_SignalCondition_author_is_bad>Ursprungsmodden markerar denna passion som dålig</WR_SignalCondition_author_is_bad>
+  <WR_SignalCondition_body_artificial_parts>Har konstgjorda kroppsdelar</WR_SignalCondition_body_artificial_parts>
+  <WR_SignalCondition_body_no_artificial_parts>Inga konstgjorda kroppsdelar</WR_SignalCondition_body_no_artificial_parts>
+  <WR_SignalCondition_colony_best_at_skill>Bäst i kolonin på färdigheten</WR_SignalCondition_colony_best_at_skill>
+  <WR_SignalCondition_colony_loss_within_3_days>En kolonist förlorades under de senaste 3 dagarna</WR_SignalCondition_colony_loss_within_3_days>
+  <WR_SignalCondition_colony_no_recent_loss>Ingen nylig kolonistförlust</WR_SignalCondition_colony_no_recent_loss>
+  <WR_SignalCondition_colony_not_best_at_skill>Inte bäst i kolonin på färdigheten</WR_SignalCondition_colony_not_best_at_skill>
+  <WR_SignalCondition_cycle_daily>Ändras dagligen</WR_SignalCondition_cycle_daily>
+  <WR_SignalCondition_environment_near_fire>Nära eld</WR_SignalCondition_environment_near_fire>
+  <WR_SignalCondition_equipment_ranged_weapon>Med utrustat avståndsvapen</WR_SignalCondition_equipment_ranged_weapon>
+  <WR_SignalCondition_location_away_from_home>Borta hemifrån</WR_SignalCondition_location_away_from_home>
+  <WR_SignalCondition_location_home>Hemma</WR_SignalCondition_location_home>
+  <WR_SignalCondition_mood_tier_apathetic>Apatisk fas</WR_SignalCondition_mood_tier_apathetic>
+  <WR_SignalCondition_mood_tier_greater>Passionerad fas</WR_SignalCondition_mood_tier_greater>
+  <WR_SignalCondition_mood_tier_interested>Intresserad fas</WR_SignalCondition_mood_tier_interested>
+  <WR_SignalCondition_mood_tier_major>Mycket intresserad fas</WR_SignalCondition_mood_tier_major>
+  <WR_SignalCondition_mood_tier_none>Fas utan passion</WR_SignalCondition_mood_tier_none>
+  <WR_SignalCondition_pain_max_0_3>Smärta högst 30%</WR_SignalCondition_pain_max_0_3>
+  <WR_SignalCondition_pain_min_0_3>Smärta minst 30%</WR_SignalCondition_pain_min_0_3>
+  <WR_SignalCondition_passion_conflicting>Skyttepassion står i konflikt med egenskapen</WR_SignalCondition_passion_conflicting>
+  <WR_SignalCondition_psychic_sensitivity_tier_critical>Kritisk psykisk känslighet</WR_SignalCondition_psychic_sensitivity_tier_critical>
+  <WR_SignalCondition_psychic_sensitivity_tier_major>Stor psykisk känslighet</WR_SignalCondition_psychic_sensitivity_tier_major>
+  <WR_SignalCondition_psychic_sensitivity_tier_minor>Liten psykisk känslighet</WR_SignalCondition_psychic_sensitivity_tier_minor>
+  <WR_SignalCondition_psychic_sensitivity_tier_normal>Normal psykisk känslighet</WR_SignalCondition_psychic_sensitivity_tier_normal>
+  <WR_SignalCondition_psychic_sensitivity_tier_nullified>Psykisk känslighet upphävd</WR_SignalCondition_psychic_sensitivity_tier_nullified>
+  <WR_SignalCondition_range_long>På långt avstånd</WR_SignalCondition_range_long>
+  <WR_SignalCondition_range_medium>På medellångt avstånd</WR_SignalCondition_range_medium>
+  <WR_SignalCondition_ritual_no_recent_quality_outcome>Ingen nylig lyckad ritual</WR_SignalCondition_ritual_no_recent_quality_outcome>
+  <WR_SignalCondition_ritual_recent_quality_outcome>Nylig lyckad ritual</WR_SignalCondition_ritual_recent_quality_outcome>
+  <WR_SignalCondition_setting_vse_critical_affects_other_skills>Kritisk passion påverkar andra färdigheter i moddens inställningar</WR_SignalCondition_setting_vse_critical_affects_other_skills>
+  <WR_SignalCondition_sight_blind>Blind</WR_SignalCondition_sight_blind>
+  <WR_SignalCondition_sight_not_blind>Inte blind</WR_SignalCondition_sight_not_blind>
+  <WR_SignalCondition_social_same_passion_opinion>Förbättrar uppfattningen om personer med samma passion</WR_SignalCondition_social_same_passion_opinion>
+  <WR_SignalCondition_state_drunk>Berusad</WR_SignalCondition_state_drunk>
+  <WR_SignalCondition_state_no_recent_lovin>Inget nyligt älskog</WR_SignalCondition_state_no_recent_lovin>
+  <WR_SignalCondition_state_not_drunk>Inte berusad</WR_SignalCondition_state_not_drunk>
+  <WR_SignalCondition_state_not_smokeleaf_high>Inte påverkad av röklöv</WR_SignalCondition_state_not_smokeleaf_high>
+  <WR_SignalCondition_state_recent_lovin>Nyligt älskog</WR_SignalCondition_state_recent_lovin>
+  <WR_SignalCondition_state_smokeleaf_high>Påverkad av röklöv</WR_SignalCondition_state_smokeleaf_high>
+  <WR_SignalCondition_time_20_5>Mellan 20:00 och 05:00</WR_SignalCondition_time_20_5>
+  <WR_SignalCondition_time_day>Under dagen</WR_SignalCondition_time_day>
+  <WR_SignalCondition_weather_not_raining>Det regnar inte</WR_SignalCondition_weather_not_raining>
+  <WR_SignalCondition_weather_raining>Det regnar</WR_SignalCondition_weather_raining>
+  <WR_SignalCondition_work_type_hated>Avskytt arbete</WR_SignalCondition_work_type_hated>
+  <WR_SignalCondition_work_compelled_aversion>Hatar färdigheten men känner sig tvungen att lära sig den</WR_SignalCondition_work_compelled_aversion>
+  <WR_SignalCondition_work_enjoyment>Stor glädje av relaterat arbete</WR_SignalCondition_work_enjoyment>
+  <WR_SignalCondition_work_passionate>Humör från arbete man brinner för</WR_SignalCondition_work_passionate>
+  <WR_SignalEffect_SkillLevel>Färdighetsnivå</WR_SignalEffect_SkillLevel>
+  <WR_SignalEffect_Passion>Passion</WR_SignalEffect_Passion>
+  <WR_SignalEffect_LearningRate>Inlärningstakt</WR_SignalEffect_LearningRate>
+  <WR_SignalEffect_SkillDecay>Färdighetsförfall</WR_SignalEffect_SkillDecay>
+  <WR_SignalEffect_WorkSpeed>Arbetshastighet</WR_SignalEffect_WorkSpeed>
+  <WR_SignalEffect_Accuracy>Träffsäkerhet</WR_SignalEffect_Accuracy>
+  <WR_SignalEffect_AimingDelay>Siktningsfördröjning</WR_SignalEffect_AimingDelay>
+  <WR_SignalEffect_Quality>Kvalitet</WR_SignalEffect_Quality>
+  <WR_SignalEffect_Yield>Avkastning</WR_SignalEffect_Yield>
+  <WR_SignalEffect_Damage>Skada</WR_SignalEffect_Damage>
+  <WR_SignalEffect_HitChance>Träffchans</WR_SignalEffect_HitChance>
+  <WR_SignalEffect_Dodge>Undvikande</WR_SignalEffect_Dodge>
+  <WR_SignalEffect_Mood>Humör</WR_SignalEffect_Mood>
+  <WR_SignalEffect_WorkPreference>Arbetspreferens</WR_SignalEffect_WorkPreference>
+  <WR_SignalEffect_Capability>Förmåga</WR_SignalEffect_Capability>
+  <WR_SignalEffect_MentalBreak>Mentalt sammanbrott</WR_SignalEffect_MentalBreak>
+  <WR_SignalEffect_StatModifier>Statistikmodifierare</WR_SignalEffect_StatModifier>
+  <WR_SignalUnit_Scalar>poäng</WR_SignalUnit_Scalar>
+  <WR_SignalUnit_StatValue>statistikvärde</WR_SignalUnit_StatValue>
+  <WR_SignalUnit_SkillLevels>färdighetsnivåer</WR_SignalUnit_SkillLevels>
+  <WR_SignalUnit_PassionLevels>passionsnivåer</WR_SignalUnit_PassionLevels>
+  <WR_SignalUnit_MoodPoints>humörpoäng</WR_SignalUnit_MoodPoints>
+  <WR_SignalUnit_Days>dagar</WR_SignalUnit_Days>
+  <WR_SignalMinorPassion>Mild passion</WR_SignalMinorPassion>
+  <WR_SignalMajorPassion>Brinnande passion</WR_SignalMajorPassion>
+  <WR_SignalOtherSkills>Andra färdigheter</WR_SignalOtherSkills>
+  <WR_SignalCurrentSkill>Aktuell färdighet</WR_SignalCurrentSkill>
+  <WR_SignalUnknownMod>Okänd modd</WR_SignalUnknownMod>
+  <WR_SignalConditionHediff>Hälsotillstånd: {0}</WR_SignalConditionHediff>
+  <WR_SignalConditionPrecept>Föreskrift: {0}</WR_SignalConditionPrecept>
+  <WR_SignalConditionTrait>Egenskap: {0}</WR_SignalConditionTrait>
+  <WR_SignalEffectSubject>{0}: {1}</WR_SignalEffectSubject>
+  <WR_SignalTargetViolentWork>Våldsamt arbete</WR_SignalTargetViolentWork>
+  <WR_SignalTargetRangedWeapon>Avståndsvapen</WR_SignalTargetRangedWeapon>
+  <WR_SignalTargetConstantDebuff>Ständigt humöravdrag</WR_SignalTargetConstantDebuff>
+</LanguageData>

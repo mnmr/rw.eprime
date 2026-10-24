@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_NoFirefighting.label>Pyrophobe</WS_NoFirefighting.label>
+  <WS_NoFirefighting.description>Bloqueur : les colons ayant ce rôle ne combattent jamais les incendies, même lorsqu'un rôle suivant (comme les tâches de base) inclut ce travail.</WS_NoFirefighting.description>
+  <WS_Core.label>Urgences</WS_Core.label>
+  <WS_Core.description>Travaux urgents que chaque colon doit faire : combattre les incendies, recevoir des soins et secourir.</WS_Core.description>
+  <WS_Basics.label>Tâches de base</WS_Basics.label>
+  <WS_Basics.description>Soins personnels et travaux simples que chaque colon devrait effectuer.</WS_Basics.description>
+  <WS_Rescuer.label>Secouriste</WS_Rescuer.label>
+  <WS_Rescuer.description>Secourir les colons à terre.</WS_Rescuer.description>
+  <WS_Doctor.label>Médecin</WS_Doctor.label>
+  <WS_Doctor.description>Soins médicaux aux colons, prisonniers et animaux.</WS_Doctor.description>
+  <WS_Medic.label>Soignant</WS_Medic.label>
+  <WS_Medic.description>Travail médical, sauf les opérations sur les colons.</WS_Medic.description>
+  <WS_Laborer.label>Manœuvre</WS_Laborer.label>
+  <WS_Laborer.description>Diverses tâches simples.</WS_Laborer.description>
+  <WS_Childminder.label>Éducateur</WS_Childminder.label>
+  <WS_Childminder.description>S'occuper des enfants et enseigner.</WS_Childminder.description>
+  <WS_Firefighter.label>Pompier</WS_Firefighter.label>
+  <WS_Firefighter.description>Combattre les incendies.</WS_Firefighter.description>
+  <WS_Patient.label>Patient</WS_Patient.label>
+  <WS_Patient.description>Recevoir des soins médicaux.</WS_Patient.description>
+  <WS_Bedrest.label>Repos au lit</WS_Bedrest.label>
+  <WS_Bedrest.description>Se reposer au lit en cas de maladie ou de blessure.</WS_Bedrest.description>
+  <WS_Jailor.label>Geôlier</WS_Jailor.label>
+  <WS_Jailor.description>Gestion des prisonniers hors interrogatoire, asservissement et conversion : nourrir, escorter, discuter, réprimer, libérer et exécuter.</WS_Jailor.description>
+  <WS_Warden.label>Gardien</WS_Warden.label>
+  <WS_Warden.description>Interactions avec les prisonniers : recruter, convertir, nourrir et libérer.</WS_Warden.description>
+  <WS_Grunt.label>Homme à tout faire</WS_Grunt.label>
+  <WS_Grunt.description>Transport et nettoyage.</WS_Grunt.description>
+  <WS_Hauler.label>Transporteur</WS_Hauler.label>
+  <WS_Hauler.description>Transporter des objets.</WS_Hauler.description>
+  <WS_Cleaner.label>Nettoyeur</WS_Cleaner.label>
+  <WS_Cleaner.description>Nettoyer.</WS_Cleaner.description>
+  <WS_Handler.label>Dresseur</WS_Handler.label>
+  <WS_Handler.description>Apprivoiser, dresser et abattre les animaux.</WS_Handler.description>
+  <WS_Cook.label>Cuisinier</WS_Cook.label>
+  <WS_Cook.description>Préparation des repas et boucherie.</WS_Cook.description>
+  <WS_Butcher.label>Boucher</WS_Butcher.label>
+  <WS_Butcher.description>Dépecer les créatures.</WS_Butcher.description>
+  <WS_Brewer.label>Brasseur</WS_Brewer.label>
+  <WS_Brewer.description>Préparer le moût à la brasserie.</WS_Brewer.description>
+  <WS_Hunter.label>Chasseur</WS_Hunter.label>
+  <WS_Hunter.description>Chasser les animaux sauvages pour se nourrir.</WS_Hunter.description>
+  <WS_Fisher.label>Pêcheur</WS_Fisher.label>
+  <WS_Fisher.description>Pêcher.</WS_Fisher.description>
+  <WS_Builder.label>Constructeur</WS_Builder.label>
+  <WS_Builder.description>Construction, réparation et déconstruction.</WS_Builder.description>
+  <WS_Repairer.label>Bricoleur</WS_Repairer.label>
+  <WS_Repairer.description>Tous les travaux de construction sauf les nouveaux bâtiments.</WS_Repairer.description>
+  <WS_Farmer.label>Agriculteur</WS_Farmer.label>
+  <WS_Farmer.description>Semer, récolter et couper les plantes.</WS_Farmer.description>
+  <WS_Grower.label>Cultivateur</WS_Grower.label>
+  <WS_Grower.description>Semer et récolter dans les zones de culture.</WS_Grower.description>
+  <WS_PlantCutter.label>Coupeur de plantes</WS_PlantCutter.label>
+  <WS_PlantCutter.description>Couper et récolter les plantes sauvages et les arbres.</WS_PlantCutter.description>
+  <WS_Miner.label>Mineur</WS_Miner.label>
+  <WS_Miner.description>Extraction minière et forage.</WS_Miner.description>
+  <WS_Tailor.label>Tailleur</WS_Tailor.label>
+  <WS_Tailor.description>Création de vêtements.</WS_Tailor.description>
+  <WS_Smith.label>Forgeron</WS_Smith.label>
+  <WS_Smith.description>Forge d'armes et d'armures.</WS_Smith.description>
+  <WS_Fabricator.label>Fabricant</WS_Fabricator.label>
+  <WS_Fabricator.description>Fabriquer des objets à l'établi de fabrication.</WS_Fabricator.description>
+  <WS_Mechanitor.label>Méchanitor</WS_Mechanitor.label>
+  <WS_Mechanitor.description>Réparer les mécanoïdes, en faire gestater de nouveaux et encoder les sous-noyaux. Recommandé uniquement aux colons possédant un mécalien.</WS_Mechanitor.description>
+  <WS_Crafter.label>Artisan</WS_Crafter.label>
+  <WS_Crafter.description>Artisanat général : taille de pierre, fonte, drogues et composants.</WS_Crafter.description>
+  <WS_Researcher.label>Chercheur</WS_Researcher.label>
+  <WS_Researcher.description>Recherche à un établi de recherche.</WS_Researcher.description>
+  <WS_DarkStudier.label>Anomaliste</WS_DarkStudier.label>
+  <WS_DarkStudier.description>Étude des entités anormales.</WS_DarkStudier.description>
+  <WS_Artist.label>Artiste</WS_Artist.label>
+  <WS_Artist.description>Sculpture et œuvres d'art.</WS_Artist.description>
+  <WS_Nurse.label>Infirmier</WS_Nurse.label>
+  <WS_Nurse.description>Nourrir, secourir et visiter les patients ; se soigner soi-même en urgence.</WS_Nurse.description>
+  <WS_DrugMaker.label>Fabricant de drogues</WS_DrugMaker.label>
+  <WS_DrugMaker.description>Produire des drogues au laboratoire et à la centrifugeuse à sérum.</WS_DrugMaker.description>
+  <WS_Painter.label>Peintre</WS_Painter.label>
+  <WS_Painter.description>Peindre et retirer la peinture.</WS_Painter.description>
+  <WS_Herder.label>Éleveur</WS_Herder.label>
+  <WS_Herder.description>Élevage des animaux d'enclos : mettre en enclos, nourrir, traire, tondre et abattre.</WS_Herder.description>
+</LanguageData>

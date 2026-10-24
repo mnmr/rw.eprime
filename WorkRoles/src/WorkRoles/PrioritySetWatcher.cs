@@ -152,7 +152,7 @@ namespace WorkRoles
                 if (assembly == null || ignoredAssemblies.Contains(assembly)) continue;
                 if (modByAssembly.TryGetValue(assembly, out var known)) return known;
 
-                string name = assembly.FullName;
+                string name = assembly.FullName!;
                 if (assembly == typeof(PrioritySetWatcher).Assembly
                     || assembly == typeof(Pawn).Assembly
                     || assembly == typeof(HarmonyLib.Harmony).Assembly

@@ -22,9 +22,11 @@ the role or count as a way to train its skill.
 
 Unknown framework builds preserve existing eligibility and report that their
 rules are unsupported. Restrictions hidden inside arbitrary jobs cannot be
-detected safely by trying jobs during recommendation capture. Vivi's
-equipment-dependent gathering and unverified Ratkin-specific rules are not
-covered; no race or xenotype name is used to guess a restriction.
+detected safely by trying jobs during recommendation capture. Supported Vivi
+versions provide equipment-dependent gathering speed, yield and eligibility.
+Unknown Vivi builds, custom gathering rules and unverified Ratkin-specific
+rules retain existing behavior; no race or xenotype name is used to guess a
+restriction.
 
 Add-ons that patch existing work givers still use the same roles and job
 ordering. Animal-handling roles, for example, continue to use Animals for

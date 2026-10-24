@@ -32,6 +32,7 @@ namespace Implanner
 
         public ImplannerMod(ModContentPack content) : base(content)
         {
+            RimShared.GameLib.Localization.BundledTranslationFallback.Install();
             Instance = this;
             Settings = GetSettings<ImplannerSettings>();
             ContentRootDir = content.RootDir;

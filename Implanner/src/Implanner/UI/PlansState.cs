@@ -484,7 +484,7 @@ namespace Implanner.UI
                 if (!model.Assignments.TryGetValue(
                         pawn.thingIDNumber, out int planId))
                     continue;
-                if (!enlisted.TryGetValue(planId, out List<Pawn> pawns))
+                if (!enlisted.TryGetValue(planId, out List<Pawn>? pawns))
                 {
                     pawns = new List<Pawn>();
                     enlisted.Add(planId, pawns);
@@ -683,7 +683,7 @@ namespace Implanner.UI
             Dictionary<BodyPartRecord, List<RequirementCandidate>> hosts,
             BodyPartRecord record, bool showPurchaseOnly)
         {
-            if (hosts.TryGetValue(record, out List<RequirementCandidate> known))
+            if (hosts.TryGetValue(record, out List<RequirementCandidate>? known))
                 return known;
             var candidates = new List<RequirementCandidate>();
             var efficiencies = new List<float>();

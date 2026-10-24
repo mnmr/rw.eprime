@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_NoFirefighting.label>Pirofobo</WS_NoFirefighting.label>
+  <WS_NoFirefighting.description>Blocco: i coloni con questo ruolo non spengono mai incendi, anche quando un ruolo successivo, come Base, include questa attività.</WS_NoFirefighting.description>
+  <WS_Core.label>Essenziale</WS_Core.label>
+  <WS_Core.description>Attività urgenti che ogni colono deve svolgere: spegnere incendi, ricevere cure e soccorrere.</WS_Core.description>
+  <WS_Basics.label>Base</WS_Basics.label>
+  <WS_Basics.description>Cura personale e lavori semplici che ogni colono dovrebbe svolgere.</WS_Basics.description>
+  <WS_Rescuer.label>Soccorritore</WS_Rescuer.label>
+  <WS_Rescuer.description>Soccorso ai coloni a terra.</WS_Rescuer.description>
+  <WS_Doctor.label>Medico</WS_Doctor.label>
+  <WS_Doctor.description>Cure mediche per coloni, prigionieri e animali.</WS_Doctor.description>
+  <WS_Medic.label>Paramedico</WS_Medic.label>
+  <WS_Medic.description>Lavoro medico, tranne operare i coloni.</WS_Medic.description>
+  <WS_Laborer.label>Manovale</WS_Laborer.label>
+  <WS_Laborer.description>Varie attività semplici.</WS_Laborer.description>
+  <WS_Childminder.label>Educatore</WS_Childminder.label>
+  <WS_Childminder.description>Cura dei bambini e insegnamento.</WS_Childminder.description>
+  <WS_Firefighter.label>Pompiere</WS_Firefighter.label>
+  <WS_Firefighter.description>Spegnimento degli incendi.</WS_Firefighter.description>
+  <WS_Patient.label>Paziente</WS_Patient.label>
+  <WS_Patient.description>Ricevere cure mediche.</WS_Patient.description>
+  <WS_Bedrest.label>Riposo a letto</WS_Bedrest.label>
+  <WS_Bedrest.description>Riposare a letto quando si è malati o feriti.</WS_Bedrest.description>
+  <WS_Jailor.label>Carceriere</WS_Jailor.label>
+  <WS_Jailor.description>Gestione dei prigionieri tranne interrogatorio, riduzione in schiavitù e conversione: alimentazione, scorta, conversazione, repressione, rilascio ed esecuzioni.</WS_Jailor.description>
+  <WS_Warden.label>Guardiano</WS_Warden.label>
+  <WS_Warden.description>Interazione con i prigionieri: reclutamento, conversione, alimentazione e rilascio.</WS_Warden.description>
+  <WS_Grunt.label>Tuttofare</WS_Grunt.label>
+  <WS_Grunt.description>Trasporto e pulizia.</WS_Grunt.description>
+  <WS_Hauler.label>Trasportatore</WS_Hauler.label>
+  <WS_Hauler.description>Trasporto di oggetti.</WS_Hauler.description>
+  <WS_Cleaner.label>Addetto alle pulizie</WS_Cleaner.label>
+  <WS_Cleaner.description>Pulizia.</WS_Cleaner.description>
+  <WS_Handler.label>Addestratore</WS_Handler.label>
+  <WS_Handler.description>Addomesticamento, addestramento e abbattimento degli animali.</WS_Handler.description>
+  <WS_Cook.label>Cuoco</WS_Cook.label>
+  <WS_Cook.description>Preparazione dei pasti e macellazione.</WS_Cook.description>
+  <WS_Butcher.label>Macellaio</WS_Butcher.label>
+  <WS_Butcher.description>Macellazione delle creature.</WS_Butcher.description>
+  <WS_Brewer.label>Birraio</WS_Brewer.label>
+  <WS_Brewer.description>Preparazione del mosto al birrificio.</WS_Brewer.description>
+  <WS_Hunter.label>Cacciatore</WS_Hunter.label>
+  <WS_Hunter.description>Caccia agli animali selvatici per procurare cibo.</WS_Hunter.description>
+  <WS_Fisher.label>Pescatore</WS_Fisher.label>
+  <WS_Fisher.description>Pesca.</WS_Fisher.description>
+  <WS_Builder.label>Costruttore</WS_Builder.label>
+  <WS_Builder.description>Costruzione, riparazione e smantellamento.</WS_Builder.description>
+  <WS_Repairer.label>Manutentore</WS_Repairer.label>
+  <WS_Repairer.description>Tutti i lavori di costruzione tranne l'edificazione di nuovi edifici.</WS_Repairer.description>
+  <WS_Farmer.label>Agricoltore</WS_Farmer.label>
+  <WS_Farmer.description>Semina, raccolta e taglio delle piante.</WS_Farmer.description>
+  <WS_Grower.label>Coltivatore</WS_Grower.label>
+  <WS_Grower.description>Semina e raccolta nelle zone di coltivazione.</WS_Grower.description>
+  <WS_PlantCutter.label>Tagliapiante</WS_PlantCutter.label>
+  <WS_PlantCutter.description>Taglio e raccolta di piante selvatiche e alberi.</WS_PlantCutter.description>
+  <WS_Miner.label>Minatore</WS_Miner.label>
+  <WS_Miner.description>Estrazione e trivellazione.</WS_Miner.description>
+  <WS_Tailor.label>Sarto</WS_Tailor.label>
+  <WS_Tailor.description>Creazione di abiti.</WS_Tailor.description>
+  <WS_Smith.label>Fabbro</WS_Smith.label>
+  <WS_Smith.description>Fabbricazione di armi e armature.</WS_Smith.description>
+  <WS_Fabricator.label>Fabbricatore</WS_Fabricator.label>
+  <WS_Fabricator.description>Produzione di oggetti al banco di fabbricazione.</WS_Fabricator.description>
+  <WS_Mechanitor.label>Meccanitor</WS_Mechanitor.label>
+  <WS_Mechanitor.description>Riparazione dei meccanoidi, gestazione di nuovi esemplari e codifica dei subnuclei. Consigliato solo ai coloni con un mechlink.</WS_Mechanitor.description>
+  <WS_Crafter.label>Artigiano</WS_Crafter.label>
+  <WS_Crafter.description>Artigianato generale: taglio della pietra, fusione, droghe e componenti.</WS_Crafter.description>
+  <WS_Researcher.label>Ricercatore</WS_Researcher.label>
+  <WS_Researcher.description>Ricerca al banco di ricerca.</WS_Researcher.description>
+  <WS_DarkStudier.label>Anomalista</WS_DarkStudier.label>
+  <WS_DarkStudier.description>Studio delle entità anomale.</WS_DarkStudier.description>
+  <WS_Artist.label>Artista</WS_Artist.label>
+  <WS_Artist.description>Scultura e opere d'arte.</WS_Artist.description>
+  <WS_Nurse.label>Infermiere</WS_Nurse.label>
+  <WS_Nurse.description>Alimentazione, soccorso e visite ai pazienti; autocura d'emergenza.</WS_Nurse.description>
+  <WS_DrugMaker.label>Produttore di droghe</WS_DrugMaker.label>
+  <WS_DrugMaker.description>Produzione di droghe nel laboratorio e nella centrifuga per sieri.</WS_DrugMaker.description>
+  <WS_Painter.label>Imbianchino</WS_Painter.label>
+  <WS_Painter.description>Verniciatura e rimozione della vernice.</WS_Painter.description>
+  <WS_Herder.label>Allevatore</WS_Herder.label>
+  <WS_Herder.description>Cura degli animali da recinto: recinzione, alimentazione, mungitura, tosatura e abbattimento.</WS_Herder.description>
+</LanguageData>

@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Reflection;
 using EPrimeReadouts.Core;
+using HarmonyLib;
 using RimShared.Common;
 using RimShared.UiLib;
 using RimWorld;
@@ -68,6 +70,34 @@ namespace EPrimeReadouts.UI
         private List<TabRecord>? tabs;
         private int tabsLanguageStamp = -1;
 
+        // Owner: dialog. Key: UiRevision.Current. Value: immutable header button
+        // widths and measured Small line bounds. Dependencies: translated
+        // restore/import/export labels and font metrics. Refresh: immediate on
+        // revision change; equal keys reuse values. Teardown: PreClose resets.
+        private int headerMetricStamp = -1;
+        private float restoreWidth, ioWidth, headerButtonHeight;
+        private float minimumWidth = 960f;
+        // Window-owned input handler installed once in PreOpen. It uses the
+        // measured header budget; the cached FieldInfo is never read by drawing.
+        private static readonly FieldInfo ResizerField = AccessTools.Field(typeof(Window), "resizer");
+        private readonly WindowResizer resizeHandler = new WindowResizer();
+
+        private void EnsureHeaderMetrics()
+        {
+            if (headerMetricStamp == UiRevision.Current) return;
+            using (GuiStateScope.Capture())
+            {
+                Text.Font = GameFont.Small;
+                restoreWidth = Mathf.Max(130f, WrText.FitWidth(UiText.Get("EPR.RestoreDefaults")) + 24f);
+                ioWidth = Mathf.Max(90f, Mathf.Max(WrText.FitWidth(UiText.Get("EPR.Import")),
+                    WrText.FitWidth(UiText.Get("EPR.Export"))) + 24f);
+                headerButtonHeight = Mathf.Max(28f, Mathf.Ceil(Text.LineHeight) + 6f);
+                minimumWidth = Mathf.Max(960f, 2f * Margin + 2f * Pad + 88f
+                    + restoreWidth + 2f * ioWidth + WrText.FitWidth(UiText.Get("EPR.Title")));
+            }
+            headerMetricStamp = UiRevision.Current;
+        }
+
         public Dialog_ReadoutConfig()
         {
             doCloseX = true;
@@ -87,8 +117,21 @@ namespace EPrimeReadouts.UI
 
         public override void PreOpen()
         {
+            UiRevision.ObserveCurrentMetrics();
+            EnsureHeaderMetrics();
+            resizeHandler.minWindowSize = new Vector2(minimumWidth, 400f);
+            ResizerField.SetValue(this, resizeHandler);
             base.PreOpen();
+            ConstrainWidth();
             help.Reset();
+        }
+
+        private void ConstrainWidth()
+        {
+            float floor = Mathf.Min(minimumWidth, Verse.UI.screenWidth);
+            if (windowRect.width >= floor) return;
+            windowRect.width = floor;
+            windowRect.x = Mathf.Clamp(windowRect.x, 0f, Verse.UI.screenWidth - floor);
         }
 
         public override void PreClose()
@@ -114,12 +157,17 @@ namespace EPrimeReadouts.UI
             ghostDef = null;
             tabs = null;
             tabsLanguageStamp = -1;
+            headerMetricStamp = -1;
         }
 
         /// Help read-marks persist between frames, never inside a render pass.
         public override void WindowUpdate()
         {
             base.WindowUpdate();
+            UiRevision.ObserveCurrentMetrics();
+            EnsureHeaderMetrics();
+            resizeHandler.minWindowSize = new Vector2(minimumWidth, 400f);
+            ConstrainWidth();
             help.FlushPendingWrites();
         }
 
@@ -174,6 +222,7 @@ namespace EPrimeReadouts.UI
         private void DrawOverview(Rect inRect, ReadoutStore store)
         {
             EprDrag.Update();
+            EnsureHeaderMetrics();
 
             // --- Read the same per-map snapshot used by the main panel. ---
             var map = Find.CurrentMap;
@@ -205,18 +254,18 @@ namespace EPrimeReadouts.UI
             Text.Anchor = TextAnchor.MiddleLeft;
             GUI.color = EprStyle.HeaderText;
             Widgets.Label(new Rect(iconRect.xMax + 8f, panelRect.y,
-                panelRect.width - iconRect.xMax - 8f - 150f, PanelH),
+                panelRect.xMax - iconRect.xMax - 40f - restoreWidth - 2f * ioWidth, PanelH),
                 UiText.Get("EPR.Title"));
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
 
             // Right-cluster buttons, all vertically centred in panel, 28px tall, 8px gaps,
             // right-to-left: [Restore defaults] [Export] [Import]
-            float btnY = panelRect.y + (PanelH - 28f) / 2f;
+            float btnY = panelRect.y + (PanelH - headerButtonHeight) / 2f;
             const float BtnGap = 8f;
 
-            // [Restore defaults] — 130px wide, 8px from right edge
-            var restoreRect = new Rect(panelRect.xMax - 138f, btnY, 130f, 28f);
+            // Measured labels retain their padding in each selected language.
+            var restoreRect = new Rect(panelRect.xMax - restoreWidth - 8f, btnY, restoreWidth, headerButtonHeight);
             if (Widgets.ButtonText(restoreRect, UiText.Get("EPR.RestoreDefaults")))
             {
                 string restorePayload = DefaultGroups.GetRestorePayload();
@@ -227,13 +276,11 @@ namespace EPrimeReadouts.UI
                     UiRevision.Current, destructive: true));
             }
 
-            // [Export] — 90px wide, to the left of Restore
-            var exportRect = new Rect(restoreRect.x - BtnGap - 90f, btnY, 90f, 28f);
+            var exportRect = new Rect(restoreRect.x - BtnGap - ioWidth, btnY, ioWidth, headerButtonHeight);
             if (Widgets.ButtonText(exportRect, UiText.Get("EPR.Export")))
                 Find.WindowStack.Add(new Dialog_ExportReadouts());
 
-            // [Import] — 90px wide, to the left of Export
-            var importRect = new Rect(exportRect.x - BtnGap - 90f, btnY, 90f, 28f);
+            var importRect = new Rect(exportRect.x - BtnGap - ioWidth, btnY, ioWidth, headerButtonHeight);
             if (Widgets.ButtonText(importRect, UiText.Get("EPR.Import")))
                 Find.WindowStack.Add(new Dialog_ImportReadouts());
 

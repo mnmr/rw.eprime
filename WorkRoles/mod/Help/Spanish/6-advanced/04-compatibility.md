@@ -1,0 +1,20 @@
+---
+title: Compatibilidad con mods
+---
+El trabajo de otros mods se detecta automáticamente. Algunas integraciones son más profundas: las pericias de Vanilla Skills Expanded y Alpha Skills alimentan las señales; el trabajo odiado de More Than Capable produce señal Pésima; Colony Groups añade agrupación; los mods de varios pisos tratan las plantas como una ubicación.
+
+Los mods opcionales de trabajo y habilidades pueden aportar perfiles que identifican las habilidades usadas y entrenadas, y ajustar la principal para recomendaciones cuando corresponda. WorkRoles deja elegibilidad, designaciones y ejecución al mod de origen. No añade dependencias obligatorias.
+
+Las recomendaciones leen etiquetas laborales, capacidades exigidas, oposición de preceptos y negativas verificadas a la minería normal. Con versiones auditadas de Humanoid Alien Races en RimWorld 1.6 y 1.7 usan sus restricciones reales de proveedores y recetas; todas las razas que las emplean se benefician. Una receta bloqueada no elimina otras utilizables del rol ni cuenta como vía de formación.
+
+Las versiones desconocidas conservan la elegibilidad anterior y avisan de que sus reglas no se admiten. No es seguro detectar restricciones ocultas intentando ejecutar trabajos al capturar recomendaciones. Las versiones compatibles de Vivi proporcionan velocidad, rendimiento y elegibilidad de recolección según el equipo. Las versiones desconocidas de Vivi, las reglas de recolección personalizadas y las específicas de Ratkin sin verificar conservan el comportamiento existente; nunca se deducen restricciones por el nombre de raza o xenotipo.
+
+Los complementos que modifican proveedores existentes conservan roles y orden. Por ejemplo, manejo de animales sigue recomendándose por Animales. La experiencia condicional en otra habilidad depende de la elegibilidad del complemento y no crea una ruta general para todos los asignados.
+
+Dos familias chocan: otros reemplazos de Trabajo, como derivados de Work Tab o Better Work Tab, compiten por la interfaz. Los mods que establecen prioridades, como Free Will o PriorityMaster, compiten por los datos: WorkRoles controla a sus colonos gestionados y bloquea esas escrituras. Un aviso único identifica el mod y sugiere el equivalente con roles.
+
+Solo controla prioridades de humanoides; mods para otros tipos, como Mech Work Tab para mecanoides, son compatibles.
+
+Algunos mods exigen valores de 0 a 4. Si hay problemas, activa «Comunicar prioridades originales de 0 a 4 a otros mods».
+
+Los que solo leen prioridades funcionan: ven los valores calculados por WorkRoles.

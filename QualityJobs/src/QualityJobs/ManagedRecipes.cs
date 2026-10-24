@@ -83,7 +83,7 @@ namespace QualityJobs
         /// consumers must use this instead of bill.recipe / uft.Recipe.
         public static RecipeDef? Registered(RecipeDef? recipe)
             => recipe?.unfinishedThingDef != null
-                && managed.TryGetValue(recipe.defName, out RecipeDef def) ? def : null;
+                && managed.TryGetValue(recipe.defName, out RecipeDef? def) ? def : null;
 
         /// All UFT ThingDefs (managed or not) — sharing (§8) and cap counting
         /// (§9) enumerate spawned UFTs through these. Returns a plain array so

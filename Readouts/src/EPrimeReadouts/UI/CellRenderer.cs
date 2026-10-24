@@ -54,9 +54,9 @@ namespace EPrimeReadouts.UI
                     counts[i] = cell.Count;
                     if (tokens[i] != null && SlotToken.IsPoolRef(tokens[i]!)
                         && renderData != null
-                        && renderData.Structure.TryGet(SlotToken.PoolId(tokens[i]!),
-                            out _, out _, out string? poolName))
-                        tooltips[i] = poolName;
+                        && renderData.Structure.TryGetEntry(SlotToken.PoolId(tokens[i]!),
+                            out PoolSnapshotEntry pool))
+                        tooltips[i] = SeededReadoutNames.Name(pool);
                     else if (tokens[i] != null && SlotToken.IsPool(tokens[i]!))
                         tooltips[i] = GameResourceCatalog.Instance.CategoryLabelOf(
                             SlotToken.MemberName(tokens[i]!)).CapitalizeFirst();

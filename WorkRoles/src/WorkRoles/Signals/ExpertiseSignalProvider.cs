@@ -21,7 +21,7 @@ namespace WorkRoles.Signals
             foreach (VseSignalReflection.ExpertiseFact fact in VseSignalReflection.Expertises(pawn))
             {
                 string? packageId = SignalUiFactory.PackageId(fact.Def);
-                SignalDefinition definition = catalog.Find(SignalSourceKind.Expertise, fact.Def.defName)
+                SignalDefinition? definition = catalog.Find(SignalSourceKind.Expertise, fact.Def.defName)
                     .FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Equals(x.Source.PackageId, packageId));
                 if (definition == null || !StringComparer.Ordinal.Equals(definition.SkillDefName, fact.Skill.defName))
                     continue;

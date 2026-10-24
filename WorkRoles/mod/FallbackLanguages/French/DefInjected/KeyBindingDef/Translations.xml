@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_PrevColonist.label>colon précédent</WR_PrevColonist.label>
+  <WR_NextColonist.label>colon suivant</WR_NextColonist.label>
+  <WR_FirstColonist.label>premier colon (Ctrl : ignorer les groupes)</WR_FirstColonist.label>
+  <WR_LastColonist.label>dernier colon (Ctrl : ignorer les groupes)</WR_LastColonist.label>
+  <WR_PrevPage.label>page/groupe précédent</WR_PrevPage.label>
+  <WR_NextPage.label>page/groupe suivant</WR_NextPage.label>
+</LanguageData>

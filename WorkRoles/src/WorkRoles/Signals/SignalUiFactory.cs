@@ -32,7 +32,7 @@ namespace WorkRoles.Signals
             if (packageId != null && packageId.StartsWith("ludeon.rimworld", StringComparison.OrdinalIgnoreCase))
                 return definition?.FallbackUi.SourceDisplayName ?? "RimWorld";
             return string.IsNullOrWhiteSpace(def?.modContentPack?.Name)
-                ? definition?.FallbackUi.SourceDisplayName ?? "Unknown mod"
+                ? definition?.FallbackUi.SourceDisplayName ?? "WR_SignalUnknownMod".Translate().ToString()
                 : def!.modContentPack.Name; // non-empty Name implies def and pack exist
         }
     }

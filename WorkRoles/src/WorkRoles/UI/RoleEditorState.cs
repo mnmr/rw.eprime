@@ -238,8 +238,8 @@ namespace WorkRoles.UI
                 - PencilSize - 6f;
             Text.Font = GameFont.Medium;
             float roleLabelWidth = Mathf.Min(
-                WrText.FitWidth(role.label), titleMaxWidth);
-            string shownRoleLabel = role.label.Truncate(roleLabelWidth);
+                WrText.FitWidth(role.DisplayLabel), titleMaxWidth);
+            string shownRoleLabel = role.DisplayLabel.Truncate(roleLabelWidth);
             Text.Font = GameFont.Small;
 
             var customSwatches = new List<Color>(store.customSwatches.Count);
@@ -281,7 +281,7 @@ namespace WorkRoles.UI
                 ? "WR_GroupConditionalRoles".Translate().ToString()
                 : role.groupId == RoleGroup.DefaultId
                     ? defaultGroupLabel
-                    : store.GroupById(role.groupId)?.label ?? defaultGroupLabel;
+                    : store.GroupById(role.groupId)?.DisplayLabel ?? defaultGroupLabel;
             string groupButtonFull = "WR_GroupButton".Translate(currentGroup);
             float groupButtonWidth = Mathf.Min(
                 checksX - 8f - TopBoxPadding, 180f);
@@ -293,12 +293,12 @@ namespace WorkRoles.UI
                 RoleGroup group = store.groups[i];
                 if (group.id != RoleGroup.DefaultId)
                     groups.Add(new RoleGroupOptionSnapshot(
-                        group.label, group.label));
+                        group.DisplayLabel, group.label));
             }
 
             IReadOnlyList<RoleSkillPresentation> skills = SkillsUsed(role);
 
-            var header = new RoleEditorHeaderSnapshot(role.id, role.label,
+            var header = new RoleEditorHeaderSnapshot(role.id, role.DisplayLabel,
                 shownRoleLabel, roleLabelWidth,
                 iconPresentation.EffectivePath,
                 roleIcon, roleIconAssigned,
@@ -308,9 +308,9 @@ namespace WorkRoles.UI
                 customSwatches, customRows,
                 checksWidth, autoAssignLabel, blockerLabel, conditionalRoleLabel,
                 compositeLabel, BlockerTip,
-                "WR_ClearRulesConfirm".Translate(role.label).ToString(),
-                "WR_CompositeConfirm".Translate(role.label).ToString(),
-                "WR_CompositeRevertConfirm".Translate(role.label).ToString(),
+                "WR_ClearRulesConfirm".Translate(role.DisplayLabel).ToString(),
+                "WR_CompositeConfirm".Translate(role.DisplayLabel).ToString(),
+                "WR_CompositeRevertConfirm".Translate(role.DisplayLabel).ToString(),
                 assignedLabel, assignedLabelWidth,
                 holders, holderOverflowLabels,
                 "WR_Nobody".Translate().ToString(),
@@ -424,7 +424,7 @@ namespace WorkRoles.UI
             {
                 Role? member = store.RoleById(memberId);
                 if (member == null) continue;
-                members.Add(new CompositeMemberRow(member.id, member.label,
+                members.Add(new CompositeMemberRow(member.id, member.DisplayLabel,
                     member.hasCustomColor, member.color, member.blocker,
                     member.enabled));
                 memberIds.Add(member.id);
@@ -447,7 +447,7 @@ namespace WorkRoles.UI
                     anyEligible = true;
                     if (collapsed) continue;
                     candidates.Add(new CompositeCandidateRow(
-                        new CompositeMemberRow(candidate.id, candidate.label,
+                        new CompositeMemberRow(candidate.id, candidate.DisplayLabel,
                             candidate.hasCustomColor, candidate.color,
                             candidate.blocker, candidate.enabled), depth));
                 }
@@ -515,7 +515,7 @@ namespace WorkRoles.UI
             if (token == LocationRules.Nowhere)
                 return "WR_LocationNowhere".Translate();
             string id = token.Substring(token.IndexOf(':') + 1);
-            WorkRoles.Core.LocationInfo location = ColonyScope.Locations()
+            WorkRoles.Core.LocationInfo? location = ColonyScope.Locations()
                 .FirstOrDefault(item => item.Id == id);
             return location != null ? LocationItemLabel(location)
                 : "WR_LocationGone".Translate().ToString();
@@ -690,7 +690,7 @@ namespace WorkRoles.UI
                 for (int i = 0; i < pawns.Count; i++)
                 {
                     Pawn pawn = pawns[i];
-                    if (!store.pawnSets.TryGetValue(pawn, out PawnRoleSet set)) continue;
+                    if (!store.pawnSets.TryGetValue(pawn, out PawnRoleSet? set)) continue;
                     int position = set.assignments.FindIndex(a => a.roleId == role.id);
                     if (position >= 0)
                         holders.Add(new RoleHolderPresentation(
@@ -1353,6 +1353,12 @@ namespace WorkRoles.UI
         {
             Title = title;
             SearchLabel = searchLabel;
+            using (GuiStateScope.Capture())
+            {
+                Text.Font = GameFont.Small;
+                SearchWidth = Mathf.Max(46f, WrText.FitWidth(searchLabel));
+                SearchHeight = Mathf.Max(24f, Mathf.Ceil(Text.LineHeight));
+            }
             AddAllJobsLabel = addAllJobsLabel;
             Warning = warning;
             WarningHeight = warningHeight;
@@ -1362,6 +1368,8 @@ namespace WorkRoles.UI
 
         internal string Title { get; }
         internal string SearchLabel { get; }
+        internal float SearchWidth { get; }
+        internal float SearchHeight { get; }
         internal string AddAllJobsLabel { get; }
         internal string? Warning { get; }
         internal float WarningHeight { get; }

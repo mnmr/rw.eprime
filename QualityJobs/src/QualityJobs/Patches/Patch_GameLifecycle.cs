@@ -25,6 +25,7 @@ namespace QualityJobs.Patches
             if (store != null)
                 store.ReleasePresentation();
             BillIds.Reset();
+            UftAuthor.ResetDisplay();
             PreceptIds.Reset();
             Patch_StockGate.ResetPresentation();
             Patch_PlaySettings.ResetPresentation();

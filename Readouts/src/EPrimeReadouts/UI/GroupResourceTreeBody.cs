@@ -291,7 +291,7 @@ namespace EPrimeReadouts.UI
                 owner.PoolsSnapshot,
                 poolExpanded,
                 new ItemTreeFilter(filters.Query, filters.Type, filters.SourceId),
-                UiText.Get("EPR.Pools"));
+                UiText.Get("EPR.Pools"), SeededReadoutNames.Resolve);
             var builtPoolRows = new PoolRenderRow[logicalPools.Length];
             for (int i = 0; i < logicalPools.Length; i++)
             {

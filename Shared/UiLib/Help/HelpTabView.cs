@@ -48,6 +48,18 @@ namespace RimShared.UiLib
         private Vector2 topicScroll;
         private Vector2 contentScroll;
 
+        // Owner: this help window. Key: published topics identity, panel width
+        // and height, and host UI metric revision. Value: immutable wrapped
+        // topic-row rectangles and scroll extent. Dependencies: topic titles,
+        // Small-font metrics, available width and scrollbar presence. Refresh:
+        // immediate behind this gate. Equality: equal geometry retains arrays.
+        // Teardown: ReleaseWindowData drops topics and rectangles.
+        private HelpTopicData[]? topicLayoutSource;
+        private Rect[]? topicRowRects;
+        private float topicLayoutWidth = -1f, topicLayoutHeight = -1f;
+        private float topicViewWidth, topicViewHeight;
+        private int topicLayoutMetrics = -1;
+
         // Owner: window. Key: the host's language revision. Value: translated
         // chapter labels and the dev reload caption. Dependencies: language
         // only. Refresh: immediate on observed revision change. Equality:
@@ -163,6 +175,10 @@ namespace RimShared.UiLib
             readSlugs = null;
             topicReadFlags = null;
             topicReadFlagsTopics = null;
+            topicLayoutSource = null;
+            topicRowRects = null;
+            topicLayoutWidth = topicLayoutHeight = -1f;
+            topicLayoutMetrics = -1;
             topicReadFlagsRevision = -1;
             pendingReadSlugs = null;
             tourRows = null;
@@ -476,10 +492,9 @@ namespace RimShared.UiLib
             Rect rect, HelpTopicData[] topics, int selected)
         {
             Rect inner = SegmentedControl.Panel(rect);
-            float viewHeight = topics.Length * TopicRowHeight;
-            bool scrollbar = viewHeight > inner.height;
+            EnsureTopicLayout(topics, inner.width, inner.height);
             var viewRect = new Rect(0f, 0f,
-                inner.width - (scrollbar ? 16f : 0f), viewHeight);
+                topicViewWidth, topicViewHeight);
             bool[] read = TopicReadFlags(topics);
             Widgets.BeginScrollView(inner, ref topicScroll, viewRect);
             try
@@ -488,18 +503,17 @@ namespace RimShared.UiLib
                 {
                     Text.Font = GameFont.Small;
                     Text.Anchor = TextAnchor.MiddleLeft;
-                    Text.WordWrap = false;
+                    Text.WordWrap = true;
                     Color plainColor = GUI.color;
                     for (int i = 0; i < topics.Length; i++)
                     {
-                        var row = new Rect(0f, i * TopicRowHeight,
-                            viewRect.width, TopicRowHeight);
+                        Rect row = topicRowRects![i];
                         if (i == selected)
                             Widgets.DrawBoxSolid(row, TopicSelectedFill);
                         else
                             Widgets.DrawHighlightIfMouseover(row);
-                        var label = new Rect(row.x + 8f, row.y,
-                            row.width - 12f, row.height);
+                        var label = new Rect(row.x + 8f, row.y + 4f,
+                            row.width - 12f, row.height - 8f);
                         GUI.color = read[i] ? ReadTopicColor : plainColor;
                         Widgets.Label(label, topics[i].ListTitle);
                         GUI.color = plainColor;
@@ -515,6 +529,45 @@ namespace RimShared.UiLib
             {
                 Widgets.EndScrollView();
             }
+        }
+
+        private void EnsureTopicLayout(HelpTopicData[] topics, float width, float height)
+        {
+            int metrics = host.UiMetricRevision;
+            if (ReferenceEquals(topicLayoutSource, topics) && topicLayoutWidth == width
+                && topicLayoutHeight == height && topicLayoutMetrics == metrics) return;
+            var rows = new Rect[topics.Length];
+            float viewWidth = width, y = 0f;
+            using (GuiStateScope.Capture())
+            {
+                Text.Font = GameFont.Small;
+                Text.WordWrap = true;
+                float lineHeight = Mathf.Ceil(Text.LineHeight);
+                for (int pass = 0; pass < 2; pass++)
+                {
+                    y = 0f;
+                    for (int i = 0; i < topics.Length; i++)
+                    {
+                        float rowHeight = Mathf.Max(TopicRowHeight, Mathf.Max(lineHeight,
+                            Mathf.Ceil(Text.CalcHeight(topics[i].ListTitle, Mathf.Max(1f, viewWidth - 12f)))) + 8f);
+                        rows[i] = new Rect(0f, y, viewWidth, rowHeight);
+                        y += rowHeight;
+                    }
+                    if (y <= height || pass == 1) break;
+                    viewWidth = Mathf.Max(1f, width - 16f);
+                }
+            }
+            bool equal = topicRowRects != null && topicRowRects.Length == rows.Length;
+            if (equal)
+                for (int i = 0; i < rows.Length; i++)
+                    if (topicRowRects![i] != rows[i]) { equal = false; break; }
+            if (!equal) topicRowRects = rows;
+            topicViewWidth = viewWidth;
+            topicViewHeight = y;
+            topicLayoutSource = topics;
+            topicLayoutWidth = width;
+            topicLayoutHeight = height;
+            topicLayoutMetrics = metrics;
         }
 
         private HashSet<string> ReadSlugs()

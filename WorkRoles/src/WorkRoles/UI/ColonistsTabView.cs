@@ -1935,7 +1935,7 @@ namespace WorkRoles.UI
 
         internal static string SkillHeaderLabel(SkillDef skill)
         {
-            if (!skillHeaderLabels.TryGetValue(skill, out string label))
+            if (!skillHeaderLabels.TryGetValue(skill, out string? label))
                 skillHeaderLabels[skill] = label = skill.skillLabel.CapitalizeFirst();
             return label;
         }
@@ -2086,7 +2086,7 @@ namespace WorkRoles.UI
             if (Event.current.type != EventType.Repaint || !Mouse.IsOver(rect)) return;
             PruneRoleTips();
             var key = (roleId, context, pawn);
-            if (!roleTipSources.TryGetValue(key, out RoleTipSource source))
+            if (!roleTipSources.TryGetValue(key, out RoleTipSource? source))
                 roleTipSources[key] = source = new RoleTipSource(this, roleId, context, pawn);
             StructuredTipPresenter.TipRegion(rect, source);
         }
@@ -2204,7 +2204,7 @@ namespace WorkRoles.UI
                     labels.Add(role.memberRoleIds[i]);
             var model = new TipModel
             {
-                Title = role.label.Colorize(WrStyle.MinorAccent),
+                Title = role.DisplayLabel.Colorize(WrStyle.MinorAccent),
             };
 
             // Chip tips carry the pawn dimension so the badge names which of
@@ -2266,9 +2266,9 @@ namespace WorkRoles.UI
                 }
                 int at = trainingBands.FindIndex(entry => entry.Band == band);
                 if (at < 0)
-                    trainingBands.Add((band, new List<string> { owner.label }));
+                    trainingBands.Add((band, new List<string> { owner.DisplayLabel }));
                 else
-                    trainingBands[at].Owners.Add(owner.label);
+                    trainingBands[at].Owners.Add(owner.DisplayLabel);
             }
             if (ownBand != null)
                 facts.Fact("WR_TipTrainingHeader".Translate(),
@@ -2402,7 +2402,7 @@ namespace WorkRoles.UI
                             role.memberRoleIds.Count - Cap).ToString());
                         break;
                     }
-                    parts.Add(member.label);
+                    parts.Add(member.DisplayLabel);
                 }
                 return parts.ToCommaList();
             }
@@ -3653,7 +3653,7 @@ namespace WorkRoles.UI
             for (int i = 0; i < pawns.Count; i++)
             {
                 Pawn pawn = pawns[i];
-                chipSequences.TryGetValue(pawn, out ColonistChipSequenceSnapshot previous);
+                chipSequences.TryGetValue(pawn, out ColonistChipSequenceSnapshot? previous);
                 int pawnRevision = Latest(UiVersion.PresentationForPawn(pawn),
                     UiVersion.RuntimeForPawn(pawn));
                 int roleRevision = previous?.RoleRevision() ?? -1;
@@ -4161,7 +4161,7 @@ namespace WorkRoles.UI
                 ? (store.recommendationTuning ?? RecommendationsTuningOptions.Default).SkillCaption
                 : default;
             ColonistChipSequenceSnapshot sequence = chipSequences[pawn];
-            chipLayouts.TryGetValue(pawn, out ColonistRowSnapshot cached);
+            chipLayouts.TryGetValue(pawn, out ColonistRowSnapshot? cached);
             bool sameStats = cached != null && ReferenceEquals(cached.Stats, stats);
             bool sameCaption = cached != null
                 && (!captions || (ReferenceEquals(cached.Stats.Facts, stats.Facts)
@@ -4534,7 +4534,7 @@ namespace WorkRoles.UI
 
         private WrTip PawnTip(Pawn pawn)
         {
-            if (!pawnTips.TryGetValue(pawn, out WrTip tip))
+            if (!pawnTips.TryGetValue(pawn, out WrTip? tip))
                 tip = CreatePawnTip(pawn);
             return tip;
         }
@@ -5161,8 +5161,8 @@ namespace WorkRoles.UI
                 : new HashSet<int>();
             var options = store.roles
                 .Where(r => !assigned.Contains(r.id))
-                .OrderBy(r => r.label, System.StringComparer.OrdinalIgnoreCase)
-                .Select(r => new FloatMenuOption(r.label, () => RoleCommands.AssignRole(pawn, r.id)))
+                .OrderBy(r => r.DisplayLabel, System.StringComparer.OrdinalIgnoreCase)
+                .Select(r => new FloatMenuOption(r.DisplayLabel, () => RoleCommands.AssignRole(pawn, r.id)))
                 .ToList();
             if (options.Count == 0)
                 options.Add(new FloatMenuOption("WR_AllRolesAssigned".Translate(), null));

@@ -77,7 +77,7 @@ namespace WorkRoles.UI
 
         /// Role-rename constructor: prefilled with the current name.
         public Dialog_RenameRole(Role role)
-            : this(role.id, role.label, renameRole: true)
+            : this(role.id, role.DisplayLabel, renameRole: true)
         {
         }
 
@@ -86,7 +86,7 @@ namespace WorkRoles.UI
 
         private Dialog_RenameRole(int roleId, string roleLabel, bool renameRole)
         {
-            onConfirm = n => RoleCommands.RenameRole(roleId, n);
+            onConfirm = n => { if (n != roleLabel) RoleCommands.RenameRole(roleId, n); };
             exceptRoleId = roleId;
             requireUniqueName = true;
             titleKey = "WR_RenameRoleTitle";
@@ -99,18 +99,19 @@ namespace WorkRoles.UI
         /// Group-rename constructor: prefilled with the current name and validates
         /// against groups while excluding the group being renamed.
         public Dialog_RenameRole(RoleGroup group)
-            : this(group.id, group.label)
+            : this(group.id, group.DisplayLabel)
         {
         }
 
         internal Dialog_RenameRole(int groupId, string groupLabel)
         {
-            onConfirm = n => RoleCommands.RenameGroup(groupId, n);
+            string displayName = RoleStore.Current?.GroupById(groupId)?.DisplayLabel ?? groupLabel;
+            onConfirm = n => { if (n != displayName) RoleCommands.RenameGroup(groupId, n); };
             exceptGroupId = groupId;
             requireUniqueName = true;
             showCancel = true;
             titleKey = "WR_RenameGroupTitle";
-            name = groupLabel;
+            name = displayName;
             doCloseX = true;
             absorbInputAroundWindow = true;
             closeOnAccept = true;
@@ -249,12 +250,13 @@ namespace WorkRoles.UI
                     y += 26f;
                 }
                 GUI.SetNextControlName("WR_RenameField");
-                name = Widgets.TextField(new Rect(0f, y, inRect.width, 30f), name);
-                // Chips, list rows and dialogs all size to the name; cap it well
-                // above the longest seeded label.
+                string enteredName = Widgets.TextField(new Rect(0f, y, inRect.width, 30f), name);
+                // Limit actual edits without turning an untouched localized
+                // prefill into a rename merely because it exceeds the cap.
                 const int MaxNameLength = 30;
-                if (name.Length > MaxNameLength)
-                    name = name.Substring(0, MaxNameLength);
+                if (enteredName != name && enteredName.Length > MaxNameLength)
+                    enteredName = enteredName.Substring(0, MaxNameLength);
+                name = enteredName;
                 EnsureValidation();
                 y += 32f;
                 if (!focusedField)

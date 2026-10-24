@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <LP_Override>Bündelüberschreibung</LP_Override>
+  <LP_Fallback>Bündelergänzung</LP_Fallback>
+  <LP_Placeholder>Bündelplatzhalter</LP_Placeholder>
+  <LP_Empty>Bündelleertext</LP_Empty>
+</LanguageData>

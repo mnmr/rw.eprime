@@ -139,7 +139,7 @@ namespace WorkRoles.UI
                 unclipResolved = true;
                 try
                 {
-                    Type guiClip = typeof(GUI).Assembly.GetType("UnityEngine.GUIClip");
+                    Type? guiClip = typeof(GUI).Assembly.GetType("UnityEngine.GUIClip");
                     var method = AccessTools.Method(
                         guiClip, "Unclip", new[] { typeof(Vector2) });
                     if (method == null || !method.IsStatic

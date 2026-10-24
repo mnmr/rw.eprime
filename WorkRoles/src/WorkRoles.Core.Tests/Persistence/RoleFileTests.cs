@@ -5,6 +5,27 @@ namespace WorkRoles.Core.Tests.Persistence;
 public class RoleFileTests
 {
     [Test]
+    public async Task GeneratedNameProvenanceRoundTripsWithoutChangingAuthoredNames()
+    {
+        var document = new RoleFileDocument
+        {
+            roles =
+            {
+                new FileRole { label = "Smithing", generatedWorkTypeDefName = "Smithing" },
+                new FileRole { label = "My forge crew", generatedWorkTypeDefName = "Smithing" },
+            },
+        };
+        RoleFileDocument parsed = RoleFile.Parse(RoleFile.Build(document));
+        await Assert.That(parsed.roles[0].generatedWorkTypeDefName).IsEqualTo("Smithing");
+        await Assert.That(parsed.roles[0].label).IsEqualTo("Smithing");
+        await Assert.That(parsed.roles[1].label).IsEqualTo("My forge crew");
+        await Assert.That(parsed.roles[1].generatedWorkTypeDefName).IsEqualTo("Smithing");
+        var legacy = RoleFile.Parse("<WorkRoles version=\"13\"><Roles><Role name=\"My forge crew\" /></Roles></WorkRoles>");
+        await Assert.That(legacy.roles[0].generatedWorkTypeDefName).IsNull();
+        await Assert.That(legacy.roles[0].label).IsEqualTo("My forge crew");
+    }
+
+    [Test]
     public async Task RecommendationExclusionSurvivesExportAndOldFilesRemainEligible()
     {
         var document = new RoleFileDocument

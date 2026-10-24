@@ -74,7 +74,7 @@ namespace Implanner
             if (evaluations.TryGetValue(pawnId, out PawnEvaluation? known))
                 return known;
             PawnEvaluation? built = null;
-            if (Index.PawnsById.TryGetValue(pawnId, out Pawn pawn))
+            if (Index.PawnsById.TryGetValue(pawnId, out Pawn? pawn))
             {
                 Plan? plan = Model.AssignedPlan(pawnId);
                 if (plan != null)
@@ -95,7 +95,7 @@ namespace Implanner
 
         private IReadOnlyList<ImplantGoal> EffectiveGoals(Plan plan)
         {
-            if (!goalsByPlan.TryGetValue(plan.Id, out IReadOnlyList<ImplantGoal> goals))
+            if (!goalsByPlan.TryGetValue(plan.Id, out IReadOnlyList<ImplantGoal>? goals))
             {
                 goals = Model.EffectiveImplants(plan);
                 goalsByPlan.Add(plan.Id, goals);
@@ -106,7 +106,7 @@ namespace Implanner
         /// The bill's load id, resolved once per pass.
         internal string BillId(Bill bill)
         {
-            if (!billIds.TryGetValue(bill, out string id))
+            if (!billIds.TryGetValue(bill, out string? id))
             {
                 id = bill.GetUniqueLoadID();
                 billIds.Add(bill, id);

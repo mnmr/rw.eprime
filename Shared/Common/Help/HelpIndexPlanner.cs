@@ -13,17 +13,38 @@ namespace RimShared.Common.Help
     {
         public HelpTopicEntry(int order, string slug, string fileName,
             bool fromFallback)
+            : this(order, slug, fileName, fromFallback, 0)
+        {
+        }
+
+        public HelpTopicEntry(int order, string slug, string fileName,
+            bool fromFallback, int sourceIndex)
         {
             Order = order;
             Slug = slug;
             FileName = fileName;
             FromFallback = fromFallback;
+            SourceIndex = sourceIndex;
         }
 
         public int Order { get; }
         public string Slug { get; }
         public string FileName { get; }
         public bool FromFallback { get; }
+        public int SourceIndex { get; }
+    }
+
+    /// <summary>A source's topic names, in descending translation priority.</summary>
+    public readonly struct HelpTopicSource
+    {
+        public HelpTopicSource(IReadOnlyList<string> files, bool fromEnglish)
+        {
+            Files = files;
+            FromEnglish = fromEnglish;
+        }
+
+        public IReadOnlyList<string> Files { get; }
+        public bool FromEnglish { get; }
     }
 
     /// <summary>
@@ -35,23 +56,30 @@ namespace RimShared.Common.Help
     /// </summary>
     public static class HelpIndexPlanner
     {
-        public static HelpTopicEntry[] PlanChapter(
-            IReadOnlyList<string> languageFiles,
-            IReadOnlyList<string> englishFiles)
+        public static HelpTopicEntry[] PlanChapter(IReadOnlyList<HelpTopicSource> sources)
         {
-            var bySlug = new Dictionary<string, HelpTopicEntry>(
-                StringComparer.Ordinal);
-            Add(languageFiles, false, bySlug);
-            Add(englishFiles, true, bySlug);
-
+            var bySlug = new Dictionary<string, HelpTopicEntry>(StringComparer.Ordinal);
+            for (int i = 0; i < sources.Count; i++)
+                Add(sources[i].Files, sources[i].FromEnglish, i, bySlug);
             var entries = new List<HelpTopicEntry>(bySlug.Count);
             foreach (var pair in bySlug) entries.Add(pair.Value);
             entries.Sort(CompareEntries);
             return entries.ToArray();
         }
 
+        public static HelpTopicEntry[] PlanChapter(
+            IReadOnlyList<string> languageFiles,
+            IReadOnlyList<string> englishFiles)
+        {
+            return PlanChapter(new[]
+            {
+                new HelpTopicSource(languageFiles, false),
+                new HelpTopicSource(englishFiles, true)
+            });
+        }
+
         private static void Add(IReadOnlyList<string> files,
-            bool fromFallback, Dictionary<string, HelpTopicEntry> bySlug)
+            bool fromFallback, int sourceIndex, Dictionary<string, HelpTopicEntry> bySlug)
         {
             for (int i = 0; i < files.Count; i++)
             {
@@ -61,11 +89,11 @@ namespace RimShared.Common.Help
                 {
                     // The active language always wins; within one source the
                     // lowest order keeps the slug.
-                    bool sameSource = existing.FromFallback == fromFallback;
+                    bool sameSource = existing.SourceIndex == sourceIndex;
                     if (!sameSource || existing.Order <= order) continue;
                 }
                 bySlug[slug] = new HelpTopicEntry(
-                    order, slug, files[i], fromFallback);
+                    order, slug, files[i], fromFallback, sourceIndex);
             }
         }
 

@@ -52,7 +52,7 @@ namespace Implanner.UI
             // The defName IS the key: hover hits this every pass and a
             // cache hit must not allocate a composite key string.
             string key = entry.Def.defName;
-            if (!tips.TryGetValue(key, out string tip))
+            if (!tips.TryGetValue(key, out string? tip))
                 tips[key] = tip = BuildImplantTip(entry);
             return tip;
         }

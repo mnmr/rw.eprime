@@ -284,12 +284,12 @@ namespace WorkRoles
             DefinitionSnapshot snapshot = DefinitionFacts();
             var givers = new Dictionary<string, GiverProfile>(StringComparer.Ordinal);
             foreach (KeyValuePair<string, JobProfileGiverFacts> pair in snapshot.Index.Givers)
-                if (snapshot.Givers.TryGetValue(pair.Key, out WorkGiverDef giver))
+                if (snapshot.Givers.TryGetValue(pair.Key, out WorkGiverDef? giver))
                     givers[pair.Key] = BuildGiver(snapshot, giver, pair.Value);
 
             var workTypes = new Dictionary<string, WorkTypeProfile>(StringComparer.Ordinal);
             foreach (KeyValuePair<string, JobProfileWorkTypeFacts> pair in snapshot.Index.WorkTypes)
-                if (snapshot.WorkTypes.TryGetValue(pair.Key, out WorkTypeDef workType))
+                if (snapshot.WorkTypes.TryGetValue(pair.Key, out WorkTypeDef? workType))
                     workTypes[pair.Key] = BuildWorkType(snapshot, workType, pair.Value);
 
             byGiver = givers;
@@ -353,9 +353,9 @@ namespace WorkRoles
                         if (fixedRecipeUsersSeen.Add(user)) fixedRecipeUsers.Add(user);
                     }
                 bool curated = VanillaXpBaseline.XpByGiver.TryGetValue(
-                    giver.defName, out string[] xpSkills);
+                    giver.defName, out string[]? xpSkills);
                 bool curatedUsed = VanillaUsedSkillBaseline.UsedByGiver.TryGetValue(
-                    giver.defName, out IReadOnlyList<string> usedSkills);
+                    giver.defName, out IReadOnlyList<string>? usedSkills);
                 IReadOnlyList<string>? trainedSkills = xpSkills;
                 List<JobProfileSkillSource> relevantSkills = SkillSources(
                     giver.workType.relevantSkills, skillIdentities, snapshot);
@@ -368,7 +368,7 @@ namespace WorkRoles
                     // This detached giver discipline chooses the recommendation
                     // primary; upstream WorkTypeDef.relevantSkills stays intact.
                     if (snapshot.SkillsByName.TryGetValue(
-                            optional.RecommendationSkillDefName, out SkillDef primary))
+                            optional.RecommendationSkillDefName, out SkillDef? primary))
                         relevantSkills = new List<JobProfileSkillSource> {
                             SkillSource(primary, skillIdentities, snapshot) };
                 }
@@ -471,7 +471,7 @@ namespace WorkRoles
 
             foreach (KeyValuePair<string, string> pair in CurveStatByGiver)
             {
-                if (!snapshot.StatsByName.TryGetValue(pair.Value, out StatDef stat)) continue;
+                if (!snapshot.StatsByName.TryGetValue(pair.Value, out StatDef? stat)) continue;
                 SkillNeed_Direct? need = stat.skillNeedFactors?.OfType<SkillNeed_Direct>()
                     .FirstOrDefault(n => n.skill != null && !n.valuesPerLevel.NullOrEmpty());
                 if (need == null) continue;
@@ -556,7 +556,7 @@ namespace WorkRoles
             WorkGiverDef giver, DefinitionSnapshot snapshot)
         {
             if (giver.defName != "Soliciting") return null;
-            snapshot.SkillsByName.TryGetValue("Sex", out SkillDef sex);
+            snapshot.SkillsByName.TryGetValue("Sex", out SkillDef? sex);
             Type? giverClass = giver.giverClass;
             ModContentPack? pack = giver.modContentPack;
             // Compare already-loaded metadata identities at the definition
@@ -579,7 +579,7 @@ namespace WorkRoles
             DefinitionSnapshot snapshot)
         {
             if (!EffectStatsByGiver.TryGetValue(
-                    giver.defName, out string[] statNames))
+                    giver.defName, out string[]? statNames))
                 return null;
             var candidates = new List<string>();
             AddCandidateSkills(candidates, usedSkills);
@@ -593,7 +593,7 @@ namespace WorkRoles
             foreach (string skillName in candidates)
             {
                 if (!snapshot.SkillsByName.TryGetValue(
-                        skillName, out SkillDef skill)) continue;
+                        skillName, out SkillDef? skill)) continue;
                 RoleWorkEffect effects = RoleWorkEffect.Unspecified;
                 foreach (string statName in statNames)
                 {
@@ -734,7 +734,7 @@ namespace WorkRoles
             var result = new List<string>();
             HashSet<string>? seen = distinct ? new HashSet<string>() : null;
             for (int i = 0; i < identities.Count; i++)
-                if (snapshot.SkillsByIdentity.TryGetValue(identities[i], out SkillDef skill))
+                if (snapshot.SkillsByIdentity.TryGetValue(identities[i], out SkillDef? skill))
                 {
                     string label = SkillLabel(skill);
                     if (seen == null || seen.Add(label)) result.Add(label);
@@ -753,7 +753,7 @@ namespace WorkRoles
             for (int i = 0; i < defNames.Count; i++)
             {
                 string name = defNames[i];
-                if (snapshot.SkillsByName.TryGetValue(name, out SkillDef skill))
+                if (snapshot.SkillsByName.TryGetValue(name, out SkillDef? skill))
                     result.Add(SkillLabel(skill));
                 else
                     unknown.Add(name);
@@ -767,7 +767,7 @@ namespace WorkRoles
         private static SkillRange SkillRangeOf(
             DefinitionSnapshot snapshot, JobProfileRequirementFacts facts)
         {
-            snapshot.SkillsByIdentity.TryGetValue(facts.SkillIdentity, out SkillDef skill);
+            snapshot.SkillsByIdentity.TryGetValue(facts.SkillIdentity, out SkillDef? skill);
             return new SkillRange
             {
                 SkillLabel = skill == null ? facts.SkillDefName : SkillLabel(skill),
@@ -782,8 +782,8 @@ namespace WorkRoles
         private static void FillCurveFacts(
             DefinitionSnapshot snapshot, GiverProfile profile, string giverDefName)
         {
-            if (!snapshot.CurvesByGiver.TryGetValue(giverDefName, out CurveFacts facts)
-                || !snapshot.StatsByName.TryGetValue(facts.StatDefName, out StatDef stat)) return;
+            if (!snapshot.CurvesByGiver.TryGetValue(giverDefName, out CurveFacts? facts)
+                || !snapshot.StatsByName.TryGetValue(facts.StatDefName, out StatDef? stat)) return;
             profile.CurveHeader = stat.LabelCap;
             profile.CurveRows = new List<(string, string)>();
             foreach ((int level, float value) in facts.Milestones)

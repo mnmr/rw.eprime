@@ -431,7 +431,7 @@ namespace WorkRoles.UI
                 }
                 if (matchingRoles != null)
                 {
-                    store.pawnSets.TryGetValue(pawn, out PawnRoleSet set);
+                    store.pawnSets.TryGetValue(pawn, out PawnRoleSet? set);
                     if (set == null
                         || !set.assignments.Any(a => matchingRoles.Contains(a.roleId)))
                         continue;
@@ -508,7 +508,7 @@ namespace WorkRoles.UI
                 HashSet<int>? roleIds = matches.Roles(term);
                 if (roleIds == null
                     || !store.pawnSets.TryGetValue(pawn,
-                        out PawnRoleSet set) || set == null) return false;
+                        out PawnRoleSet? set) || set == null) return false;
                 for (int i = 0; i < set.assignments.Count; i++)
                     if (roleIds.Contains(set.assignments[i].roleId))
                         return true;
@@ -525,7 +525,7 @@ namespace WorkRoles.UI
         private static bool PawnCoverageContains(RoleStore store, Pawn pawn,
             string giverDefName, ColonistsRosterCatalogSnapshot currentCatalog)
         {
-            if (!store.pawnSets.TryGetValue(pawn, out PawnRoleSet set)) return false;
+            if (!store.pawnSets.TryGetValue(pawn, out PawnRoleSet? set)) return false;
             foreach (var assignment in set.assignments)
                 if (currentCatalog.RoleCoversJob(assignment.roleId,
                         giverDefName))
@@ -538,7 +538,7 @@ namespace WorkRoles.UI
             ColonistsRosterCatalogSnapshot currentCatalog)
         {
             if (givers == null || givers.Count == 0) return false;
-            if (!store.pawnSets.TryGetValue(pawn, out PawnRoleSet set)) return false;
+            if (!store.pawnSets.TryGetValue(pawn, out PawnRoleSet? set)) return false;
             foreach (var assignment in set.assignments)
             {
                 foreach (string giver in givers)

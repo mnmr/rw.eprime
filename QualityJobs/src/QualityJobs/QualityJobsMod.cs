@@ -19,6 +19,7 @@ namespace QualityJobs
 
         public QualityJobsMod(ModContentPack content) : base(content)
         {
+            RimShared.GameLib.Localization.BundledTranslationFallback.Install();
             Instance = this;
             Settings = GetSettings<QualityJobsSettings>();
             new Harmony("EPrime.QualityJobs").PatchAll();
@@ -53,7 +54,9 @@ namespace QualityJobs
 
         private void DrawSettingsWindowContents(Rect inRect)
         {
+            Text.Font = GameFont.Small;
             SettingsLabels.Ensure();
+            SettingsLabels.EnsureButtonMetrics();
 
             // A Game and its components exist before FinalizeInit publishes the
             // per-save settings snapshot. Treat the store as an editable source
@@ -89,7 +92,7 @@ namespace QualityJobs
             GUI.color   = SectionHeader.LabelColor;
             Widgets.Label(
                 new Rect(iconRect.xMax + 8f, panelRect.y,
-                    panelRect.width - iconRect.xMax - 8f - 158f, PanelH),
+                    panelRect.xMax - iconRect.xMax - 24f - SettingsLabels.ButtonWidth, PanelH),
                 SettingsLabels.Title!);
             GUI.color   = prevColor;
             Text.Anchor = prevAnch;
@@ -100,8 +103,9 @@ namespace QualityJobs
             // MouseUp event pass; dialog open is therefore per-click, not per-frame.
             if (Current.ProgramState == ProgramState.Playing)
             {
-                float btnY    = panelRect.y + (PanelH - 28f) / 2f;
-                var   btnRect = new Rect(panelRect.xMax - 158f, btnY, 150f, 28f);
+                float btnY = panelRect.y + (PanelH - SettingsLabels.ButtonHeight) / 2f;
+                var btnRect = new Rect(panelRect.xMax - SettingsLabels.ButtonWidth - 8f,
+                    btnY, SettingsLabels.ButtonWidth, SettingsLabels.ButtonHeight);
                 if (loadedStore != null)
                 {
                     // Disable button: opens confirmation dialog.
@@ -485,6 +489,32 @@ namespace QualityJobs
         {
             private static LoadedLanguage? _builtForLanguage;
 
+            // Owner: process/assembly, reset with SettingsLabels. Key: UI metric
+            // revision and translated enable/disable captions. Value: immutable
+            // scalar Small-font button dimensions. Dependencies: captions and
+            // font metrics. Refresh: immediate on change. Equality: stable keys
+            // reuse dimensions. Teardown: Reset clears the stamp and references.
+            private static int buttonMetricRevision = -1;
+            private static string? buttonEnable, buttonDisable;
+            public static float ButtonWidth, ButtonHeight;
+
+            public static void EnsureButtonMetrics()
+            {
+                UiRevision.ObserveCurrentMetrics();
+                if (buttonMetricRevision == UiRevision.Current && buttonEnable == EnableButton
+                    && buttonDisable == DisableButton) return;
+                using (GuiStateScope.Capture())
+                {
+                    Text.Font = GameFont.Small;
+                    ButtonWidth = Mathf.Max(150f, Mathf.Max(WrText.FitWidth(EnableButton!),
+                        WrText.FitWidth(DisableButton!)) + 24f);
+                    ButtonHeight = Mathf.Max(28f, Mathf.Ceil(Text.LineHeight) + 6f);
+                }
+                buttonMetricRevision = UiRevision.Current;
+                buttonEnable = EnableButton;
+                buttonDisable = DisableButton;
+            }
+
             // Constant labels (rebuilt on language change).
             public static string? Title;
             public static string? BillDefaults;
@@ -560,6 +590,8 @@ namespace QualityJobs
 
             public static void Reset()
             {
+                buttonMetricRevision = -1;
+                buttonEnable = buttonDisable = null;
                 _builtForLanguage = null;
                 QualityLabels = null;
                 MinSkillValue = -1;

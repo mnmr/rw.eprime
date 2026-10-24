@@ -82,7 +82,7 @@ namespace WorkRoles.UI
                 && recommendationOrder == other.recommendationOrder
                 && defaultExclusions == other.defaultExclusions;
 
-            public override bool Equals(object obj) =>
+            public override bool Equals(object? obj) =>
                 obj is RestoreItemKey other && Equals(other);
 
             public override int GetHashCode()

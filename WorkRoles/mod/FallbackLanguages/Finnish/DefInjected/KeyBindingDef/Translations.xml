@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_PrevColonist.label>edellinen siirtolainen</WR_PrevColonist.label>
+  <WR_NextColonist.label>seuraava siirtolainen</WR_NextColonist.label>
+  <WR_FirstColonist.label>ensimmäinen siirtolainen (Ctrl: ohita ryhmät)</WR_FirstColonist.label>
+  <WR_LastColonist.label>viimeinen siirtolainen (Ctrl: ohita ryhmät)</WR_LastColonist.label>
+  <WR_PrevPage.label>edellinen sivu/ryhmä</WR_PrevPage.label>
+  <WR_NextPage.label>seuraava sivu/ryhmä</WR_NextPage.label>
+</LanguageData>

@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <EPR.SeedEggs>Œufs</EPR.SeedEggs>
+  <EPR.SeedFertilizedeggs>Œufs fécondés</EPR.SeedFertilizedeggs>
+  <EPR.SeedHardDrugs>Drogues dures</EPR.SeedHardDrugs>
+  <EPR.SeedLeathers>Cuirs</EPR.SeedLeathers>
+  <EPR.SeedMeals>Repas</EPR.SeedMeals>
+  <EPR.SeedMeats>Viandes</EPR.SeedMeats>
+  <EPR.SeedMechs>Mécanoïdes</EPR.SeedMechs>
+  <EPR.SeedMortarshells>Obus de mortier</EPR.SeedMortarshells>
+  <EPR.SeedPlantfood>Aliments végétaux</EPR.SeedPlantfood>
+  <EPR.SeedSera>Sérums</EPR.SeedSera>
+  <EPR.SeedSocialDrugs>Drogues récréatives</EPR.SeedSocialDrugs>
+  <EPR.SeedStoneblocks>Blocs de pierre</EPR.SeedStoneblocks>
+  <EPR.SeedStonechunks>Roches</EPR.SeedStonechunks>
+  <EPR.SeedWools>Laines</EPR.SeedWools>
+  <EPR.SeedFood>Nourriture</EPR.SeedFood>
+  <EPR.SeedRaw>Brut</EPR.SeedRaw>
+  <EPR.SeedMedicine>Médicaments</EPR.SeedMedicine>
+  <EPR.SeedDrugs>Drogues</EPR.SeedDrugs>
+  <EPR.SeedTextiles>Textiles</EPR.SeedTextiles>
+  <EPR.SeedMaterials>Matériaux</EPR.SeedMaterials>
+  <EPR.SeedWealth>Richesse</EPR.SeedWealth>
+</LanguageData>

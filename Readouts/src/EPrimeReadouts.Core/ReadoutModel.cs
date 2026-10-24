@@ -8,6 +8,9 @@ namespace EPrimeReadouts.Core
     {
         public int Id;
         public string Name = "";
+        // Explicit provenance from shipped defaults. Legacy/custom names have none;
+        // never infer provenance from a name, even when it matches a shipped seed.
+        public string? SeedName;
         public int OrderIndex;
         public List<List<string>> Tiers = new List<List<string>>();
         public int TierCount => Tiers.Count;
@@ -103,6 +106,7 @@ namespace EPrimeReadouts.Core
             if (!CanUseGroupName(nextName, id)) return false;
             if (group.Name == nextName) return false;
             group.Name = nextName;
+            group.SeedName = null;
             return true;
         }
 
@@ -337,6 +341,7 @@ namespace EPrimeReadouts.Core
             if (nextName.Length == 0 || !CanUsePoolName(nextName, id)) return false;
             if (pool.Name == nextName) return false;
             pool.Name = nextName;
+            pool.SeedName = null;
             SortPools();
             return true;
         }
@@ -558,6 +563,7 @@ namespace EPrimeReadouts.Core
                     {
                         Id = newId,
                         Name = PoolNameRules.Normalize(imported.Name),
+                        SeedName = imported.SeedName,
                         IconDefName = imported.IconDefName,
                         Members = imported.Members != null
                             ? new List<string>(imported.Members)
@@ -580,6 +586,7 @@ namespace EPrimeReadouts.Core
                     {
                         Id = newId,
                         Name = imported.Name ?? "",
+                        SeedName = imported.SeedName,
                         OrderIndex = orderIndex++,
                         DefaultEnabled = imported.DefaultEnabled,
                     };

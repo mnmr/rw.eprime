@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <QJ_FinishBillLabel>Slutför {0} ({1})</QJ_FinishBillLabel>
+  <QJ_AtStockCap>gränsen för ofärdiga föremål har nåtts</QJ_AtStockCap>
+  <QJ_UnfinishedWorkWaiting>beställningens ofärdiga föremål väntar på fortsatt arbete</QJ_UnfinishedWorkWaiting>
+  <QJ_QualityPanelTitle>Quality Jobs</QJ_QualityPanelTitle>
+  <QJ_ManageBill>Hantera denna beställning</QJ_ManageBill>
+  <QJ_FinisherSkill>Slutförarens färdighet: {0}</QJ_FinisherSkill>
+  <QJ_FinisherSkillTip>Endast personer med minst denna färdighetsnivå får slutföra arbetet. Vem som helst får utföra det tidigare tillverkningsarbetet.</QJ_FinisherSkillTip>
+  <QJ_AutoBest>Anpassa slutförarens färdighetskrav automatiskt</QJ_AutoBest>
+  <QJ_AutoBestTip>Markerad: Endast kolonins bästa tillgängliga slutförare får slutföra arbetet, och färdighetskravet följer personen automatiskt. Kolonister som är bortresta, utslagna eller upptagna räknas fortfarande som tillgängliga i denna jämförelse.\n\nAvmarkerad: Alla som uppfyller ditt färdighetskrav får slutföra arbetet.</QJ_AutoBestTip>
+  <QJ_AutoBestCurrent>Just nu: {0}</QJ_AutoBestCurrent>
+  <QJ_AutoBestNone>Ingen behörig kolonist</QJ_AutoBestNone>
+  <QJ_MigrationTitle>Befintliga kvalitetsbeställningar</QJ_MigrationTitle>
+  <QJ_MigrationBody>Quality Jobs hittade {0} befintliga kvalitetsbeställningar. De har lämnats ohanterade så att de kan fortsätta fungera som tidigare. Delat ofärdigt arbete är tillgängligt oavsett val.</QJ_MigrationBody>
+  <QJ_MigrationEnableExisting>Aktivera Quality Jobs för befintliga beställningar av kvalitetsföremål?</QJ_MigrationEnableExisting>
+  <QJ_MigrationEnableExistingTip>Markerad: Befintliga beställningar använder Quality Jobs med automatisk anpassning av slutförarens färdighetskrav. Kolonins bästa behöriga kolonist gör det sista arbetet; tillfälligt otillgängliga kolonister räknas fortfarande. Krav på inspiration och produktionsspecialist är avstängda, och resultat av låg kvalitet görs inte om.\n\nAvmarkerad: Befintliga beställningar behåller grundspelets slutförandebeteende. Delning av ofärdigt arbete påverkas inte.</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationContinue>Fortsätt</QJ_MigrationContinue>
+  <QJ_RequireInspired>Kräv inspirerad kreativitet</QJ_RequireInspired>
+  <QJ_RequireSpecialist>Kräv produktionsspecialist</QJ_RequireSpecialist>
+  <QJ_StockCapLabel>Lagergräns: {0}</QJ_StockCapLabel>
+  <QJ_StockCapTooltip>Det högsta antalet ofärdiga föremål av denna produkt. Gränsen delas per produkt, så alla beställningar som tillverkar föremålet räknas mot den.\n\n0 betyder obegränsat.</QJ_StockCapTooltip>
+  <QJ_StatusHeader>Status</QJ_StatusHeader>
+  <QJ_StatusQueue>Väntar: {0} · Slutförs: {1}</QJ_StatusQueue>
+  <QJ_StatusQueueShared>Ofärdiga: {0} · Väntar: {1} · Slutförs: {2}</QJ_StatusQueueShared>
+  <QJ_StatusQueueTip>Ofärdiga: föremål i den gemensamma mängden som alla tillåtna hantverkare får fortsätta med. Väntar: pausade föremål som behöver en behörig slutförare. Slutförs: föremål som tilldelats en slutförare.</QJ_StatusQueueTip>
+  <QJ_StatusFinishers>Behöriga slutförare: {0}</QJ_StatusFinishers>
+  <QJ_StatusFinishersNone>Behöriga slutförare: inga</QJ_StatusFinishersNone>
+  <QJ_StatusFinishersTip>Kolonister på denna karta som just nu får göra det sista arbetet, med den bästa kandidaten först. En kolonist är behörig när den nödvändiga arbetstypen är aktiverad och kraven ovan är uppfyllda.\n\nUtslagna kolonister, kolonister i ett mentalt tillstånd och kolonister utanför kartan räknas inte.</QJ_StatusFinishersTip>
+  <QJ_StatusStalled>Väntande föremål saknar behörig slutförare</QJ_StatusStalled>
+  <QJ_StatusStalledTip>Ofärdiga föremål väntar, men ingen kolonist är behörig att slutföra dem just nu, så inga slutförandejobb skapas.\n\nKontrollera färdighetskravet, kraven på inspiration och specialist samt att den avsedda slutföraren har arbetstypen aktiverad och befinner sig på kartan. Under stoppet kan lagergränsen även hindra att nya föremål påbörjas.</QJ_StatusStalledTip>
+  <QJ_StatusStalledConstruction>Ingen behörig slutförare — bygget står still</QJ_StatusStalledConstruction>
+  <QJ_StatusStalledConstructionTip>Byggnaden är pausad i väntan på det sista arbetet, men ingen kolonist är behörig just nu, så den blir inte färdig.\n\nKontrollera färdighetskravet, kraven på inspiration och specialist samt att den avsedda byggaren har Byggande aktiverat och befinner sig på kartan.</QJ_StatusStalledConstructionTip>
+  <QJ_OddsHeader>Kvalitetschanser</QJ_OddsHeader>
+  <QJ_NormalOrWorse>Normal eller sämre</QJ_NormalOrWorse>
+  <QJ_OddsColConfig>Inställning</QJ_OddsColConfig>
+  <QJ_OddsColBest>Bäst</QJ_OddsColBest>
+  <QJ_SettingsBillDefaults>Standardval för beställningar</QJ_SettingsBillDefaults>
+  <QJ_SettingsConstructionDefaults>Standardval för byggande</QJ_SettingsConstructionDefaults>
+  <QJ_SettingsGlobalOptions>Globala alternativ</QJ_SettingsGlobalOptions>
+  <QJ_SettingsManageNewBills>Hantera nya kvalitetsbeställningar</QJ_SettingsManageNewBills>
+  <QJ_SettingsManageNewBillsTip>Markerad: Quality Jobs hanterar normalt beställningar som ger kvalitetsföremål med alternativen i denna kolumn. Enskilda beställningar kan åsidosätta dem i sina beställningsinställningar.\n\nAvmarkerad: Beställningar använder grundspelets beteende om Quality Jobs inte aktiverats i beställningens inställningar.</QJ_SettingsManageNewBillsTip>
+  <QJ_SettingsManageNewConstruction>Hantera nya byggjobb</QJ_SettingsManageNewConstruction>
+  <QJ_SettingsManageNewConstructionTip>Markerad: Nya byggnader med kvalitet hanteras automatiskt med alternativen i denna kolumn. Enskilda byggnader kan ställas in eller återställas med knappen Kvalitetsarbete.\n\nAvmarkerad: Nya byggnader använder grundspelets beteende om de inte aktiveras enskilt.</QJ_SettingsManageNewConstructionTip>
+  <QJ_RequireInspiredTip>Markerad: Endast en person med inspirerad kreativitet får göra det sista arbetet; andra får göra det tidigare arbetet. Inspirationen förbrukas när arbetet slutförs, som i grundspelet.\n\nAvmarkerad: Inspirerad kreativitet krävs inte.</QJ_RequireInspiredTip>
+  <QJ_RequireSpecialistTip>Markerad: Endast en person vars Ideology-roll ger en bonus till produktionskvalitet får göra det sista arbetet; andra får göra det tidigare arbetet.\n\nAvmarkerad: En produktionsspecialistroll krävs inte.</QJ_RequireSpecialistTip>
+  <QJ_SettingsFinisherSkillTip>Endast personer med minst denna färdighetsnivå får göra det sista arbetet; andra får göra det tidigare arbetet.\n\nNär automatisk anpassning av slutförarens färdighetskrav är markerad sparas värdet som manuellt standardvärde men används inte.</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsShareWork>Dela ofärdigt arbete</QJ_SettingsShareWork>
+  <QJ_SettingsShareWorkTip>Markerad: Ofärdiga föremål låses upp så att alla tillåtna personer kan fortsätta arbete som någon annan påbörjat.\n\nAvmarkerad: Grundspelets beteende, där ett ofärdigt föremål förblir bundet till personen som påbörjade det.</QJ_SettingsShareWorkTip>
+  <QJ_SettingsHighPriorityFinish>Ge slutförare högprioriterade jobb</QJ_SettingsHighPriorityFinish>
+  <QJ_SettingsHighPriorityFinishTip>Markerad: En kolonist som valts att slutföra ett föremål tar jobbet nästa gång hen söker arbete, före alla andra arbetstyper utom brandbekämpning, sjukvård, räddning och sängvila. Det pågående jobbet avbryts inte.\n\nAvmarkerad: Slutförandejobbet kommer först inom sin arbetstyp, men arbetstyper som kolonisten prioriterar högre går fortfarande före.</QJ_SettingsHighPriorityFinishTip>
+  <QJ_SettingsDefaultCap>Standardgräns för ofärdiga föremål: {0}</QJ_SettingsDefaultCap>
+  <QJ_SettingsDefaultCapTip>Anger det förvalda högsta antalet ofärdiga föremål per produkt. Alla beställningar av samma föremål delar gränsen.\n\nNär gränsen nås slutar beställningarna påbörja nya föremål; pågående föremål kan fortfarande slutföras. 0 betyder obegränsat.</QJ_SettingsDefaultCapTip>
+  <QJ_SettingsUnlimitedHint>0 = obegränsat</QJ_SettingsUnlimitedHint>
+  <QJ_SettingsShowToolbarButton>Visa verktygsfältsknapp</QJ_SettingsShowToolbarButton>
+  <QJ_SettingsShowToolbarButtonTip>Lägger till en knapp intill visningsreglagen i skärmens nedre högra hörn. Knappen öppnar inställningarna för Quality Jobs.</QJ_SettingsShowToolbarButtonTip>
+  <QJ_ToolbarButtonTip>Öppna inställningarna för Quality Jobs.</QJ_ToolbarButtonTip>
+  <QJ_SettingsEnabledNote>Reglaget gäller det inlästa sparspelet. Avstängning återställer alla föremål till grundspelet och tar bort sparspelets Quality Jobs-inställningar.\n\nOm modden förblir installerad aktiveras den igen med standardinställningar nästa gång sparspelet läses in. Avstängning är till för att förbereda borttagning av modden.</QJ_SettingsEnabledNote>
+  <QJ_DisableButton>Stäng av Quality Jobs</QJ_DisableButton>
+  <QJ_EnableButton>Aktivera Quality Jobs</QJ_EnableButton>
+  <QJ_DisableWarning>Avstängning återställer alla åsidosatta föremål till grundspelets ägarskap och tar permanent bort Quality Jobs-inställningarna för detta sparspel (beställningsvillkor, lagergränser). Sparningar som görs därefter innehåller inga spår av modden, så detta är det rena sättet att förbereda avinstallation.\n\nSlutför ersättningsbyggnader först för att behålla deras sparade sänginställningar och färg. När originalet har rivits behöver dessa inställningar Quality Jobs tills ersättningen är färdig.\n\nObs! Om modden förblir installerad aktiveras den igen med standardinställningar nästa gång sparspelet läses in.\n\nStäng av Quality Jobs?</QJ_DisableWarning>
+  <QJ_NoGameLoaded>Läs in ett sparspel för att ändra sparspecifikt beteende.</QJ_NoGameLoaded>
+  <QJ_GizmoQualityJobLabel>Kvalitetsarbete</QJ_GizmoQualityJobLabel>
+  <QJ_GizmoRebuildDesc>Välj målkvalitet och byggarkrav för denna färdiga byggnad. Starta ombyggnad för att riva och ersätta den tills målet uppnås.</QJ_GizmoRebuildDesc>
+  <QJ_StartRebuilding>Starta ombyggnad</QJ_StartRebuilding>
+  <QJ_RebuildNote>Välj en målkvalitet för att börja. Byggnader under målet rivs och byggs om, vilket förbrukar material och gör dem otillgängliga under arbetet. Byggnader som redan uppfyller målet behålls.</QJ_RebuildNote>
+  <QJ_NoRebuildNeeded>Inga behöriga byggnader behöver byggas om. Byggnader måste ligga under målkvaliteten, kunna byggas och sakna andra rivnings- eller återinstallationsorder.</QJ_NoRebuildNeeded>
+  <QJ_GizmoManageDesc>Hantera bygget med Quality Jobs: pausa slutförandet tills en behörig byggare finns, och bygg vid behov om tills målkvaliteten nås.\n\nVänsterklick slår på eller av. Aktivering tillämpar dina standardval för byggande. Högerklick öppnar inställningarna.</QJ_GizmoManageDesc>
+  <QJ_MinQualityLabel>Målkvalitet</QJ_MinQualityLabel>
+  <QJ_NoRetries>Inga nya försök</QJ_NoRetries>
+  <QJ_AnyQuality>Valfri</QJ_AnyQuality>
+  <QJ_RetriedUntilTip>Byggnaden rivs och byggs om tills den får vald kvalitet eller bättre, utom när Inga nya försök är valt.\n\nEn del material går förlorat vid varje nytt försök.</QJ_RetriedUntilTip>
+  <QJ_BillTargetQualityTip>När ett färdigt föremål får lägre kvalitet än detta ökas beställningens antal med ett så att en ersättning tillverkas. Själva föremålet behålls.\n\nDetta gäller beställningar med ett fast antal föremål; övriga upprepningslägen avgör redan själva när de ska sluta.</QJ_BillTargetQualityTip>
+  <QJ_Clear>Rensa</QJ_Clear>
+  <QJ_ConstructionPanelTitle>Kvalitetsarbete</QJ_ConstructionPanelTitle>
+  <QJ_FinishGiverLabel>slutför kvalitetsarbete</QJ_FinishGiverLabel>
+  <QJ_FinishGiverVerb>slutför</QJ_FinishGiverVerb>
+  <QJ_FinishGiverGerund>slutför kvalitetsarbete</QJ_FinishGiverGerund>
+  <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
+  <QJ_WelcomeBody>Quality Jobs låter alla kolonister arbeta på ett ofärdigt föremål eller en byggnad, men bara en kolonist som uppfyller dina krav får slutföra arbetet, eftersom endast slutföraren avgör kvaliteten. Det fungerar för tillverkningsbeställningar och byggande.</QJ_WelcomeBody>
+  <QJ_WelcomeFind>Öppna inställningarna för Quality Jobs med denna knapp intill visningsreglagen i skärmens nedre högra hörn. Beställningsfönstret för ett kvalitetsföremål har en Quality Jobs-del, och en markerad ritning eller stomme till en kvalitetsbyggnad har en Kvalitetsarbete-knapp.</QJ_WelcomeFind>
+  <QJ_WelcomeTakeMeThere>Ta mig dit nu</QJ_WelcomeTakeMeThere>
+</LanguageData>

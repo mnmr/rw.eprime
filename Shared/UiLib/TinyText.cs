@@ -28,7 +28,7 @@ namespace RimShared.UiLib
             Font == other.Font && LineHeight == other.LineHeight
             && UiScale == other.UiScale;
 
-        public override bool Equals(object obj) =>
+        public override bool Equals(object? obj) =>
             obj is TinyTextMetrics other && Equals(other);
 
         public override int GetHashCode() =>

@@ -106,7 +106,7 @@ namespace Implanner
 
         private static InstalledFacts InstalledFactsOf(string defName)
         {
-            if (installedFacts.TryGetValue(defName, out InstalledFacts known))
+            if (installedFacts.TryGetValue(defName, out InstalledFacts? known))
                 return known;
             var result = new InstalledFacts();
             ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(defName);
@@ -142,7 +142,7 @@ namespace Implanner
 
         private static PlannedSlotFacts? FactsOf(string defName, int ordinal)
         {
-            if (!facts.TryGetValue(defName, out PlannedSlotFacts?[] slots))
+            if (!facts.TryGetValue(defName, out PlannedSlotFacts?[]? slots))
             {
                 slots = Build(defName);
                 facts.Add(defName, slots);

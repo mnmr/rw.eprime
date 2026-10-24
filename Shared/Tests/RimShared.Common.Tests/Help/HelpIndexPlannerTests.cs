@@ -6,6 +6,21 @@ namespace RimShared.Common.Tests.Help;
 public class HelpIndexPlannerTests
 {
     [Test]
+    public async Task CompanionTopicsOverrideBundledTopicsWithPerTopicEnglishFallback()
+    {
+        var entries = HelpIndexPlanner.PlanChapter(new HelpTopicSource[]
+        {
+            new(["04-roles.md"], false),
+            new(["01-roles.md", "02-ordering.md"], false),
+            new(["01-roles.md", "02-ordering.md", "03-states.md"], true)
+        });
+
+        await Assert.That(entries.Select(e => (e.Slug, e.SourceIndex, e.FromFallback)))
+            .IsEquivalentTo(new[] { ("roles", 0, false), ("ordering", 1, false), ("states", 2, true) });
+        await Assert.That(entries.Single(e => e.Slug == "roles").FileName).IsEqualTo("04-roles.md");
+    }
+
+    [Test]
     public async Task OrdersByNumericPrefixThenSlugAndIgnoresMalformedNames()
     {
         var entries = HelpIndexPlanner.PlanChapter(

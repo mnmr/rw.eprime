@@ -1,0 +1,30 @@
+---
+title: Qualité minimale
+---
+Avec Quality Bionics Remastered ou Vanilla Genetics Expanded, les implants possèdent une qualité allant d'horrible à légendaire, qui change leur efficacité. Un bouton **Qualité minimale** apparaît alors à côté de **Supprimer le plan**.
+
+![En-tête du plan avec le bouton Qualité minimale](plan-min-quality.png)
+
+Chaque implant du plan, y compris ceux hérités, est posé et fabriqué à cette qualité ou mieux. Ceux sans qualité ne sont pas affectés. Un nouveau plan qui en complète un autre commence avec le même minimum.
+
+Implanner ne remplace jamais une partie saine par une moins bonne. Un bras bionique horrible fonctionne moins bien qu'un bras naturel : il attend donc un meilleur objet, sauf si le bras manque ou est gravement endommagé. Lorsque plusieurs objets conviennent, le meilleur va au colon dont le tour arrive en premier.
+
+Un colon possédant déjà l'implant prévu le conserve, même sous le minimum, sauf si l'option suivante est activée.
+
+## Meilleurs implants pour les colons prioritaires
+
+![Option dans l'onglet Automatisation](upgrade-by-priority.png)
+
+Avec **Donner les meilleurs implants aux colons prioritaires**, dans les options de chirurgie de l'onglet Automatisation, la qualité suit la priorité des colons :
+
+- Les nouvelles opérations utilisent la plus basse qualité acceptée, laissant les meilleurs objets libres.
+- Un meilleur objet va au colon le plus prioritaire portant un implant moins bon du même type. L'ancien est retiré, le meilleur est posé, puis l'ancien passe au colon suivant.
+- Un objet déjà réservé pour un colon moins prioritaire est aussi transféré tant que son opération n'est pas encore programmée.
+
+Chaque échange est une opération supplémentaire. Un colon n'en reçoit une que s'il n'attend aucune autre opération Implanner et si la limite d'opérations simultanées le permet. Un implant n'est jamais échangé si son retrait enlèverait autre chose de la partie du corps.
+
+Quand Implanner fabrique un implant pour le plan :
+
+- Avec Quality Jobs, l'ordre vise le minimum ; la finition revient donc à un artisan capable de l'atteindre.
+- Un implant hybride de Vanilla Genetics Expanded tire sa qualité du génocadre. L'ordre n'utilise que des génocadres au minimum requis ou mieux.
+- Sans l'un ni l'autre, tout artisan peut terminer l'implant ; un résultat inférieur au minimum est fabriqué à nouveau. Les stocks minimaux (voir [Conserver du stock](topic:keeping-stock)) arrêtent ce processus avant d'épuiser les matériaux.

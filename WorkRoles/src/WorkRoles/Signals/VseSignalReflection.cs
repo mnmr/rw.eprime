@@ -212,7 +212,7 @@ namespace WorkRoles.Signals
                 var result = new List<ExpertiseFact>(records.Count);
                 for (int i = 0; i < records.Count; i++)
                 {
-                    object record = records[i];
+                    object? record = records[i];
                     if (record == null) continue;
                     Def def = recordDefRead!(record);
                     SkillDef? skill = def == null ? null : expertiseSkillRead!(def);
@@ -286,9 +286,8 @@ namespace WorkRoles.Signals
                 passionMutableState = new PassionMutableState[definitions.Length];
                 for (int i = 0; i < definitions.Length; i++)
                 {
-                    object value = definitions.GetValue(i);
-                    Def? def = value as Def;
-                    if (def == null) continue;
+                    object? value = definitions.GetValue(i);
+                    if (value is not Def def) continue;
                     int colorValue = colorRead(value);
                     string authorTier = Enum.GetName(color.FieldType, colorValue)
                         ?? colorValue.ToString();
@@ -343,7 +342,7 @@ namespace WorkRoles.Signals
                 if (expertiseOf == null || !expertiseOf.IsStatic
                     || expertiseOf.ReturnType != trackerType
                     || allExpertise == null || allExpertise.GetGetMethod(true) == null
-                    || allExpertise.GetGetMethod(true).IsStatic
+                    || allExpertise.GetGetMethod(true)!.IsStatic
                     || !typeof(IList).IsAssignableFrom(allExpertise.PropertyType)
                     || fullDescription == null || fullDescription.IsStatic
                     || fullDescription.ReturnType != typeof(string))

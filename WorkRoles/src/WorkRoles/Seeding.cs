@@ -26,7 +26,7 @@ namespace WorkRoles
             foreach (var groupDef in DefDatabase<RoleGroupDef>.AllDefsListForReading
                          .OrderBy(d => d.order))
                 if (SeededDefIdentity.GroupLabel(groupDef) is { Length: > 0 } groupLabel)
-                    RoleCommands.EnsureGroup(groupLabel);
+                    RoleCommands.EnsureGroup(groupLabel, groupDef.defName);
             foreach (var def in defs)
                 RoleCommands.CreateRoleFromDef(def);
             store.seeded = true;
@@ -294,17 +294,16 @@ namespace WorkRoles
         };
 
         /// A migrating pawn ranks this work type apart from every role that
-        /// carries it: materialize a dedicated single-type role. labelShort
-        /// names it ("Haul+" for both Allow Tool and Keyz' Allow Utilities).
+        /// carries it: materialize a dedicated single-type role. Its persisted
+        /// name is invariant; labelShort is resolved only for presentation.
         private static Role? CreateCarrierRole(string workTypeDefName)
         {
             var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(workTypeDefName);
             if (workType == null) return null;
-            string label = workType.labelShort is { Length: > 0 }
-                ? workType.labelShort.CapitalizeFirst()
-                : SeededDefIdentity.WorkTypeRoleLabel(workType) ?? workType.defName;
+            string label = SeededDefIdentity.WorkTypeRoleLabel(workType) ?? workType.defName;
             var role = RoleCommands.CreateRoleDirect(label);
             if (role == null) return null;
+            role.generatedWorkTypeDefName = workType.defName;
             ApplyGeneratedColor(role, workType.defName);
             RoleCommands.AddEntryDirect(role.id,
                 new JobEntry(JobEntryKind.WorkType, workType.defName));
@@ -448,7 +447,7 @@ namespace WorkRoles
                 if (role == null || role.entries.Contains(templateEntries[at])) continue;
                 RoleCommands.AddEntryDirect(role.id, templateEntries[at],
                     TemplatePlacement.AnchoredInsertIndex(role.entries, templateEntries, at));
-                result.Add(role.label);
+                result.Add(role.DisplayLabel);
                 restored = true;
             }
             return restored;
@@ -530,10 +529,11 @@ namespace WorkRoles
                     var role = RoleCommands.CreateRoleDirect(label);
                     if (role != null)
                     {
+                        role.generatedWorkTypeDefName = workType.defName;
                         ApplyGeneratedColor(role, workType.defName);
                         RoleCommands.AddEntryDirect(role.id, new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName));
                         role.minAge = RecsAdapter.MinUnlockAgeOf(role);
-                        result.Add(role.label);
+                        result.Add(role.DisplayLabel);
                     }
                 }
                 // Invisible uncovered types stay uncovered (only marked known);
@@ -661,7 +661,7 @@ namespace WorkRoles
 
         private static string DefGroupLabel(RoleDef def) => def.group.NullOrEmpty()
             ? "WR_GroupDefault".Translate().ToString()
-            : SeededDefIdentity.GroupLabel(def) ?? def.group ?? "";
+            : SeededDisplayNames.Group(def);
 
         /// The role's color differs from what its def resolves today.
         private static bool ColorDrifted(Role role, RoleDef def)
@@ -773,8 +773,8 @@ namespace WorkRoles
                 result.Add(new RestoreItem
                 {
                     label = labelTaken
-                        ? seedLabel + " " + "WR_RestoreDuplicateHint".Translate()
-                        : seedLabel,
+                        ? def.LabelCap + " " + "WR_RestoreDuplicateHint".Translate()
+                        : def.LabelCap.ToString(),
                     explanation = "WR_RestoreExplainRole".Translate(),
                     templateDef = def.defName,
                 });
@@ -794,7 +794,7 @@ namespace WorkRoles
                 int count = moved.Sum(kv => kv.Value.Count);
                 result.Add(new RestoreItem
                 {
-                    label = "WR_RestoreMovedJobs".Translate(role.label, count),
+                    label = "WR_RestoreMovedJobs".Translate(role.DisplayLabel, count),
                     explanation = "WR_RestoreExplainBackfill".Translate(count),
                     backfillRoleId = role.id,
                 });
@@ -808,7 +808,7 @@ namespace WorkRoles
                 if (def == null || !EntriesDrifted(role, def)) continue;
                 result.Add(new RestoreItem
                 {
-                    label = "WR_RestoreJobsItem".Translate(role.label),
+                    label = "WR_RestoreJobsItem".Translate(role.DisplayLabel),
                     explanation = "WR_RestoreExplainJobs".Translate(),
                     entriesRoleId = role.id,
                 });
@@ -819,7 +819,7 @@ namespace WorkRoles
                 if (!IsOffPaletteGeneratedRole(role)) continue;
                 result.Add(new RestoreItem
                 {
-                    label = "WR_RestoreSnapColorItem".Translate(role.label),
+                    label = "WR_RestoreSnapColorItem".Translate(role.DisplayLabel),
                     explanation = "WR_RestoreExplainSnapColor".Translate(),
                     paletteSnapRoleId = role.id,
                 });
@@ -833,7 +833,7 @@ namespace WorkRoles
                 if (def == null || !GroupDrifted(store, role, def)) continue;
                 result.Add(new RestoreItem
                 {
-                    label = "WR_RestoreGroupItem".Translate(role.label, DefGroupLabel(def)),
+                    label = "WR_RestoreGroupItem".Translate(role.DisplayLabel, DefGroupLabel(def)),
                     explanation = "WR_RestoreExplainGroup".Translate(DefGroupLabel(def)),
                     groupRoleId = role.id,
                 });
@@ -847,7 +847,7 @@ namespace WorkRoles
                 if (def == null || !ColorDrifted(role, def)) continue;
                 result.Add(new RestoreItem
                 {
-                    label = "WR_RestoreColorItem".Translate(role.label),
+                    label = "WR_RestoreColorItem".Translate(role.DisplayLabel),
                     explanation = "WR_RestoreExplainColor".Translate(),
                     colorRoleId = role.id,
                 });
@@ -859,7 +859,7 @@ namespace WorkRoles
                 if (def == null || !HoldersDrifted(role, def)) continue;
                 result.Add(new RestoreItem
                 {
-                    label = "WR_RestoreHoldersItem".Translate(role.label),
+                    label = "WR_RestoreHoldersItem".Translate(role.DisplayLabel),
                     explanation = "WR_RestoreExplainHolders".Translate(),
                     holderRoleId = role.id,
                 });
@@ -1032,7 +1032,7 @@ namespace WorkRoles
                 {
                     if (store.RoleByTemplate(defName) != null) continue;
                     var role = RoleCommands.CreateRoleFromDef(DefDatabase<RoleDef>.GetNamedSilentFail(defName));
-                    if (role != null) { result.Add(role.label); restored.Add(role); }
+                    if (role != null) { result.Add(role.DisplayLabel); restored.Add(role); }
                 }
             }
 
@@ -1056,7 +1056,7 @@ namespace WorkRoles
                             role.workTypeSnapshots[kv.Key] = known = new List<string>();
                         known.AddRange(kv.Value);
                     }
-                    result.Add("WR_RestoreMovedJobs".Translate(role.label, moved.Sum(kv => kv.Value.Count)));
+                    result.Add("WR_RestoreMovedJobs".Translate(role.DisplayLabel, moved.Sum(kv => kv.Value.Count)));
                     CompiledJobOrders.InvalidateRole(roleId, ModelDomain.RoleHistory);
                 }
 
@@ -1071,7 +1071,7 @@ namespace WorkRoles
                     role.entries = DefaultEntriesFor(def);
                     // Stale union-only snapshots could resurrect removed givers.
                     role.workTypeSnapshots.Clear();
-                    result.Add("WR_RestoreJobsItem".Translate(role.label));
+                    result.Add("WR_RestoreJobsItem".Translate(role.DisplayLabel));
                     CompiledJobOrders.InvalidateRole(roleId);
                 }
                 RefreshWorkTypeSnapshots(publishChanges: false);
@@ -1083,7 +1083,7 @@ namespace WorkRoles
                     var role = store.RoleById(roleId);
                     if (role == null || !role.hasCustomColor) continue;
                     role.color = NearestPaletteColor(role.color);
-                    result.Add(role.label);
+                    result.Add(role.DisplayLabel);
                 }
 
             PreservePawnCoverage(store, priorCoverage);
@@ -1098,10 +1098,10 @@ namespace WorkRoles
                         : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
                     if (role == null || def == null || !GroupDrifted(store, role, def)) continue;
                     RoleGroup? group = RoleCommands.EnsureGroup(
-                        SeededDefIdentity.GroupLabel(def));
+                        SeededDefIdentity.GroupLabel(def), SeededDefIdentity.GroupDef(def)?.defName);
                     if (group == null) continue;
                     role.groupId = group.id;
-                    result.Add("WR_RestoreGroupItem".Translate(role.label, DefGroupLabel(def)));
+                    result.Add("WR_RestoreGroupItem".Translate(role.DisplayLabel, DefGroupLabel(def)));
                     anyMoved = true;
                 }
                 if (anyMoved) RoleCommands.SweepEmptyGroups();
@@ -1117,7 +1117,7 @@ namespace WorkRoles
                     var (has, color) = def.ResolvedColor();
                     role.hasCustomColor = has;
                     role.color = color;
-                    result.Add("WR_RestoreColorItem".Translate(role.label));
+                    result.Add("WR_RestoreColorItem".Translate(role.DisplayLabel));
                 }
 
             if (holderRoleIds != null)
@@ -1129,7 +1129,7 @@ namespace WorkRoles
                     if (role == null || def == null || !HoldersDrifted(role, def)) continue;
                     role.colonyMin = def.tuning?.colonyMin ?? 0;
                     role.coverage = def.tuning?.coverage ?? 0;
-                    result.Add("WR_RestoreHoldersItem".Translate(role.label));
+                    result.Add("WR_RestoreHoldersItem".Translate(role.DisplayLabel));
                 }
 
             // After the roles: training members may have been restored just above.

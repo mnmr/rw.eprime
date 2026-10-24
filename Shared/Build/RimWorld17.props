@@ -1,0 +1,18 @@
+<Project>
+  <!-- Compile against the exact APIs loaded by the installed 1.7 game.
+       Harmony 3 is not binary-compatible with the 1.6 Harmony 2 reference. -->
+  <PropertyGroup>
+    <InstalledGameRoot Condition="'$(InstalledGameRoot)' == ''">C:/Program Files (x86)/Steam/steamapps/common/RimWorld</InstalledGameRoot>
+    <InstalledHarmonyPath Condition="'$(InstalledHarmonyPath)' == ''">$(InstalledGameRoot)/../../workshop/content/294100/2009463077/1.7/Assemblies/0Harmony.dll</InstalledHarmonyPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp" HintPath="$(InstalledGameRoot)/Assembly-CSharp.dll" Private="false" />
+    <Reference Include="UnityStubs" HintPath="$(InstalledGameRoot)/UnityStubs.dll" Private="false" />
+    <Reference Include="Waylith" HintPath="$(InstalledGameRoot)/Waylith.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(InstalledHarmonyPath)" Private="false" />
+  </ItemGroup>
+  <Target Name="ValidateRimWorld17References" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(InstalledGameRoot)/UnityStubs.dll')" Text="RimWorld 1.7 requires InstalledGameRoot to point to a Waylith installation." />
+    <Error Condition="!Exists('$(InstalledHarmonyPath)')" Text="RimWorld 1.7 requires InstalledHarmonyPath to point to its installed Harmony assembly." />
+  </Target>
+</Project>

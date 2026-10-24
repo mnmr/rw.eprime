@@ -165,7 +165,7 @@ namespace Implanner
                 bool valid = (reinstall
                         || (evaluation != null
                             && evaluation.BatchKeys.Contains(reservation.GoalKey)))
-                    && index.ItemsById.TryGetValue(itemId, out Thing item)
+                    && index.ItemsById.TryGetValue(itemId, out Thing? item)
                     && !item.IsForbidden(Faction.OfPlayer)
                     && index.PawnMayCollect(reservation.PawnId, itemId)
                     && (reinstall || MeetsPlanMinimum(evaluation!, reservation.GoalKey, item));

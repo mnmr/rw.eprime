@@ -49,7 +49,7 @@ namespace Implanner
             if (manageBill == null) return false;
             try
             {
-                object status = manageBill.Invoke(null, new object[] { bill, targetQuality });
+                object? status = manageBill.Invoke(null, new object[] { bill, targetQuality });
                 return Convert.ToInt32(status) == 0; // BillManagementStatus.Success
             }
             catch (Exception exception)

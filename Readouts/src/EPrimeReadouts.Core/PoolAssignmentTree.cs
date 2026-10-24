@@ -27,17 +27,20 @@ namespace EPrimeReadouts.Core
     public static class PoolAssignmentTree
     {
         public static PoolAssignmentTreeRow[] Build(PoolSnapshot? pools,
-            bool expanded, ItemTreeFilter filter, string rootLabel)
+            bool expanded, ItemTreeFilter filter, string rootLabel,
+            Func<string, string>? displayName = null)
         {
             if (pools == null || pools.Count == 0)
                 return Array.Empty<PoolAssignmentTreeRow>();
 
             bool filtering = SearchMatcher.IsActive(filter.Query);
             int matchCount = 0;
+            var names = new string[pools.Count];
             for (int i = 0; i < pools.Count; i++)
             {
                 PoolSnapshotEntry entry = pools.EntryAt(i);
-                if (!filtering || SearchMatcher.Matches(entry.Name, filter.Query))
+                names[i] = SeededName.Resolve(entry.Name, entry.SeedName, displayName);
+                if (!filtering || SearchMatcher.Matches(names[i], filter.Query))
                     matchCount++;
             }
             if (matchCount == 0)
@@ -53,12 +56,12 @@ namespace EPrimeReadouts.Core
             for (int i = 0; i < pools.Count; i++)
             {
                 PoolSnapshotEntry entry = pools.EntryAt(i);
-                if (filtering && !SearchMatcher.Matches(entry.Name, filter.Query))
+                if (filtering && !SearchMatcher.Matches(names[i], filter.Query))
                     continue;
                 rows[rowIndex++] = new PoolAssignmentTreeRow(
                     false,
                     entry.Id,
-                    entry.Name,
+                    names[i],
                     SlotToken.PoolToken(entry.Id),
                     entry.IconDefName,
                     false);

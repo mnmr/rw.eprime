@@ -214,8 +214,8 @@ namespace Implanner
             {
                 HediffCompProperties props = def.comps[i];
                 if (props == null || !ebfProps.IsInstanceOfType(props)) continue;
-                linear = (int)ebfLinear.GetValue(props);
-                float adjustment = (float)ebfScale.GetValue(props);
+                linear = (int)ebfLinear.GetValue(props)!;
+                float adjustment = (float)ebfScale.GetValue(props)!;
                 // The framework ignores factors at or below zero.
                 scale = adjustment + 1f > 0f ? adjustment + 1f : 1f;
                 return linear != 0 || scale != 1f;
@@ -248,7 +248,7 @@ namespace Implanner
             for (int i = 0; i < comps.Count; i++)
                 if (compType.IsInstanceOfType(comps[i]))
                 {
-                    quality = (int)(QualityCategory)field.GetValue(comps[i]);
+                    quality = (int)(QualityCategory)field.GetValue(comps[i])!;
                     return true;
                 }
             return false;

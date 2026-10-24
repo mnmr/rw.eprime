@@ -197,7 +197,7 @@ namespace Implanner
                     map[list[i].Def.defName] = list[i];
                 implantsByDefName = map;
             }
-            return implantsByDefName.TryGetValue(defName, out ImplantCatalogEntry entry)
+            return implantsByDefName.TryGetValue(defName, out ImplantCatalogEntry? entry)
                 ? entry
                 : null;
         }
@@ -240,7 +240,7 @@ namespace Implanner
                 {
                     if (recipe.removesHediff != null && IsPlannable(recipe.addsHediff))
                     {
-                        if (!upgrades.TryGetValue(recipe.addsHediff, out List<RecipeDef> list))
+                        if (!upgrades.TryGetValue(recipe.addsHediff, out List<RecipeDef>? list))
                         {
                             list = new List<RecipeDef>();
                             upgrades.Add(recipe.addsHediff, list);
@@ -250,7 +250,7 @@ namespace Implanner
                     continue;
                 }
                 if (!IsPlannable(recipe.addsHediff)) continue;
-                if (!parts.TryGetValue(recipe.addsHediff, out HashSet<BodyPartDef> set))
+                if (!parts.TryGetValue(recipe.addsHediff, out HashSet<BodyPartDef>? set))
                 {
                     set = new HashSet<BodyPartDef>();
                     parts.Add(recipe.addsHediff, set);
@@ -329,7 +329,7 @@ namespace Implanner
                 surgeryRecipes.Sort(ByRecipeDefName);
                 if (!AnyHumanRecipe(surgeryRecipes)) continue;
                 if (!byDef.TryGetValue(surgeryRecipes[0].removesHediff,
-                        out ImplantCatalogEntry baseEntry))
+                        out ImplantCatalogEntry? baseEntry))
                     continue;
                 float efficiency = def.addedPartProps?.partEfficiency ?? 1f;
                 result.Add(new ImplantCatalogEntry(
@@ -453,7 +453,7 @@ namespace Implanner
                 foreach (ThingDef ingredient in ingredients[g].filter.AllowedThingDefs)
                 {
                     if (!ingredient.isTechHediff) continue;
-                    if (!implantItems.TryGetValue(recipe.addsHediff, out List<ThingDef> items))
+                    if (!implantItems.TryGetValue(recipe.addsHediff, out List<ThingDef>? items))
                     {
                         items = new List<ThingDef>();
                         implantItems.Add(recipe.addsHediff, items);
@@ -471,7 +471,7 @@ namespace Implanner
         private static bool IsPurchaseOnly(HediffDef def, HashSet<ThingDef> producible,
             Dictionary<HediffDef, List<ThingDef>> implantItems)
         {
-            if (!implantItems.TryGetValue(def, out List<ThingDef> items))
+            if (!implantItems.TryGetValue(def, out List<ThingDef>? items))
                 return false;
             for (int i = 0; i < items.Count; i++)
                 if (producible.Contains(items[i]))

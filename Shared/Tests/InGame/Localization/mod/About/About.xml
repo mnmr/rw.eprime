@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>Localization integration probe</name>
+  <author>RimShared tests</author>
+  <packageId>rimshared.tests.localization</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+</ModMetaData>

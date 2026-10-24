@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_GroupEssentials.label>Grunnleggende</WS_GroupEssentials.label>
+  <WS_GroupFood.label>Mat</WS_GroupFood.label>
+  <WS_GroupAnimals.label>Dyr</WS_GroupAnimals.label>
+  <WS_GroupIndoors.label>Innendørs</WS_GroupIndoors.label>
+  <WS_GroupOutdoors.label>Utendørs</WS_GroupOutdoors.label>
+  <WS_GroupResearch.label>Forskning</WS_GroupResearch.label>
+  <WS_GroupSocial.label>Sosialt</WS_GroupSocial.label>
+  <WS_GroupMedical.label>Helsearbeid</WS_GroupMedical.label>
+</LanguageData>

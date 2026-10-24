@@ -28,6 +28,7 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 ## Worth noting
 
 - **Seeded Roles:** an initial role set is seeded into the game, covering all detected work types and jobs.
+- **Localized Names:** unchanged template roles and newly seeded groups follow the display language without changing their saved names. Custom names stay verbatim, including after renaming back to a seed spelling. Older saves and exports lack group-name provenance, so existing group names remain as saved; the fixed Default group still follows the display language.
 - **Combo Roles:** various roles (Basics, Farmer, Grunt) that combine multiple work types to make work assignment easier.
 - **Blocker Roles:** used to specify things that pawns will never do (for jobs in any subsequent role assignment), e.g. so you can put Pyrophobe before Core (to block its Firefighting).
 - **Extra Roles:** training roles that enable role progression and convenience roles to make prioritization easier.
@@ -106,9 +107,15 @@ When more than twelve skills are installed, the selected-colonist panel uses a t
 
 ```
 dotnet build src/WorkRoles.slnx
+dotnet build -c Release src/WorkRoles/WorkRoles.csproj -p:RimWorldVersion=1.7
 ```
 
 Three projects: `WorkRoles.Core` (pure logic, netstandard2.0, unit-tested), `WorkRoles` (net472 game assembly; game refs via the `Krafs.Rimworld.Ref` NuGet package — no game files needed), and `WorkRoles.Core.Tests` (.NET 10, TUnit).
+
+The default build produces the 1.6 assemblies. The second command produces the
+net10.0 1.7 assemblies against the installed game and Harmony 3. Build both
+versions before packaging. Override `InstalledGameRoot` and
+`InstalledHarmonyPath` when their locations differ from the shared defaults.
 
 Building never deploys the mod. After building, mirror the current `mod/` folder to your local RimWorld installation with:
 

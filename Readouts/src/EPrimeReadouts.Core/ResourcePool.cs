@@ -24,6 +24,8 @@ namespace EPrimeReadouts.Core
     {
         public int Id;
         public string Name = "";
+        // Null for custom and unknown legacy names; set only by explicit seed data.
+        public string? SeedName;
         /// Members are defNames or "@CategoryDefName" refs (expanded at snapshot).
         public List<string> Members = new List<string>();
         /// Explicit icon choice; null/empty or unresolvable falls back to the

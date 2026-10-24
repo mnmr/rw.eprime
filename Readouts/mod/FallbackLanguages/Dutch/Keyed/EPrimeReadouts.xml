@@ -1,0 +1,153 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <EPR.Title>EPrime's Readouts</EPR.Title>
+  <EPR.Results>Resultaten</EPR.Results>
+  <EPR.NoMatches>Geen resultaten</EPR.NoMatches>
+  <EPR.MoreResults>…en nog {0}</EPR.MoreResults>
+  <EPR.CycleTip>Aantal zichtbare niveaus wisselen</EPR.CycleTip>
+  <EPR.UseVanilla>Grondstofweergave van het basisspel gebruiken</EPR.UseVanilla>
+  <EPR.OffsetX>Horizontale verschuiving</EPR.OffsetX>
+  <EPR.OffsetY>Verticale verschuiving</EPR.OffsetY>
+  <EPR.PanelWidth>Paneelbreedte</EPR.PanelWidth>
+  <EPR.BottomMargin>Ondermarge</EPR.BottomMargin>
+  <EPR.Groups>Groepen</EPR.Groups>
+  <EPR.Resources>Grondstoffen</EPR.Resources>
+  <EPR.AllStorableItems>Alle opslagbare voorwerpen</EPR.AllStorableItems>
+  <EPR.All>Alles</EPR.All>
+  <EPR.Vanilla>Basisspel</EPR.Vanilla>
+  <EPR.SearchFilter>Zoekfilter</EPR.SearchFilter>
+  <EPR.ItemFilter>Voorwerpfilter</EPR.ItemFilter>
+  <EPR.SourceFilter>Bronfilter</EPR.SourceFilter>
+  <EPR.NoMatchingItems>Geen passende voorwerpen</EPR.NoMatchingItems>
+  <EPR.Editor>Bewerker</EPR.Editor>
+  <EPR.GroupEditor>Groepsbewerker</EPR.GroupEditor>
+  <EPR.Add>Toevoegen</EPR.Add>
+  <EPR.DeleteConfirm>Groep ‘{0}’ verwijderen?</EPR.DeleteConfirm>
+  <EPR.SelectGroupHint>Selecteer of maak een groep om die te bewerken.</EPR.SelectGroupHint>
+  <EPR.Thresholds>Drempelwaarden</EPR.Thresholds>
+  <EPR.Low>Laag</EPR.Low>
+  <EPR.Critical>Kritiek</EPR.Critical>
+  <EPR.Set>Instellen</EPR.Set>
+  <EPR.Clear>Wissen</EPR.Clear>
+  <EPR.ShowWhenZero>Bij nul tonen</EPR.ShowWhenZero>
+  <EPR.PoolTip>Toevoegen als grondstoffenpool: één vak met het totale aantal van alles in deze categorie</EPR.PoolTip>
+  <EPR.EnableTip>Deze groep in de grondstofweergave tonen</EPR.EnableTip>
+  <EPR.RestoreDefaults>Standaarden herstellen</EPR.RestoreDefaults>
+  <EPR.RestoreConfirm>ALLE groepen en drempelwaarden vervangen door de standaardset? Dit heeft gevolgen voor alle spelers in multiplayer.</EPR.RestoreConfirm>
+  <EPR.Help>Help</EPR.Help>
+  <EPR.HelpGroups>Dit zijn je groepen voor de grondstofweergave. Elke groep verschijnt als een aparte strook.
+
+Klik op het vinkje om de zichtbaarheid te wijzigen of op [x] om de groep te verwijderen.
+
+Voeg groepen toe met het naamveld en de knop Toevoegen.</EPR.HelpGroups>
+  <EPR.HelpResources>Blader door grondstoffen en ingestelde grondstoffenpools om ze aan de geselecteerde groep toe te voegen.
+
+Klik op een item om het achteraan toe te voegen, of sleep het naar een bepaald vak op een niveau. Toegewezen items zijn gedimd en gemarkeerd; rechtsklik erop of klik op hun vinkje om ze te verwijderen.</EPR.HelpResources>
+  <EPR.HelpEditor>Dit paneel toont de niveaus van de geselecteerde groep.
+
+Een groep kan maximaal drie weergaveniveaus hebben. Een nieuw niveau wordt automatisch beschikbaar zodra het vorige niet leeg is.
+
+Klik op voorwerpen in het rechterpaneel of sleep ze om ze aan de geselecteerde groep toe te voegen.
+
+Klik op een vak om weergaveopties in te stellen. Rechtsklik om de toewijzing te wissen. Sleep voorwerpen om ze binnen of tussen niveaus te verplaatsen.</EPR.HelpEditor>
+  <EPR.Options>Opties</EPR.Options>
+  <EPR.Overview>Overzicht</EPR.Overview>
+  <EPR.HelpChapterBasics>Basis</EPR.HelpChapterBasics>
+  <EPR.HelpChapterGroups>Groepen</EPR.HelpChapterGroups>
+  <EPR.HelpChapterPools>Grondstoffenpools</EPR.HelpChapterPools>
+  <EPR.HelpChapterOptions>Opties</EPR.HelpChapterOptions>
+  <EPR.HelpReload>Opnieuw laden</EPR.HelpReload>
+  <EPR.WelcomeTitle>EPrime's Readouts</EPR.WelcomeTitle>
+  <EPR.WelcomeBody>Readouts vervangt de grondstofweergave linksboven door groepen die je zelf instelt. Elke groep bevat maximaal drie niveaus met grondstoffen of grondstoffenpools. De tellers veranderen van kleur bij de ingestelde drempelwaarden.</EPR.WelcomeBody>
+  <EPR.WelcomeFind>Open de bewerker met het tandwiel bovenaan de grondstofweergave. Het tabblad Opties bevat de weergaveopties en het tabblad Help legt de rest uit.</EPR.WelcomeFind>
+  <EPR.WelcomeTakeMeThere>Nu openen</EPR.WelcomeTakeMeThere>
+  <EPR.ShowSearchFilter>Zoekfilter tonen</EPR.ShowSearchFilter>
+  <EPR.SearchHideZero>Resultaten met nul verbergen</EPR.SearchHideZero>
+  <EPR.SearchStorageOnly>Alleen opgeslagen voorwerpen tellen</EPR.SearchStorageOnly>
+  <EPR.SearchStorageOnlyTip>Wanneer ingeschakeld, worden alleen geschikte, niet-rotte voorwerpen in opslagzones of opslaggebouwen zoals planken geteld. Losse voorwerpen elders op de kaart worden uitgesloten. Voorwerpen die pionnen dragen, in inventarissen of containers zitten of in onontdekte gebieden liggen, worden nooit geteld. Verboden voorwerpen tellen mee tenzij ‘Verboden voorwerpen negeren’ ook is ingeschakeld.</EPR.SearchStorageOnlyTip>
+  <EPR.SearchHideForbidden>Verboden voorwerpen negeren</EPR.SearchHideForbidden>
+  <EPR.SelectJumpCamera>Camera naar aangeklikte grondstof verplaatsen</EPR.SelectJumpCamera>
+  <EPR.DisplayOptions>Weergaveopties</EPR.DisplayOptions>
+  <EPR.KeepReadoutToggle>Grondstofknop in de werkbalk behouden</EPR.KeepReadoutToggle>
+  <EPR.KeepReadoutToggleTip>Behoudt de grondstofknop van het spel in de werkbalk rechtsonder. Daarmee toon of verberg je de groepen; wanneer ze verborgen zijn, blijven alleen het tandwiel en het zoekveld over.</EPR.KeepReadoutToggleTip>
+  <EPR.TierLayoutOptions>Niveau-indeling</EPR.TierLayoutOptions>
+  <EPR.TierLayoutHorizontal>Horizontaal</EPR.TierLayoutHorizontal>
+  <EPR.TierLayoutVertical>Verticaal</EPR.TierLayoutVertical>
+  <EPR.TierLayoutTip>Bepaalt hoe een uitgeklapte groep extra niveaus toont, of je die nu met de driehoeken of door aanwijzen hebt geopend. Horizontaal plaatst ze rechts op dezelfde rij. Verticaal geeft elk niveau een eigen rij en maakt de strook hoger.</EPR.TierLayoutTip>
+  <EPR.ExpandOnHover>Uitklappen bij aanwijzen</EPR.ExpandOnHover>
+  <EPR.CollapseWhenIdle>Inklappen wanneer niet aangewezen</EPR.CollapseWhenIdle>
+  <EPR.ShowModName>Modnaam tonen</EPR.ShowModName>
+  <EPR.CountOptions>Telopties</EPR.CountOptions>
+  <EPR.PlannedWorkOptions>Gepland werk</EPR.PlannedWorkOptions>
+  <EPR.ReserveForBills>Grondstoffen voor opdrachten reserveren</EPR.ReserveForBills>
+  <EPR.ReserveForBillsTip>Trekt de ingrediënten af die je openstaande opdrachten nog moeten verbruiken. Een opdracht reserveert een ingrediënt alleen als de behoefte op precies één manier kan worden vervuld. ‘Elk leer’ en vergelijkbare open keuzes reserveren niets.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBuildables>Grondstoffen voor bouwwerk reserveren</EPR.ReserveForBuildables>
+  <EPR.ReserveForBuildablesTip>Trekt de materialen af die je blauwdrukken en halfgebouwde frames nog nodig hebben. Materialen die al naar een frame zijn gebracht worden niet opnieuw geteld, en verboden blauwdrukken worden genegeerd.</EPR.ReserveForBuildablesTip>
+  <EPR.ShowNegativeCounts>Tekorten als negatieve getallen tonen</EPR.ShowNegativeCounts>
+  <EPR.ShowNegativeCountsTip>Wanneer gepland werk meer nodig heeft dan je bezit, wordt het tekort getoond in plaats van bij nul te stoppen.</EPR.ShowNegativeCountsTip>
+  <EPR.QualityJobsRework>Ondersteuning voor Quality Jobs</EPR.QualityJobsRework>
+  <EPR.QualityJobsReworkTip>Schat voor opdrachten en bouwwerk met een doelkwaliteit hoeveel pogingen nodig zijn en reserveert voor alle pogingen. Herbouwde constructies leveren het aandeel terug dat het basisspel bij afbraak teruggeeft.</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsMissingTip>Vereist EPrime's Quality Jobs; die mod is niet geïnstalleerd.</EPR.QualityJobsMissingTip>
+  <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs is geïnstalleerd maar biedt de benodigde integratie niet. Werk de mod bij om deze optie in te schakelen.</EPR.QualityJobsOutdatedTip>
+  <EPR.TipPlannedWork>Gepland werk</EPR.TipPlannedWork>
+  <EPR.TipResource>Grondstof</EPR.TipResource>
+  <EPR.TipQueued>In wachtrij</EPR.TipQueued>
+  <EPR.TipEach>Per stuk</EPR.TipEach>
+  <EPR.TipDrain>Verbruik</EPR.TipDrain>
+  <EPR.TipInStock>Op voorraad</EPR.TipInStock>
+  <EPR.TipAvailableStock>{0} beschikbaar · {1} op voorraad</EPR.TipAvailableStock>
+  <EPR.TipOtherPlannedWork>Overig ({0})</EPR.TipOtherPlannedWork>
+  <EPR.TipMixedResources>Gemengd</EPR.TipMixedResources>
+  <EPR.ClickOptions>Klikopties</EPR.ClickOptions>
+  <EPR.SearchOptions>Zoekopties</EPR.SearchOptions>
+  <EPR.HoverOptions>Aanwijsopties</EPR.HoverOptions>
+  <EPR.OptionsFor>Weergaveopties voor {0}</EPR.OptionsFor>
+  <EPR.ThresholdCaption>Drempelwaarden voor gekleurde tellers aanpassen</EPR.ThresholdCaption>
+  <EPR.CountRuleCaption>Telopties voor deze grondstof/pool overschrijven</EPR.CountRuleCaption>
+  <EPR.RuleDefault>Standaard</EPR.RuleDefault>
+  <EPR.RuleAlwaysOn>Altijd aan</EPR.RuleAlwaysOn>
+  <EPR.RuleAlwaysOff>Altijd uit</EPR.RuleAlwaysOff>
+  <EPR.Pools>Grondstoffenpools</EPR.Pools>
+  <EPR.ResourcePoolEditor>Grondstoffenpoolbewerker</EPR.ResourcePoolEditor>
+  <EPR.HelpPools>Maak een grondstoffenpool en selecteer die hier om de inhoud in het grondstoffenpaneel te bewerken. Gebruik de rijacties om een pool te hernoemen of te verwijderen.
+
+Om een pool aan een groep toe te voegen, ga je naar de groepsbewerker en gebruik je de tak Grondstoffenpools in de grondstoffenboom.</EPR.HelpPools>
+  <EPR.HelpPoolEditor>Beperk de grondstoffenboom met de gedeelde filters. Vink categorieën of afzonderlijke grondstoffen aan om ze in de geselecteerde pool op te nemen. Klik op het pictogram van een grondstof om het als poolpictogram te gebruiken.</EPR.HelpPoolEditor>
+  <EPR.SelectOrCreatePool>Selecteer of maak een grondstoffenpool om te beginnen.</EPR.SelectOrCreatePool>
+  <EPR.DeletePoolConfirm>Pool ‘{0}’ verwijderen? Vakken die hem gebruiken worden uit alle groepen verwijderd.</EPR.DeletePoolConfirm>
+  <EPR.NameLabel>Naam</EPR.NameLabel>
+  <EPR.PoolNameTaken>Er bestaat al een grondstoffenpool met deze naam.</EPR.PoolNameTaken>
+  <EPR.GroupNameTaken>Er bestaat al een groep met deze naam.</EPR.GroupNameTaken>
+  <EPR.Export>Exporteren</EPR.Export>
+  <EPR.Import>Importeren</EPR.Import>
+  <EPR.Exported>Geëxporteerd naar {0}</EPR.Exported>
+  <EPR.ExportOverwriteConfirm>{0} bestaat al. Vervangen?</EPR.ExportOverwriteConfirm>
+  <EPR.Imported>Import geslaagd.</EPR.Imported>
+  <EPR.NoFiles>Geen exportbestanden gevonden.</EPR.NoFiles>
+  <EPR.ExportPreviewTitle>Readouts exporteren</EPR.ExportPreviewTitle>
+  <EPR.CopyToClipboard>Naar klembord kopiëren</EPR.CopyToClipboard>
+  <EPR.CopiedToClipboard>Naar klembord gekopieerd.</EPR.CopiedToClipboard>
+  <EPR.Save>Opslaan</EPR.Save>
+  <EPR.ExportLocationLabel>Opslaglocatie</EPR.ExportLocationLabel>
+  <EPR.CopyPath>Pad kopiëren</EPR.CopyPath>
+  <EPR.LocGameData>Map met spelgegevens</EPR.LocGameData>
+  <EPR.LocDesktop>Bureaublad</EPR.LocDesktop>
+  <EPR.LocUserHome>Gebruikersmap</EPR.LocUserHome>
+  <EPR.LocCustom>Aangepast...</EPR.LocCustom>
+  <EPR.EnterPath>Pad invoeren</EPR.EnterPath>
+  <EPR.BadFileName>Voer een geldige bestandsnaam in.</EPR.BadFileName>
+  <EPR.BadDirectory>Voer een geldig mappad in.</EPR.BadDirectory>
+  <EPR.ImportTitle>Readouts importeren</EPR.ImportTitle>
+  <EPR.ImportLocationLabel>Importlocatie</EPR.ImportLocationLabel>
+  <EPR.FromClipboard>Van klembord</EPR.FromClipboard>
+  <EPR.ClipboardEmpty>Het klembord is leeg of bevat geen Readouts-export.</EPR.ClipboardEmpty>
+  <EPR.ImportWarning>WAARSCHUWING: Dit VERVANGT alle huidige pools, groepen en drempelwaarden. Dit heeft gevolgen voor alle spelers in multiplayer.</EPR.ImportWarning>
+  <EPR.ImportParseFailed>Readouts-XML kon niet worden gelezen: {0}</EPR.ImportParseFailed>
+  <EPR.DeleteFileConfirm>Het bestand ‘{0}’ verwijderen? Dit kan niet ongedaan worden gemaakt.</EPR.DeleteFileConfirm>
+  <EPR.ContentSummary>{0} pools, {1} groepen</EPR.ContentSummary>
+  <EPR.PreviewPoolsHeader>Pools</EPR.PreviewPoolsHeader>
+  <EPR.PreviewGroupsHeader>Groepen</EPR.PreviewGroupsHeader>
+  <EPR.PreviewPoolRow>{0} ({1} leden)</EPR.PreviewPoolRow>
+  <EPR.PreviewGroupRow>{0} ({1} niveaus, {2} vakken)</EPR.PreviewGroupRow>
+  <EPR.PreviewNone>(geen)</EPR.PreviewNone>
+</LanguageData>

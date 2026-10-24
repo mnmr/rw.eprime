@@ -6,14 +6,16 @@ namespace EPrimeReadouts.Core
     {
         public int Id { get; }
         public string Name { get; }
+        public string? SeedName { get; }
         public IReadOnlyList<string> Members { get; }
         public string? IconDefName { get; }
 
         internal PoolSnapshotEntry(int id, string name,
-            IReadOnlyList<string> members, string? iconDefName)
+            IReadOnlyList<string> members, string? iconDefName, string? seedName)
         {
             Id = id;
             Name = name;
+            SeedName = seedName;
             Members = members;
             IconDefName = iconDefName;
         }
@@ -87,7 +89,7 @@ namespace EPrimeReadouts.Core
                     pool.Id,
                     pool.Name ?? "",
                     expanded.AsReadOnly(),
-                    icon);
+                    icon, pool.SeedName);
                 entries[pool.Id] = entry;
                 orderedEntries[poolIndex] = entry;
             }
@@ -95,6 +97,9 @@ namespace EPrimeReadouts.Core
         }
 
         /// Returns true and populates out-params when the pool id is found.
+        public bool TryGetEntry(int poolId, out PoolSnapshotEntry entry) =>
+            entries.TryGetValue(poolId, out entry);
+
         public bool TryGet(int poolId, out IReadOnlyList<string>? members,
             out string? iconDefName, out string? name)
         {

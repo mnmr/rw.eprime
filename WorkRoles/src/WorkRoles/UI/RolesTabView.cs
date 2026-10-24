@@ -41,6 +41,9 @@ namespace WorkRoles.UI
                 NewLabel = newLabel;
                 CopyLabel = copyLabel;
                 DeleteLabel = deleteLabel;
+                ToggleWidth = Mathf.Max(64f, Mathf.Max(WrText.FitWidth(treeNested),
+                    WrText.FitWidth(treeFlat)) + 20f);
+                ToggleWidth = Mathf.Max(ToggleWidth, WrText.FitTinyWidth(displayModeCaption));
             }
 
             internal string SelectOrCreateRole { get; }
@@ -55,6 +58,7 @@ namespace WorkRoles.UI
             internal string NewLabel { get; }
             internal string CopyLabel { get; }
             internal string DeleteLabel { get; }
+            internal float ToggleWidth { get; }
 
             internal bool ContentEquals(RolesTabChromeSnapshot other) =>
                 other != null
@@ -69,7 +73,8 @@ namespace WorkRoles.UI
                 && JobFilterShown == other.JobFilterShown
                 && NewLabel == other.NewLabel
                 && CopyLabel == other.CopyLabel
-                && DeleteLabel == other.DeleteLabel;
+                && DeleteLabel == other.DeleteLabel
+                && ToggleWidth == other.ToggleWidth;
         }
 
         // Pawn source for the holders row, injected by MainTabWindow (the
@@ -87,9 +92,9 @@ namespace WorkRoles.UI
 
         // Owner: this Roles-tab view for one open Work Roles window.
         // Key: selected job-filter def name, LanguageChangeCoordinator.Revision,
-        // and DefinitionReloadCoordinator.Revision.
+        // DefinitionReloadCoordinator.Revision, and UiRevision.Current.
         // Value: immutable detached list/editor chrome plus the resolved and
-        // Small-font-truncated job-filter label.
+        // Small-font-truncated job-filter label and measured display toggle width.
         // Dependencies: fixed translated labels, selected job-filter def,
         // localized giver display name, GameFont.Small metrics, and the fixed
         // 200f job-label width available inside the button.
@@ -452,11 +457,11 @@ namespace WorkRoles.UI
             float labelH = Mathf.Max(
                 ListFilterCaptionAdvance, TinyText.LineHeight);
             const float InputH = 24f;
-            const float ToggleW = 64f;
+            float toggleWidth = chrome.ToggleWidth;
             const float JobBtnW = 220f;
 
             float y1 = rect.y + ListFilterCaptionAdvance;
-            float searchW = rect.width - ToggleW - 8f - 22f;
+            float searchW = rect.width - toggleWidth - 8f - 22f;
             FilterCaption(new Rect(rect.x, rect.y, searchW, labelH),
                 chrome.SearchCaption);
             listState.RoleSearch = Widgets.TextField(
@@ -470,8 +475,8 @@ namespace WorkRoles.UI
             }
 
             // Nested/flat toggle: auto-nesting of covered roles on or off.
-            var toggleRect = new Rect(rect.xMax - ToggleW, y1, ToggleW, InputH);
-            FilterCaption(new Rect(toggleRect.x, rect.y, ToggleW, labelH),
+            var toggleRect = new Rect(rect.xMax - toggleWidth, y1, toggleWidth, InputH);
+            FilterCaption(new Rect(toggleRect.x, rect.y, toggleWidth, labelH),
                 chrome.DisplayModeCaption);
             WrTips.Key("WR_TreeToggleTip").Region(toggleRect);
             if (Widgets.ButtonText(toggleRect,
@@ -1923,8 +1928,8 @@ namespace WorkRoles.UI
         {
             RoleJobTreeSnapshot tree = model.JobTree!; // non-composite editor only
             const float SearchW = 110f;
-            const float SearchLabelW = 46f;
-            const float SearchH = 24f;
+            float SearchLabelW = tree.SearchWidth;
+            float SearchH = tree.SearchHeight;
             float headerW = rect.width - SearchLabelW - SearchW - 8f;
 
             // HeaderLabel puts the VISIBLE text top at rect.y; directly under the

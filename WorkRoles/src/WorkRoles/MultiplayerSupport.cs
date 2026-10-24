@@ -90,6 +90,8 @@ namespace WorkRoles
         [SyncWorker(shouldConstruct = true)]
         private static void SyncImportSelection(SyncWorker sync, ref ImportSelection selection)
         {
+            // The XML carries every portable role field, including invariant
+            // generated-name provenance; no client-local labels enter the payload.
             sync.Bind(ref selection.xml);
             sync.Bind(ref selection.palette);
             sync.Bind(ref selection.paletteOverwrite);

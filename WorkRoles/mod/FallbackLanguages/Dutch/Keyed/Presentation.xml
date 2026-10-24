@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_SignalCondition_after_mental_break>Na een mentale inzinking</WR_SignalCondition_after_mental_break>
+  <WR_SignalCondition_age_min_18>18 jaar of ouder</WR_SignalCondition_age_min_18>
+  <WR_SignalCondition_apparel_not_nude>Draagt kleding</WR_SignalCondition_apparel_not_nude>
+  <WR_SignalCondition_apparel_nude>Naakt</WR_SignalCondition_apparel_nude>
+  <WR_SignalCondition_author_is_bad>De bronmod markeert deze passie als slecht</WR_SignalCondition_author_is_bad>
+  <WR_SignalCondition_body_artificial_parts>Heeft kunstmatige lichaamsdelen</WR_SignalCondition_body_artificial_parts>
+  <WR_SignalCondition_body_no_artificial_parts>Geen kunstmatige lichaamsdelen</WR_SignalCondition_body_no_artificial_parts>
+  <WR_SignalCondition_colony_best_at_skill>Beste in de kolonie in deze vaardigheid</WR_SignalCondition_colony_best_at_skill>
+  <WR_SignalCondition_colony_loss_within_3_days>In de afgelopen 3 dagen ging een kolonist verloren</WR_SignalCondition_colony_loss_within_3_days>
+  <WR_SignalCondition_colony_no_recent_loss>Geen recent verlies van kolonisten</WR_SignalCondition_colony_no_recent_loss>
+  <WR_SignalCondition_colony_not_best_at_skill>Niet de beste in de kolonie in deze vaardigheid</WR_SignalCondition_colony_not_best_at_skill>
+  <WR_SignalCondition_cycle_daily>Verandert dagelijks</WR_SignalCondition_cycle_daily>
+  <WR_SignalCondition_environment_near_fire>Bij vuur</WR_SignalCondition_environment_near_fire>
+  <WR_SignalCondition_equipment_ranged_weapon>Met een uitgerust afstandswapen</WR_SignalCondition_equipment_ranged_weapon>
+  <WR_SignalCondition_location_away_from_home>Weg van huis</WR_SignalCondition_location_away_from_home>
+  <WR_SignalCondition_location_home>Thuis</WR_SignalCondition_location_home>
+  <WR_SignalCondition_mood_tier_apathetic>Apathische fase</WR_SignalCondition_mood_tier_apathetic>
+  <WR_SignalCondition_mood_tier_greater>Gepassioneerde fase</WR_SignalCondition_mood_tier_greater>
+  <WR_SignalCondition_mood_tier_interested>Geïnteresseerde fase</WR_SignalCondition_mood_tier_interested>
+  <WR_SignalCondition_mood_tier_major>Zeer geïnteresseerde fase</WR_SignalCondition_mood_tier_major>
+  <WR_SignalCondition_mood_tier_none>Fase zonder passie</WR_SignalCondition_mood_tier_none>
+  <WR_SignalCondition_pain_max_0_3>Pijn maximaal 30%</WR_SignalCondition_pain_max_0_3>
+  <WR_SignalCondition_pain_min_0_3>Pijn minstens 30%</WR_SignalCondition_pain_min_0_3>
+  <WR_SignalCondition_passion_conflicting>Een passie voor Schieten botst met deze eigenschap</WR_SignalCondition_passion_conflicting>
+  <WR_SignalCondition_psychic_sensitivity_tier_critical>Kritieke psychische gevoeligheid</WR_SignalCondition_psychic_sensitivity_tier_critical>
+  <WR_SignalCondition_psychic_sensitivity_tier_major>Grote psychische gevoeligheid</WR_SignalCondition_psychic_sensitivity_tier_major>
+  <WR_SignalCondition_psychic_sensitivity_tier_minor>Lage psychische gevoeligheid</WR_SignalCondition_psychic_sensitivity_tier_minor>
+  <WR_SignalCondition_psychic_sensitivity_tier_normal>Normale psychische gevoeligheid</WR_SignalCondition_psychic_sensitivity_tier_normal>
+  <WR_SignalCondition_psychic_sensitivity_tier_nullified>Psychische gevoeligheid tenietgedaan</WR_SignalCondition_psychic_sensitivity_tier_nullified>
+  <WR_SignalCondition_range_long>Op lange afstand</WR_SignalCondition_range_long>
+  <WR_SignalCondition_range_medium>Op middellange afstand</WR_SignalCondition_range_medium>
+  <WR_SignalCondition_ritual_no_recent_quality_outcome>Geen recent geslaagd ritueel</WR_SignalCondition_ritual_no_recent_quality_outcome>
+  <WR_SignalCondition_ritual_recent_quality_outcome>Recent geslaagd ritueel</WR_SignalCondition_ritual_recent_quality_outcome>
+  <WR_SignalCondition_setting_vse_critical_affects_other_skills>Kritieke passie beïnvloedt andere vaardigheden volgens de modinstellingen</WR_SignalCondition_setting_vse_critical_affects_other_skills>
+  <WR_SignalCondition_sight_blind>Blind</WR_SignalCondition_sight_blind>
+  <WR_SignalCondition_sight_not_blind>Niet blind</WR_SignalCondition_sight_not_blind>
+  <WR_SignalCondition_social_same_passion_opinion>Verbetert de mening over pionnen met dezelfde passie</WR_SignalCondition_social_same_passion_opinion>
+  <WR_SignalCondition_state_drunk>Dronken</WR_SignalCondition_state_drunk>
+  <WR_SignalCondition_state_no_recent_lovin>Geen recent liefdesspel</WR_SignalCondition_state_no_recent_lovin>
+  <WR_SignalCondition_state_not_drunk>Niet dronken</WR_SignalCondition_state_not_drunk>
+  <WR_SignalCondition_state_not_smokeleaf_high>Niet onder invloed van rookblad</WR_SignalCondition_state_not_smokeleaf_high>
+  <WR_SignalCondition_state_recent_lovin>Recent liefdesspel</WR_SignalCondition_state_recent_lovin>
+  <WR_SignalCondition_state_smokeleaf_high>Onder invloed van rookblad</WR_SignalCondition_state_smokeleaf_high>
+  <WR_SignalCondition_time_20_5>Tussen 20:00 en 05:00</WR_SignalCondition_time_20_5>
+  <WR_SignalCondition_time_day>Overdag</WR_SignalCondition_time_day>
+  <WR_SignalCondition_weather_not_raining>Het regent niet</WR_SignalCondition_weather_not_raining>
+  <WR_SignalCondition_weather_raining>Het regent</WR_SignalCondition_weather_raining>
+  <WR_SignalCondition_work_type_hated>Gehaat werk</WR_SignalCondition_work_type_hated>
+  <WR_SignalCondition_work_compelled_aversion>Haat de vaardigheid maar voelt zich gedwongen haar te leren</WR_SignalCondition_work_compelled_aversion>
+  <WR_SignalCondition_work_enjoyment>Veel plezier in verwant werk</WR_SignalCondition_work_enjoyment>
+  <WR_SignalCondition_work_passionate>Stemming door werk met passie</WR_SignalCondition_work_passionate>
+  <WR_SignalEffect_SkillLevel>Vaardigheidsniveau</WR_SignalEffect_SkillLevel>
+  <WR_SignalEffect_Passion>Passie</WR_SignalEffect_Passion>
+  <WR_SignalEffect_LearningRate>Leersnelheid</WR_SignalEffect_LearningRate>
+  <WR_SignalEffect_SkillDecay>Vaardigheidsverval</WR_SignalEffect_SkillDecay>
+  <WR_SignalEffect_WorkSpeed>Werksnelheid</WR_SignalEffect_WorkSpeed>
+  <WR_SignalEffect_Accuracy>Nauwkeurigheid</WR_SignalEffect_Accuracy>
+  <WR_SignalEffect_AimingDelay>Richttijd</WR_SignalEffect_AimingDelay>
+  <WR_SignalEffect_Quality>Kwaliteit</WR_SignalEffect_Quality>
+  <WR_SignalEffect_Yield>Opbrengst</WR_SignalEffect_Yield>
+  <WR_SignalEffect_Damage>Schade</WR_SignalEffect_Damage>
+  <WR_SignalEffect_HitChance>Raakkans</WR_SignalEffect_HitChance>
+  <WR_SignalEffect_Dodge>Ontwijken</WR_SignalEffect_Dodge>
+  <WR_SignalEffect_Mood>Stemming</WR_SignalEffect_Mood>
+  <WR_SignalEffect_WorkPreference>Werkvoorkeur</WR_SignalEffect_WorkPreference>
+  <WR_SignalEffect_Capability>Vermogen</WR_SignalEffect_Capability>
+  <WR_SignalEffect_MentalBreak>Mentale inzinking</WR_SignalEffect_MentalBreak>
+  <WR_SignalEffect_StatModifier>Statistiekmodificator</WR_SignalEffect_StatModifier>
+  <WR_SignalUnit_Scalar>punten</WR_SignalUnit_Scalar>
+  <WR_SignalUnit_StatValue>statistiekwaarde</WR_SignalUnit_StatValue>
+  <WR_SignalUnit_SkillLevels>vaardigheidsniveaus</WR_SignalUnit_SkillLevels>
+  <WR_SignalUnit_PassionLevels>passieniveaus</WR_SignalUnit_PassionLevels>
+  <WR_SignalUnit_MoodPoints>stemmingspunten</WR_SignalUnit_MoodPoints>
+  <WR_SignalUnit_Days>dagen</WR_SignalUnit_Days>
+  <WR_SignalMinorPassion>Milde passie</WR_SignalMinorPassion>
+  <WR_SignalMajorPassion>Brandende passie</WR_SignalMajorPassion>
+  <WR_SignalOtherSkills>Andere vaardigheden</WR_SignalOtherSkills>
+  <WR_SignalCurrentSkill>Huidige vaardigheid</WR_SignalCurrentSkill>
+  <WR_SignalUnknownMod>Onbekende mod</WR_SignalUnknownMod>
+  <WR_SignalConditionHediff>Gezondheidstoestand: {0}</WR_SignalConditionHediff>
+  <WR_SignalConditionPrecept>Voorschrift: {0}</WR_SignalConditionPrecept>
+  <WR_SignalConditionTrait>Eigenschap: {0}</WR_SignalConditionTrait>
+  <WR_SignalEffectSubject>{0}: {1}</WR_SignalEffectSubject>
+  <WR_SignalTargetViolentWork>Gewelddadig werk</WR_SignalTargetViolentWork>
+  <WR_SignalTargetRangedWeapon>Afstandswapens</WR_SignalTargetRangedWeapon>
+  <WR_SignalTargetConstantDebuff>Voortdurende stemmingsstraf</WR_SignalTargetConstantDebuff>
+</LanguageData>

@@ -129,7 +129,7 @@ namespace WorkRoles.UI
             if (!report.NullOrEmpty()) return report!;
             ActivitySnapshot value = Resolve(pawn);
             string label = value.RoleId >= 0
-                ? store?.RoleById(value.RoleId)?.label ?? ""
+                ? store?.RoleById(value.RoleId)?.DisplayLabel ?? ""
                 : value.Label!; // non-role snapshots always carry a label
             return label.UncapitalizeFirst();
         }

@@ -40,6 +40,8 @@ namespace WorkRoles.Core
         public string? fileId;
         public string? label;
         public string? templateDef;
+        public string? generatedWorkTypeDefName;
+        public bool customName;
         public string? group;   // role-list group name; null = the Default group
         public string? groupId;
         public string? colorRef;
@@ -82,6 +84,7 @@ namespace WorkRoles.Core
     {
         public string? fileId;
         public string? name;
+        public string? nameSourceDef;
 
         public static implicit operator FileGroup(string name) => new FileGroup { name = name };
         public override string ToString() => name ?? "";
@@ -244,6 +247,8 @@ namespace WorkRoles.Core
                     var element = new XElement("Group", new XAttribute("name", group.name ?? ""));
                     if (!string.IsNullOrEmpty(group.fileId))
                         element.Add(new XAttribute("fileId", group.fileId));
+                    if (!string.IsNullOrEmpty(group.nameSourceDef))
+                        element.Add(new XAttribute("nameSourceDef", group.nameSourceDef));
                     groups.Add(element);
                 }
                 root.Add(groups);
@@ -313,6 +318,9 @@ namespace WorkRoles.Core
                 element.Add(new XAttribute("fileId", role.fileId));
             if (!string.IsNullOrEmpty(role.templateDef))
                 element.Add(new XAttribute("id", role.templateDef));
+            if (!string.IsNullOrEmpty(role.generatedWorkTypeDefName))
+                element.Add(new XAttribute("nameSourceWorkType", role.generatedWorkTypeDefName));
+            if (role.customName) element.Add(new XAttribute("customName", "true"));
             if (!string.IsNullOrEmpty(role.group))
                 element.Add(new XAttribute("group", role.group));
             if (!string.IsNullOrEmpty(role.groupId))
@@ -456,7 +464,8 @@ namespace WorkRoles.Core
                 {
                     doc.groups.Add(name!); // guarded by IsNullOrEmpty above
                     doc.groupsWithIds.Add(new FileGroup
-                        { fileId = EmptyToNull(fileId), name = name });
+                        { fileId = EmptyToNull(fileId), name = name,
+                            nameSourceDef = EmptyToNull(groupEl.Attribute("nameSourceDef")?.Value?.Trim()) });
                 }
             }
             foreach (var roleEl in root.Element("Roles")?.Elements("Role")
@@ -696,6 +705,8 @@ namespace WorkRoles.Core
                 fileId = EmptyToNull(el.Attribute("fileId")?.Value?.Trim()),
                 label = label,
                 templateDef = el.Attribute("id")?.Value,
+                generatedWorkTypeDefName = EmptyToNull(el.Attribute("nameSourceWorkType")?.Value?.Trim()),
+                customName = string.Equals(el.Attribute("customName")?.Value, "true", StringComparison.OrdinalIgnoreCase),
                 group = el.Attribute("group")?.Value?.Trim(),
                 groupId = EmptyToNull(el.Attribute("groupId")?.Value?.Trim()),
             };

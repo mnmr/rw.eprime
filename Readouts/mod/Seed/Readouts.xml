@@ -1,25 +1,25 @@
 <Readouts>
   <Pools>
-    <Pool Name="Eggs">
+    <Pool Name="Eggs" SeedName="Eggs">
       <Member>@EggsUnfertilized</Member>
     </Pool>
-    <Pool Name="Fertilized eggs">
+    <Pool Name="Fertilized eggs" SeedName="Fertilized eggs">
       <Member>@EggsFertilized</Member>
     </Pool>
-    <Pool Name="Hard Drugs">
+    <Pool Name="Hard Drugs" SeedName="Hard Drugs">
       <Member MayRequire="davai.sortedcategories">@DavaiHardDrugs</Member>
       <Member>Yayo</Member>
       <Member>Flake</Member>
       <Member>WakeUp</Member>
       <Member>GoJuice</Member>
     </Pool>
-    <Pool Name="Leathers">
+    <Pool Name="Leathers" SeedName="Leathers">
       <Member>@Leathers</Member>
     </Pool>
-    <Pool Name="Meals" Icon="MealLavish">
+    <Pool Name="Meals" SeedName="Meals" Icon="MealLavish">
       <Member>@FoodMeals</Member>
     </Pool>
-    <Pool Name="Meats">
+    <Pool Name="Meats" SeedName="Meats">
       <Member>Meat_Bear_Grizzly</Member>
       <Member>Meat_Cassowary</Member>
       <Member>Meat_Cougar</Member>
@@ -116,7 +116,7 @@
       <Member MayRequire="Ludeon.RimWorld.Odyssey">Fish_Flounder</Member>
       <Member MayRequire="Ludeon.RimWorld.Odyssey">Fish_Toxfish</Member>
     </Pool>
-    <Pool Name="Mechs" MayRequire="Ludeon.RimWorld.Biotech">
+    <Pool Name="Mechs" SeedName="Mechs" MayRequire="Ludeon.RimWorld.Biotech">
       <Member>SignalChip</Member>
       <Member>NanostructuringChip</Member>
       <Member>PowerfocusChip</Member>
@@ -124,7 +124,7 @@
       <Member>SubcoreRegular</Member>
       <Member>SubcoreHigh</Member>
     </Pool>
-    <Pool Name="Mortar shells">
+    <Pool Name="Mortar shells" SeedName="Mortar shells">
       <Member>Shell_AntigrainWarhead</Member>
       <Member MayRequire="Ludeon.RimWorld.Anomaly">Shell_Deadlife</Member>
       <Member>Shell_EMP</Member>
@@ -134,10 +134,10 @@
       <Member>Shell_Smoke</Member>
       <Member MayRequire="Ludeon.RimWorld.Biotech">Shell_Toxic</Member>
     </Pool>
-    <Pool Name="Plant food">
+    <Pool Name="Plant food" SeedName="Plant food">
       <Member>@PlantFoodRaw</Member>
     </Pool>
-    <Pool Name="Sera">
+    <Pool Name="Sera" SeedName="Sera">
       <Member MayRequire="davai.sortedcategories">@DavaiSera</Member>
       <Member>MechSerumHealer</Member>
       <Member>MechSerumResurrector</Member>
@@ -147,24 +147,24 @@
       <Member MayRequire="Ludeon.RimWorld.Anomaly">MindNumbSerum</Member>
       <Member MayRequire="Ludeon.RimWorld.Anomaly">GhoulResurrectionSerum</Member>
     </Pool>
-    <Pool Name="Social Drugs">
+    <Pool Name="Social Drugs" SeedName="Social Drugs">
       <Member MayRequire="davai.sortedcategories">@DavaiSocialDrugs</Member>
       <Member>Beer</Member>
       <Member>SmokeleafJoint</Member>
       <Member>Ambrosia</Member>
     </Pool>
-    <Pool Name="Stone blocks">
+    <Pool Name="Stone blocks" SeedName="Stone blocks">
       <Member>@StoneBlocks</Member>
     </Pool>
-    <Pool Name="Stone chunks" Icon="ChunkMarble">
+    <Pool Name="Stone chunks" SeedName="Stone chunks" Icon="ChunkMarble">
       <Member>@StoneChunks</Member>
     </Pool>
-    <Pool Name="Wools">
+    <Pool Name="Wools" SeedName="Wools">
       <Member>@Wools</Member>
     </Pool>
   </Pools>
   <Groups>
-    <Group Name="Food">
+    <Group Name="Food" SeedName="Food">
       <Tier>
         <Slot>pool:Meals</Slot>
         <Slot MayRequire="Ludeon.RimWorld.Biotech">BabyFood</Slot>
@@ -184,7 +184,7 @@
         <Slot MayRequire="Ludeon.RimWorld.Biotech">~HemogenPack</Slot>
       </Tier>
     </Group>
-    <Group Name="Raw">
+    <Group Name="Raw" SeedName="Raw">
       <Tier>
         <Slot>pool:Meats</Slot>
         <Slot>pool:Plant food</Slot>
@@ -202,7 +202,7 @@
         <Slot>~Wort</Slot>
       </Tier>
     </Group>
-    <Group Name="Medicine">
+    <Group Name="Medicine" SeedName="Medicine">
       <Tier>
         <Slot>MedicineHerbal</Slot>
         <Slot>MedicineIndustrial</Slot>
@@ -213,7 +213,7 @@
         <Slot>Cloth</Slot>
       </Tier>
     </Group>
-    <Group Name="Drugs">
+    <Group Name="Drugs" SeedName="Drugs">
       <Tier>
         <Slot>Penoxycyline</Slot>
         <Slot>~PsychiteTea</Slot>
@@ -225,7 +225,7 @@
         <Slot>pool:Sera</Slot>
       </Tier>
     </Group>
-    <Group Name="Textiles">
+    <Group Name="Textiles" SeedName="Textiles">
       <Tier>
         <Slot>Cloth</Slot>
         <Slot>pool:Leathers</Slot>
@@ -237,7 +237,7 @@
         <Slot>~Synthread</Slot>
       </Tier>
     </Group>
-    <Group Name="Materials">
+    <Group Name="Materials" SeedName="Materials">
       <Tier>
         <Slot>Steel</Slot>
         <Slot>WoodLog</Slot>
@@ -259,7 +259,7 @@
         <Slot MayRequire="Ludeon.RimWorld.Anomaly">~Shard</Slot>
       </Tier>
     </Group>
-    <Group Name="Wealth">
+    <Group Name="Wealth" SeedName="Wealth">
       <Tier>
         <Slot>Silver</Slot>
         <Slot>Gold</Slot>

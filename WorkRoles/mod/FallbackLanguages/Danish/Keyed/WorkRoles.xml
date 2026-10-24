@@ -1,0 +1,633 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_ColonistsTab>Kolonister</WR_ColonistsTab>
+  <WR_RecommendationsTab>Anbefalinger</WR_RecommendationsTab>
+  <WR_OptionsTab>Indstillinger</WR_OptionsTab>
+  <WR_CompatSection>Kompatibilitetsindstillinger</WR_CompatSection>
+  <WR_OptNumeric>Vis numeriske prioriteter i gitre</WR_OptNumeric>
+  <WR_TipOff>Fra</WR_TipOff>
+  <WR_TipOn>Til</WR_TipOn>
+  <WR_OptNumericTipWhat>Grundspillets indstilling for »manuelle prioriteter«, pr. gemt spil.</WR_OptNumericTipWhat>
+  <WR_OptNumericTipOff>Prioritetsgitre (også i mods som Numbers) viser flueben</WR_OptNumericTipOff>
+  <WR_OptNumericTipOn>Prioritetsgitre viser tal</WR_OptNumericTipOn>
+  <WR_OptNumericTipWhy>Indstillingen findes her, fordi WorkRoles erstatter grundspillets Arbejde-fane, hvor den lå før.</WR_OptNumericTipWhy>
+  <WR_OptVanillaRange>Rapportér grundspillets prioriteter 0–4 til andre mods</WR_OptVanillaRange>
+  <WR_OptVanillaRangeTipWhat>WorkRoles ordner arbejde med entydige prioriteter (fortløbende tal fra 1).</WR_OptVanillaRangeTipWhat>
+  <WR_OptVanillaRangeTipOff>Andre mods ser disse prioriteter uændret</WR_OptVanillaRangeTipOff>
+  <WR_OptVanillaRangeTipOn>Prioriteter oversættes til grundspillets interval 0–4</WR_OptVanillaRangeTipOn>
+  <WR_OptEmergencyRule>Kun de første 5 roller afbryder det igangværende arbejde ved nødsituationer</WR_OptEmergencyRule>
+  <WR_OptEmergencyRuleTipWhat>Bestemmer pr. gemt spil, hvilke akutte opgaver (brandslukning, akut behandling og at gå i seng for akut behandling) der må afbryde søvn, måltider og andre opgaver.</WR_OptEmergencyRuleTipWhat>
+  <WR_OptEmergencyRuleTipOff>Alle akutte opgaver i en aktiveret rolle afbryder kolonistens igangværende opgave</WR_OptEmergencyRuleTipOff>
+  <WR_OptEmergencyRuleTipOn>Kun akutte opgaver fra kolonistens første 5 aktiverede roller afbryder den igangværende opgave; i senere roller udføres de på deres normale plads i rækkefølgen</WR_OptEmergencyRuleTipOn>
+  <WR_OptEmergencyRuleTipWhy>Når indstillingen er slået til, som den er som standard, venter reserveroller sidst i rækken på tur: En kolonist med Læge som sin sjette rolle fortsætter med at lave mad, mens den primære læge behandler patienten med akut behov for behandling. Slå den fra, hvis alle kolonister skal reagere på enhver nødsituation, de kan håndtere.</WR_OptEmergencyRuleTipWhy>
+  <WR_AutomationSection>Automatiseringsindstillinger</WR_AutomationSection>
+  <WR_OptAutoOptimize>Optimér kolonier automatisk hver spiltime</WR_OptAutoOptimize>
+  <WR_OptAutoOptimizeTipWhat>Kører Ret min koloni automatisk for hver koloni og anvender ændringerne, pr. gemt spil.</WR_OptAutoOptimizeTipWhat>
+  <WR_OptAutoOptimizeTipOff>Rolletildelinger ændres kun, når du redigerer dem</WR_OptAutoOptimizeTipOff>
+  <WR_OptAutoOptimizeTipOn>Anbefalede tildelinger anvendes ved starten af hver spiltime</WR_OptAutoOptimizeTipOn>
+  <WR_OptAutoOptimizeTipWhy>Fastgjorte tildelinger bevares, også udelukkede roller. Intet skrives, når en kolonist allerede svarer til anbefalingen.</WR_OptAutoOptimizeTipWhy>
+  <WR_AutoOptimizeConfirmApply>Anvend udfører ændringerne nedenfor nu og slår automatisk timeoptimering til. Mens den er slået til, skjules knapperne Ret min koloni og Gør det; du kan stadig tildele, omarrangere og fastgøre roller som normalt.</WR_AutoOptimizeConfirmApply>
+  <WR_AutoOptimizeGlobalWarning>Du har flere kolonier: automatisk optimering er GLOBAL og ændrer rolletildelinger i ALLE kolonier hver time. Forhåndsvisningen nedenfor viser kun ændringer for den aktuelle koloni.</WR_AutoOptimizeGlobalWarning>
+  <WR_DisplaySection>Visningsindstillinger</WR_DisplaySection>
+  <WR_OptSkillCaptions>Vis bedste færdigheder under kolonistnavne</WR_OptSkillCaptions>
+  <WR_OptSkillCaptionsTip>Hver kolonistrække har en lille tekst under navnet med kolonistens bedste arbejdsfærdigheder og niveauer, farvet efter egnethed. Slå dette fra for at vise navnet på sin egen linje.</WR_OptSkillCaptionsTip>
+  <WR_OptVerdictsColonists>Vis vurderinger på kolonisters rollemærker</WR_OptVerdictsColonists>
+  <WR_OptVerdictsColonistsTip>Hvert rollemærke i kolonisttabellen viser et par egnethedsstjerner for indehaveren efter anbefalingssystemets vurdering: hvide stjerner for gode vurderinger (én stærk, to fremragende, guld enestående), røde for dårlige (én svag, to elendig), grå for neutral.</WR_OptVerdictsColonistsTip>
+  <WR_OptVerdictsPalette>Vis vurderinger for den valgte kolonist i rollepaletten</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>Palettens mærker viser, hvor godt hver rolle passer til den valgte kolonist.</WR_OptVerdictsPaletteTip>
+  <WR_OptVerdictsRecommendations>Vis vurderinger på anbefalede rollemærker</WR_OptVerdictsRecommendations>
+  <WR_OptPaletteGrouping>Gruppering af rollepalet</WR_OptPaletteGrouping>
+  <WR_OptVerdictsRecommendationsTip>Anbefalede rollemærker (statistikpanel og ændringsvisninger) viser egnethedsvurderingen for den kolonist, de anbefales til.</WR_OptVerdictsRecommendationsTip>
+  <WR_RecGlobalPanel>Globale indstillinger</WR_RecGlobalPanel>
+  <WR_RecGlobalPanelHelp>Disse indstillinger ændrer anbefalingssystemets bedømmelse og rangering af kandidater samt rækkefølgen i den endelige anbefalingsliste. Brug Nulstil for at gendanne standarder, hvis du fortryder dine ændringer.</WR_RecGlobalPanelHelp>
+  <WR_RecRolePanel>Rolleindstillinger</WR_RecRolePanel>
+  <WR_RecRolePanelHelp>Her vises alle roller undtagen dem under Udelukkede roller. Udvid en rolle for at justere dens anbefalingsindstillinger. Roller ordnes automatisk for hver kolonist; Jæger beholder sin placering efter skydefærdighed.</WR_RecRolePanelHelp>
+  <WR_RecExcludedHeader>Udelukkede roller</WR_RecExcludedHeader>
+  <WR_RecExcludedHelp>Roller på denne liste anbefales aldrig, heller ikke gennem træningsforløb eller automatiske roller. Eksisterende fastgjorte tildelinger er beskyttet. Brug Tilføj rolle for at udelukke en rolle; fjern dens mærke for at tillade anbefalinger igen.</WR_RecExcludedHelp>
+  <WR_RecExcludedTip>Udelukkelser gælder anbefalinger for alle kolonister i dette spil, også Ret min koloni og automatisk optimering. Du kan stadig tildele udelukkede roller manuelt. Redigering af listen ændrer ikke aktuelle tildelinger. Anvendelse af anbefalinger fjerner udelukkede roller, der ikke er fastgjort, og bevarer fastgjorte tildelinger.</WR_RecExcludedTip>
+  <WR_RecExcludedChipTip>Denne rolle anbefales aldrig. Klik på fjernikonet for at tillade anbefalinger igen og gendanne posten under Rolleindstillinger. De gemte indstillinger bevares.</WR_RecExcludedChipTip>
+  <WR_RecExcludedAddTip>Vælg en rolle, anbefalingssystemet aldrig skal anbefale. Alle roller kan udelukkes, også træningsroller, automatiske, betingede, blokerende og sammensatte roller.</WR_RecExcludedAddTip>
+  <WR_RecExcludedReason>Denne rolle er udelukket fra anbefalinger. Fjern den fra Udelukkede roller på fanen Anbefalinger for at tillade den igen.</WR_RecExcludedReason>
+  <WR_RecTuneReset>Nulstil</WR_RecTuneReset>
+  <WR_RecTuneResetTip>Gendanner dette afsnits indstillinger til standardværdierne.</WR_RecTuneResetTip>
+  <WR_RecTuneCellHint>Klik på en værdi for at hæve den, højreklik for at sænke den.</WR_RecTuneCellHint>
+  <WR_StepModifiersTip>Klik: 1 trin.\nShift: 5 trin.\nCtrl: 10 trin.\nCtrl+Shift: spring til grænsen.</WR_StepModifiersTip>
+  <WR_SignalLetterAwful>E</WR_SignalLetterAwful>
+  <WR_SignalLetterPoor>S</WR_SignalLetterPoor>
+  <WR_SignalLetterNeutral>N</WR_SignalLetterNeutral>
+  <WR_SignalLetterStrong>S</WR_SignalLetterStrong>
+  <WR_SignalLetterGreat>F</WR_SignalLetterGreat>
+  <WR_SignalLetterExceptional>E</WR_SignalLetterExceptional>
+  <WR_RecTuneChampionSection>Indstillinger for valg af hovedansvarlig</WR_RecTuneChampionSection>
+  <WR_RecTuneChampionSectionIntro>Hver rolle får først en hovedansvarlig: den kolonist, der er bedst egnet til at bære den. Disse indstillinger afgør, hvem der kvalificerer sig, og hvordan færdighed og signalstyrke vejes mod hinanden.</WR_RecTuneChampionSectionIntro>
+  <WR_RecTuneOrderingSection>Indstillinger for endelig rollerækkefølge</WR_RecTuneOrderingSection>
+  <WR_RecTuneOrderingSectionIntro>Når en kolonists roller er valgt, afgør disse indstillinger deres rækkefølge, som også er arbejdets prioriteringsrækkefølge.</WR_RecTuneOrderingSectionIntro>
+  <WR_RecTuneOptionalSection>Indstillinger for træningsforløb og valgfrie mål</WR_RecTuneOptionalSection>
+  <WR_RecTuneOptionalSectionIntro>Disse indstillinger afgør, hvornår et træningsforløb aktiveres for en kolonist, og hvornår en valgfri rolle med flere færdigheder overhovedet er værd at anbefale.</WR_RecTuneOptionalSectionIntro>
+  <WR_RecTuneLeadSection>Indstillinger for fordeling af hovedroller</WR_RecTuneLeadSection>
+  <WR_RecTuneLeadSectionIntro>Når flere træningsforløb har et fælles mål, fordeler disse indstillinger hovedrollerne mellem forskellige kolonister i stedet for at samle dem på én.</WR_RecTuneLeadSectionIntro>
+  <WR_RecTuneHunterSection>Indstillinger for Jægers placering</WR_RecTuneHunterSection>
+  <WR_RecTuneHunterSectionIntro>En ikke-fastgjort Jæger-rolle placeres dynamisk efter skydefærdighed: bedre skytter jager senere i prioriteringsrækkefølgen, fordi deres tid er mere værd andre steder.</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneCandidateMinimumSignal>Mindste kandidatsignal</WR_RecTuneCandidateMinimumSignal>
+  <WR_RecTuneCandidateMinimumSignalDesc>Laveste signal, som tillades i almindeligt rollevalg. En højere værdi fjerner svagere kandidater før valg af hovedansvarlig og mindste antal indehavere.</WR_RecTuneCandidateMinimumSignalDesc>
+  <WR_RecTuneChampionSkillDivisor>Færdighedsdivisor for hovedansvarlig</WR_RecTuneChampionSkillDivisor>
+  <WR_RecTuneChampionSkillDivisorDesc>Færdighedsbidraget er ceil(færdighedsniveau ÷ denne værdi). En højere værdi mindsker indflydelsen af ren færdighed.</WR_RecTuneChampionSkillDivisorDesc>
+  <WR_RecTuneChampionMultiSkillMinimumCount>Grænse for kombinerede færdigheder</WR_RecTuneChampionMultiSkillMinimumCount>
+  <WR_RecTuneChampionMultiSkillMinimumCountDesc>Mindste antal kvalificerende målfærdigheder, der kræves for at summere hovedansvarliges point. Under dette antal vurderes kun rollens bedste færdighed.</WR_RecTuneChampionMultiSkillMinimumCountDesc>
+  <WR_RecTuneChampionMultiplierRow>Signalmultiplikator</WR_RecTuneChampionMultiplierRow>
+  <WR_RecTuneChampionMultiplierRowDesc>Ganger det afrundede færdighedsbidrag ved hver signalstyrke under valg af hovedansvarlig.</WR_RecTuneChampionMultiplierRowDesc>
+  <WR_RecTuneMultiplierAwfulTip>Elendig. Denne kolonne har kun betydning, når det mindste kandidatsignal tillader elendige kandidater.</WR_RecTuneMultiplierAwfulTip>
+  <WR_RecTuneChampionTieBreakRow>Point ved lighed</WR_RecTuneChampionTieBreakRow>
+  <WR_RecTuneChampionTieBreakRowDesc>Signalpoint, der sammenlignes ved lige point for hovedansvarlige. For roller med flere færdigheder summeres point på tværs af kvalificerende signaler.</WR_RecTuneChampionTieBreakRowDesc>
+  <WR_RecTuneRankedCandidatePrioritySignal>Prioritetssignal for rangerede kandidater</WR_RecTuneRankedCandidatePrioritySignal>
+  <WR_RecTuneRankedCandidatePrioritySignalDesc>Kandidater, der ikke er hovedansvarlige, med dette signal eller bedre rangeres før svagere kandidater, inden minimumspladserne fyldes.</WR_RecTuneRankedCandidatePrioritySignalDesc>
+  <WR_RecTuneSurplusMinimumSignal>Mindstesignal for ekstra tildelinger</WR_RecTuneSurplusMinimumSignal>
+  <WR_RecTuneSurplusMinimumSignalDesc>Når de krævede pladser er fyldt, kan almindelige kandidater med dette signal eller bedre stadig få rollen. Niveauforbedring gælder roller med én færdighed inden for deres træningsinterval; mål med flere færdigheder bruger egnethedskravene for valgfrie mål.</WR_RecTuneSurplusMinimumSignalDesc>
+  <WR_RecTuneOrderingSkillDivisor>Færdighedsdivisor for rækkefølge</WR_RecTuneOrderingSkillDivisor>
+  <WR_RecTuneOrderingSkillDivisorDesc>Færdighedspoint i slutrækkefølgen er ceil(færdighedsniveau ÷ denne værdi). En højere værdi mindsker færdighedens virkning på rollerækkefølgen.</WR_RecTuneOrderingSkillDivisorDesc>
+  <WR_RecTuneOrderingPointsRow>Signalpoint</WR_RecTuneOrderingPointsRow>
+  <WR_RecTuneOrderingPointsRowDesc>Point fra hver signalstyrke, når de endelige anbefalede roller ordnes.</WR_RecTuneOrderingPointsRowDesc>
+  <WR_RecTuneMinimumPickRow>Bonus for minimumsvalg</WR_RecTuneMinimumPickRow>
+  <WR_RecTuneMinimumPickRowDesc>Rækkefølgepoint til den første, anden, tredje og hver senere bonde valgt til at opfylde rollens minimum af indehavere.</WR_RecTuneMinimumPickRowDesc>
+  <WR_RecTuneCategoryPointsRow>Kategoripoint</WR_RecTuneCategoryPointsRow>
+  <WR_RecTuneCategoryPointsRowDesc>Rækkefølgepoint efter betydning for kolonien: Vigtig hæver pligtroller over produktionsarbejde med samme signal, mens Valgfri skubber roller mod listens slutning.</WR_RecTuneCategoryPointsRowDesc>
+  <WR_RecTuneTimePointsRow>Point for tidsbehov</WR_RecTuneTimePointsRow>
+  <WR_RecTuneTimePointsRowDesc>Rækkefølgepoint efter tidsbehov: Deltid placerer hurtige pligter over fuldtidsarbejde med samme signal, mens Lejlighedsvis skubber fyldarbejde mod slutningen.</WR_RecTuneTimePointsRowDesc>
+  <WR_RecTunePathMinimumSignal>Mindstesignal for træningsrolle</WR_RecTunePathMinimumSignal>
+  <WR_RecTunePathMinimumSignalDesc>Laveste signal en rolle må have, når den indgår i et aktivt træningsforløb.</WR_RecTunePathMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumSkillCount>Færdighedsgrænse for valgfrie mål</WR_RecTuneOptionalTargetMinimumSkillCount>
+  <WR_RecTuneOptionalTargetMinimumSkillCountDesc>Antal kvalificerende målfærdigheder, før egnethedstesten for valgfrie mål bruges. Roller med færre kvalificerende færdigheder springer testen over.</WR_RecTuneOptionalTargetMinimumSkillCountDesc>
+  <WR_RecTuneOptionalTargetMinimumSignal>Mindstesignal for valgfrie mål</WR_RecTuneOptionalTargetMinimumSignal>
+  <WR_RecTuneOptionalTargetMinimumSignalDesc>En færdighed skal nå dette signal, før niveauforbedring kan påvirke ekstra tildelinger for én færdighed eller bidrage med egnethedspoint til et valgfrit mål.</WR_RecTuneOptionalTargetMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetStrongLevel>Mellemniveau for færdighedsforbedring</WR_RecTuneOptionalTargetStrongLevel>
+  <WR_RecTuneOptionalTargetStrongLevelDesc>Ved dette færdighedsniveau hæves et svagere kvalificerende signal til det angivne mellemsignal ved ekstra tildelinger for én færdighed og point for valgfrie mål.</WR_RecTuneOptionalTargetStrongLevelDesc>
+  <WR_RecTuneOptionalTargetStrongPromotedSignal>Forbedret mellemsignal</WR_RecTuneOptionalTargetStrongPromotedSignal>
+  <WR_RecTuneOptionalTargetStrongPromotedSignalDesc>Signal brugt til ekstra tildelinger for én færdighed og egnethedspoint for valgfrie mål på eller over mellemniveauet for færdighedsforbedring.</WR_RecTuneOptionalTargetStrongPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetGreatLevel>Højt niveau for færdighedsforbedring</WR_RecTuneOptionalTargetGreatLevel>
+  <WR_RecTuneOptionalTargetGreatLevelDesc>Ved dette færdighedsniveau hæves et svagere kvalificerende signal til det angivne høje signal ved ekstra tildelinger for én færdighed og point for valgfrie mål.</WR_RecTuneOptionalTargetGreatLevelDesc>
+  <WR_RecTuneOptionalTargetGreatPromotedSignal>Forbedret højt signal</WR_RecTuneOptionalTargetGreatPromotedSignal>
+  <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>Signal brugt til ekstra tildelinger for én færdighed og egnethedspoint for valgfrie mål på eller over det høje niveau for færdighedsforbedring.</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumPoints>Mindstepoint for valgfrie mål</WR_RecTuneOptionalTargetMinimumPoints>
+  <WR_RecTuneOptionalTargetMinimumPointsDesc>Mindste sum af signaltrin over den angivne signalgrænse, der kræves for at anbefale et valgfrit mål med flere færdigheder.</WR_RecTuneOptionalTargetMinimumPointsDesc>
+  <WR_RecTuneLeadMinimumConnectedTargets>Forbundne mål før fordeling</WR_RecTuneLeadMinimumConnectedTargets>
+  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Mindste antal forbundne træningsmål, før planlæggeren forsøger at tildele deres hovedroller til forskellige bønder.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
+  <WR_RecTuneLeadMinimumSignal>Mindstesignal for hovedrolle</WR_RecTuneLeadMinimumSignal>
+  <WR_RecTuneLeadMinimumSignalDesc>Laveste tilladte rollesignal for en bonde valgt som hovedansvarlig i et fordelt træningsforløb.</WR_RecTuneLeadMinimumSignalDesc>
+  <WR_RecTuneHunterTiersRow>Højeste skydeniveau pr. trin</WR_RecTuneHunterTiersRow>
+  <WR_RecTuneHunterTiersRowDesc>Grænser for skydefærdighed til Jægers dynamiske placering. Trin 1 placerer Jæger lige efter grundarbejde, trin 2 og 3 efter de midterste og sidste arbejdsroller, og niveauer over trin 4 placerer Jæger sidst.</WR_RecTuneHunterTiersRowDesc>
+  <WR_TrainingSection>Træningsforløb</WR_TrainingSection>
+  <WR_TrainingHelp>Her kan du angive, hvordan kolonister lærer nye færdigheder og udvikler sig mod denne rolle. Et træningsforløb kan have flere intervaller, så roller kan overlappe. Kolonister får anbefalet alle roller på deres aktuelle færdighedsniveau, hvis træningsforløbet anbefales til dem.</WR_TrainingHelp>
+  <WR_TrainingTipWhat>Rollens eget udviklingsforløb: Hver medlemsrolle har et færdighedsinterval, hvor den anbefales. Rollen selv bliver altid i sit forløb.</WR_TrainingTipWhat>
+  <WR_TrainingTipBands>Overlappende intervaller sameksisterer; uden overlap erstatter den senere rolle den tidligere.</WR_TrainingTipBands>
+  <WR_TrainingTipOrder>Tildelinger prioriterer højere intervalminimum. Ved lige intervaller prioriteres bondens svageste rollefærdighed og derefter den gemte forløbsrækkefølge.</WR_TrainingTipOrder>
+  <WR_AddNew>Tilføj ny</WR_AddNew>
+  <WR_WhenPanelCaption>Rolleudvikling: Her angiver du, ved hvilken færdighed de viste roller anbefales. Overlappende roller supplerer hinanden.</WR_WhenPanelCaption>
+  <WR_AddRole>Tilføj rolle</WR_AddRole>
+  <WR_NoContributionRoleTip>Træner ingen af de færdigheder, rollen kræver, så forløbet kan ikke bruge den som træningstrin. Mods kan ændre, hvad der giver XP, så du kan tilføje den alligevel.</WR_NoContributionRoleTip>
+  <WR_ContributesTip>Træner mod denne rolle: {0}.</WR_ContributesTip>
+  <WR_RecClassificationSection>Klassifikation</WR_RecClassificationSection>
+  <WR_RecSkillsSection>Færdigheder</WR_RecSkillsSection>
+  <WR_RecScalingSection>Skalering af tildelinger</WR_RecScalingSection>
+  <WR_RoleColonyMinLabel>Minimum i kolonien:</WR_RoleColonyMinLabel>
+  <WR_RoleColonyMinTip>Det mindste antal tildelinger af denne rolle.</WR_RoleColonyMinTip>
+  <WR_RoleCoverageLabel>Dækning:</WR_RoleCoverageLabel>
+  <WR_RoleCoverageTip>Hvor stor en procentdel af kolonisterne der ideelt bør få rollen.</WR_RoleCoverageTip>
+  <WR_RoleCategoryLabel>Betydning for kolonien:</WR_RoleCategoryLabel>
+  <WR_RoleCategoryTip>Hvor vigtig rollen er ved planlægning af kolonien. »Ikke angivet« lader rollen være uklassificeret.</WR_RoleCategoryTip>
+  <WR_RoleCategoryNone>Ikke angivet</WR_RoleCategoryNone>
+  <WR_RoleCategoryImportant>Vigtig</WR_RoleCategoryImportant>
+  <WR_RoleCategoryNormal>Normal</WR_RoleCategoryNormal>
+  <WR_RoleCategoryOptional>Valgfri</WR_RoleCategoryOptional>
+  <WR_RoleTimeLabel>Tidsbehov:</WR_RoleTimeLabel>
+  <WR_RoleTimeTip>Hvor meget af en kolonists dag arbejdet i rollen typisk optager.</WR_RoleTimeTip>
+  <WR_RoleTimeNone>Ikke angivet</WR_RoleTimeNone>
+  <WR_RoleTimePartTime>Deltid</WR_RoleTimePartTime>
+  <WR_RoleTimeFullTime>Fuldtid</WR_RoleTimeFullTime>
+  <WR_RoleTimeOpportunistic>Lejlighedsvis</WR_RoleTimeOpportunistic>
+  <WR_ChampionPenalty>Straf for gentaget hovedansvar</WR_ChampionPenalty>
+  <WR_ChampionPenaltyTip>Når slået til, får en kolonist, der allerede er hovedansvarlig for andre roller, et fradrag i konkurrencen om denne rolle. Slå fra for roller, hvor flere hovedansvar er i orden, f.eks. lejlighedsvist arbejde.</WR_ChampionPenaltyTip>
+  <WR_PartialCapability>Tillad delvis arbejdsevne</WR_PartialCapability>
+  <WR_PartialCapabilityTip>Når slået til, anbefales rollen til kolonister, der kan udføre nogle, men ikke alle dens opgaver. Den anbefales aldrig til kolonister, der ikke kan udføre nogen af opgaverne. Nyttigt til brede roller, som alle bør have, f.eks. en fælles rolle til ledig tid.</WR_PartialCapabilityTip>
+  <WR_PartialCapabilityLockedTip>Denne rolle anbefales allerede til kolonister, der kan udføre nogle, men ikke alle dens opgaver. Roller uden færdighedskrævende arbejde og jagtroller tillader altid dette.</WR_PartialCapabilityLockedTip>
+  <WR_RoleAgeBandsLabel>Aldersgrupper, der kan tildeles rollen:</WR_RoleAgeBandsLabel>
+  <WR_RoleAgeBandsTip>Kolonister uden for de valgte aldersintervaller får aldrig rollen tildelt eller anbefalet. Klik uden for valget for at medtage alt frem til det interval; klik på første eller sidste valgte interval for at fjerne det, og på et midterinterval for kun at vælge det. Grænserne følger spillets aldre for oplåsning af arbejde. Alle opgaver i rollen er mulige fra {0} år.</WR_RoleAgeBandsTip>
+  <WR_WorkTypesLabel>Arbejdstyper</WR_WorkTypesLabel>
+  <WR_WorkTypesTip>Kun kolonister, der kan udføre de angivne arbejdstyper, er egnede til rollen.\n\nUdledt af de valgte opgaver og vist til orientering.</WR_WorkTypesTip>
+  <WR_UsedSkillsLabel>Brugte</WR_UsedSkillsLabel>
+  <WR_UsedSkillsTip>Viser færdigheder, der påvirker rollens opgaver. Hold markøren over en færdighed for at se virkningen.\n\nUdledt af de valgte opgaver og vist til orientering.</WR_UsedSkillsTip>
+  <WR_TrainedSkillsLabel>Trænede</WR_TrainedSkillsLabel>
+  <WR_TrainedSkillsTip>Viser færdigheder, der får XP fra rollens opgaver.\n\nUdledt af de valgte opgaver og vist til orientering.</WR_TrainedSkillsTip>
+  <WR_GatedSkillsLabel>Niveaukrav</WR_GatedSkillsLabel>
+  <WR_GatedSkillsTip>Viser færdigheder, kolonister skal have til visse opgaver i rollen. Mindsteniveauet afhænger af opskrift, plante eller bygning. Hold markøren over færdigheder for detaljer.\n\nUdledt af de valgte opgaver og vist til orientering.</WR_GatedSkillsTip>
+  <WR_RecMoreContentGates>{0} flere</WR_RecMoreContentGates>
+  <WR_EffectSpeed>Gør arbejdet hurtigere</WR_EffectSpeed>
+  <WR_EffectQuality>Forbedrer kvaliteten</WR_EffectQuality>
+  <WR_EffectYield>Øger udbyttet</WR_EffectYield>
+  <WR_EffectSuccess>Øger chancen for succes</WR_EffectSuccess>
+  <WR_RequiredSkillsLabel>Påkrævede</WR_RequiredSkillsLabel>
+  <WR_RequiredSkillsTip>Valgfrie ufravigelige krav for rollen. En kolonist med en deaktiveret påkrævet færdighed kan ikke få rollen anbefalet. Niveauet påvirker ikke dette krav; det er adskilt fra indholdets minimumskrav under Niveaukrav.</WR_RequiredSkillsTip>
+  <WR_AddSkill>Tilføj færdighed</WR_AddSkill>
+  <WR_AddSkillTip>Tilføj et udtrykkeligt ufravigeligt færdighedskrav. Det ændrer ikke rollens udledte brugte eller trænede færdigheder.</WR_AddSkillTip>
+  <WR_RemoveSkillTip>Fjern dette udtrykkelige færdighedskrav.</WR_RemoveSkillTip>
+  <WR_RoleMissingRequiredSkills>Påkrævede færdigheder deaktiveret for {0}: {1}.</WR_RoleMissingRequiredSkills>
+  <WR_PathAddRoleTip>Tilføjer en rolle til dette forløb.</WR_PathAddRoleTip>
+  <WR_BandChipTip>Træk i en ende for at ændre færdighedsintervallet, eller i midten for at flytte det.</WR_BandChipTip>
+  <WR_PriorityGridTitle>Prioritetsgitter</WR_PriorityGridTitle>
+  <WR_ShowPriorityGridTip>Vis prioritetsgitteret for alle viste kolonister med de aktive rolle- og stedfiltre (rå prioriteter eller grundspillets 0–4, som kan skiftes i dialogen).</WR_ShowPriorityGridTip>
+  <WR_GridModeRaw>WorkRoles-prioriteter</WR_GridModeRaw>
+  <WR_GridModeVanilla>Grundspillets prioriteter</WR_GridModeVanilla>
+  <WR_ResizeGripTip>Træk for at ændre vinduets størrelse (det kan kun vokse fra størrelsen tilpasset indholdet). Dobbeltklik for automatisk størrelse igen.</WR_ResizeGripTip>
+  <WR_RolesTab>Roller</WR_RolesTab>
+  <WR_HelpTab>Hjælp</WR_HelpTab>
+  <WR_HelpChapterStart>Start</WR_HelpChapterStart>
+  <WR_HelpChapterBasics>Grundlæggende</WR_HelpChapterBasics>
+  <WR_HelpChapterEditing>Redigering af roller</WR_HelpChapterEditing>
+  <WR_HelpChapterOrganizing>Organisering</WR_HelpChapterOrganizing>
+  <WR_HelpChapterRecommendations>Anbefalinger</WR_HelpChapterRecommendations>
+  <WR_HelpChapterAdvanced>Avanceret</WR_HelpChapterAdvanced>
+  <WR_HelpReload>Genindlæs</WR_HelpReload>
+  <WR_HelpDemoChipA>Læge</WR_HelpDemoChipA>
+  <WR_HelpDemoChipB>Landmand</WR_HelpDemoChipB>
+  <WR_HelpDemoChipC>Bærer</WR_HelpDemoChipC>
+  <WR_HelpTourHeader>Guidet rundvisning</WR_HelpTourHeader>
+  <WR_HelpTourProgress>{0} af {1} emner læst</WR_HelpTourProgress>
+  <WR_HelpTourComplete>Du er klar!</WR_HelpTourComplete>
+  <WR_HelpTourCompleteHint>Du kender det grundlæggende. Kapitlerne ovenfor dækker resten.</WR_HelpTourCompleteHint>
+  <WR_ClusterEveryone>Alle</WR_ClusterEveryone>
+  <WR_ClusterUnskilled>Uden færdighedskrav</WR_ClusterUnskilled>
+  <WR_OddJobsRole>Småopgaver</WR_OddJobsRole>
+  <WR_BlockerRole>Blokerende rolle</WR_BlockerRole>
+  <WR_BlockerRoleTipWhat>En blokerende rolles opgaver udføres aldrig: de blokeres (»vil ikke udføre«), selv hvis en senere rolle indeholder dem.</WR_BlockerRoleTipWhat>
+  <WR_BlockerRoleTipWhy>Roller før den blokerende rolle har stadig forrang, så du kan tillade undtagelser ved at placere en rolle tidligere.</WR_BlockerRoleTipWhy>
+  <WR_ReasonFireFear>Genetisk skrækslagen for ild: blokerer brandslukning.</WR_ReasonFireFear>
+  <WR_RoleTipEnabled>aktiveret</WR_RoleTipEnabled>
+  <WR_RoleTipDisabled>DEAKTIVERET globalt</WR_RoleTipDisabled>
+  <WR_RoleTipDisabledHere>DEAKTIVERET for denne kolonist</WR_RoleTipDisabledHere>
+  <WR_RoleTipDisabledBoth>DEAKTIVERET globalt og for denne kolonist</WR_RoleTipDisabledBoth>
+  <WR_RoleTipForcedOn>aktiveret, tvunget til for denne kolonist</WR_RoleTipForcedOn>
+  <WR_RoleTipForcedOnGlobalOff>TVUNGET TIL for denne kolonist (rollen er DEAKTIVERET globalt)</WR_RoleTipForcedOnGlobalOff>
+  <WR_BadgeBlocker>blokerende</WR_BadgeBlocker>
+  <WR_BadgeHours>begrænsede timer</WR_BadgeHours>
+  <WR_BadgeLocation>begrænsede steder</WR_BadgeLocation>
+  <WR_TipJobsLabel>Opgaver</WR_TipJobsLabel>
+  <WR_TipSkillsLabel>Færdigheder</WR_TipSkillsLabel>
+  <WR_TipTrainingHeader>Træning</WR_TipTrainingHeader>
+  <WR_TipTrainingRecommend>Anbefales til kolonister med færdighed {0}</WR_TipTrainingRecommend>
+  <WR_TipTrainingPath>på vej mod {0}</WR_TipTrainingPath>
+  <WR_TipBestFitsLabel>Bedst egnede</WR_TipBestFitsLabel>
+  <WR_TipWholeType>{0} (alle opgaver)</WR_TipWholeType>
+  <WR_TipMore>+{0} flere</WR_TipMore>
+  <WR_RoleCapNeverDo>{0} vil aldrig udføre {1}</WR_RoleCapNeverDo>
+  <WR_RoleCapAllJobs>nogen af opgaverne i denne rolle</WR_RoleCapAllJobs>
+  <WR_RoleCapSomeJobs>{0} af de {1} opgaver i denne rolle</WR_RoleCapSomeJobs>
+  <WR_RoleJobIncapable>ude af stand til dette arbejde</WR_RoleJobIncapable>
+  <WR_RoleJobNoRangedWeapon>intet afstandsvåben</WR_RoleJobNoRangedWeapon>
+  <WR_RoleJobTooYoung>for ung, muligt fra {0} år</WR_RoleJobTooYoung>
+  <WR_RoleTooYoung>{0} er for ung til rollen (mindstealder {1}).</WR_RoleTooYoung>
+  <WR_RoleTooOld>{0} er for gammel til rollen (højeste alder {1}).</WR_RoleTooOld>
+  <WR_MtcHatedWorkSignalLabel>Hader {0}</WR_MtcHatedWorkSignalLabel>
+  <WR_MtcHatedWorkSignalDescription>More Than Capable tillader arbejdet, men det giver alvorlige og voksende straffe.</WR_MtcHatedWorkSignalDescription>
+  <WR_RoleAwfulSignal>{0} har et elendigt signal for denne rolle: {1}.</WR_RoleAwfulSignal>
+  <WR_ActClick>Klik</WR_ActClick>
+  <WR_ActShiftClick>Shift-klik</WR_ActShiftClick>
+  <WR_ActCtrlShiftClick>Ctrl+Shift-klik</WR_ActCtrlShiftClick>
+  <WR_ActAltClick>Alt-klik</WR_ActAltClick>
+  <WR_ActDrag>Træk</WR_ActDrag>
+  <WR_ActRightClick>Højreklik</WR_ActRightClick>
+  <WR_ActX>X</WR_ActX>
+  <WR_ActPaletteClick>Slå rollen til eller fra globalt</WR_ActPaletteClick>
+  <WR_ActPaletteShiftClick>Tildel til de valgte kolonister sidst i rækken</WR_ActPaletteShiftClick>
+  <WR_ActPaletteCtrlShiftClick>Tildel til de valgte kolonister lige efter Basis</WR_ActPaletteCtrlShiftClick>
+  <WR_ActPaletteAltClick>Tildel til de valgte kolonister, hvor anbefalingssystemet placerer den</WR_ActPaletteAltClick>
+  <WR_ActPaletteDrag>Tildel til en kolonist</WR_ActPaletteDrag>
+  <WR_ActTreeClick>Vælg til redigering</WR_ActTreeClick>
+  <WR_ActTreeDrag>Omarrangér eller flyt mellem grupper</WR_ActTreeDrag>
+  <WR_ActTreeRightClick>Sammensæt rollen (medtag/udelad)</WR_ActTreeRightClick>
+  <WR_ActChipClick>Skift mellem til, fra og tvunget til for kolonisten</WR_ActChipClick>
+  <WR_ActChipRightClick>Fastgørelsesindstillinger</WR_ActChipRightClick>
+  <WR_ActChipDrag>Omarrangér eller flyt til en anden kolonist</WR_ActChipDrag>
+  <WR_ActChipX>Fjern</WR_ActChipX>
+  <WR_ColonistNameCaption>Kolonistnavn</WR_ColonistNameCaption>
+  <WR_AssignedRoleCaption>Tildelt rolle</WR_AssignedRoleCaption>
+  <WR_CoveredJobCaption>Dækket opgave</WR_CoveredJobCaption>
+  <WR_LocationCaption>Sted</WR_LocationCaption>
+  <WR_GroupByCaption>Gruppér efter</WR_GroupByCaption>
+  <WR_SkillColumnsCaption>Færdighedskolonner</WR_SkillColumnsCaption>
+  <WR_RoleDisplayCaption>Rollevisning</WR_RoleDisplayCaption>
+  <WR_ColonistSearchTip>Søger i kolonistnavne. Adskil søgeord med mellemrum; alle skal matche. Brug r: eller role: foran et ord for at søge i tildelte rollenavne, eller j: eller job: for opgaver fra tildelte roller. Eksempel: br r:doc.</WR_ColonistSearchTip>
+  <WR_ColonistRoleFilterTip>Viser kolonister med den valgte rolle. En tildelt ikke-blokerende rolle matcher også, hvis dens opgaver dækker den valgte rolle fuldt ud. Kombineres med søge-, opgave- og stedfiltre.</WR_ColonistRoleFilterTip>
+  <WR_ColonistJobFilterTip>Valgt: {0}
+
+Viser kolonister, hvis tildelte ikke-blokerende roller indeholder denne opgave. Kontrollerer rolledækning, ikke kolonistens aktuelle aktivitet eller grundspillets arbejdsprioritet.</WR_ColonistJobFilterTip>
+  <WR_ColonistScopeTip>Vælger, hvilke steder kolonister i tabellen kommer fra. Aktuelt sted følger det aktive kort; Overalt medtager bosættelser, karavaner og et rejsende gravskib.</WR_ColonistScopeTip>
+  <WR_ColonistGroupTip>Inddeler de synlige kolonister efter den valgte egenskab. Gruppering ændrer ikke, hvem der matcher filtrene; afsnitsoverskrifter kan foldes sammen.</WR_ColonistGroupTip>
+  <WR_ColonistSkillColumnsTip>Vælger op til tre færdighedskolonner til tabellen. Klik på en overskrift for at sortere efter færdigheden, eller på X for at fjerne kolonnen.</WR_ColonistSkillColumnsTip>
+  <WR_ColonistRoleDisplayTip>Vælger, hvad tildelte rollemærker viser: fulde navne, initialer eller ikoner. Knappen ved siden af skifter mellem stablede mærker og gitterkolonner. Dette er en visningsindstilling pr. spiller.</WR_ColonistRoleDisplayTip>
+  <WR_ChipLayoutGridTip>Mærker står i lige brede gitterkolonner. Lange navne toner ud ved kanten og får kun ekstra plads, hvor lignende rollenavne kræver det; værktøjstippet viser hele navnet. Klik for at stable mærker med deres naturlige bredde. Højreklik for at vælge, hvor meget af navnene kolonnerne skal rumme.</WR_ChipLayoutGridTip>
+  <WR_ChipLayoutStackTip>Mærker stables med deres naturlige bredde. Klik for at justere dem i lige brede gitterkolonner. Højreklik for at vælge, hvor meget af navnene gitterkolonnerne skal rumme.</WR_ChipLayoutStackTip>
+  <WR_GridNamesAutomatic>Automatisk</WR_GridNamesAutomatic>
+  <WR_GridNamesShort>Korte</WR_GridNamesShort>
+  <WR_GridNamesMedium>Mellem</WR_GridNamesMedium>
+  <WR_GridNamesLong>Lange</WR_GridNamesLong>
+  <WR_GridNamesFull>Fulde</WR_GridNamesFull>
+  <WR_ColonistClearFiltersTip>Rydder søgning efter kolonistnavn og filtrene for tildelt rolle og dækket opgave. Sted, gruppering, færdighedskolonner og rollevisning ændres ikke.</WR_ColonistClearFiltersTip>
+  <WR_FilterAllRoles>Alle roller</WR_FilterAllRoles>
+  <WR_ScopeAll>Overalt</WR_ScopeAll>
+  <WR_ScopeCurrent>Aktuelt sted</WR_ScopeCurrent>
+  <WR_ScopeCurrentNamed>{0} (aktuelt sted)</WR_ScopeCurrentNamed>
+  <WR_ShipFallback>Gravskib</WR_ShipFallback>
+  <WR_ShipTip>Gravskibet, når det ikke er parkeret ved en bosættelse (bosættelsens felt har forrang).</WR_ShipTip>
+  <WR_GroupNone>Ingen gruppering</WR_GroupNone>
+  <WR_GroupFaction>Fraktion</WR_GroupFaction>
+  <WR_GroupRace>Race</WR_GroupRace>
+  <WR_GroupGender>Køn</WR_GroupGender>
+  <WR_GroupAge>Alder</WR_GroupAge>
+  <WR_GroupXenotype>Xenotype</WR_GroupXenotype>
+  <WR_GroupIdeo>Ideoligion</WR_GroupIdeo>
+  <WR_GroupSlaves>Slaveri</WR_GroupSlaves>
+  <WR_GroupTitleColonists>Kolonister</WR_GroupTitleColonists>
+  <WR_GroupTitleSlaves>Slaver</WR_GroupTitleSlaves>
+  <WR_GroupColonyGroups>Colony Groups</WR_GroupColonyGroups>
+  <WR_GroupTitleUngrouped>Ugrupperede</WR_GroupTitleUngrouped>
+  <WR_ChipsNormal>Mærker: Fulde navne</WR_ChipsNormal>
+  <WR_ChipsCompact>Mærker: Initialer</WR_ChipsCompact>
+  <WR_ChipsIcons>Mærker: Ikoner</WR_ChipsIcons>
+  <WR_OrderSuffixBar>(Fanerækkefølge)</WR_OrderSuffixBar>
+  <WR_OrderSuffixAZ>(A-Z)</WR_OrderSuffixAZ>
+  <WR_DisplayButton>Visning</WR_DisplayButton>
+  <WR_DisplayOptions>Visningsindstillinger</WR_DisplayOptions>
+  <WR_CopyRolesTip>Kopiér kolonistens roller.</WR_CopyRolesTip>
+  <WR_PasteRolesTip>Indsæt de kopierede roller på denne kolonist.</WR_PasteRolesTip>
+  <WR_AddRoleTip>Tildel en rolle.</WR_AddRoleTip>
+  <WR_SkillsButton>Færdigheder</WR_SkillsButton>
+  <WR_SkillsButtonCount>Færdigheder ({0}/{1})</WR_SkillsButtonCount>
+  <WR_ColColonist>Kolonist</WR_ColColonist>
+  <WR_NoFilterMatches>Ingen kolonister matcher filteret.</WR_NoFilterMatches>
+  <WR_FixMyColony>Ret min koloni</WR_FixMyColony>
+  <WR_FixMyColonyTip>Erstat hver kolonists roller med de anbefalede roller.</WR_FixMyColonyTip>
+  <WR_FixNeedsSingleLocation>Anbefalinger beregnes pr. sted. Begræns stedfilteret til én bosættelse eller ét skib for at bruge Ret min koloni.</WR_FixNeedsSingleLocation>
+  <WR_AutoManaged>Automatisk administreret</WR_AutoManaged>
+  <WR_AutoManagedTip>WorkRoles opdaterer automatisk rolletildelinger i hver koloni ved starten af hver spiltime.
+
+Fastgjorte tildelinger bevares, også udelukkede roller.
+
+Slå »Optimér kolonier automatisk hver spiltime« fra på fanen Indstillinger for at få Ret min koloni tilbage.</WR_AutoManagedTip>
+  <WR_SetPriorityBlockedTitle>WorkRoles administrerer prioriteter</WR_SetPriorityBlockedTitle>
+  <WR_SetPriorityBlockedBody>{0} forsøgte at indstille arbejdsprioriteter ({1}).
+
+WorkRoles har blokeret {2} prioritetsskrivninger siden sidste besked eller starten af denne spilsession.
+
+WorkRoles styrer prioriteter for rolleadministrerede kolonister, så ændringen blev ignoreret. Moddets øvrige funktioner påvirkes ikke.
+
+Opnå en lignende effekt med roller: Opret eller redigér på fanen Roller en rolle med arbejdet, og placér den, hvor du ønsker, i hver kolonists rolleliste, eller brug en blokerende rolle til at forbyde arbejdet helt.
+
+Denne besked vises én gang pr. mod pr. gemt spil.</WR_SetPriorityBlockedBody>
+  <WR_AllWork>alt arbejde</WR_AllWork>
+  <WR_GiverBypassTitle>En opgave omgik rollelisterne</WR_GiverBypassTitle>
+  <WR_GiverBypassBody>{0} begyndte opgaven »{1}«, men ingen tildelt rolle indeholder den.
+
+WorkRoles giver hver administreret kolonist en opgaveliste via spillets standardmetoder. Et andet mod ser ud til at vælge arbejde fra sin egen liste, som omgår rollebegrænsninger. Kolonister kan derfor indimellem udføre arbejde uden for deres roller, mens det mod er aktivt.
+
+Opgaven blev ikke afbrudt. Denne besked vises én gang pr. gemt spil.</WR_GiverBypassBody>
+  <WR_Apply>Anvend</WR_Apply>
+  <WR_SelectAll>Vælg alle</WR_SelectAll>
+  <WR_PreviewNoChanges>Ingen ændringer.</WR_PreviewNoChanges>
+  <WR_PreviewStale>Kolonien ændrede sig, mens forhåndsvisningen var åben; intet blev anvendt.</WR_PreviewStale>
+  <WR_ReasonEveryone>Tildeles automatisk til alle.</WR_ReasonEveryone>
+  <WR_ReasonHunter>Bærer et afstandsvåben; jagt træner også Skydning.</WR_ReasonHunter>
+  <WR_ReasonSignal>Anbefalingssignaler taler for {0}.</WR_ReasonSignal>
+  <WR_ReasonCoverage>Kolonidækning: bedst tilgængelige til dette arbejde.</WR_ReasonCoverage>
+  <WR_ReasonRemoved>Ikke på anbefalingslisten. Fastgør roller, du vil beholde, før du anvender.</WR_ReasonRemoved>
+  <WR_SignalColSignal>Signal</WR_SignalColSignal>
+  <WR_SignalColEffects>Virkninger</WR_SignalColEffects>
+  <WR_SignalCondition>Betingelse</WR_SignalCondition>
+  <WR_SignalSource>Kilde</WR_SignalSource>
+  <WR_SignalVerdict>Vurdering</WR_SignalVerdict>
+  <WR_SignalSkillPromotion>Høj færdighed</WR_SignalSkillPromotion>
+  <WR_SignalSkillPromotionEffect>{0} → {1}</WR_SignalSkillPromotionEffect>
+  <WR_SignalSkillPromotionCondition>Niveau {0} opfylder grænsen {1}</WR_SignalSkillPromotionCondition>
+  <WR_SignalFromSkill>(fra {0})</WR_SignalFromSkill>
+  <WR_SignalAlreadyReflected>Allerede afspejlet i det viste færdighedsniveau</WR_SignalAlreadyReflected>
+  <WR_SignalDisabled>Deaktiveret</WR_SignalDisabled>
+  <WR_SignalCapabilityOff>{0} deaktiveret</WR_SignalCapabilityOff>
+  <WR_SignalCapabilityAwful>{0} behandles som elendig</WR_SignalCapabilityAwful>
+  <WR_SignalDescriptive>Beskrivende</WR_SignalDescriptive>
+  <WR_SignalExpertiseScale>grundværdi {0}, ekspertiseniveau {1}, aktuelt {2}</WR_SignalExpertiseScale>
+  <WR_VerdictAwful>Elendig</WR_VerdictAwful>
+  <WR_VerdictPoor>Svag</WR_VerdictPoor>
+  <WR_VerdictNeutral>Neutral</WR_VerdictNeutral>
+  <WR_VerdictStrong>Stærk</WR_VerdictStrong>
+  <WR_VerdictGreat>Fremragende</WR_VerdictGreat>
+  <WR_VerdictExceptional>Enestående</WR_VerdictExceptional>
+  <WR_PinAssignment>Fastgør</WR_PinAssignment>
+  <WR_UnpinAssignment>Frigør</WR_UnpinAssignment>
+  <WR_PinnedTip>Fastgjort: Gør det, Ret min koloni og automatisk optimering bevarer tildelingen, selv hvis rollen eller et medlem af en sammensat rolle er udelukket fra anbefalinger.</WR_PinnedTip>
+  <WR_CopiedRoles>Kopierede rollerne for {0}.</WR_CopiedRoles>
+  <WR_RecommendedRoles>Anbefalede roller</WR_RecommendedRoles>
+  <WR_AlreadyAssigned>Allerede tildelt</WR_AlreadyAssigned>
+  <WR_WillBeRemoved>Ikke på anbefalingslisten. Fastgør roller, du vil beholde, før du anvender.</WR_WillBeRemoved>
+  <WR_RecTipColonyNeed>Koloniens behov</WR_RecTipColonyNeed>
+  <WR_RecTipSkills>Vurderede færdigheder</WR_RecTipSkills>
+  <WR_RecTipSignalVerdict>Signalvurdering</WR_RecTipSignalVerdict>
+  <WR_RecTipSelection>Udvælgelse</WR_RecTipSelection>
+  <WR_RecTipAssignmentsOne>1 tildeling ønsket</WR_RecTipAssignmentsOne>
+  <WR_RecTipAssignmentsMany>{0} tildelinger ønsket</WR_RecTipAssignmentsMany>
+  <WR_RecTipWithWaiverOne>{0} (1 træningsundtagelse)</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0} ({1} træningsundtagelser)</WR_RecTipWithWaiversMany>
+  <WR_RecTipEveryoneCapable>Tildelt alle, der kan udføre rollen</WR_RecTipEveryoneCapable>
+  <WR_RecDecisionAuto>Tildeles automatisk til enhver bonde, der kan udføre rollen.</WR_RecDecisionAuto>
+  <WR_RecDecisionSignals>Den angivne signalgrænse kvalificerer denne bonde.</WR_RecDecisionSignals>
+  <WR_RecDecisionCoverageDraft>Bedste resterende kandidat valgt til at opfylde den krævede dækning.</WR_RecDecisionCoverageDraft>
+  <WR_RecDecisionTraining>Tildelt gennem træningsforløbet for {0}.</WR_RecDecisionTraining>
+  <WR_RecDecisionTrainingUnknown>Tildelt gennem et træningsforløb.</WR_RecDecisionTrainingUnknown>
+  <WR_RecDecisionDirectSlot>Valgt direkte til plads {0} af {1} for {2}.</WR_RecDecisionDirectSlot>
+  <WR_RecDecisionTrainingSlot>Valgt til plads {0} af {1} for {2}. En træningsundtagelse erstattede {2} med {3} ({4}; {2} kræver {5}).</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>Valgt til plads {0} af {1} for {2}. En træningsundtagelse erstattede {2} med {3}.</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>Valgt til plads {0} af {1} gennem en træningsundtagelse, med tildeling af {2}.</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
+  <WR_RecDecisionDirectFallbackSlot>Valgt direkte til plads {0} af {1} for {2}, fordi ingen træningserstatning kvalificerede sig til pladsen.</WR_RecDecisionDirectFallbackSlot>
+  <WR_RecDecisionCoverageRepairSlot>Valgt direkte til resterende krævede plads {0} af {1} for {2}.</WR_RecDecisionCoverageRepairSlot>
+  <WR_RecDecisionSignalSurplus>Valgt som ekstra kandidat ud fra signalvurderingen.</WR_RecDecisionSignalSurplus>
+  <WR_RecDecisionAptitudeSurplus>Valgt som ekstra kandidat, fordi den samlede færdighedsegnethed er på eller over rollens krævede niveau.</WR_RecDecisionAptitudeSurplus>
+  <WR_RecDecisionHunter>Bærer et afstandsvåben og kan jage.</WR_RecDecisionHunter>
+  <WR_RecDecisionFire>Ildskræk kræver blokering af brandslukning.</WR_RecDecisionFire>
+  <WR_RecDecisionRetained>Eksisterende rolle uden færdighedskrav bevaret.</WR_RecDecisionRetained>
+  <WR_RecDecisionProtected>Eksisterende beskyttet tildeling bevaret.</WR_RecDecisionProtected>
+  <WR_RecDecisionIncapacitated>Denne kolonist er ukampdygtig. Ikke-udelukkede roller og fastgjorte tildelinger bevares uændret og tæller ikke med i koloniens behov, før kolonisten kommer sig.</WR_RecDecisionIncapacitated>
+  <WR_RecDecisionNever>Denne rolle er indstillet til aldrig at blive anbefalet.</WR_RecDecisionNever>
+  <WR_RecDecisionControlledByTraining>Styres af {0}: tildeles gennem dets træningsforløb, ikke selvstændigt.</WR_RecDecisionControlledByTraining>
+  <WR_RecDecisionDisabled>Denne rolle er deaktiveret.</WR_RecDecisionDisabled>
+  <WR_RecDecisionUnavailable>Rollens arbejde er utilgængeligt, indtil forskningen er færdig.</WR_RecDecisionUnavailable>
+  <WR_RecDecisionExcluded>Denne rolle styres af regler og er udelukket fra almindelige anbefalinger.</WR_RecDecisionExcluded>
+  <WR_RecDecisionIncapable>Denne bonde kan ikke udføre rollens arbejde.</WR_RecDecisionIncapable>
+  <WR_RecDecisionNotMechanitor>Denne kolonist har ingen mechlink og kan derfor ikke udføre mekanitorarbejde.</WR_RecDecisionNotMechanitor>
+  <WR_RecDecisionHunterRequirements>Denne bonde bærer ikke et afstandsvåben.</WR_RecDecisionHunterRequirements>
+  <WR_RecDecisionAwful>Et elendigt signal udelukker denne bonde.</WR_RecDecisionAwful>
+  <WR_RecDecisionCovered>Dækket af anbefalet rolle: {0}.</WR_RecDecisionCovered>
+  <WR_RecDecisionCoveredUnknown>Dækket af en anden anbefalet rolle.</WR_RecDecisionCoveredUnknown>
+  <WR_RecDecisionCoverageFilled>Den krævede dækning blev opfyldt af højere rangerede kandidater.</WR_RecDecisionCoverageFilled>
+  <WR_RecDecisionWeakSignal>Signalvurderingen ligger under den angivne grænse, og den krævede dækning valgte ikke denne bonde.</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionNotSelected>Denne bonde blev ikke valgt af nogen anbefalingsregel.</WR_RecDecisionNotSelected>
+  <WR_RecDecisionOutOfBand>Bondens færdighed placerer vedkommende i et andet interval af træningsforløbet.</WR_RecDecisionOutOfBand>
+  <WR_RecDecisionOutqualified>Andre, bedre kvalificerede kandidater blev valgt til pladserne.</WR_RecDecisionOutqualified>
+  <WR_RecDecisionRecommended>Valgt af anbefalingssystemet.</WR_RecDecisionRecommended>
+  <WR_MakeItSo>Gør det</WR_MakeItSo>
+  <WR_AllRolesAssigned>Alle roller tildelt</WR_AllRolesAssigned>
+  <WR_NowDrafted>Indkaldt</WR_NowDrafted>
+  <WR_NowMental>Mental tilstand</WR_NowMental>
+  <WR_NowIdle>Ledig</WR_NowIdle>
+  <WR_NowForced>Spillerordre</WR_NowForced>
+  <WR_NowSleeping>Sover</WR_NowSleeping>
+  <WR_NowRecreation>Rekreation</WR_NowRecreation>
+  <WR_NowNeeds>Personlige behov</WR_NowNeeds>
+  <WR_NowBusy>Optaget</WR_NowBusy>
+  <WR_NowTip>{0}: {1}</WR_NowTip>
+  <WR_TipActivityLabel>Aktuel aktivitet</WR_TipActivityLabel>
+  <WR_TipActivityValue>{0}: {1}</WR_TipActivityValue>
+  <WR_RestoreDefaults>Gendan standarder</WR_RestoreDefaults>
+  <WR_RestoreDefaultsTip>Genskab manglende forudlavede roller og træningsforløb, gendan standardudelukkelser, og giv forudlavede roller deres standardgrupper, farver og indehaverindstillinger tilbage. En forhåndsvisning lader dig vælge, hvad der gendannes.</WR_RestoreDefaultsTip>
+  <WR_RestoreDefaultsTitle>Gendan standarder</WR_RestoreDefaultsTitle>
+  <WR_Export>Eksportér</WR_Export>
+  <WR_Import>Importér</WR_Import>
+  <WR_ExportTip>Skriv alle rolledefinitioner (ikke tildelinger) til:\n{0}</WR_ExportTip>
+  <WR_ImportTip>Tilføj rolledefinitionerne fra:\n{0}</WR_ImportTip>
+  <WR_ExportTitle>Eksportér roller</WR_ExportTitle>
+  <WR_CopyClipboard>Kopiér til udklipsholder</WR_CopyClipboard>
+  <WR_CopyPath>Kopiér sti</WR_CopyPath>
+  <WR_Save>Gem</WR_Save>
+  <WR_ExportLocationLabel>Eksportsted</WR_ExportLocationLabel>
+  <WR_LocGameData>Mappe med spildata</WR_LocGameData>
+  <WR_LocDesktop>Skrivebord</WR_LocDesktop>
+  <WR_LocUserHome>Brugermappe</WR_LocUserHome>
+  <WR_LocCustom>Brugerdefineret...</WR_LocCustom>
+  <WR_EnterPath>Angiv sti</WR_EnterPath>
+  <WR_BadFileName>Angiv et gyldigt filnavn.</WR_BadFileName>
+  <WR_BadDirectory>Angiv en gyldig mappesti.</WR_BadDirectory>
+  <WR_ImportTitle>Importér roller</WR_ImportTitle>
+  <WR_ImportFromClipboard>Fra udklipsholder</WR_ImportFromClipboard>
+  <WR_ImportLocationLabel>Importsted</WR_ImportLocationLabel>
+  <WR_ImportClipboardInvalid>Udklipsholderen indeholder ikke en WorkRoles-eksport.</WR_ImportClipboardInvalid>
+  <WR_ImportFileMissing>Ingen fil fundet på {0}</WR_ImportFileMissing>
+  <WR_ImportParseFailed>Kunne ikke læse roller: {0}</WR_ImportParseFailed>
+  <WR_SectionPalette>Palet</WR_SectionPalette>
+  <WR_SectionRoles>Roller</WR_SectionRoles>
+  <WR_ModeMerge>Flet</WR_ModeMerge>
+  <WR_ModeOverwrite>Overskriv</WR_ModeOverwrite>
+  <WR_RowNew>{0} (ny)</WR_RowNew>
+  <WR_RowUpdate>{0} (opdatering)</WR_RowUpdate>
+  <WR_RowRecolors>{0} → {1} (omfarver: {2})</WR_RowRecolors>
+  <WR_RowNewColor>{0} {1} (ny farve)</WR_RowNewColor>
+  <WR_NothingToMerge>Alt stemmer overens: intet at flette.</WR_NothingToMerge>
+  <WR_PaletteOverwriteInfo>Erstatter alle brugerdefinerede farver med filens {0} paletposter.</WR_PaletteOverwriteInfo>
+  <WR_OverwriteReplaces>Anvender alle {0} roller fra filen. Matchende roller (samme forudlavede rolle, ellers samme navn) bevarer deres kolonisttildelinger.</WR_OverwriteReplaces>
+  <WR_OverwriteDeletes>Sletter (ikke i filen): {0} (kolonister mister disse tildelinger).</WR_OverwriteDeletes>
+  <WR_PathsOverwriteInfo>Erstatter alle eksisterende træningsforløb med filens {0} forløb.</WR_PathsOverwriteInfo>
+  <WR_ImportSummary>Import færdig: {0} tilføjet, {1} opdateret, {2} slettet, {3} paletændringer, {4} træningsforløb.</WR_ImportSummary>
+  <WR_CopiedToClipboard>Kopieret til udklipsholderen.</WR_CopiedToClipboard>
+  <WR_ExportSaved>Gemt på {0}</WR_ExportSaved>
+  <WR_ExportFailed>Kunne ikke gemme: {0}</WR_ExportFailed>
+  <WR_ExportOverwriteConfirm>{0} findes allerede. Erstat filen?</WR_ExportOverwriteConfirm>
+  <WR_RestoreMovedJobs>{0} (gendan {1} flyttede opgaver)</WR_RestoreMovedJobs>
+  <WR_RestorePathItem>{0} (træningsforløb)</WR_RestorePathItem>
+  <WR_RestoreGroupItem>{0} (flyt til gruppen '{1}')</WR_RestoreGroupItem>
+  <WR_RestoreColorItem>{0} (gendan standardfarve)</WR_RestoreColorItem>
+  <WR_RestoreJobsItem>{0} (nulstil opgaver til standard)</WR_RestoreJobsItem>
+  <WR_RestoreSnapColorItem>{0} (tilpas farve til paletten)</WR_RestoreSnapColorItem>
+  <WR_RestoreHoldersItem>{0} (gendan standarder for indehavere)</WR_RestoreHoldersItem>
+  <WR_RestoreRecOrder>Anbefalingsrækkefølge (nulstil til standard)</WR_RestoreRecOrder>
+  <WR_RestoreDefaultExclusions>Udelukkede standardroller</WR_RestoreDefaultExclusions>
+  <WR_RestoreExplainDefaultExclusions>Føjer manglende standardudelukkelser tilbage til panelet Udelukkede roller. Bevarer øvrige udelukkede roller.</WR_RestoreExplainDefaultExclusions>
+  <WR_RestoreOverwriteWarning>⚠ Fremhævede poster overskriver dine ændringer.</WR_RestoreOverwriteWarning>
+  <WR_RestoreDuplicateHint>(der findes allerede en rolle med dette navn)</WR_RestoreDuplicateHint>
+  <WR_RestoreExplainRole>Opretter rollen fra moddets skabelon.</WR_RestoreExplainRole>
+  <WR_RestoreExplainCoverage>Opretter en rolle, der dækker denne arbejdstype.</WR_RestoreExplainCoverage>
+  <WR_RestoreExplainBackfill>Tilføjer igen {0} opgaver, som mods flyttede.</WR_RestoreExplainBackfill>
+  <WR_RestoreExplainGroup>Flytter rollen tilbage til gruppen '{0}'.</WR_RestoreExplainGroup>
+  <WR_RestoreExplainColor>Nulstiller farven til skabelonens standard.</WR_RestoreExplainColor>
+  <WR_RestoreExplainJobs>Nulstiller rollens opgaveliste til moddets aktuelle standard. Kolonister beholder deres samlede opgaver: Roller, som dækker fjernede opgaver, tildeles automatisk.</WR_RestoreExplainJobs>
+  <WR_RestoreExplainSnapColor>Erstatter den genererede farve med den nærmeste paletfarve, så farvevælgeren fremhæver den.</WR_RestoreExplainSnapColor>
+  <WR_RestoreExplainHolders>Nulstiller indehaverskaleringen til skabelonens standard.</WR_RestoreExplainHolders>
+  <WR_RestoreExplainRecOrder>Rydder din brugerdefinerede rækkefølge.</WR_RestoreExplainRecOrder>
+  <WR_RestoreExplainPath>Opretter træningsforløbet.</WR_RestoreExplainPath>
+  <WR_NothingToRestore>Intet at gendanne: Alle forudlavede roller og træningsforløb findes med deres standardgrupper, farver og indehaverindstillinger, og ingen opgaver blev flyttet.</WR_NothingToRestore>
+  <WR_RolesRestored>Gendannet: {0}</WR_RolesRestored>
+  <WR_FilterAnyJob>Enhver opgave</WR_FilterAnyJob>
+  <WR_RoleLabelOff>{0} (slået fra)</WR_RoleLabelOff>
+  <WR_SelectOrCreateRole>Vælg eller opret en rolle.</WR_SelectOrCreateRole>
+  <WR_New>Ny</WR_New>
+  <WR_Copy>Kopiér</WR_Copy>
+  <WR_Delete>Slet</WR_Delete>
+  <WR_NewRoleTitle>Ny rolle</WR_NewRoleTitle>
+  <WR_CopyRoleTitle>Kopiér rolle</WR_CopyRoleTitle>
+  <WR_CopySource>Kopierer {0}</WR_CopySource>
+  <WR_NameTaken>Der findes allerede en rolle med dette navn.</WR_NameTaken>
+  <WR_DeleteConfirm>Slet rollen '{0}'? Den fjernes fra alle kolonister.</WR_DeleteConfirm>
+  <WR_AssignedTo>Tildelt til</WR_AssignedTo>
+  <WR_Nobody>Ingen</WR_Nobody>
+  <WR_PlusOthers>+{0} andre</WR_PlusOthers>
+  <WR_AvailableJobs>Tilgængelige opgaver</WR_AvailableJobs>
+  <WR_Search>Søg</WR_Search>
+  <WR_WarningPrefix>Advarsel:</WR_WarningPrefix>
+  <WR_UnusedJobsWarning>Du har opgaver, som ikke findes i nogen rolle.</WR_UnusedJobsWarning>
+  <WR_SelectedJobs>Valgte opgaver (ordnet)</WR_SelectedJobs>
+  <WR_TypeColumn>Type</WR_TypeColumn>
+  <WR_JobColumn>Opgave</WR_JobColumn>
+  <WR_AllJobs>Alle opgaver</WR_AllJobs>
+  <WR_CoveredByTypeTip>Dækket af arbejdstypen. Klik for at give opgaven sin egen post, der kan flyttes.</WR_CoveredByTypeTip>
+  <WR_AddAllJobs>Tilføj alle opgaver (enkeltvis, flytbare)</WR_AddAllJobs>
+  <WR_SelectedRows>{0} valgt</WR_SelectedRows>
+  <WR_MoveSelectedUpTip>Flyt de valgte rækker ét trin op. Klik for at vælge en række, Shift-klik for et interval, Ctrl-klik for at tilføje eller fjerne én række.</WR_MoveSelectedUpTip>
+  <WR_MoveSelectedDownTip>Flyt de valgte rækker ét trin ned.</WR_MoveSelectedDownTip>
+  <WR_RemoveSelectedTip>Fjern de valgte rækker.</WR_RemoveSelectedTip>
+  <WR_MissingDef>{0} findes ikke i den aktuelle modliste (inaktiv, indtil moddet vender tilbage).</WR_MissingDef>
+  <WR_DeadEntryTip>Ingen virkning: Alt i denne post dækkes allerede af posterne ovenfor. Flyt den op for at prioritere den, eller fjern den.</WR_DeadEntryTip>
+  <WR_CompositeRole>Sammensat rolle</WR_CompositeRole>
+  <WR_CompositeRoleTip>Sammensatte roller samler andre roller: Indehavere udfører medlemsrollernes opgaver i medlemsrækkefølgen. En sammensat rolle har ingen egen opgaveliste.</WR_CompositeRoleTip>
+  <WR_CompositeConfirm>Gør '{0}' til en sammensat rolle? Dens valgte opgaver fjernes.</WR_CompositeConfirm>
+  <WR_CompositeRevertConfirm>Gør '{0}' til en almindelig rolle igen? Dens medlemsroller fjernes.</WR_CompositeRevertConfirm>
+  <WR_MemberRoles>Medlemsroller (ordnet)</WR_MemberRoles>
+  <WR_AvailableRoles>Tilgængelige roller</WR_AvailableRoles>
+  <WR_NoMembersHint>Tilføj roller fra listen til venstre. Indehavere udfører medlemsrollernes opgaver i rækkefølgen her.</WR_NoMembersHint>
+  <WR_NoCandidatesHint>Ingen roller kan tilføjes. Medlemmer skal være almindelige roller uden tids- eller stedregler, og en sammensat rolle kan ikke indeholde en anden sammensat rolle.</WR_NoCandidatesHint>
+  <WR_MemberLockTip>Låst: Rollen indgår i en sammensat rolle. Fjern den fra alle sammensatte roller for at ændre indstillingen.</WR_MemberLockTip>
+  <WR_ScaleRenameTip>Omdøb skalaen (roller, der bruger den, følger med).</WR_ScaleRenameTip>
+  <WR_ScaleRenameTitle>Omdøb skala</WR_ScaleRenameTitle>
+  <WR_ScaleNewTitle>Ny skala (kopierer den aktuelle)</WR_ScaleNewTitle>
+  <WR_ScaleUsedBy>Bruges af {0}</WR_ScaleUsedBy>
+  <WR_ScaleReset>Nulstil</WR_ScaleReset>
+  <WR_ScaleResetTip>Gendan værdierne fra før dine ændringer (siden du valgte rollen eller skalaen).</WR_ScaleResetTip>
+  <WR_ScaleSaveAs>Gem som</WR_ScaleSaveAs>
+  <WR_ScaleDeleteConfirm>Slet skalaen '{0}'?\n\n{1}. Disse roller bruger Aldrig i stedet.</WR_ScaleDeleteConfirm>
+  <WR_ScaleSaveAsTitle>Gem ændringer som en ny skala (denne skala vender tilbage til sine gemte værdier)</WR_ScaleSaveAsTitle>
+  <WR_ScaleDirectTip>Direkte minimum for intervallet; resten af det krævede totalantal kan dækkes af træningsundtagelser. Hæves det over totalen, hæves totalen også. Klik +1 (starter forfra ved 8), højreklik -1. Venstretræk kopierer mellem intervaller (højreklik under træk justerer værdien i trækretningen). Højretræk laver en stigning: ét trin pr. interval, op mod højre, ned mod venstre.</WR_ScaleDirectTip>
+  <WR_ScaleTotalsCaption>Krævet totalantal (inklusive træningsundtagelser)</WR_ScaleTotalsCaption>
+  <WR_ScaleMinsCaption>Direkte minimum for {0}</WR_ScaleMinsCaption>
+  <WR_ScaleTrainingHelp>Denne rolle træner mod {0}, så tildelinger styres af indstillingerne for {0} (selv når dette er sat til Aldrig). Du kan dog stadig gennemtvinge mindste antal tildelinger for {1} her.</WR_ScaleTrainingHelp>
+  <WR_ScaleControlledBy>Styret af {0}</WR_ScaleControlledBy>
+  <WR_ScaleTotalTip>Krævet totalantal for intervallet, inklusive træningsundtagelser. Hævning opretter pladser med træningsundtagelser; sænkning fjerner dem, før det direkte minimum sænkes. Klik +1, højreklik -1. Venstretræk kopierer mellem intervaller (højreklik under træk justerer værdien i trækretningen). Højretræk laver en stigning: ét trin pr. interval, op mod højre, ned mod venstre.</WR_ScaleTotalTip>
+  <WR_SkillsUsedLabel>Brugte færdigheder:</WR_SkillsUsedLabel>
+  <WR_VirtualRoleTip>Vises her, fordi rollens opgaver dækkes af den overordnede rolle. Den tilhører gruppen »{0}«.</WR_VirtualRoleTip>
+  <WR_TipTrainsLabel>Træner</WR_TipTrainsLabel>
+  <WR_TipTrainsNothing>Intet (ingen færdigheds-XP)</WR_TipTrainsNothing>
+  <WR_TipRequiresLabel>Kræver</WR_TipRequiresLabel>
+  <WR_TipReqBills>{0} {1} ({2} af {3} ordrer har færdighedskrav)</WR_TipReqBills>
+  <WR_TipReqItems>{0} {1} ({2} genstande har færdighedskrav)</WR_TipReqItems>
+  <WR_TipReqJobs>{0} {1} ({2} opgaver har færdighedskrav)</WR_TipReqJobs>
+  <WR_TipLevelN>Niveau {0}</WR_TipLevelN>
+  <WR_TipXpLabel>Giver XP</WR_TipXpLabel>
+  <WR_TipXpValue>{0} af {1} opgaver</WR_TipXpValue>
+  <WR_TipUnlockAgeLabel>Mindstealder</WR_TipUnlockAgeLabel>
+  <WR_TipUnlockAgeValue>{0} (yngre kolonister kan ikke udføre arbejdet)</WR_TipUnlockAgeValue>
+  <WR_SkillTipGiverSource>Opgavegiver: {0} ({1})</WR_SkillTipGiverSource>
+  <WR_SkillTipTypeSource>Arbejdstype: {0} ({1})</WR_SkillTipTypeSource>
+  <WR_SkillTipUnknownMod>ukendt mod</WR_SkillTipUnknownMod>
+  <WR_EmergencySuffix> (akut)</WR_EmergencySuffix>
+  <WR_ConditionalRole>Betinget rolle</WR_ConditionalRole>
+  <WR_ConditionalRoleTip>Betingede roller slår sig selv til og fra efter regler om aktive timer og sted. En rolle er betinget, når en regel er angivet.</WR_ConditionalRoleTip>
+  <WR_AutoAssign>Tildel automatisk</WR_AutoAssign>
+  <WR_AutoAssignTip>Nytilkomne (rekrutter, vandrere) får automatisk rollen, hvis de er i dens aldersgrupper.</WR_AutoAssignTip>
+  <WR_CustomSwatchEmpty>Tom plads: Klik for at vælge en brugerdefineret farve. Brugerdefinerede farver deles af alle roller.</WR_CustomSwatchEmpty>
+  <WR_CustomSwatchTip>Klik for at bruge farven. Højreklik for at ændre pladsen.</WR_CustomSwatchTip>
+  <WR_ClearRulesConfirm>Fjern alle regler fra '{0}'? Den bliver en manuel rolle igen.</WR_ClearRulesConfirm>
+  <WR_ActiveHours>Aktive timer</WR_ActiveHours>
+  <WR_HoursActive>Aktiv</WR_HoursActive>
+  <WR_HoursInactive>Inaktiv</WR_HoursInactive>
+  <WR_LocationAny>Hvor som helst</WR_LocationAny>
+  <WR_LocationNowhere>Ingen steder</WR_LocationNowhere>
+  <WR_LocationNowhereTip>Rollen var begrænset til steder, der ikke længere findes. Den forbliver deaktiveret, indtil du vælger et andet sted.</WR_LocationNowhereTip>
+  <WR_LocationSettlements>Bosættelser</WR_LocationSettlements>
+  <WR_LocationCaravans>Karavaner</WR_LocationCaravans>
+  <WR_LocationShipItem>Skib: {0}</WR_LocationShipItem>
+  <WR_LocationSettlementItem>Bosættelse: {0}</WR_LocationSettlementItem>
+  <WR_LocationCount>{0} steder</WR_LocationCount>
+  <WR_LocationGone>(forsvundet)</WR_LocationGone>
+  <WR_InvalidRoleTip>Rollen kan aldrig gælde: Den har ingen opgaver, eller alle angivne steder er forsvundet.</WR_InvalidRoleTip>
+  <WR_GroupDefault>Standard</WR_GroupDefault>
+  <WR_GroupConditionalRoles>Betingede roller</WR_GroupConditionalRoles>
+  <WR_GroupComposites>Sammensatte roller</WR_GroupComposites>
+  <WR_GroupLabel>Gruppe</WR_GroupLabel>
+  <WR_GroupButton>Gruppe: {0}</WR_GroupButton>
+  <WR_GroupNewOption>Ny...</WR_GroupNewOption>
+  <WR_NewGroupTitle>Ny gruppe</WR_NewGroupTitle>
+  <WR_RenameGroup>Omdøb gruppe</WR_RenameGroup>
+  <WR_RenameGroupTitle>Omdøb gruppe</WR_RenameGroupTitle>
+  <WR_GroupOverlayTip>Roller med regler vises under Betingede roller. Den gemte gruppe vender tilbage, når reglerne ryddes.</WR_GroupOverlayTip>
+  <WR_GroupCompositeTip>Sammensatte roller vises under Sammensatte roller.</WR_GroupCompositeTip>
+  <WR_TreeNested>Indlejret</WR_TreeNested>
+  <WR_TreeFlat>Flad</WR_TreeFlat>
+  <WR_TreeToggleTip>Skift indlejring af dækkede roller under deres kombinationsrolle.</WR_TreeToggleTip>
+  <WR_DisplayModeLabel>Visningstilstand</WR_DisplayModeLabel>
+  <WR_JobFilterLabel>Opgavefilter</WR_JobFilterLabel>
+  <WR_PaletteBySkills>Færdigheder</WR_PaletteBySkills>
+  <WR_PaletteByGroups>Grupper</WR_PaletteByGroups>
+  <WR_PaletteModeTip>Ordner rollepaletten efter relevant færdighed eller dine rollegrupper.</WR_PaletteModeTip>
+  <WR_SuppressedHours>Fra: uden for aktive timer</WR_SuppressedHours>
+  <WR_SuppressedLocation>Fra: ikke på rollens steder</WR_SuppressedLocation>
+  <WR_BillRoleOption>Rolle: {0}</WR_BillRoleOption>
+  <WR_BillWorkerRoleTip>Kun kolonister, der aktivt har rollen, udfører ordren; en betinget rolle anvender sine regler (f.eks. aktive timer). Valg af en arbejder fjerner rollebegrænsningen og omvendt.</WR_BillWorkerRoleTip>
+  <WR_SurgeryWorkerRoleTip>Hvem der må udføre operationen. Enhver arbejder betyder ingen rollebegrænsning. En rolle begrænser operationen til kolonister, der aktivt har den; en betinget rolle anvender sine regler (f.eks. aktive timer).</WR_SurgeryWorkerRoleTip>
+  <WR_SelectRoleIcon>Vælg rolleikon</WR_SelectRoleIcon>
+  <WR_RenameRoleTitle>Omdøb rolle</WR_RenameRoleTitle>
+  <WR_NewWorkDetected>Nye arbejdstyper fundet. Roller oprettet eller udvidet: {0}</WR_NewWorkDetected>
+  <WR_SeedReportTitle>WorkRoles konfigureret</WR_SeedReportTitle>
+  <WR_SeedReportBody>Oprettede {0} roller og tildelte rollesæt til {1} kolonister ud fra deres arbejdsprioriteter.</WR_SeedReportBody>
+  <WR_SeedReportGenerated>Oprettet til modtilføjet arbejde: {0}.</WR_SeedReportGenerated>
+  <WR_SeedReportFailures>Noget arbejde kunne ikke overføres:</WR_SeedReportFailures>
+  <WR_SeedDropFailure>{0}: mistede {1} (var prioritet {2})</WR_SeedDropFailure>
+  <WR_SeedPawnFailure>{0}: overførsel mislykkedes ({1})</WR_SeedPawnFailure>
+  <WR_WelcomeTitle>WorkRoles</WR_WelcomeTitle>
+  <WR_WelcomeBody>WorkRoles angiver kolonisternes arbejdsprioriteter ud fra navngivne roller som Læge, Smed og Landmand, som du tildeler dem.</WR_WelcomeBody>
+  <WR_WelcomeFind>Åbn WorkRoles med knappen Arbejde nederst på skærmen. Fanen Hjælp begynder med en guidet rundvisning.</WR_WelcomeFind>
+  <WR_WelcomeTakeMeThere>Åbn nu</WR_WelcomeTakeMeThere>
+  <WR_WelcomeSmallScreen>Din spilskærm er {0}x{1} (opløsning divideret med UI-skala). WorkRoles er designet til {2}x{3} eller større, f.eks. 1920x1080 ved UI-skala 1.25. Det virker også på mindre skærme, men nogle tekster forkortes, og fanerne kræver mere rulning. En lavere UI-skala i spilindstillingerne giver vinduet mere plads.</WR_WelcomeSmallScreen>
+  <WR_RoleWorkAversion>{0}s forskrift {1} er imod {2}. Anbefalinger giver et begrænset pointfradrag: to prioritetstrin eller seks virtuelle færdighedspoint ved valg af hovedansvarlig. Krævet dækning kan stadig vælge denne bonde. Jæger flyttes to trin senere, højst til trin fem; den eksisterende reserveplacering på første trin gælder stadig.</WR_RoleWorkAversion>
+  <WR_WorkBlockedTags>deaktiverede arbejdsmærker</WR_WorkBlockedTags>
+  <WR_WorkBlockedCapacity>mangler en nødvendig helbredskapacitet</WR_WorkBlockedCapacity>
+  <WR_WorkBlockedRace>ikke tilladt af racens arbejdsbegrænsninger</WR_WorkBlockedRace>
+  <WR_WorkBlockedRecipe>ikke tilladt af racens opskriftsbegrænsninger</WR_WorkBlockedRecipe>
+  <WR_WorkBlockedViviGathering>kræver positiv Vivi-indsamlingshastighed og udbytte; egnede indsamlingsredskaber kan muliggøre arbejdet</WR_WorkBlockedViviGathering>
+  <WR_WorkBlockedPrecept>afvises på grund af {0}</WR_WorkBlockedPrecept>
+  <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
+  <WR_RecWorkAversion>{0} er imod {1}; anbefalingsscoren sænkes.</WR_RecWorkAversion>
+  <WR_RecDecisionWorkAversion>Modvilje sænker scoren under grænsen for valgfrit arbejde.</WR_RecDecisionWorkAversion>
+</LanguageData>

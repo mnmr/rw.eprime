@@ -4,6 +4,25 @@ namespace EPrimeReadouts.Core.Tests;
 
 public class PoolAssignmentTreeTests
 {
+    [Test]
+    public async Task CustomSeedEquivalentNameRemainsVerbatimAfterExportAndImport()
+    {
+        var original = new ReadoutModel();
+        original.CreatePool(1, "Meals");
+        original.CreateGroup(1, "Food");
+        string xml = ReadoutsXml.Export(original.Pools, original.Groups);
+        bool parsed = ReadoutsXml.TryImport(xml, out var pools, out var groups, out _);
+        await Assert.That(parsed).IsTrue();
+        var imported = new ReadoutModel();
+        int poolId = 10, groupId = 20;
+        imported.ApplyImport(pools!, groups!, () => poolId++, () => groupId++);
+        static string TranslateSeed(string name) => name == "Meals" ? "Repas" : name;
+        var rows = PoolAssignmentTree.Build(PoolSnapshot.Build(imported.Pools, StaticResources.Catalog()),
+            true, new ItemTreeFilter("", ItemPickerType.Resources, ItemSourceIds.All), "Pools", TranslateSeed);
+        await Assert.That(rows[1].Label).IsEqualTo("Meals");
+        await Assert.That(imported.Groups[0].Name).IsEqualTo("Food");
+    }
+
     private static PoolSnapshot Pools() => PoolSnapshot.Build(
         new List<ResourcePool>
         {
@@ -18,11 +37,32 @@ public class PoolAssignmentTreeTests
             {
                 Id = 7,
                 Name = "Metals",
+                SeedName = "Metals",
                 IconDefName = "Steel",
                 Members = new List<string> { "Steel", "Plasteel" },
             },
         },
         StaticResources.Catalog());
+
+    [Test]
+    public async Task LocalizedSearchUsesDisplayNamesAndPreservesSavedPoolIdentities()
+    {
+        var pools = Pools();
+        static string Display(string value) => value == "Metals" ? "Métaux" : value;
+        var rows = PoolAssignmentTree.Build(pools, expanded: false,
+            new ItemTreeFilter("métaux", ItemPickerType.Resources, ItemSourceIds.All),
+            "Réserves", Display);
+
+        await Assert.That(string.Join(",", rows.Select(row => row.Label)))
+            .IsEqualTo("Réserves,Métaux");
+        await Assert.That(rows[1].Token).IsEqualTo("#7");
+        await Assert.That(rows[1].IconDefName).IsEqualTo("Steel");
+        await Assert.That(pools.EntryAt(1).Name).IsEqualTo("Metals");
+        var all = PoolAssignmentTree.Build(pools, expanded: true,
+            new ItemTreeFilter("", ItemPickerType.Resources, ItemSourceIds.All),
+            "Réserves", Display);
+        await Assert.That(all[1].Label).IsEqualTo("Components");
+    }
 
     [Test]
     public async Task EmptySnapshotProducesNoSyntheticRows()

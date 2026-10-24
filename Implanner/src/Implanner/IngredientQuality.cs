@@ -47,7 +47,7 @@ namespace Implanner
                     continue;
                 FieldInfo? field = extension.GetType().GetField("quality");
                 if (field == null) return false;
-                quality = (int)(QualityCategory)field.GetValue(extension);
+                quality = (int)(QualityCategory)field.GetValue(extension)!;
                 return true;
             }
             return false;

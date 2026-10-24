@@ -64,7 +64,7 @@ namespace RimShared.GameLib
                     cacheStamp = stamp;
                 }
             }
-            if (cache.TryGetValue(map, out Map canonical)) return canonical;
+            if (cache.TryGetValue(map, out Map? canonical)) return canonical;
             canonical = Compute(map);
             cache[map] = canonical;
             return canonical;
@@ -92,7 +92,7 @@ namespace RimShared.GameLib
             try
             {
                 var args = new object?[] { map, null };
-                if (!(bool)tryGetController.Invoke(null, args) || args[1] == null)
+                if (!(bool)tryGetController.Invoke(null, args)! || args[1] == null)
                     return null;
                 return mapByLevel!.GetValue(args[1]) // resolved together with tryGetController
                     is System.Collections.IDictionary levels && levels.Contains(0)

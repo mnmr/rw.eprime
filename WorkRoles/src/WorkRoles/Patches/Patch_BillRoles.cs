@@ -124,7 +124,7 @@ namespace WorkRoles.Patches
             var role = BillRoles.RestrictionFor(bill);
             string label = role == null
                 ? "AnyWorker".Translate()
-                : "WR_BillRoleOption".Translate(role.label);
+                : role.BillOptionLabel;
             if (Widgets.ButtonText(buttonRect, ButtonLabel(label, buttonRect.width - ButtonTextPadding)))
                 Find.WindowStack.Add(new FloatMenu(WorkerOptions(bill)));
             WrTips.Key("WR_SurgeryWorkerRoleTip").Region(buttonRect);
@@ -138,7 +138,7 @@ namespace WorkRoles.Patches
                 stamp = UiRevision.Current;
             }
             var key = (Text.Font, label, (int)width);
-            if (!buttonLabels.TryGetValue(key, out string result))
+            if (!buttonLabels.TryGetValue(key, out string? result))
             {
                 // Same drift margin as WrText.FitWidth so a fractional UI scale
                 // cannot wrap a label that measured as fitting.
@@ -164,7 +164,7 @@ namespace WorkRoles.Patches
             foreach (var role in BillRoles.EligibleRoles(bill))
             {
                 int roleId = role.id;
-                options.Add(new FloatMenuOption("WR_BillRoleOption".Translate(role.label),
+                options.Add(new FloatMenuOption(role.BillOptionLabel,
                     () => RoleCommands.SetBillRole(bill, roleId)));
             }
             return options;
@@ -326,7 +326,7 @@ namespace WorkRoles.Patches
                 int roleId = role.id;
                 yield return new Widgets.DropdownMenuElement<Pawn>
                 {
-                    option = new FloatMenuOption("WR_BillRoleOption".Translate(role.label), () =>
+                    option = new FloatMenuOption(role.BillOptionLabel, () =>
                     {
                         bill.SetAnyPawnRestriction();
                         RoleCommands.SetBillRole(bill, roleId);
@@ -420,7 +420,7 @@ namespace WorkRoles.Patches
             // worker dropdown was its first 30f row. Overdraw its button; the
             // click was already handled by the dropdown underneath this frame.
             var rect = new Rect(0f, 0f, listing.ColumnWidth, 30f);
-            Widgets.ButtonText(rect, "WR_BillRoleOption".Translate(role.label));
+            Widgets.ButtonText(rect, role.BillOptionLabel);
             WrTips.Key("WR_BillWorkerRoleTip").Region(rect);
         }
     }

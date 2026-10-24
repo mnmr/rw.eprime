@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <LP_Item.label>Bündelbezeichnung</LP_Item.label>
+  <LP_Item.description>Bündelbeschreibung</LP_Item.description>
+  <LP_Item.notes.0>Bündelnotiz</LP_Item.notes.0>
+  <LP_Item.extras.0>Bündel erster Eintrag</LP_Item.extras.0>
+  <LP_Item.extras.1>Bündel zweiter Eintrag</LP_Item.extras.1>
+</LanguageData>
