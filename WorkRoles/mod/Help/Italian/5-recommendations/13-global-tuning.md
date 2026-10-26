@@ -6,7 +6,7 @@ La parte destra della scheda Consigli contiene le regolazioni del sistema, divis
 ![Le cinque sezioni delle opzioni globali](global-sections.png)
 
 - **Scelta del responsabile** decide chi sostiene ciascun ruolo.
-- **Percorsi formativi e obiettivi facoltativi** stabilisce quando si attivano i percorsi e quando vale la pena consigliare ruoli facoltativi con più abilità.
+- **Percorsi formativi e obiettivi facoltativi** stabiliscono quando si attivano i percorsi e quando vale la pena consigliare ruoli facoltativi con più abilità.
 - **Distribuzione dei ruoli guida** ripartisce la guida della formazione tra coloni diversi.
 - **Ordine finale dei ruoli** decide la sequenza dei ruoli consigliati a un colono.
 - **Posizione del Cacciatore** imposta le soglie di Tiro per la sua posizione dinamica.

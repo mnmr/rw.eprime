@@ -5,7 +5,7 @@ Os dois botões numerados ![botões da tabela de prioridades](priority-grid-butt
 
 ![Tabela de prioridades](priority-grid.png)
 
-Ela mostra as prioridades calculadas para todos os colonos listados, respeitando filtros. O botão superior alterna entre posições originais do mod e a escala do jogo de 0 a 4. Arraste a alça do canto para redimensionar; clique duas vezes para restaurar.
+Ela mostra as prioridades calculadas para todos os colonos listados, respeitando filtros. O botão superior alterna entre posições originais do mod e a escala do jogo de 0 a 4.
 
 Duas opções relacionadas ficam em Opções:
 

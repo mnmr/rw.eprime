@@ -27,7 +27,7 @@ Installare un impianto ibrido espelle tutto ciò che è già installato su quell
 
 Gli ibridi ereditano la qualità dal genotelaio usato per produrli; vedi [qualità minima](topic:minimum-quality).
 
-**Quality Bionics Remastered**: i bionici hanno qualità; quelli migliori funzionano meglio e hanno più punti salute. Il suggerimento mostra l'efficienza della parte dalla qualità pessima alla leggendaria e ogni piano stabilisce la qualità minima installabile; vedi [qualità minima](topic:minimum-quality).
+**Quality Bionics Remastered**: i bionici hanno qualità; quelli migliori funzionano meglio e hanno più punti salute. Il suggerimento mostra l'efficienza della parte dalla qualità terribile alla leggendaria e ogni piano stabilisce la qualità minima installabile; vedi [qualità minima](topic:minimum-quality).
 
 **Elite Bionics Framework**: gli impianti che aumentano o riducono i punti salute di una parte mostrano la variazione nel suggerimento.
 

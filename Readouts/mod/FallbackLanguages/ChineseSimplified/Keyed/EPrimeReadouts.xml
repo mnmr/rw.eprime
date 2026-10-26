@@ -64,7 +64,7 @@
   <EPR.ShowSearchFilter>显示搜索筛选</EPR.ShowSearchFilter>
   <EPR.SearchHideZero>隐藏数量为零的结果</EPR.SearchHideZero>
   <EPR.SearchStorageOnly>仅统计储存中的物品</EPR.SearchStorageOnly>
-  <EPR.SearchStorageOnlyTip>启用后，仅统计储存区或货架等储存建筑内符合条件且未腐烂的物品。地图其他位置的散落物品不计入。角色搬运中、物品栏或容器内，以及未探索区域中的物品始终不计入。禁止使用的物品仍会计入，除非同时启用“忽略禁止使用的物品”。</EPR.SearchStorageOnlyTip>
+  <EPR.SearchStorageOnlyTip>启用后，仅统计储存区或货架等储存建筑内符合条件且未腐烂的物品。地图其他位置的散落物品不计入。被携带、存放在物品栏或容器内，以及位于未探索区域的物品始终不计入。禁止使用的物品仍会计入，除非同时启用“忽略禁止使用的物品”。</EPR.SearchStorageOnlyTip>
   <EPR.SearchHideForbidden>忽略禁止使用的物品</EPR.SearchHideForbidden>
   <EPR.SelectJumpCamera>点击资源时跳转镜头</EPR.SelectJumpCamera>
   <EPR.DisplayOptions>显示选项</EPR.DisplayOptions>
@@ -150,4 +150,7 @@
   <EPR.PreviewPoolRow>{0}（{1} 个成员）</EPR.PreviewPoolRow>
   <EPR.PreviewGroupRow>{0}（{1} 个层级，{2} 个栏位）</EPR.PreviewGroupRow>
   <EPR.PreviewNone>（无）</EPR.PreviewNone>
+  <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout 在自定义或预设模式下会绘制自己的资源面板，与 EPrime's Readouts 争用同一显示区域。</EPR.CompatibilityCustomResourceReadout>
+  <EPR.CompatibilityReadoutsPlus>Readouts+ 为原版资源显示添加了点击操作。启用 EPrime 的资源显示时，这些操作将不生效。</EPR.CompatibilityReadoutsPlus>
+  <EPR.CompatibilityToggleableReadouts>Toggleable Readouts（包括 Continued 版）会替换原版资源显示的绘制方式。启用 EPrime 的资源显示时，其筛选和置顶功能将不生效。</EPR.CompatibilityToggleableReadouts>
 </LanguageData>

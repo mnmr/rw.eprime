@@ -452,16 +452,20 @@ namespace RimShared.Common.Help
                     ? run.Target : "";
 
                 int wordStart = -1;
-                for (int j = 0; j <= text.Length; j++)
+                for (int j = 0; j <= text.Length;)
                 {
                     bool atEnd = j == text.Length;
+                    int next = atEnd ? j + 1 : TextElements.NextBoundary(text, j);
                     char c = atEnd ? ' ' : text[j];
                     bool isSpace = LineBreakRules.IsSpace(c);
                     bool isGlyph = !isSpace
-                        && LineBreakRules.IsCharacterBreakable(c);
+                        && LineBreakRules.IsCharacterBreakable(TextElements.ScalarAt(text, j));
+                    if (wordStart < 0 && LineBreakRules.ForbidsLineStart(c))
+                        UnmarkGlyphBreak(segments);
                     if (!isSpace && !isGlyph)
                     {
                         if (wordStart < 0) wordStart = j;
+                        j = next;
                         continue;
                     }
                     if (wordStart >= 0)
@@ -470,19 +474,22 @@ namespace RimShared.Common.Help
                             text.Substring(wordStart, j - wordStart),
                             run.Style, target);
                         wordStart = -1;
-                        if (isGlyph) MarkBreak(segments, gap: false);
+                        if (isGlyph && !LineBreakRules.ForbidsLineEnd(text[j - 1]))
+                            MarkBreak(segments, gap: false);
                     }
                     if (isSpace)
                     {
                         if (!atEnd && segments.Count > 0)
                             MarkBreak(segments, gap: true);
+                        j = next;
                         continue;
                     }
                     if (LineBreakRules.ForbidsLineStart(c))
                         UnmarkGlyphBreak(segments);
-                    AppendWord(segments, c.ToString(), run.Style, target);
+                    AppendWord(segments, text.Substring(j, next - j), run.Style, target);
                     if (!LineBreakRules.ForbidsLineEnd(c))
                         MarkBreak(segments, gap: false);
+                    j = next;
                 }
             }
         }

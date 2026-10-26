@@ -4,6 +4,21 @@ namespace EPrimeReadouts.Core.Tests;
 
 public class LayoutEngineSearchTests
 {
+    [Test]
+    public async Task TurkishSearchFindsAndHighlightsTheSameTranslatedResource()
+    {
+        var input = Input("ışık");
+        input.Catalog = new FakeResourceCatalog().With("Steel", "Işık");
+        input.SearchCulture = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+        var model = ReadoutLayoutEngine.Build(input);
+        await Assert.That(Icons(model)).IsEqualTo("Steel,Steel");
+        await Assert.That(model.Cells.Count(c => c.Kind == CellKind.Highlight)).IsEqualTo(1);
+        input.SearchText = "işik";
+        model = ReadoutLayoutEngine.Build(input);
+        await Assert.That(Icons(model)).IsEqualTo("Steel");
+        await Assert.That(model.Cells.Any(c => c.Kind == CellKind.Highlight)).IsFalse();
+    }
+
     private static LayoutInput Input(string search)
     {
         var group = new ReadoutGroup { Id = 1, Name = "Meals" };

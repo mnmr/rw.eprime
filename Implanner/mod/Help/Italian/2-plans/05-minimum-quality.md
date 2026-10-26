@@ -1,13 +1,13 @@
 ---
 title: Qualità minima
 ---
-Con Quality Bionics Remastered o Vanilla Genetics Expanded caricati, gli impianti hanno qualità da pessima a leggendaria, che ne modifica l'efficacia. In questo caso il piano mostra un pulsante **Qualità minima** accanto a **Elimina piano**.
+Con Quality Bionics Remastered o Vanilla Genetics Expanded caricati, gli impianti hanno qualità da terribile a leggendaria, che ne modifica l'efficacia. In questo caso il piano mostra un pulsante **Qualità minima** accanto a **Elimina piano**.
 
 ![L'intestazione del piano con il pulsante Qualità minima](plan-min-quality.png)
 
 Ogni impianto del piano, compresi quelli ereditati, viene installato e prodotto con quella qualità o superiore. Gli impianti privi di qualità non sono interessati. Un nuovo piano derivato parte dallo stesso minimo del piano base.
 
-Implanner non sostituisce mai una parte sana del corpo con una peggiore. Un braccio bionico pessimo funziona peggio di uno naturale, quindi attende un oggetto migliore, salvo che il braccio del colono sia mancante o gravemente danneggiato. Quando più oggetti sono idonei, il migliore va al colono il cui turno arriva prima.
+Implanner non sostituisce mai una parte sana del corpo con una peggiore. Un braccio bionico di qualità terribile funziona peggio di uno naturale, quindi attende un oggetto migliore, salvo che il braccio del colono sia mancante o gravemente danneggiato. Quando più oggetti sono idonei, il migliore va al colono il cui turno arriva prima.
 
 Un colono che possiede già l'impianto pianificato lo conserva anche sotto il minimo, a meno che sia attiva l'opzione seguente.
 

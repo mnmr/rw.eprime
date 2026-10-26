@@ -5,7 +5,7 @@ Ti mancano i vecchi numeri? I due piccoli pulsanti numerati ![pulsanti della gri
 
 ![La griglia delle priorità](priority-grid.png)
 
-La griglia mostra le priorità calcolate da WorkRoles per ogni colono elencato, rispettando i filtri attivi. Il pulsante in alto alterna i valori originali della mod e la familiare vista da 0 a 4 del gioco base. Trascina l'angolo per ridimensionare; fai doppio clic per ripristinare la dimensione.
+La griglia mostra le priorità calcolate da WorkRoles per ogni colono elencato, rispettando i filtri attivi. Il pulsante in alto alterna i valori originali della mod e la familiare vista da 0 a 4 del gioco base.
 
 Due opzioni collegate si trovano nella scheda Opzioni:
 

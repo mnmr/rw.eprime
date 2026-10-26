@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <RS_CompatibilityHeading>Se han detectado posibles conflictos entre mods</RS_CompatibilityHeading>
+  <RS_CompatibilityRemove>Elimina los mods indicados arriba para evitar estos conflictos.</RS_CompatibilityRemove>
+  <RS_CompatibilityRestoreAutomation>Elimina los mods indicados arriba para activar la automatización.</RS_CompatibilityRestoreAutomation>
+</LanguageData>

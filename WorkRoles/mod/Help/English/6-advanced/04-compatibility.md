@@ -41,9 +41,8 @@ WorkRoles owns priorities for managed colonists, so their writes are
 blocked. When that happens a one-time notice names the mod and suggests
 the role-based way to get the same effect.
 
-Priority ownership applies to humanlike pawns only, so mods that set
-priorities for other pawn kinds, like Mech Work Tab for mechanoids, are
-fully compatible.
+Priority ownership applies only to humanlike characters, so mods that set
+mechanoid priorities, such as Mech Work Tab, are fully compatible.
 
 Some mods require priorities in the range 0 to 4, so if you have issues
 with other mods make sure the "Report vanilla 0-4 priorities to other

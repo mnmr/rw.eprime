@@ -43,6 +43,16 @@ public class HelpMarkdownTests
     }
 
     [Test]
+    public async Task SoftLineBreaksKeepKoreanWordSpacesAndJoinCompleteJapaneseAndHanElements()
+    {
+        var doc = HelpMarkdown.Parse("작업을\n설정합니다\n\n- 작업을\n  설정합니다\n\n"
+            + "か\u3099\nく\n\n\U00020000\n中文");
+
+        await Assert.That(Dump(doc)).IsEqualTo(
+            "P 작업을 설정합니다\n* 작업을 설정합니다\nP か\u3099く\nP \U00020000中文");
+    }
+
+    [Test]
     public async Task MissingFrontMatterYieldsAnEmptyTitleAndKeepsAllContent()
     {
         var doc = HelpMarkdown.Parse("Just text.");

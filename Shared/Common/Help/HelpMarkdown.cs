@@ -199,8 +199,8 @@ namespace RimShared.Common.Help
 
         /// <summary>
         /// Joins the source lines of one block with a space, as markdown
-        /// does, except between two character-breakable (CJK) glyphs where
-        /// a space would render as a visible gap mid-sentence.
+        /// does, except between Han/kana elements where a space would render
+        /// as a visible gap mid-sentence. Korean retains its word separator.
         /// </summary>
         private static string JoinSoftLines(List<string> lines)
         {
@@ -209,10 +209,13 @@ namespace RimShared.Common.Help
             for (int i = 1; i < lines.Count; i++)
             {
                 string next = lines[i];
-                bool glyphJoin = joined.Length > 0 && next.Length > 0
-                    && LineBreakRules.IsCharacterBreakable(
-                        joined[joined.Length - 1])
-                    && LineBreakRules.IsCharacterBreakable(next[0]);
+                string previous = lines[i - 1];
+                int lastElement = 0;
+                for (int j = 0; j < previous.Length; j = TextElements.NextBoundary(previous, j))
+                    lastElement = j;
+                bool glyphJoin = previous.Length > 0 && next.Length > 0
+                    && LineBreakRules.JoinsSoftLineWithoutSpace(TextElements.ScalarAt(previous, lastElement))
+                    && LineBreakRules.JoinsSoftLineWithoutSpace(TextElements.ScalarAt(next, 0));
                 if (!glyphJoin) joined.Append(' ');
                 joined.Append(next);
             }

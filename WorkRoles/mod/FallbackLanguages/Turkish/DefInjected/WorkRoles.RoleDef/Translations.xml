@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_Artist.description>Heykel ve sanat eserleri yapma.</WS_Artist.description>
+  <WS_Artist.label>Sanatçı</WS_Artist.label>
+  <WS_Basics.description>Her kolonicinin yapması gereken kişisel bakım ve basit işler.</WS_Basics.description>
+  <WS_Basics.label>Temel işler</WS_Basics.label>
+  <WS_Bedrest.description>Hasta veya yaralıyken yatakta dinlenme.</WS_Bedrest.description>
+  <WS_Bedrest.label>Yatak istirahati</WS_Bedrest.label>
+  <WS_Brewer.description>Bira tezgâhında şıra hazırlama.</WS_Brewer.description>
+  <WS_Brewer.label>Biracı</WS_Brewer.label>
+  <WS_Builder.description>İnşaat, onarım ve söküm.</WS_Builder.description>
+  <WS_Builder.label>İnşaatçı</WS_Builder.label>
+  <WS_Butcher.description>Ölü hayvanları parçalama.</WS_Butcher.description>
+  <WS_Butcher.label>Kasap</WS_Butcher.label>
+  <WS_Childminder.description>Çocuk bakımı ve öğretim.</WS_Childminder.description>
+  <WS_Childminder.label>Çocuk bakıcısı</WS_Childminder.label>
+  <WS_Cleaner.description>Temizlik.</WS_Cleaner.description>
+  <WS_Cleaner.label>Temizlikçi</WS_Cleaner.label>
+  <WS_Cook.description>Yemek hazırlama ve kasaplık.</WS_Cook.description>
+  <WS_Cook.label>Aşçı</WS_Cook.label>
+  <WS_Core.description>Her kolonicinin yapması gereken acil işler: yangın söndürme, tedavi olma ve kurtarma.</WS_Core.description>
+  <WS_Core.label>Çekirdek işler</WS_Core.label>
+  <WS_Crafter.description>Genel zanaat: taş kesme, eritme, uyuşturucu ve bileşen üretimi.</WS_Crafter.description>
+  <WS_Crafter.label>Zanaatkâr</WS_Crafter.label>
+  <WS_DarkStudier.description>Anomalili varlıkları inceleme.</WS_DarkStudier.description>
+  <WS_DarkStudier.label>Anomalist</WS_DarkStudier.label>
+  <WS_Doctor.description>Kolonicilere, mahkûmlara ve hayvanlara tıbbi bakım.</WS_Doctor.description>
+  <WS_Doctor.label>Doktor</WS_Doctor.label>
+  <WS_DrugMaker.description>Uyuşturucu laboratuvarında ve serum santrifüjünde üretim.</WS_DrugMaker.description>
+  <WS_DrugMaker.label>Uyuşturucu üreticisi</WS_DrugMaker.label>
+  <WS_Fabricator.description>Üretim tezgâhında ileri teknoloji ürünleri üretme.</WS_Fabricator.description>
+  <WS_Fabricator.label>Teknik üretici</WS_Fabricator.label>
+  <WS_Farmer.description>Ekim, hasat ve bitki kesme.</WS_Farmer.description>
+  <WS_Farmer.label>Çiftçi</WS_Farmer.label>
+  <WS_Firefighter.description>Yangın söndürme.</WS_Firefighter.description>
+  <WS_Firefighter.label>İtfaiyeci</WS_Firefighter.label>
+  <WS_Fisher.description>Balık tutma.</WS_Fisher.description>
+  <WS_Fisher.label>Balıkçı</WS_Fisher.label>
+  <WS_Grower.description>Ekim alanlarında ekim ve hasat.</WS_Grower.description>
+  <WS_Grower.label>Yetiştirici</WS_Grower.label>
+  <WS_Grunt.description>Taşıma ve temizlik.</WS_Grunt.description>
+  <WS_Grunt.label>Beden işçisi</WS_Grunt.label>
+  <WS_Handler.description>Hayvan evcilleştirme, eğitim ve kesim.</WS_Handler.description>
+  <WS_Handler.label>Hayvan bakıcısı</WS_Handler.label>
+  <WS_Hauler.description>Eşya taşıma.</WS_Hauler.description>
+  <WS_Hauler.label>Taşıyıcı</WS_Hauler.label>
+  <WS_Herder.description>Ağıl hayvancılığı: ağıla götürme, besleme, sağma, kırkma ve kesim.</WS_Herder.description>
+  <WS_Herder.label>Çoban</WS_Herder.label>
+  <WS_Hunter.description>Yiyecek için vahşi hayvan avlama.</WS_Hunter.description>
+  <WS_Hunter.label>Avcı</WS_Hunter.label>
+  <WS_Jailor.description>Sorgulama, köleleştirme ve din değiştirme dışındaki mahkûm işleri: besleme, refakat, sohbet, bastırma, salıverme ve infaz.</WS_Jailor.description>
+  <WS_Jailor.label>Gardiyan</WS_Jailor.label>
+  <WS_Laborer.description>Çeşitli basit işler.</WS_Laborer.description>
+  <WS_Laborer.label>İşçi</WS_Laborer.label>
+  <WS_Mechanitor.description>Mekanoit onarma, yenilerini yetiştirme ve alt çekirdek kodlama. Yalnızca mekabağı olan kolonicilere önerilir.</WS_Mechanitor.description>
+  <WS_Mechanitor.label>Mekanitör</WS_Mechanitor.label>
+  <WS_Medic.description>Kolonicileri ameliyat etme dışındaki tıbbi işler.</WS_Medic.description>
+  <WS_Medic.label>Sağlıkçı</WS_Medic.label>
+  <WS_Miner.description>Madencilik ve sondaj.</WS_Miner.description>
+  <WS_Miner.label>Madenci</WS_Miner.label>
+  <WS_NoFirefighting.description>Engelleyici: Bu role sahip koloniciler, sonraki bir rol (Temel işler gibi) yangın söndürmeyi içerse bile asla yangın söndürmez.</WS_NoFirefighting.description>
+  <WS_NoFirefighting.label>Ateş korkusu</WS_NoFirefighting.label>
+  <WS_Nurse.description>Hastaları besleme, kurtarma ve ziyaret; acil durumda kendini tedavi etme.</WS_Nurse.description>
+  <WS_Nurse.label>Hemşire</WS_Nurse.label>
+  <WS_Painter.description>Boyama ve boya sökme.</WS_Painter.description>
+  <WS_Painter.label>Boyacı</WS_Painter.label>
+  <WS_Patient.description>Tıbbi tedavi alma.</WS_Patient.description>
+  <WS_Patient.label>Hasta</WS_Patient.label>
+  <WS_PlantCutter.description>Yabani bitki ve ağaçları kesme ve hasat etme.</WS_PlantCutter.description>
+  <WS_PlantCutter.label>Bitki kesici</WS_PlantCutter.label>
+  <WS_Repairer.description>Yeni bina inşa etmek dışındaki tüm inşaat işleri.</WS_Repairer.description>
+  <WS_Repairer.label>Tamirci</WS_Repairer.label>
+  <WS_Rescuer.description>Yere düşmüş kolonicileri kurtarma.</WS_Rescuer.description>
+  <WS_Rescuer.label>Kurtarıcı</WS_Rescuer.label>
+  <WS_Researcher.description>Araştırma masasında araştırma.</WS_Researcher.description>
+  <WS_Researcher.label>Araştırmacı</WS_Researcher.label>
+  <WS_Smith.description>Silah ve zırh üretimi.</WS_Smith.description>
+  <WS_Smith.label>Demirci</WS_Smith.label>
+  <WS_Tailor.description>Giysi üretimi.</WS_Tailor.description>
+  <WS_Tailor.label>Terzi</WS_Tailor.label>
+  <WS_Warden.description>Mahkûmlarla etkileşim: katılıma ikna, din değiştirme, besleme ve salıverme.</WS_Warden.description>
+  <WS_Warden.label>Gözetmen</WS_Warden.label>
+</LanguageData>

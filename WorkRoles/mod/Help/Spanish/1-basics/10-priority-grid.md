@@ -5,7 +5,7 @@ Los dos botones numerados ![botones de la tabla](priority-grid-buttons.png) sobr
 
 ![Tabla de prioridades](priority-grid.png)
 
-Muestra las prioridades calculadas por WorkRoles para los colonos listados, respetando los filtros. El botón superior alterna entre rangos propios y la escala original de 0 a 4. Arrastra la esquina para cambiar el tamaño; doble clic para restaurarlo.
+Muestra las prioridades calculadas por WorkRoles para los colonos listados, respetando los filtros. El botón superior alterna entre rangos propios y la escala original de 0 a 4.
 
 Dos opciones relacionadas están en Opciones:
 

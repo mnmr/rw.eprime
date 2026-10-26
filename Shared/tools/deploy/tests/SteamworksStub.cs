@@ -3,6 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.IO;
+using System.Text.Json;
 
 namespace Steamworks
 {
@@ -48,19 +50,28 @@ namespace Steamworks
         public static EResult Result = EResult.k_EResultOK;
         public static Upload Pending, Published;
         public static readonly List<Upload> Submissions = new List<Upload>();
-        public static void Reset()
+        public static void Configure()
         {
-            Online = true; NeedsAgreement = RejectTags = ResultConsumed = false;
-            Initializations = Shutdowns = Creates = Starts = CompletionChecks = 0;
-            Result = EResult.k_EResultOK;
-            Pending = Published = null;
-            Submissions.Clear();
+            using (var input = JsonDocument.Parse(File.ReadAllText(Environment.GetEnvironmentVariable("WORKSHOP_TEST_INPUT"))))
+            {
+                var settings = input.RootElement;
+                Online = settings.GetProperty("Online").GetBoolean();
+                NeedsAgreement = settings.GetProperty("NeedsAgreement").GetBoolean();
+                RejectTags = settings.GetProperty("RejectTags").GetBoolean();
+                Result = (EResult)settings.GetProperty("Result").GetInt32();
+            }
+        }
+        public static void Report()
+        {
+            File.WriteAllText(Environment.GetEnvironmentVariable("WORKSHOP_TEST_OUTPUT"), JsonSerializer.Serialize(new {
+                ProcessId = Environment.ProcessId, Initializations, Shutdowns, Creates, Starts, Published, Submissions
+            }, new JsonSerializerOptions { IncludeFields = true }));
         }
     }
     public static class SteamAPI
     {
-        public static bool Init() { Fixture.Initializations++; return true; }
-        public static void Shutdown() { Fixture.Shutdowns++; }
+        public static bool Init() { Fixture.Configure(); Fixture.Initializations++; return true; }
+        public static void Shutdown() { Fixture.Shutdowns++; Fixture.Report(); }
         // Steamworks.NET's manual dispatcher consumes even unregistered call
         // results. Confirmed with a real read-only CheckFileSignature request.
         public static void RunCallbacks() { Fixture.ResultConsumed = true; }

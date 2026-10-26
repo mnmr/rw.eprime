@@ -27,7 +27,7 @@ title: 支持的模组
 
 混合植入体的品质取决于制作所用基因框架（参见[最低品质](topic:minimum-quality)）。
 
-**Quality Bionics Remastered**：仿生体具有品质，更高品质性能更好、生命值更多。提示显示极差至传说的部位效率，各方案设置最低安装品质（参见[最低品质](topic:minimum-quality)）。
+**Quality Bionics Remastered**：仿生体具有品质，更高品质性能更好、生命值更多。提示显示极差至传奇级的部位效率，各方案设置最低安装品质（参见[最低品质](topic:minimum-quality)）。
 
 **Elite Bionics Framework**：提升或降低身体部位生命值的植入体会在提示中显示变化。
 

@@ -31,6 +31,7 @@ namespace QualityJobs.Patches
             Patch_PlaySettings.ResetPresentation();
             Command_QualityJob.ResetPresentationCache();
             QualityJobsMod.ResetPresentationCaches();
+            BillWindowIntegration.Reset();
             WrText.Reset();
             WrTips.Reset();
         }

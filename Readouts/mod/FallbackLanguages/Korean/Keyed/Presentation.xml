@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <EPR.SeedDrugs>약물</EPR.SeedDrugs>
+  <EPR.SeedEggs>알</EPR.SeedEggs>
+  <EPR.SeedFertilizedeggs>유정란</EPR.SeedFertilizedeggs>
+  <EPR.SeedFood>식량</EPR.SeedFood>
+  <EPR.SeedHardDrugs>고위험 약물</EPR.SeedHardDrugs>
+  <EPR.SeedLeathers>가죽</EPR.SeedLeathers>
+  <EPR.SeedMaterials>재료</EPR.SeedMaterials>
+  <EPR.SeedMeals>식사</EPR.SeedMeals>
+  <EPR.SeedMeats>고기</EPR.SeedMeats>
+  <EPR.SeedMechs>메카노이드</EPR.SeedMechs>
+  <EPR.SeedMedicine>의약품</EPR.SeedMedicine>
+  <EPR.SeedMortarshells>박격포탄</EPR.SeedMortarshells>
+  <EPR.SeedPlantfood>식물성 식품</EPR.SeedPlantfood>
+  <EPR.SeedRaw>식재료</EPR.SeedRaw>
+  <EPR.SeedSera>혈청</EPR.SeedSera>
+  <EPR.SeedSocialDrugs>사교용 약물</EPR.SeedSocialDrugs>
+  <EPR.SeedStoneblocks>석재</EPR.SeedStoneblocks>
+  <EPR.SeedStonechunks>암석 덩어리</EPR.SeedStonechunks>
+  <EPR.SeedTextiles>직물</EPR.SeedTextiles>
+  <EPR.SeedWealth>재산</EPR.SeedWealth>
+  <EPR.SeedWools>털</EPR.SeedWools>
+</LanguageData>

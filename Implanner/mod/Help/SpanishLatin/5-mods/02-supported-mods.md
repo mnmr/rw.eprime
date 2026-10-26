@@ -19,7 +19,7 @@ Cualquier mod de implantes que use los datos de cirugía funciona sin configurac
 
 Algunos híbridos reemplazan la parte: el módulo de hibernación sustituye el cerebro. Otros se colocan sobre ella, como el refuerzo neuronal. Los implantes normales pueden instalarse en una parte que lleva un híbrido encima, pero no si el híbrido la ha sustituido.
 
-Instalar cualquier híbrido exhaz clic en lo ya instalado en esa parte. Los implantes exhaz clic endos caen junto al médico.
+Instalar cualquier híbrido expulsa lo ya instalado en esa parte. Los implantes expulsados caen junto al médico.
 
 - Implanner instala primero el híbrido para no tener que sacar nada.
 - Si ya había implantes, permite que caigan, los reserva para ese colono y los reinstala justo después.

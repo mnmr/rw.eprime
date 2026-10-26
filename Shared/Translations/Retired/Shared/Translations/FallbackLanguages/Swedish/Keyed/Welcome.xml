@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <RS_CompatibilityHeading>Potentiella modkonflikter upptäckta</RS_CompatibilityHeading>
+  <RS_CompatibilityRemove>Ta bort moddarna ovan för att undvika dessa konflikter.</RS_CompatibilityRemove>
+  <RS_CompatibilityRestoreAutomation>Ta bort moddarna ovan för att aktivera automatisering.</RS_CompatibilityRestoreAutomation>
+</LanguageData>

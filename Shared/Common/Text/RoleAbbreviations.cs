@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Text;
 
 namespace RimShared.Common
 {
@@ -14,14 +16,18 @@ namespace RimShared.Common
     /// roles in catalog order for stability.
     public static class RoleAbbreviations
     {
-        public static Dictionary<int, string> Build(IReadOnlyList<(int id, string label)> roles)
+        public static Dictionary<int, string> Build(IReadOnlyList<(int id, string label)> roles,
+            CultureInfo? culture = null)
         {
+            culture = culture ?? CultureInfo.InvariantCulture;
+            // Explicit casing also works on Unity Mono, whose Turkish
+            // case-insensitive collation can disagree with its case conversion.
             var used = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
             var reserved = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
             foreach (var (_, rawLabel) in roles)
             {
-                string? initials = InitialsOf(CleanWords(rawLabel));
-                if (initials != null) reserved.Add(initials);
+                string? initials = InitialsOf(CleanWords(rawLabel), culture);
+                if (initials != null) reserved.Add(ComparisonKey(initials, culture));
             }
 
             var result = new Dictionary<int, string>();
@@ -31,13 +37,14 @@ namespace RimShared.Common
                 string? picked = null;
 
                 // A multi-word name may claim its own reservation.
-                string? own = InitialsOf(words);
-                if (own != null && used.Add(own))
+                string? own = InitialsOf(words, culture);
+                if (own != null && used.Add(ComparisonKey(own, culture)))
                     picked = own;
 
                 if (picked == null)
-                    foreach (var candidate in LadderCandidates(words))
-                        if (!reserved.Contains(candidate) && used.Add(candidate))
+                    foreach (var candidate in LadderCandidates(words, culture))
+                        if (!reserved.Contains(ComparisonKey(candidate, culture))
+                            && used.Add(ComparisonKey(candidate, culture)))
                         {
                             picked = candidate;
                             break;
@@ -47,11 +54,12 @@ namespace RimShared.Common
                 {
                     // Numbered fallback seeds from the first usable character
                     // ('R' when the label has none).
-                    char first = words.Count > 0 ? char.ToUpperInvariant(words[0][0]) : 'R';
+                    string first = words.Count > 0 ? TextElements.Prefix(words[0], 1).ToUpper(culture) : "R";
                     for (int i = 1; picked == null; i++)
                     {
-                        string candidate = $"{first}{i}";
-                        if (!reserved.Contains(candidate) && used.Add(candidate))
+                        string candidate = first + i.ToString(CultureInfo.InvariantCulture);
+                        if (!reserved.Contains(ComparisonKey(candidate, culture))
+                            && used.Add(ComparisonKey(candidate, culture)))
                             picked = candidate;
                     }
                 }
@@ -65,36 +73,55 @@ namespace RimShared.Common
         private static List<string> CleanWords(string rawLabel)
         {
             string label = string.IsNullOrWhiteSpace(rawLabel) ? "Role" : rawLabel.Trim();
-            return label.Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries)
-                .Select(w => new string(w.Where(char.IsLetterOrDigit).ToArray()))
-                .Where(w => w.Length > 0)
-                .ToList();
+            var words = new List<string>();
+            var word = new StringBuilder();
+            for (int i = 0; i < label.Length;)
+            {
+                int end = TextElements.NextBoundary(label, i);
+                if (char.IsWhiteSpace(label, i))
+                {
+                    if (word.Length > 0) { words.Add(word.ToString()); word.Clear(); }
+                }
+                else if (char.IsLetterOrDigit(label, i))
+                    word.Append(label, i, end - i);
+                i = end;
+            }
+            if (word.Length > 0) words.Add(word.ToString());
+            return words;
         }
 
-        private static string? InitialsOf(List<string> words) =>
+        private static string? InitialsOf(List<string> words, CultureInfo culture) =>
             words.Count >= 2
-                ? string.Concat(words.Select(w => char.ToUpperInvariant(w[0])))
+                ? string.Concat(words.Select(w => TextElements.Prefix(w, 1).ToUpper(culture)))
                 : null;
 
-        private static IEnumerable<string> LadderCandidates(List<string> words)
+        private static IEnumerable<string> LadderCandidates(List<string> words, CultureInfo culture)
         {
             if (words.Count == 0) yield break; // nothing usable: numbered fallback
             string word = words[0];
-            char first = char.ToUpperInvariant(word[0]);
-            if (word.Length >= 2)
+            int[] starts = TextElements.GetStarts(word);
+            string first = TextElements.Prefix(word, 1).ToUpper(culture);
+            if (starts.Length >= 2)
             {
-                yield return $"{first}{word[1]}";
-                const string Vowels = "aeiouyAEIOUY";
-                for (int i = 1; i < word.Length; i++)
-                    if (Vowels.IndexOf(word[i]) >= 0)
+                yield return first + ElementAt(word, starts, 1);
+                const string Vowels = "aeiouyAEIOUYıİöÖüÜ";
+                for (int i = 1; i < starts.Length; i++)
+                    if (Vowels.IndexOf(word[starts[i]]) >= 0)
                     {
-                        yield return $"{first}{word[i]}";
+                        yield return first + ElementAt(word, starts, i);
                         break;
                     }
-                yield return $"{first}{word[word.Length - 1]}";
+                yield return first + ElementAt(word, starts, starts.Length - 1);
             }
             // A bare single letter beats a numbered fallback.
-            yield return first.ToString();
+            yield return first;
         }
+
+        private static string ElementAt(string text, int[] starts, int index) =>
+            text.Substring(starts[index],
+                (index + 1 == starts.Length ? text.Length : starts[index + 1]) - starts[index]);
+
+        private static string ComparisonKey(string value, CultureInfo culture) =>
+            culture.Equals(CultureInfo.InvariantCulture) ? value : value.ToUpper(culture);
     }
 }

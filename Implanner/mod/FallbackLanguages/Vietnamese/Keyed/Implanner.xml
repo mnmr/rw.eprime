@@ -1,0 +1,216 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <IMP_AddImplantReserve>Thêm bộ phận cấy ghép</IMP_AddImplantReserve>
+  <IMP_AddImplantReserveTip>Chọn bộ phận cấy ghép để giữ riêng, không cho tự động dùng.</IMP_AddImplantReserveTip>
+  <IMP_AddPlan>Kế hoạch mới</IMP_AddPlan>
+  <IMP_AggregateColonists>Cư dân: {0} / {1}</IMP_AggregateColonists>
+  <IMP_AutomationOffBody>{0} chia khu định cư này thành nhiều tầng. Implanner không thể chuyển bộ phận cấy ghép hay ca mổ qua ranh giới giữa các tầng, nên sẽ ngừng giữ vật phẩm và xếp lịch mổ để tránh chỉ thực hiện được một phần kế hoạch.\n\nCác chức năng khác vẫn hoạt động. Bạn vẫn có thể tạo kế hoạch, giao kế hoạch và xếp hạng bộ phận cấy ghép. Hãy tự thêm ca mổ; Implanner sẽ theo dõi những gì đã lắp và còn thiếu.</IMP_AutomationOffBody>
+  <IMP_AutomationOffTitle>Tự động hóa đã tắt</IMP_AutomationOffTitle>
+  <IMP_BadDirectory>Nhập thư mục hợp lệ.</IMP_BadDirectory>
+  <IMP_BadFileName>Nhập tên tệp hợp lệ.</IMP_BadFileName>
+  <IMP_BenchLockedTip>Không thể dán, tạm dừng hoặc tiếp tục lệnh tại bàn Implanner. Bỏ chọn "Bàn Implanner" ở đầu thẻ Công việc để lấy lại quyền sử dụng bàn.</IMP_BenchLockedTip>
+  <IMP_BenchNoNewBills>Bỏ chọn "Bàn Implanner" để thêm lệnh ở đây</IMP_BenchNoNewBills>
+  <IMP_BenchToggle>Bàn Implanner</IMP_BenchToggle>
+  <IMP_BenchToggleTip>Implanner ưu tiên đặt lệnh chế tạo tại bàn này; các lệnh có sẵn sẽ bị tạm dừng. Khi bật, bạn không thể thêm, dán, tạm dừng hoặc tiếp tục lệnh tại đây.\n\nBỏ chọn để lấy lại quyền sử dụng bàn. Các lệnh đã tạm dừng trước khi bật vẫn giữ nguyên, còn những lệnh khác sẽ tiếp tục.</IMP_BenchToggleTip>
+  <IMP_CleanupBody>Implanner đã tạo các lệnh này. OK sẽ tắt tự động hóa và xóa những lệnh được chọn. Lệnh không chọn vẫn còn và được quản lý tiếp khi bật lại tự động hóa. Vật phẩm cấy ghép được giữ chỗ sẽ được giải phóng trong cả hai trường hợp. Hủy sẽ giữ tự động hóa bật.</IMP_CleanupBody>
+  <IMP_CleanupTitle>Tắt tự động hóa?</IMP_CleanupTitle>
+  <IMP_ColColonist>Cư dân</IMP_ColColonist>
+  <IMP_ColMelee>C</IMP_ColMelee>
+  <IMP_ColMeleeTip>Kỹ năng cận chiến</IMP_ColMeleeTip>
+  <IMP_ColPlan>Kế hoạch</IMP_ColPlan>
+  <IMP_ColPriority>Ưu tiên</IMP_ColPriority>
+  <IMP_ColProgress>Tiến độ</IMP_ColProgress>
+  <IMP_ColShooting>B</IMP_ColShooting>
+  <IMP_ColShootingTip>Kỹ năng bắn súng</IMP_ColShootingTip>
+  <IMP_ColState>Trạng thái</IMP_ColState>
+  <IMP_ColonistDetails>Chi tiết cư dân</IMP_ColonistDetails>
+  <IMP_CompatibilityLevelMod>{0}: Tự động hóa của Implanner bị vô hiệu hóa khi dùng mod nhiều tầng này. Lập kế hoạch và theo dõi vẫn hoạt động.</IMP_CompatibilityLevelMod>
+  <IMP_CopyClipboard>Chép vào bộ nhớ tạm</IMP_CopyClipboard>
+  <IMP_DeleteFileConfirm>Xóa "{0}"?</IMP_DeleteFileConfirm>
+  <IMP_DeletePlan>Xóa kế hoạch</IMP_DeletePlan>
+  <IMP_DeletePlanConfirm>Xóa kế hoạch "{0}"? Cư dân được giao kế hoạch sẽ mất phân công, và các kế hoạch mở rộng từ nó sẽ ngừng kế thừa.</IMP_DeletePlanConfirm>
+  <IMP_DetailCollecting>Đang gom {0}</IMP_DetailCollecting>
+  <IMP_DragItemsHere>Kéo bộ phận cấy ghép vào đây</IMP_DragItemsHere>
+  <IMP_EnterPath>Thư mục:</IMP_EnterPath>
+  <IMP_Export>Xuất</IMP_Export>
+  <IMP_ExportPlansTitle>Xuất kế hoạch</IMP_ExportPlansTitle>
+  <IMP_ExportSummary>{0} kế hoạch, {1} bộ phận cấy ghép</IMP_ExportSummary>
+  <IMP_ExtendsNothing>Không có</IMP_ExtendsNothing>
+  <IMP_ExtendsPlan>Mở rộng từ</IMP_ExtendsPlan>
+  <IMP_FromClipboard>Từ bộ nhớ tạm</IMP_FromClipboard>
+  <IMP_GoalBlockedFloor>Chờ bác sĩ đủ cấp ({0})</IMP_GoalBlockedFloor>
+  <IMP_GoalBlockedLoss>Sẽ phá hủy {0}</IMP_GoalBlockedLoss>
+  <IMP_GoalComplete>Hoàn tất</IMP_GoalComplete>
+  <IMP_GoalMissing>Còn thiếu</IMP_GoalMissing>
+  <IMP_GoalPartial>{0} / {1}</IMP_GoalPartial>
+  <IMP_GoalReady>Sẵn sàng</IMP_GoalReady>
+  <IMP_GoalRecovering>Đang hồi phục</IMP_GoalRecovering>
+  <IMP_GoalReserved>Đã giữ chỗ</IMP_GoalReserved>
+  <IMP_GoalScheduled>Đã xếp lịch mổ</IMP_GoalScheduled>
+  <IMP_GroupByFaction>Theo phe</IMP_GroupByFaction>
+  <IMP_GroupByGender>Theo giới tính</IMP_GroupByGender>
+  <IMP_GroupByIdeo>Theo tín ngưỡng</IMP_GroupByIdeo>
+  <IMP_GroupByLocation>Theo vị trí</IMP_GroupByLocation>
+  <IMP_GroupByNone>Không nhóm</IMP_GroupByNone>
+  <IMP_GroupByXenotype>Theo xenotype</IMP_GroupByXenotype>
+  <IMP_Help>Trợ giúp</IMP_Help>
+  <IMP_HelpChapterAutomation>Tự động hóa</IMP_HelpChapterAutomation>
+  <IMP_HelpChapterBasics>Cơ bản</IMP_HelpChapterBasics>
+  <IMP_HelpChapterMods>Mod</IMP_HelpChapterMods>
+  <IMP_HelpChapterPlans>Kế hoạch</IMP_HelpChapterPlans>
+  <IMP_HelpChapterSharing>Chia sẻ</IMP_HelpChapterSharing>
+  <IMP_HelpReload>Tải lại</IMP_HelpReload>
+  <IMP_ImplantGroupOther>Khác</IMP_ImplantGroupOther>
+  <IMP_Import>Nhập</IMP_Import>
+  <IMP_ImportAddNote>Kế hoạch nhập được thêm bên cạnh kế hoạch hiện có; không thay thế gì. Tên bị trùng sẽ được thêm số.</IMP_ImportAddNote>
+  <IMP_ImportInvalid>Dữ liệu xuất kế hoạch Implanner không hợp lệ: {0}</IMP_ImportInvalid>
+  <IMP_ImportPlansTitle>Nhập kế hoạch</IMP_ImportPlansTitle>
+  <IMP_Inherited>kế thừa</IMP_Inherited>
+  <IMP_IterAsap>Sớm nhất</IMP_IterAsap>
+  <IMP_IterColonist>Trọn bộ</IMP_IterColonist>
+  <IMP_IterTier>Theo bậc</IMP_IterTier>
+  <IMP_LocCustom>Thư mục tùy chọn</IMP_LocCustom>
+  <IMP_LocDesktop>Màn hình nền</IMP_LocDesktop>
+  <IMP_LocGameData>Thư mục Implanner</IMP_LocGameData>
+  <IMP_LocUserHome>Thư mục cá nhân</IMP_LocUserHome>
+  <IMP_NextScheduled>Đã xếp lịch mổ cho {0}</IMP_NextScheduled>
+  <IMP_NoFiles>Chưa có tệp kế hoạch đã xuất ở đây.</IMP_NoFiles>
+  <IMP_NoMatchingImplants>Không có bộ phận cấy ghép khớp tìm kiếm.</IMP_NoMatchingImplants>
+  <IMP_NoPlan>Không có</IMP_NoPlan>
+  <IMP_NoPlans>Tạo kế hoạch để đặt mục tiêu cấy ghép.</IMP_NoPlans>
+  <IMP_NoSelection>Chọn cư dân để xem bộ phận cấy ghép còn thiếu.</IMP_NoSelection>
+  <IMP_OptAllowMultipleBladders>Cho phép nhiều bộ phận cấy ghép bàng quang</IMP_OptAllowMultipleBladders>
+  <IMP_OptAllowMultipleBladdersTip>Trò chơi coi các bộ phận cấy ghép bàng quang từ các mod khác nhau là riêng biệt, nên một cư dân có thể mang nhiều loại cùng lúc và cộng dồn hiệu ứng. Tắt để coi chúng là một vị trí: chọn một loại trong kế hoạch sẽ thay thế các loại khác, và cư dân đã có bất kỳ loại nào dưới đây được tính là hoàn tất. Không bao giờ tháo bỏ thứ gì.\n\nBộ phận bị ảnh hưởng:\n{0}</IMP_OptAllowMultipleBladdersTip>
+  <IMP_OptAllowMultipleHygieneEnhancers>Cho phép nhiều bộ tăng cường vệ sinh</IMP_OptAllowMultipleHygieneEnhancers>
+  <IMP_OptAllowMultipleHygieneEnhancersTip>Trò chơi coi các bộ tăng cường vệ sinh từ các mod khác nhau là riêng biệt, nên một cư dân có thể mang nhiều loại cùng lúc và cộng dồn hiệu ứng. Tắt để coi chúng là một vị trí: chọn một loại trong kế hoạch sẽ thay thế các loại khác, và cư dân đã có bất kỳ loại nào dưới đây được tính là hoàn tất. Không bao giờ tháo bỏ thứ gì.\n\nBộ phận bị ảnh hưởng:\n{0}</IMP_OptAllowMultipleHygieneEnhancersTip>
+  <IMP_OptAutoFloor>Giao ca mổ cho bác sĩ giỏi nhất hiện có</IMP_OptAutoFloor>
+  <IMP_OptAutoFloorTip>Ca mổ chỉ dành cho bác sĩ giỏi nhất hiện có, tránh để bác sĩ mới làm hỏng việc lắp bộ phận sinh học chỉ vì tới bàn mổ trước. Giới hạn thay đổi theo bác sĩ giỏi nhất ở mỗi khu định cư khi có người đến hoặc đi. Không ai tự mổ được, nên ca mổ của bác sĩ giỏi nhất được giao cho người giỏi kế tiếp.\n\nTắt để tự đặt cấp kỹ năng tối thiểu cố định.</IMP_OptAutoFloorTip>
+  <IMP_OptAutoProduction>Tự thêm lệnh chế tạo bộ phận cấy ghép còn thiếu</IMP_OptAutoProduction>
+  <IMP_OptAutoProductionTip>Tự tạo lệnh chế tạo cho bộ phận cấy ghép còn thiếu. Implanner đếm nhu cầu còn lại của các kế hoạch ở mỗi khu định cư, trừ kho và lệnh đã xếp hàng, rồi đặt lệnh tại bàn phù hợp. Lệnh do mod tạo sẽ bị xóa khi hết nhu cầu.</IMP_OptAutoProductionTip>
+  <IMP_OptCatalog>Danh mục</IMP_OptCatalog>
+  <IMP_OptCompatNoneLoaded>Không có bộ phận cấy ghép liên quan nào được tải.</IMP_OptCompatNoneLoaded>
+  <IMP_OptConcurrency>Số bàn được nhận lệnh</IMP_OptConcurrency>
+  <IMP_OptConcurrencyTip>Số bàn tối đa trong mỗi khu định cư được giữ lệnh chế tạo của Implanner cùng lúc. Mỗi lệnh chế tạo một bộ phận cấy ghép; mỗi bàn giữ tối đa hai lệnh để có việc tiếp ngay khi xong. Nhiều bàn giúp chế tạo song song, nhưng thợ sẽ dành nhiều thời gian hơn cho cấy ghép và ít hơn cho việc khác. Giữ Shift khi nhấn +/- để đổi 10, hoặc Ctrl để đổi 5.</IMP_OptConcurrencyTip>
+  <IMP_OptCountHospitalized>Tính cả bệnh nhân hiện có</IMP_OptCountHospitalized>
+  <IMP_OptCountHospitalizedTip>Cư dân và nô lệ đang nằm giường bệnh, hoặc gục ngã và chờ điều trị, cũng chiếm suất mổ. Ca mổ mới của Implanner sẽ chờ đến khi bệnh viện còn chỗ trong giới hạn trên. Tù nhân, khách và bệnh nhân từ phe khác không chiếm suất. Tắt để xếp lịch cấy ghép bất kể ai đang được điều trị.</IMP_OptCountHospitalizedTip>
+  <IMP_OptDesignatedBenches>Chỉ dùng bàn Implanner</IMP_OptDesignatedBenches>
+  <IMP_OptDesignatedBenchesTip>Lệnh chế tạo chỉ được đặt tại bàn có chọn "Bàn Implanner" trong thẻ Công việc; khu định cư không có bàn như vậy sẽ không chế tạo bộ phận cấy ghép. Khi tắt, bàn Implanner được ưu tiên; bàn khác chỉ được dùng khi mọi bàn Implanner đều có hai lệnh. Giới hạn "Số bàn được nhận lệnh" luôn áp dụng.</IMP_OptDesignatedBenchesTip>
+  <IMP_OptEnable>Bật tự động hóa</IMP_OptEnable>
+  <IMP_OptEnableTip>Công tắc tổng cho mọi hành động tự động của Implanner: giữ chỗ vật phẩm cấy ghép, xếp lịch mổ và tạo lệnh chế tạo. Khi tắt, Implanner vẫn theo dõi kế hoạch và tiến độ nhưng ngừng thực hiện. Khi tắt cũng sẽ hỏi muốn giữ lại lệnh nào.</IMP_OptEnableTip>
+  <IMP_OptIdleBenches>Chỉ tạo lệnh tại bàn rảnh</IMP_OptIdleBenches>
+  <IMP_OptIdleBenchesTip>Chỉ bàn không có việc đang chờ mới nhận lệnh Implanner mới. Hàng đợi sản xuất của bạn được ưu tiên; chế tạo cấy ghép tận dụng thời gian trống. Tắt để lệnh cấy ghép được xếp sau lệnh của bạn.</IMP_OptIdleBenchesTip>
+  <IMP_OptImplantReserves>Cấy ghép giữ riêng</IMP_OptImplantReserves>
+  <IMP_OptImplantReservesTip>Bộ phận cấy ghép giữ riêng để dùng thủ công. Tự động hóa chỉ giữ chỗ số lượng vượt mức này, nên luôn còn bấy nhiêu mỗi loại được liệt kê để mổ khẩn cấp hoặc trao đổi. Sản xuất không tính vật phẩm giữ riêng là có sẵn và tiếp tục chế tạo đến khi tự động hóa hoạt động được mà không cần chúng.</IMP_OptImplantReservesTip>
+  <IMP_OptIntermediaries>Cho phép chế tạo nguyên liệu trung gian còn thiếu</IMP_OptIntermediaries>
+  <IMP_OptIntermediariesTip>Khi thiếu nguyên liệu như linh kiện để làm bộ phận cấy ghép, Implanner cũng có thể xếp lệnh làm nguyên liệu đó nếu nó là sản phẩm chế tạo được. Việc bù thiếu theo suốt chuỗi sản xuất. Tài nguyên thô như thép không bao giờ được chế tạo; bạn vẫn phải tự thu thập.</IMP_OptIntermediariesTip>
+  <IMP_OptIteration>Trình tự thực hiện</IMP_OptIteration>
+  <IMP_OptIterationTip>Thứ tự tự động xử lý bộ phận cấy ghép còn thiếu. Ưu tiên cư dân ở thẻ Tổng quan luôn quyết định ai đi trước.\n\nTheo bậc: mọi người nhận bộ phận ở bậc cao nhất trước, rồi mới xuống các bậc sau. Cư dân được mổ khi đã giữ đủ cả bậc của họ.\n\nTrọn bộ: hoàn thành toàn bộ kế hoạch của một cư dân trước khi sang người tiếp theo. Ca mổ chờ đến khi giữ đủ toàn bộ kế hoạch.\n\nSớm nhất: mỗi bộ phận có trong kho được xếp lịch ngay cho cư dân có ưu tiên cao nhất còn thiếu nó. Nếu cùng ưu tiên, chân dành cho người chậm nhất; tay ưu tiên người đang trang bị vũ khí cận chiến, rồi đến người có tổng cấp Chế tạo và Trí tuệ cao nhất.</IMP_OptIterationTip>
+  <IMP_OptManualFloor>Kỹ năng y tế tối thiểu cho ca mổ</IMP_OptManualFloor>
+  <IMP_OptManualFloorTip>Cấp Y tế tối thiểu bác sĩ cần để thực hiện ca mổ Implanner. Ca mổ sẽ chờ bác sĩ đạt cấp này trở lên. Khi tắt phân công tự động, giá trị ban đầu lấy từ bác sĩ giỏi nhất hiện tại.</IMP_OptManualFloorTip>
+  <IMP_OptModCompat>Tương thích mod</IMP_OptModCompat>
+  <IMP_OptProduction>Sản xuất</IMP_OptProduction>
+  <IMP_OptProductionSkill>Kỹ năng chế tạo tối thiểu cho lệnh</IMP_OptProductionSkill>
+  <IMP_OptProductionSkillTip>Cấp Chế tạo tối thiểu cho lệnh sản xuất Implanner. Mức cao tránh giao linh kiện đắt tiền cho thợ yếu; mức thấp cho phép nhiều cư dân tham gia. Lệnh chờ đến khi thợ đủ điều kiện nhận làm.</IMP_OptProductionSkillTip>
+  <IMP_OptReserves>Giữ trong kho (sau chi phí lệnh)</IMP_OptReserves>
+  <IMP_OptReservesTip>Mức dự trữ tối thiểu cho chế tạo tự động. Chỉ thêm lệnh khi khu định cư đủ nguyên liệu, đã tính cả nhu cầu của lệnh đang chờ, mà vẫn giữ được ít nhất mức này cho từng nguyên liệu. Tăng số để bảo vệ kho; đặt 0 để sản xuất dùng tự do.</IMP_OptReservesTip>
+  <IMP_OptShowPurchaseOnly>Hiện bộ phận chỉ mua được</IMP_OptShowPurchaseOnly>
+  <IMP_OptShowPurchaseOnlyTip>Liệt kê bộ phận cấy ghép không bàn nào chế tạo được, như bộ phận hồ quang. Chúng chỉ có từ trao đổi, nhiệm vụ hoặc thu nhặt. Bật để vẫn đưa chúng vào kế hoạch. Tự động hóa giữ chỗ ngay khi có hàng và lắp vào đợt kế tiếp; thiếu chúng không cản các bộ phận khác. Nếu mod thêm công thức chế tạo, bộ phận tự trở thành loại thông thường.\n\nBộ phận bị ảnh hưởng:\n{0}</IMP_OptShowPurchaseOnlyTip>
+  <IMP_OptSkillSliderMaximum>Giá trị tối đa của thanh kỹ năng</IMP_OptSkillSliderMaximum>
+  <IMP_OptSkillSliderMaximumTip>Đặt đầu trên của thanh Y tế và Chế tạo. Không ảnh hưởng yêu cầu kỹ năng hiện có hay chọn bác sĩ tự động.</IMP_OptSkillSliderMaximumTip>
+  <IMP_OptSurgery>Phẫu thuật</IMP_OptSurgery>
+  <IMP_OptSurgeryConcurrency>Số ca mổ đồng thời</IMP_OptSurgeryConcurrency>
+  <IMP_OptSurgeryConcurrencyTip>Số cư dân tối đa trong mỗi khu định cư được xếp lịch mổ cùng lúc. Mức cao xếp hàng nhiều người song song; mức thấp giữ bệnh viện và bác sĩ rảnh. Mặc định một suất trên mười cư dân. Giữ Shift khi nhấn +/- để đổi 10, hoặc Ctrl để đổi 5.</IMP_OptSurgeryConcurrencyTip>
+  <IMP_OptUpgradeByPriority>Dành cấy ghép tốt nhất cho cư dân ưu tiên cao</IMP_OptUpgradeByPriority>
+  <IMP_OptUpgradeByPriorityTip>Bộ phận chất lượng cao hơn dành cho cư dân có ưu tiên cao nhất ở thẻ Tổng quan. Ca mổ mới dùng chất lượng thấp nhất mà kế hoạch chấp nhận, để dành loại tốt hơn.\n\nKhi có bộ phận tốt hơn, cư dân ưu tiên cao nhất đang dùng loại cùng kiểu nhưng kém hơn sẽ nhận nó. Bộ phận cũ được tháo trước rồi chuyển cho người kế tiếp. Bộ phận đã giữ cho cư dân ưu tiên thấp hơn cũng được chuyển, miễn ca mổ của họ chưa được xếp lịch.\n\nMỗi lần đổi cần thêm ca mổ. Khi tắt, mỗi cư dân nhận bộ phận tốt nhất trong kho khi đến lượt.</IMP_OptUpgradeByPriorityTip>
+  <IMP_Overrides>thay thế {0}</IMP_Overrides>
+  <IMP_PlanColonists>{0} cư dân</IMP_PlanColonists>
+  <IMP_PlanCounts>{0} bộ phận cấy ghép</IMP_PlanCounts>
+  <IMP_PlanExtends>mở rộng từ {0}</IMP_PlanExtends>
+  <IMP_PlanGoalCount>{0} bộ phận cấy ghép</IMP_PlanGoalCount>
+  <IMP_PlanMinQuality>Chất lượng tối thiểu: {0}</IMP_PlanMinQuality>
+  <IMP_PlanMinQualityNoQualityJobs>Quality Jobs chưa được tải, nên bất kỳ thợ nào cũng có thể hoàn thành bộ phận cấy ghép. Nếu thành phẩm kém mức này, nó sẽ được chế tạo lại.</IMP_PlanMinQualityNoQualityJobs>
+  <IMP_PlanMinQualityTip>Bộ phận cấy ghép cho kế hoạch này được lắp và chế tạo ở chất lượng này trở lên. Không ảnh hưởng bộ phận không có chất lượng.\n\nKhông bao giờ thay bộ phận cơ thể khỏe mạnh bằng thứ kém hơn. Bộ phận sinh học chất lượng thấp sẽ chờ vật phẩm tốt hơn, trừ khi bộ phận cơ thể bị mất hoặc hỏng.</IMP_PlanMinQualityTip>
+  <IMP_PlanNameTitle>Tên kế hoạch</IMP_PlanNameTitle>
+  <IMP_PlansHeader>Kế hoạch</IMP_PlansHeader>
+  <IMP_Priority0>Đầu tiên</IMP_Priority0>
+  <IMP_Priority1>Cao</IMP_Priority1>
+  <IMP_Priority2>Thường</IMP_Priority2>
+  <IMP_Priority3>Thấp</IMP_Priority3>
+  <IMP_Priority4>Cuối cùng</IMP_Priority4>
+  <IMP_RankTiersHelp>Có thể chia bộ phận cấy ghép thành 5 bậc. Vị trí ảnh hưởng thứ tự sản xuất và phẫu thuật (tùy lựa chọn tự động hóa).\n\nKéo để sắp xếp lại.</IMP_RankTiersHelp>
+  <IMP_RankTiersTitle>Bậc cấy ghép</IMP_RankTiersTitle>
+  <IMP_ReadFailed>Không đọc được tệp: {0}</IMP_ReadFailed>
+  <IMP_RegionHead>Đầu</IMP_RegionHead>
+  <IMP_RegionLimbs>Tay chân</IMP_RegionLimbs>
+  <IMP_RegionTorso>Thân</IMP_RegionTorso>
+  <IMP_ReqBody>Chỉ có thể lắp {0} trên {1} nhân tạo. Chọn bộ phận thay thế để thêm cùng vào kế hoạch:</IMP_ReqBody>
+  <IMP_ReqConfirm>Thêm vào kế hoạch</IMP_ReqConfirm>
+  <IMP_ReqTitle>Yêu cầu</IMP_ReqTitle>
+  <IMP_Save>Lưu</IMP_Save>
+  <IMP_SaveFailed>Không lưu được: {0}</IMP_SaveFailed>
+  <IMP_SavedTo>Đã lưu kế hoạch vào {0}</IMP_SavedTo>
+  <IMP_ScopeAll>Mọi nơi</IMP_ScopeAll>
+  <IMP_SettingsShowToolbarButton>Hiện nút trên thanh công cụ</IMP_SettingsShowToolbarButton>
+  <IMP_ShipFallback>Tàu hấp dẫn</IMP_ShipFallback>
+  <IMP_StateAway>Vắng mặt</IMP_StateAway>
+  <IMP_StateDone>Xong</IMP_StateDone>
+  <IMP_StateOperating>Đang mổ</IMP_StateOperating>
+  <IMP_StatePreparing>Chuẩn bị</IMP_StatePreparing>
+  <IMP_StateWaiting>Đang chờ</IMP_StateWaiting>
+  <IMP_StripAutomationOff>Tự động hóa tắt</IMP_StripAutomationOff>
+  <IMP_StripAutomationOn>Tự động hóa bật</IMP_StripAutomationOn>
+  <IMP_StripAwaitingProduction>Chờ sản xuất</IMP_StripAwaitingProduction>
+  <IMP_StripBatch>Đang cấy ghép một đợt cho {0}</IMP_StripBatch>
+  <IMP_StripBatchStars>Đang cấy ghép một đợt cho {0} ({1})</IMP_StripBatchStars>
+  <IMP_StripColony>Khu định cư: {0}</IMP_StripColony>
+  <IMP_StripInstalled>Đã lắp {0} / {1} bộ phận</IMP_StripInstalled>
+  <IMP_StripMaking>Đang chế tạo {0}</IMP_StripMaking>
+  <IMP_StripMakingFor>Đang làm nguyên liệu cho {0}</IMP_StripMakingFor>
+  <IMP_StripNothingToCraft>Không có gì cần chế tạo</IMP_StripNothingToCraft>
+  <IMP_StripProduction>Sản xuất: {0}%</IMP_StripProduction>
+  <IMP_StripStock>{0} trong kho, {1} đang chờ</IMP_StripStock>
+  <IMP_StripSurgery>Phẫu thuật: {0}%</IMP_StripSurgery>
+  <IMP_StripWaiting>Đang chờ {0}</IMP_StripWaiting>
+  <IMP_StripWaitingBench>Chờ bàn làm việc</IMP_StripWaitingBench>
+  <IMP_TabAutomation>Tự động hóa</IMP_TabAutomation>
+  <IMP_TabHelp>Trợ giúp</IMP_TabHelp>
+  <IMP_TabOptions>Tùy chọn</IMP_TabOptions>
+  <IMP_TabOverview>Tổng quan</IMP_TabOverview>
+  <IMP_TabPlans>Kế hoạch</IMP_TabPlans>
+  <IMP_TierHigh>Ưu tiên cao</IMP_TierHigh>
+  <IMP_TierHighest>Ưu tiên cao nhất</IMP_TierHighest>
+  <IMP_TierLow>Ưu tiên thấp</IMP_TierLow>
+  <IMP_TierMedium>Ưu tiên trung bình</IMP_TierMedium>
+  <IMP_TierNormal>Ưu tiên thường</IMP_TierNormal>
+  <IMP_TipBenchesInUse>Bàn có lệnh Implanner: {0}</IMP_TipBenchesInUse>
+  <IMP_TipCapacity>Bộ phận cơ thể: {0}</IMP_TipCapacity>
+  <IMP_TipColCrafting>Đang chế tạo</IMP_TipColCrafting>
+  <IMP_TipColFree>Còn trống</IMP_TipColFree>
+  <IMP_TipColHeldBack>Giữ riêng</IMP_TipColHeldBack>
+  <IMP_TipColImplant>Cấy ghép</IMP_TipColImplant>
+  <IMP_TipColInstalled>Đã lắp</IMP_TipColInstalled>
+  <IMP_TipColItem>Vật phẩm</IMP_TipColItem>
+  <IMP_TipColMissing>Còn thiếu</IMP_TipColMissing>
+  <IMP_TipColNeeded>Cần</IMP_TipColNeeded>
+  <IMP_TipColPlanned>Dự kiến</IMP_TipColPlanned>
+  <IMP_TipColQueued>Đang chờ</IMP_TipColQueued>
+  <IMP_TipColReserved>Đã giữ chỗ</IMP_TipColReserved>
+  <IMP_TipColScheduled>Đã xếp lịch</IMP_TipColScheduled>
+  <IMP_TipColStatus>Trạng thái</IMP_TipColStatus>
+  <IMP_TipColTier>Bậc</IMP_TipColTier>
+  <IMP_TipColonistStates>Cư dân: {0} đang chờ, {1} chuẩn bị, {2} đang mổ, {3} xong, {4} vắng mặt</IMP_TipColonistStates>
+  <IMP_TipCovered>Đã đáp ứng</IMP_TipCovered>
+  <IMP_TipMaking>Đang chế tạo</IMP_TipMaking>
+  <IMP_TipMakingMaterials>Đang làm nguyên liệu</IMP_TipMakingMaterials>
+  <IMP_TipMaxHp>Máu tối đa bộ phận: {0}</IMP_TipMaxHp>
+  <IMP_TipNoRecipe>Không có công thức</IMP_TipNoRecipe>
+  <IMP_TipPartEfficiency>Hiệu suất bộ phận: {0}</IMP_TipPartEfficiency>
+  <IMP_TipPartEfficiencyRange>Hiệu suất bộ phận: {0} đến {1}, tùy chất lượng</IMP_TipPartEfficiencyRange>
+  <IMP_TipProduction>Sản xuất</IMP_TipProduction>
+  <IMP_TipSurgery>Phẫu thuật</IMP_TipSurgery>
+  <IMP_ToolbarButtonTip>Mở Implanner</IMP_ToolbarButtonTip>
+  <IMP_WelcomeBody>Implanner lập kế hoạch cấy ghép cho cư dân và có thể tự động hóa công việc sản xuất, lắp đặt cần thiết.</IMP_WelcomeBody>
+  <IMP_WelcomeFind>Mở Implanner bằng nút này trên thanh công cụ ở góc dưới bên phải màn hình, cạnh các nút hiển thị.</IMP_WelcomeFind>
+  <IMP_WelcomeTakeMeThere>Mở ngay</IMP_WelcomeTakeMeThere>
+  <IMP_WelcomeTitle>EPrime's Implanner</IMP_WelcomeTitle>
+</LanguageData>

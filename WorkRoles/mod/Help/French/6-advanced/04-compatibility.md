@@ -13,7 +13,7 @@ Les extensions modifiant des fournisseurs de tâches existants utilisent toujour
 
 Deux familles entrent en conflit. Les autres remplacements de l'onglet Travail, comme les variantes de Work Tab et Better Work Tab, se disputent la même interface. Les mods fixant les priorités, comme Free Will et PriorityMaster, se disputent les mêmes données : WorkRoles contrôle les priorités des colons gérés, donc bloque leurs modifications. Un avertissement unique nomme alors le mod et propose une méthode par rôles pour obtenir le même effet.
 
-Ce contrôle concerne uniquement les personnages humanoïdes : les mods réglant d'autres types, comme Mech Work Tab pour les mécanoïdes, sont entièrement compatibles.
+Ce contrôle concerne uniquement les personnages humanoïdes : les mods réglant les priorités des mécanoïdes, comme Mech Work Tab, sont entièrement compatibles.
 
 Certains mods exigent des priorités de 0 à 4. En cas de problème, vérifiez que « Transmettre aux autres mods des priorités de 0 à 4 » est activé.
 

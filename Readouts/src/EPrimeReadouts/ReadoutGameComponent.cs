@@ -28,8 +28,10 @@ namespace EPrimeReadouts
         private static void QueueWelcome()
         {
             ReadoutSettings? settings = EPrimeReadoutsMod.Settings;
-            if (settings == null
-                || !RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves, queueWelcome))
+            if (settings == null || Find.World == null) return;
+            var notice = CompatibilityWarnings.Current();
+            if (!RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves,
+                    queueWelcome, notice, settings.compatibilityWarningsSeen))
                 return;
             EPrimeReadoutsMod.Persist();
             Find.WindowStack?.Add(new RimShared.UiLib.WelcomeDialog(
@@ -46,6 +48,7 @@ namespace EPrimeReadouts
             {
                 FindIcon = ReadoutTextures.Gear,
                 FindTextColor = EprStyle.SelectionTint,
+                ConflictingMods = notice,
             });
         }
 

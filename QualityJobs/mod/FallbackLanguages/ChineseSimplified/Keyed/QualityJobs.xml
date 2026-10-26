@@ -5,19 +5,19 @@
   <QJ_UnfinishedWorkWaiting>此清单的未完成品正等待继续加工</QJ_UnfinishedWorkWaiting>
   <QJ_QualityPanelTitle>Quality Jobs</QJ_QualityPanelTitle>
   <QJ_ManageBill>管理此生产清单</QJ_ManageBill>
-  <QJ_FinisherSkill>收尾技能：{0}</QJ_FinisherSkill>
-  <QJ_FinisherSkillTip>只有技能达到此等级的角色才能完成最后工序。此前的制作可由任何人进行。</QJ_FinisherSkillTip>
+  <QJ_FinisherSkill>收尾等级：{0}</QJ_FinisherSkill>
+  <QJ_FinisherSkillTip>只有技能达到此等级的殖民者才能完成最后工序。此前的制作可由任何人进行。</QJ_FinisherSkillTip>
   <QJ_AutoBest>自动调整收尾技能要求</QJ_AutoBest>
-  <QJ_AutoBestTip>勾选：仅允许殖民地中技能最高的合适人选完成最后工序，技能要求会自动跟随该角色调整。比较时，暂时离开、倒地或忙碌的殖民者仍视为可用。\n\n不勾选：任何达到手动设置的收尾技能要求的角色都可完成最后工序。</QJ_AutoBestTip>
+  <QJ_AutoBestTip>勾选：仅允许殖民地中技能最高的合适人选完成最后工序，技能要求会自动跟随该殖民者调整。比较时，暂时离开、倒地或忙碌的殖民者仍视为可用。\n\n不勾选：任何达到手动设置的收尾技能要求的殖民者都可完成最后工序。</QJ_AutoBestTip>
   <QJ_AutoBestCurrent>当前：{0}</QJ_AutoBestCurrent>
   <QJ_AutoBestNone>无符合条件的殖民者</QJ_AutoBestNone>
   <QJ_MigrationTitle>现有品质生产清单</QJ_MigrationTitle>
   <QJ_MigrationBody>Quality Jobs 找到了 {0} 项现有的品质生产清单。它们仍未纳入管理，以保持当前行为。无论选择哪种方式，都可共享未完成品。</QJ_MigrationBody>
   <QJ_MigrationEnableExisting>为现有品质物品生产清单启用 Quality Jobs？</QJ_MigrationEnableExisting>
-  <QJ_MigrationEnableExistingTip>勾选：现有清单使用 Quality Jobs，并启用自动调整收尾技能。由殖民地中技能最高的合适人选完成最后工序，暂时无法工作的殖民者也计入比较。不要求创作灵感或生产专精，低品质成品也不会触发重做。\n\n不勾选：现有清单保留原版完成方式。不影响未完成品共享。</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationEnableExistingTip>勾选：现有清单使用 Quality Jobs，并启用自动调整收尾技能。由殖民地中技能最高的合适人选完成最后工序，暂时无法工作的殖民者也计入比较。不要求创造灵感或生产专家，低品质成品也不会触发重做。\n\n不勾选：现有清单保留原版完成方式。不影响未完成品共享。</QJ_MigrationEnableExistingTip>
   <QJ_MigrationContinue>继续</QJ_MigrationContinue>
-  <QJ_RequireInspired>要求创作灵感</QJ_RequireInspired>
-  <QJ_RequireSpecialist>要求生产专精</QJ_RequireSpecialist>
+  <QJ_RequireInspired>要求创造灵感</QJ_RequireInspired>
+  <QJ_RequireSpecialist>要求生产专家</QJ_RequireSpecialist>
   <QJ_StockCapLabel>库存上限：{0}</QJ_StockCapLabel>
   <QJ_StockCapTooltip>此产品未完成品的最大数量。同一产品共用上限，因此所有生产该物品的清单都计入此限制。\n\n0 表示无限制。</QJ_StockCapTooltip>
   <QJ_StatusHeader>状态</QJ_StatusHeader>
@@ -42,11 +42,11 @@
   <QJ_SettingsManageNewBillsTip>勾选：Quality Jobs 默认按本列选项管理生产品质物品的清单。可在各清单设置中单独覆盖。\n\n不勾选：清单使用原版行为，除非在其设置窗口中单独启用 Quality Jobs。</QJ_SettingsManageNewBillsTip>
   <QJ_SettingsManageNewConstruction>管理新增建造工作</QJ_SettingsManageNewConstruction>
   <QJ_SettingsManageNewConstructionTip>勾选：新增品质建筑自动按本列选项管理。可通过“品质工作”按钮单独配置或取消管理。\n\n不勾选：新建筑使用原版行为，除非单独启用。</QJ_SettingsManageNewConstructionTip>
-  <QJ_RequireInspiredTip>勾选：仅有创作灵感的角色可以完成最后工序；其他角色可进行此前工作。完工时会消耗灵感，与原版相同。\n\n不勾选：不要求创作灵感。</QJ_RequireInspiredTip>
-  <QJ_RequireSpecialistTip>勾选：只有理念职位提供生产品质加成的角色才能完成最后工序；其他角色可进行此前工作。\n\n不勾选：不要求生产专精职位。</QJ_RequireSpecialistTip>
-  <QJ_SettingsFinisherSkillTip>只有技能达到此等级的角色才能完成最后工序；其他角色可进行此前工作。\n\n启用自动调整收尾技能后，此值保留为手动默认值，但不用于判定。</QJ_SettingsFinisherSkillTip>
+  <QJ_RequireInspiredTip>勾选：仅有创造灵感的殖民者可以完成最后工序；其他工作者可进行此前工作。完工时会消耗灵感，与原版相同。\n\n不勾选：不要求创造灵感。</QJ_RequireInspiredTip>
+  <QJ_RequireSpecialistTip>勾选：只有理念职位提供生产品质加成的殖民者才能完成最后工序；其他工作者可进行此前工作。\n\n不勾选：不要求生产专家职位。</QJ_RequireSpecialistTip>
+  <QJ_SettingsFinisherSkillTip>只有技能达到此等级的殖民者才能完成最后工序；其他工作者可进行此前工作。\n\n启用自动调整收尾技能后，此值保留为手动默认值，但不用于判定。</QJ_SettingsFinisherSkillTip>
   <QJ_SettingsShareWork>共享未完成品</QJ_SettingsShareWork>
-  <QJ_SettingsShareWorkTip>勾选：解除未完成品的制作者限制，任何获准角色都可接续他人的工作。\n\n不勾选：保持原版行为，未完成品仍绑定最初制作者。</QJ_SettingsShareWorkTip>
+  <QJ_SettingsShareWorkTip>勾选：解除未完成品的制作者限制，任何合格工作者都可接续他人的工作。\n\n不勾选：保持原版行为，未完成品仍绑定最初制作者。</QJ_SettingsShareWorkTip>
   <QJ_SettingsHighPriorityFinish>提高收尾工作优先级</QJ_SettingsHighPriorityFinish>
   <QJ_SettingsHighPriorityFinishTip>勾选：被选中收尾的殖民者下次寻找工作时，会优先进行收尾，仅灭火、医疗、救援和卧床休息优先于它。不会中断当前工作。\n\n不勾选：收尾是所属工作类型内的首要任务，但该殖民者排序更靠前的其他工作类型仍优先。</QJ_SettingsHighPriorityFinishTip>
   <QJ_SettingsDefaultCap>默认未完成品库存上限：{0}</QJ_SettingsDefaultCap>
@@ -80,4 +80,8 @@
   <QJ_WelcomeBody>Quality Jobs 让任何殖民者都能加工未完成物品或建筑，但只有满足你所设要求的人才能完成最后工序，因为品质完全取决于收尾者。它适用于生产清单和建筑施工。</QJ_WelcomeBody>
   <QJ_WelcomeFind>点击屏幕右下角显示开关旁的此按钮，可打开 Quality Jobs 设置。品质物品的生产清单窗口中有 Quality Jobs 区域；选中品质建筑的蓝图或施工框架时，会显示“品质工作”按钮。</QJ_WelcomeFind>
   <QJ_WelcomeTakeMeThere>立即打开</QJ_WelcomeTakeMeThere>
+  <QJ_CompatibilityFinishIt>对已被 Quality Jobs 从加工清单中分离的未成品使用 Finish it! 时，可能会失败。</QJ_CompatibilityFinishIt>
+  <QJ_CompatibilityNoJobAuthors>启用 No Job Authors 的强制完成或 Achtung 兼容选项后，它可能绕过 Quality Jobs，继续处理已为品质要求预留的工作。</QJ_CompatibilityNoJobAuthors>
+  <QJ_CompatibilityQualityBuilder>QualityBuilder 也会控制建造者和建造重试，其规则可能与 Quality Jobs 冲突。</QJ_CompatibilityQualityBuilder>
+  <QJ_CompatibilitySharingAdvice>关闭未成品共享并不能消除所有这些冲突。</QJ_CompatibilitySharingAdvice>
 </LanguageData>

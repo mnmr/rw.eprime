@@ -65,6 +65,8 @@ namespace EPrimeReadouts
         /// Saves (world persistent random values) whose one-time welcome
         /// dialog this player has already seen.
         public List<string> welcomeShownSaves = new List<string>();
+        /// Save id plus active conflict package id; player acknowledgment only.
+        public List<string> compatibilityWarningsSeen = new List<string>();
 
         public override void ExposeData()
         {
@@ -73,6 +75,8 @@ namespace EPrimeReadouts
             if (helpTopicsRead == null) helpTopicsRead = new List<string>();
             Scribe_Collections.Look(ref welcomeShownSaves, "welcomeShownSaves", LookMode.Value);
             if (welcomeShownSaves == null) welcomeShownSaves = new List<string>();
+            Scribe_Collections.Look(ref compatibilityWarningsSeen, "compatibilityWarningsSeen", LookMode.Value);
+            if (compatibilityWarningsSeen == null) compatibilityWarningsSeen = new List<string>();
             Scribe_Values.Look(ref useVanillaReadout, "useVanillaReadout", false);
             Scribe_Values.Look(ref offsetX, "offsetX", 7f);
             Scribe_Values.Look(ref offsetY, "offsetY", 7f);

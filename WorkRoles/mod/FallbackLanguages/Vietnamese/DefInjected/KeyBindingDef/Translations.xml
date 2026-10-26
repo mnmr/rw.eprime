@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_FirstColonist.label>cư dân đầu tiên (Ctrl: bỏ qua nhóm)</WR_FirstColonist.label>
+  <WR_LastColonist.label>cư dân cuối cùng (Ctrl: bỏ qua nhóm)</WR_LastColonist.label>
+  <WR_NextColonist.label>cư dân kế tiếp</WR_NextColonist.label>
+  <WR_NextPage.label>trang/nhóm kế tiếp</WR_NextPage.label>
+  <WR_PrevColonist.label>cư dân trước</WR_PrevColonist.label>
+  <WR_PrevPage.label>trang/nhóm trước</WR_PrevPage.label>
+</LanguageData>

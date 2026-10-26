@@ -6,9 +6,9 @@
   <QJ_QualityPanelTitle>Quality Jobs</QJ_QualityPanelTitle>
   <QJ_ManageBill>Diesen Auftrag verwalten</QJ_ManageBill>
   <QJ_FinisherSkill>Fertigstellen ab Stufe {0}</QJ_FinisherSkill>
-  <QJ_FinisherSkillTip>Nur Bauern mit mindestens dieser Fertigkeitsstufe dürfen die Arbeit abschließen. Die vorherigen Arbeitsschritte dürfen alle ausführen.</QJ_FinisherSkillTip>
-  <QJ_AutoBest>Fertigstellungsstufe automatisch anpassen</QJ_AutoBest>
-  <QJ_AutoBestTip>Aktiviert: Nur der am besten geeignete verfügbare Bauer der Kolonie darf diese Arbeit abschließen. Die erforderliche Fertigkeitsstufe richtet sich automatisch nach ihm. Abwesende Kolonisten sowie solche, die am Boden liegen oder beschäftigt sind, gelten bei diesem Vergleich weiterhin als verfügbar.\n\nDeaktiviert: Jeder Bauer, der die eingestellte Anforderung erfüllt, darf die Arbeit abschließen.</QJ_AutoBestTip>
+  <QJ_FinisherSkillTip>Nur Kolonisten mit mindestens dieser Fertigkeitsstufe dürfen die Arbeit abschließen. Die vorherigen Arbeitsschritte dürfen alle ausführen.</QJ_FinisherSkillTip>
+  <QJ_AutoBest>Stufe automatisch anpassen</QJ_AutoBest>
+  <QJ_AutoBestTip>Aktiviert: Nur der am besten geeignete verfügbare Kolonist der Kolonie darf diese Arbeit abschließen. Die erforderliche Fertigkeitsstufe richtet sich automatisch nach ihm. Abwesende Kolonisten sowie solche, die am Boden liegen oder beschäftigt sind, gelten bei diesem Vergleich weiterhin als verfügbar.\n\nDeaktiviert: Jeder Kolonist, der die eingestellte Anforderung erfüllt, darf die Arbeit abschließen.</QJ_AutoBestTip>
   <QJ_AutoBestCurrent>Derzeit: {0}</QJ_AutoBestCurrent>
   <QJ_AutoBestNone>Kein geeigneter Kolonist</QJ_AutoBestNone>
   <QJ_MigrationTitle>Bestehende Qualitätsaufträge</QJ_MigrationTitle>
@@ -16,9 +16,9 @@
   <QJ_MigrationEnableExisting>Quality Jobs für bestehende Aufträge für Qualitätsgegenstände aktivieren?</QJ_MigrationEnableExisting>
   <QJ_MigrationEnableExistingTip>Aktiviert: Bestehende Aufträge verwenden Quality Jobs mit automatischer Anpassung der Fertigstellungsstufe. Der beste geeignete Kolonist der Kolonie übernimmt den letzten Handgriff; vorübergehend nicht verfügbare Kolonisten zählen weiterhin mit. Inspiration und Produktionsspezialisierung sind nicht erforderlich, und Ergebnisse niedriger Qualität werden nicht wiederholt.\n\nDeaktiviert: Bestehende Aufträge behalten das Fertigstellungsverhalten des Grundspiels. Das Teilen unfertiger Arbeit bleibt unverändert.</QJ_MigrationEnableExistingTip>
   <QJ_MigrationContinue>Weiter</QJ_MigrationContinue>
-  <QJ_RequireInspired>Inspirierte Kreativität erforderlich</QJ_RequireInspired>
+  <QJ_RequireInspired>Kreative Eingebung erforderlich</QJ_RequireInspired>
   <QJ_RequireSpecialist>Produktionsspezialist erforderlich</QJ_RequireSpecialist>
-  <QJ_StockCapLabel>Bestandsobergrenze: {0}</QJ_StockCapLabel>
+  <QJ_StockCapLabel>Bestandslimit: {0}</QJ_StockCapLabel>
   <QJ_StockCapTooltip>Die Höchstzahl unfertiger Gegenstände dieses Produkts. Die Obergrenze gilt gemeinsam für das Produkt, sodass alle Aufträge, die diesen Gegenstand herstellen, darauf angerechnet werden.\n\n0 bedeutet unbegrenzt.</QJ_StockCapTooltip>
   <QJ_StatusHeader>Status</QJ_StatusHeader>
   <QJ_StatusQueue>Wartend: {0} · Fertigstellung: {1}</QJ_StatusQueue>
@@ -32,8 +32,8 @@
   <QJ_StatusStalledConstruction>Kein geeigneter Fertigsteller — Bau steht still</QJ_StatusStalledConstruction>
   <QJ_StatusStalledConstructionTip>Dieses Gebäude wartet auf den letzten Handgriff, aber kein Kolonist erfüllt derzeit die Anforderungen. Es wird daher nicht fertiggestellt.\n\nPrüfe die erforderliche Fertigkeitsstufe, die Anforderungen an Inspiration und Spezialisierung sowie, ob der vorgesehene Baumeister Bauen aktiviert hat und sich auf dieser Karte befindet.</QJ_StatusStalledConstructionTip>
   <QJ_OddsHeader>Qualitätschancen</QJ_OddsHeader>
-  <QJ_NormalOrWorse>Normal oder schlechter</QJ_NormalOrWorse>
-  <QJ_OddsColConfig>Einstellung</QJ_OddsColConfig>
+  <QJ_NormalOrWorse>Bis normal</QJ_NormalOrWorse>
+  <QJ_OddsColConfig>Einst.</QJ_OddsColConfig>
   <QJ_OddsColBest>Beste</QJ_OddsColBest>
   <QJ_SettingsBillDefaults>Standardoptionen für Aufträge</QJ_SettingsBillDefaults>
   <QJ_SettingsConstructionDefaults>Standardoptionen für Bauvorhaben</QJ_SettingsConstructionDefaults>
@@ -42,12 +42,12 @@
   <QJ_SettingsManageNewBillsTip>Aktiviert: Quality Jobs verwaltet Aufträge mit Qualitätsprodukten standardmäßig mit den Optionen dieser Spalte. Einzelne Aufträge können diese Optionen in ihren Einstellungen überschreiben.\n\nDeaktiviert: Aufträge verwenden das Verhalten des Grundspiels, sofern Quality Jobs nicht im Auftragsdialog aktiviert wurde.</QJ_SettingsManageNewBillsTip>
   <QJ_SettingsManageNewConstruction>Neue Bauvorhaben verwalten</QJ_SettingsManageNewConstruction>
   <QJ_SettingsManageNewConstructionTip>Aktiviert: Neue Gebäude mit Qualität werden automatisch mit den Optionen dieser Spalte verwaltet. Einzelne Gebäude lassen sich über die Schaltfläche Quality Job konfigurieren oder freigeben.\n\nDeaktiviert: Neue Gebäude verwenden das Verhalten des Grundspiels, sofern sie nicht einzeln aktiviert werden.</QJ_SettingsManageNewConstructionTip>
-  <QJ_RequireInspiredTip>Aktiviert: Nur ein Bauer mit Inspirierter Kreativität darf den letzten Handgriff übernehmen; andere Bauern dürfen die vorherigen Arbeiten erledigen. Die Inspiration wird bei Fertigstellung wie im Grundspiel verbraucht.\n\nDeaktiviert: Inspirierte Kreativität ist nicht erforderlich.</QJ_RequireInspiredTip>
-  <QJ_RequireSpecialistTip>Aktiviert: Nur ein Bauer, dessen Ideologierolle einen Bonus auf die Produktionsqualität verleiht, darf den letzten Handgriff übernehmen; andere Bauern dürfen die vorherigen Arbeiten erledigen.\n\nDeaktiviert: Eine Rolle als Produktionsspezialist ist nicht erforderlich.</QJ_RequireSpecialistTip>
-  <QJ_SettingsFinisherSkillTip>Nur Bauern mit mindestens dieser Fertigkeitsstufe dürfen den letzten Handgriff übernehmen; andere Bauern dürfen die vorherigen Arbeiten erledigen.\n\nBei automatischer Anpassung der Fertigstellungsstufe bleibt dieser Wert als manueller Standard erhalten, wird aber nicht verwendet.</QJ_SettingsFinisherSkillTip>
+  <QJ_RequireInspiredTip>Aktiviert: Nur ein Kolonist mit kreativer Eingebung darf den letzten Handgriff übernehmen; andere Arbeiter dürfen die vorherigen Arbeiten erledigen. Die Inspiration wird bei Fertigstellung wie im Grundspiel verbraucht.\n\nDeaktiviert: Kreative Eingebung ist nicht erforderlich.</QJ_RequireInspiredTip>
+  <QJ_RequireSpecialistTip>Aktiviert: Nur ein Kolonist, dessen Ideologierolle einen Bonus auf die Produktionsqualität verleiht, darf den letzten Handgriff übernehmen; andere Arbeiter dürfen die vorherigen Arbeiten erledigen.\n\nDeaktiviert: Eine Rolle als Produktionsspezialist ist nicht erforderlich.</QJ_RequireSpecialistTip>
+  <QJ_SettingsFinisherSkillTip>Nur Kolonisten mit mindestens dieser Fertigkeitsstufe dürfen den letzten Handgriff übernehmen; andere Arbeiter dürfen die vorherigen Arbeiten erledigen.\n\nBei automatischer Anpassung der Fertigstellungsstufe bleibt dieser Wert als manueller Standard erhalten, wird aber nicht verwendet.</QJ_SettingsFinisherSkillTip>
   <QJ_SettingsShareWork>Unfertige Arbeit teilen</QJ_SettingsShareWork>
-  <QJ_SettingsShareWorkTip>Aktiviert: Unfertige Gegenstände werden freigegeben, sodass jeder zugelassene Bauer die Arbeit eines anderen fortsetzen kann.\n\nDeaktiviert: Verhalten des Grundspiels, bei dem ein unfertiger Gegenstand an den Bauern gebunden bleibt, der ihn begonnen hat.</QJ_SettingsShareWorkTip>
-  <QJ_SettingsHighPriorityFinish>Fertigstellern eine Aufgabe mit hoher Priorität geben</QJ_SettingsHighPriorityFinish>
+  <QJ_SettingsShareWorkTip>Aktiviert: Unfertige Gegenstände werden freigegeben, sodass jeder berechtigte Arbeiter die Arbeit eines anderen fortsetzen kann.\n\nDeaktiviert: Verhalten des Grundspiels, bei dem ein unfertiger Gegenstand an den Arbeiter gebunden bleibt, der ihn begonnen hat.</QJ_SettingsShareWorkTip>
+  <QJ_SettingsHighPriorityFinish>Fertigstellung hoch priorisieren</QJ_SettingsHighPriorityFinish>
   <QJ_SettingsHighPriorityFinishTip>Aktiviert: Ein zur Fertigstellung ausgewählter Kolonist übernimmt diese Aufgabe bei der nächsten Arbeitssuche vor allen anderen Arbeitsarten außer Brandbekämpfung, medizinischer Versorgung, Rettung und Bettruhe. Seine aktuelle Tätigkeit wird nicht unterbrochen.\n\nDeaktiviert: Die Fertigstellungsaufgabe steht innerhalb ihrer Arbeitsart an erster Stelle. Höher priorisierte Arbeitsarten des Kolonisten kommen weiterhin zuerst.</QJ_SettingsHighPriorityFinishTip>
   <QJ_SettingsDefaultCap>Standardobergrenze für unfertige Gegenstände: {0}</QJ_SettingsDefaultCap>
   <QJ_SettingsDefaultCapTip>Legt die standardmäßige Höchstzahl unfertiger Gegenstände je Produkt fest. Alle Aufträge für denselben Gegenstand teilen diese Obergrenze.\n\nSobald die Obergrenze erreicht ist, beginnen Aufträge keine neuen Gegenstände; bereits begonnene dürfen noch fertiggestellt werden. 0 bedeutet unbegrenzt.</QJ_SettingsDefaultCapTip>
@@ -80,4 +80,8 @@
   <QJ_WelcomeBody>Mit Quality Jobs darf jeder Kolonist an einem unfertigen Gegenstand oder Gebäude arbeiten. Fertigstellen darf es nur ein Kolonist, der deine Anforderungen erfüllt, denn allein der Fertigsteller bestimmt die Qualität. Das funktioniert für Fertigungsaufträge und Bauvorhaben.</QJ_WelcomeBody>
   <QJ_WelcomeFind>Öffne die Einstellungen von Quality Jobs über diese Schaltfläche neben den Ansichtsoptionen unten rechts. Das Auftragsfenster eines Qualitätsgegenstands hat einen Bereich Quality Jobs, und ein ausgewählter Bauplan oder Rahmen eines Qualitätsgebäudes hat eine Schaltfläche Quality Job.</QJ_WelcomeFind>
   <QJ_WelcomeTakeMeThere>Jetzt öffnen</QJ_WelcomeTakeMeThere>
+  <QJ_CompatibilityFinishIt>Finish it! kann bei unfertigen Arbeiten fehlschlagen, die Quality Jobs von ihrem Auftrag getrennt hat.</QJ_CompatibilityFinishIt>
+  <QJ_CompatibilityNoJobAuthors>No Job Authors kann qualitätsbedingt reservierte Arbeiten außerhalb von Quality Jobs fortsetzen, wenn seine Optionen zum erzwungenen Fertigstellen oder zur Achtung-Kompatibilität aktiviert sind.</QJ_CompatibilityNoJobAuthors>
+  <QJ_CompatibilityQualityBuilder>QualityBuilder steuert ebenfalls Bauarbeiter und erneute Bauversuche. Seine Regeln können mit Quality Jobs in Konflikt geraten.</QJ_CompatibilityQualityBuilder>
+  <QJ_CompatibilitySharingAdvice>Das Deaktivieren der gemeinsamen Bearbeitung unfertiger Arbeiten beseitigt nicht alle diese Konflikte.</QJ_CompatibilitySharingAdvice>
 </LanguageData>

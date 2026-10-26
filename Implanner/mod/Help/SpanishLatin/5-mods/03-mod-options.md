@@ -3,9 +3,9 @@ title: Opciones de mods
 ---
 ![Opciones con Compatibilidad con mods y Catálogo](options-tab.png)
 
-Opciones contiene la compatibilidad de planes y el intervalo visual de habilidad. La automatización se configura en su propia pestaña. Los configuración de planes y automatización se comparten entre todos los jugadores.
+Opciones contiene la compatibilidad de planes y el intervalo visual de habilidad. La automatización se configura en su propia pestaña. La configuración de planes y automatización se comparte entre todos los jugadores.
 
-**Máximo de los controles de habilidad** fija el extremo de Medicina y Fabricación entre 20 y 100, en pasos de 10; por defecto 20. Súbelo para elegir mínimos mayores con mods como Endless Growth. Es una preferencia visual personal: no modifica mínimos existentes, selección automática de médicos ni elegibilidad de tareas.
+**Máximo de los controles de habilidad** fija el extremo de Medicina y Fabricación entre 20 y 100, en pasos de 10; por defecto 20. Súbelo para elegir mínimos mayores con mods como Endless Growth. Es una preferencia visual personal: no modifica mínimos existentes, selección automática de médicos ni elegibilidad de proyectos.
 
 ![Descripción que enumera implantes afectados y sus mods](options-bladder-tip.png)
 

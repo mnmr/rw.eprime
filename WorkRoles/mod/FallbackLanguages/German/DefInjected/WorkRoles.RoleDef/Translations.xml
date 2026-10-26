@@ -61,7 +61,7 @@
   <WS_Smith.label>Schmied</WS_Smith.label>
   <WS_Smith.description>Waffen und Rüstungen schmieden.</WS_Smith.description>
   <WS_Fabricator.label>Fabrikator</WS_Fabricator.label>
-  <WS_Fabricator.description>Gegenstände an der Fabrikationsbank herstellen.</WS_Fabricator.description>
+  <WS_Fabricator.description>Gegenstände am Fabrikationstisch herstellen.</WS_Fabricator.description>
   <WS_Mechanitor.label>Mechanitor</WS_Mechanitor.label>
   <WS_Mechanitor.description>Mechanoiden reparieren, neue heranzüchten und Subkerne kodieren. Nur für Kolonisten mit Mechlink empfohlen.</WS_Mechanitor.description>
   <WS_Crafter.label>Handwerker</WS_Crafter.label>

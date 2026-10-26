@@ -3,7 +3,7 @@
   <name>EPrime's Quality Jobs</name>
   <author>Morten Mertner</author>
   <packageId>EPrime.QualityJobs</packageId>
-  <modVersion>1.1.9</modVersion>
+  <modVersion>1.2.0</modVersion>
   <supportedVersions>
     <li>1.6</li>
     <li>1.7</li>
@@ -22,7 +22,7 @@
 Quality Jobs lets everyone work on unfinished items, but only qualified colonists are allowed to finish the job (quality outcome only depends on the finisher).
 
 - Works for both crafting and construction. 
-- Automatically hands the finishing touch to the best qualifying pawn, with support for inspirations and specialists.
+- Automatically hands the finishing touch to the best qualifying colonist, with support for inspirations and specialists.
 - Configurable defaults with override options per bill or buildable. 
 - Unfinished work sharing also unblocks bills, so a colonist with an unfinished item doesn't block others from working at the bench.
 

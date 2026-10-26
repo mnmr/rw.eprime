@@ -2,6 +2,22 @@ namespace RimShared.Common.Tests;
 
 public class RoleAbbreviationsTests
 {
+    [Test]
+    public async Task LocalizedAbbreviationsKeepWholeLettersAndSelectedLanguageCasing()
+    {
+        var turkish = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+        var map = RoleAbbreviations.Build(new (int, string)[]
+        {
+            (0, "inşaat işçisi"), (1, "ışık ustası"),
+            (2, "e\u0301béniste"), (3, "\U00020000工"), (4, "か\u3099工")
+        }, turkish);
+        await Assert.That(map[0]).IsEqualTo("İİ");
+        await Assert.That(map[1]).IsEqualTo("IU");
+        await Assert.That(map[2]).IsEqualTo("E\u0301b");
+        await Assert.That(map[3]).IsEqualTo("\U00020000工");
+        await Assert.That(map[4]).IsEqualTo("か\u3099工");
+    }
+
     private static Dictionary<int, string> Build(params string[] labels) => RoleAbbreviations.Build(labels.Select((label, i) => (i, label)).ToList());
 
     [Test]

@@ -7,4 +7,4 @@ Implanner planifica los implantes de los colonos y automatiza el trabajo necesar
 - **Asigna** colonos a planes en Vista general.
 - La **automatización** fabrica los implantes que faltan, reserva los objetos y programa las operaciones cuando todo está listo.
 
-Puedes desactivar por completo la automatización. Cada paso aparece en las mismas listas de producción y operaciones que ya utilizas.
+Puedes desactivar por completo la automatización. Cada paso aparece en las mismas listas de proyectos y operaciones que ya utilizas.

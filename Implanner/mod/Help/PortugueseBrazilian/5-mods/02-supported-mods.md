@@ -23,7 +23,7 @@ Instalar qualquer híbrido expulsa tudo já instalado naquela parte. Os implante
 
 - Implanner instala o híbrido primeiro, evitando retiradas.
 - Se já houver implantes, permite que caiam, reserva-os para aquele colono e os reinstala logo depois.
-- Nunca instala um híbrido se algo naquela parte seria perdido permanentemente.
+- Nunca instala um híbrido se algo naquela parte fosse perdido permanentemente.
 
 A qualidade dos híbridos vem da estrutura genética usada (veja [Qualidade mínima](topic:minimum-quality)).
 

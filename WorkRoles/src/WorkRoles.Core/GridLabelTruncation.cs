@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using RimShared.Common;
 
 namespace WorkRoles.Core
 {
@@ -63,8 +64,8 @@ namespace WorkRoles.Core
             for (int i = 1; i < count; i++)
             {
                 string previous = texts[i - 1];
-                int shared = CommonPrefixLength(previous, texts[i]);
-                int needed = shared == previous.Length ? shared : shared + 1;
+                int shared = CommonPrefixLength(previous, texts[i], out bool wholePrevious);
+                int needed = wholePrevious ? shared : shared + 1;
                 if (needed > required[order[i - 1]]) required[order[i - 1]] = needed;
                 if (needed > required[order[i]]) required[order[i]] = needed;
             }
@@ -105,8 +106,11 @@ namespace WorkRoles.Core
         {
             if (prefixLength < 0)
                 throw new ArgumentOutOfRangeException(nameof(prefixLength));
-            return label != null && prefixLength != int.MaxValue
-                && label.Length > prefixLength + 1;
+            if (label == null || prefixLength == int.MaxValue) return false;
+            int end = 0;
+            for (int i = 0; i <= prefixLength && end < label.Length; i++)
+                end = TextElements.NextBoundary(label, end);
+            return end < label.Length;
         }
 
         /// <summary>
@@ -118,17 +122,24 @@ namespace WorkRoles.Core
         {
             if (label == null) return string.Empty;
             if (!IsCut(label, prefixLength)) return label;
-            int end = prefixLength;
-            while (end > 0 && char.IsWhiteSpace(label[end - 1])) end--;
-            return label.Substring(0, end);
+            return TextElements.Prefix(label, prefixLength).TrimEnd();
         }
 
-        private static int CommonPrefixLength(string left, string right)
+        private static int CommonPrefixLength(string left, string right, out bool wholeLeft)
         {
-            int limit = Math.Min(left.Length, right.Length);
-            int i = 0;
-            while (i < limit && left[i] == right[i]) i++;
-            return i;
+            int a = 0, b = 0, count = 0;
+            while (a < left.Length && b < right.Length)
+            {
+                int nextA = TextElements.NextBoundary(left, a);
+                int nextB = TextElements.NextBoundary(right, b);
+                if (nextA - a != nextB - b
+                    || string.CompareOrdinal(left, a, right, b, nextA - a) != 0) break;
+                count++;
+                a = nextA;
+                b = nextB;
+            }
+            wholeLeft = a == left.Length;
+            return count;
         }
     }
 }

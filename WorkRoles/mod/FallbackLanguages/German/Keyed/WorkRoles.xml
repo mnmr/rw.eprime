@@ -88,7 +88,7 @@
   <WR_RecTuneOrderingPointsRow>Signalpunkte</WR_RecTuneOrderingPointsRow>
   <WR_RecTuneOrderingPointsRowDesc>Punkte jeder Signalstärke für die Reihenfolge der endgültigen Rollenempfehlungen.</WR_RecTuneOrderingPointsRowDesc>
   <WR_RecTuneMinimumPickRow>Bonus für Mindestbesetzung</WR_RecTuneMinimumPickRow>
-  <WR_RecTuneMinimumPickRowDesc>Reihenfolgepunkte für den ersten, zweiten, dritten und jeden weiteren Bauern, der zur Mindestbesetzung einer Rolle ausgewählt wurde.</WR_RecTuneMinimumPickRowDesc>
+  <WR_RecTuneMinimumPickRowDesc>Reihenfolgepunkte für den ersten, zweiten, dritten und jeden weiteren Arbeiter, der zur Mindestbesetzung einer Rolle ausgewählt wurde.</WR_RecTuneMinimumPickRowDesc>
   <WR_RecTuneCategoryPointsRow>Kategoriepunkte</WR_RecTuneCategoryPointsRow>
   <WR_RecTuneCategoryPointsRowDesc>Reihenfolgepunkte nach Bedeutung für die Kolonie: Wichtig hebt Pflichtrollen über Produktionsarbeit mit gleichem Signal; Optional schiebt Rollen ans Listenende.</WR_RecTuneCategoryPointsRowDesc>
   <WR_RecTuneTimePointsRow>Zeitbedarfspunkte</WR_RecTuneTimePointsRow>
@@ -110,16 +110,16 @@
   <WR_RecTuneOptionalTargetMinimumPoints>Mindestpunkte für optionale Ziele</WR_RecTuneOptionalTargetMinimumPoints>
   <WR_RecTuneOptionalTargetMinimumPointsDesc>Mindestsumme der Signalschritte über der eingestellten Signaluntergrenze, um ein optionales Ziel mit mehreren Fertigkeiten zu empfehlen.</WR_RecTuneOptionalTargetMinimumPointsDesc>
   <WR_RecTuneLeadMinimumConnectedTargets>Verbundene Ziele für Verteilung</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Mindestzahl verbundener Trainingsziele, bevor der Planer ihre führenden Rollen auf verschiedene Bauern zu verteilen versucht.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
+  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Mindestzahl verbundener Trainingsziele, bevor der Planer ihre führenden Rollen auf verschiedene Arbeiter zu verteilen versucht.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
   <WR_RecTuneLeadMinimumSignal>Mindestsignal für führende Rollen</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>Niedrigstes zulässiges Rollensignal für einen Bauern, der als führender Träger eines verteilten Trainingspfads gewählt wird.</WR_RecTuneLeadMinimumSignalDesc>
+  <WR_RecTuneLeadMinimumSignalDesc>Niedrigstes zulässiges Rollensignal für einen Arbeiter, der als führender Träger eines verteilten Trainingspfads gewählt wird.</WR_RecTuneLeadMinimumSignalDesc>
   <WR_RecTuneHunterTiersRow>Höchste Schießstufe je Bereich</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Schießstufengrenzen für die dynamische Jägerposition. Bereich 1 platziert Jäger direkt hinter Grundarbeiten, Bereiche 2 und 3 hinter mittleren und letzten Arbeitsrollen. Stufen oberhalb von Bereich 4 setzen Jäger zuletzt.</WR_RecTuneHunterTiersRowDesc>
   <WR_TrainingSection>Trainingspfad</WR_TrainingSection>
   <WR_TrainingHelp>Hier legst du fest, wie Kolonisten neue Fertigkeiten erwerben und sich dieser Rolle annähern. Ein Trainingspfad kann mehrere Bereiche mit überlappenden Rollen enthalten. Wird der Pfad einem Kolonisten empfohlen, erhält er alle Rollen seiner aktuellen Fertigkeitsstufe.</WR_TrainingHelp>
   <WR_TrainingTipWhat>Der eigene Entwicklungsweg der Rolle: Jede Mitgliedsrolle hat einen Fertigkeitsbereich, in dem sie empfohlen wird. Die Rolle selbst bleibt immer in ihrem Pfad.</WR_TrainingTipWhat>
   <WR_TrainingTipBands>Überlappende Bereiche bestehen nebeneinander; ohne Überlappung ersetzt die spätere Rolle die frühere.</WR_TrainingTipBands>
-  <WR_TrainingTipOrder>Zuweisungen priorisieren höhere Bereichsuntergrenzen. Bei gleichen Bereichen kommt die schwächste Rollenfertigkeit des Bauern zuerst, danach die gespeicherte Pfadreihenfolge.</WR_TrainingTipOrder>
+  <WR_TrainingTipOrder>Zuweisungen priorisieren höhere Bereichsuntergrenzen. Bei gleichen Bereichen kommt die schwächste Rollenfertigkeit des Arbeiters zuerst, danach die gespeicherte Pfadreihenfolge.</WR_TrainingTipOrder>
   <WR_AddNew>Neu hinzufügen</WR_AddNew>
   <WR_WhenPanelCaption>Rollenentwicklung: Hier legst du fest, bei welcher Fertigkeit die angezeigten Rollen empfohlen werden. Überlappende Rollen ergänzen sich.</WR_WhenPanelCaption>
   <WR_AddRole>Rolle hinzufügen</WR_AddRole>
@@ -254,7 +254,7 @@
   <WR_GroupByCaption>Gruppieren nach</WR_GroupByCaption>
   <WR_SkillColumnsCaption>Fertigkeitsspalten</WR_SkillColumnsCaption>
   <WR_RoleDisplayCaption>Rollenanzeige</WR_RoleDisplayCaption>
-  <WR_ColonistSearchTip>Durchsucht Kolonistennamen. Trenne Begriffe durch Leerzeichen; jeder muss passen. Mit r: oder role: suchst du zugewiesene Rollennamen, mit j: oder job: Aufgaben aus zugewiesenen Rollen. Beispiel: br r:doc.</WR_ColonistSearchTip>
+  <WR_ColonistSearchTip>Durchsucht Kolonistennamen. Trenne Begriffe durch Leerzeichen; jeder muss passen. Mit r: oder role: suchst du zugewiesene Rollennamen, mit j: oder job: Aufgaben aus zugewiesenen Rollen. Beispiel: br r:arzt.</WR_ColonistSearchTip>
   <WR_ColonistRoleFilterTip>Zeigt Kolonisten mit der gewählten Rolle. Eine zugewiesene Nicht-Sperrrolle passt ebenfalls, wenn ihre Aufgaben die gewählte Rolle vollständig abdecken. Kombinierbar mit Such-, Aufgaben- und Ortsfiltern.</WR_ColonistRoleFilterTip>
   <WR_ColonistJobFilterTip>Gewählt: {0}
 
@@ -292,7 +292,7 @@ Zeigt Kolonisten, deren zugewiesene Nicht-Sperrrollen diese Aufgabe enthalten. G
   <WR_ChipsNormal>Marken: Volle Namen</WR_ChipsNormal>
   <WR_ChipsCompact>Marken: Initialen</WR_ChipsCompact>
   <WR_ChipsIcons>Marken: Symbole</WR_ChipsIcons>
-  <WR_OrderSuffixBar>(Reiterreihenfolge)</WR_OrderSuffixBar>
+  <WR_OrderSuffixBar>(Kolonistenleiste)</WR_OrderSuffixBar>
   <WR_OrderSuffixAZ>(A-Z)</WR_OrderSuffixAZ>
   <WR_DisplayButton>Anzeige</WR_DisplayButton>
   <WR_DisplayOptions>Anzeigeoptionen</WR_DisplayOptions>
@@ -375,8 +375,8 @@ Die Aufgabe wurde nicht unterbrochen. Dieser Hinweis erscheint einmal pro Spiels
   <WR_RecTipWithWaiverOne>{0} (1 Trainingsausnahme)</WR_RecTipWithWaiverOne>
   <WR_RecTipWithWaiversMany>{0} ({1} Trainingsausnahmen)</WR_RecTipWithWaiversMany>
   <WR_RecTipEveryoneCapable>Allen fähigen Kolonisten zugewiesen</WR_RecTipEveryoneCapable>
-  <WR_RecDecisionAuto>Jedem fähigen Bauern automatisch zugewiesen.</WR_RecDecisionAuto>
-  <WR_RecDecisionSignals>Die eingestellte Signalschwelle qualifiziert diesen Bauern.</WR_RecDecisionSignals>
+  <WR_RecDecisionAuto>Allen automatisch zugewiesen, die diese Arbeit ausführen können.</WR_RecDecisionAuto>
+  <WR_RecDecisionSignals>Erfüllt die eingestellte Signalschwelle.</WR_RecDecisionSignals>
   <WR_RecDecisionCoverageDraft>Bester verbleibender Kandidat zur nötigen Abdeckung ausgewählt.</WR_RecDecisionCoverageDraft>
   <WR_RecDecisionTraining>Über den Trainingspfad für {0} zugewiesen.</WR_RecDecisionTraining>
   <WR_RecDecisionTrainingUnknown>Über einen Trainingspfad zugewiesen.</WR_RecDecisionTrainingUnknown>
@@ -399,21 +399,21 @@ Die Aufgabe wurde nicht unterbrochen. Dieser Hinweis erscheint einmal pro Spiels
   <WR_RecDecisionDisabled>Diese Rolle ist deaktiviert.</WR_RecDecisionDisabled>
   <WR_RecDecisionUnavailable>Die Arbeit dieser Rolle ist erst nach Abschluss ihrer Forschung verfügbar.</WR_RecDecisionUnavailable>
   <WR_RecDecisionExcluded>Diese Rolle wird durch Regeln gesteuert und ist von normalen Empfehlungen ausgeschlossen.</WR_RecDecisionExcluded>
-  <WR_RecDecisionIncapable>Dieser Bauer ist zur Arbeit dieser Rolle unfähig.</WR_RecDecisionIncapable>
+  <WR_RecDecisionIncapable>Zur Arbeit dieser Rolle unfähig.</WR_RecDecisionIncapable>
   <WR_RecDecisionNotMechanitor>Dieser Kolonist hat keinen Mechlink und kann daher keine Mechanitorarbeit erledigen.</WR_RecDecisionNotMechanitor>
-  <WR_RecDecisionHunterRequirements>Dieser Bauer trägt keine Fernkampfwaffe.</WR_RecDecisionHunterRequirements>
-  <WR_RecDecisionAwful>Ein miserables Signal schließt diesen Bauern aus.</WR_RecDecisionAwful>
+  <WR_RecDecisionHunterRequirements>Keine Fernkampfwaffe ausgerüstet.</WR_RecDecisionHunterRequirements>
+  <WR_RecDecisionAwful>Durch ein miserables Signal ausgeschlossen.</WR_RecDecisionAwful>
   <WR_RecDecisionCovered>Durch empfohlene Rolle abgedeckt: {0}.</WR_RecDecisionCovered>
   <WR_RecDecisionCoveredUnknown>Durch eine andere empfohlene Rolle abgedeckt.</WR_RecDecisionCoveredUnknown>
   <WR_RecDecisionCoverageFilled>Die nötige Abdeckung wurde durch höher eingestufte Kandidaten erreicht.</WR_RecDecisionCoverageFilled>
-  <WR_RecDecisionWeakSignal>Die Signalbewertung liegt unter der eingestellten Schwelle; auch für die nötige Abdeckung wurde dieser Bauer nicht gewählt.</WR_RecDecisionWeakSignal>
-  <WR_RecDecisionNotSelected>Dieser Bauer wurde von keiner Empfehlungsregel ausgewählt.</WR_RecDecisionNotSelected>
-  <WR_RecDecisionOutOfBand>Die Fertigkeit dieses Bauern liegt in einem anderen Bereich des Trainingspfads.</WR_RecDecisionOutOfBand>
+  <WR_RecDecisionWeakSignal>Die Signalbewertung liegt unter der eingestellten Schwelle; auch für die nötige Abdeckung wurde dieser Arbeiter nicht gewählt.</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionNotSelected>Von keiner Empfehlungsregel ausgewählt.</WR_RecDecisionNotSelected>
+  <WR_RecDecisionOutOfBand>Die Fertigkeitsstufe liegt in einem anderen Bereich des Trainingspfads.</WR_RecDecisionOutOfBand>
   <WR_RecDecisionOutqualified>Andere, besser qualifizierte Kandidaten wurden für die verfügbaren Plätze gewählt.</WR_RecDecisionOutqualified>
   <WR_RecDecisionRecommended>Vom Empfehlungssystem ausgewählt.</WR_RecDecisionRecommended>
   <WR_MakeItSo>So umsetzen</WR_MakeItSo>
   <WR_AllRolesAssigned>Alle Rollen zugewiesen</WR_AllRolesAssigned>
-  <WR_NowDrafted>Rekrutiert</WR_NowDrafted>
+  <WR_NowDrafted>Kampfmodus</WR_NowDrafted>
   <WR_NowMental>Mentaler Zustand</WR_NowMental>
   <WR_NowIdle>Untätig</WR_NowIdle>
   <WR_NowForced>Spielerbefehl</WR_NowForced>
@@ -620,7 +620,7 @@ Die Aufgabe wurde nicht unterbrochen. Dieser Hinweis erscheint einmal pro Spiels
   <WR_WelcomeFind>Öffne WorkRoles über die Arbeit-Schaltfläche am unteren Bildschirmrand. Der Hilfereiter beginnt mit einer geführten Tour.</WR_WelcomeFind>
   <WR_WelcomeTakeMeThere>Jetzt öffnen</WR_WelcomeTakeMeThere>
   <WR_WelcomeSmallScreen>Dein Spielbildschirm ist {0}x{1} groß (Auflösung geteilt durch UI-Skalierung). WorkRoles ist für mindestens {2}x{3} ausgelegt, etwa 1920x1080 bei UI-Skalierung 1.25. Es funktioniert auch auf kleineren Bildschirmen, aber manche Beschriftungen werden gekürzt und Reiter benötigen mehr Scrollen. Eine niedrigere UI-Skalierung gibt dem Fenster mehr Platz.</WR_WelcomeSmallScreen>
-  <WR_RoleWorkAversion>Die Vorschrift {1} von {0} lehnt {2} ab. Empfehlungen erhalten einen begrenzten Punktabzug: zwei Prioritätsstufen oder sechs virtuelle Fertigkeitspunkte bei der Auswahl des Hauptverantwortlichen. Nötige Abdeckung kann diesen Bauern weiterhin auswählen. Jäger rückt zwei Bereiche nach hinten, höchstens bis Bereich fünf; die bestehende Ausweichplatzierung im ersten Bereich gilt weiterhin.</WR_RoleWorkAversion>
+  <WR_RoleWorkAversion>Die Vorschrift {1} von {0} lehnt {2} ab. Empfehlungen erhalten einen begrenzten Punktabzug: zwei Prioritätsstufen oder sechs virtuelle Fertigkeitspunkte bei der Auswahl des Hauptverantwortlichen. Nötige Abdeckung kann diesen Arbeiter weiterhin auswählen. Jäger rückt zwei Bereiche nach hinten, höchstens bis Bereich fünf; die bestehende Ausweichplatzierung im ersten Bereich gilt weiterhin.</WR_RoleWorkAversion>
   <WR_WorkBlockedTags>deaktivierte Arbeitskennzeichen</WR_WorkBlockedTags>
   <WR_WorkBlockedCapacity>eine erforderliche Gesundheitskapazität fehlt</WR_WorkBlockedCapacity>
   <WR_WorkBlockedRace>durch Arbeitsbeschränkungen dieser Rasse nicht erlaubt</WR_WorkBlockedRace>
@@ -630,4 +630,7 @@ Die Aufgabe wurde nicht unterbrochen. Dieser Hinweis erscheint einmal pro Spiels
   <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
   <WR_RecWorkAversion>{0} lehnt {1} ab; die Empfehlungswertung wird gesenkt.</WR_RecWorkAversion>
   <WR_RecDecisionWorkAversion>Abneigung senkt die Wertung unter die Schwelle für optionale Arbeit.</WR_RecDecisionWorkAversion>
+  <WR_CompatibilityFreeWill>Free Will legt die Arbeitsprioritäten der Kolonisten fest. WorkRoles steuert jedoch die Prioritäten verwalteter Kolonisten und blockiert diese Änderungen.</WR_CompatibilityFreeWill>
+  <WR_CompatibilityPriorityMaster>PriorityMaster ändert die manuellen Prioritätswerte und deren Wertebereich. WorkRoles ersetzt diese Bedienelemente und leitet die Prioritäten verwalteter Kolonisten aus ihren Rollen ab.</WR_CompatibilityPriorityMaster>
+  <WR_CompatibilityWorkTab>{0} ersetzt den Arbeitsreiter und steuert die Prioritäten. Das führt zu Konflikten mit der rollenbasierten Arbeitsverwaltung von WorkRoles.</WR_CompatibilityWorkTab>
 </LanguageData>

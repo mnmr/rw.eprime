@@ -27,11 +27,48 @@ function Assert-WorkshopConnected {
     }
 }
 
-function Invoke-SteamWorkshopSession {
-    param([string]$RimWorldDir, [scriptblock]$Action)
+function Invoke-SteamWorkshopProcess {
+    param([string]$RimWorldDir, [scriptblock]$Action, [hashtable]$Parameters = @{})
     if ($PSVersionTable.PSVersion -lt [version]'7.6') {
         throw 'Workshop publishing requires PowerShell 7.6 or newer. Use pwsh to run the script.'
     }
+    # Shutdown does not unload Steam's overlay. Only this short-lived process
+    # loads Steam; confirmations stay in the caller. Pass data as serialized
+    # stdin, never command text (descriptions can exceed Windows' command-line
+    # limit when encoded). Actions must declare their inputs as parameters.
+    $request = @{ Helper = "$PSScriptRoot\steam-workshop.ps1"; GameDirectory = $RimWorldDir; Action = $Action.ToString(); Parameters = $Parameters }
+    # Handle the worker's error envelope ourselves, preserving recovery advice
+    # even when the calling shell opts into native exit-code exceptions.
+    $PSNativeCommandUseErrorActionPreference = $false
+    $reply = @($request | & (Join-Path $PSHOME 'pwsh.exe') -NoProfile -NonInteractive -Command {
+        Set-StrictMode -Version Latest
+        $ErrorActionPreference = 'Stop'
+        try {
+            $request = @($input)[0]
+            . $request.Helper
+            $output = @(Invoke-SteamWorkshopSession -RimWorldDir $request.GameDirectory -Action ([scriptblock]::Create($request.Action)) -Parameters $request.Parameters)
+            [pscustomobject]@{ Output = $output; Error = $null }
+        } catch {
+            [pscustomobject]@{ Output = @(); Error = $_.Exception.Message }
+            exit 1
+        }
+    })
+    # Native invocation waits for exit. Host messages are forwarded separately;
+    # the final envelope keeps them out of returned item IDs/tag result objects.
+    if ($reply.Count -eq 0 -or -not $reply[-1].PSObject.Properties['Output']) {
+        throw "Steam publishing process exited without a result (code $LASTEXITCODE). Check the Workshop before retrying."
+    }
+    $response = $reply[-1]
+    if ($LASTEXITCODE -ne 0) {
+        if ($response.Error) { throw $response.Error }
+        throw "Steam publishing process exited with code $LASTEXITCODE. Check the Workshop before retrying."
+    }
+    $response.Output
+}
+
+# Called inside the worker only; owns the native binding and Steam lifecycle.
+function Invoke-SteamWorkshopSession {
+    param([string]$RimWorldDir, [scriptblock]$Action, [hashtable]$Parameters = @{})
     $binding = Join-Path $RimWorldDir 'com.rlabrecque.steamworks.net.dll'
     $nativePath = Join-Path $RimWorldDir 'steam_api64.dll'
     $nativeHandle = [Runtime.InteropServices.NativeLibrary]::Load((Resolve-Path -LiteralPath $nativePath).Path)
@@ -46,7 +83,7 @@ function Invoke-SteamWorkshopSession {
         if (-not $initialized) { throw 'Steam initialization failed. Start Steam and log in as the Workshop item owner.' }
         if ([Steamworks.SteamUtils]::GetAppID().m_AppId -ne 294100) { throw 'Steam initialized for the wrong app; nothing was submitted.' }
         Assert-WorkshopConnected
-        & $Action
+        & $Action @Parameters
     } finally {
         try {
             if ($initialized) { [Steamworks.SteamAPI]::Shutdown() }

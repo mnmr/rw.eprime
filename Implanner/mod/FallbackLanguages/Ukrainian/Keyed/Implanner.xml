@@ -1,0 +1,216 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <IMP_AddImplantReserve>Додати імплант</IMP_AddImplantReserve>
+  <IMP_AddImplantReserveTip>Виберіть імплант, який слід відкласти від автоматизації.</IMP_AddImplantReserveTip>
+  <IMP_AddPlan>Новий план</IMP_AddPlan>
+  <IMP_AggregateColonists>Колоністів: {0} / {1}</IMP_AggregateColonists>
+  <IMP_AutomationOffBody>{0} розміщує цю колонію на кількох поверхах. Implanner не може перенести імплант або операцію між поверхами, тому припиняє резервування й призначення операцій, щоб не виконувати лише частину кожного плану.\n\nРешта можливостей працює. Створюйте плани, призначайте їх і впорядковуйте імпланти. Додавайте операції вручну, а Implanner відстежуватиме встановлені й відсутні імпланти.</IMP_AutomationOffBody>
+  <IMP_AutomationOffTitle>Автоматизацію вимкнено</IMP_AutomationOffTitle>
+  <IMP_BadDirectory>Введіть коректну папку.</IMP_BadDirectory>
+  <IMP_BadFileName>Введіть коректну назву файлу.</IMP_BadFileName>
+  <IMP_BenchLockedTip>На верстаті Implanner не можна вставляти, призупиняти чи поновлювати замовлення. Зніміть позначку «Верстат Implanner» вгорі вкладки «Завдання», щоб повернути верстат.</IMP_BenchLockedTip>
+  <IMP_BenchNoNewBills>Зніміть «Верстат Implanner», щоб додавати замовлення</IMP_BenchNoNewBills>
+  <IMP_BenchToggle>Верстат Implanner</IMP_BenchToggle>
+  <IMP_BenchToggleTip>Implanner розміщує замовлення на цьому верстаті раніше за інші, а вже наявні замовлення призупиняються. Поки позначку встановлено, тут не можна додавати, вставляти, призупиняти чи поновлювати замовлення.\n\nЗніміть позначку, щоб повернути верстат. Замовлення, призупинені ще до її встановлення, залишаться такими; решта поновляться.</IMP_BenchToggleTip>
+  <IMP_CleanupBody>Ці замовлення створив Implanner. OK вимикає автоматизацію й видаляє позначені замовлення. Непозначені залишаються, і після повторного ввімкнення Implanner знову ними керуватиме. Резервування імплантів скасовується в обох випадках. Скасування залишає автоматизацію ввімкненою.</IMP_CleanupBody>
+  <IMP_CleanupTitle>Вимкнути автоматизацію?</IMP_CleanupTitle>
+  <IMP_ColColonist>Колоніст</IMP_ColColonist>
+  <IMP_ColMelee>Б</IMP_ColMelee>
+  <IMP_ColMeleeTip>Навичка ближнього бою</IMP_ColMeleeTip>
+  <IMP_ColPlan>План</IMP_ColPlan>
+  <IMP_ColPriority>Пріоритет</IMP_ColPriority>
+  <IMP_ColProgress>Поступ</IMP_ColProgress>
+  <IMP_ColShooting>С</IMP_ColShooting>
+  <IMP_ColShootingTip>Навичка стрільби</IMP_ColShootingTip>
+  <IMP_ColState>Стан</IMP_ColState>
+  <IMP_ColonistDetails>Відомості про колоніста</IMP_ColonistDetails>
+  <IMP_CompatibilityLevelMod>{0}: автоматизацію Implanner вимкнено з цим модом поверхів. Планування й відстеження працюють.</IMP_CompatibilityLevelMod>
+  <IMP_CopyClipboard>Копіювати до буфера</IMP_CopyClipboard>
+  <IMP_DeleteFileConfirm>Видалити «{0}»?</IMP_DeleteFileConfirm>
+  <IMP_DeletePlan>Видалити план</IMP_DeletePlan>
+  <IMP_DeletePlanConfirm>Видалити план «{0}»? Колоністи втратять його призначення, а плани, що його доповнюють, перестануть успадковувати його вміст.</IMP_DeletePlanConfirm>
+  <IMP_DetailCollecting>Збирання: {0}</IMP_DetailCollecting>
+  <IMP_DragItemsHere>Перетягніть імпланти сюди</IMP_DragItemsHere>
+  <IMP_EnterPath>Папка:</IMP_EnterPath>
+  <IMP_Export>Експорт</IMP_Export>
+  <IMP_ExportPlansTitle>Експорт планів</IMP_ExportPlansTitle>
+  <IMP_ExportSummary>Планів: {0}, імплантів: {1}</IMP_ExportSummary>
+  <IMP_ExtendsNothing>Нічого</IMP_ExtendsNothing>
+  <IMP_ExtendsPlan>Доповнює</IMP_ExtendsPlan>
+  <IMP_FromClipboard>Із буфера обміну</IMP_FromClipboard>
+  <IMP_GoalBlockedFloor>Бракує навички лікаря ({0})</IMP_GoalBlockedFloor>
+  <IMP_GoalBlockedLoss>Буде знищено {0}</IMP_GoalBlockedLoss>
+  <IMP_GoalComplete>Виконано</IMP_GoalComplete>
+  <IMP_GoalMissing>Бракує</IMP_GoalMissing>
+  <IMP_GoalPartial>{0} / {1}</IMP_GoalPartial>
+  <IMP_GoalReady>Готово</IMP_GoalReady>
+  <IMP_GoalRecovering>Відновлення</IMP_GoalRecovering>
+  <IMP_GoalReserved>Зарезервовано</IMP_GoalReserved>
+  <IMP_GoalScheduled>Операцію призначено</IMP_GoalScheduled>
+  <IMP_GroupByFaction>За фракцією</IMP_GroupByFaction>
+  <IMP_GroupByGender>За статтю</IMP_GroupByGender>
+  <IMP_GroupByIdeo>За ідеолігією</IMP_GroupByIdeo>
+  <IMP_GroupByLocation>За місцем</IMP_GroupByLocation>
+  <IMP_GroupByNone>Без групування</IMP_GroupByNone>
+  <IMP_GroupByXenotype>За ксенотипом</IMP_GroupByXenotype>
+  <IMP_Help>Довідка</IMP_Help>
+  <IMP_HelpChapterAutomation>Автоматизація</IMP_HelpChapterAutomation>
+  <IMP_HelpChapterBasics>Основи</IMP_HelpChapterBasics>
+  <IMP_HelpChapterMods>Моди</IMP_HelpChapterMods>
+  <IMP_HelpChapterPlans>Плани</IMP_HelpChapterPlans>
+  <IMP_HelpChapterSharing>Обмін</IMP_HelpChapterSharing>
+  <IMP_HelpReload>Перезавантажити</IMP_HelpReload>
+  <IMP_ImplantGroupOther>Інше</IMP_ImplantGroupOther>
+  <IMP_Import>Імпорт</IMP_Import>
+  <IMP_ImportAddNote>Імпортовані плани додаються поряд із наявними; нічого не замінюється. До зайнятої назви додається число.</IMP_ImportAddNote>
+  <IMP_ImportInvalid>Некоректний експорт планів Implanner: {0}</IMP_ImportInvalid>
+  <IMP_ImportPlansTitle>Імпорт планів</IMP_ImportPlansTitle>
+  <IMP_Inherited>успадковано</IMP_Inherited>
+  <IMP_IterAsap>Якнайшвидше</IMP_IterAsap>
+  <IMP_IterColonist>Повні комплекти</IMP_IterColonist>
+  <IMP_IterTier>За рівнями</IMP_IterTier>
+  <IMP_LocCustom>Інша папка</IMP_LocCustom>
+  <IMP_LocDesktop>Робочий стіл</IMP_LocDesktop>
+  <IMP_LocGameData>Папка Implanner</IMP_LocGameData>
+  <IMP_LocUserHome>Домашня папка</IMP_LocUserHome>
+  <IMP_NextScheduled>Призначено операцію: {0}</IMP_NextScheduled>
+  <IMP_NoFiles>Тут ще немає експортованих планів.</IMP_NoFiles>
+  <IMP_NoMatchingImplants>Імплантів за цим запитом немає.</IMP_NoMatchingImplants>
+  <IMP_NoPlan>Немає</IMP_NoPlan>
+  <IMP_NoPlans>Створіть план, щоб задати потрібний набір імплантів.</IMP_NoPlans>
+  <IMP_NoSelection>Виберіть колоніста, щоб побачити відсутні імпланти.</IMP_NoSelection>
+  <IMP_OptAllowMultipleBladders>Кілька імплантів сечового міхура</IMP_OptAllowMultipleBladders>
+  <IMP_OptAllowMultipleBladdersTip>Гра вважає імпланти сечового міхура з різних модів окремими, тому колоніст може мати кілька одночасно з додаванням ефектів. Вимкніть, щоб вважати їх одним місцем: вибір одного в плані замінює інші, а колоніст із будь-яким із наведених імплантів вважається готовим. Нічого не знімається.\n\nВідповідні імпланти:\n{0}</IMP_OptAllowMultipleBladdersTip>
+  <IMP_OptAllowMultipleHygieneEnhancers>Кілька покращувачів гігієни</IMP_OptAllowMultipleHygieneEnhancers>
+  <IMP_OptAllowMultipleHygieneEnhancersTip>Гра вважає покращувачі гігієни з різних модів окремими імплантами, тому колоніст може мати кілька одночасно з додаванням ефектів. Вимкніть, щоб вважати їх одним місцем: вибір одного в плані замінює інші, а колоніст із будь-яким із наведених імплантів вважається готовим. Нічого не знімається.\n\nВідповідні імпланти:\n{0}</IMP_OptAllowMultipleHygieneEnhancersTip>
+  <IMP_OptAutoFloor>Операції найкращому доступному лікарю</IMP_OptAutoFloor>
+  <IMP_OptAutoFloorTip>Операції обмежуються найкращим доступним лікарем, щоб початківець не зіпсував установлення біоніки лише тому, що першим дістався операційного столу. Обмеження відповідає найкращому лікарю кожної колонії з урахуванням прибуття й відбуття людей. Ніхто не оперує себе, тож операції найкращого лікаря виконує наступний за навичкою.\n\nВимкніть, щоб самостійно задати сталий мінімум навички.</IMP_OptAutoFloorTip>
+  <IMP_OptAutoProduction>Автозамовлення відсутніх імплантів</IMP_OptAutoProduction>
+  <IMP_OptAutoProductionTip>Для відсутніх імплантів автоматично створюються замовлення. Implanner рахує потребу планів кожної колонії, віднімає запас і замовлення в черзі та додає нові на придатні верстати. Створені ним замовлення видаляються, коли потреба зникає.</IMP_OptAutoProductionTip>
+  <IMP_OptCatalog>Каталог</IMP_OptCatalog>
+  <IMP_OptCompatNoneLoaded>Жодного відповідного імпланта не завантажено.</IMP_OptCompatNoneLoaded>
+  <IMP_OptConcurrency>Верстати із замовленнями</IMP_OptConcurrency>
+  <IMP_OptConcurrencyTip>Скільки верстатів кожної колонії можуть одночасно мати замовлення Implanner. Кожне замовлення виготовляє один імплант, а верстат тримає до двох, щоб наступне вже чекало. Більше верстатів працюють паралельно, але майстри витрачають більше часу на імпланти й менше на решту. Утримуйте Shift під час клацання +/-, щоб змінити на 10, або Ctrl — на 5.</IMP_OptConcurrencyTip>
+  <IMP_OptCountHospitalized>Враховувати наявних пацієнтів</IMP_OptCountHospitalized>
+  <IMP_OptCountHospitalizedTip>Колоністи й раби в медичних ліжках або знерухомлені в очікуванні лікування також займають місця для операцій. Нові операції Implanner чекають, доки кількість пацієнтів не стане нижчою за ліміт. Ув'язнені, гості й пацієнти інших фракцій місць не займають. Вимкніть, щоб призначати встановлення імплантів незалежно від тих, хто вже лікується.</IMP_OptCountHospitalizedTip>
+  <IMP_OptDesignatedBenches>Лише верстати Implanner</IMP_OptDesignatedBenches>
+  <IMP_OptDesignatedBenchesTip>Виробничі замовлення додаються лише на верстати з позначкою «Верстат Implanner» на вкладці «Завдання», тому колонія без них не виготовляє імплантів. Якщо вимкнено, верстати Implanner отримують замовлення першими, а решта використовується, коли кожен верстат Implanner має два замовлення. Ліміт верстатів із замовленнями діє в обох випадках.</IMP_OptDesignatedBenchesTip>
+  <IMP_OptEnable>Увімкнути автоматизацію</IMP_OptEnable>
+  <IMP_OptEnableTip>Головний перемикач усіх самостійних дій Implanner: резервування імплантів, призначення операцій і створення виробничих замовлень. Після вимкнення Implanner відстежує плани й поступ, але не виконує їх. Під час вимкнення також пропонується вибрати, які з наявних замовлень залишити.</IMP_OptEnableTip>
+  <IMP_OptIdleBenches>Нові замовлення лише на вільних верстатах</IMP_OptIdleBenches>
+  <IMP_OptIdleBenchesTip>Нові замовлення Implanner отримують лише верстати без роботи в черзі. Ваше виробництво зберігає пріоритет, а імпланти заповнюють простої. Вимкніть, щоб замовлення імплантів ставали в чергу після ваших.</IMP_OptIdleBenchesTip>
+  <IMP_OptImplantReserves>Відкладені імпланти</IMP_OptImplantReserves>
+  <IMP_OptImplantReservesTip>Імпланти, відкладені для ручного використання. Автоматизація резервує лише надлишок понад ці кількості, залишаючи зазначений запас для термінових операцій чи торгівлі. Виробництво не вважає відкладені предмети доступними й продовжується, доки автоматизація не зможе діяти без них.</IMP_OptImplantReservesTip>
+  <IMP_OptIntermediaries>Виготовляти відсутні складники</IMP_OptIntermediaries>
+  <IMP_OptIntermediariesTip>Якщо для імпланта бракує інгредієнта, наприклад компонентів, Implanner може замовити і його, якщо це виготовлюваний предмет. Нестача відстежується по всьому виробничому ланцюжку. Сировина на кшталт сталі не виготовляється: її потрібно добувати самостійно.</IMP_OptIntermediariesTip>
+  <IMP_OptIteration>Стратегія виконання</IMP_OptIteration>
+  <IMP_OptIterationTip>Порядок автоматичного встановлення відсутніх імплантів. Пріоритет колоніста на вкладці «Огляд» завжди визначає черговість.\n\nЗа рівнями: спершу всі отримують імпланти найвищого рівня, потім черга переходить до нижчих. Операції колоніста починаються, коли зарезервовано весь його рівень.\n\nПовні комплекти: завершити весь план одного колоніста, перш ніж починати наступного. Операції чекають резервування всього плану.\n\nЯкнайшвидше: кожен наявний імплант одразу призначається колоністу найвищого пріоритету, якому його бракує. За рівного пріоритету ноги отримує найповільніший колоніст; руки спершу отримують колоністи зі спорядженою зброєю ближнього бою, а потім — із найбільшою сумою рівнів ремесла й інтелекту.</IMP_OptIterationTip>
+  <IMP_OptManualFloor>Потрібна медицина для операцій</IMP_OptManualFloor>
+  <IMP_OptManualFloorTip>Мінімальна навичка медицини для операцій Implanner. Операції чекають лікаря із цим або вищим рівнем. Після вимкнення автоматичного призначення початкове значення береться з поточного найкращого лікаря.</IMP_OptManualFloorTip>
+  <IMP_OptModCompat>Сумісність модів</IMP_OptModCompat>
+  <IMP_OptProduction>Виробництво</IMP_OptProduction>
+  <IMP_OptProductionSkill>Потрібне ремесло для виробництва</IMP_OptProductionSkill>
+  <IMP_OptProductionSkillTip>Мінімальна навичка ремесла для виробничих замовлень Implanner. Вищі значення захищають дорогі компоненти від недосвідчених майстрів; нижчі дозволяють допомагати більшій кількості колоністів. Замовлення чекають придатного майстра.</IMP_OptProductionSkillTip>
+  <IMP_OptReserves>Залишати в запасі (після витрат)</IMP_OptReserves>
+  <IMP_OptReservesTip>Мінімальні запаси для автоматичного виробництва. Замовлення додається, лише якщо колонія може покрити його витрати разом із рештою витрат замовлень у черзі та залишити щонайменше цю кількість кожного інгредієнта. Збільште число, щоб захистити запас; задайте нуль, щоб дозволити вільне витрачання.</IMP_OptReservesTip>
+  <IMP_OptShowPurchaseOnly>Показувати невиготовлювані імпланти</IMP_OptShowPurchaseOnly>
+  <IMP_OptShowPurchaseOnlyTip>Показує імпланти, які не виготовляє жоден верстат, наприклад архотехнічні частини. Їх отримують через торгівлю, завдання чи знахідки. Увімкніть, щоб додавати їх до планів. Автоматизація резервує предмет, щойно він з'явиться в запасі, й установлює з наступним комплектом; відсутність такого імпланта не затримує інші. Мод із рецептом автоматично робить імплант звичайним.\n\nВідповідні імпланти:\n{0}</IMP_OptShowPurchaseOnlyTip>
+  <IMP_OptSkillSliderMaximum>Максимум повзунків навичок</IMP_OptSkillSliderMaximum>
+  <IMP_OptSkillSliderMaximumTip>Задає верхню межу повзунків медицини й ремесла. Наявні вимоги до навичок та автоматичний вибір лікаря не змінюються.</IMP_OptSkillSliderMaximumTip>
+  <IMP_OptSurgery>Операції</IMP_OptSurgery>
+  <IMP_OptSurgeryConcurrency>Одночасні операції</IMP_OptSurgeryConcurrency>
+  <IMP_OptSurgeryConcurrencyTip>Скільки колоністів у кожній колонії можуть одночасно мати призначені операції. Вищі значення додають більше пацієнтів паралельно, нижчі залишають лікарню та лікарів вільнішими. Початкове значення — один на десять колоністів. Утримуйте Shift під час клацання +/-, щоб змінити на 10, або Ctrl — на 5.</IMP_OptSurgeryConcurrencyTip>
+  <IMP_OptUpgradeByPriority>Найкращі імпланти — пріоритетним колоністам</IMP_OptUpgradeByPriority>
+  <IMP_OptUpgradeByPriorityTip>Імпланти вищої якості отримують колоністи з найвищим пріоритетом на вкладці «Огляд». Для нових операцій використовується найнижча допустима планом якість, щоб кращі імпланти залишалися вільними.\n\nКоли з'являється кращий імплант, його отримує найпріоритетніший колоніст із гіршим імплантом того самого типу. Старий спершу знімається й переходить наступному в черзі. Імплант, уже зарезервований менш пріоритетному колоністу, також передається, якщо операцію ще не призначено.\n\nКожна заміна — додаткова операція. Якщо вимкнено, кожен колоніст отримує найкращий наявний імплант, коли настає його черга.</IMP_OptUpgradeByPriorityTip>
+  <IMP_Overrides>замінює {0}</IMP_Overrides>
+  <IMP_PlanColonists>Колоністів: {0}</IMP_PlanColonists>
+  <IMP_PlanCounts>Імплантів: {0}</IMP_PlanCounts>
+  <IMP_PlanExtends>доповнює {0}</IMP_PlanExtends>
+  <IMP_PlanGoalCount>Імплантів: {0}</IMP_PlanGoalCount>
+  <IMP_PlanMinQuality>Мінімальна якість: {0}</IMP_PlanMinQuality>
+  <IMP_PlanMinQualityNoQualityJobs>Quality Jobs не завантажено, тому імплант може завершити будь-який майстер. Якщо якість нижча за задану, імплант виготовляється знову.</IMP_PlanMinQualityNoQualityJobs>
+  <IMP_PlanMinQualityTip>Імпланти цього плану встановлюються й виготовляються із цією або вищою якістю. Імплантів без якості це не стосується.\n\nІмплант ніколи не замінює здорову частину тіла гіршою. Біоніка низької якості чекає на кращий предмет, якщо частина тіла не відсутня чи пошкоджена.</IMP_PlanMinQualityTip>
+  <IMP_PlanNameTitle>Назва плану</IMP_PlanNameTitle>
+  <IMP_PlansHeader>Плани</IMP_PlansHeader>
+  <IMP_Priority0>Перший</IMP_Priority0>
+  <IMP_Priority1>Високий</IMP_Priority1>
+  <IMP_Priority2>Звичайний</IMP_Priority2>
+  <IMP_Priority3>Низький</IMP_Priority3>
+  <IMP_Priority4>Останній</IMP_Priority4>
+  <IMP_RankTiersHelp>Імпланти можна розподілити на 5 рівнів. Розміщення впливає на порядок виробництва й операцій залежно від параметрів автоматизації.\n\nПеретягуйте предмети для зміни порядку.</IMP_RankTiersHelp>
+  <IMP_RankTiersTitle>Рівні імплантів</IMP_RankTiersTitle>
+  <IMP_ReadFailed>Не вдалося прочитати файл: {0}</IMP_ReadFailed>
+  <IMP_RegionHead>Голова</IMP_RegionHead>
+  <IMP_RegionLimbs>Кінцівки</IMP_RegionLimbs>
+  <IMP_RegionTorso>Тулуб</IMP_RegionTorso>
+  <IMP_ReqBody>{0} можна встановити лише на штучну частину тіла «{1}». Виберіть заміну, яку слід додати до плану разом із ним:</IMP_ReqBody>
+  <IMP_ReqConfirm>Додати до плану</IMP_ReqConfirm>
+  <IMP_ReqTitle>Вимоги</IMP_ReqTitle>
+  <IMP_Save>Зберегти</IMP_Save>
+  <IMP_SaveFailed>Не вдалося зберегти: {0}</IMP_SaveFailed>
+  <IMP_SavedTo>Плани збережено в {0}</IMP_SavedTo>
+  <IMP_ScopeAll>Усюди</IMP_ScopeAll>
+  <IMP_SettingsShowToolbarButton>Показувати кнопку на панелі</IMP_SettingsShowToolbarButton>
+  <IMP_ShipFallback>Гравкорабель</IMP_ShipFallback>
+  <IMP_StateAway>Відсутній</IMP_StateAway>
+  <IMP_StateDone>Готово</IMP_StateDone>
+  <IMP_StateOperating>Операція</IMP_StateOperating>
+  <IMP_StatePreparing>Підготовка</IMP_StatePreparing>
+  <IMP_StateWaiting>Очікує</IMP_StateWaiting>
+  <IMP_StripAutomationOff>Автоматизацію вимкнено</IMP_StripAutomationOff>
+  <IMP_StripAutomationOn>Автоматизацію ввімкнено</IMP_StripAutomationOn>
+  <IMP_StripAwaitingProduction>Очікування виробництва</IMP_StripAwaitingProduction>
+  <IMP_StripBatch>Установлення комплекту: {0}</IMP_StripBatch>
+  <IMP_StripBatchStars>Установлення комплекту: {0} ({1})</IMP_StripBatchStars>
+  <IMP_StripColony>Колонія: {0}</IMP_StripColony>
+  <IMP_StripInstalled>Установлено імплантів: {0} / {1}</IMP_StripInstalled>
+  <IMP_StripMaking>Виготовлення: {0}</IMP_StripMaking>
+  <IMP_StripMakingFor>Виготовлення матеріалів для {0}</IMP_StripMakingFor>
+  <IMP_StripNothingToCraft>Нічого виготовляти</IMP_StripNothingToCraft>
+  <IMP_StripProduction>Виробництво: {0}%</IMP_StripProduction>
+  <IMP_StripStock>{0} у запасі, {1} у черзі</IMP_StripStock>
+  <IMP_StripSurgery>Операції: {0}%</IMP_StripSurgery>
+  <IMP_StripWaiting>Очікування: {0}</IMP_StripWaiting>
+  <IMP_StripWaitingBench>Очікування верстата</IMP_StripWaitingBench>
+  <IMP_TabAutomation>Автоматизація</IMP_TabAutomation>
+  <IMP_TabHelp>Довідка</IMP_TabHelp>
+  <IMP_TabOptions>Параметри</IMP_TabOptions>
+  <IMP_TabOverview>Огляд</IMP_TabOverview>
+  <IMP_TabPlans>Плани</IMP_TabPlans>
+  <IMP_TierHigh>Високий пріоритет</IMP_TierHigh>
+  <IMP_TierHighest>Найвищий пріоритет</IMP_TierHighest>
+  <IMP_TierLow>Низький пріоритет</IMP_TierLow>
+  <IMP_TierMedium>Середній пріоритет</IMP_TierMedium>
+  <IMP_TierNormal>Звичайний пріоритет</IMP_TierNormal>
+  <IMP_TipBenchesInUse>Верстатів із замовленнями Implanner: {0}</IMP_TipBenchesInUse>
+  <IMP_TipCapacity>Частина тіла: {0}</IMP_TipCapacity>
+  <IMP_TipColCrafting>Виробляється</IMP_TipColCrafting>
+  <IMP_TipColFree>Вільно</IMP_TipColFree>
+  <IMP_TipColHeldBack>Відкладено</IMP_TipColHeldBack>
+  <IMP_TipColImplant>Імплант</IMP_TipColImplant>
+  <IMP_TipColInstalled>Установлено</IMP_TipColInstalled>
+  <IMP_TipColItem>Предмет</IMP_TipColItem>
+  <IMP_TipColMissing>Бракує</IMP_TipColMissing>
+  <IMP_TipColNeeded>Потрібно</IMP_TipColNeeded>
+  <IMP_TipColPlanned>У плані</IMP_TipColPlanned>
+  <IMP_TipColQueued>У черзі</IMP_TipColQueued>
+  <IMP_TipColReserved>Резерв</IMP_TipColReserved>
+  <IMP_TipColScheduled>Призначено</IMP_TipColScheduled>
+  <IMP_TipColStatus>Стан</IMP_TipColStatus>
+  <IMP_TipColTier>Рівень</IMP_TipColTier>
+  <IMP_TipColonistStates>Колоністи: {0} очікують, {1} готуються, {2} оперуються, {3} завершили, {4} відсутні</IMP_TipColonistStates>
+  <IMP_TipCovered>Забезпечено</IMP_TipCovered>
+  <IMP_TipMaking>Виготовляється</IMP_TipMaking>
+  <IMP_TipMakingMaterials>Виготовлення матеріалів</IMP_TipMakingMaterials>
+  <IMP_TipMaxHp>Макс. міцність частини тіла: {0}</IMP_TipMaxHp>
+  <IMP_TipNoRecipe>Немає рецепта</IMP_TipNoRecipe>
+  <IMP_TipPartEfficiency>Ефективність частини: {0}</IMP_TipPartEfficiency>
+  <IMP_TipPartEfficiencyRange>Ефективність частини: від {0} до {1}, залежно від якості</IMP_TipPartEfficiencyRange>
+  <IMP_TipProduction>Виробництво</IMP_TipProduction>
+  <IMP_TipSurgery>Операції</IMP_TipSurgery>
+  <IMP_ToolbarButtonTip>Відкрити Implanner</IMP_ToolbarButtonTip>
+  <IMP_WelcomeBody>Implanner планує імпланти колоністів і за бажанням автоматизує роботи з їхнього виготовлення та встановлення.</IMP_WelcomeBody>
+  <IMP_WelcomeFind>Відкрийте Implanner цією кнопкою на панелі в правому нижньому куті екрана, поряд із перемикачами відображення.</IMP_WelcomeFind>
+  <IMP_WelcomeTakeMeThere>Відкрити зараз</IMP_WelcomeTakeMeThere>
+  <IMP_WelcomeTitle>EPrime's Implanner</IMP_WelcomeTitle>
+</LanguageData>

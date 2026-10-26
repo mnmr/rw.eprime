@@ -1,0 +1,636 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_ActAltClick>Alt+クリック</WR_ActAltClick>
+  <WR_ActChipClick>この入植者でオン・オフ・強制オンを切り替え</WR_ActChipClick>
+  <WR_ActChipDrag>並べ替え、または別の入植者へ移動</WR_ActChipDrag>
+  <WR_ActChipRightClick>固定設定</WR_ActChipRightClick>
+  <WR_ActChipX>削除</WR_ActChipX>
+  <WR_ActClick>クリック</WR_ActClick>
+  <WR_ActCtrlShiftClick>Ctrl+Shift+クリック</WR_ActCtrlShiftClick>
+  <WR_ActDrag>ドラッグ</WR_ActDrag>
+  <WR_ActPaletteAltClick>選択中の入植者のおすすめ位置に割り当て</WR_ActPaletteAltClick>
+  <WR_ActPaletteClick>ロールを全体で切り替え</WR_ActPaletteClick>
+  <WR_ActPaletteCtrlShiftClick>選択中の入植者の基本作業の直後に割り当て</WR_ActPaletteCtrlShiftClick>
+  <WR_ActPaletteDrag>入植者に割り当て</WR_ActPaletteDrag>
+  <WR_ActPaletteShiftClick>選択中の入植者の末尾に割り当て</WR_ActPaletteShiftClick>
+  <WR_ActRightClick>右クリック</WR_ActRightClick>
+  <WR_ActShiftClick>Shift+クリック</WR_ActShiftClick>
+  <WR_ActTreeClick>編集対象に選択</WR_ActTreeClick>
+  <WR_ActTreeDrag>並べ替え、または別グループへ移動</WR_ActTreeDrag>
+  <WR_ActTreeRightClick>ロールを構成（含める・除外）</WR_ActTreeRightClick>
+  <WR_ActX>X</WR_ActX>
+  <WR_ActiveHours>有効時間</WR_ActiveHours>
+  <WR_AddAllJobs>全作業を個別追加（並べ替え可）</WR_AddAllJobs>
+  <WR_AddNew>新規追加</WR_AddNew>
+  <WR_AddRole>ロールを追加</WR_AddRole>
+  <WR_AddRoleTip>ロールを割り当てます。</WR_AddRoleTip>
+  <WR_AddSkill>スキル追加</WR_AddSkill>
+  <WR_AddSkillTip>必須スキル条件を追加します。作業から求める「使用」「育成」のスキルは変わりません。</WR_AddSkillTip>
+  <WR_AllJobs>全作業</WR_AllJobs>
+  <WR_AllRolesAssigned>全ロール割当済み</WR_AllRolesAssigned>
+  <WR_AllWork>全作業</WR_AllWork>
+  <WR_AlreadyAssigned>割当済み</WR_AlreadyAssigned>
+  <WR_Apply>適用</WR_Apply>
+  <WR_AssignedRoleCaption>割当ロール</WR_AssignedRoleCaption>
+  <WR_AssignedTo>担当者</WR_AssignedTo>
+  <WR_AutoAssign>自動割り当て</WR_AutoAssign>
+  <WR_AutoAssignTip>新規加入者は、対象年齢帯なら自動的にこのロールを受け取ります。</WR_AutoAssignTip>
+  <WR_AutoManaged>自動管理中</WR_AutoManaged>
+  <WR_AutoManagedTip>ゲーム内の毎正時に、全コロニーのロール割り当てを自動更新します。
+
+除外ロールも含め、固定済みの割り当ては保持します。
+
+「オプション」で毎時の自動最適化をオフにすると「コロニーを最適化」が戻ります。</WR_AutoManagedTip>
+  <WR_AutoOptimizeConfirmApply>「適用」で下記の変更を今すぐ行い、毎時の自動最適化を有効にします。有効中は「コロニーを最適化」と「おすすめを適用」ボタンを隠しますが、割り当て、並べ替え、固定は通常どおり行えます。</WR_AutoOptimizeConfirmApply>
+  <WR_AutoOptimizeGlobalWarning>複数のコロニーがあります。自動最適化は全体設定で、毎時全コロニーの割り当てを変更します。以下のプレビューは現在のコロニーだけです。</WR_AutoOptimizeGlobalWarning>
+  <WR_AutomationSection>自動化設定</WR_AutomationSection>
+  <WR_AvailableJobs>選択可能な作業</WR_AvailableJobs>
+  <WR_AvailableRoles>選択可能なロール</WR_AvailableRoles>
+  <WR_BadDirectory>有効なフォルダーパスを入力してください。</WR_BadDirectory>
+  <WR_BadFileName>有効なファイル名を入力してください。</WR_BadFileName>
+  <WR_BadgeBlocker>ブロッカー</WR_BadgeBlocker>
+  <WR_BadgeHours>時間制限</WR_BadgeHours>
+  <WR_BadgeLocation>場所制限</WR_BadgeLocation>
+  <WR_BandChipTip>端をドラッグしてスキル範囲を変更し、中央をドラッグして移動します。</WR_BandChipTip>
+  <WR_BillRoleOption>ロール: {0}</WR_BillRoleOption>
+  <WR_BillWorkerRoleTip>このロールを有効に持つ入植者だけが加工します。条件付きロールは時間などのルールにも従います。担当者を選ぶとロール制限を解除し、逆も同様です。</WR_BillWorkerRoleTip>
+  <WR_BlockerRole>ブロッカーロール</WR_BlockerRole>
+  <WR_BlockerRoleTipWhat>含まれる作業を禁止します。後のロールにあっても「実行しない」として扱います。</WR_BlockerRoleTipWhat>
+  <WR_BlockerRoleTipWhy>ブロッカーより前のロールが優先されるため、例外を許すロールは前に置きます。</WR_BlockerRoleTipWhy>
+  <WR_ChampionPenalty>最適担当の兼任を減点</WR_ChampionPenalty>
+  <WR_ChampionPenaltyTip>オンなら、他のロールの最適担当者になっている人を、このロールの選考で減点します。時々行う仕事など、兼任してよい場合はオフにします。</WR_ChampionPenaltyTip>
+  <WR_ChipLayoutGridTip>同じ幅の列にチップをそろえます。長い名前は端で薄くなり、似たロール名を区別する場合だけ幅を広げます。全文はツールチップに表示します。クリックで自然幅の配置にし、右クリックで名前を収める長さを選びます。</WR_ChipLayoutGridTip>
+  <WR_ChipLayoutStackTip>チップを自然な幅で並べます。クリックで等幅の列にそろえ、右クリックで表形式の名前の長さを選びます。</WR_ChipLayoutStackTip>
+  <WR_ChipsCompact>頭文字</WR_ChipsCompact>
+  <WR_ChipsIcons>アイコン</WR_ChipsIcons>
+  <WR_ChipsNormal>名前</WR_ChipsNormal>
+  <WR_ClearRulesConfirm>「{0}」の全ルールを削除しますか？手動ロールに戻ります。</WR_ClearRulesConfirm>
+  <WR_ClusterEveryone>全員</WR_ClusterEveryone>
+  <WR_ClusterUnskilled>スキル不要</WR_ClusterUnskilled>
+  <WR_ColColonist>入植者</WR_ColColonist>
+  <WR_ColonistClearFiltersTip>名前検索、割当ロール、担当作業の条件を解除します。場所、分類、スキル列、表示方式は保持します。</WR_ColonistClearFiltersTip>
+  <WR_ColonistGroupTip>表示中の入植者を選んだ特徴で分類します。検索条件は変わりません。見出しで各区分を折りたためます。</WR_ColonistGroupTip>
+  <WR_ColonistJobFilterTip>選択: {0}
+
+ブロッカー以外の割当ロールにこの作業が含まれる人を表示します。現在の行動やバニラの優先順位ではなく、ロールがカバーする作業を調べます。</WR_ColonistJobFilterTip>
+  <WR_ColonistNameCaption>入植者名</WR_ColonistNameCaption>
+  <WR_ColonistRoleDisplayTip>割当ロールの表示を名前、頭文字、アイコンから選びます。横のボタンで自然幅の配置と表形式を切り替えます。プレイヤーごとの表示設定です。</WR_ColonistRoleDisplayTip>
+  <WR_ColonistRoleFilterTip>選んだロールを持つ人を表示します。ブロッカー以外の割当ロールが対象ロールの全作業を含む場合も一致します。検索、作業、場所の条件と組み合わせます。</WR_ColonistRoleFilterTip>
+  <WR_ColonistScopeTip>一覧に含める場所を選びます。「現在地」は表示中のマップに追従し、「全ての場所」は拠点、キャラバン、飛行中のグラヴシップを含めます。</WR_ColonistScopeTip>
+  <WR_ColonistSearchTip>入植者名を検索します。空白で区切ると全語に一致する人を表示します。r:またはrole:で割当ロール名、j:またはjob:で割当ロールに含まれる作業を検索します。例: ブラ r:医者。</WR_ColonistSearchTip>
+  <WR_ColonistSkillColumnsTip>最大3つのスキル列を選びます。見出しで並べ替え、Xで列を外します。</WR_ColonistSkillColumnsTip>
+  <WR_ColonistsTab>入植者</WR_ColonistsTab>
+  <WR_CompatSection>互換性設定</WR_CompatSection>
+  <WR_CompatibilityFreeWill>Free Willは入植者の優先順位を設定しますが、WorkRolesが管理中の入植者への変更は遮断します。</WR_CompatibilityFreeWill>
+  <WR_CompatibilityPriorityMaster>PriorityMasterは手動の優先順位と範囲を変更します。WorkRolesはその操作を置き換え、管理中の入植者の順位をロールから求めます。</WR_CompatibilityPriorityMaster>
+  <WR_CompatibilityWorkTab>{0}は「優先順位」タブを置き換えて順位を管理するため、WorkRolesのロール管理と競合します。</WR_CompatibilityWorkTab>
+  <WR_CompositeConfirm>「{0}」を複合ロールにしますか？選択した作業は削除されます。</WR_CompositeConfirm>
+  <WR_CompositeRevertConfirm>「{0}」を通常ロールに戻しますか？構成ロールは外れます。</WR_CompositeRevertConfirm>
+  <WR_CompositeRole>複合ロール</WR_CompositeRole>
+  <WR_CompositeRoleTip>他のロールをまとめ、構成順に作業を行います。複合ロール自身の作業一覧はありません。</WR_CompositeRoleTip>
+  <WR_ConditionalRole>条件付きロール</WR_ConditionalRole>
+  <WR_ConditionalRoleTip>有効時間と場所のルールで自動的に切り替わります。何かルールを設定すると条件付きロールになります。</WR_ConditionalRoleTip>
+  <WR_ContributesTip>このロールへの育成: {0}。</WR_ContributesTip>
+  <WR_CopiedRoles>{0}のロールをコピーしました。</WR_CopiedRoles>
+  <WR_CopiedToClipboard>クリップボードにコピーしました。</WR_CopiedToClipboard>
+  <WR_Copy>コピー</WR_Copy>
+  <WR_CopyClipboard>クリップボードにコピー</WR_CopyClipboard>
+  <WR_CopyPath>パスをコピー</WR_CopyPath>
+  <WR_CopyRoleTitle>ロールをコピー</WR_CopyRoleTitle>
+  <WR_CopyRolesTip>この入植者のロールをコピーします。</WR_CopyRolesTip>
+  <WR_CopySource>{0}をコピー</WR_CopySource>
+  <WR_CoveredByTypeTip>作業種別に含まれています。クリックすると個別の項目にして並べ替えられます。</WR_CoveredByTypeTip>
+  <WR_CoveredJobCaption>担当作業</WR_CoveredJobCaption>
+  <WR_CustomSwatchEmpty>空き枠: クリックでカスタム色を選びます。色は全ロールで共有します。</WR_CustomSwatchEmpty>
+  <WR_CustomSwatchTip>クリックでこの色を使用し、右クリックで枠の色を変更します。</WR_CustomSwatchTip>
+  <WR_DeadEntryTip>効果なし: 全作業が上の項目に含まれています。優先するには上へ移し、不要なら削除してください。</WR_DeadEntryTip>
+  <WR_Delete>削除</WR_Delete>
+  <WR_DeleteConfirm>ロール「{0}」を削除しますか？全入植者から外れます。</WR_DeleteConfirm>
+  <WR_DisplayButton>表示</WR_DisplayButton>
+  <WR_DisplayModeLabel>表示方式</WR_DisplayModeLabel>
+  <WR_DisplayOptions>表示設定</WR_DisplayOptions>
+  <WR_DisplaySection>表示設定</WR_DisplaySection>
+  <WR_EffectQuality>品質が上がる</WR_EffectQuality>
+  <WR_EffectSpeed>作業が速くなる</WR_EffectSpeed>
+  <WR_EffectSuccess>成功率が上がる</WR_EffectSuccess>
+  <WR_EffectYield>収量が増える</WR_EffectYield>
+  <WR_EmergencySuffix> （緊急）</WR_EmergencySuffix>
+  <WR_EnterPath>パスを入力</WR_EnterPath>
+  <WR_Export>エクスポート</WR_Export>
+  <WR_ExportFailed>保存できませんでした: {0}</WR_ExportFailed>
+  <WR_ExportLocationLabel>保存先</WR_ExportLocationLabel>
+  <WR_ExportOverwriteConfirm>{0}は既にあります。置き換えますか？</WR_ExportOverwriteConfirm>
+  <WR_ExportSaved>{0}に保存しました</WR_ExportSaved>
+  <WR_ExportTip>割り当てを除く全ロール定義を書き出す場所:\n{0}</WR_ExportTip>
+  <WR_ExportTitle>ロールのエクスポート</WR_ExportTitle>
+  <WR_FilterAllRoles>全ロール</WR_FilterAllRoles>
+  <WR_FilterAnyJob>全作業</WR_FilterAnyJob>
+  <WR_FixMyColony>コロニーを最適化</WR_FixMyColony>
+  <WR_FixMyColonyTip>全入植者のロールをおすすめの構成に置き換えます。</WR_FixMyColonyTip>
+  <WR_FixNeedsSingleLocation>おすすめは場所ごとに計算します。最適化するには、場所を1つの拠点または船に絞ってください。</WR_FixNeedsSingleLocation>
+  <WR_GatedSkillsLabel>条件</WR_GatedSkillsLabel>
+  <WR_GatedSkillsTip>一部の作業に必要なスキルです。最低レベルはレシピ、植物、建築物によって異なります。ホバーで詳細を確認できます。\n\n選択した作業から求めた参考情報です。</WR_GatedSkillsTip>
+  <WR_GiverBypassBody>{0}が「{1}」を開始しましたが、その作業を含むロールは割り当てられていません。
+
+WorkRolesはゲーム標準の仕組みで管理中の入植者に作業一覧を渡します。他Modが独自の一覧から仕事を選び、ロール制限を通らなかった可能性があります。そのModの有効中はロール外の仕事をする場合があります。
+
+作業は中断していません。この通知はセーブごとに1回表示します。</WR_GiverBypassBody>
+  <WR_GiverBypassTitle>ロール外の作業を開始しました</WR_GiverBypassTitle>
+  <WR_GridModeRaw>WorkRolesの順位</WR_GridModeRaw>
+  <WR_GridModeVanilla>バニラの順位</WR_GridModeVanilla>
+  <WR_GridNamesAutomatic>自動</WR_GridNamesAutomatic>
+  <WR_GridNamesFull>全文</WR_GridNamesFull>
+  <WR_GridNamesLong>長い</WR_GridNamesLong>
+  <WR_GridNamesMedium>中程度</WR_GridNamesMedium>
+  <WR_GridNamesShort>短い</WR_GridNamesShort>
+  <WR_GroupAge>年齢</WR_GroupAge>
+  <WR_GroupButton>グループ: {0}</WR_GroupButton>
+  <WR_GroupByCaption>分類</WR_GroupByCaption>
+  <WR_GroupColonyGroups>Colony Groups</WR_GroupColonyGroups>
+  <WR_GroupCompositeTip>複合ロールは「複合ロール」に表示します。</WR_GroupCompositeTip>
+  <WR_GroupComposites>複合ロール</WR_GroupComposites>
+  <WR_GroupConditionalRoles>条件付きロール</WR_GroupConditionalRoles>
+  <WR_GroupDefault>標準</WR_GroupDefault>
+  <WR_GroupFaction>派閥</WR_GroupFaction>
+  <WR_GroupGender>性別</WR_GroupGender>
+  <WR_GroupIdeo>思想</WR_GroupIdeo>
+  <WR_GroupLabel>グループ</WR_GroupLabel>
+  <WR_GroupNewOption>新規...</WR_GroupNewOption>
+  <WR_GroupNone>分類なし</WR_GroupNone>
+  <WR_GroupOverlayTip>ルール付きのロールは「条件付きロール」に表示します。ルールを消すと元のグループに戻ります。</WR_GroupOverlayTip>
+  <WR_GroupRace>種族</WR_GroupRace>
+  <WR_GroupSlaves>奴隷かどうか</WR_GroupSlaves>
+  <WR_GroupTitleColonists>入植者</WR_GroupTitleColonists>
+  <WR_GroupTitleSlaves>奴隷</WR_GroupTitleSlaves>
+  <WR_GroupTitleUngrouped>未分類</WR_GroupTitleUngrouped>
+  <WR_GroupXenotype>ゼノタイプ</WR_GroupXenotype>
+  <WR_HelpChapterAdvanced>応用</WR_HelpChapterAdvanced>
+  <WR_HelpChapterBasics>基本</WR_HelpChapterBasics>
+  <WR_HelpChapterEditing>ロール編集</WR_HelpChapterEditing>
+  <WR_HelpChapterOrganizing>整理</WR_HelpChapterOrganizing>
+  <WR_HelpChapterRecommendations>おすすめ</WR_HelpChapterRecommendations>
+  <WR_HelpChapterStart>はじめに</WR_HelpChapterStart>
+  <WR_HelpDemoChipA>医者</WR_HelpDemoChipA>
+  <WR_HelpDemoChipB>農夫</WR_HelpDemoChipB>
+  <WR_HelpDemoChipC>運搬担当</WR_HelpDemoChipC>
+  <WR_HelpReload>再読込</WR_HelpReload>
+  <WR_HelpTab>ヘルプ</WR_HelpTab>
+  <WR_HelpTourComplete>準備完了！</WR_HelpTourComplete>
+  <WR_HelpTourCompleteHint>基本は身に付きました。その他の機能は上の各章で説明します。</WR_HelpTourCompleteHint>
+  <WR_HelpTourHeader>使い方ガイド</WR_HelpTourHeader>
+  <WR_HelpTourProgress>{1}項目中{0}項目を読了</WR_HelpTourProgress>
+  <WR_HoursActive>有効</WR_HoursActive>
+  <WR_HoursInactive>無効</WR_HoursInactive>
+  <WR_Import>インポート</WR_Import>
+  <WR_ImportClipboardInvalid>クリップボードにWorkRolesのエクスポートデータがありません。</WR_ImportClipboardInvalid>
+  <WR_ImportFileMissing>{0}にファイルがありません</WR_ImportFileMissing>
+  <WR_ImportFromClipboard>クリップボードから</WR_ImportFromClipboard>
+  <WR_ImportLocationLabel>読込元</WR_ImportLocationLabel>
+  <WR_ImportParseFailed>ロールを読み込めませんでした: {0}</WR_ImportParseFailed>
+  <WR_ImportSummary>完了: 追加{0}、更新{1}、削除{2}、色変更{3}、育成パス{4}。</WR_ImportSummary>
+  <WR_ImportTip>次の場所からロール定義を追加:\n{0}</WR_ImportTip>
+  <WR_ImportTitle>ロールのインポート</WR_ImportTitle>
+  <WR_InvalidRoleTip>有効になりません。作業が空か、指定した場所が全て消失しています。</WR_InvalidRoleTip>
+  <WR_JobColumn>作業</WR_JobColumn>
+  <WR_JobFilterLabel>作業フィルター</WR_JobFilterLabel>
+  <WR_LocCustom>指定...</WR_LocCustom>
+  <WR_LocDesktop>デスクトップ</WR_LocDesktop>
+  <WR_LocGameData>ゲームデータフォルダー</WR_LocGameData>
+  <WR_LocUserHome>ホームフォルダー</WR_LocUserHome>
+  <WR_LocationAny>全ての場所</WR_LocationAny>
+  <WR_LocationCaption>場所</WR_LocationCaption>
+  <WR_LocationCaravans>キャラバン</WR_LocationCaravans>
+  <WR_LocationCount>{0}か所</WR_LocationCount>
+  <WR_LocationGone>（消失）</WR_LocationGone>
+  <WR_LocationNowhere>対象の場所なし</WR_LocationNowhere>
+  <WR_LocationNowhereTip>指定していた場所が全て消失しました。別の場所を選ぶまで無効のままです。</WR_LocationNowhereTip>
+  <WR_LocationSettlementItem>拠点: {0}</WR_LocationSettlementItem>
+  <WR_LocationSettlements>拠点</WR_LocationSettlements>
+  <WR_LocationShipItem>船: {0}</WR_LocationShipItem>
+  <WR_MakeItSo>おすすめを適用</WR_MakeItSo>
+  <WR_MemberLockTip>変更不可: 複合ロールの一部です。全ての複合ロールから外すと変更できます。</WR_MemberLockTip>
+  <WR_MemberRoles>構成ロール（優先順）</WR_MemberRoles>
+  <WR_MissingDef>現在のMod構成に{0}はありません。元のModを戻すまで無効です。</WR_MissingDef>
+  <WR_ModeMerge>統合</WR_ModeMerge>
+  <WR_ModeOverwrite>上書き</WR_ModeOverwrite>
+  <WR_MoveSelectedDownTip>選択行を1段下へ移します。</WR_MoveSelectedDownTip>
+  <WR_MoveSelectedUpTip>選択行を1段上へ移します。クリックで選択、Shiftで範囲選択、Ctrlで1行ずつ追加・解除します。</WR_MoveSelectedUpTip>
+  <WR_MtcHatedWorkSignalDescription>More Than Capableでは実行できますが、深刻なペナルティが次第に増えます。</WR_MtcHatedWorkSignalDescription>
+  <WR_MtcHatedWorkSignalLabel>{0}が嫌い</WR_MtcHatedWorkSignalLabel>
+  <WR_NameTaken>同名のロールが既にあります。</WR_NameTaken>
+  <WR_New>新規</WR_New>
+  <WR_NewGroupTitle>新規グループ</WR_NewGroupTitle>
+  <WR_NewRoleTitle>新規ロール</WR_NewRoleTitle>
+  <WR_NewWorkDetected>新しい作業種別を検出しました。作成・拡張したロール: {0}</WR_NewWorkDetected>
+  <WR_NoCandidatesHint>追加できるロールはありません。時間・場所ルールのない通常ロールが対象で、複合ロールの入れ子はできません。</WR_NoCandidatesHint>
+  <WR_NoContributionRoleTip>目標に必要なスキルを鍛えないため、通常は育成段階に使えません。Modが経験値の取得方法を変える場合があるので、追加自体は可能です。</WR_NoContributionRoleTip>
+  <WR_NoFilterMatches>条件に一致する入植者はいません。</WR_NoFilterMatches>
+  <WR_NoMembersHint>左からロールを追加してください。ここに並ぶ順に構成ロールの作業を行います。</WR_NoMembersHint>
+  <WR_Nobody>なし</WR_Nobody>
+  <WR_NothingToMerge>全て一致しており、統合する変更はありません。</WR_NothingToMerge>
+  <WR_NothingToRestore>復元対象はありません。全既定ロールと育成パスがあり、グループ、色、担当人数は初期設定で、移動された作業もありません。</WR_NothingToRestore>
+  <WR_NowBusy>行動中</WR_NowBusy>
+  <WR_NowDrafted>徴兵中</WR_NowDrafted>
+  <WR_NowForced>プレイヤー命令</WR_NowForced>
+  <WR_NowIdle>待機中</WR_NowIdle>
+  <WR_NowMental>精神変調中</WR_NowMental>
+  <WR_NowNeeds>個人の欲求</WR_NowNeeds>
+  <WR_NowRecreation>娯楽中</WR_NowRecreation>
+  <WR_NowSleeping>睡眠中</WR_NowSleeping>
+  <WR_NowTip>{0}: {1}</WR_NowTip>
+  <WR_OddJobsRole>雑用</WR_OddJobsRole>
+  <WR_OptAutoOptimize>ゲーム内毎時コロニーを自動最適化</WR_OptAutoOptimize>
+  <WR_OptAutoOptimizeTipOff>自分で編集した場合だけ割り当てが変化</WR_OptAutoOptimizeTipOff>
+  <WR_OptAutoOptimizeTipOn>ゲーム内の毎正時におすすめの割り当てを適用</WR_OptAutoOptimizeTipOn>
+  <WR_OptAutoOptimizeTipWhat>各コロニーで「コロニーを最適化」を自動実行し、変更を適用するセーブごとの設定です。</WR_OptAutoOptimizeTipWhat>
+  <WR_OptAutoOptimizeTipWhy>除外ロールを含め、固定した割り当ては保持します。既におすすめと一致していれば何も変更しません。</WR_OptAutoOptimizeTipWhy>
+  <WR_OptEmergencyRule>緊急割り込みは先頭5ロールのみ</WR_OptEmergencyRule>
+  <WR_OptEmergencyRuleTipOff>有効な全ロールの緊急作業が現在の作業へ割り込む</WR_OptEmergencyRuleTipOff>
+  <WR_OptEmergencyRuleTipOn>先頭5つの有効ロールの緊急作業だけが割り込む。それ以降は通常の順番で実行</WR_OptEmergencyRuleTipOn>
+  <WR_OptEmergencyRuleTipWhat>消火、緊急治療、緊急治療のためのベッド休養が、睡眠・食事・他の作業へ割り込める範囲をセーブごとに設定します。</WR_OptEmergencyRuleTipWhat>
+  <WR_OptEmergencyRuleTipWhy>初期状態のオンでは、末尾の予備ロールは順番を待ちます。医者ロールが6番目の入植者は料理を続け、専任の医者が緊急患者を治療します。全員に可能な全緊急作業へ対応させるならオフにします。</WR_OptEmergencyRuleTipWhy>
+  <WR_OptNumeric>優先順位表を数値表示</WR_OptNumeric>
+  <WR_OptNumericTipOff>NumbersなどのModを含め、優先順位表をチェックマークで表示</WR_OptNumericTipOff>
+  <WR_OptNumericTipOn>優先順位表を数値で表示</WR_OptNumericTipOn>
+  <WR_OptNumericTipWhat>バニラの「詳細な設定」と同じ、セーブごとの設定です。</WR_OptNumericTipWhat>
+  <WR_OptNumericTipWhy>WorkRolesが元の「優先順位」タブを置き換えるため、ここに配置しています。</WR_OptNumericTipWhy>
+  <WR_OptPaletteGrouping>ロールパレットの分類</WR_OptPaletteGrouping>
+  <WR_OptSkillCaptions>名前の下に得意スキルを表示</WR_OptSkillCaptions>
+  <WR_OptSkillCaptionsTip>各入植者の名前の下に、得意な仕事スキルとレベルを適性に応じた色で小さく表示します。オフなら名前だけを表示します。</WR_OptSkillCaptionsTip>
+  <WR_OptVanillaRange>他Modに0～4の優先順位を通知</WR_OptVanillaRange>
+  <WR_OptVanillaRangeTipOff>他Modにもそのままの順位を通知</WR_OptVanillaRangeTipOff>
+  <WR_OptVanillaRangeTipOn>バニラの0～4に変換して通知</WR_OptVanillaRangeTipOn>
+  <WR_OptVanillaRangeTipWhat>WorkRolesは1から始まる重複しない連番で作業を並べます。</WR_OptVanillaRangeTipWhat>
+  <WR_OptVerdictsColonists>割当ロールに適性を表示</WR_OptVerdictsColonists>
+  <WR_OptVerdictsColonistsTip>入植者一覧のロールチップに、おすすめ判定と同じ適性を星で表示します。好適は白1つ、優秀は白2つ、卓越は金、不向きは赤1つ、極めて不向きは赤2つ、中立は灰色です。</WR_OptVerdictsColonistsTip>
+  <WR_OptVerdictsPalette>パレットに選択中の入植者の適性を表示</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>各ロールが選択中の入植者にどれだけ向いているかをパレットに表示します。</WR_OptVerdictsPaletteTip>
+  <WR_OptVerdictsRecommendations>おすすめのロールに適性を表示</WR_OptVerdictsRecommendations>
+  <WR_OptVerdictsRecommendationsTip>能力パネルや変更プレビューのおすすめチップに、対象の入植者の適性を表示します。</WR_OptVerdictsRecommendationsTip>
+  <WR_OptionsTab>オプション</WR_OptionsTab>
+  <WR_OrderSuffixAZ>（名前順）</WR_OrderSuffixAZ>
+  <WR_OrderSuffixBar>（入植者バー順）</WR_OrderSuffixBar>
+  <WR_OverwriteDeletes>ファイルにないため削除: {0}（割り当ても解除）。</WR_OverwriteDeletes>
+  <WR_OverwriteReplaces>ファイルの全{0}ロールを適用します。同じ既定ロール、なければ同名のロールは既存の割り当てを保持します。</WR_OverwriteReplaces>
+  <WR_PaletteByGroups>グループ</WR_PaletteByGroups>
+  <WR_PaletteBySkills>スキル</WR_PaletteBySkills>
+  <WR_PaletteModeTip>関連スキルまたはロールのグループでパレットを並べます。</WR_PaletteModeTip>
+  <WR_PaletteOverwriteInfo>全カスタム色をファイル内の{0}色で置き換えます。</WR_PaletteOverwriteInfo>
+  <WR_PartialCapability>一部の作業だけ可能でも許可</WR_PartialCapability>
+  <WR_PartialCapabilityLockedTip>このロールは一部の作業だけ可能な人にもおすすめします。スキル不要のロールと狩猟ロールでは常に許可します。</WR_PartialCapabilityLockedTip>
+  <WR_PartialCapabilityTip>オンなら、一部だけ実行できる入植者にもおすすめします。全て不可能な人にはおすすめしません。暇な時の共通作業など、全員向けの幅広いロールに適しています。</WR_PartialCapabilityTip>
+  <WR_PasteRolesTip>コピーしたロールをこの入植者に貼り付けます。</WR_PasteRolesTip>
+  <WR_PathAddRoleTip>このパスにロールを追加します。</WR_PathAddRoleTip>
+  <WR_PathsOverwriteInfo>全育成パスをファイル内の{0}パスで置き換えます。</WR_PathsOverwriteInfo>
+  <WR_PinAssignment>固定</WR_PinAssignment>
+  <WR_PinnedTip>固定済み: おすすめの適用、コロニー最適化、自動最適化で保持します。ロール自身や複合の構成ロールを除外していても保持します。</WR_PinnedTip>
+  <WR_PlusOthers>ほか{0}人</WR_PlusOthers>
+  <WR_PreviewNoChanges>変更なし。</WR_PreviewNoChanges>
+  <WR_PreviewStale>プレビュー中にコロニーが変化したため、適用しませんでした。</WR_PreviewStale>
+  <WR_PriorityGridTitle>優先順位表</WR_PriorityGridTitle>
+  <WR_ReasonCoverage>必要人数の確保: この仕事で利用可能な最適候補。</WR_ReasonCoverage>
+  <WR_ReasonEveryone>全員に自動割り当て。</WR_ReasonEveryone>
+  <WR_ReasonFireFear>遺伝的に火を恐れるため、消火を禁止します。</WR_ReasonFireFear>
+  <WR_ReasonHunter>遠距離武器を持っています。狩猟は射撃の訓練にもなります。</WR_ReasonHunter>
+  <WR_ReasonRemoved>おすすめに含まれません。残したいロールは適用前に固定してください。</WR_ReasonRemoved>
+  <WR_ReasonSignal>適性要因が{0}を支持しています。</WR_ReasonSignal>
+  <WR_RecClassificationSection>分類</WR_RecClassificationSection>
+  <WR_RecDecisionAptitudeSurplus>合算したスキル適性が必要水準以上のため、追加候補に選ばれました。</WR_RecDecisionAptitudeSurplus>
+  <WR_RecDecisionAuto>作業可能な全員に自動割り当てします。</WR_RecDecisionAuto>
+  <WR_RecDecisionAwful>「極めて不向き」の要因により対象外です。</WR_RecDecisionAwful>
+  <WR_RecDecisionControlledByTraining>{0}が管理しています。単独ではなく、その育成パスから割り当てます。</WR_RecDecisionControlledByTraining>
+  <WR_RecDecisionCoverageDraft>必要人数を満たすため、残りの最適候補に選ばれました。</WR_RecDecisionCoverageDraft>
+  <WR_RecDecisionCoverageFilled>必要人数は上位候補で満たされました。</WR_RecDecisionCoverageFilled>
+  <WR_RecDecisionCoverageRepairSlot>{2}の残りの必要枠（{1}枠中{0}番目）に直接選ばれました。</WR_RecDecisionCoverageRepairSlot>
+  <WR_RecDecisionCovered>おすすめのロールが作業をカバーします: {0}。</WR_RecDecisionCovered>
+  <WR_RecDecisionCoveredUnknown>別のおすすめロールが作業をカバーします。</WR_RecDecisionCoveredUnknown>
+  <WR_RecDecisionDirectFallbackSlot>条件を満たす育成代替がいないため、{2}の{1}枠中{0}番目に直接選ばれました。</WR_RecDecisionDirectFallbackSlot>
+  <WR_RecDecisionDirectSlot>{2}の{1}枠中{0}番目に直接選ばれました。</WR_RecDecisionDirectSlot>
+  <WR_RecDecisionDisabled>このロールは無効です。</WR_RecDecisionDisabled>
+  <WR_RecDecisionExcluded>ルールで管理するロールのため、通常のおすすめから除外します。</WR_RecDecisionExcluded>
+  <WR_RecDecisionFire>火への恐怖により消火ブロッカーが必要です。</WR_RecDecisionFire>
+  <WR_RecDecisionHunter>遠距離武器を持ち、狩猟が可能です。</WR_RecDecisionHunter>
+  <WR_RecDecisionHunterRequirements>遠距離武器を装備していません。</WR_RecDecisionHunterRequirements>
+  <WR_RecDecisionIncapable>このロールの仕事は実行不可能です。</WR_RecDecisionIncapable>
+  <WR_RecDecisionIncapacitated>この入植者はダウン中です。除外されていないロールと固定割り当てを保持し、回復まで必要人数には数えません。</WR_RecDecisionIncapacitated>
+  <WR_RecDecisionNever>このロールはおすすめしない設定です。</WR_RecDecisionNever>
+  <WR_RecDecisionNotMechanitor>メカリンクがないため、メカニターの仕事はできません。</WR_RecDecisionNotMechanitor>
+  <WR_RecDecisionNotSelected>どのおすすめ規則でも選ばれませんでした。</WR_RecDecisionNotSelected>
+  <WR_RecDecisionOutOfBand>スキルレベルが育成パスの別の範囲にあります。</WR_RecDecisionOutOfBand>
+  <WR_RecDecisionOutqualified>空き枠には、より適任の候補が選ばれました。</WR_RecDecisionOutqualified>
+  <WR_RecDecisionProtected>保護された既存の割り当てを保持しました。</WR_RecDecisionProtected>
+  <WR_RecDecisionRecommended>おすすめの候補に選ばれました。</WR_RecDecisionRecommended>
+  <WR_RecDecisionRetained>既存のスキル不要ロールを保持しました。</WR_RecDecisionRetained>
+  <WR_RecDecisionSignalSurplus>適性判定により追加候補に選ばれました。</WR_RecDecisionSignalSurplus>
+  <WR_RecDecisionSignals>設定した適性の下限を満たします。</WR_RecDecisionSignals>
+  <WR_RecDecisionTraining>{0}の育成パスから割り当てました。</WR_RecDecisionTraining>
+  <WR_RecDecisionTrainingSlot>{2}の{1}枠中{0}番目に選ばれました。育成代替で{2}を{3}に置換しました（{4}、{2}には{5}が必要）。</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>{2}の{1}枠中{0}番目に選ばれました。育成代替で{2}を{3}に置換しました。</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>育成代替で{1}枠中{0}番目に選ばれ、{2}を割り当てました。</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecDecisionTrainingUnknown>育成パスから割り当てました。</WR_RecDecisionTrainingUnknown>
+  <WR_RecDecisionUnavailable>研究が終わるまで、このロールの仕事は利用できません。</WR_RecDecisionUnavailable>
+  <WR_RecDecisionWeakSignal>適性が設定した下限未満で、必要人数の選考でも選ばれませんでした。</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionWorkAversion>嫌悪による減点で、任意作業の下限未満になります。</WR_RecDecisionWorkAversion>
+  <WR_RecExcludedAddTip>おすすめから除外するロールを選びます。育成、自動、条件付き、ブロッカー、複合を含む全ロールが対象です。</WR_RecExcludedAddTip>
+  <WR_RecExcludedChipTip>このロールはおすすめしません。削除アイコンで除外を解除すると、ロール設定にも戻ります。保存済みの設定は保持します。</WR_RecExcludedChipTip>
+  <WR_RecExcludedHeader>除外ロール</WR_RecExcludedHeader>
+  <WR_RecExcludedHelp>ここにあるロールは、育成パスや自動ロール経由でもおすすめしません。既存の固定割り当ては守ります。「ロールを追加」で除外し、チップを削除すると再び候補に戻ります。</WR_RecExcludedHelp>
+  <WR_RecExcludedReason>おすすめから除外されています。「おすすめ」タブの除外ロールから外すと再び候補になります。</WR_RecExcludedReason>
+  <WR_RecExcludedTip>このセーブの全入植者と、最適化・自動最適化に適用します。除外ロールも手動で割り当てられます。一覧の編集だけでは現在の割り当ては変えません。おすすめを適用すると未固定の除外ロールを外し、固定済みは保持します。</WR_RecExcludedTip>
+  <WR_RecGlobalPanel>全体設定</WR_RecGlobalPanel>
+  <WR_RecGlobalPanelHelp>候補の評価・順位付けと、最終的なおすすめ一覧での配置を調整します。変更を戻すには各欄の「リセット」を使います。</WR_RecGlobalPanelHelp>
+  <WR_RecMoreContentGates>ほか{0}件</WR_RecMoreContentGates>
+  <WR_RecRolePanel>ロール設定</WR_RecRolePanel>
+  <WR_RecRolePanelHelp>除外ロール以外を一覧表示します。展開しておすすめ設定を調整できます。順番は入植者ごとに自動決定し、狩人は射撃スキルによる配置を維持します。</WR_RecRolePanelHelp>
+  <WR_RecScalingSection>割り当て人数</WR_RecScalingSection>
+  <WR_RecSkillsSection>スキル</WR_RecSkillsSection>
+  <WR_RecTipAssignmentsMany>{0}人の割り当てが必要</WR_RecTipAssignmentsMany>
+  <WR_RecTipAssignmentsOne>1人の割り当てが必要</WR_RecTipAssignmentsOne>
+  <WR_RecTipColonyNeed>コロニーの必要人数</WR_RecTipColonyNeed>
+  <WR_RecTipEveryoneCapable>実行可能な全員に割り当て</WR_RecTipEveryoneCapable>
+  <WR_RecTipSelection>選択理由</WR_RecTipSelection>
+  <WR_RecTipSignalVerdict>適性要因の判定</WR_RecTipSignalVerdict>
+  <WR_RecTipSkills>評価したスキル</WR_RecTipSkills>
+  <WR_RecTipWithWaiverOne>{0}（育成代替1人）</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0}（育成代替{1}人）</WR_RecTipWithWaiversMany>
+  <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
+  <WR_RecTuneCandidateMinimumSignal>候補の最低適性</WR_RecTuneCandidateMinimumSignal>
+  <WR_RecTuneCandidateMinimumSignalDesc>通常のロール選択に認める適性の下限です。上げると最適担当者や最低人数の選択前に弱い候補を除外します。</WR_RecTuneCandidateMinimumSignalDesc>
+  <WR_RecTuneCategoryPointsRow>重要度の点数</WR_RecTuneCategoryPointsRow>
+  <WR_RecTuneCategoryPointsRowDesc>コロニーでの重要度による加点です。「重要」は同じ適性の生産作業より先にし、「任意」は後ろへ送ります。</WR_RecTuneCategoryPointsRowDesc>
+  <WR_RecTuneCellHint>クリックで増やし、右クリックで減らします。</WR_RecTuneCellHint>
+  <WR_RecTuneChampionMultiSkillMinimumCount>スキル合算の最低数</WR_RecTuneChampionMultiSkillMinimumCount>
+  <WR_RecTuneChampionMultiSkillMinimumCountDesc>評価点を合算するために必要な対象スキル数の下限です。条件を満たすスキルがこれ未満なら、そのロールで最も高いスキルだけを評価します。</WR_RecTuneChampionMultiSkillMinimumCountDesc>
+  <WR_RecTuneChampionMultiplierRow>適性の倍率</WR_RecTuneChampionMultiplierRow>
+  <WR_RecTuneChampionMultiplierRowDesc>最適担当者の選択時、切り上げたスキル点に適性ごとの倍率を掛けます。</WR_RecTuneChampionMultiplierRowDesc>
+  <WR_RecTuneChampionSection>最適担当者の選択</WR_RecTuneChampionSection>
+  <WR_RecTuneChampionSectionIntro>各ロールはまず、中心を担う最適担当者を選びます。候補条件と、スキルと適性要因の強さの重みを設定します。</WR_RecTuneChampionSectionIntro>
+  <WR_RecTuneChampionSkillDivisor>最適担当者のスキル除数</WR_RecTuneChampionSkillDivisor>
+  <WR_RecTuneChampionSkillDivisorDesc>スキル点は「スキルレベル÷この値」を切り上げます。上げるとスキルそのものの影響が弱まります。</WR_RecTuneChampionSkillDivisorDesc>
+  <WR_RecTuneChampionTieBreakRow>同点時の点数</WR_RecTuneChampionTieBreakRow>
+  <WR_RecTuneChampionTieBreakRowDesc>最適担当者の点数が同じ場合に比べる適性点です。複数スキルのロールでは対象の適性点を合算します。</WR_RecTuneChampionTieBreakRowDesc>
+  <WR_RecTuneHunterSection>狩人の配置</WR_RecTuneHunterSection>
+  <WR_RecTuneHunterSectionIntro>未固定の狩人ロールは射撃スキルで配置を変えます。射撃が得意な人ほど他の仕事も有益なため、狩りを後回しにします。</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneHunterTiersRow>段階ごとの射撃上限</WR_RecTuneHunterTiersRow>
+  <WR_RecTuneHunterTiersRowDesc>狩人の配置を決める射撃レベル境界です。第1段階は基本作業の直後、第2・第3段階は作業ロールの中間・最後の後、第4段階を超えると最後に置きます。</WR_RecTuneHunterTiersRowDesc>
+  <WR_RecTuneLeadMinimumConnectedTargets>分散を始める関連目標数</WR_RecTuneLeadMinimumConnectedTargets>
+  <WR_RecTuneLeadMinimumConnectedTargetsDesc>育成の主担当を別々の作業者に分散し始める、関連する育成目標数の下限です。</WR_RecTuneLeadMinimumConnectedTargetsDesc>
+  <WR_RecTuneLeadMinimumSignal>主担当の最低適性</WR_RecTuneLeadMinimumSignal>
+  <WR_RecTuneLeadMinimumSignalDesc>分散した育成パスの主担当に選べる作業者のロール適性下限です。</WR_RecTuneLeadMinimumSignalDesc>
+  <WR_RecTuneLeadSection>育成の主担当を分散</WR_RecTuneLeadSection>
+  <WR_RecTuneLeadSectionIntro>複数の育成パスが目標を共有する際、主担当を一人に集中させず複数人に分散します。</WR_RecTuneLeadSectionIntro>
+  <WR_RecTuneMinimumPickRow>最低人数枠の加点</WR_RecTuneMinimumPickRow>
+  <WR_RecTuneMinimumPickRowDesc>最低人数を満たすために選んだ1人目、2人目、3人目、それ以降の作業者への並び順の加点です。</WR_RecTuneMinimumPickRowDesc>
+  <WR_RecTuneMultiplierAwfulTip>極めて不向き。候補の最低適性がこの判定を許す場合だけ使います。</WR_RecTuneMultiplierAwfulTip>
+  <WR_RecTuneOptionalSection>育成パスと任意目標</WR_RecTuneOptionalSection>
+  <WR_RecTuneOptionalSectionIntro>育成パスを有効にする条件と、複数スキルを使う任意ロールをおすすめする条件です。</WR_RecTuneOptionalSectionIntro>
+  <WR_RecTuneOptionalTargetGreatLevel>上段階への昇格レベル</WR_RecTuneOptionalTargetGreatLevel>
+  <WR_RecTuneOptionalTargetGreatLevelDesc>このスキルレベルで、条件を満たす低い適性を設定した上段階へ上げ、単一スキルの追加割り当てと任意目標の評価に使います。</WR_RecTuneOptionalTargetGreatLevelDesc>
+  <WR_RecTuneOptionalTargetGreatPromotedSignal>上段階の昇格先</WR_RecTuneOptionalTargetGreatPromotedSignal>
+  <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>上段階の昇格レベル以上で、単一スキルの追加割り当てと任意目標の評価に使う適性です。</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumPoints>任意目標の最低点</WR_RecTuneOptionalTargetMinimumPoints>
+  <WR_RecTuneOptionalTargetMinimumPointsDesc>複数スキルの任意目標をおすすめするために必要な、設定した下限を超える適性段階数の合計です。</WR_RecTuneOptionalTargetMinimumPointsDesc>
+  <WR_RecTuneOptionalTargetMinimumSignal>任意目標の最低適性</WR_RecTuneOptionalTargetMinimumSignal>
+  <WR_RecTuneOptionalTargetMinimumSignalDesc>レベル昇格を単一スキルの追加割り当てや任意目標の適性点に使うために必要な適性です。</WR_RecTuneOptionalTargetMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumSkillCount>任意目標のスキル数</WR_RecTuneOptionalTargetMinimumSkillCount>
+  <WR_RecTuneOptionalTargetMinimumSkillCountDesc>任意目標の適性判定を行う対象スキル数の下限です。それより少ないロールはこの判定を省きます。</WR_RecTuneOptionalTargetMinimumSkillCountDesc>
+  <WR_RecTuneOptionalTargetStrongLevel>中段階への昇格レベル</WR_RecTuneOptionalTargetStrongLevel>
+  <WR_RecTuneOptionalTargetStrongLevelDesc>このスキルレベルで、条件を満たす低い適性を設定した中段階へ上げ、単一スキルの追加割り当てと任意目標の評価に使います。</WR_RecTuneOptionalTargetStrongLevelDesc>
+  <WR_RecTuneOptionalTargetStrongPromotedSignal>中段階の昇格先</WR_RecTuneOptionalTargetStrongPromotedSignal>
+  <WR_RecTuneOptionalTargetStrongPromotedSignalDesc>中段階の昇格レベル以上で、単一スキルの追加割り当てと任意目標の評価に使う適性です。</WR_RecTuneOptionalTargetStrongPromotedSignalDesc>
+  <WR_RecTuneOrderingPointsRow>適性点</WR_RecTuneOrderingPointsRow>
+  <WR_RecTuneOrderingPointsRowDesc>最終的なおすすめ順を決める際、各適性段階が加える点数です。</WR_RecTuneOrderingPointsRowDesc>
+  <WR_RecTuneOrderingSection>最終ロール順</WR_RecTuneOrderingSection>
+  <WR_RecTuneOrderingSectionIntro>担当ロールを選んだ後、その表示順、つまり作業の優先順位を決めます。</WR_RecTuneOrderingSectionIntro>
+  <WR_RecTuneOrderingSkillDivisor>並び順のスキル除数</WR_RecTuneOrderingSkillDivisor>
+  <WR_RecTuneOrderingSkillDivisorDesc>最終順のスキル点は「スキルレベル÷この値」を切り上げます。上げると順番へのスキルの影響が弱まります。</WR_RecTuneOrderingSkillDivisorDesc>
+  <WR_RecTunePathMinimumSignal>育成ロールの最低適性</WR_RecTunePathMinimumSignal>
+  <WR_RecTunePathMinimumSignalDesc>有効な育成パスに参加できるロールの適性下限です。</WR_RecTunePathMinimumSignalDesc>
+  <WR_RecTuneRankedCandidatePrioritySignal>候補を優先する適性</WR_RecTuneRankedCandidatePrioritySignal>
+  <WR_RecTuneRankedCandidatePrioritySignalDesc>最適担当者以外で、この適性以上の候補を先に並べてから最低人数を満たします。</WR_RecTuneRankedCandidatePrioritySignalDesc>
+  <WR_RecTuneReset>リセット</WR_RecTuneReset>
+  <WR_RecTuneResetTip>この欄を初期設定に戻します。</WR_RecTuneResetTip>
+  <WR_RecTuneSurplusMinimumSignal>追加割り当ての最低適性</WR_RecTuneSurplusMinimumSignal>
+  <WR_RecTuneSurplusMinimumSignalDesc>必要人数を満たした後も、この適性以上の通常候補へ追加できます。単一スキルは設定した育成範囲内でレベルによる昇格を適用し、複数スキルの目標は任意目標の適性条件を使います。</WR_RecTuneSurplusMinimumSignalDesc>
+  <WR_RecTuneTimePointsRow>所要時間の点数</WR_RecTuneTimePointsRow>
+  <WR_RecTuneTimePointsRowDesc>所要時間による加点です。「短時間」は同じ適性の長時間作業より先にし、「空き時間」は後ろへ送ります。</WR_RecTuneTimePointsRowDesc>
+  <WR_RecWorkAversion>{0}は{1}に反対するため、おすすめ評価を下げます。</WR_RecWorkAversion>
+  <WR_RecommendationsTab>おすすめ</WR_RecommendationsTab>
+  <WR_RecommendedRoles>おすすめのロール</WR_RecommendedRoles>
+  <WR_RemoveSelectedTip>選択行を削除します。</WR_RemoveSelectedTip>
+  <WR_RemoveSkillTip>この必須スキル条件を外します。</WR_RemoveSkillTip>
+  <WR_RenameGroup>グループを改名</WR_RenameGroup>
+  <WR_RenameGroupTitle>グループを改名</WR_RenameGroupTitle>
+  <WR_RenameRoleTitle>ロールを改名</WR_RenameRoleTitle>
+  <WR_RequiredSkillsLabel>必須</WR_RequiredSkillsLabel>
+  <WR_RequiredSkillsTip>このロール用に追加する必須条件です。いずれかの必須スキルが無効な入植者にはおすすめしません。レベルは問いません。「条件」にある作業ごとの最低レベルとは別です。</WR_RequiredSkillsTip>
+  <WR_ResizeGripTip>ドラッグでウィンドウを拡大します。内容に合う大きさ未満には縮められません。ダブルクリックで自動サイズに戻します。</WR_ResizeGripTip>
+  <WR_RestoreColorItem>{0}（初期色に戻す）</WR_RestoreColorItem>
+  <WR_RestoreDefaultExclusions>既定の除外ロール</WR_RestoreDefaultExclusions>
+  <WR_RestoreDefaults>初期設定に戻す</WR_RestoreDefaults>
+  <WR_RestoreDefaultsTip>失われた既定ロールと育成パス、初期の除外設定を復元し、既定ロールのグループ、色、担当人数設定を戻します。プレビューで復元対象を選べます。</WR_RestoreDefaultsTip>
+  <WR_RestoreDefaultsTitle>初期設定に戻す</WR_RestoreDefaultsTitle>
+  <WR_RestoreDuplicateHint>（同名のロールが既にあります）</WR_RestoreDuplicateHint>
+  <WR_RestoreExplainBackfill>Modが移動した{0}件の作業を再追加します。</WR_RestoreExplainBackfill>
+  <WR_RestoreExplainColor>ひな形の初期色に戻します。</WR_RestoreExplainColor>
+  <WR_RestoreExplainCoverage>この作業種別をカバーするロールを作成します。</WR_RestoreExplainCoverage>
+  <WR_RestoreExplainDefaultExclusions>不足している既定の除外を戻します。自分で除外した他のロールは保持します。</WR_RestoreExplainDefaultExclusions>
+  <WR_RestoreExplainGroup>ロールをグループ「{0}」へ戻します。</WR_RestoreExplainGroup>
+  <WR_RestoreExplainHolders>担当人数尺度をひな形の初期値に戻します。</WR_RestoreExplainHolders>
+  <WR_RestoreExplainJobs>作業一覧をModの現在の初期設定に戻します。削除される作業を含む別ロールを自動割り当てし、各入植者の担当作業は保持します。</WR_RestoreExplainJobs>
+  <WR_RestoreExplainPath>育成パスを作成します。</WR_RestoreExplainPath>
+  <WR_RestoreExplainRecOrder>独自の順番を解除します。</WR_RestoreExplainRecOrder>
+  <WR_RestoreExplainRole>Modのひな形からロールを作成します。</WR_RestoreExplainRole>
+  <WR_RestoreExplainSnapColor>生成した色をパレットで最も近い色に置き換え、色選択で強調できるようにします。</WR_RestoreExplainSnapColor>
+  <WR_RestoreGroupItem>{0}（「{1}」へ移動）</WR_RestoreGroupItem>
+  <WR_RestoreHoldersItem>{0}（担当人数の初期値を復元）</WR_RestoreHoldersItem>
+  <WR_RestoreJobsItem>{0}（作業を初期設定に戻す）</WR_RestoreJobsItem>
+  <WR_RestoreMovedJobs>{0}（移動した{1}件の作業を復元）</WR_RestoreMovedJobs>
+  <WR_RestoreOverwriteWarning>⚠ 強調した項目は編集内容を上書きします。</WR_RestoreOverwriteWarning>
+  <WR_RestorePathItem>{0}（育成パス）</WR_RestorePathItem>
+  <WR_RestoreRecOrder>おすすめ順（初期設定に戻す）</WR_RestoreRecOrder>
+  <WR_RestoreSnapColorItem>{0}（パレットの色に合わせる）</WR_RestoreSnapColorItem>
+  <WR_RoleAgeBandsLabel>割り当て可能な年齢帯:</WR_RoleAgeBandsLabel>
+  <WR_RoleAgeBandsTip>選択外の年齢帯には割り当て・おすすめを行いません。範囲外をクリックするとそこまで広げ、選択の端をクリックすると外し、中央をクリックするとその帯だけにします。区切りはゲームで仕事が解禁される年齢です。このロールの全作業は{0}歳から可能です。</WR_RoleAgeBandsTip>
+  <WR_RoleAwfulSignal>{0}にはこのロールで「極めて不向き」の要因があります: {1}。</WR_RoleAwfulSignal>
+  <WR_RoleCapAllJobs>このロールの全作業</WR_RoleCapAllJobs>
+  <WR_RoleCapNeverDo>{0}は{1}を実行しません</WR_RoleCapNeverDo>
+  <WR_RoleCapSomeJobs>このロールの作業{1}件中{0}件</WR_RoleCapSomeJobs>
+  <WR_RoleCategoryImportant>重要</WR_RoleCategoryImportant>
+  <WR_RoleCategoryLabel>重要度:</WR_RoleCategoryLabel>
+  <WR_RoleCategoryNone>未設定</WR_RoleCategoryNone>
+  <WR_RoleCategoryNormal>通常</WR_RoleCategoryNormal>
+  <WR_RoleCategoryOptional>任意</WR_RoleCategoryOptional>
+  <WR_RoleCategoryTip>コロニーの割り当てでこのロールをどれだけ重視するかです。「未設定」は未分類にします。</WR_RoleCategoryTip>
+  <WR_RoleColonyMinLabel>最低人数:</WR_RoleColonyMinLabel>
+  <WR_RoleColonyMinTip>このロールを割り当てる最低人数です。</WR_RoleColonyMinTip>
+  <WR_RoleCoverageLabel>担当率:</WR_RoleCoverageLabel>
+  <WR_RoleCoverageTip>入植者の何%にこのロールを持たせたいかを設定します。</WR_RoleCoverageTip>
+  <WR_RoleDisplayCaption>ロール表示</WR_RoleDisplayCaption>
+  <WR_RoleJobIncapable>この仕事は不可能</WR_RoleJobIncapable>
+  <WR_RoleJobNoRangedWeapon>遠距離武器なし</WR_RoleJobNoRangedWeapon>
+  <WR_RoleJobTooYoung>年齢不足、{0}歳から可能</WR_RoleJobTooYoung>
+  <WR_RoleLabelOff>{0}（オフ）</WR_RoleLabelOff>
+  <WR_RoleMissingRequiredSkills>{0}の必須スキルが無効: {1}。</WR_RoleMissingRequiredSkills>
+  <WR_RoleTimeFullTime>長時間</WR_RoleTimeFullTime>
+  <WR_RoleTimeLabel>所要時間:</WR_RoleTimeLabel>
+  <WR_RoleTimeNone>未設定</WR_RoleTimeNone>
+  <WR_RoleTimeOpportunistic>空き時間</WR_RoleTimeOpportunistic>
+  <WR_RoleTimePartTime>短時間</WR_RoleTimePartTime>
+  <WR_RoleTimeTip>この仕事が1日のどれだけを使う傾向にあるかです。</WR_RoleTimeTip>
+  <WR_RoleTipDisabled>全体で無効</WR_RoleTipDisabled>
+  <WR_RoleTipDisabledBoth>全体でもこの入植者でも無効</WR_RoleTipDisabledBoth>
+  <WR_RoleTipDisabledHere>この入植者で無効</WR_RoleTipDisabledHere>
+  <WR_RoleTipEnabled>有効</WR_RoleTipEnabled>
+  <WR_RoleTipForcedOn>有効、この入植者で強制オン</WR_RoleTipForcedOn>
+  <WR_RoleTipForcedOnGlobalOff>この入植者で強制オン（全体では無効）</WR_RoleTipForcedOnGlobalOff>
+  <WR_RoleTooOld>{0}はこのロールの上限年齢（{1}歳）を超えています。</WR_RoleTooOld>
+  <WR_RoleTooYoung>{0}はこのロールの最低年齢（{1}歳）未満です。</WR_RoleTooYoung>
+  <WR_RoleWorkAversion>{0}の戒律「{1}」は{2}に反対しています。おすすめでは優先度2段階、最適担当者の選択では仮想スキル6点を減点します。必要人数を満たすために選ばれる場合はあります。狩人は2段階後ろへ移動し、上限は第5段階です。既存の第1段階への代替規則は適用します。</WR_RoleWorkAversion>
+  <WR_RolesRestored>復元: {0}</WR_RolesRestored>
+  <WR_RolesTab>ロール</WR_RolesTab>
+  <WR_RowNew>{0}（新規）</WR_RowNew>
+  <WR_RowNewColor>{0} {1}（新規色）</WR_RowNewColor>
+  <WR_RowRecolors>{0} → {1}（色変更: {2}）</WR_RowRecolors>
+  <WR_RowUpdate>{0}（更新）</WR_RowUpdate>
+  <WR_Save>保存</WR_Save>
+  <WR_ScaleControlledBy>{0}が管理</WR_ScaleControlledBy>
+  <WR_ScaleDeleteConfirm>尺度「{0}」を削除しますか？\n\n{1}。これらのロールは代わりに「なし」を使います。</WR_ScaleDeleteConfirm>
+  <WR_ScaleDirectTip>この人数帯の直接割り当て下限です。残りは育成代替で満たせます。必要総数を超えて増やすと総数も増えます。クリックで+1（8の次は循環）、右クリックで-1。左ドラッグで他の帯へコピーし、そのまま右クリックすると移動方向へ値を調整します。右ドラッグは帯ごとに1段階ずつ、右へ増加、左へ減少します。</WR_ScaleDirectTip>
+  <WR_ScaleMinsCaption>{0}の直接割り当て下限</WR_ScaleMinsCaption>
+  <WR_ScaleNewTitle>新規尺度（現在の尺度をコピー）</WR_ScaleNewTitle>
+  <WR_ScaleRenameTip>この尺度を改名します。参照するロールにも反映します。</WR_ScaleRenameTip>
+  <WR_ScaleRenameTitle>尺度の改名</WR_ScaleRenameTitle>
+  <WR_ScaleReset>リセット</WR_ScaleReset>
+  <WR_ScaleResetTip>このロールまたは尺度を選んだ時点の値に戻します。</WR_ScaleResetTip>
+  <WR_ScaleSaveAs>別名保存</WR_ScaleSaveAs>
+  <WR_ScaleSaveAsTitle>変更を新規尺度として保存（元の尺度は保存済みの値に戻る）</WR_ScaleSaveAsTitle>
+  <WR_ScaleTotalTip>育成代替を含む必要総数です。増やすと育成代替枠ができ、減らすと代替枠から先に減り、その後で直接下限が減ります。クリックで+1、右クリックで-1。左ドラッグでコピーし、そのまま右クリックすると移動方向へ調整します。右ドラッグは帯ごとに1段階ずつ、右へ増加、左へ減少します。</WR_ScaleTotalTip>
+  <WR_ScaleTotalsCaption>必要総数（育成代替を含む）</WR_ScaleTotalsCaption>
+  <WR_ScaleTrainingHelp>このロールは{0}の育成用なので、ここが「なし」でも{0}の調整設定で割り当てを決めます。ただし、ここで{1}の最低人数を指定することもできます。</WR_ScaleTrainingHelp>
+  <WR_ScaleUsedBy>使用先: {0}</WR_ScaleUsedBy>
+  <WR_ScopeAll>全ての場所</WR_ScopeAll>
+  <WR_ScopeCurrent>現在地</WR_ScopeCurrent>
+  <WR_ScopeCurrentNamed>{0}（現在地）</WR_ScopeCurrentNamed>
+  <WR_Search>検索</WR_Search>
+  <WR_SectionPalette>パレット</WR_SectionPalette>
+  <WR_SectionRoles>ロール</WR_SectionRoles>
+  <WR_SeedDropFailure>{0}: {1}が失われました（元の優先度{2}）</WR_SeedDropFailure>
+  <WR_SeedPawnFailure>{0}: 移行失敗（{1}）</WR_SeedPawnFailure>
+  <WR_SeedReportBody>{0}個のロールを作成し、既存の優先順位から{1}人に割り当てました。</WR_SeedReportBody>
+  <WR_SeedReportFailures>一部の仕事を移行できませんでした:</WR_SeedReportFailures>
+  <WR_SeedReportGenerated>Modの作業用に生成: {0}。</WR_SeedReportGenerated>
+  <WR_SeedReportTitle>WorkRolesの初期設定完了</WR_SeedReportTitle>
+  <WR_SelectAll>全選択</WR_SelectAll>
+  <WR_SelectOrCreateRole>ロールを選択または作成してください。</WR_SelectOrCreateRole>
+  <WR_SelectRoleIcon>ロールのアイコンを選択</WR_SelectRoleIcon>
+  <WR_SelectedJobs>選択した作業（優先順）</WR_SelectedJobs>
+  <WR_SelectedRows>{0}件選択</WR_SelectedRows>
+  <WR_SetPriorityBlockedBody>{0}が作業優先順位（{1}）を設定しようとしました。
+
+前回の通知または今回のゲーム起動以降、{2}回の変更を遮断しました。
+
+ロール管理中の入植者の優先順位はWorkRolesが決めるため、この変更は無視しました。そのModの他の機能には影響しません。
+
+同様の設定を行うには「ロール」タブで対象作業を含むロールを作成・編集し、各入植者の一覧で希望の位置に置いてください。完全に禁止するにはブロッカーロールを使います。
+
+この通知はModごと、セーブごとに1回表示します。</WR_SetPriorityBlockedBody>
+  <WR_SetPriorityBlockedTitle>WorkRolesが優先順位を管理しています</WR_SetPriorityBlockedTitle>
+  <WR_ShipFallback>グラヴシップ</WR_ShipFallback>
+  <WR_ShipTip>拠点に停泊していないグラヴシップです。拠点タイルでは拠点を優先します。</WR_ShipTip>
+  <WR_ShowPriorityGridTip>現在のロール・場所フィルターに合う全入植者の優先順位表を表示します。生の順位とバニラの0～4を画面内で切り替えられます。</WR_ShowPriorityGridTip>
+  <WR_SignalAlreadyReflected>表示中のスキルレベルに反映済み</WR_SignalAlreadyReflected>
+  <WR_SignalCapabilityAwful>{0}を極めて不向きとして扱う</WR_SignalCapabilityAwful>
+  <WR_SignalCapabilityOff>{0}は無効</WR_SignalCapabilityOff>
+  <WR_SignalColEffects>効果</WR_SignalColEffects>
+  <WR_SignalColSignal>適性要因</WR_SignalColSignal>
+  <WR_SignalCondition>条件</WR_SignalCondition>
+  <WR_SignalDescriptive>参考情報</WR_SignalDescriptive>
+  <WR_SignalDisabled>無効</WR_SignalDisabled>
+  <WR_SignalExpertiseScale>基礎{0}、専門レベル{1}、現在{2}</WR_SignalExpertiseScale>
+  <WR_SignalFromSkill>（{0}による）</WR_SignalFromSkill>
+  <WR_SignalLetterAwful>劣</WR_SignalLetterAwful>
+  <WR_SignalLetterExceptional>卓</WR_SignalLetterExceptional>
+  <WR_SignalLetterGreat>優</WR_SignalLetterGreat>
+  <WR_SignalLetterNeutral>中</WR_SignalLetterNeutral>
+  <WR_SignalLetterPoor>低</WR_SignalLetterPoor>
+  <WR_SignalLetterStrong>適</WR_SignalLetterStrong>
+  <WR_SignalSkillPromotion>高スキル</WR_SignalSkillPromotion>
+  <WR_SignalSkillPromotionCondition>レベル{0}が基準{1}を満たす</WR_SignalSkillPromotionCondition>
+  <WR_SignalSkillPromotionEffect>{0} → {1}</WR_SignalSkillPromotionEffect>
+  <WR_SignalSource>出典</WR_SignalSource>
+  <WR_SignalVerdict>判定</WR_SignalVerdict>
+  <WR_SkillColumnsCaption>スキル列</WR_SkillColumnsCaption>
+  <WR_SkillTipGiverSource>作業元: {0}（{1}）</WR_SkillTipGiverSource>
+  <WR_SkillTipTypeSource>作業種別: {0}（{1}）</WR_SkillTipTypeSource>
+  <WR_SkillTipUnknownMod>不明なMod</WR_SkillTipUnknownMod>
+  <WR_SkillsButton>スキル</WR_SkillsButton>
+  <WR_SkillsButtonCount>スキル（{0}/{1}）</WR_SkillsButtonCount>
+  <WR_SkillsUsedLabel>使用スキル:</WR_SkillsUsedLabel>
+  <WR_StepModifiersTip>クリック: 1段階。\nShift: 5段階。\nCtrl: 10段階。\nCtrl+Shift: 上限・下限へ。</WR_StepModifiersTip>
+  <WR_SuppressedHours>オフ: 有効時間外</WR_SuppressedHours>
+  <WR_SuppressedLocation>オフ: 対象の場所ではない</WR_SuppressedLocation>
+  <WR_SurgeryWorkerRoleTip>手術の担当者です。「誰でも」はロール制限なしです。ロールを選ぶと、それを有効に持つ入植者に限定します。条件付きロールは時間などのルールにも従います。</WR_SurgeryWorkerRoleTip>
+  <WR_TipActivityLabel>現在の行動</WR_TipActivityLabel>
+  <WR_TipActivityValue>{0}: {1}</WR_TipActivityValue>
+  <WR_TipBestFitsLabel>適任者</WR_TipBestFitsLabel>
+  <WR_TipJobsLabel>作業</WR_TipJobsLabel>
+  <WR_TipLevelN>レベル{0}</WR_TipLevelN>
+  <WR_TipMore>ほか{0}件</WR_TipMore>
+  <WR_TipOff>オフ</WR_TipOff>
+  <WR_TipOn>オン</WR_TipOn>
+  <WR_TipReqBills>{0} {1}（加工指示{3}件中{2}件にスキル条件）</WR_TipReqBills>
+  <WR_TipReqItems>{0} {1}（{2}個のアイテムにスキル条件）</WR_TipReqItems>
+  <WR_TipReqJobs>{0} {1}（{2}件の作業にスキル条件）</WR_TipReqJobs>
+  <WR_TipRequiresLabel>必要条件</WR_TipRequiresLabel>
+  <WR_TipSkillsLabel>スキル</WR_TipSkillsLabel>
+  <WR_TipTrainingHeader>育成</WR_TipTrainingHeader>
+  <WR_TipTrainingPath>{0}への育成途中</WR_TipTrainingPath>
+  <WR_TipTrainingRecommend>スキルレベル{0}の入植者におすすめ</WR_TipTrainingRecommend>
+  <WR_TipTrainsLabel>育成</WR_TipTrainsLabel>
+  <WR_TipTrainsNothing>なし（経験値なし）</WR_TipTrainsNothing>
+  <WR_TipUnlockAgeLabel>最低年齢</WR_TipUnlockAgeLabel>
+  <WR_TipUnlockAgeValue>{0}（これより幼い入植者は実行不可）</WR_TipUnlockAgeValue>
+  <WR_TipWholeType>{0}（全作業）</WR_TipWholeType>
+  <WR_TipXpLabel>経験値取得</WR_TipXpLabel>
+  <WR_TipXpValue>作業{1}件中{0}件</WR_TipXpValue>
+  <WR_TrainedSkillsLabel>育成</WR_TrainedSkillsLabel>
+  <WR_TrainedSkillsTip>このロールの作業で経験値を得るスキルです。\n\n選択した作業から求めた参考情報です。</WR_TrainedSkillsTip>
+  <WR_TrainingHelp>このロールへ向けてスキルを身に付ける過程を設定します。複数のレベル範囲を重ねられます。パスをおすすめされた入植者には、現在のレベルに該当する全ロールをおすすめします。</WR_TrainingHelp>
+  <WR_TrainingSection>育成パス</WR_TrainingSection>
+  <WR_TrainingTipBands>重なる範囲のロールは共存し、重ならない範囲では後のロールに置き換わります。</WR_TrainingTipBands>
+  <WR_TrainingTipOrder>範囲の下限が高いロールを先にします。同じ範囲なら、作業者の最も弱い関連スキル、保存したパス順の順に比較します。</WR_TrainingTipOrder>
+  <WR_TrainingTipWhat>ロール独自の育成過程です。各構成ロールにおすすめするスキル範囲を設定します。目標ロール自身は常にパスに残ります。</WR_TrainingTipWhat>
+  <WR_TreeFlat>一覧</WR_TreeFlat>
+  <WR_TreeNested>階層</WR_TreeNested>
+  <WR_TreeToggleTip>作業をカバーするロールの下に、対象ロールを入れ子表示します。</WR_TreeToggleTip>
+  <WR_TypeColumn>種別</WR_TypeColumn>
+  <WR_UnpinAssignment>固定解除</WR_UnpinAssignment>
+  <WR_UnusedJobsWarning>どのロールにも含まれない作業があります。</WR_UnusedJobsWarning>
+  <WR_UsedSkillsLabel>使用</WR_UsedSkillsLabel>
+  <WR_UsedSkillsTip>このロールの作業に影響するスキルです。ホバーで効果を確認できます。\n\n選択した作業から求めた参考情報です。</WR_UsedSkillsTip>
+  <WR_VerdictAwful>極めて不向き</WR_VerdictAwful>
+  <WR_VerdictExceptional>卓越</WR_VerdictExceptional>
+  <WR_VerdictGreat>優秀</WR_VerdictGreat>
+  <WR_VerdictNeutral>中立</WR_VerdictNeutral>
+  <WR_VerdictPoor>不向き</WR_VerdictPoor>
+  <WR_VerdictStrong>好適</WR_VerdictStrong>
+  <WR_VirtualRoleTip>親ロールがこの作業を含むため、ここに表示しています。所属グループは「{0}」です。</WR_VirtualRoleTip>
+  <WR_WarningPrefix>警告:</WR_WarningPrefix>
+  <WR_WelcomeBody>WorkRolesは、入植者に割り当てた医者、鍛冶職人、農夫などのロールから、作業優先順位を決めます。</WR_WelcomeBody>
+  <WR_WelcomeFind>画面下の「優先順位」ボタンで開きます。「ヘルプ」タブには使い方ガイドがあります。</WR_WelcomeFind>
+  <WR_WelcomeSmallScreen>現在のゲーム画面は{0}x{1}（解像度÷UIスケール）です。WorkRolesは{2}x{3}以上、例えば1920x1080でUIスケール1.25を想定しています。小さい画面でも動作しますが、一部の名前を省略し、スクロールが増えます。ゲーム設定でUIスケールを下げると表示領域が広がります。</WR_WelcomeSmallScreen>
+  <WR_WelcomeTakeMeThere>今すぐ開く</WR_WelcomeTakeMeThere>
+  <WR_WelcomeTitle>WorkRoles</WR_WelcomeTitle>
+  <WR_WhenPanelCaption>育成段階: 各ロールをおすすめするスキル範囲を設定します。重なるロールは互いを補います。</WR_WhenPanelCaption>
+  <WR_WillBeRemoved>おすすめに含まれません。残したいロールは適用前に固定してください。</WR_WillBeRemoved>
+  <WR_WorkBlockedCapacity>必要な身体能力が不足</WR_WorkBlockedCapacity>
+  <WR_WorkBlockedPrecept>{0}により拒否</WR_WorkBlockedPrecept>
+  <WR_WorkBlockedRace>種族の作業制限で不許可</WR_WorkBlockedRace>
+  <WR_WorkBlockedRecipe>種族のレシピ制限で不許可</WR_WorkBlockedRecipe>
+  <WR_WorkBlockedTags>作業タグが無効</WR_WorkBlockedTags>
+  <WR_WorkBlockedViviGathering>Viviの採集速度と収量が正数である必要があります。適切な採集道具で可能になる場合があります</WR_WorkBlockedViviGathering>
+  <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
+  <WR_WorkTypesLabel>作業種別</WR_WorkTypesLabel>
+  <WR_WorkTypesTip>指定した種別の仕事ができる入植者が対象です。\n\n選択した作業から求めた参考情報です。</WR_WorkTypesTip>
+</LanguageData>

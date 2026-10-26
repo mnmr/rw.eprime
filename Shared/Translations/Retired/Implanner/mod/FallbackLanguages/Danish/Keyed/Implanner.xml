@@ -1,0 +1,216 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <IMP_ToolbarButtonTip>Åbn Implanner</IMP_ToolbarButtonTip>
+  <IMP_TabOverview>Oversigt</IMP_TabOverview>
+  <IMP_TabPlans>Planer</IMP_TabPlans>
+  <IMP_TabAutomation>Automatisering</IMP_TabAutomation>
+  <IMP_TabOptions>Indstillinger</IMP_TabOptions>
+  <IMP_TabHelp>Hjælp</IMP_TabHelp>
+  <IMP_ColColonist>Kolonist</IMP_ColColonist>
+  <IMP_ColPlan>Plan</IMP_ColPlan>
+  <IMP_ColProgress>Fremskridt</IMP_ColProgress>
+  <IMP_ColState>Tilstand</IMP_ColState>
+  <IMP_ColShooting>S</IMP_ColShooting>
+  <IMP_ColMelee>N</IMP_ColMelee>
+  <IMP_ColShootingTip>Skydefærdighed</IMP_ColShootingTip>
+  <IMP_ColMeleeTip>Nærkampsfærdighed</IMP_ColMeleeTip>
+  <IMP_ColPriority>Prioritet</IMP_ColPriority>
+  <IMP_Priority0>Først</IMP_Priority0>
+  <IMP_Priority1>Høj</IMP_Priority1>
+  <IMP_Priority2>Normal</IMP_Priority2>
+  <IMP_Priority3>Lav</IMP_Priority3>
+  <IMP_Priority4>Sidst</IMP_Priority4>
+  <IMP_GroupByNone>Ingen gruppering</IMP_GroupByNone>
+  <IMP_GroupByLocation>Efter sted</IMP_GroupByLocation>
+  <IMP_GroupByFaction>Efter fraktion</IMP_GroupByFaction>
+  <IMP_GroupByGender>Efter køn</IMP_GroupByGender>
+  <IMP_GroupByXenotype>Efter xenotype</IMP_GroupByXenotype>
+  <IMP_GroupByIdeo>Efter ideoligion</IMP_GroupByIdeo>
+  <IMP_NoPlan>Ingen</IMP_NoPlan>
+  <IMP_ScopeAll>Overalt</IMP_ScopeAll>
+  <IMP_StripColony>Koloni: {0}</IMP_StripColony>
+  <IMP_AggregateColonists>Kolonister: {0} / {1}</IMP_AggregateColonists>
+  <IMP_StripAutomationOn>Automatisering til</IMP_StripAutomationOn>
+  <IMP_StripAutomationOff>Automatisering fra</IMP_StripAutomationOff>
+  <IMP_StripProduction>Produktion: {0}%</IMP_StripProduction>
+  <IMP_StripStock>{0} på lager, {1} i kø</IMP_StripStock>
+  <IMP_StripMaking>Fremstiller {0}</IMP_StripMaking>
+  <IMP_StripMakingFor>Fremstiller materialer til {0}</IMP_StripMakingFor>
+  <IMP_StripWaiting>Venter på {0}</IMP_StripWaiting>
+  <IMP_StripNothingToCraft>Intet at fremstille</IMP_StripNothingToCraft>
+  <IMP_StripWaitingBench>Venter på arbejdsbænk</IMP_StripWaitingBench>
+  <IMP_StripAwaitingProduction>Venter på produktion</IMP_StripAwaitingProduction>
+  <IMP_StripSurgery>Operationer: {0}%</IMP_StripSurgery>
+  <IMP_StripInstalled>{0} / {1} implantater indsat</IMP_StripInstalled>
+  <IMP_StripBatch>Indsætter en gruppe implantater hos {0}</IMP_StripBatch>
+  <IMP_StripBatchStars>Indsætter en gruppe implantater hos {0} ({1})</IMP_StripBatchStars>
+  <IMP_TipProduction>Produktion</IMP_TipProduction>
+  <IMP_TipSurgery>Operationer</IMP_TipSurgery>
+  <IMP_TipColTier>Trin</IMP_TipColTier>
+  <IMP_TipColItem>Genstand</IMP_TipColItem>
+  <IMP_TipColImplant>Implantat</IMP_TipColImplant>
+  <IMP_TipColNeeded>Behov</IMP_TipColNeeded>
+  <IMP_TipColFree>Fri</IMP_TipColFree>
+  <IMP_TipColReserved>Reserveret</IMP_TipColReserved>
+  <IMP_TipColHeldBack>Tilbageholdt</IMP_TipColHeldBack>
+  <IMP_TipColQueued>I kø</IMP_TipColQueued>
+  <IMP_TipColCrafting>Fremstilles</IMP_TipColCrafting>
+  <IMP_TipColStatus>Status</IMP_TipColStatus>
+  <IMP_TipCovered>Dækket</IMP_TipCovered>
+  <IMP_TipMaking>Fremstilles</IMP_TipMaking>
+  <IMP_TipMakingMaterials>Fremstiller materialer</IMP_TipMakingMaterials>
+  <IMP_TipNoRecipe>Ingen opskrift</IMP_TipNoRecipe>
+  <IMP_TipBenchesInUse>Bænke med Implanner-ordrer: {0}</IMP_TipBenchesInUse>
+  <IMP_TipColPlanned>Planlagt</IMP_TipColPlanned>
+  <IMP_TipColInstalled>Indsat</IMP_TipColInstalled>
+  <IMP_TipColMissing>Mangler</IMP_TipColMissing>
+  <IMP_TipColScheduled>Planlagt operation</IMP_TipColScheduled>
+  <IMP_TipColonistStates>Kolonister: {0} venter, {1} forberedes, {2} opereres, {3} færdige, {4} væk</IMP_TipColonistStates>
+  <IMP_NextScheduled>Operation planlagt for {0}</IMP_NextScheduled>
+  <IMP_ColonistDetails>Kolonistdetaljer</IMP_ColonistDetails>
+  <IMP_DetailCollecting>Samler {0}</IMP_DetailCollecting>
+  <IMP_NoSelection>Vælg en kolonist for at se resterende implantater.</IMP_NoSelection>
+  <IMP_WelcomeTitle>EPrime's Implanner</IMP_WelcomeTitle>
+  <IMP_WelcomeBody>Implanner planlægger kolonisters implantater og kan automatisere arbejdet med at fremstille og indsætte dem.</IMP_WelcomeBody>
+  <IMP_WelcomeFind>Åbn Implanner med denne knap på værktøjslinjen nederst til højre, ved siden af visningsknapperne.</IMP_WelcomeFind>
+  <IMP_WelcomeTakeMeThere>Åbn nu</IMP_WelcomeTakeMeThere>
+  <IMP_StateWaiting>Venter</IMP_StateWaiting>
+  <IMP_StatePreparing>Forberedes</IMP_StatePreparing>
+  <IMP_StateOperating>Opereres</IMP_StateOperating>
+  <IMP_StateDone>Færdig</IMP_StateDone>
+  <IMP_StateAway>Væk</IMP_StateAway>
+  <IMP_GoalComplete>Fuldført</IMP_GoalComplete>
+  <IMP_GoalMissing>Mangler</IMP_GoalMissing>
+  <IMP_GoalPartial>{0} / {1}</IMP_GoalPartial>
+  <IMP_GoalReserved>Reserveret</IMP_GoalReserved>
+  <IMP_GoalReady>Klar</IMP_GoalReady>
+  <IMP_GoalScheduled>Operation planlagt</IMP_GoalScheduled>
+  <IMP_GoalRecovering>Kommer sig</IMP_GoalRecovering>
+  <IMP_GoalBlockedFloor>Blokeret af lægeminimum ({0})</IMP_GoalBlockedFloor>
+  <IMP_GoalBlockedLoss>Ville ødelægge {0}</IMP_GoalBlockedLoss>
+  <IMP_PlansHeader>Planer</IMP_PlansHeader>
+  <IMP_AddPlan>Ny plan</IMP_AddPlan>
+  <IMP_PlanNameTitle>Plannavn</IMP_PlanNameTitle>
+  <IMP_ExtendsPlan>Udvider</IMP_ExtendsPlan>
+  <IMP_ExtendsNothing>Intet</IMP_ExtendsNothing>
+  <IMP_PlanExtends>udvider {0}</IMP_PlanExtends>
+  <IMP_Inherited>arvet</IMP_Inherited>
+  <IMP_Overrides>tilsidesætter {0}</IMP_Overrides>
+  <IMP_NoPlans>Opret en plan for at definere et sæt implantatmål.</IMP_NoPlans>
+  <IMP_PlanCounts>{0} implantater</IMP_PlanCounts>
+  <IMP_PlanColonists>{0} kolonister</IMP_PlanColonists>
+  <IMP_DeletePlan>Slet plan</IMP_DeletePlan>
+  <IMP_PlanMinQuality>Mindstekvalitet: {0}</IMP_PlanMinQuality>
+  <IMP_PlanMinQualityTip>Implantater til denne plan indsættes og fremstilles i denne kvalitet eller bedre. Implantater uden kvalitetsniveau påvirkes ikke.\n\nEt implantat erstatter aldrig en rask kropsdel med en dårligere. Ved et bionisk implantat af lav kvalitet venter planen på et bedre eksemplar, medmindre kropsdelen mangler eller er beskadiget.</IMP_PlanMinQualityTip>
+  <IMP_PlanMinQualityNoQualityJobs>Quality Jobs er ikke indlæst, så enhver håndværker kan færdiggøre et implantat. Et implantat under denne kvalitet fremstilles igen.</IMP_PlanMinQualityNoQualityJobs>
+  <IMP_DeletePlanConfirm>Slet planen »{0}«? Tildelte kolonister mister deres tildeling, og planer, der udvider den, holder op med at arve.</IMP_DeletePlanConfirm>
+  <IMP_ImplantGroupOther>Andet</IMP_ImplantGroupOther>
+  <IMP_ReqTitle>Krav</IMP_ReqTitle>
+  <IMP_ReqBody>{0} kan kun indsættes på en kunstig {1}. Vælg den erstatning, der skal tilføjes til planen sammen med det:</IMP_ReqBody>
+  <IMP_ReqConfirm>Tilføj til plan</IMP_ReqConfirm>
+  <IMP_TipPartEfficiency>Kropsdelens effektivitet: {0}</IMP_TipPartEfficiency>
+  <IMP_TipCapacity>Kropsdel: {0}</IMP_TipCapacity>
+  <IMP_TipPartEfficiencyRange>Kropsdelens effektivitet: {0} til {1}, efter kvalitet</IMP_TipPartEfficiencyRange>
+  <IMP_TipMaxHp>Kropsdelens maksimale HP: {0}</IMP_TipMaxHp>
+  <IMP_RegionLimbs>Lemmer</IMP_RegionLimbs>
+  <IMP_RegionTorso>Torso</IMP_RegionTorso>
+  <IMP_RegionHead>Hoved</IMP_RegionHead>
+  <IMP_NoMatchingImplants>Ingen implantater matcher søgningen.</IMP_NoMatchingImplants>
+  <IMP_RankTiersTitle>Implantattrin</IMP_RankTiersTitle>
+  <IMP_Help>Hjælp</IMP_Help>
+  <IMP_RankTiersHelp>Implantater kan grupperes i 5 trin. Placeringen påvirker produktionsrækkefølge og operationer (afhængigt af automatiseringsindstillingerne).\n\nTræk for at flytte genstande.</IMP_RankTiersHelp>
+  <IMP_TierHighest>Højeste prioritet</IMP_TierHighest>
+  <IMP_TierHigh>Høj prioritet</IMP_TierHigh>
+  <IMP_TierMedium>Mellemprioritet</IMP_TierMedium>
+  <IMP_TierNormal>Normal prioritet</IMP_TierNormal>
+  <IMP_TierLow>Lav prioritet</IMP_TierLow>
+  <IMP_DragItemsHere>Træk implantater hertil</IMP_DragItemsHere>
+  <IMP_OptEnable>Aktivér automatisering</IMP_OptEnable>
+  <IMP_OptSurgery>Operationer</IMP_OptSurgery>
+  <IMP_OptIteration>Gennemløbsstrategi</IMP_OptIteration>
+  <IMP_OptSurgeryConcurrency>Samtidige operationer</IMP_OptSurgeryConcurrency>
+  <IMP_OptCountHospitalized>Tæl nuværende patienter</IMP_OptCountHospitalized>
+  <IMP_OptUpgradeByPriority>Giv de bedste implantater til højt prioriterede kolonister</IMP_OptUpgradeByPriority>
+  <IMP_IterTier>Grupper efter trin</IMP_IterTier>
+  <IMP_IterColonist>Hele sæt</IMP_IterColonist>
+  <IMP_IterAsap>Hurtigst muligt</IMP_IterAsap>
+  <IMP_OptManualFloor>Krævet lægefærdighed til operationsordrer</IMP_OptManualFloor>
+  <IMP_OptAutoFloor>Tildel operationer til den bedste tilgængelige læge</IMP_OptAutoFloor>
+  <IMP_OptImplantReserves>Implantatreserver</IMP_OptImplantReserves>
+  <IMP_AddImplantReserve>Tilføj implantat</IMP_AddImplantReserve>
+  <IMP_OptProduction>Produktion</IMP_OptProduction>
+  <IMP_OptAutoProduction>Tilføj automatisk fremstillingsordrer for manglende implantater</IMP_OptAutoProduction>
+  <IMP_OptConcurrency>Bænke, der må have ordrer</IMP_OptConcurrency>
+  <IMP_OptIdleBenches>Opret kun ordrer ved ledige bænke</IMP_OptIdleBenches>
+  <IMP_OptDesignatedBenches>Brug kun Implanner-bænke</IMP_OptDesignatedBenches>
+  <IMP_OptProductionSkill>Krævet håndværksfærdighed til produktionsordrer</IMP_OptProductionSkill>
+  <IMP_OptIntermediaries>Tillad produktionsordrer for manglende mellemprodukter</IMP_OptIntermediaries>
+  <IMP_OptReserves>Behold på lager (efter ordreomkostninger)</IMP_OptReserves>
+  <IMP_OptModCompat>Modkompatibilitet</IMP_OptModCompat>
+  <IMP_OptSkillSliderMaximum>Højeste værdi på færdighedsskydere</IMP_OptSkillSliderMaximum>
+  <IMP_OptSkillSliderMaximumTip>Angiver den øvre grænse for skyderne til Lægekunst og Håndværk. Eksisterende færdighedskrav og automatisk lægevalg påvirkes ikke.</IMP_OptSkillSliderMaximumTip>
+  <IMP_OptAllowMultipleBladders>Tillad flere blæreimplantater</IMP_OptAllowMultipleBladders>
+  <IMP_OptAllowMultipleHygieneEnhancers>Tillad flere hygiejneforbedrere</IMP_OptAllowMultipleHygieneEnhancers>
+  <IMP_OptCatalog>Katalog</IMP_OptCatalog>
+  <IMP_OptShowPurchaseOnly>Vis implantater, der kun kan anskaffes</IMP_OptShowPurchaseOnly>
+  <IMP_CleanupTitle>Slå automatisering fra?</IMP_CleanupTitle>
+  <IMP_CleanupBody>Implanner oprettede disse ordrer. OK slår automatisering fra og fjerner de markerede ordrer. Umarkerede ordrer bliver og overtages igen, når automatisering slås til. Reserverede implantater frigives i begge tilfælde. Annullér bevarer automatisering.</IMP_CleanupBody>
+  <IMP_AutomationOffTitle>Automatisering er slået fra</IMP_AutomationOffTitle>
+  <IMP_AutomationOffBody>{0} fordeler kolonien over flere etager. Implanner kan ikke flytte et implantat eller en operation over en etagegrænse og holder derfor op med at reservere genstande og planlægge operationer frem for kun at gennemføre halvdelen af hver plan.\n\nAlt andet virker stadig. Fortsæt med at oprette og tildele planer og rangere implantater. Tilføj selv operationer; Implanner følger, hvad der er indsat, og hvad der mangler.</IMP_AutomationOffBody>
+  <IMP_OptEnableTip>Hovedkontakten for alt, Implanner gør selv: reservering af implantater, planlægning af operationer og oprettelse af fremstillingsordrer. Slået fra følger Implanner stadig planer og fremskridt, men handler ikke på dem. Ved deaktivering spørges også, hvilke eksisterende ordrer der skal bevares.</IMP_OptEnableTip>
+  <IMP_OptIterationTip>Rækkefølgen, automatikken behandler manglende implantater i. Kolonistprioriteten på Oversigt afgør altid, hvem der kommer først.\n\nGrupper efter trin: Alle får først implantater fra højeste trin; derefter arbejdes ned gennem listen. En kolonist opereres, når hele trinnet er reserveret.\n\nHele sæt: Færdiggør én kolonists plan før den næste. Operation venter, indtil hele planen er reserveret.\n\nHurtigst muligt: Hvert implantat på lager planlægges straks til den højest prioriterede kolonist, som mangler det. Ved lige prioritet går ben til den langsomste kolonist og arme først til kolonister med et udrustet nærkampsvåben, derefter til kolonisten med højest samlet Håndværk og Intellekt.</IMP_OptIterationTip>
+  <IMP_OptAutoFloorTip>Operationsordrer begrænses til din bedste tilgængelige læge, så en nybegynder aldrig ødelægger en bionisk installation, blot fordi vedkommende nåede operationsbordet først. Begrænsningen følger hver kolonis bedste læge, når folk kommer og går. Ingen kan operere sig selv, så den bedste læges egne operationer går til den næstbedste.\n\nSlå fra for selv at angive et fast mindsteniveau.</IMP_OptAutoFloorTip>
+  <IMP_OptSurgeryConcurrencyTip>Hvor mange kolonister pr. koloni der må have planlagte operationer samtidig. Højere værdier sætter flere i kø parallelt; lavere holder hospital og læger fri. Starter ved én pr. ti kolonister. Hold Shift ved klik på +/- for at ændre med 10, eller Ctrl for 5.</IMP_OptSurgeryConcurrencyTip>
+  <IMP_OptCountHospitalizedTip>Kolonister og slaver i sygesenge samt dem, der ikke kan rejse sig og venter på behandling, optager også operationspladser. Nye Implanner-operationer venter, til hospitalet har plads under grænsen ovenfor. Fanger, gæster og besøgende patienter fra andre fraktioner optager aldrig en plads. Slå fra for at planlægge implantatoperationer uanset igangværende behandling.</IMP_OptCountHospitalizedTip>
+  <IMP_OptUpgradeByPriorityTip>Implantater af højere kvalitet går til kolonister med højeste prioritet på Oversigt. Nye operationer bruger planens laveste acceptable kvalitet, så de bedre implantater forbliver fri.\n\nNår et bedre implantat er tilgængeligt, får den højest prioriterede kolonist med et dårligere af samme slags det. Det gamle fjernes først og går derefter til næste kolonist i køen. Et implantat reserveret til en lavere prioriteret kolonist overdrages også, hvis operationen endnu ikke er planlagt.\n\nHver udskiftning er en ekstra operation. Slået fra får hver kolonist det bedste implantat på lager, når det er deres tur.</IMP_OptUpgradeByPriorityTip>
+  <IMP_OptManualFloorTip>Det mindste niveau i Lægekunst til Implanner-operationer. Ordrer venter på en tilgængelig læge på dette niveau eller højere. Værdien begynder ved din aktuelt bedste læge, når automatisk tildeling slås fra.</IMP_OptManualFloorTip>
+  <IMP_OptImplantReservesTip>Implantater, der holdes tilbage til manuel brug. Automatikken reserverer kun beholdningen ud over de angivne antal, så du altid har så mange af hvert anført implantat fri til akutte operationer eller handel. Produktionen regner ikke de tilbageholdte genstande som tilgængelige og fortsætter med at fremstille flere, indtil automatikken kan fortsætte uden dem.</IMP_OptImplantReservesTip>
+  <IMP_AddImplantReserveTip>Vælg et implantat, der holdes tilbage fra automatikken.</IMP_AddImplantReserveTip>
+  <IMP_OptAllowMultipleBladdersTip>Blæreimplantater fra forskellige mods er særskilte implantater for spillet, så en kolonist kan have flere samtidig, og virkningerne lægges sammen. Slå fra for at behandle dem som én plads: Valg af ét i en plan tilsidesætter de andre, og en kolonist, der allerede har et af implantaterne nedenfor, regnes som færdig. Intet fjernes nogensinde.\n\nBerørte implantater:\n{0}</IMP_OptAllowMultipleBladdersTip>
+  <IMP_OptAllowMultipleHygieneEnhancersTip>Hygiejneforbedrere fra forskellige mods er særskilte implantater for spillet, så en kolonist kan have flere samtidig, og virkningerne lægges sammen. Slå fra for at behandle dem som én plads: Valg af ét i en plan tilsidesætter de andre, og en kolonist, der allerede har et af implantaterne nedenfor, regnes som færdig. Intet fjernes nogensinde.\n\nBerørte implantater:\n{0}</IMP_OptAllowMultipleHygieneEnhancersTip>
+  <IMP_OptShowPurchaseOnlyTip>Viser implantater, som ingen arbejdsbænk kan fremstille, f.eks. archotech-dele. De fås kun gennem handel, opgaver eller bjærgning. Slå til for alligevel at planlægge dem. Automatikken reserverer genstanden, så snart den er på lager, og indsætter den med næste gruppe; en manglende genstand forsinker aldrig de andre implantater. Et mod med en fremstillingsopskrift gør automatisk implantatet almindeligt.\n\nBerørte implantater:\n{0}</IMP_OptShowPurchaseOnlyTip>
+  <IMP_OptCompatNoneLoaded>Ingen af de berørte implantater er indlæst.</IMP_OptCompatNoneLoaded>
+  <IMP_OptAutoProductionTip>Manglende implantater får automatisk fremstillingsordrer. Implanner tæller planernes resterende behov i hver koloni, fratrækker lager og ordrer i kø og opretter ordrer ved egnede bænke. Oprettede ordrer fjernes igen, når behovet forsvinder.</IMP_OptAutoProductionTip>
+  <IMP_OptConcurrencyTip>Hvor mange bænke pr. koloni der må have Implanner-ordrer samtidig. Hver ordre fremstiller ét implantat; en bænk har op til to, så den næste venter, når den første er færdig. Flere bænke fremstiller parallelt, men håndværkerne bruger mere tid på implantater og mindre på alt andet. Hold Shift ved klik på +/- for 10 ad gangen, eller Ctrl for 5.</IMP_OptConcurrencyTip>
+  <IMP_OptIdleBenchesTip>Kun bænke uden ventende arbejde får nye Implanner-ordrer. Dine egne produktionskøer har forrang, og implantatfremstilling udfylder hullerne. Slå fra for at sætte implantatordrer i kø efter dine egne.</IMP_OptIdleBenchesTip>
+  <IMP_OptDesignatedBenchesTip>Fremstillingsordrer går kun til bænke med »Implanner-bænk« markeret på fanen Ordrer, så en koloni uden en sådan fremstiller ingen implantater. Slået fra får Implanner-bænke ordrer først; andre bruges, når alle Implanner-bænke har to ordrer. Grænsen »Bænke, der må have ordrer« gælder i begge tilfælde.</IMP_OptDesignatedBenchesTip>
+  <IMP_BenchToggle>Implanner-bænk</IMP_BenchToggle>
+  <IMP_BenchToggleTip>Implanner sætter sine fremstillingsordrer på denne bænk før alle andre, og de eksisterende ordrer suspenderes. Mens dette er markeret, kan du ikke tilføje, indsætte, suspendere eller genoptage ordrer her.\n\nFjern markeringen for at tage bænken tilbage. Ordrer, der allerede var suspenderet ved markeringen, forbliver suspenderet; resten genoptages.</IMP_BenchToggleTip>
+  <IMP_BenchLockedTip>Du kan ikke indsætte, suspendere eller genoptage ordrer på en Implanner-bænk. Fjern markeringen »Implanner-bænk« øverst på fanen Ordrer for at tage bænken tilbage.</IMP_BenchLockedTip>
+  <IMP_BenchNoNewBills>Fjern »Implanner-bænk« for at tilføje ordrer her</IMP_BenchNoNewBills>
+  <IMP_OptProductionSkillTip>Mindste Håndværk til Implanners produktionsordrer. Højere værdier holder dyre komponenter fra uøvede håndværkere; lavere lader flere kolonister hjælpe. Ordrer venter, til en kvalificeret håndværker tager dem.</IMP_OptProductionSkillTip>
+  <IMP_OptIntermediariesTip>Når en implantatordre ikke kan betales, fordi f.eks. komponenter mangler, kan Implanner også oprette en ordre til ingrediensen, hvis den er et fremstilbart produkt. Mangler følges ned gennem hele produktionskæden. Råressourcer som stål fremstilles aldrig; dem må du stadig selv indsamle.</IMP_OptIntermediariesTip>
+  <IMP_OptReservesTip>Minimumsbeholdninger for automatisk fremstilling. En ordre tilføjes kun, når kolonien har råd til den ud over de materialer, ordrer i kø stadig kræver, og bagefter har mindst denne mængde af hver ingrediens. Hæv tallet for at beskytte lageret; sæt til nul for frit forbrug.</IMP_OptReservesTip>
+  <IMP_HelpChapterBasics>Grundlæggende</IMP_HelpChapterBasics>
+  <IMP_HelpChapterPlans>Planer</IMP_HelpChapterPlans>
+  <IMP_HelpChapterAutomation>Automatisering</IMP_HelpChapterAutomation>
+  <IMP_HelpChapterSharing>Deling</IMP_HelpChapterSharing>
+  <IMP_HelpChapterMods>Mods</IMP_HelpChapterMods>
+  <IMP_HelpReload>Genindlæs</IMP_HelpReload>
+  <IMP_Import>Importér</IMP_Import>
+  <IMP_Export>Eksportér</IMP_Export>
+  <IMP_ExportPlansTitle>Eksportér planer</IMP_ExportPlansTitle>
+  <IMP_ImportPlansTitle>Importér planer</IMP_ImportPlansTitle>
+  <IMP_ExportSummary>{0} planer, {1} implantater</IMP_ExportSummary>
+  <IMP_PlanGoalCount>{0} implantater</IMP_PlanGoalCount>
+  <IMP_CopyClipboard>Kopiér til udklipsholder</IMP_CopyClipboard>
+  <IMP_FromClipboard>Fra udklipsholder</IMP_FromClipboard>
+  <IMP_Save>Gem</IMP_Save>
+  <IMP_ImportAddNote>Importerede planer tilføjes ved siden af dine eksisterende planer; intet erstattes. Et navn, der allerede er taget, får et nummer.</IMP_ImportAddNote>
+  <IMP_LocGameData>Implanner-mappe</IMP_LocGameData>
+  <IMP_LocDesktop>Skrivebord</IMP_LocDesktop>
+  <IMP_LocUserHome>Hjemmemappe</IMP_LocUserHome>
+  <IMP_LocCustom>Valgfri mappe</IMP_LocCustom>
+  <IMP_EnterPath>Mappe:</IMP_EnterPath>
+  <IMP_BadFileName>Angiv et gyldigt filnavn.</IMP_BadFileName>
+  <IMP_BadDirectory>Angiv en gyldig mappe.</IMP_BadDirectory>
+  <IMP_SavedTo>Planer gemt i {0}</IMP_SavedTo>
+  <IMP_SaveFailed>Kunne ikke gemme: {0}</IMP_SaveFailed>
+  <IMP_ReadFailed>Kunne ikke læse filen: {0}</IMP_ReadFailed>
+  <IMP_ImportInvalid>Ikke en gyldig Implanner-planeksport: {0}</IMP_ImportInvalid>
+  <IMP_DeleteFileConfirm>Slet »{0}«?</IMP_DeleteFileConfirm>
+  <IMP_NoFiles>Ingen eksporterede planfiler her endnu.</IMP_NoFiles>
+  <IMP_ShipFallback>Gravskib</IMP_ShipFallback>
+  <IMP_SettingsShowToolbarButton>Vis knap på værktøjslinjen</IMP_SettingsShowToolbarButton>
+  <IMP_CompatibilityLevelMod>{0}: Implanners automatisering er deaktiveret med dette mod til flere etager. Planlægning og sporing fungerer stadig.</IMP_CompatibilityLevelMod>
+</LanguageData>

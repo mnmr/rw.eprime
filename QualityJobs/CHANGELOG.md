@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 1.2.0 — 2026-10-26
+
+- Added: Built-in translations. Available languages: English, French, German, Italian, Japanese, Korean, Brazilian Portuguese, Spanish (European and Latin American), Simplified Chinese, Traditional Chinese, Turkish, Ukrainian, and Vietnamese.
+- Added: Welcome warnings for potential conflicts with QualityBuilder, No Job Authors, and Finish it! when enabled.
+- Changed: Bill settings preserve windows and controls provided by other mods.
+- Fixed: Construction plans and rebuild settings are preserved when another mod cancels or replaces a construction action.
+
 ## 1.1.9 — 2026-10-19
 
 - Added: Already completed buildings can now be enlisted as a quality job. Rebuilding preserves paint and bed settings.

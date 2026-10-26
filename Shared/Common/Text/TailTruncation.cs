@@ -18,8 +18,8 @@ namespace RimShared.Common
         /// Returns <paramref name="text"/> unchanged when it fits
         /// <paramref name="maxWidth"/>; otherwise the ellipsis followed by
         /// the longest tail that fits. A tail never starts with whitespace.
-        /// A slot too narrow even for one character still yields the
-        /// ellipsis plus the last character (best effort; the caller
+        /// A slot too narrow even for one text element still yields the
+        /// ellipsis plus that complete element (best effort; the caller
         /// decides how to clip). <paramref name="width"/> receives the
         /// measured width of the returned text.
         /// </summary>
@@ -29,11 +29,14 @@ namespace RimShared.Common
             width = measure(text);
             if (width <= maxWidth || text.Length <= 1) return text;
 
+            int[] starts = TextElements.GetStarts(text);
+            if (starts.Length <= 1) return text;
+
             // Binary search over the tail length: widths are monotone in
             // the tail length (trimming a leading space only shrinks).
             int low = 1;
-            int high = text.Length - 1;
-            string best = Tail(text, 1);
+            int high = starts.Length - 1;
+            string best = Tail(text, starts, 1);
             float bestWidth = measure(best);
             if (bestWidth > maxWidth)
             {
@@ -43,7 +46,7 @@ namespace RimShared.Common
             while (low < high)
             {
                 int mid = low + (high - low + 1) / 2;
-                string candidate = Tail(text, mid);
+                string candidate = Tail(text, starts, mid);
                 float candidateWidth = measure(candidate);
                 if (candidateWidth <= maxWidth)
                 {
@@ -60,7 +63,7 @@ namespace RimShared.Common
             return best;
         }
 
-        private static string Tail(string text, int length) =>
-            Ellipsis + text.Substring(text.Length - length).TrimStart();
+        private static string Tail(string text, int[] starts, int length) =>
+            Ellipsis + text.Substring(starts[starts.Length - length]).TrimStart();
     }
 }

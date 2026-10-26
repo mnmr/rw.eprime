@@ -39,7 +39,7 @@ Regrouper par divise la table en sections repliables, ici selon le genre :
 
 ![Table regroupée par genre](grouped-table.png)
 
-Le regroupement ne fait qu'organiser les lignes ; les filtres déterminent toujours qui apparaît. Si Colony Groups est installé, ses groupes de personnages sont proposés.
+Le regroupement ne fait qu'organiser les lignes ; les filtres déterminent toujours qui apparaît. Si Colony Groups est installé, ses groupes sont proposés.
 
 ## Colonnes de compétences
 

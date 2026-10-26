@@ -1,0 +1,156 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <EPR.Add>追加</EPR.Add>
+  <EPR.All>全て</EPR.All>
+  <EPR.AllStorableItems>保管可能な全アイテム</EPR.AllStorableItems>
+  <EPR.BadDirectory>有効なフォルダーパスを入力してください。</EPR.BadDirectory>
+  <EPR.BadFileName>有効なファイル名を入力してください。</EPR.BadFileName>
+  <EPR.BottomMargin>下部の余白</EPR.BottomMargin>
+  <EPR.Clear>解除</EPR.Clear>
+  <EPR.ClickOptions>クリック設定</EPR.ClickOptions>
+  <EPR.ClipboardEmpty>クリップボードが空か、資源表示のエクスポートデータがありません。</EPR.ClipboardEmpty>
+  <EPR.CollapseWhenIdle>ポインターが離れると折りたたむ</EPR.CollapseWhenIdle>
+  <EPR.CompatibilityCustomResourceReadout>Custom Resource Readoutはカスタムまたはプリセットモードで独自の資源パネルを描画し、EPrime's Readoutsと同じ表示領域で競合します。</EPR.CompatibilityCustomResourceReadout>
+  <EPR.CompatibilityReadoutsPlus>Readouts+はバニラの資源表示にクリック操作を追加します。EPrime's Readoutsの有効中は、その操作を利用できません。</EPR.CompatibilityReadoutsPlus>
+  <EPR.CompatibilityToggleableReadouts>Toggleable Readouts（Continuedを含む）はバニラの資源描画を置き換えます。EPrime's Readoutsの有効中は、その絞り込みや固定機能を利用できません。</EPR.CompatibilityToggleableReadouts>
+  <EPR.ContentSummary>プール{0}個、グループ{1}個</EPR.ContentSummary>
+  <EPR.CopiedToClipboard>クリップボードにコピーしました。</EPR.CopiedToClipboard>
+  <EPR.CopyPath>パスをコピー</EPR.CopyPath>
+  <EPR.CopyToClipboard>クリップボードにコピー</EPR.CopyToClipboard>
+  <EPR.CountOptions>集計設定</EPR.CountOptions>
+  <EPR.CountRuleCaption>この資源・プールの集計設定を上書き</EPR.CountRuleCaption>
+  <EPR.Critical>危機</EPR.Critical>
+  <EPR.CycleTip>表示する段数を切り替える</EPR.CycleTip>
+  <EPR.DeleteConfirm>グループ「{0}」を削除しますか？</EPR.DeleteConfirm>
+  <EPR.DeleteFileConfirm>ファイル「{0}」を削除しますか？元に戻せません。</EPR.DeleteFileConfirm>
+  <EPR.DeletePoolConfirm>プール「{0}」を削除しますか？このプールを使うスロットは全グループから削除されます。</EPR.DeletePoolConfirm>
+  <EPR.DisplayOptions>表示設定</EPR.DisplayOptions>
+  <EPR.Editor>編集</EPR.Editor>
+  <EPR.EnableTip>このグループを資源表示に出す</EPR.EnableTip>
+  <EPR.EnterPath>パスを入力</EPR.EnterPath>
+  <EPR.ExpandOnHover>ホバーで展開</EPR.ExpandOnHover>
+  <EPR.Export>エクスポート</EPR.Export>
+  <EPR.ExportLocationLabel>保存先</EPR.ExportLocationLabel>
+  <EPR.ExportOverwriteConfirm>{0}は既にあります。置き換えますか？</EPR.ExportOverwriteConfirm>
+  <EPR.ExportPreviewTitle>Readoutsのエクスポート</EPR.ExportPreviewTitle>
+  <EPR.Exported>{0}にエクスポートしました</EPR.Exported>
+  <EPR.FromClipboard>クリップボードから</EPR.FromClipboard>
+  <EPR.GroupEditor>グループ編集</EPR.GroupEditor>
+  <EPR.GroupNameTaken>同名のグループが既にあります。</EPR.GroupNameTaken>
+  <EPR.Groups>グループ</EPR.Groups>
+  <EPR.HelpChapterBasics>基本</EPR.HelpChapterBasics>
+  <EPR.HelpChapterGroups>グループ</EPR.HelpChapterGroups>
+  <EPR.HelpChapterOptions>オプション</EPR.HelpChapterOptions>
+  <EPR.HelpChapterPools>資源プール</EPR.HelpChapterPools>
+  <EPR.HelpEditor>選択中のグループの各段を表示します。
+
+グループは最大3段です。直前の段に項目が入ると、次の段が自動的に使えるようになります。
+
+右のパネルの項目をクリックまたはドラッグして追加します。
+
+スロットをクリックすると表示設定を開きます。右クリックで割り当てを解除し、ドラッグで同じ段や別の段へ並べ替えます。</EPR.HelpEditor>
+  <EPR.HelpGroups>資源の表示グループです。各グループを別々の表示帯として描画します。
+
+チェックマークで表示を切り替え、[x]で削除します。
+
+名前を入力して「追加」を押すと新規グループを作成します。</EPR.HelpGroups>
+  <EPR.HelpPoolEditor>共通のフィルターで資源ツリーを絞り込みます。カテゴリーや個々の資源にチェックすると選択中のプールに含めます。資源のアイコンをクリックすると、プールのアイコンに使えます。</EPR.HelpPoolEditor>
+  <EPR.HelpPools>資源プールを作成し、ここで選択すると「資源」パネルで内容を編集できます。各行の操作で名前の変更や削除ができます。
+
+グループに追加するには「グループ編集」へ切り替え、資源ツリーの「資源プール」を使います。</EPR.HelpPools>
+  <EPR.HelpReload>再読込</EPR.HelpReload>
+  <EPR.HelpResources>資源や定義済みの資源プールを選び、選択中のグループへ追加します。
+
+クリックすると末尾に追加し、ドラッグすると任意の段のスロットに配置できます。割当済みの項目は暗くなり、印が付きます。右クリックまたはチェックマークのクリックで削除します。</EPR.HelpResources>
+  <EPR.HoverOptions>ホバー設定</EPR.HoverOptions>
+  <EPR.Import>インポート</EPR.Import>
+  <EPR.ImportLocationLabel>読込元</EPR.ImportLocationLabel>
+  <EPR.ImportParseFailed>資源表示のXMLを解析できませんでした: {0}</EPR.ImportParseFailed>
+  <EPR.ImportTitle>Readoutsのインポート</EPR.ImportTitle>
+  <EPR.ImportWarning>警告: 現在の全てのプール、グループ、しきい値を置き換えます。マルチプレイでは全員に影響します。</EPR.ImportWarning>
+  <EPR.Imported>インポートしました。</EPR.Imported>
+  <EPR.ItemFilter>アイテム絞り込み</EPR.ItemFilter>
+  <EPR.KeepReadoutToggle>ツールバーの資源表示ボタンを残す</EPR.KeepReadoutToggle>
+  <EPR.KeepReadoutToggleTip>画面右下のツールバーにゲーム標準の資源表示ボタンを残します。クリックでグループを表示・非表示にします。非表示時も歯車と検索欄は残ります。</EPR.KeepReadoutToggleTip>
+  <EPR.LocCustom>指定...</EPR.LocCustom>
+  <EPR.LocDesktop>デスクトップ</EPR.LocDesktop>
+  <EPR.LocGameData>ゲームデータフォルダー</EPR.LocGameData>
+  <EPR.LocUserHome>ホームフォルダー</EPR.LocUserHome>
+  <EPR.Low>不足</EPR.Low>
+  <EPR.MoreResults>…ほか{0}件</EPR.MoreResults>
+  <EPR.NameLabel>名前</EPR.NameLabel>
+  <EPR.NoFiles>エクスポートファイルがありません。</EPR.NoFiles>
+  <EPR.NoMatches>該当なし</EPR.NoMatches>
+  <EPR.NoMatchingItems>該当するアイテムなし</EPR.NoMatchingItems>
+  <EPR.OffsetX>横位置の調整</EPR.OffsetX>
+  <EPR.OffsetY>縦位置の調整</EPR.OffsetY>
+  <EPR.Options>オプション</EPR.Options>
+  <EPR.OptionsFor>{0}の表示設定</EPR.OptionsFor>
+  <EPR.Overview>概要</EPR.Overview>
+  <EPR.PanelWidth>パネル幅</EPR.PanelWidth>
+  <EPR.PlannedWorkOptions>予定作業</EPR.PlannedWorkOptions>
+  <EPR.PoolNameTaken>同名の資源プールが既にあります。</EPR.PoolNameTaken>
+  <EPR.PoolTip>プールとして追加: このカテゴリー全体の合計を1つのスロットに表示します</EPR.PoolTip>
+  <EPR.Pools>資源プール</EPR.Pools>
+  <EPR.PreviewGroupRow>{0}（{1}段、{2}スロット）</EPR.PreviewGroupRow>
+  <EPR.PreviewGroupsHeader>グループ</EPR.PreviewGroupsHeader>
+  <EPR.PreviewNone>（なし）</EPR.PreviewNone>
+  <EPR.PreviewPoolRow>{0}（{1}項目）</EPR.PreviewPoolRow>
+  <EPR.PreviewPoolsHeader>プール</EPR.PreviewPoolsHeader>
+  <EPR.QualityJobsMissingTip>EPrime's Quality Jobsが必要ですが、未導入です。</EPR.QualityJobsMissingTip>
+  <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobsは導入済みですが、必要な連携機能がありません。更新するとこの設定を使えます。</EPR.QualityJobsOutdatedTip>
+  <EPR.QualityJobsRework>Quality Jobs連携</EPR.QualityJobsRework>
+  <EPR.QualityJobsReworkTip>目標品質がある加工指示と建築について、目標に達するまでの予想試行回数を求め、全試行分の材料を確保します。建て替え時は、解体でバニラが返却する分を差し引きます。</EPR.QualityJobsReworkTip>
+  <EPR.ReserveForBills>加工指示の材料を差し引く</EPR.ReserveForBills>
+  <EPR.ReserveForBillsTip>未完了の加工指示が今後消費する材料を差し引きます。材料の選択肢が1種類に確定する場合のみ確保します。「任意の革」など、自由に選べる材料は差し引きません。</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBuildables>建築の材料を差し引く</EPR.ReserveForBuildables>
+  <EPR.ReserveForBuildablesTip>設計図と建築途中の枠に必要な残りの材料を差し引きます。既に枠へ運び込んだ材料は二重に数えず、禁止された設計図は無視します。</EPR.ReserveForBuildablesTip>
+  <EPR.ResourcePoolEditor>資源プール編集</EPR.ResourcePoolEditor>
+  <EPR.Resources>資源</EPR.Resources>
+  <EPR.RestoreConfirm>全てのグループとしきい値を初期設定で置き換えますか？マルチプレイでは全員に影響します。</EPR.RestoreConfirm>
+  <EPR.RestoreDefaults>初期設定に戻す</EPR.RestoreDefaults>
+  <EPR.Results>検索結果</EPR.Results>
+  <EPR.RuleAlwaysOff>常にオフ</EPR.RuleAlwaysOff>
+  <EPR.RuleAlwaysOn>常にオン</EPR.RuleAlwaysOn>
+  <EPR.RuleDefault>標準設定</EPR.RuleDefault>
+  <EPR.Save>保存</EPR.Save>
+  <EPR.SearchFilter>検索フィルター</EPR.SearchFilter>
+  <EPR.SearchHideForbidden>禁止品を除外</EPR.SearchHideForbidden>
+  <EPR.SearchHideZero>数量0の結果を隠す</EPR.SearchHideZero>
+  <EPR.SearchOptions>検索設定</EPR.SearchOptions>
+  <EPR.SearchStorageOnly>保管中のアイテムのみ数える</EPR.SearchStorageOnly>
+  <EPR.SearchStorageOnlyTip>有効にすると、備蓄ゾーンや棚などの保管設備内にある、腐敗していない対象アイテムだけを数えます。それ以外の場所に落ちている品は除外します。運搬中の品、所持品や容器内の品、未探索の場所に隠れている品は常に除外します。「禁止品を除外」も有効でない限り、禁止品は含めます。</EPR.SearchStorageOnlyTip>
+  <EPR.SelectGroupHint>グループを選択または作成して編集してください。</EPR.SelectGroupHint>
+  <EPR.SelectJumpCamera>クリックした資源へカメラ移動</EPR.SelectJumpCamera>
+  <EPR.SelectOrCreatePool>資源プールを選択または作成してください。</EPR.SelectOrCreatePool>
+  <EPR.Set>設定</EPR.Set>
+  <EPR.ShowModName>Mod名を表示</EPR.ShowModName>
+  <EPR.ShowNegativeCounts>不足分を負の数で表示</EPR.ShowNegativeCounts>
+  <EPR.ShowNegativeCountsTip>予定作業に必要な数が在庫を超える場合、0で止めず不足数を表示します。</EPR.ShowNegativeCountsTip>
+  <EPR.ShowSearchFilter>検索欄を表示</EPR.ShowSearchFilter>
+  <EPR.ShowWhenZero>0でも表示</EPR.ShowWhenZero>
+  <EPR.SourceFilter>出典絞り込み</EPR.SourceFilter>
+  <EPR.ThresholdCaption>数値の色を変えるしきい値を設定</EPR.ThresholdCaption>
+  <EPR.Thresholds>しきい値</EPR.Thresholds>
+  <EPR.TierLayoutHorizontal>横並び</EPR.TierLayoutHorizontal>
+  <EPR.TierLayoutOptions>段の配置</EPR.TierLayoutOptions>
+  <EPR.TierLayoutTip>三角ボタンやホバーで展開した際の追加段の配置です。横並びでは同じ行の右側に追加し、縦並びでは段ごとに行を分けて表示帯を高くします。</EPR.TierLayoutTip>
+  <EPR.TierLayoutVertical>縦並び</EPR.TierLayoutVertical>
+  <EPR.TipAvailableStock>利用可能{0} · 在庫{1}</EPR.TipAvailableStock>
+  <EPR.TipDrain>消費量</EPR.TipDrain>
+  <EPR.TipEach>1回分</EPR.TipEach>
+  <EPR.TipInStock>在庫</EPR.TipInStock>
+  <EPR.TipMixedResources>混合</EPR.TipMixedResources>
+  <EPR.TipOtherPlannedWork>その他（{0}）</EPR.TipOtherPlannedWork>
+  <EPR.TipPlannedWork>予定作業</EPR.TipPlannedWork>
+  <EPR.TipQueued>待機数</EPR.TipQueued>
+  <EPR.TipResource>資源</EPR.TipResource>
+  <EPR.Title>EPrime's Readouts</EPR.Title>
+  <EPR.UseVanilla>バニラの資源表示を使う</EPR.UseVanilla>
+  <EPR.Vanilla>バニラ</EPR.Vanilla>
+  <EPR.WelcomeBody>Readoutsは画面左上の資源表示を、自分で設定したグループに置き換えます。各グループに資源や資源プールを最大3段まで配置でき、設定したしきい値で数値の色が変わります。</EPR.WelcomeBody>
+  <EPR.WelcomeFind>資源パネル上部の歯車ボタンで編集画面を開きます。「オプション」タブで表示を設定でき、「ヘルプ」タブに各機能の説明があります。</EPR.WelcomeFind>
+  <EPR.WelcomeTakeMeThere>今すぐ開く</EPR.WelcomeTakeMeThere>
+  <EPR.WelcomeTitle>EPrime's Readouts</EPR.WelcomeTitle>
+  <EPR.Help>ヘルプ</EPR.Help>
+</LanguageData>

@@ -11,4 +11,4 @@ A coluna Estado resume cada colono:
 
 O progresso reflete o que está instalado agora. Se o corpo não possui a parte necessária para um implante planejado, ele é excluído da meta e não conta nem como instalado nem como faltante. Um implante extraído ou destruído volta a faltar, e a automação busca um substituto. Para extraí-lo e vender ou entregar a outro, desligue **Ativar automação** primeiro, ou ele será reservado e agendado para reinstalação.
 
-Implantes instalados manualmente também contam. Uma parte superior satisfaz uma meta inferior: uma perna arceotecnológica atende à meta de perna biônica, sem agendar uma piora. Implantes que podem compartilhar uma parte, como os cerebrais, continuam sendo metas separadas.
+Implantes instalados manualmente também contam. Uma parte superior satisfaz uma meta inferior: uma perna arquotecnológica atende à meta de perna biônica, sem agendar uma piora. Implantes que podem compartilhar uma parte, como os cerebrais, continuam sendo metas separadas.

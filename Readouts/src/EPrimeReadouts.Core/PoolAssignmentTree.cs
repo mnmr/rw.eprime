@@ -40,7 +40,7 @@ namespace EPrimeReadouts.Core
             {
                 PoolSnapshotEntry entry = pools.EntryAt(i);
                 names[i] = SeededName.Resolve(entry.Name, entry.SeedName, displayName);
-                if (!filtering || SearchMatcher.Matches(names[i], filter.Query))
+                if (!filtering || SearchMatcher.Matches(names[i], filter.Query, filter.SearchCulture))
                     matchCount++;
             }
             if (matchCount == 0)
@@ -56,7 +56,7 @@ namespace EPrimeReadouts.Core
             for (int i = 0; i < pools.Count; i++)
             {
                 PoolSnapshotEntry entry = pools.EntryAt(i);
-                if (filtering && !SearchMatcher.Matches(names[i], filter.Query))
+                if (filtering && !SearchMatcher.Matches(names[i], filter.Query, filter.SearchCulture))
                     continue;
                 rows[rowIndex++] = new PoolAssignmentTreeRow(
                     false,

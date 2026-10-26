@@ -5,6 +5,34 @@ namespace RimShared.Common.Tests;
 public class WelcomeTileLayoutTests
 {
     [Test]
+    public async Task ContentCanUseSpareHeightWithoutLeavingTheScreenOrOverlappingOtherWelcomes()
+    {
+        var single = WelcomeTileLayout.Create(1536, 864, 1).At(0);
+        var expanded = single.FitContentHeight(720f);
+        await Assert.That(expanded.Height).IsEqualTo(720f);
+        await Assert.That(expanded.Y >= 12f && expanded.Y + expanded.Height <= 817f).IsTrue();
+        await Assert.That(single.FitContentHeight(400f).Height).IsEqualTo(single.Height);
+
+        var compact = WelcomeTileLayout.Create(1024, 576, 1).At(0).FitContentHeight(720f);
+        await Assert.That(compact.Height < 720f).IsTrue();
+        await Assert.That(compact.Y >= 12f && compact.Y + compact.Height <= 529f).IsTrue();
+
+        var tiled = WelcomeTileLayout.Create(1536, 1440, 4);
+        for (int i = 0; i < tiled.Count; i++)
+        {
+            var a = tiled.At(i).FitContentHeight(720f);
+            await Assert.That(a.Height > 520f).IsTrue();
+            await Assert.That(a.Y >= 12f && a.Y + a.Height <= 1393f).IsTrue();
+            for (int j = 0; j < i; j++)
+            {
+                var b = tiled.At(j).FitContentHeight(720f);
+                await Assert.That(a.X < b.X + b.Width && b.X < a.X + a.Width
+                    && a.Y < b.Y + b.Height && b.Y < a.Y + a.Height).IsFalse();
+            }
+        }
+    }
+
+    [Test]
     public async Task DisposingRejectsReentrantWindowCallbacksUntilTheNextGameStarts()
     {
         // A window removal can invoke every mod assembly's pending callback.

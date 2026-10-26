@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <EPR.SeedDrugs>Uyuşturucular</EPR.SeedDrugs>
+  <EPR.SeedEggs>Yumurtalar</EPR.SeedEggs>
+  <EPR.SeedFertilizedeggs>Döllenmiş yumurtalar</EPR.SeedFertilizedeggs>
+  <EPR.SeedFood>Yiyecek</EPR.SeedFood>
+  <EPR.SeedHardDrugs>Ağır uyuşturucular</EPR.SeedHardDrugs>
+  <EPR.SeedLeathers>Deriler</EPR.SeedLeathers>
+  <EPR.SeedMaterials>Malzemeler</EPR.SeedMaterials>
+  <EPR.SeedMeals>Yemekler</EPR.SeedMeals>
+  <EPR.SeedMeats>Etler</EPR.SeedMeats>
+  <EPR.SeedMechs>Mekanoitler</EPR.SeedMechs>
+  <EPR.SeedMedicine>İlaçlar</EPR.SeedMedicine>
+  <EPR.SeedMortarshells>Havan mermileri</EPR.SeedMortarshells>
+  <EPR.SeedPlantfood>Bitkisel yiyecekler</EPR.SeedPlantfood>
+  <EPR.SeedRaw>Çiğ yiyecek</EPR.SeedRaw>
+  <EPR.SeedSera>Serumlar</EPR.SeedSera>
+  <EPR.SeedSocialDrugs>Sosyal uyuşturucular</EPR.SeedSocialDrugs>
+  <EPR.SeedStoneblocks>Taş bloklar</EPR.SeedStoneblocks>
+  <EPR.SeedStonechunks>Taş parçaları</EPR.SeedStonechunks>
+  <EPR.SeedTextiles>Tekstil</EPR.SeedTextiles>
+  <EPR.SeedWealth>Servet</EPR.SeedWealth>
+  <EPR.SeedWools>Yünler</EPR.SeedWools>
+</LanguageData>

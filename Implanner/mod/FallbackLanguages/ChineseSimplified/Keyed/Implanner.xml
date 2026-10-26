@@ -11,9 +11,9 @@
   <IMP_ColProgress>进度</IMP_ColProgress>
   <IMP_ColState>状态</IMP_ColState>
   <IMP_ColShooting>射</IMP_ColShooting>
-  <IMP_ColMelee>近</IMP_ColMelee>
+  <IMP_ColMelee>格</IMP_ColMelee>
   <IMP_ColShootingTip>射击技能</IMP_ColShootingTip>
-  <IMP_ColMeleeTip>近战技能</IMP_ColMeleeTip>
+  <IMP_ColMeleeTip>格斗技能</IMP_ColMeleeTip>
   <IMP_ColPriority>优先级</IMP_ColPriority>
   <IMP_Priority0>最先</IMP_Priority0>
   <IMP_Priority1>高</IMP_Priority1>
@@ -129,7 +129,7 @@
   <IMP_OptSurgery>手术</IMP_OptSurgery>
   <IMP_OptIteration>执行策略</IMP_OptIteration>
   <IMP_OptSurgeryConcurrency>同时手术人数</IMP_OptSurgeryConcurrency>
-  <IMP_OptCountHospitalized>计入住院角色</IMP_OptCountHospitalized>
+  <IMP_OptCountHospitalized>计入现有患者</IMP_OptCountHospitalized>
   <IMP_OptUpgradeByPriority>将最佳植入体分配给高优先级殖民者</IMP_OptUpgradeByPriority>
   <IMP_IterTier>按层级分批</IMP_IterTier>
   <IMP_IterColonist>整套安装</IMP_IterColonist>
@@ -158,7 +158,7 @@
   <IMP_AutomationOffTitle>自动化已关闭</IMP_AutomationOffTitle>
   <IMP_AutomationOffBody>{0} 将此殖民地分布在多个楼层。Implanner 无法跨楼层运输植入体或执行手术，因此停止分配物品和安排手术，以免每个方案都只能完成一部分。\n\n其他功能仍然可用。你可以继续创建和分配方案，并排序植入体。自行添加手术后，Implanner 会跟踪已安装和仍缺少的植入体。</IMP_AutomationOffBody>
   <IMP_OptEnableTip>控制 Implanner 所有自动操作的总开关：分配植入体、安排手术和创建生产清单。关闭后仍会跟踪方案与进度，只是不再执行操作。关闭时还会询问保留哪些现有清单。</IMP_OptEnableTip>
-  <IMP_OptIterationTip>决定自动化处理缺失植入体的顺序。“概览”页的殖民者优先级始终决定先后。\n\n按层级分批：先让所有人获得最高层级的植入体，再依次处理较低层级。某殖民者整个层级所需物品都已分配后才进入手术。\n\n整套安装：完成一名殖民者的整个方案后再处理下一名。全部方案物品都已分配后才安排手术。\n\n尽快安装：库存中的每个植入体立即安排给缺少它且优先级最高的殖民者。优先级相同时，腿优先给行动最慢者；手臂先给近战人员，再给最佳工匠或研究员。</IMP_OptIterationTip>
+  <IMP_OptIterationTip>决定自动化处理缺失植入体的顺序。“概览”页的殖民者优先级始终决定先后。\n\n按层级分批：先让所有人获得最高层级的植入体，再依次处理较低层级。某殖民者整个层级所需物品都已分配后才进入手术。\n\n整套安装：完成一名殖民者的整个方案后再处理下一名。全部方案物品都已分配后才安排手术。\n\n尽快安装：库存中的每个植入体立即安排给缺少它且优先级最高的殖民者。优先级相同时，腿优先给行动最慢者；手臂先给装备近战武器者，再给手工与智识技能总和最高者。</IMP_OptIterationTip>
   <IMP_OptAutoFloorTip>手术清单仅允许当前最佳医生执行，避免新手医生仅因先到手术台就失误损坏仿生体。每个殖民地的要求会随人员来去跟随最佳医生变化。任何人都无法给自己动手术，因此最佳医生本人的手术交给次佳医生。\n\n关闭后可手动设置固定技能下限。</IMP_OptAutoFloorTip>
   <IMP_OptSurgeryConcurrencyTip>每个殖民地可同时持有已安排手术的殖民者人数。较高值可让更多人并行排队，较低值则为医院和医生保留余力。初始为每十名殖民者一名。点击 +/- 时按住 Shift 可每次调整 10，按住 Ctrl 则调整 5。</IMP_OptSurgeryConcurrencyTip>
   <IMP_OptCountHospitalizedTip>躺在医疗床上的殖民者和奴隶，以及倒地等待治疗者，也会占用手术名额。新的 Implanner 手术会等待，直到医院占用人数低于上述上限。囚犯、访客和其他派系的来访患者不会占名额。关闭后，安排植入手术时将不考虑已接受治疗的人。</IMP_OptCountHospitalizedTip>
@@ -173,10 +173,10 @@
   <IMP_OptAutoProductionTip>自动为缺少的植入体添加生产清单。Implanner 统计各殖民地方案的剩余需求，扣除库存和已排队清单，然后向可制作的工作台添加清单。需求消失后，会撤回其创建的清单。</IMP_OptAutoProductionTip>
   <IMP_OptConcurrencyTip>每个殖民地可同时持有 Implanner 生产清单的工作台数量。每份清单制作一个植入体，每台最多两份，确保首份完成时下一份已在等待。更多工作台可并行制作，但会让工匠把更多时间花在植入体上，减少其他工作。点击 +/- 时按住 Shift 可每次调整 10，按住 Ctrl 则调整 5。</IMP_OptConcurrencyTip>
   <IMP_OptIdleBenchesTip>仅向没有待执行工作的工作台添加新清单。你自己的生产队列优先，植入体利用空闲时间制作。关闭后，植入体清单可排在你自己的清单之后。</IMP_OptIdleBenchesTip>
-  <IMP_OptDesignatedBenchesTip>仅向“生产清单”页中勾选“Implanner 工作台”的工作台添加生产清单，因此没有专用台的殖民地不会制作植入体。关闭后仍优先使用 Implanner 工作台，所有专用台各有两份清单后才使用其他工作台。两种情况下都适用“可持有清单的工作台数”上限。</IMP_OptDesignatedBenchesTip>
+  <IMP_OptDesignatedBenchesTip>仅向“清单”页中勾选“Implanner 工作台”的工作台添加生产清单，因此没有专用台的殖民地不会制作植入体。关闭后仍优先使用 Implanner 工作台，所有专用台各有两份清单后才使用其他工作台。两种情况下都适用“可持有清单的工作台数”上限。</IMP_OptDesignatedBenchesTip>
   <IMP_BenchToggle>Implanner 工作台</IMP_BenchToggle>
   <IMP_BenchToggleTip>Implanner 优先在此工作台放置生产清单，并暂停原有清单。勾选期间，你无法在此添加、粘贴、暂停或恢复清单。\n\n取消勾选可收回工作台。指定前已暂停的清单仍保持暂停，其余恢复。</IMP_BenchToggleTip>
-  <IMP_BenchLockedTip>无法在 Implanner 工作台粘贴、暂停或恢复清单。取消勾选“生产清单”页顶部的“Implanner 工作台”即可收回。</IMP_BenchLockedTip>
+  <IMP_BenchLockedTip>无法在 Implanner 工作台粘贴、暂停或恢复清单。取消勾选“清单”页顶部的“Implanner 工作台”即可收回。</IMP_BenchLockedTip>
   <IMP_BenchNoNewBills>取消勾选“Implanner 工作台”后才能在此添加清单</IMP_BenchNoNewBills>
   <IMP_OptProductionSkillTip>Implanner 生产清单所需的最低手工技能。较高值可避免低技能工匠使用昂贵零部件，较低值则让更多殖民者参与。清单会等待符合要求的工匠接手。</IMP_OptProductionSkillTip>
   <IMP_OptIntermediariesTip>若因缺少零部件等原料而无法制作植入体，且该原料是可制作的工业产品，Implanner 也可为其添加生产清单。会沿整个生产链追查缺口。钢铁等原材料绝不自动制作，仍需自行收集。</IMP_OptIntermediariesTip>
@@ -212,4 +212,5 @@
   <IMP_NoFiles>此处尚无导出的方案文件。</IMP_NoFiles>
   <IMP_ShipFallback>逆重飞船</IMP_ShipFallback>
   <IMP_SettingsShowToolbarButton>显示工具栏按钮</IMP_SettingsShowToolbarButton>
+  <IMP_CompatibilityLevelMod>{0}：使用此多层地图模组时，Implanner 的自动化功能将被禁用。规划和追踪功能仍可正常使用。</IMP_CompatibilityLevelMod>
 </LanguageData>

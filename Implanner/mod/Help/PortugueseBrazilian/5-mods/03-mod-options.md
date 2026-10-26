@@ -20,8 +20,8 @@ Cada dica lista os implantes afetados carregados e seus mods.
 
 ![Dica com implantes afetados](options-purchase-tip.png)
 
-**Mostrar implantes não fabricáveis** vem desligado. Ligado, lista os que nenhuma bancada fabrica, como partes arceotecnológicas obtidas por comércio, missões ou recuperação. A dica nomeia todos os afetados carregados.
+**Mostrar implantes não fabricáveis** vem desligado. Ligado, lista os que nenhuma bancada fabrica, como partes arquotecnológicas obtidas por comércio, missões ou recuperação. A dica nomeia todos os afetados carregados.
 
-![Seletor de membros com pernas e braços arceotecnológicos](picker-purchase-only.png)
+![Seletor de membros com pernas e braços arquotecnológicos](picker-purchase-only.png)
 
 Eles aparecem como qualquer implante, mas nunca bloqueiam os demais: o restante do lote prossegue e, quando houver o item, ele entra no próximo lote ou imediatamente em Assim que possível. Desligar oculta as linhas e as retira do menu de implantes separados, mas escolhas existentes continuam no plano e funcionando. Se um mod acrescenta uma receita, o implante vira comum automaticamente, independentemente da opção.

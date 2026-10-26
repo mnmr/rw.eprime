@@ -9,6 +9,6 @@ Cada grupo activado ocupa una franja. De izquierda a derecha, muestra la raya de
 - Hay un triángulo por nivel. El blanco indica un nivel visible; el tenue, uno oculto.
 - Cada recurso o conjunto tiene su icono y contador (consulta [Qué es un conjunto de recursos](topic:what-a-resource-pool-is)).
 
-Las cantidades superiores a diez mil se abrevian: 12.800 aparece como 12.8k. La descripción muestra la cifra exacta (consulta [Pasar el cursor y haz clic enr una casilla](topic:hovering-and-clicking-a-slot)).
+Las cantidades superiores a diez mil se abrevian: 12.800 aparece como 12.8k. La descripción muestra la cifra exacta (consulta [Pasar el cursor y hacer clic en una casilla](topic:hovering-and-clicking-a-slot)).
 
-El contador cambia de color cuando la cantidad baja hasta un límite configurado (consulta [Opciones de casilla](topic:slot-options)). También se vuelve naranja si es negativo: tus tareas y planos necesitan más de lo que tienes (consulta [Trabajo previsto](topic:planned-work)).
+El contador cambia de color cuando la cantidad baja hasta un límite configurado (consulta [Opciones de casilla](topic:slot-options)). También se vuelve naranja si es negativo: tus proyectos y planos necesitan más de lo que tienes (consulta [Trabajo previsto](topic:planned-work)).

@@ -13,7 +13,7 @@ Um tipo de trabalho equivale a uma coluna; um trabalho é uma atividade específ
 
 ![O tipo Medicina e seus trabalhos](worktype-jobs.png)
 
-Funções contêm tipos inteiros ou trabalhos individuais. ![Ficha Médico](chip-doctor.png) inclui toda a Medicina; Açougueiro contém apenas o abate de Cozinha.
+Funções contêm tipos inteiros ou trabalhos individuais. ![Ficha Médico](chip-doctor.png) inclui toda a Medicina; Açougueiro contém apenas as tarefas de carnear de Cozinha.
 
 As estrelas indicam a adequação do colono: vermelho ruim, cinza neutro, branco e dourado bom. [Avaliações](topic:verdicts) mostra a escala completa.
 

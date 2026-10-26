@@ -358,7 +358,7 @@ namespace WorkRoles.UI
             using (new TextBlock(GameFont.Small))
             {
                 for (int r = 0; r < pawnNames.Length; r++)
-                    pawnNames[r] = pawnNameSources[r].Truncate(NameW - 6f);
+                    pawnNames[r] = WrText.Truncate(pawnNameSources[r], NameW - 6f);
                 phantomLabelSize = Text.CalcSize("");
                 phantomLabelGeometry = InclinedLabelGeometry.Calculate(
                     phantomLabelSize.x, phantomLabelSize.y, LabelAngle);

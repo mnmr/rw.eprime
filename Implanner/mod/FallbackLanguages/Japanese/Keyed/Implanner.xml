@@ -1,0 +1,216 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <IMP_AddImplantReserve>インプラントを追加</IMP_AddImplantReserve>
+  <IMP_AddImplantReserveTip>自動化に使わず取り置くインプラントを選びます。</IMP_AddImplantReserveTip>
+  <IMP_AddPlan>新規プラン</IMP_AddPlan>
+  <IMP_AggregateColonists>入植者: {0} / {1}</IMP_AggregateColonists>
+  <IMP_AutomationOffBody>{0}により、このコロニーは複数の階層にまたがっています。Implannerは階層をまたぐインプラントの運搬や手術に対応できないため、アイテムの割り当てと手術予約を停止しています。\n\nその他の機能は利用できます。プランの作成・割り当てやインプラントの優先順位設定を続けられます。手術は手動で追加してください。取付済みの部位と不足分はImplannerが追跡します。</IMP_AutomationOffBody>
+  <IMP_AutomationOffTitle>自動化は停止しています</IMP_AutomationOffTitle>
+  <IMP_BadDirectory>有効なフォルダーを入力してください。</IMP_BadDirectory>
+  <IMP_BadFileName>有効なファイル名を入力してください。</IMP_BadFileName>
+  <IMP_BenchLockedTip>Implanner専用作業台では、指示の貼り付け、中断、再開はできません。「加工」タブ上部の「Implanner専用作業台」をオフにすると通常の管理に戻せます。</IMP_BenchLockedTip>
+  <IMP_BenchNoNewBills>追加するには「Implanner専用作業台」をオフにしてください</IMP_BenchNoNewBills>
+  <IMP_BenchToggle>Implanner専用作業台</IMP_BenchToggle>
+  <IMP_BenchToggleTip>Implannerはこの台を優先して加工指示を置き、既存の指示を中断します。オンの間、この台では指示の追加、貼り付け、中断、再開ができません。\n\nオフにすると通常の管理に戻ります。指定前から中断中だった指示はそのまま、残りは再開します。</IMP_BenchToggleTip>
+  <IMP_CleanupBody>以下はImplannerが作成した指示です。「OK」で自動化を停止し、チェックした指示を削除します。未チェックの指示は残り、自動化を再開すると再び管理します。どちらの場合もインプラントの割り当ては解除します。「キャンセル」なら自動化を続けます。</IMP_CleanupBody>
+  <IMP_CleanupTitle>自動化を停止しますか？</IMP_CleanupTitle>
+  <IMP_ColColonist>入植者</IMP_ColColonist>
+  <IMP_ColMelee>格</IMP_ColMelee>
+  <IMP_ColMeleeTip>格闘スキル</IMP_ColMeleeTip>
+  <IMP_ColPlan>プラン</IMP_ColPlan>
+  <IMP_ColPriority>優先度</IMP_ColPriority>
+  <IMP_ColProgress>進捗</IMP_ColProgress>
+  <IMP_ColShooting>射</IMP_ColShooting>
+  <IMP_ColShootingTip>射撃スキル</IMP_ColShootingTip>
+  <IMP_ColState>状態</IMP_ColState>
+  <IMP_ColonistDetails>入植者の詳細</IMP_ColonistDetails>
+  <IMP_CompatibilityLevelMod>{0}: この多層マップModとの併用中はImplannerの自動化を無効にします。計画と進捗確認は利用できます。</IMP_CompatibilityLevelMod>
+  <IMP_CopyClipboard>クリップボードにコピー</IMP_CopyClipboard>
+  <IMP_DeleteFileConfirm>「{0}」を削除しますか？</IMP_DeleteFileConfirm>
+  <IMP_DeletePlan>プランを削除</IMP_DeletePlan>
+  <IMP_DeletePlanConfirm>プラン「{0}」を削除しますか？割り当てられた入植者のプラン割り当てが解除され、継承先のプランは継承を停止します。</IMP_DeletePlanConfirm>
+  <IMP_DetailCollecting>{0}を収集中</IMP_DetailCollecting>
+  <IMP_DragItemsHere>ここにインプラントをドラッグ</IMP_DragItemsHere>
+  <IMP_EnterPath>フォルダー:</IMP_EnterPath>
+  <IMP_Export>エクスポート</IMP_Export>
+  <IMP_ExportPlansTitle>プランのエクスポート</IMP_ExportPlansTitle>
+  <IMP_ExportSummary>プラン{0}件、インプラント{1}個</IMP_ExportSummary>
+  <IMP_ExtendsNothing>なし</IMP_ExtendsNothing>
+  <IMP_ExtendsPlan>継承元</IMP_ExtendsPlan>
+  <IMP_FromClipboard>クリップボードから</IMP_FromClipboard>
+  <IMP_GoalBlockedFloor>医術レベル不足（{0}）</IMP_GoalBlockedFloor>
+  <IMP_GoalBlockedLoss>{0}を失うため保留</IMP_GoalBlockedLoss>
+  <IMP_GoalComplete>完了</IMP_GoalComplete>
+  <IMP_GoalMissing>不足</IMP_GoalMissing>
+  <IMP_GoalPartial>{0} / {1}</IMP_GoalPartial>
+  <IMP_GoalReady>準備完了</IMP_GoalReady>
+  <IMP_GoalRecovering>回復待ち</IMP_GoalRecovering>
+  <IMP_GoalReserved>割当済み</IMP_GoalReserved>
+  <IMP_GoalScheduled>手術予定</IMP_GoalScheduled>
+  <IMP_GroupByFaction>派閥別</IMP_GroupByFaction>
+  <IMP_GroupByGender>性別</IMP_GroupByGender>
+  <IMP_GroupByIdeo>思想別</IMP_GroupByIdeo>
+  <IMP_GroupByLocation>場所別</IMP_GroupByLocation>
+  <IMP_GroupByNone>分類なし</IMP_GroupByNone>
+  <IMP_GroupByXenotype>ゼノタイプ別</IMP_GroupByXenotype>
+  <IMP_Help>ヘルプ</IMP_Help>
+  <IMP_HelpChapterAutomation>自動化</IMP_HelpChapterAutomation>
+  <IMP_HelpChapterBasics>基本</IMP_HelpChapterBasics>
+  <IMP_HelpChapterMods>Mod</IMP_HelpChapterMods>
+  <IMP_HelpChapterPlans>プラン</IMP_HelpChapterPlans>
+  <IMP_HelpChapterSharing>共有</IMP_HelpChapterSharing>
+  <IMP_HelpReload>再読込</IMP_HelpReload>
+  <IMP_ImplantGroupOther>その他</IMP_ImplantGroupOther>
+  <IMP_Import>インポート</IMP_Import>
+  <IMP_ImportAddNote>既存のプランを置き換えず、追加します。同名のプランがある場合は番号を付けます。</IMP_ImportAddNote>
+  <IMP_ImportInvalid>有効なImplannerのプランファイルではありません: {0}</IMP_ImportInvalid>
+  <IMP_ImportPlansTitle>プランのインポート</IMP_ImportPlansTitle>
+  <IMP_Inherited>継承</IMP_Inherited>
+  <IMP_IterAsap>随時</IMP_IterAsap>
+  <IMP_IterColonist>一人ずつ全て</IMP_IterColonist>
+  <IMP_IterTier>ティア単位</IMP_IterTier>
+  <IMP_LocCustom>任意のフォルダー</IMP_LocCustom>
+  <IMP_LocDesktop>デスクトップ</IMP_LocDesktop>
+  <IMP_LocGameData>Implannerフォルダー</IMP_LocGameData>
+  <IMP_LocUserHome>ホームフォルダー</IMP_LocUserHome>
+  <IMP_NextScheduled>{0}の手術を予定</IMP_NextScheduled>
+  <IMP_NoFiles>この場所にエクスポート済みのプランはありません。</IMP_NoFiles>
+  <IMP_NoMatchingImplants>検索に一致するインプラントはありません。</IMP_NoMatchingImplants>
+  <IMP_NoPlan>なし</IMP_NoPlan>
+  <IMP_NoPlans>プランを作成して、目標のインプラント構成を設定してください。</IMP_NoPlans>
+  <IMP_NoSelection>入植者を選ぶと、残りのインプラントを表示します。</IMP_NoSelection>
+  <IMP_OptAllowMultipleBladders>複数の膀胱インプラントを許可</IMP_OptAllowMultipleBladders>
+  <IMP_OptAllowMultipleBladdersTip>異なるModの膀胱インプラントは別種として扱われるため、複数を取り付けて効果を重ねられます。オフにすると同じ枠として扱い、プランで1つを選ぶと他を置き換えます。下記のいずれかを既に持つ入植者は完了とみなします。既存のインプラントは取り外しません。\n\n対象のインプラント:\n{0}</IMP_OptAllowMultipleBladdersTip>
+  <IMP_OptAllowMultipleHygieneEnhancers>複数の衛生強化器を許可</IMP_OptAllowMultipleHygieneEnhancers>
+  <IMP_OptAllowMultipleHygieneEnhancersTip>異なるModの衛生強化器は別種として扱われるため、複数を取り付けて効果を重ねられます。オフにすると同じ枠として扱い、プランで1つを選ぶと他を置き換えます。下記のいずれかを既に持つ入植者は完了とみなします。既存のインプラントは取り外しません。\n\n対象のインプラント:\n{0}</IMP_OptAllowMultipleHygieneEnhancersTip>
+  <IMP_OptAutoFloor>最良の医者に手術を割り当てる</IMP_OptAutoFloor>
+  <IMP_OptAutoFloorTip>最も優れた医者だけが手術できるようにします。初心者が先に手術台へ来たというだけで義肢の取付を担当するのを防ぎます。各コロニーの医者の出入りに合わせて必要レベルを調整します。自分自身には手術できないため、最良の医者自身の手術は次に優れた医者が担当します。\n\nオフにすると、必要レベルの下限を自分で固定できます。</IMP_OptAutoFloorTip>
+  <IMP_OptAutoProduction>不足分の加工指示を自動追加</IMP_OptAutoProduction>
+  <IMP_OptAutoProductionTip>不足するインプラントの加工指示を自動作成します。各コロニーのプランに必要な残数から、在庫と既存の加工指示を差し引き、対応する作業台へ追加します。不要になった指示は削除します。</IMP_OptAutoProductionTip>
+  <IMP_OptCatalog>カタログ</IMP_OptCatalog>
+  <IMP_OptCompatNoneLoaded>対象のインプラントは読み込まれていません。</IMP_OptCompatNoneLoaded>
+  <IMP_OptConcurrency>加工指示を置ける作業台数</IMP_OptConcurrency>
+  <IMP_OptConcurrencyTip>各コロニーでImplannerの加工指示を同時に置ける作業台数です。1指示で1個製作し、作業台ごとに2件まで置くので、1件が終わると次が待っています。作業台を増やすと並行して製作しますが、製作者が他の仕事に使える時間は減ります。+/-のクリック時にShiftで10、Ctrlで5ずつ変更します。</IMP_OptConcurrencyTip>
+  <IMP_OptCountHospitalized>既存の患者も数える</IMP_OptCountHospitalized>
+  <IMP_OptCountHospitalizedTip>病床にいる、またはダウンして治療を待っている入植者と奴隷も手術枠を使います。上記の上限に余裕ができるまで、新しいImplannerの手術は待機します。囚人、客、他派閥からの外来患者は枠を使いません。オフなら治療中の人数に関係なく手術を予定します。</IMP_OptCountHospitalizedTip>
+  <IMP_OptDesignatedBenches>Implanner専用作業台のみ使用</IMP_OptDesignatedBenches>
+  <IMP_OptDesignatedBenchesTip>「加工」タブの「Implanner専用作業台」がオンの台だけに指示を追加します。専用台のないコロニーでは製作しません。オフなら専用台を優先し、全ての専用台に2件ずつ指示があると他の台も使います。どちらも「加工指示を置ける作業台数」の上限に従います。</IMP_OptDesignatedBenchesTip>
+  <IMP_OptEnable>自動化を有効にする</IMP_OptEnable>
+  <IMP_OptEnableTip>インプラントの割り当て、手術の予約、加工指示の作成など、Implannerが自動で行う全ての動作を切り替えます。オフでもプランと進捗は追跡しますが、自動の処理は行いません。オフにする際は、既存の指示をどれだけ残すか確認します。</IMP_OptEnableTip>
+  <IMP_OptIdleBenches>空いている作業台にのみ追加</IMP_OptIdleBenches>
+  <IMP_OptIdleBenchesTip>待機中の仕事がない作業台にだけImplannerの指示を追加します。自分で設定した生産を優先し、空き時間にインプラントを製作します。オフなら既存の指示の後ろに追加できます。</IMP_OptIdleBenchesTip>
+  <IMP_OptImplantReserves>手動用インプラントの確保</IMP_OptImplantReserves>
+  <IMP_OptImplantReservesTip>手動使用のために取り置くインプラントです。自動化はこの数を超える在庫だけを割り当て、緊急手術や交易に使う品を残します。生産では取り置き分を利用可能な在庫に数えず、それを使わず自動化を進められるまで製作します。</IMP_OptImplantReservesTip>
+  <IMP_OptIntermediaries>不足する中間材料の製作を許可</IMP_OptIntermediaries>
+  <IMP_OptIntermediariesTip>コンポーネントなどの材料不足で製作できない場合、その材料が製作可能な加工品なら加工指示も追加できます。生産工程をさかのぼって不足分を補います。スチールなどの原資源は製作せず、自分で集める必要があります。</IMP_OptIntermediariesTip>
+  <IMP_OptIteration>進行方式</IMP_OptIteration>
+  <IMP_OptIterationTip>不足するインプラントを処理する順番です。誰を先にするかは、常に概要タブの入植者の優先度で決まります。\n\nティア単位: 全員に最上位ティアを取り付けてから、次のティアへ進みます。その入植者のティア全体の品を割り当てると手術を開始します。\n\n一人ずつ全て: 一人のプランを全て終えてから次の入植者に進みます。プラン全体の品を割り当てるまで手術を待ちます。\n\n随時: 在庫のあるインプラントは、それが不足している最も優先度の高い入植者の手術にすぐ回します。同じ優先度なら、脚は移動の最も遅い人へ、腕は近接武器を装備している人を優先し、その次に工芸と知力の合計が最も高い人へ回します。</IMP_OptIterationTip>
+  <IMP_OptManualFloor>手術指示の必要医術レベル</IMP_OptManualFloor>
+  <IMP_OptManualFloorTip>Implannerの手術に必要な医術レベルです。このレベル以上の医者が作業できるまで手術指示は待機します。自動割り当てをオフにした時点の最良の医者を初期値にします。</IMP_OptManualFloorTip>
+  <IMP_OptModCompat>Mod互換性</IMP_OptModCompat>
+  <IMP_OptProduction>生産</IMP_OptProduction>
+  <IMP_OptProductionSkill>加工指示の必要工芸レベル</IMP_OptProductionSkill>
+  <IMP_OptProductionSkillTip>Implannerの加工指示に必要な工芸レベルです。高くすると低スキルの製作者に高価な部品を任せずに済み、低くすると多くの入植者が手伝えます。条件を満たす製作者が着手するまで待機します。</IMP_OptProductionSkillTip>
+  <IMP_OptReserves>製作後に残す在庫</IMP_OptReserves>
+  <IMP_OptReservesTip>自動生産で残す資源の下限です。待機中の加工指示が必要とする材料に加え、新しい指示の費用をまかない、全ての材料をこの数以上残せる場合だけ指示を追加します。在庫を守るには値を増やし、自由に消費させるには0にします。</IMP_OptReservesTip>
+  <IMP_OptShowPurchaseOnly>製作不可のインプラントを表示</IMP_OptShowPurchaseOnly>
+  <IMP_OptShowPurchaseOnlyTip>アルコテック部位など、作業台で製作できないインプラントを表示します。交易、クエスト、回収などでのみ入手できます。オンにするとプランに含められます。自動化は入荷次第割り当て、次の一括手術で取り付けます。不足していても他の取付は止めません。Modで製作レシピが追加されると、自動的に通常のインプラントとして扱います。\n\n対象のインプラント:\n{0}</IMP_OptShowPurchaseOnlyTip>
+  <IMP_OptSkillSliderMaximum>スキルスライダーの上限</IMP_OptSkillSliderMaximum>
+  <IMP_OptSkillSliderMaximumTip>医術と工芸のスライダーの上限です。既存の必要レベルや医者の自動選択には影響しません。</IMP_OptSkillSliderMaximumTip>
+  <IMP_OptSurgery>手術</IMP_OptSurgery>
+  <IMP_OptSurgeryConcurrency>同時手術人数</IMP_OptSurgeryConcurrency>
+  <IMP_OptSurgeryConcurrencyTip>各コロニーで同時に手術を予定できる入植者数です。多いほど並行して進み、少ないほど病院と医者に余裕を残せます。初期値は入植者10人につき1人です。+/-のクリック時にShiftで10、Ctrlで5ずつ変更します。</IMP_OptSurgeryConcurrencyTip>
+  <IMP_OptUpgradeByPriority>高優先の入植者に最良のインプラントを回す</IMP_OptUpgradeByPriority>
+  <IMP_OptUpgradeByPriorityTip>概要タブで優先度の高い入植者に高品質のインプラントを回します。新規の手術にはプランが許す最低品質を使い、より良い品を残します。\n\nより良い品が使えるようになると、同種の低品質品を持つ最も優先度の高い入植者に回します。古い品を先に取り外し、次の入植者へ渡します。低優先の入植者に割り当て済みの品も、その手術が未予約なら回します。\n\n交換のたびに追加の手術が必要です。オフの場合は、順番が来た時点で在庫にある最良の品を使います。</IMP_OptUpgradeByPriorityTip>
+  <IMP_Overrides>{0}を置換</IMP_Overrides>
+  <IMP_PlanColonists>入植者{0}人</IMP_PlanColonists>
+  <IMP_PlanCounts>インプラント{0}個</IMP_PlanCounts>
+  <IMP_PlanExtends>{0}を継承</IMP_PlanExtends>
+  <IMP_PlanGoalCount>インプラント{0}個</IMP_PlanGoalCount>
+  <IMP_PlanMinQuality>最低品質: {0}</IMP_PlanMinQuality>
+  <IMP_PlanMinQualityNoQualityJobs>Quality Jobsが未導入のため、どの製作者でもインプラントを仕上げられます。完成品がこの品質未満なら再度製作します。</IMP_PlanMinQualityNoQualityJobs>
+  <IMP_PlanMinQualityTip>このプランのインプラントは、この品質以上で製作・取付します。品質のないインプラントには影響しません。\n\n健康な部位を、それより性能の低い部位に置き換えることはありません。低品質の義肢は、部位が欠損・損傷していない限り、より良い品を待ちます。</IMP_PlanMinQualityTip>
+  <IMP_PlanNameTitle>プラン名</IMP_PlanNameTitle>
+  <IMP_PlansHeader>プラン</IMP_PlansHeader>
+  <IMP_Priority0>最優先</IMP_Priority0>
+  <IMP_Priority1>高</IMP_Priority1>
+  <IMP_Priority2>通常</IMP_Priority2>
+  <IMP_Priority3>低</IMP_Priority3>
+  <IMP_Priority4>最後</IMP_Priority4>
+  <IMP_RankTiersHelp>インプラントを5つのティアに分けられます。配置は生産順と手術順（自動化設定による）に影響します。\n\nドラッグで並べ替えます。</IMP_RankTiersHelp>
+  <IMP_RankTiersTitle>インプラントのティア</IMP_RankTiersTitle>
+  <IMP_ReadFailed>ファイルを読み込めませんでした: {0}</IMP_ReadFailed>
+  <IMP_RegionHead>頭部</IMP_RegionHead>
+  <IMP_RegionLimbs>四肢</IMP_RegionLimbs>
+  <IMP_RegionTorso>胴体</IMP_RegionTorso>
+  <IMP_ReqBody>{0}は人工の{1}にしか取り付けられません。一緒にプランへ追加する置換部位を選んでください:</IMP_ReqBody>
+  <IMP_ReqConfirm>プランに追加</IMP_ReqConfirm>
+  <IMP_ReqTitle>必要条件</IMP_ReqTitle>
+  <IMP_Save>保存</IMP_Save>
+  <IMP_SaveFailed>保存できませんでした: {0}</IMP_SaveFailed>
+  <IMP_SavedTo>プランを{0}に保存しました</IMP_SavedTo>
+  <IMP_ScopeAll>全ての場所</IMP_ScopeAll>
+  <IMP_SettingsShowToolbarButton>ツールバーボタンを表示</IMP_SettingsShowToolbarButton>
+  <IMP_ShipFallback>グラヴシップ</IMP_ShipFallback>
+  <IMP_StateAway>不在</IMP_StateAway>
+  <IMP_StateDone>完了</IMP_StateDone>
+  <IMP_StateOperating>手術中</IMP_StateOperating>
+  <IMP_StatePreparing>準備中</IMP_StatePreparing>
+  <IMP_StateWaiting>待機中</IMP_StateWaiting>
+  <IMP_StripAutomationOff>自動化オフ</IMP_StripAutomationOff>
+  <IMP_StripAutomationOn>自動化オン</IMP_StripAutomationOn>
+  <IMP_StripAwaitingProduction>生産待ち</IMP_StripAwaitingProduction>
+  <IMP_StripBatch>{0}にまとめて取付中</IMP_StripBatch>
+  <IMP_StripBatchStars>{0}にまとめて取付中（{1}）</IMP_StripBatchStars>
+  <IMP_StripColony>コロニー: {0}</IMP_StripColony>
+  <IMP_StripInstalled>取付済み: {0} / {1}</IMP_StripInstalled>
+  <IMP_StripMaking>{0}を製作中</IMP_StripMaking>
+  <IMP_StripMakingFor>{0}の材料を製作中</IMP_StripMakingFor>
+  <IMP_StripNothingToCraft>製作不要</IMP_StripNothingToCraft>
+  <IMP_StripProduction>生産: {0}%</IMP_StripProduction>
+  <IMP_StripStock>在庫{0}、待機{1}</IMP_StripStock>
+  <IMP_StripSurgery>手術: {0}%</IMP_StripSurgery>
+  <IMP_StripWaiting>{0}を待機中</IMP_StripWaiting>
+  <IMP_StripWaitingBench>作業台待ち</IMP_StripWaitingBench>
+  <IMP_TabAutomation>自動化</IMP_TabAutomation>
+  <IMP_TabHelp>ヘルプ</IMP_TabHelp>
+  <IMP_TabOptions>オプション</IMP_TabOptions>
+  <IMP_TabOverview>概要</IMP_TabOverview>
+  <IMP_TabPlans>プラン</IMP_TabPlans>
+  <IMP_TierHigh>高優先</IMP_TierHigh>
+  <IMP_TierHighest>最優先</IMP_TierHighest>
+  <IMP_TierLow>低優先</IMP_TierLow>
+  <IMP_TierMedium>中優先</IMP_TierMedium>
+  <IMP_TierNormal>通常</IMP_TierNormal>
+  <IMP_TipBenchesInUse>Implannerの加工指示がある作業台: {0}</IMP_TipBenchesInUse>
+  <IMP_TipCapacity>身体部位: {0}</IMP_TipCapacity>
+  <IMP_TipColCrafting>製作中</IMP_TipColCrafting>
+  <IMP_TipColFree>未割当</IMP_TipColFree>
+  <IMP_TipColHeldBack>手動用</IMP_TipColHeldBack>
+  <IMP_TipColImplant>インプラント</IMP_TipColImplant>
+  <IMP_TipColInstalled>取付済み</IMP_TipColInstalled>
+  <IMP_TipColItem>アイテム</IMP_TipColItem>
+  <IMP_TipColMissing>不足</IMP_TipColMissing>
+  <IMP_TipColNeeded>必要数</IMP_TipColNeeded>
+  <IMP_TipColPlanned>計画数</IMP_TipColPlanned>
+  <IMP_TipColQueued>待機</IMP_TipColQueued>
+  <IMP_TipColReserved>割当済み</IMP_TipColReserved>
+  <IMP_TipColScheduled>手術予定</IMP_TipColScheduled>
+  <IMP_TipColStatus>状態</IMP_TipColStatus>
+  <IMP_TipColTier>ティア</IMP_TipColTier>
+  <IMP_TipColonistStates>入植者: 待機{0}、準備{1}、手術{2}、完了{3}、不在{4}</IMP_TipColonistStates>
+  <IMP_TipCovered>充足</IMP_TipCovered>
+  <IMP_TipMaking>製作中</IMP_TipMaking>
+  <IMP_TipMakingMaterials>材料製作中</IMP_TipMakingMaterials>
+  <IMP_TipMaxHp>部位の最大HP: {0}</IMP_TipMaxHp>
+  <IMP_TipNoRecipe>レシピなし</IMP_TipNoRecipe>
+  <IMP_TipPartEfficiency>部位効率: {0}</IMP_TipPartEfficiency>
+  <IMP_TipPartEfficiencyRange>部位効率: {0}～{1}（品質による）</IMP_TipPartEfficiencyRange>
+  <IMP_TipProduction>生産</IMP_TipProduction>
+  <IMP_TipSurgery>手術</IMP_TipSurgery>
+  <IMP_ToolbarButtonTip>Implannerを開く</IMP_ToolbarButtonTip>
+  <IMP_WelcomeBody>Implannerは入植者のインプラント取付を計画し、必要に応じて製作と手術を自動化します。</IMP_WelcomeBody>
+  <IMP_WelcomeFind>画面右下のツールバーにある、表示切替ボタン横のこのボタンでImplannerを開けます。</IMP_WelcomeFind>
+  <IMP_WelcomeTakeMeThere>今すぐ開く</IMP_WelcomeTakeMeThere>
+  <IMP_WelcomeTitle>EPrime's Implanner</IMP_WelcomeTitle>
+</LanguageData>

@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_SignalConditionHediff>Tình trạng sức khỏe: {0}</WR_SignalConditionHediff>
+  <WR_SignalConditionPrecept>Giáo lý: {0}</WR_SignalConditionPrecept>
+  <WR_SignalConditionTrait>Đặc điểm: {0}</WR_SignalConditionTrait>
+  <WR_SignalCondition_after_mental_break>Sau cơn suy sụp tinh thần</WR_SignalCondition_after_mental_break>
+  <WR_SignalCondition_age_min_18>Từ 18 tuổi</WR_SignalCondition_age_min_18>
+  <WR_SignalCondition_apparel_not_nude>Đang mặc quần áo</WR_SignalCondition_apparel_not_nude>
+  <WR_SignalCondition_apparel_nude>Khỏa thân</WR_SignalCondition_apparel_nude>
+  <WR_SignalCondition_author_is_bad>Mod nguồn đánh dấu đam mê này là xấu</WR_SignalCondition_author_is_bad>
+  <WR_SignalCondition_body_artificial_parts>Có bộ phận cơ thể nhân tạo</WR_SignalCondition_body_artificial_parts>
+  <WR_SignalCondition_body_no_artificial_parts>Không có bộ phận cơ thể nhân tạo</WR_SignalCondition_body_no_artificial_parts>
+  <WR_SignalCondition_colony_best_at_skill>Giỏi kỹ năng này nhất khu định cư</WR_SignalCondition_colony_best_at_skill>
+  <WR_SignalCondition_colony_loss_within_3_days>Mất một cư dân trong 3 ngày qua</WR_SignalCondition_colony_loss_within_3_days>
+  <WR_SignalCondition_colony_no_recent_loss>Gần đây không mất cư dân</WR_SignalCondition_colony_no_recent_loss>
+  <WR_SignalCondition_colony_not_best_at_skill>Không giỏi kỹ năng này nhất khu định cư</WR_SignalCondition_colony_not_best_at_skill>
+  <WR_SignalCondition_cycle_daily>Thay đổi mỗi ngày</WR_SignalCondition_cycle_daily>
+  <WR_SignalCondition_environment_near_fire>Gần lửa</WR_SignalCondition_environment_near_fire>
+  <WR_SignalCondition_equipment_ranged_weapon>Đang trang bị vũ khí tầm xa</WR_SignalCondition_equipment_ranged_weapon>
+  <WR_SignalCondition_location_away_from_home>Xa nhà</WR_SignalCondition_location_away_from_home>
+  <WR_SignalCondition_location_home>Ở nhà</WR_SignalCondition_location_home>
+  <WR_SignalCondition_mood_tier_apathetic>Giai đoạn thờ ơ</WR_SignalCondition_mood_tier_apathetic>
+  <WR_SignalCondition_mood_tier_greater>Giai đoạn đam mê</WR_SignalCondition_mood_tier_greater>
+  <WR_SignalCondition_mood_tier_interested>Giai đoạn hứng thú</WR_SignalCondition_mood_tier_interested>
+  <WR_SignalCondition_mood_tier_major>Giai đoạn rất hứng thú</WR_SignalCondition_mood_tier_major>
+  <WR_SignalCondition_mood_tier_none>Giai đoạn không đam mê</WR_SignalCondition_mood_tier_none>
+  <WR_SignalCondition_pain_max_0_3>Đau không quá 30%</WR_SignalCondition_pain_max_0_3>
+  <WR_SignalCondition_pain_min_0_3>Đau từ 30% trở lên</WR_SignalCondition_pain_min_0_3>
+  <WR_SignalCondition_passion_conflicting>Đam mê Bắn súng xung đột với đặc điểm này</WR_SignalCondition_passion_conflicting>
+  <WR_SignalCondition_psychic_sensitivity_tier_critical>Độ nhạy tâm linh cực cao</WR_SignalCondition_psychic_sensitivity_tier_critical>
+  <WR_SignalCondition_psychic_sensitivity_tier_major>Độ nhạy tâm linh cao</WR_SignalCondition_psychic_sensitivity_tier_major>
+  <WR_SignalCondition_psychic_sensitivity_tier_minor>Độ nhạy tâm linh thấp</WR_SignalCondition_psychic_sensitivity_tier_minor>
+  <WR_SignalCondition_psychic_sensitivity_tier_normal>Độ nhạy tâm linh bình thường</WR_SignalCondition_psychic_sensitivity_tier_normal>
+  <WR_SignalCondition_psychic_sensitivity_tier_nullified>Độ nhạy tâm linh bị triệt tiêu</WR_SignalCondition_psychic_sensitivity_tier_nullified>
+  <WR_SignalCondition_range_long>Ở tầm xa</WR_SignalCondition_range_long>
+  <WR_SignalCondition_range_medium>Ở tầm trung</WR_SignalCondition_range_medium>
+  <WR_SignalCondition_ritual_no_recent_quality_outcome>Gần đây không có nghi lễ thành công</WR_SignalCondition_ritual_no_recent_quality_outcome>
+  <WR_SignalCondition_ritual_recent_quality_outcome>Gần đây có nghi lễ thành công</WR_SignalCondition_ritual_recent_quality_outcome>
+  <WR_SignalCondition_setting_vse_critical_affects_other_skills>Đam mê cực độ tác động kỹ năng khác trong thiết lập mod</WR_SignalCondition_setting_vse_critical_affects_other_skills>
+  <WR_SignalCondition_sight_blind>Mù</WR_SignalCondition_sight_blind>
+  <WR_SignalCondition_sight_not_blind>Không mù</WR_SignalCondition_sight_not_blind>
+  <WR_SignalCondition_social_same_passion_opinion>Tăng thiện cảm với người cùng đam mê</WR_SignalCondition_social_same_passion_opinion>
+  <WR_SignalCondition_state_drunk>Say rượu</WR_SignalCondition_state_drunk>
+  <WR_SignalCondition_state_no_recent_lovin>Gần đây không ân ái</WR_SignalCondition_state_no_recent_lovin>
+  <WR_SignalCondition_state_not_drunk>Không say rượu</WR_SignalCondition_state_not_drunk>
+  <WR_SignalCondition_state_not_smokeleaf_high>Không phê thuốc lá</WR_SignalCondition_state_not_smokeleaf_high>
+  <WR_SignalCondition_state_recent_lovin>Gần đây có ân ái</WR_SignalCondition_state_recent_lovin>
+  <WR_SignalCondition_state_smokeleaf_high>Phê thuốc lá</WR_SignalCondition_state_smokeleaf_high>
+  <WR_SignalCondition_time_20_5>Từ 20:00 đến 05:00</WR_SignalCondition_time_20_5>
+  <WR_SignalCondition_time_day>Ban ngày</WR_SignalCondition_time_day>
+  <WR_SignalCondition_weather_not_raining>Không mưa</WR_SignalCondition_weather_not_raining>
+  <WR_SignalCondition_weather_raining>Đang mưa</WR_SignalCondition_weather_raining>
+  <WR_SignalCondition_work_compelled_aversion>Ghét kỹ năng nhưng cảm thấy buộc phải học</WR_SignalCondition_work_compelled_aversion>
+  <WR_SignalCondition_work_enjoyment>Rất thích làm việc liên quan</WR_SignalCondition_work_enjoyment>
+  <WR_SignalCondition_work_passionate>Tâm trạng khi làm việc có đam mê</WR_SignalCondition_work_passionate>
+  <WR_SignalCondition_work_type_hated>Công việc ghét</WR_SignalCondition_work_type_hated>
+  <WR_SignalCurrentSkill>Kỹ năng hiện tại</WR_SignalCurrentSkill>
+  <WR_SignalEffectSubject>{0}: {1}</WR_SignalEffectSubject>
+  <WR_SignalEffect_Accuracy>Độ chính xác</WR_SignalEffect_Accuracy>
+  <WR_SignalEffect_AimingDelay>Thời gian ngắm</WR_SignalEffect_AimingDelay>
+  <WR_SignalEffect_Capability>Khả năng</WR_SignalEffect_Capability>
+  <WR_SignalEffect_Damage>Sát thương</WR_SignalEffect_Damage>
+  <WR_SignalEffect_Dodge>Né tránh</WR_SignalEffect_Dodge>
+  <WR_SignalEffect_HitChance>Xác suất trúng</WR_SignalEffect_HitChance>
+  <WR_SignalEffect_LearningRate>Tốc độ học</WR_SignalEffect_LearningRate>
+  <WR_SignalEffect_MentalBreak>Suy sụp tinh thần</WR_SignalEffect_MentalBreak>
+  <WR_SignalEffect_Mood>Tâm trạng</WR_SignalEffect_Mood>
+  <WR_SignalEffect_Passion>Đam mê</WR_SignalEffect_Passion>
+  <WR_SignalEffect_Quality>Chất lượng</WR_SignalEffect_Quality>
+  <WR_SignalEffect_SkillDecay>Mai một kỹ năng</WR_SignalEffect_SkillDecay>
+  <WR_SignalEffect_SkillLevel>Cấp kỹ năng</WR_SignalEffect_SkillLevel>
+  <WR_SignalEffect_StatModifier>Điều chỉnh chỉ số</WR_SignalEffect_StatModifier>
+  <WR_SignalEffect_WorkPreference>Sở thích công việc</WR_SignalEffect_WorkPreference>
+  <WR_SignalEffect_WorkSpeed>Tốc độ làm việc</WR_SignalEffect_WorkSpeed>
+  <WR_SignalEffect_Yield>Sản lượng</WR_SignalEffect_Yield>
+  <WR_SignalMajorPassion>Đam mê cháy bỏng</WR_SignalMajorPassion>
+  <WR_SignalMinorPassion>Đam mê nhẹ</WR_SignalMinorPassion>
+  <WR_SignalOtherSkills>Kỹ năng khác</WR_SignalOtherSkills>
+  <WR_SignalTargetConstantDebuff>Giảm tâm trạng liên tục</WR_SignalTargetConstantDebuff>
+  <WR_SignalTargetRangedWeapon>Vũ khí tầm xa</WR_SignalTargetRangedWeapon>
+  <WR_SignalTargetViolentWork>Công việc bạo lực</WR_SignalTargetViolentWork>
+  <WR_SignalUnit_Days>ngày</WR_SignalUnit_Days>
+  <WR_SignalUnit_MoodPoints>điểm tâm trạng</WR_SignalUnit_MoodPoints>
+  <WR_SignalUnit_PassionLevels>cấp đam mê</WR_SignalUnit_PassionLevels>
+  <WR_SignalUnit_Scalar>điểm</WR_SignalUnit_Scalar>
+  <WR_SignalUnit_SkillLevels>cấp kỹ năng</WR_SignalUnit_SkillLevels>
+  <WR_SignalUnit_StatValue>giá trị chỉ số</WR_SignalUnit_StatValue>
+  <WR_SignalUnknownMod>Mod không rõ</WR_SignalUnknownMod>
+</LanguageData>

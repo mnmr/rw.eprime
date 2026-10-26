@@ -1,0 +1,156 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <EPR.Add>추가</EPR.Add>
+  <EPR.All>전체</EPR.All>
+  <EPR.AllStorableItems>보관 가능한 모든 물품</EPR.AllStorableItems>
+  <EPR.BadDirectory>올바른 폴더 경로를 입력하세요.</EPR.BadDirectory>
+  <EPR.BadFileName>올바른 파일 이름을 입력하세요.</EPR.BadFileName>
+  <EPR.BottomMargin>아래 여백</EPR.BottomMargin>
+  <EPR.Clear>비우기</EPR.Clear>
+  <EPR.ClickOptions>클릭 옵션</EPR.ClickOptions>
+  <EPR.ClipboardEmpty>클립보드가 비었거나 자원 표시 내보내기 내용이 없습니다.</EPR.ClipboardEmpty>
+  <EPR.CollapseWhenIdle>커서가 벗어나면 접기</EPR.CollapseWhenIdle>
+  <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout은 사용자 설정 또는 프리셋 모드에서 자체 자원 패널을 그립니다. EPrime's Readouts와 같은 표시 영역을 사용하여 충돌합니다.</EPR.CompatibilityCustomResourceReadout>
+  <EPR.CompatibilityReadoutsPlus>Readouts+는 기본 자원 표시에 클릭 기능을 추가합니다. EPrime's Readouts가 켜져 있으면 해당 기능을 거치지 않습니다.</EPR.CompatibilityReadoutsPlus>
+  <EPR.CompatibilityToggleableReadouts>Toggleable Readouts(Continued 포함)는 기본 자원 렌더링을 대체합니다. EPrime's Readouts가 켜져 있으면 해당 필터와 고정 기능을 거치지 않습니다.</EPR.CompatibilityToggleableReadouts>
+  <EPR.ContentSummary>묶음 {0}개, 그룹 {1}개</EPR.ContentSummary>
+  <EPR.CopiedToClipboard>클립보드에 복사했습니다.</EPR.CopiedToClipboard>
+  <EPR.CopyPath>경로 복사</EPR.CopyPath>
+  <EPR.CopyToClipboard>클립보드로 복사</EPR.CopyToClipboard>
+  <EPR.CountOptions>집계 옵션</EPR.CountOptions>
+  <EPR.CountRuleCaption>이 자원/묶음의 집계 옵션 재정의</EPR.CountRuleCaption>
+  <EPR.Critical>위험</EPR.Critical>
+  <EPR.CycleTip>표시 단 바꾸기</EPR.CycleTip>
+  <EPR.DeleteConfirm>"{0}" 그룹을 삭제하시겠습니까?</EPR.DeleteConfirm>
+  <EPR.DeleteFileConfirm>"{0}" 파일을 삭제하시겠습니까? 되돌릴 수 없습니다.</EPR.DeleteFileConfirm>
+  <EPR.DeletePoolConfirm>"{0}" 묶음을 삭제하시겠습니까? 이를 사용하는 슬롯이 모든 그룹에서 제거됩니다.</EPR.DeletePoolConfirm>
+  <EPR.DisplayOptions>표시 옵션</EPR.DisplayOptions>
+  <EPR.Editor>편집기</EPR.Editor>
+  <EPR.EnableTip>이 그룹을 자원 표시에 표시</EPR.EnableTip>
+  <EPR.EnterPath>경로 입력</EPR.EnterPath>
+  <EPR.ExpandOnHover>가리키면 펼치기</EPR.ExpandOnHover>
+  <EPR.Export>내보내기</EPR.Export>
+  <EPR.ExportLocationLabel>저장 위치</EPR.ExportLocationLabel>
+  <EPR.ExportOverwriteConfirm>{0} 파일이 이미 있습니다. 덮어쓰시겠습니까?</EPR.ExportOverwriteConfirm>
+  <EPR.ExportPreviewTitle>자원 표시 내보내기</EPR.ExportPreviewTitle>
+  <EPR.Exported>{0}에 내보냈습니다</EPR.Exported>
+  <EPR.FromClipboard>클립보드에서</EPR.FromClipboard>
+  <EPR.GroupEditor>그룹 편집기</EPR.GroupEditor>
+  <EPR.GroupNameTaken>같은 이름의 그룹이 이미 있습니다.</EPR.GroupNameTaken>
+  <EPR.Groups>그룹</EPR.Groups>
+  <EPR.Help>도움말</EPR.Help>
+  <EPR.HelpChapterBasics>기초</EPR.HelpChapterBasics>
+  <EPR.HelpChapterGroups>그룹</EPR.HelpChapterGroups>
+  <EPR.HelpChapterOptions>옵션</EPR.HelpChapterOptions>
+  <EPR.HelpChapterPools>자원 묶음</EPR.HelpChapterPools>
+  <EPR.HelpEditor>선택한 그룹의 표시 단을 보여줍니다.
+
+그룹은 최대 세 단으로 표시됩니다. 앞 단에 항목을 넣으면 다음 단을 사용할 수 있습니다.
+
+오른쪽 패널의 항목을 클릭하거나 끌어서 선택한 그룹에 추가하세요.
+
+슬롯을 클릭하면 표시 옵션을 설정하고, 오른쪽 클릭하면 배정을 해제합니다. 끌어서 같은 단 안이나 다른 단으로 옮길 수 있습니다.</EPR.HelpEditor>
+  <EPR.HelpGroups>자원 표시 그룹입니다. 그룹마다 별도의 띠로 표시됩니다.
+
+체크 표시로 표시 여부를 바꾸고 [x]로 그룹을 삭제합니다.
+
+이름을 입력하고 추가 버튼을 눌러 새 그룹을 만드세요.</EPR.HelpGroups>
+  <EPR.HelpPoolEditor>공용 필터로 자원 트리를 좁히세요. 범주나 개별 자원을 선택해 묶음에 넣습니다. 자원의 아이콘을 클릭하면 묶음 아이콘으로 사용합니다.</EPR.HelpPoolEditor>
+  <EPR.HelpPools>자원 묶음을 만든 뒤 여기서 선택하면 자원 패널에서 내용을 편집할 수 있습니다. 행의 버튼으로 이름을 바꾸거나 삭제하세요.
+
+묶음을 그룹에 추가하려면 그룹 편집기로 전환하고 자원 트리의 자원 묶음 가지를 사용하세요.</EPR.HelpPools>
+  <EPR.HelpReload>다시 불러오기</EPR.HelpReload>
+  <EPR.HelpResources>자원과 기존 자원 묶음을 찾아 선택한 그룹에 추가합니다.
+
+클릭하면 끝에 추가하고, 끌면 원하는 단의 슬롯에 놓을 수 있습니다. 배정된 항목은 흐리게 표시되며 표식이 붙습니다. 오른쪽 클릭하거나 체크 표시를 눌러 제거하세요.</EPR.HelpResources>
+  <EPR.HoverOptions>가리키기 옵션</EPR.HoverOptions>
+  <EPR.Import>가져오기</EPR.Import>
+  <EPR.ImportLocationLabel>가져올 위치</EPR.ImportLocationLabel>
+  <EPR.ImportParseFailed>자원 표시 XML을 해석할 수 없습니다: {0}</EPR.ImportParseFailed>
+  <EPR.ImportTitle>자원 표시 가져오기</EPR.ImportTitle>
+  <EPR.ImportWarning>경고: 현재의 모든 묶음, 그룹, 기준값을 대체합니다. 멀티플레이에서는 모든 플레이어에게 적용됩니다.</EPR.ImportWarning>
+  <EPR.Imported>가져오기를 적용했습니다.</EPR.Imported>
+  <EPR.ItemFilter>물품 필터</EPR.ItemFilter>
+  <EPR.KeepReadoutToggle>도구 모음에 자원 표시 전환 유지</EPR.KeepReadoutToggle>
+  <EPR.KeepReadoutToggleTip>오른쪽 아래 도구 모음에 게임의 자원 표시 버튼을 유지합니다. 클릭하면 그룹을 보이거나 숨깁니다. 그룹을 숨기면 톱니바퀴와 검색창만 남습니다.</EPR.KeepReadoutToggleTip>
+  <EPR.LocCustom>직접 지정...</EPR.LocCustom>
+  <EPR.LocDesktop>바탕 화면</EPR.LocDesktop>
+  <EPR.LocGameData>게임 데이터 폴더</EPR.LocGameData>
+  <EPR.LocUserHome>사용자 홈</EPR.LocUserHome>
+  <EPR.Low>부족</EPR.Low>
+  <EPR.MoreResults>…외 {0}개</EPR.MoreResults>
+  <EPR.NameLabel>이름</EPR.NameLabel>
+  <EPR.NoFiles>내보내기 파일이 없습니다.</EPR.NoFiles>
+  <EPR.NoMatches>일치 없음</EPR.NoMatches>
+  <EPR.NoMatchingItems>일치하는 물품 없음</EPR.NoMatchingItems>
+  <EPR.OffsetX>가로 위치 조정</EPR.OffsetX>
+  <EPR.OffsetY>세로 위치 조정</EPR.OffsetY>
+  <EPR.Options>옵션</EPR.Options>
+  <EPR.OptionsFor>{0} 표시 옵션</EPR.OptionsFor>
+  <EPR.Overview>개요</EPR.Overview>
+  <EPR.PanelWidth>패널 너비</EPR.PanelWidth>
+  <EPR.PlannedWorkOptions>예정 작업</EPR.PlannedWorkOptions>
+  <EPR.PoolNameTaken>같은 이름의 자원 묶음이 이미 있습니다.</EPR.PoolNameTaken>
+  <EPR.PoolTip>묶음 항목으로 추가: 이 범주의 전체 수량을 한 슬롯에 합산 표시</EPR.PoolTip>
+  <EPR.Pools>자원 묶음</EPR.Pools>
+  <EPR.PreviewGroupRow>{0} ({1}단, {2}슬롯)</EPR.PreviewGroupRow>
+  <EPR.PreviewGroupsHeader>그룹</EPR.PreviewGroupsHeader>
+  <EPR.PreviewNone>(없음)</EPR.PreviewNone>
+  <EPR.PreviewPoolRow>{0} ({1}항목)</EPR.PreviewPoolRow>
+  <EPR.PreviewPoolsHeader>묶음</EPR.PreviewPoolsHeader>
+  <EPR.QualityJobsMissingTip>EPrime's Quality Jobs가 필요하지만 설치되지 않았습니다.</EPR.QualityJobsMissingTip>
+  <EPR.QualityJobsOutdatedTip>설치된 EPrime's Quality Jobs가 필요한 연동 기능을 제공하지 않습니다. 업데이트하면 이 옵션을 사용할 수 있습니다.</EPR.QualityJobsOutdatedTip>
+  <EPR.QualityJobsRework>Quality Jobs 지원</EPR.QualityJobsRework>
+  <EPR.QualityJobsReworkTip>목표 품질이 있는 계획서와 건물은 예상 재시도 횟수를 계산해 전체 재료를 확보합니다. 재건축 시 해체하면 기본 게임의 반환 비율만큼 돌려받는 것으로 계산합니다.</EPR.QualityJobsReworkTip>
+  <EPR.ReserveForBills>제작 계획서 재료 차감</EPR.ReserveForBills>
+  <EPR.ReserveForBillsTip>대기 중인 계획서가 앞으로 소비할 재료를 뺍니다. 재료를 정확히 한 종류로만 충족할 수 있을 때만 계산합니다. "아무 가죽" 같은 열린 선택지는 차감하지 않습니다.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBuildables>건설 재료 차감</EPR.ReserveForBuildables>
+  <EPR.ReserveForBuildablesTip>청사진과 미완성 골조에 앞으로 필요한 재료를 뺍니다. 이미 골조에 운반된 재료는 중복 계산하지 않고, 금지된 청사진은 제외합니다.</EPR.ReserveForBuildablesTip>
+  <EPR.ResourcePoolEditor>자원 묶음 편집기</EPR.ResourcePoolEditor>
+  <EPR.Resources>자원</EPR.Resources>
+  <EPR.RestoreConfirm>모든 그룹과 기준값을 기본 구성으로 바꾸시겠습니까? 멀티플레이에서는 모든 플레이어에게 적용됩니다.</EPR.RestoreConfirm>
+  <EPR.RestoreDefaults>기본값 복원</EPR.RestoreDefaults>
+  <EPR.Results>결과</EPR.Results>
+  <EPR.RuleAlwaysOff>항상 끄기</EPR.RuleAlwaysOff>
+  <EPR.RuleAlwaysOn>항상 켜기</EPR.RuleAlwaysOn>
+  <EPR.RuleDefault>기본값</EPR.RuleDefault>
+  <EPR.Save>저장</EPR.Save>
+  <EPR.SearchFilter>검색 필터</EPR.SearchFilter>
+  <EPR.SearchHideForbidden>금지된 물품 제외</EPR.SearchHideForbidden>
+  <EPR.SearchHideZero>수량 0인 결과 숨기기</EPR.SearchHideZero>
+  <EPR.SearchOptions>검색 옵션</EPR.SearchOptions>
+  <EPR.SearchStorageOnly>보관 중인 물품만 집계</EPR.SearchStorageOnly>
+  <EPR.SearchStorageOnlyTip>켜면 저장 구역이나 선반 같은 보관 건물에 있는, 썩지 않은 적격 물품만 셉니다. 그 밖의 지도 위 물품은 제외합니다. 운반 중이거나 소지품·컨테이너 안에 있거나 미발견 영역에 숨은 물품은 항상 제외합니다. 금지된 물품은 "금지된 물품 제외"도 켜야 제외됩니다.</EPR.SearchStorageOnlyTip>
+  <EPR.SelectGroupHint>편집할 그룹을 선택하거나 만드세요.</EPR.SelectGroupHint>
+  <EPR.SelectJumpCamera>클릭한 자원으로 카메라 이동</EPR.SelectJumpCamera>
+  <EPR.SelectOrCreatePool>자원 묶음을 선택하거나 만들어 시작하세요.</EPR.SelectOrCreatePool>
+  <EPR.Set>설정</EPR.Set>
+  <EPR.ShowModName>모드 이름 표시</EPR.ShowModName>
+  <EPR.ShowNegativeCounts>부족량을 음수로 표시</EPR.ShowNegativeCounts>
+  <EPR.ShowNegativeCountsTip>예정 작업의 필요량이 재고보다 많으면 0에서 멈추지 않고 부족량을 표시합니다.</EPR.ShowNegativeCountsTip>
+  <EPR.ShowSearchFilter>검색 필터 표시</EPR.ShowSearchFilter>
+  <EPR.ShowWhenZero>수량이 0이어도 표시</EPR.ShowWhenZero>
+  <EPR.SourceFilter>출처 필터</EPR.SourceFilter>
+  <EPR.ThresholdCaption>수량 색상 기준 설정</EPR.ThresholdCaption>
+  <EPR.Thresholds>기준값</EPR.Thresholds>
+  <EPR.TierLayoutHorizontal>가로</EPR.TierLayoutHorizontal>
+  <EPR.TierLayoutOptions>단 배치</EPR.TierLayoutOptions>
+  <EPR.TierLayoutTip>삼각형 버튼이나 가리키기로 펼친 추가 단의 배치 방식입니다. 가로는 같은 행의 오른쪽에 추가하고, 세로는 단마다 새 행을 만들어 띠의 높이를 늘립니다.</EPR.TierLayoutTip>
+  <EPR.TierLayoutVertical>세로</EPR.TierLayoutVertical>
+  <EPR.TipAvailableStock>가용 {0} · 재고 {1}</EPR.TipAvailableStock>
+  <EPR.TipDrain>소모</EPR.TipDrain>
+  <EPR.TipEach>개당</EPR.TipEach>
+  <EPR.TipInStock>재고</EPR.TipInStock>
+  <EPR.TipMixedResources>혼합</EPR.TipMixedResources>
+  <EPR.TipOtherPlannedWork>기타 ({0})</EPR.TipOtherPlannedWork>
+  <EPR.TipPlannedWork>예정 작업</EPR.TipPlannedWork>
+  <EPR.TipQueued>대기</EPR.TipQueued>
+  <EPR.TipResource>자원</EPR.TipResource>
+  <EPR.Title>EPrime's Readouts</EPR.Title>
+  <EPR.UseVanilla>기본 자원 표시 사용</EPR.UseVanilla>
+  <EPR.Vanilla>기본 게임</EPR.Vanilla>
+  <EPR.WelcomeBody>Readouts는 왼쪽 위 자원 표시를 직접 구성한 그룹으로 대체합니다. 그룹마다 최대 세 단의 자원이나 자원 묶음을 담고, 설정한 기준값에 따라 수량 색상이 바뀝니다.</EPR.WelcomeBody>
+  <EPR.WelcomeFind>자원 패널 위쪽 톱니바퀴로 편집기를 여세요. 옵션 탭에서 표시 방식을 설정하고 도움말 탭에서 나머지 기능을 확인할 수 있습니다.</EPR.WelcomeFind>
+  <EPR.WelcomeTakeMeThere>지금 열기</EPR.WelcomeTakeMeThere>
+  <EPR.WelcomeTitle>EPrime's Readouts</EPR.WelcomeTitle>
+</LanguageData>

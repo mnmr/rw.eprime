@@ -47,7 +47,7 @@ Group by splits the table into collapsible sections, here by gender:
 ![The table grouped by gender](grouped-table.png)
 
 Grouping only arranges rows; the filters still decide who is listed, and
-with Colony Groups installed its pawn groups appear as an option.
+with Colony Groups installed its groups appear as an option.
 
 ## Skill columns
 

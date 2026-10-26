@@ -49,6 +49,22 @@ public class TailTruncationTests
     }
 
     [Test]
+    [Arguments("e\u0301")]
+    [Arguments("\U00020000")]
+    [Arguments("か\u3099")]
+    [Arguments("ｶﾞ")]
+    [Arguments("\u1112\u1161\u11AB")]
+    [Arguments("\U0001F469\u200D\U0001F4BB")]
+    public async Task NarrowCaptionKeepsTheCompleteFinalTextElement(string finalElement)
+    {
+        string fitted = TailTruncation.Fit("caption " + finalElement, 4f,
+            text => text.Length, out float width);
+
+        await Assert.That(fitted).IsEqualTo("..." + finalElement);
+        await Assert.That(width).IsEqualTo(3f + finalElement.Length);
+    }
+
+    [Test]
     public async Task EmptyTextStaysEmpty()
     {
         string fitted = TailTruncation.Fit("", 10f, Mono, out float width);

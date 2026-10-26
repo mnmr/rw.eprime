@@ -124,7 +124,7 @@ namespace EPrimeReadouts.UI
             List<TreeRow> flat = ResourceTreeFlattener.Flatten(
                 roots,
                 expanded,
-                new ItemTreeFilter(filters.Query, filters.Type, filters.SourceId),
+                new ItemTreeFilter(filters.Query, filters.Type, filters.SourceId, UiLanguage.CaseCulture),
                 GameResourceCatalog.Instance);
             var builtRows = new EditorRow[flat.Count];
             for (int i = 0; i < flat.Count; i++)

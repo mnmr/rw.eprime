@@ -129,7 +129,7 @@
   <IMP_OptSurgery>Operationen</IMP_OptSurgery>
   <IMP_OptIteration>Ablaufstrategie</IMP_OptIteration>
   <IMP_OptSurgeryConcurrency>Gleichzeitige Operationen</IMP_OptSurgeryConcurrency>
-  <IMP_OptCountHospitalized>Hospitalisierte Bauern mitzählen</IMP_OptCountHospitalized>
+  <IMP_OptCountHospitalized>Vorhandene Patienten mitzählen</IMP_OptCountHospitalized>
   <IMP_OptUpgradeByPriority>Beste Implantate an Kolonisten mit hoher Priorität geben</IMP_OptUpgradeByPriority>
   <IMP_IterTier>Stufenweise Gruppen</IMP_IterTier>
   <IMP_IterColonist>Vollständige Sätze</IMP_IterColonist>
@@ -152,13 +152,13 @@
   <IMP_OptAllowMultipleBladders>Mehrere Blasenimplantate erlauben</IMP_OptAllowMultipleBladders>
   <IMP_OptAllowMultipleHygieneEnhancers>Mehrere Hygieneverbesserer erlauben</IMP_OptAllowMultipleHygieneEnhancers>
   <IMP_OptCatalog>Katalog</IMP_OptCatalog>
-  <IMP_OptShowPurchaseOnly>Nur erwerbbare Implantate anzeigen</IMP_OptShowPurchaseOnly>
+  <IMP_OptShowPurchaseOnly>Nicht herstellbare Implantate anzeigen</IMP_OptShowPurchaseOnly>
   <IMP_CleanupTitle>Automatisierung ausschalten?</IMP_CleanupTitle>
   <IMP_CleanupBody>Implanner hat diese Aufträge erstellt. OK schaltet die Automatisierung aus und entfernt angekreuzte Aufträge. Nicht angekreuzte bleiben bestehen und werden beim erneuten Einschalten wieder übernommen. Reservierte Implantate werden in beiden Fällen freigegeben. Abbrechen lässt die Automatisierung eingeschaltet.</IMP_CleanupBody>
   <IMP_AutomationOffTitle>Automatisierung ist ausgeschaltet</IMP_AutomationOffTitle>
   <IMP_AutomationOffBody>{0} verteilt diese Kolonie über mehrere Ebenen. Implanner kann Implantate oder Operationen nicht über Ebenengrenzen hinweg transportieren. Deshalb werden keine Gegenstände mehr reserviert und keine Operationen geplant, statt jeden Plan nur halb umzusetzen.\n\nAlles andere funktioniert weiterhin. Erstelle und weise Pläne zu und ordne Implantate. Füge Operationen selbst hinzu; Implanner verfolgt, was eingesetzt ist und was noch fehlt.</IMP_AutomationOffBody>
   <IMP_OptEnableTip>Der Hauptschalter für alles, was Implanner selbstständig tut: Implantate reservieren, Operationen planen und Fertigungsaufträge erstellen. Ausgeschaltet verfolgt Implanner weiter Pläne und Fortschritt, handelt aber nicht mehr. Beim Ausschalten kannst du wählen, welche bestehenden Aufträge bleiben.</IMP_OptEnableTip>
-  <IMP_OptIterationTip>Reihenfolge für fehlende Implantate. Die Kolonistenpriorität in der Übersicht entscheidet immer, wer zuerst kommt.\n\nStufenweise Gruppen: Alle erhalten zuerst Implantate der höchsten Stufe, danach geht es abwärts. Ein Kolonist wird operiert, sobald seine ganze Stufe reserviert ist.\n\nVollständige Sätze: Erst den ganzen Plan eines Kolonisten abschließen, dann den nächsten beginnen. Operationen warten auf die Reservierung des gesamten Plans.\n\nSofort: Jedes vorrätige Implantat wird sofort für den höchstpriorisierten Kolonisten eingeplant, dem es fehlt. Bei gleicher Priorität gehen Beine an den langsamsten Kolonisten, Arme zuerst an Nahkämpfer, dann an den besten Handwerker oder Forscher.</IMP_OptIterationTip>
+  <IMP_OptIterationTip>Reihenfolge für fehlende Implantate. Die Kolonistenpriorität in der Übersicht entscheidet immer, wer zuerst kommt.\n\nStufenweise Gruppen: Alle erhalten zuerst Implantate der höchsten Stufe, danach geht es abwärts. Ein Kolonist wird operiert, sobald seine ganze Stufe reserviert ist.\n\nVollständige Sätze: Erst den ganzen Plan eines Kolonisten abschließen, dann den nächsten beginnen. Operationen warten auf die Reservierung des gesamten Plans.\n\nSofort: Jedes vorrätige Implantat wird sofort für den höchstpriorisierten Kolonisten eingeplant, dem es fehlt. Bei gleicher Priorität gehen Beine an den langsamsten Kolonisten, Arme zuerst an Träger einer Nahkampfwaffe, danach an den Kolonisten mit der höchsten Summe aus Handwerk und Intellekt.</IMP_OptIterationTip>
   <IMP_OptAutoFloorTip>Operationsaufträge sind auf deinen besten verfügbaren Arzt beschränkt, damit kein Anfänger einen bionischen Einbau verpfuscht, nur weil er zuerst am OP-Tisch war. Die Beschränkung folgt dem besten Arzt jeder Kolonie bei Zu- und Abgängen. Niemand kann sich selbst operieren; Operationen am besten Arzt übernimmt der zweitbeste.\n\nDeaktiviere dies, um eine feste Mindeststufe einzustellen.</IMP_OptAutoFloorTip>
   <IMP_OptSurgeryConcurrencyTip>Wie viele Kolonisten je Kolonie gleichzeitig geplante Operationen haben dürfen. Höhere Werte reihen mehr Kolonisten parallel ein; niedrigere halten Krankenhaus und Ärzte frei. Beginnt bei einem je zehn Kolonisten. Shift beim Klick auf +/- ändert um 10, Ctrl um 5.</IMP_OptSurgeryConcurrencyTip>
   <IMP_OptCountHospitalizedTip>Kolonisten und Sklaven in Krankenbetten sowie kampfunfähige, behandlungsbedürftige Personen belegen ebenfalls Operationsplätze. Neue Implanner-Operationen warten, bis unter der obigen Grenze Platz ist. Gefangene, Gäste und Besuchspatienten anderer Fraktionen belegen nie einen Platz. Deaktiviert werden Implantatoperationen unabhängig von laufenden Behandlungen geplant.</IMP_OptCountHospitalizedTip>
@@ -212,4 +212,5 @@
   <IMP_NoFiles>Hier gibt es noch keine exportierten Plandateien.</IMP_NoFiles>
   <IMP_ShipFallback>Gravschiff</IMP_ShipFallback>
   <IMP_SettingsShowToolbarButton>Werkzeugleistenschaltfläche anzeigen</IMP_SettingsShowToolbarButton>
+  <IMP_CompatibilityLevelMod>{0}: Die Automatisierung von EPrime's Implanner ist mit dieser Mod für mehrere Ebenen deaktiviert. Planung und Nachverfolgung funktionieren weiterhin.</IMP_CompatibilityLevelMod>
 </LanguageData>

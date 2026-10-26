@@ -1524,8 +1524,10 @@ namespace QualityJobs
         private static void QueueWelcome()
         {
             QualityJobsSettings? settings = QualityJobsMod.Settings;
-            if (settings == null
-                || !RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves, queueWelcome))
+            if (settings == null || Find.World == null) return;
+            var notice = CompatibilityWarnings.Current();
+            if (!RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves,
+                    queueWelcome, notice, settings.compatibilityWarningsSeen))
                 return;
             QualityJobsMod.Instance.WriteSettings();
             Find.WindowStack?.Add(new RimShared.UiLib.WelcomeDialog(
@@ -1540,6 +1542,8 @@ namespace QualityJobs
                 openSettings)
             {
                 FindIcon = QualityJobsTex.ToolbarButton,
+                ConflictingMods = notice,
+                AdditionalConflictAdvice = "QJ_CompatibilitySharingAdvice".Translate(),
             });
         }
 

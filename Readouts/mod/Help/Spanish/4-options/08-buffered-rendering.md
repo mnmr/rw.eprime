@@ -1,6 +1,6 @@
 ---
-title: Recuperación del dibujo
+title: Dibujo alternativo
 ---
-Readouts restaura automáticamente las imágenes del panel guardadas en caché cuando se pierden recursos gráficos, por ejemplo al reanudar el ordenador tras suspenderlo.
+Readouts utiliza imágenes del panel guardadas en caché para reducir el trabajo de dibujo. Si detecta un problema al mostrarlas, dibuja el panel directamente.
 
-Si falla el dibujo, el panel pasa al dibujo directo y su engranaje se vuelve ámbar. Si los fallos se repiten, se cede al panel original hasta que vuelvas a cargar una partida. Cada cambio de respaldo se registra en el registro del juego.
+Si el dibujo mediante búfer se desactiva tras varios fallos, el engranaje se vuelve ámbar. Si los fallos siguen repitiéndose, el panel original del juego toma el relevo hasta que vuelvas a cargar una partida. Estos cambios de modo quedan anotados en el registro del juego.

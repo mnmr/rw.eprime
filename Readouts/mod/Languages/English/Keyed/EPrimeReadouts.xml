@@ -53,11 +53,14 @@
   <EPR.WelcomeBody>Readouts replaces the resource readout in the top left corner with groups you configure. Each group holds up to three tiers of resources or resource pools, and its counters change color at the thresholds you set.</EPR.WelcomeBody>
   <EPR.WelcomeFind>Open the editor with the gear button at the top of the readout panel. The Options tab holds the display options and the Help tab explains the rest.</EPR.WelcomeFind>
   <EPR.WelcomeTakeMeThere>Take me there now</EPR.WelcomeTakeMeThere>
+  <EPR.CompatibilityReadoutsPlus>Readouts+ adds click controls to the vanilla resource readout. Those controls are bypassed while EPrime's readout is enabled.</EPR.CompatibilityReadoutsPlus>
+  <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout draws its own resource panel in custom or preset mode. That panel competes with EPrime's Readouts for the same display.</EPR.CompatibilityCustomResourceReadout>
+  <EPR.CompatibilityToggleableReadouts>Toggleable Readouts (including Continued) replaces vanilla readout rendering. Its filtering and pinning are bypassed while EPrime's readout is enabled.</EPR.CompatibilityToggleableReadouts>
 
   <EPR.ShowSearchFilter>Show search filter</EPR.ShowSearchFilter>
   <EPR.SearchHideZero>Hide zero-count results</EPR.SearchHideZero>
   <EPR.SearchStorageOnly>Only count items in storage</EPR.SearchStorageOnly>
-  <EPR.SearchStorageOnlyTip>When enabled, only counts eligible, non-rotten items in stockpile zones or storage buildings such as shelves. Loose map items elsewhere on the map are excluded. Items carried by pawns, held in inventories or containers, or hidden in unrevealed areas are never counted. Forbidden items are included unless “Ignore forbidden items” is also enabled.</EPR.SearchStorageOnlyTip>
+  <EPR.SearchStorageOnlyTip>When enabled, only counts eligible, non-rotten items in stockpile zones or storage buildings such as shelves. Loose map items elsewhere on the map are excluded. Carried items, items held in inventories or containers, and items hidden in unrevealed areas are never counted. Forbidden items are included unless “Ignore forbidden items” is also enabled.</EPR.SearchStorageOnlyTip>
   <EPR.SearchHideForbidden>Ignore forbidden items</EPR.SearchHideForbidden>
   <EPR.SelectJumpCamera>Jump camera to clicked resource</EPR.SelectJumpCamera>
   <EPR.DisplayOptions>Display Options</EPR.DisplayOptions>

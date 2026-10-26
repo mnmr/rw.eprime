@@ -36,7 +36,7 @@
   <WR_SignalCondition_setting_vse_critical_affects_other_skills>Critical passion affects other skills in the mod settings</WR_SignalCondition_setting_vse_critical_affects_other_skills>
   <WR_SignalCondition_sight_blind>Blind</WR_SignalCondition_sight_blind>
   <WR_SignalCondition_sight_not_blind>Not blind</WR_SignalCondition_sight_not_blind>
-  <WR_SignalCondition_social_same_passion_opinion>Improves opinion of pawns sharing the passion</WR_SignalCondition_social_same_passion_opinion>
+  <WR_SignalCondition_social_same_passion_opinion>Improves opinion of others who share the passion</WR_SignalCondition_social_same_passion_opinion>
   <WR_SignalCondition_state_drunk>Drunk</WR_SignalCondition_state_drunk>
   <WR_SignalCondition_state_no_recent_lovin>No recent lovin'</WR_SignalCondition_state_no_recent_lovin>
   <WR_SignalCondition_state_not_drunk>Not drunk</WR_SignalCondition_state_not_drunk>

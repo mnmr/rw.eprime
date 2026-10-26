@@ -57,6 +57,7 @@ namespace Implanner.UI
         /// checking it deselects an own blocker or suppresses an inherited
         /// one — the click IS the choice.
         internal string OverridesLabel = "";
+        internal string OverridesTarget = "";
         internal int Ordinal;            // leaves: slot ordinal
 
         /// Small-font fit width of Label, measured at build: the caption
@@ -85,7 +86,7 @@ namespace Implanner.UI
 
     /// A leaf row's right-aligned caption ("overrides X" or "inherited")
     /// fitted to the row width the picker draws at: the display text (the
-    /// tail behind an ellipsis when the slot is too narrow), its width, and
+    /// identifying implant shortened when the slot is too narrow), its width, and
     /// the full text for the tooltip a truncated caption shows.
     internal readonly struct PickerCaption
     {
@@ -385,7 +386,11 @@ namespace Implanner.UI
                     string text = full;
                     if (width > max)
                     {
-                        text = TailTruncation.Fit(full, max, MeasureFit, out width);
+                        text = row.OverridesTarget.Length > 0
+                            ? HeadTruncation.FitWithSubstitution(
+                                "IMP_Overrides".Translate(), row.OverridesTarget,
+                                max, MeasureFit, out width)
+                            : HeadTruncation.Fit(full, max, MeasureFit, out width);
                         // Not even the ellipsis and one character fit: the
                         // row has no room, so the caption is omitted.
                         if (width > max) continue;
@@ -617,7 +622,7 @@ namespace Implanner.UI
                     // The body-part group matches for every slot of the
                     // entry; resolved once, before the per-slot labels.
                     bool groupMatches = searching
-                        && SearchMatcher.Matches(entry.GroupLabel, query);
+                        && SearchMatcher.Matches(entry.GroupLabel, query, UiLanguage.CaseCulture);
                     ImplantGoal? goal = FindGoal(selected, entry.Def.defName);
                     for (int ordinal = 0; ordinal < entry.SlotLabels.Count; ordinal++)
                     {
@@ -626,7 +631,7 @@ namespace Implanner.UI
                             ? entry.Label + " (" + slotLabel + ")"
                             : entry.Label;
                         if (searching && !groupMatches
-                            && !SearchMatcher.Matches(label, query))
+                            && !SearchMatcher.Matches(label, query, UiLanguage.CaseCulture))
                             continue;
                         bool own = goal != null && HasOrdinal(goal, ordinal);
                         var row = new PickerRow
@@ -646,8 +651,11 @@ namespace Implanner.UI
                             string overridden = FirstConflictLabel(
                                 model, plannedSlots, entry.Def.defName, ordinal);
                             if (overridden.Length > 0)
+                            {
+                                row.OverridesTarget = overridden;
                                 row.OverridesLabel =
                                     "IMP_Overrides".Translate(overridden);
+                            }
                             if (entry.RequiresArtificialPart)
                             {
                                 BodyPartRecord? record = entry.SlotRecords[ordinal];

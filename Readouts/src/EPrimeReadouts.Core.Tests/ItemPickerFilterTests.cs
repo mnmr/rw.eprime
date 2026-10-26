@@ -4,6 +4,25 @@ namespace EPrimeReadouts.Core.Tests;
 
 public class ItemPickerFilterTests
 {
+    [Test]
+    public async Task TurkishPickerSearchUsesLocalizedLabelsAndOrdinalSourceIds()
+    {
+        var tree = new List<ResourceTreeNode>
+        {
+            new ResourceTreeNode { Id = "Items", Label = "İnşaat", DefNames = ["Lamp", "Wall"] }
+        };
+        var catalog = new FakeResourceCatalog()
+            .WithItem("Lamp", "Işık", true, true, "IRON")
+            .WithItem("Wall", "Duvar", true, true, "IRON");
+        var culture = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+        var rows = ResourceTreeFlattener.Flatten(tree, [],
+            new ItemTreeFilter("ışık", ItemPickerType.Resources, "iron", culture), catalog);
+        await Assert.That(DefNames(rows)).IsEqualTo("Lamp");
+        rows = ResourceTreeFlattener.Flatten(tree, [],
+            new ItemTreeFilter("inşaat", ItemPickerType.Resources, "iron", culture), catalog);
+        await Assert.That(DefNames(rows)).IsEqualTo("Lamp,Wall");
+    }
+
     private static List<ResourceTreeNode> Tree()
     {
         var root = new ResourceTreeNode { Id = "Items", Label = "items", Poolable = true };

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using RimShared.Common;
 using RimShared.UiLib;
@@ -372,7 +372,7 @@ namespace WorkRoles.UI
                     "WR_TreeFlat".Translate().ToString(),
                     anyJob,
                     jobFilterLabel,
-                    jobFilterLabel.Truncate(200f),
+                    WrText.Truncate(jobFilterLabel, 200f),
                     "WR_New".Translate().ToString(),
                     "WR_Copy".Translate().ToString(),
                     "WR_Delete".Translate().ToString());
@@ -926,7 +926,7 @@ namespace WorkRoles.UI
             // — at least 5 color rows either way.
             const float TopBoxPadding = 8f;
             const float TitleH = 30f;
-            const float AssignedRowH = 22f;
+            float AssignedRowH = header.AssignedRowHeight;
             const float GroupRowH = 26f;
             const float SkillsRowH = 22f;
             const float CheckRowH = 24f;
@@ -1639,55 +1639,13 @@ namespace WorkRoles.UI
                 return;
             }
 
-            Color SepColor = new Color(0.55f, 0.55f, 0.55f);
-            const string Sep = ", ";
-            float sepW = WrText.FitWidth(Sep);
-            // Reserve enough width so "+99 others" always fits at the right edge.
-            const float OverflowReserve = 70f;
-
-            float x = rect.x;
-            int remaining = 0;
-
-            for (int i = 0; i < header.HolderCount; i++)
+            for (int i = 0; i < header.HolderLabelCount; i++)
             {
-                string name = header.HolderAt(i).Label;
-                float nameW = WrText.FitWidth(name);
-                bool hasNext = i < header.HolderCount - 1;
-
-                // Determine how much space remains after this name (sep + overflow reserve if more names follow).
-                float needed = nameW + (hasNext ? sepW + OverflowReserve : 0f);
-                if (x + needed > rect.xMax && i > 0)
-                {
-                    // No room — count remaining (including this one)
-                    remaining = header.HolderCount - i;
-                    break;
-                }
-                // Even the very first name doesn't fit: show overflow immediately.
-                if (i == 0 && x + nameW + (hasNext ? OverflowReserve : 0f) > rect.xMax && hasNext)
-                {
-                    remaining = header.HolderCount;
-                    break;
-                }
-
-                Widgets.Label(new Rect(x, rect.y, nameW, rect.height), name);
-                x += nameW;
-
-                if (hasNext && x + sepW <= rect.xMax)
-                {
-                    GUI.color = SepColor;
-                    Widgets.Label(new Rect(x, rect.y, sepW, rect.height), Sep);
-                    GUI.color = Color.white;
-                    x += sepW;
-                }
+                RoleHolderLabel label = header.HolderLabelAt(i);
+                GUI.color = label.Dim ? new Color(0.55f, 0.55f, 0.55f) : Color.white;
+                Widgets.Label(new Rect(rect.x + label.X, rect.y,
+                    label.Width, rect.height), label.Text);
             }
-
-            if (remaining > 0)
-            {
-                string moreText = header.HolderOverflowLabel(remaining);
-                GUI.color = SepColor;
-                Widgets.Label(new Rect(x, rect.y, rect.xMax - x, rect.height), moreText);
-            }
-
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
         }

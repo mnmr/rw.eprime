@@ -64,7 +64,7 @@ Pulsa una casilla para configurar su visualización. Haz clic derecho para quita
   <EPR.ShowSearchFilter>Mostrar filtro de búsqueda</EPR.ShowSearchFilter>
   <EPR.SearchHideZero>Ocultar resultados con cantidad cero</EPR.SearchHideZero>
   <EPR.SearchStorageOnly>Contar solo objetos almacenados</EPR.SearchStorageOnly>
-  <EPR.SearchStorageOnlyTip>Al activarlo, solo se cuentan los objetos válidos y no podridos que estén en zonas de almacenaje o edificios de almacenamiento, como estanterías. Se excluyen los objetos sueltos del resto del mapa. Nunca se cuentan los objetos que los personajes transportan, guardan en inventarios o contenedores, ni los ocultos en zonas sin revelar. Los objetos prohibidos se incluyen salvo que también se active «Ignorar objetos prohibidos».</EPR.SearchStorageOnlyTip>
+  <EPR.SearchStorageOnlyTip>Al activarlo, solo se cuentan los objetos válidos y no podridos que estén en zonas de almacenaje o edificios de almacenamiento, como estanterías. Se excluyen los objetos sueltos del resto del mapa. Nunca se cuentan los objetos transportados, los guardados en inventarios o contenedores, ni los ocultos en zonas sin revelar. Los objetos prohibidos se incluyen salvo que también se active «Ignorar objetos prohibidos».</EPR.SearchStorageOnlyTip>
   <EPR.SearchHideForbidden>Ignorar objetos prohibidos</EPR.SearchHideForbidden>
   <EPR.SelectJumpCamera>Mover la cámara al recurso pulsado</EPR.SelectJumpCamera>
   <EPR.DisplayOptions>Opciones de visualización</EPR.DisplayOptions>
@@ -79,14 +79,14 @@ Pulsa una casilla para configurar su visualización. Haz clic derecho para quita
   <EPR.ShowModName>Mostrar nombre del mod</EPR.ShowModName>
   <EPR.CountOptions>Opciones de recuento</EPR.CountOptions>
   <EPR.PlannedWorkOptions>Trabajo previsto</EPR.PlannedWorkOptions>
-  <EPR.ReserveForBills>Reservar recursos para tareas de producción</EPR.ReserveForBills>
-  <EPR.ReserveForBillsTip>Resta los ingredientes que aún consumirán las tareas pendientes. Una tarea solo reserva un ingrediente cuando hay exactamente una forma de satisfacerlo. «Cualquier cuero» y otras opciones abiertas no reservan nada.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBills>Reservar recursos para proyectos</EPR.ReserveForBills>
+  <EPR.ReserveForBillsTip>Resta los ingredientes que aún consumirán los proyectos pendientes. Un proyecto solo reserva un ingrediente cuando hay exactamente una forma de satisfacerlo. «Cualquier cuero» y otras opciones abiertas no reservan nada.</EPR.ReserveForBillsTip>
   <EPR.ReserveForBuildables>Reservar recursos para construcciones</EPR.ReserveForBuildables>
   <EPR.ReserveForBuildablesTip>Resta los materiales que aún necesitan los planos y las estructuras en construcción. No vuelve a contar los materiales ya transportados a una estructura e ignora los planos prohibidos.</EPR.ReserveForBuildablesTip>
   <EPR.ShowNegativeCounts>Mostrar los déficits como números negativos</EPR.ShowNegativeCounts>
   <EPR.ShowNegativeCountsTip>Si el trabajo previsto necesita más de lo que tienes, muestra cuánto falta en lugar de detenerse en cero.</EPR.ShowNegativeCountsTip>
   <EPR.QualityJobsRework>Compatibilidad con Quality Jobs</EPR.QualityJobsRework>
-  <EPR.QualityJobsReworkTip>Para tareas y construcciones con un objetivo de calidad, estima cuántos intentos harán falta y reserva recursos para todos ellos. Las estructuras reconstruidas devuelven la proporción de materiales que recupera el juego original al desmantelarlas.</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsReworkTip>Para proyectos y construcciones con un objetivo de calidad, estima cuántos intentos harán falta y reserva recursos para todos ellos. Las estructuras reconstruidas devuelven la proporción de materiales que recupera el juego original al desmantelarlas.</EPR.QualityJobsReworkTip>
   <EPR.QualityJobsMissingTip>Requiere EPrime's Quality Jobs, que no está instalado.</EPR.QualityJobsMissingTip>
   <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs está instalado, pero no ofrece la integración necesaria. Actualízalo para activar esta opción.</EPR.QualityJobsOutdatedTip>
   <EPR.TipPlannedWork>Trabajo previsto</EPR.TipPlannedWork>
@@ -150,4 +150,7 @@ Para añadir un conjunto a un grupo, cambia al Editor de grupos y utiliza la ram
   <EPR.PreviewPoolRow>{0} ({1} miembros)</EPR.PreviewPoolRow>
   <EPR.PreviewGroupRow>{0} ({1} niveles, {2} casillas)</EPR.PreviewGroupRow>
   <EPR.PreviewNone>(ninguno)</EPR.PreviewNone>
+  <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout muestra su propio panel de recursos en modo personalizado o predefinido. Ese panel compite con EPrime's Readouts por el mismo espacio en pantalla.</EPR.CompatibilityCustomResourceReadout>
+  <EPR.CompatibilityReadoutsPlus>Readouts+ añade controles de clic al panel de recursos del juego base. Estos controles no se utilizan mientras el panel de EPrime está activado.</EPR.CompatibilityReadoutsPlus>
+  <EPR.CompatibilityToggleableReadouts>Toggleable Readouts (incluido Continued) sustituye la visualización del panel del juego base. Sus funciones de filtrado y fijación no se utilizan mientras el panel de EPrime está activado.</EPR.CompatibilityToggleableReadouts>
 </LanguageData>

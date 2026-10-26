@@ -5,79 +5,83 @@
   <QJ_UnfinishedWorkWaiting>此清單的未完成品正等待繼續加工</QJ_UnfinishedWorkWaiting>
   <QJ_QualityPanelTitle>Quality Jobs</QJ_QualityPanelTitle>
   <QJ_ManageBill>管理此生產清單</QJ_ManageBill>
-  <QJ_FinisherSkill>收尾技能：{0}</QJ_FinisherSkill>
-  <QJ_FinisherSkillTip>只有技能達到此等級的角色才能完成最后工序。此前的制作可由任何人進行。</QJ_FinisherSkillTip>
+  <QJ_FinisherSkill>收尾門檻：{0}</QJ_FinisherSkill>
+  <QJ_FinisherSkillTip>只有技能達到此等級的殖民者才能完成最後工序。此前的製作可由任何人進行。</QJ_FinisherSkillTip>
   <QJ_AutoBest>自動調整收尾技能要求</QJ_AutoBest>
-  <QJ_AutoBestTip>勾選：僅允許殖民地中技能最高的合適人選完成最后工序，技能要求會自動跟隨該角色調整。比較時，暫時離開、倒地或忙碌的殖民者仍視為可用。\n\n不勾選：任何達到手動設定的收尾技能要求的角色都可完成最后工序。</QJ_AutoBestTip>
+  <QJ_AutoBestTip>勾選：僅允許殖民地中技能最高的合適人選完成最後工序，技能要求會自動跟隨該殖民者調整。比較時，暫時離開、倒地或忙碌的殖民者仍視為可用。\n\n不勾選：任何達到手動設定的收尾技能要求的殖民者都可完成最後工序。</QJ_AutoBestTip>
   <QJ_AutoBestCurrent>當前：{0}</QJ_AutoBestCurrent>
   <QJ_AutoBestNone>無符合條件的殖民者</QJ_AutoBestNone>
   <QJ_MigrationTitle>現有品質生產清單</QJ_MigrationTitle>
   <QJ_MigrationBody>Quality Jobs 找到了 {0} 項現有的品質生產清單。它們仍未納入管理，以保持當前行為。無論選擇哪種方式，都可共享未完成品。</QJ_MigrationBody>
   <QJ_MigrationEnableExisting>為現有品質物品生產清單啟用 Quality Jobs？</QJ_MigrationEnableExisting>
-  <QJ_MigrationEnableExistingTip>勾選：現有清單使用 Quality Jobs，并啟用自動調整收尾技能。由殖民地中技能最高的合適人選完成最后工序，暫時無法工作的殖民者也計入比較。不要求創作靈感或生產專精，低品質成品也不會觸發重做。\n\n不勾選：現有清單保留原版完成方式。不影響未完成品共享。</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationEnableExistingTip>勾選：現有清單使用 Quality Jobs，並啟用自動調整收尾技能。由殖民地中技能最高的合適人選完成最後工序，暫時無法工作的殖民者也計入比較。不要求創作狂熱或製造專家，低品質成品也不會觸發重做。\n\n不勾選：現有清單保留原版完成方式。不影響未完成品共享。</QJ_MigrationEnableExistingTip>
   <QJ_MigrationContinue>繼續</QJ_MigrationContinue>
-  <QJ_RequireInspired>要求創作靈感</QJ_RequireInspired>
-  <QJ_RequireSpecialist>要求生產專精</QJ_RequireSpecialist>
+  <QJ_RequireInspired>要求創作狂熱</QJ_RequireInspired>
+  <QJ_RequireSpecialist>要求製造專家</QJ_RequireSpecialist>
   <QJ_StockCapLabel>庫存上限：{0}</QJ_StockCapLabel>
   <QJ_StockCapTooltip>此產品未完成品的最大數量。同一產品共用上限，因此所有生產該物品的清單都計入此限制。\n\n0 表示無限制。</QJ_StockCapTooltip>
   <QJ_StatusHeader>狀態</QJ_StatusHeader>
   <QJ_StatusQueue>等待中：{0} · 收尾中：{1}</QJ_StatusQueue>
   <QJ_StatusQueueShared>未完成：{0} · 等待中：{1} · 收尾中：{2}</QJ_StatusQueueShared>
-  <QJ_StatusQueueTip>未完成：共享池中任何獲準工匠都能繼續制作的物品。等待中：已暫停、需要符合要求的角色收尾的物品。收尾中：已分配給收尾者的物品。</QJ_StatusQueueTip>
+  <QJ_StatusQueueTip>未完成：共享池中任何獲準工匠都能繼續製作的物品。等待中：已暫停、需要符合要求的角色收尾的物品。收尾中：已分配給收尾者的物品。</QJ_StatusQueueTip>
   <QJ_StatusFinishers>符合收尾條件的人選：{0}</QJ_StatusFinishers>
   <QJ_StatusFinishersNone>符合收尾條件的人選：無</QJ_StatusFinishersNone>
-  <QJ_StatusFinishersTip>此地圖上當前符合收尾條件的殖民者，最佳人選列在最前。必須啟用所需工作類型，并滿足上方收尾要求。\n\n倒地、精神崩潰或不在此地圖的殖民者不計入。</QJ_StatusFinishersTip>
+  <QJ_StatusFinishersTip>此地圖上當前符合收尾條件的殖民者，最佳人選列在最前。必須啟用所需工作類型，並滿足上方收尾要求。\n\n倒地、處於精神異常狀態或不在此地圖的殖民者不計入。</QJ_StatusFinishersTip>
   <QJ_StatusStalled>等待中的物品沒有合適的收尾者</QJ_StatusStalled>
-  <QJ_StatusStalledTip>有未完成品在等待，但當前沒有殖民者滿足收尾條件，因此不會生成收尾工作。\n\n請檢查技能、靈感和專精要求，以及預期收尾者是否已啟用相應工作且位于此地圖。停滯期間，庫存上限也可能阻止開始制作新物品。</QJ_StatusStalledTip>
+  <QJ_StatusStalledTip>有未完成品在等待，但當前沒有殖民者滿足收尾條件，因此不會生成收尾工作。\n\n請檢查技能、靈感和專精要求，以及預期收尾者是否已啟用相應工作且位於此地圖。停滯期間，庫存上限也可能阻止開始製作新物品。</QJ_StatusStalledTip>
   <QJ_StatusStalledConstruction>沒有合適的收尾者——施工已停滯</QJ_StatusStalledConstruction>
-  <QJ_StatusStalledConstructionTip>建筑已暫停，等待最后工序，但當前沒有殖民者符合條件，因此無法完工。\n\n請檢查技能、靈感和專精要求，以及預期建筑工是否已啟用建造工作且位于此地圖。</QJ_StatusStalledConstructionTip>
-  <QJ_OddsHeader>品質概率</QJ_OddsHeader>
-  <QJ_NormalOrWorse>一般及以下</QJ_NormalOrWorse>
+  <QJ_StatusStalledConstructionTip>建築已暫停，等待最後工序，但當前沒有殖民者符合條件，因此無法完工。\n\n請檢查技能、靈感和專精要求，以及預期建築工是否已啟用建造工作且位於此地圖。</QJ_StatusStalledConstructionTip>
+  <QJ_OddsHeader>品質機率</QJ_OddsHeader>
+  <QJ_NormalOrWorse>普通及以下</QJ_NormalOrWorse>
   <QJ_OddsColConfig>配置</QJ_OddsColConfig>
   <QJ_OddsColBest>最佳</QJ_OddsColBest>
   <QJ_SettingsBillDefaults>生產清單預設選項</QJ_SettingsBillDefaults>
   <QJ_SettingsConstructionDefaults>建造預設選項</QJ_SettingsConstructionDefaults>
   <QJ_SettingsGlobalOptions>全局選項</QJ_SettingsGlobalOptions>
   <QJ_SettingsManageNewBills>管理新增品質生產清單</QJ_SettingsManageNewBills>
-  <QJ_SettingsManageNewBillsTip>勾選：Quality Jobs 預設按本列選項管理生產品質物品的清單。可在各清單設定中單獨覆蓋。\n\n不勾選：清單使用原版行為，除非在其設定窗口中單獨啟用 Quality Jobs。</QJ_SettingsManageNewBillsTip>
+  <QJ_SettingsManageNewBillsTip>勾選：Quality Jobs 預設按本欄選項管理生產品質物品的清單。可在各清單設定中單獨覆蓋。\n\n不勾選：清單使用原版行為，除非在其設定窗口中單獨啟用 Quality Jobs。</QJ_SettingsManageNewBillsTip>
   <QJ_SettingsManageNewConstruction>管理新增建造工作</QJ_SettingsManageNewConstruction>
-  <QJ_SettingsManageNewConstructionTip>勾選：新增品質建筑自動按本列選項管理。可通過“品質工作”按鈕單獨配置或取消管理。\n\n不勾選：新建筑使用原版行為，除非單獨啟用。</QJ_SettingsManageNewConstructionTip>
-  <QJ_RequireInspiredTip>勾選：僅有創作靈感的角色可以完成最后工序；其他角色可進行此前工作。完工時會消耗靈感，與原版相同。\n\n不勾選：不要求創作靈感。</QJ_RequireInspiredTip>
-  <QJ_RequireSpecialistTip>勾選：只有理念職位提供生產品質加成的角色才能完成最后工序；其他角色可進行此前工作。\n\n不勾選：不要求生產專精職位。</QJ_RequireSpecialistTip>
-  <QJ_SettingsFinisherSkillTip>只有技能達到此等級的角色才能完成最后工序；其他角色可進行此前工作。\n\n啟用自動調整收尾技能后，此值保留為手動預設值，但不用于判定。</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsManageNewConstructionTip>勾選：新增品質建築自動按本欄選項管理。可通過“品質工作”按鈕單獨配置或取消管理。\n\n不勾選：新建築使用原版行為，除非單獨啟用。</QJ_SettingsManageNewConstructionTip>
+  <QJ_RequireInspiredTip>勾選：僅有創作狂熱的殖民者可以完成最後工序；其他工作者可進行此前工作。完工時會消耗靈感，與原版相同。\n\n不勾選：不要求創作狂熱。</QJ_RequireInspiredTip>
+  <QJ_RequireSpecialistTip>勾選：只有理念職位提供生產品質加成的殖民者才能完成最後工序；其他工作者可進行此前工作。\n\n不勾選：不要求製造專家職位。</QJ_RequireSpecialistTip>
+  <QJ_SettingsFinisherSkillTip>只有技能達到此等級的殖民者才能完成最後工序；其他工作者可進行此前工作。\n\n啟用自動調整收尾技能後，此值保留為手動預設值，但不用於判定。</QJ_SettingsFinisherSkillTip>
   <QJ_SettingsShareWork>共享未完成品</QJ_SettingsShareWork>
-  <QJ_SettingsShareWorkTip>勾選：解除未完成品的制作者限制，任何獲準角色都可接續他人的工作。\n\n不勾選：保持原版行為，未完成品仍綁定最初制作者。</QJ_SettingsShareWorkTip>
+  <QJ_SettingsShareWorkTip>勾選：解除未完成品的製作者限制，任何合格工作者都可接續他人的工作。\n\n不勾選：保持原版行為，未完成品仍綁定最初製作者。</QJ_SettingsShareWorkTip>
   <QJ_SettingsHighPriorityFinish>提高收尾工作優先級</QJ_SettingsHighPriorityFinish>
-  <QJ_SettingsHighPriorityFinishTip>勾選：被選中收尾的殖民者下次尋找工作時，會優先進行收尾，僅滅火、醫療、救援和臥床休息優先于它。不會中斷當前工作。\n\n不勾選：收尾是所屬工作類型內的首要任務，但該殖民者排序更靠前的其他工作類型仍優先。</QJ_SettingsHighPriorityFinishTip>
+  <QJ_SettingsHighPriorityFinishTip>勾選：被選中收尾的殖民者下次尋找工作時，會優先進行收尾，僅滅火、醫療、救援和臥床休息優先於它。不會中斷當前工作。\n\n不勾選：收尾是所屬工作類型內的首要任務，但該殖民者排序更靠前的其他工作類型仍優先。</QJ_SettingsHighPriorityFinishTip>
   <QJ_SettingsDefaultCap>預設未完成品庫存上限：{0}</QJ_SettingsDefaultCap>
-  <QJ_SettingsDefaultCapTip>設定每種產品未完成品的預設數量上限。生產同一物品的所有清單共用此上限。\n\n達到上限后不再開始制作新物品，已開始的仍可完成。0 表示無限制。</QJ_SettingsDefaultCapTip>
+  <QJ_SettingsDefaultCapTip>設定每種產品未完成品的預設數量上限。生產同一物品的所有清單共用此上限。\n\n達到上限後不再開始製作新物品，已開始的仍可完成。0 表示無限制。</QJ_SettingsDefaultCapTip>
   <QJ_SettingsUnlimitedHint>0 = 無限制</QJ_SettingsUnlimitedHint>
   <QJ_SettingsShowToolbarButton>顯示工具欄按鈕</QJ_SettingsShowToolbarButton>
-  <QJ_SettingsShowToolbarButtonTip>在螢幕右下角的顯示開關旁添加按鈕，用于打開 Quality Jobs 設定。</QJ_SettingsShowToolbarButtonTip>
+  <QJ_SettingsShowToolbarButtonTip>在螢幕右下角的顯示開關旁添加按鈕，用於打開 Quality Jobs 設定。</QJ_SettingsShowToolbarButtonTip>
   <QJ_ToolbarButtonTip>打開 Quality Jobs 設定。</QJ_ToolbarButtonTip>
-  <QJ_SettingsEnabledNote>此開關僅作用于當前存檔。禁用會使所有物品恢復原版行為，并丟棄此存檔的 Quality Jobs 配置。\n\n若模組仍已安裝，下次載入此存檔時會按預設設定重新啟用。禁用功能用于卸載模組前的準備。</QJ_SettingsEnabledNote>
+  <QJ_SettingsEnabledNote>此開關僅作用於當前存檔。禁用會使所有物品恢復原版行為，並丟棄此存檔的 Quality Jobs 配置。\n\n若模組仍已安裝，下次載入此存檔時會按預設設定重新啟用。禁用功能用於卸載模組前的準備。</QJ_SettingsEnabledNote>
   <QJ_DisableButton>禁用 Quality Jobs</QJ_DisableButton>
   <QJ_EnableButton>啟用 Quality Jobs</QJ_EnableButton>
-  <QJ_DisableWarning>禁用會讓所有暫存物品恢復原版歸屬，并永久刪除此存檔的 Quality Jobs 配置（清單條件、庫存上限）。此后儲存的存檔不再含模組資料，因此可用此方式干凈地準備卸載。\n\n請先完成替換建筑，以保留已儲存的床鋪設定和涂色。原建筑拆除后，這些設定需要 Quality Jobs 保管，直到替換建筑完工。\n\n注意：若模組仍已安裝，下次載入此存檔時會按預設設定重新啟用。\n\n禁用 Quality Jobs？</QJ_DisableWarning>
+  <QJ_DisableWarning>禁用會讓所有暫存物品恢復原版歸屬，並永久刪除此存檔的 Quality Jobs 配置（清單條件、庫存上限）。此後儲存的存檔不再含模組資料，因此可用此方式乾淨地準備卸載。\n\n請先完成替換建築，以保留已儲存的床鋪設定和塗色。原建築拆除後，這些設定需要 Quality Jobs 保管，直到替換建築完工。\n\n注意：若模組仍已安裝，下次載入此存檔時會按預設設定重新啟用。\n\n禁用 Quality Jobs？</QJ_DisableWarning>
   <QJ_NoGameLoaded>請先載入存檔，再更改存檔專屬行為。</QJ_NoGameLoaded>
   <QJ_GizmoQualityJobLabel>品質工作</QJ_GizmoQualityJobLabel>
-  <QJ_GizmoRebuildDesc>為這座已完工建筑選擇品質目標和建筑工要求。開始重建后會拆除并替換建筑，直到達到目標。</QJ_GizmoRebuildDesc>
+  <QJ_GizmoRebuildDesc>為這座已完工建築選擇品質目標和建築工要求。開始重建後會拆除並替換建築，直到達到目標。</QJ_GizmoRebuildDesc>
   <QJ_StartRebuilding>開始重建</QJ_StartRebuilding>
-  <QJ_RebuildNote>先選擇品質目標。低于目標的建筑會拆除重建，消耗材料，且施工期間無法使用。已達到目標的建筑會保留。</QJ_RebuildNote>
-  <QJ_NoRebuildNeeded>沒有符合條件且需要重建的建筑。建筑必須低于品質目標、可建造，且沒有其他拆除或重新安裝命令。</QJ_NoRebuildNeeded>
-  <QJ_GizmoManageDesc>用 Quality Jobs 管理此建筑：暫停最后工序，直到有符合要求的建筑工；還可選擇反復重建直到獲得目標品質。\n\n左鍵點選切換啟用狀態，啟用時應用你的建造預設選項。右鍵點選可配置。</QJ_GizmoManageDesc>
+  <QJ_RebuildNote>先選擇品質目標。低於目標的建築會拆除重建，消耗材料，且施工期間無法使用。已達到目標的建築會保留。</QJ_RebuildNote>
+  <QJ_NoRebuildNeeded>沒有符合條件且需要重建的建築。建築必須低於品質目標、可建造，且沒有其他拆除或重新安裝命令。</QJ_NoRebuildNeeded>
+  <QJ_GizmoManageDesc>用 Quality Jobs 管理此建築：暫停最後工序，直到有符合要求的建築工；還可選擇反覆重建直到獲得目標品質。\n\n左鍵點選切換啟用狀態，啟用時應用你的建造預設選項。右鍵點選可配置。</QJ_GizmoManageDesc>
   <QJ_MinQualityLabel>品質目標</QJ_MinQualityLabel>
   <QJ_NoRetries>不重試</QJ_NoRetries>
   <QJ_AnyQuality>任意</QJ_AnyQuality>
-  <QJ_RetriedUntilTip>除非選擇“不重試”，否則建筑會反復拆除重建，直到獲得所選品質或更高品質。\n\n每次重試都會損失部分材料。</QJ_RetriedUntilTip>
-  <QJ_BillTargetQualityTip>成品低于此品質時，生產清單的次數增加一次，以制作替代品。原成品仍會保留。\n\n僅適用于制作固定數量物品的清單；其他重復模式自行決定何時停止。</QJ_BillTargetQualityTip>
+  <QJ_RetriedUntilTip>除非選擇“不重試”，否則建築會反覆拆除重建，直到獲得所選品質或更高品質。\n\n每次重試都會損失部分材料。</QJ_RetriedUntilTip>
+  <QJ_BillTargetQualityTip>成品低於此品質時，生產清單的次數增加一次，以製作替代品。原成品仍會保留。\n\n僅適用於製作固定數量物品的清單；其他重複模式自行決定何時停止。</QJ_BillTargetQualityTip>
   <QJ_Clear>清除</QJ_Clear>
   <QJ_ConstructionPanelTitle>品質工作</QJ_ConstructionPanelTitle>
   <QJ_FinishGiverLabel>完成品質工作</QJ_FinishGiverLabel>
   <QJ_FinishGiverVerb>完成</QJ_FinishGiverVerb>
   <QJ_FinishGiverGerund>正在完成品質工作</QJ_FinishGiverGerund>
   <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
-  <QJ_WelcomeBody>Quality Jobs 讓任何殖民者都能加工未完成物品或建筑，但只有滿足你所設要求的人才能完成最后工序，因為品質完全取決于收尾者。它適用于生產清單和建筑施工。</QJ_WelcomeBody>
-  <QJ_WelcomeFind>點選螢幕右下角顯示開關旁的此按鈕，可打開 Quality Jobs 設定。品質物品的生產清單窗口中有 Quality Jobs 區域；選中品質建筑的藍圖或施工框架時，會顯示“品質工作”按鈕。</QJ_WelcomeFind>
+  <QJ_WelcomeBody>Quality Jobs 讓任何殖民者都能加工未完成物品或建築，但只有滿足你所設要求的人才能完成最後工序，因為品質完全取決於收尾者。它適用於生產清單和建築施工。</QJ_WelcomeBody>
+  <QJ_WelcomeFind>點選螢幕右下角顯示開關旁的此按鈕，可打開 Quality Jobs 設定。品質物品的生產清單窗口中有 Quality Jobs 區域；選中品質建築的藍圖或施工框架時，會顯示“品質工作”按鈕。</QJ_WelcomeFind>
   <QJ_WelcomeTakeMeThere>立即打開</QJ_WelcomeTakeMeThere>
+  <QJ_CompatibilityFinishIt>將 Finish it! 用於 Quality Jobs 已從工作清單中解除關聯的未完成物品時，可能會失敗。</QJ_CompatibilityFinishIt>
+  <QJ_CompatibilityNoJobAuthors>啟用 No Job Authors 的強制完成或 Achtung 相容性選項時，該模組可能會繞過 Quality Jobs，繼續處理因品質要求而保留的工作。</QJ_CompatibilityNoJobAuthors>
+  <QJ_CompatibilityQualityBuilder>QualityBuilder 也會控制建造者與重新施工。其規則可能與 Quality Jobs 衝突。</QJ_CompatibilityQualityBuilder>
+  <QJ_CompatibilitySharingAdvice>關閉未完成物品共享功能並無法消除所有這類衝突。</QJ_CompatibilitySharingAdvice>
 </LanguageData>

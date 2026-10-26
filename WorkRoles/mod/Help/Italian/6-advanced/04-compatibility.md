@@ -13,7 +13,7 @@ Le estensioni che modificano fornitori di lavoro esistenti continuano a usare gl
 
 Due famiglie di mod entrano in conflitto. Le altre sostituzioni della scheda Lavoro, come varianti di Work Tab e Better Work Tab, competono per la stessa interfaccia. Le mod che impostano priorità, come Free Will e PriorityMaster, competono per gli stessi dati: WorkRoles controlla le priorità dei coloni gestiti, quindi blocca quelle scritture. Quando accade, un avviso mostrato una sola volta nomina la mod e suggerisce come ottenere lo stesso effetto con i ruoli.
 
-Il controllo delle priorità riguarda soltanto le pedine umanoidi. Le mod che gestiscono altri tipi di pedine, come Mech Work Tab per i meccanoidi, sono quindi pienamente compatibili.
+Il controllo delle priorità riguarda soltanto i personaggi umanoidi. Le mod che gestiscono le priorità dei meccanoidi, come Mech Work Tab, sono quindi pienamente compatibili.
 
 Alcune mod richiedono priorità da 0 a 4. In caso di problemi, verifica che “Comunica alle altre mod priorità da 0 a 4” sia attivo.
 

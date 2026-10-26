@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using RimShared.Common;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -256,7 +257,7 @@ namespace WorkRoles.UI
                 plainLabels.Add(role.DisplayLabel);
             }
             Dictionary<int, string> abbreviations =
-                RoleAbbreviations.Build(labels);
+                RoleAbbreviations.Build(labels, UiLanguage.CaseCulture);
             int[] gridPrefixRequirements =
                 GridLabelTruncation.RequiredPrefixLengths(plainLabels);
 
@@ -509,8 +510,7 @@ namespace WorkRoles.UI
             for (int i = 0; i < roleOptions.Count; i++)
             {
                 ColonistRoleFilterOption option = roleOptions[i];
-                if (option.Label.IndexOf(term!,
-                        StringComparison.OrdinalIgnoreCase) < 0)
+                if (!SearchMatcher.Matches(option.Label, term, UiLanguage.CaseCulture))
                     continue;
                 (result ?? (result = new HashSet<int>())).Add(option.RoleId);
             }
@@ -537,11 +537,9 @@ namespace WorkRoles.UI
             for (int i = 0; i < jobOptions.Count; i++)
             {
                 ColonistJobFilterOption option = jobOptions[i];
-                if (option.Label.IndexOf(term!,
-                        StringComparison.OrdinalIgnoreCase) < 0
+                if (!SearchMatcher.Matches(option.Label, term, UiLanguage.CaseCulture)
                     && (option.GerundLabel == null
-                        || option.GerundLabel.IndexOf(term!,
-                            StringComparison.OrdinalIgnoreCase) < 0))
+                        || !SearchMatcher.Matches(option.GerundLabel, term, UiLanguage.CaseCulture)))
                     continue;
                 (result ?? (result = new HashSet<string>(
                     StringComparer.Ordinal))).Add(option.DefName);

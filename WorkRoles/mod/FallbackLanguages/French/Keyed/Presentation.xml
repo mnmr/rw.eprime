@@ -36,13 +36,13 @@
   <WR_SignalCondition_setting_vse_critical_affects_other_skills>La passion critique affecte les autres compétences dans les réglages du mod</WR_SignalCondition_setting_vse_critical_affects_other_skills>
   <WR_SignalCondition_sight_blind>Aveugle</WR_SignalCondition_sight_blind>
   <WR_SignalCondition_sight_not_blind>Non aveugle</WR_SignalCondition_sight_not_blind>
-  <WR_SignalCondition_social_same_passion_opinion>Améliore l'opinion des personnages partageant cette passion</WR_SignalCondition_social_same_passion_opinion>
+  <WR_SignalCondition_social_same_passion_opinion>Améliore l'opinion des autres qui partagent cette passion</WR_SignalCondition_social_same_passion_opinion>
   <WR_SignalCondition_state_drunk>Ivre</WR_SignalCondition_state_drunk>
   <WR_SignalCondition_state_no_recent_lovin>Aucune étreinte récente</WR_SignalCondition_state_no_recent_lovin>
   <WR_SignalCondition_state_not_drunk>Non ivre</WR_SignalCondition_state_not_drunk>
-  <WR_SignalCondition_state_not_smokeleaf_high>Pas sous l'effet de la smokeleaf</WR_SignalCondition_state_not_smokeleaf_high>
+  <WR_SignalCondition_state_not_smokeleaf_high>Pas sous l'effet du smokeleaf</WR_SignalCondition_state_not_smokeleaf_high>
   <WR_SignalCondition_state_recent_lovin>Étreinte récente</WR_SignalCondition_state_recent_lovin>
-  <WR_SignalCondition_state_smokeleaf_high>Sous l'effet de la smokeleaf</WR_SignalCondition_state_smokeleaf_high>
+  <WR_SignalCondition_state_smokeleaf_high>Sous l'effet du smokeleaf</WR_SignalCondition_state_smokeleaf_high>
   <WR_SignalCondition_time_20_5>Entre 20 h et 5 h</WR_SignalCondition_time_20_5>
   <WR_SignalCondition_time_day>Pendant la journée</WR_SignalCondition_time_day>
   <WR_SignalCondition_weather_not_raining>Il ne pleut pas</WR_SignalCondition_weather_not_raining>

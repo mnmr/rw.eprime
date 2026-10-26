@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0 — 2026-10-26
+
+- Added: Built-in translations. Available languages: English, French, German, Italian, Japanese, Korean, Brazilian Portuguese, Spanish (European and Latin American), Simplified Chinese, Traditional Chinese, Turkish, Ukrainian, and Vietnamese.
+- Added: Welcome warnings when multi-level mods disable automation, clarifying that planning and tracking remain available.
+- Fixed: Clarified how equipment affects automation in Help.
+- Fixed: Improved CJK help wrapping, Turkish searches, accented plan names, and translated option labels.
+
 ## 1.1.9 — 2026-10-18
 
 - Added: Support for alternate production routes (for mod 'EPOE-Forked: Allow direct crafting').

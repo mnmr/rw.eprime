@@ -5,7 +5,7 @@ title: 自動優化
 
 ![自動優化選項](options-automation.png)
 
-開啟后，每個游戲整點對所有殖民地運行[調整殖民地](topic:fix-my-colony)。若殖民者已符合推薦，不寫入更改。[固定分配](topic:pinning)每次都保留，即使職責或組合成員位于[排除的職責](topic:recommendation-order)。
+開啟後，每個遊戲整點對所有殖民地運行[調整殖民地](topic:fix-my-colony)。若殖民者已符合推薦，不寫入更改。[固定分配](topic:pinning)每次都保留，即使職責或組合成員位於[排除的職責](topic:recommendation-order)。
 
 開啟時先顯示首輪確認預覽。啟用期間隱藏“調整殖民地”和“就這樣安排”按鈕，但仍可手動分配、排序和固定。
 

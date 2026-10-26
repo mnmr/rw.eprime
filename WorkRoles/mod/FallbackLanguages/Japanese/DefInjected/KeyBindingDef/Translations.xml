@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_FirstColonist.label>最初の入植者（Ctrlでグループ無視）</WR_FirstColonist.label>
+  <WR_LastColonist.label>最後の入植者（Ctrlでグループ無視）</WR_LastColonist.label>
+  <WR_NextColonist.label>次の入植者</WR_NextColonist.label>
+  <WR_NextPage.label>次のページ・グループ</WR_NextPage.label>
+  <WR_PrevColonist.label>前の入植者</WR_PrevColonist.label>
+  <WR_PrevPage.label>前のページ・グループ</WR_PrevPage.label>
+</LanguageData>

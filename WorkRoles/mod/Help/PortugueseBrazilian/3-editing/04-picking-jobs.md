@@ -1,7 +1,7 @@
 ---
 title: Escolher trabalhos
 ---
-A lista da função vem da árvore Trabalhos disponíveis:
+A lista da função vem da árvore Tarefas disponíveis:
 
 ![Árvore de trabalhos disponíveis](jobs-expanded.png)
 
@@ -9,7 +9,7 @@ Clique na marca de um tipo para alternar o tipo inteiro; expanda para escolher t
 
 As escolhas entram na lista ordenada à direita:
 
-![Lista de trabalhos selecionados](selected-jobs.png)
+![Lista de tarefas selecionadas](selected-jobs.png)
 
 Uma linha de tipo cobre todos os trabalhos, inclusive futuros acréscimos de mods. Trabalhos individuais ganham linhas próprias e podem ser arrastados para qualquer ordem: essa será a [prioridade](topic:ordering). Uma linha atenuada não acrescenta nada, pois tudo já está coberto acima; mova para cima ou remova.
 

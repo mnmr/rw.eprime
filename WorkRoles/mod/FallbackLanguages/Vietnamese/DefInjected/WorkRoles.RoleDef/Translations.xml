@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_Artist.description>Điêu khắc và sáng tác nghệ thuật.</WS_Artist.description>
+  <WS_Artist.label>Nghệ sĩ</WS_Artist.label>
+  <WS_Basics.description>Tự chăm sóc và việc đơn giản mọi cư dân nên làm.</WS_Basics.description>
+  <WS_Basics.label>Cơ bản</WS_Basics.label>
+  <WS_Bedrest.description>Nằm nghỉ khi ốm hoặc bị thương.</WS_Bedrest.description>
+  <WS_Bedrest.label>Nghỉ bệnh</WS_Bedrest.label>
+  <WS_Brewer.description>Nấu dịch nha tại bàn nấu bia.</WS_Brewer.description>
+  <WS_Brewer.label>Thợ nấu bia</WS_Brewer.label>
+  <WS_Builder.description>Xây dựng, sửa chữa và tháo dỡ.</WS_Builder.description>
+  <WS_Builder.label>Thợ xây</WS_Builder.label>
+  <WS_Butcher.description>Xẻ thịt sinh vật đã chết.</WS_Butcher.description>
+  <WS_Butcher.label>Thợ xẻ thịt</WS_Butcher.label>
+  <WS_Childminder.description>Chăm sóc và dạy trẻ.</WS_Childminder.description>
+  <WS_Childminder.label>Người trông trẻ</WS_Childminder.label>
+  <WS_Cleaner.description>Dọn dẹp.</WS_Cleaner.description>
+  <WS_Cleaner.label>Người dọn dẹp</WS_Cleaner.label>
+  <WS_Cook.description>Chuẩn bị bữa ăn và xẻ thịt.</WS_Cook.description>
+  <WS_Cook.label>Đầu bếp</WS_Cook.label>
+  <WS_Core.description>Việc khẩn cấp mọi cư dân phải làm: chữa cháy, nhận điều trị và cứu hộ.</WS_Core.description>
+  <WS_Core.label>Cốt lõi</WS_Core.label>
+  <WS_Crafter.description>Chế tạo chung: cắt đá, luyện kim, làm chất kích thích và linh kiện.</WS_Crafter.description>
+  <WS_Crafter.label>Thợ chế tác</WS_Crafter.label>
+  <WS_DarkStudier.description>Nghiên cứu thực thể dị thường.</WS_DarkStudier.description>
+  <WS_DarkStudier.label>Nhà dị thường học</WS_DarkStudier.label>
+  <WS_Doctor.description>Chăm sóc y tế cho cư dân, tù nhân và động vật.</WS_Doctor.description>
+  <WS_Doctor.label>Bác sĩ</WS_Doctor.label>
+  <WS_DrugMaker.description>Sản xuất chất kích thích tại phòng điều chế và máy ly tâm huyết thanh.</WS_DrugMaker.description>
+  <WS_DrugMaker.label>Thợ điều chế</WS_DrugMaker.label>
+  <WS_Fabricator.description>Chế tạo vật phẩm tại bàn gia công.</WS_Fabricator.description>
+  <WS_Fabricator.label>Thợ gia công</WS_Fabricator.label>
+  <WS_Farmer.description>Gieo trồng, thu hoạch và chặt cây.</WS_Farmer.description>
+  <WS_Farmer.label>Nông dân</WS_Farmer.label>
+  <WS_Firefighter.description>Dập lửa.</WS_Firefighter.description>
+  <WS_Firefighter.label>Lính cứu hỏa</WS_Firefighter.label>
+  <WS_Fisher.description>Câu cá.</WS_Fisher.description>
+  <WS_Fisher.label>Ngư dân</WS_Fisher.label>
+  <WS_Grower.description>Gieo trồng và thu hoạch trong vùng trồng trọt.</WS_Grower.description>
+  <WS_Grower.label>Người trồng trọt</WS_Grower.label>
+  <WS_Grunt.description>Vận chuyển và dọn dẹp.</WS_Grunt.description>
+  <WS_Grunt.label>Phụ việc</WS_Grunt.label>
+  <WS_Handler.description>Thuần hóa, huấn luyện và giết mổ động vật.</WS_Handler.description>
+  <WS_Handler.label>Người huấn thú</WS_Handler.label>
+  <WS_Hauler.description>Vận chuyển vật phẩm.</WS_Hauler.description>
+  <WS_Hauler.label>Người vận chuyển</WS_Hauler.label>
+  <WS_Herder.description>Chăm sóc vật nuôi trong chuồng: lùa vào chuồng, cho ăn, vắt sữa, xén lông và giết mổ.</WS_Herder.description>
+  <WS_Herder.label>Người chăn nuôi</WS_Herder.label>
+  <WS_Hunter.description>Săn động vật hoang dã lấy thức ăn.</WS_Hunter.description>
+  <WS_Hunter.label>Thợ săn</WS_Hunter.label>
+  <WS_Jailor.description>Quản lý tù nhân trừ thẩm vấn, bắt làm nô lệ và cải đạo: cho ăn, áp giải, trò chuyện, trấn áp, thả và hành quyết.</WS_Jailor.description>
+  <WS_Jailor.label>Cai ngục</WS_Jailor.label>
+  <WS_Laborer.description>Các việc đơn giản khác.</WS_Laborer.description>
+  <WS_Laborer.label>Lao công</WS_Laborer.label>
+  <WS_Mechanitor.description>Sửa mechanoid, ươm mechanoid mới và mã hóa lõi phụ. Chỉ đề xuất cho cư dân có mechlink.</WS_Mechanitor.description>
+  <WS_Mechanitor.label>Mechanitor</WS_Mechanitor.label>
+  <WS_Medic.description>Việc y tế trừ phẫu thuật cho cư dân.</WS_Medic.description>
+  <WS_Medic.label>Nhân viên y tế</WS_Medic.label>
+  <WS_Miner.description>Đào mỏ và khoan.</WS_Miner.description>
+  <WS_Miner.label>Thợ mỏ</WS_Miner.label>
+  <WS_NoFirefighting.description>Vai trò chặn: người giữ vai trò này không bao giờ chữa cháy, kể cả khi vai trò phía sau (như Cơ bản) có chữa cháy.</WS_NoFirefighting.description>
+  <WS_NoFirefighting.label>Sợ lửa</WS_NoFirefighting.label>
+  <WS_Nurse.description>Cho bệnh nhân ăn, cứu hộ, thăm bệnh và tự chữa khẩn cấp.</WS_Nurse.description>
+  <WS_Nurse.label>Y tá</WS_Nurse.label>
+  <WS_Painter.description>Sơn và tẩy sơn.</WS_Painter.description>
+  <WS_Painter.label>Thợ sơn</WS_Painter.label>
+  <WS_Patient.description>Tiếp nhận điều trị y tế.</WS_Patient.description>
+  <WS_Patient.label>Bệnh nhân</WS_Patient.label>
+  <WS_PlantCutter.description>Chặt và thu hoạch cây hoang dã.</WS_PlantCutter.description>
+  <WS_PlantCutter.label>Người chặt cây</WS_PlantCutter.label>
+  <WS_Repairer.description>Mọi việc xây dựng trừ xây công trình mới.</WS_Repairer.description>
+  <WS_Repairer.label>Thợ sửa chữa</WS_Repairer.label>
+  <WS_Rescuer.description>Cứu cư dân gục ngã.</WS_Rescuer.description>
+  <WS_Rescuer.label>Người cứu hộ</WS_Rescuer.label>
+  <WS_Researcher.description>Nghiên cứu tại bàn nghiên cứu.</WS_Researcher.description>
+  <WS_Researcher.label>Nhà nghiên cứu</WS_Researcher.label>
+  <WS_Smith.description>Rèn vũ khí và giáp.</WS_Smith.description>
+  <WS_Smith.label>Thợ rèn</WS_Smith.label>
+  <WS_Tailor.description>May trang phục.</WS_Tailor.description>
+  <WS_Tailor.label>Thợ may</WS_Tailor.label>
+  <WS_Warden.description>Tương tác với tù nhân: tuyển mộ, cải đạo, cho ăn và thả.</WS_Warden.description>
+  <WS_Warden.label>Quản giáo</WS_Warden.label>
+</LanguageData>

@@ -39,14 +39,16 @@ namespace Implanner
         public override void LoadedGame() =>
             LongEventHandler.ExecuteWhenFinished(queueWelcome);
 
-        /// The welcome dialog appears once per player per save
-        /// (`WelcomeDialog.ClaimSave`). Presentation only — never touches
-        /// synced state.
+        /// The welcome appears once per player per save, and once again for
+        /// each newly encountered automation conflict (`WelcomeDialog.ClaimSave`).
+        /// Presentation only — never touches synced state.
         private static void QueueWelcome()
         {
             ImplannerSettings? settings = ImplannerMod.Settings;
-            if (settings == null
-                || !RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves, queueWelcome))
+            if (settings == null || Find.World == null) return;
+            var notice = CompatibilityWarnings.Current();
+            if (!RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves,
+                    queueWelcome, notice, settings.compatibilityWarningsSeen))
                 return;
             ImplannerMod.Instance.WriteSettings();
             Find.WindowStack?.Add(new RimShared.UiLib.WelcomeDialog(
@@ -63,6 +65,8 @@ namespace Implanner
             {
                 FindIcon = Patches.ImplannerTex.ToolbarButton,
                 FindTextColor = PlannerStyle.TierStarColor,
+                ConflictingMods = notice,
+                ConflictAdvice = "RS_CompatibilityRestoreAutomation".Translate(),
             });
         }
 

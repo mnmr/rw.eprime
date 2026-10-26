@@ -64,7 +64,7 @@ Cliquez sur une case pour régler son affichage. Faites un clic droit pour retir
   <EPR.ShowSearchFilter>Afficher le filtre de recherche</EPR.ShowSearchFilter>
   <EPR.SearchHideZero>Masquer les résultats à zéro</EPR.SearchHideZero>
   <EPR.SearchStorageOnly>Compter uniquement les objets stockés</EPR.SearchStorageOnly>
-  <EPR.SearchStorageOnlyTip>Si cette option est activée, seuls les objets admissibles et non pourris situés dans des zones de stockage ou des bâtiments de stockage, comme les étagères, sont comptés. Les objets posés ailleurs sur la carte sont exclus. Les objets portés par les personnages, placés dans des inventaires ou des conteneurs, ou cachés dans des zones non découvertes ne sont jamais comptés. Les objets interdits sont inclus, sauf si « Ignorer les objets interdits » est également activé.</EPR.SearchStorageOnlyTip>
+  <EPR.SearchStorageOnlyTip>Si cette option est activée, seuls les objets admissibles et non pourris situés dans des zones de stockage ou des bâtiments de stockage, comme les étagères, sont comptés. Les objets posés ailleurs sur la carte sont exclus. Les objets transportés, placés dans des inventaires ou des conteneurs, ou cachés dans des zones non découvertes ne sont jamais comptés. Les objets interdits sont inclus, sauf si « Ignorer les objets interdits » est également activé.</EPR.SearchStorageOnlyTip>
   <EPR.SearchHideForbidden>Ignorer les objets interdits</EPR.SearchHideForbidden>
   <EPR.SelectJumpCamera>Centrer la caméra sur la ressource cliquée</EPR.SelectJumpCamera>
   <EPR.DisplayOptions>Options d'affichage</EPR.DisplayOptions>
@@ -150,4 +150,7 @@ Pour ajouter un ensemble à un groupe, passez à l'éditeur de groupes et utilis
   <EPR.PreviewPoolRow>{0} ({1} ressources)</EPR.PreviewPoolRow>
   <EPR.PreviewGroupRow>{0} ({1} niveaux, {2} cases)</EPR.PreviewGroupRow>
   <EPR.PreviewNone>(aucun)</EPR.PreviewNone>
+  <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout affiche son propre panneau de ressources en mode personnalisé ou prédéfini. Ce panneau entre en concurrence avec EPrime's Readouts pour le même affichage.</EPR.CompatibilityCustomResourceReadout>
+  <EPR.CompatibilityReadoutsPlus>Readouts+ ajoute des commandes cliquables à l'affichage des ressources du jeu de base. Ces commandes sont ignorées lorsque l'affichage d'EPrime est activé.</EPR.CompatibilityReadoutsPlus>
+  <EPR.CompatibilityToggleableReadouts>Toggleable Readouts (y compris Continued) remplace le rendu de l'affichage des ressources du jeu de base. Ses fonctions de filtrage et d'épinglage sont ignorées lorsque l'affichage d'EPrime est activé.</EPR.CompatibilityToggleableReadouts>
 </LanguageData>

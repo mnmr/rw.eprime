@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_Artist.description>조각과 예술품 제작.</WS_Artist.description>
+  <WS_Artist.label>예술가</WS_Artist.label>
+  <WS_Basics.description>모든 정착민에게 필요한 자기 관리와 단순 작업.</WS_Basics.description>
+  <WS_Basics.label>기본</WS_Basics.label>
+  <WS_Bedrest.description>질병이나 부상이 있을 때 병상에서 휴식.</WS_Bedrest.description>
+  <WS_Bedrest.label>병상 휴식</WS_Bedrest.label>
+  <WS_Brewer.description>양조대에서 맥아즙 만들기.</WS_Brewer.description>
+  <WS_Brewer.label>양조가</WS_Brewer.label>
+  <WS_Builder.description>건설, 수리, 해체.</WS_Builder.description>
+  <WS_Builder.label>건설자</WS_Builder.label>
+  <WS_Butcher.description>죽은 생물 도축.</WS_Butcher.description>
+  <WS_Butcher.label>도축가</WS_Butcher.label>
+  <WS_Childminder.description>육아와 교육.</WS_Childminder.description>
+  <WS_Childminder.label>돌봄 담당</WS_Childminder.label>
+  <WS_Cleaner.description>청소.</WS_Cleaner.description>
+  <WS_Cleaner.label>청소부</WS_Cleaner.label>
+  <WS_Cook.description>식사 준비와 도축.</WS_Cook.description>
+  <WS_Cook.label>요리사</WS_Cook.label>
+  <WS_Core.description>모든 정착민이 해야 하는 긴급 작업: 소방, 치료받기, 구조.</WS_Core.description>
+  <WS_Core.label>필수</WS_Core.label>
+  <WS_Crafter.description>석재 가공, 제련, 약물, 부품 등 일반 제작.</WS_Crafter.description>
+  <WS_Crafter.label>제작자</WS_Crafter.label>
+  <WS_DarkStudier.description>이상 존재 연구.</WS_DarkStudier.description>
+  <WS_DarkStudier.label>이상 연구자</WS_DarkStudier.label>
+  <WS_Doctor.description>정착민, 포로, 동물의 진료.</WS_Doctor.description>
+  <WS_Doctor.label>의사</WS_Doctor.label>
+  <WS_DrugMaker.description>약물 연구대와 혈청 연구대에서 약물 제작.</WS_DrugMaker.description>
+  <WS_DrugMaker.label>약물 제작자</WS_DrugMaker.label>
+  <WS_Fabricator.description>조립 작업대에서 물품 제작.</WS_Fabricator.description>
+  <WS_Fabricator.label>정밀 제작자</WS_Fabricator.label>
+  <WS_Farmer.description>파종, 수확, 식물 벌채.</WS_Farmer.description>
+  <WS_Farmer.label>농부</WS_Farmer.label>
+  <WS_Firefighter.description>화재 진압.</WS_Firefighter.description>
+  <WS_Firefighter.label>소방수</WS_Firefighter.label>
+  <WS_Fisher.description>낚시.</WS_Fisher.description>
+  <WS_Fisher.label>어부</WS_Fisher.label>
+  <WS_Grower.description>재배 구역에서 파종과 수확.</WS_Grower.description>
+  <WS_Grower.label>재배자</WS_Grower.label>
+  <WS_Grunt.description>운반과 청소.</WS_Grunt.description>
+  <WS_Grunt.label>잡역부</WS_Grunt.label>
+  <WS_Handler.description>동물 길들이기, 훈련, 도살.</WS_Handler.description>
+  <WS_Handler.label>조련사</WS_Handler.label>
+  <WS_Hauler.description>물품 운반.</WS_Hauler.description>
+  <WS_Hauler.label>운반꾼</WS_Hauler.label>
+  <WS_Herder.description>우리 동물 사육: 우리로 이동, 먹이 주기, 착유, 털 깎기, 도살.</WS_Herder.description>
+  <WS_Herder.label>목축업자</WS_Herder.label>
+  <WS_Hunter.description>식량을 위한 야생동물 사냥.</WS_Hunter.description>
+  <WS_Hunter.label>사냥꾼</WS_Hunter.label>
+  <WS_Jailor.description>심문, 노예화, 개종을 제외한 포로 관리: 식사, 호송, 대화, 억압, 석방, 처형.</WS_Jailor.description>
+  <WS_Jailor.label>간수</WS_Jailor.label>
+  <WS_Laborer.description>기타 단순 작업.</WS_Laborer.description>
+  <WS_Laborer.label>노동자</WS_Laborer.label>
+  <WS_Mechanitor.description>메카노이드 수리·배양과 서브코어 인코딩. 메크링크가 있는 정착민에게만 추천합니다.</WS_Mechanitor.description>
+  <WS_Mechanitor.label>메카나이터</WS_Mechanitor.label>
+  <WS_Medic.description>정착민 수술을 제외한 의료 작업.</WS_Medic.description>
+  <WS_Medic.label>의무병</WS_Medic.label>
+  <WS_Miner.description>채굴과 시추.</WS_Miner.description>
+  <WS_Miner.label>광부</WS_Miner.label>
+  <WS_NoFirefighting.description>차단 역할: 뒤쪽 역할(기본 등)에 소방이 포함되어 있어도 이 역할을 가진 정착민은 불을 끄지 않습니다.</WS_NoFirefighting.description>
+  <WS_NoFirefighting.label>불 회피자</WS_NoFirefighting.label>
+  <WS_Nurse.description>환자에게 음식 주기, 구조, 문병, 긴급 자가 치료.</WS_Nurse.description>
+  <WS_Nurse.label>간호사</WS_Nurse.label>
+  <WS_Painter.description>도색과 도색 제거.</WS_Painter.description>
+  <WS_Painter.label>도장공</WS_Painter.label>
+  <WS_Patient.description>치료받기.</WS_Patient.description>
+  <WS_Patient.label>환자</WS_Patient.label>
+  <WS_PlantCutter.description>야생 식물과 나무 벌채·수확.</WS_PlantCutter.description>
+  <WS_PlantCutter.label>벌채꾼</WS_PlantCutter.label>
+  <WS_Repairer.description>새 건물 짓기를 제외한 모든 건설 작업.</WS_Repairer.description>
+  <WS_Repairer.label>수리공</WS_Repairer.label>
+  <WS_Rescuer.description>쓰러진 정착민 구조.</WS_Rescuer.description>
+  <WS_Rescuer.label>구조자</WS_Rescuer.label>
+  <WS_Researcher.description>연구대에서 연구.</WS_Researcher.description>
+  <WS_Researcher.label>연구원</WS_Researcher.label>
+  <WS_Smith.description>무기와 방어구 제작.</WS_Smith.description>
+  <WS_Smith.label>대장장이</WS_Smith.label>
+  <WS_Tailor.description>의류 제작.</WS_Tailor.description>
+  <WS_Tailor.label>재봉사</WS_Tailor.label>
+  <WS_Warden.description>포로 교류: 포섭, 개종, 식사, 석방.</WS_Warden.description>
+  <WS_Warden.label>교도관</WS_Warden.label>
+</LanguageData>

@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_SignalConditionHediff>건강 상태: {0}</WR_SignalConditionHediff>
+  <WR_SignalConditionPrecept>교리: {0}</WR_SignalConditionPrecept>
+  <WR_SignalConditionTrait>특성: {0}</WR_SignalConditionTrait>
+  <WR_SignalCondition_after_mental_break>정신 붕괴 후</WR_SignalCondition_after_mental_break>
+  <WR_SignalCondition_age_min_18>18세 이상</WR_SignalCondition_age_min_18>
+  <WR_SignalCondition_apparel_not_nude>의복 착용 중</WR_SignalCondition_apparel_not_nude>
+  <WR_SignalCondition_apparel_nude>나체</WR_SignalCondition_apparel_nude>
+  <WR_SignalCondition_author_is_bad>원본 모드가 부정적 열정으로 표시함</WR_SignalCondition_author_is_bad>
+  <WR_SignalCondition_body_artificial_parts>인공 신체 부위 있음</WR_SignalCondition_body_artificial_parts>
+  <WR_SignalCondition_body_no_artificial_parts>인공 신체 부위 없음</WR_SignalCondition_body_no_artificial_parts>
+  <WR_SignalCondition_colony_best_at_skill>이 기술이 정착지 최고</WR_SignalCondition_colony_best_at_skill>
+  <WR_SignalCondition_colony_loss_within_3_days>최근 3일 안에 정착민을 잃음</WR_SignalCondition_colony_loss_within_3_days>
+  <WR_SignalCondition_colony_no_recent_loss>최근 정착민 손실 없음</WR_SignalCondition_colony_no_recent_loss>
+  <WR_SignalCondition_colony_not_best_at_skill>이 기술이 정착지 최고가 아님</WR_SignalCondition_colony_not_best_at_skill>
+  <WR_SignalCondition_cycle_daily>매일 바뀜</WR_SignalCondition_cycle_daily>
+  <WR_SignalCondition_environment_near_fire>불 근처</WR_SignalCondition_environment_near_fire>
+  <WR_SignalCondition_equipment_ranged_weapon>원거리 무기 장비 중</WR_SignalCondition_equipment_ranged_weapon>
+  <WR_SignalCondition_location_away_from_home>정착지 밖</WR_SignalCondition_location_away_from_home>
+  <WR_SignalCondition_location_home>정착지 안</WR_SignalCondition_location_home>
+  <WR_SignalCondition_mood_tier_apathetic>무관심 시기</WR_SignalCondition_mood_tier_apathetic>
+  <WR_SignalCondition_mood_tier_greater>열정적인 시기</WR_SignalCondition_mood_tier_greater>
+  <WR_SignalCondition_mood_tier_interested>관심 있는 시기</WR_SignalCondition_mood_tier_interested>
+  <WR_SignalCondition_mood_tier_major>매우 관심 있는 시기</WR_SignalCondition_mood_tier_major>
+  <WR_SignalCondition_mood_tier_none>열정 없는 시기</WR_SignalCondition_mood_tier_none>
+  <WR_SignalCondition_pain_max_0_3>통증 30% 이하</WR_SignalCondition_pain_max_0_3>
+  <WR_SignalCondition_pain_min_0_3>통증 30% 이상</WR_SignalCondition_pain_min_0_3>
+  <WR_SignalCondition_passion_conflicting>사격 열정이 이 특성과 충돌함</WR_SignalCondition_passion_conflicting>
+  <WR_SignalCondition_psychic_sensitivity_tier_critical>극심한 정신 감응력</WR_SignalCondition_psychic_sensitivity_tier_critical>
+  <WR_SignalCondition_psychic_sensitivity_tier_major>높은 정신 감응력</WR_SignalCondition_psychic_sensitivity_tier_major>
+  <WR_SignalCondition_psychic_sensitivity_tier_minor>약한 정신 감응력</WR_SignalCondition_psychic_sensitivity_tier_minor>
+  <WR_SignalCondition_psychic_sensitivity_tier_normal>보통 정신 감응력</WR_SignalCondition_psychic_sensitivity_tier_normal>
+  <WR_SignalCondition_psychic_sensitivity_tier_nullified>정신 감응력 무효</WR_SignalCondition_psychic_sensitivity_tier_nullified>
+  <WR_SignalCondition_range_long>장거리</WR_SignalCondition_range_long>
+  <WR_SignalCondition_range_medium>중거리</WR_SignalCondition_range_medium>
+  <WR_SignalCondition_ritual_no_recent_quality_outcome>최근 성공한 의식 없음</WR_SignalCondition_ritual_no_recent_quality_outcome>
+  <WR_SignalCondition_ritual_recent_quality_outcome>최근 의식 성공</WR_SignalCondition_ritual_recent_quality_outcome>
+  <WR_SignalCondition_setting_vse_critical_affects_other_skills>모드 설정에서 극단적 열정이 다른 기술에도 영향</WR_SignalCondition_setting_vse_critical_affects_other_skills>
+  <WR_SignalCondition_sight_blind>실명</WR_SignalCondition_sight_blind>
+  <WR_SignalCondition_sight_not_blind>실명 아님</WR_SignalCondition_sight_not_blind>
+  <WR_SignalCondition_social_same_passion_opinion>같은 열정을 가진 사람에 대한 호감 증가</WR_SignalCondition_social_same_passion_opinion>
+  <WR_SignalCondition_state_drunk>취함</WR_SignalCondition_state_drunk>
+  <WR_SignalCondition_state_no_recent_lovin>최근 사랑을 나누지 않음</WR_SignalCondition_state_no_recent_lovin>
+  <WR_SignalCondition_state_not_drunk>취하지 않음</WR_SignalCondition_state_not_drunk>
+  <WR_SignalCondition_state_not_smokeleaf_high>연초에 취하지 않음</WR_SignalCondition_state_not_smokeleaf_high>
+  <WR_SignalCondition_state_recent_lovin>최근 사랑을 나눔</WR_SignalCondition_state_recent_lovin>
+  <WR_SignalCondition_state_smokeleaf_high>연초에 취함</WR_SignalCondition_state_smokeleaf_high>
+  <WR_SignalCondition_time_20_5>20:00~05:00</WR_SignalCondition_time_20_5>
+  <WR_SignalCondition_time_day>낮 시간</WR_SignalCondition_time_day>
+  <WR_SignalCondition_weather_not_raining>비가 오지 않음</WR_SignalCondition_weather_not_raining>
+  <WR_SignalCondition_weather_raining>비가 옴</WR_SignalCondition_weather_raining>
+  <WR_SignalCondition_work_compelled_aversion>기술을 싫어하지만 배워야 한다는 강박이 있음</WR_SignalCondition_work_compelled_aversion>
+  <WR_SignalCondition_work_enjoyment>관련 작업을 매우 즐김</WR_SignalCondition_work_enjoyment>
+  <WR_SignalCondition_work_passionate>열정 있는 작업으로 기분 변화</WR_SignalCondition_work_passionate>
+  <WR_SignalCondition_work_type_hated>싫어하는 작업</WR_SignalCondition_work_type_hated>
+  <WR_SignalCurrentSkill>현재 기술</WR_SignalCurrentSkill>
+  <WR_SignalEffectSubject>{0}: {1}</WR_SignalEffectSubject>
+  <WR_SignalEffect_Accuracy>정확도</WR_SignalEffect_Accuracy>
+  <WR_SignalEffect_AimingDelay>조준 지연</WR_SignalEffect_AimingDelay>
+  <WR_SignalEffect_Capability>작업 가능 여부</WR_SignalEffect_Capability>
+  <WR_SignalEffect_Damage>피해량</WR_SignalEffect_Damage>
+  <WR_SignalEffect_Dodge>회피</WR_SignalEffect_Dodge>
+  <WR_SignalEffect_HitChance>명중률</WR_SignalEffect_HitChance>
+  <WR_SignalEffect_LearningRate>학습 속도</WR_SignalEffect_LearningRate>
+  <WR_SignalEffect_MentalBreak>정신 붕괴</WR_SignalEffect_MentalBreak>
+  <WR_SignalEffect_Mood>기분</WR_SignalEffect_Mood>
+  <WR_SignalEffect_Passion>열정</WR_SignalEffect_Passion>
+  <WR_SignalEffect_Quality>품질</WR_SignalEffect_Quality>
+  <WR_SignalEffect_SkillDecay>기술 감소</WR_SignalEffect_SkillDecay>
+  <WR_SignalEffect_SkillLevel>기술 수준</WR_SignalEffect_SkillLevel>
+  <WR_SignalEffect_StatModifier>능력치 보정</WR_SignalEffect_StatModifier>
+  <WR_SignalEffect_WorkPreference>작업 선호</WR_SignalEffect_WorkPreference>
+  <WR_SignalEffect_WorkSpeed>작업 속도</WR_SignalEffect_WorkSpeed>
+  <WR_SignalEffect_Yield>생산량</WR_SignalEffect_Yield>
+  <WR_SignalMajorPassion>불타는 열정</WR_SignalMajorPassion>
+  <WR_SignalMinorPassion>약한 열정</WR_SignalMinorPassion>
+  <WR_SignalOtherSkills>다른 기술</WR_SignalOtherSkills>
+  <WR_SignalTargetConstantDebuff>지속적인 기분 불이익</WR_SignalTargetConstantDebuff>
+  <WR_SignalTargetRangedWeapon>원거리 무기</WR_SignalTargetRangedWeapon>
+  <WR_SignalTargetViolentWork>폭력 작업</WR_SignalTargetViolentWork>
+  <WR_SignalUnit_Days>일</WR_SignalUnit_Days>
+  <WR_SignalUnit_MoodPoints>기분 점수</WR_SignalUnit_MoodPoints>
+  <WR_SignalUnit_PassionLevels>열정 단계</WR_SignalUnit_PassionLevels>
+  <WR_SignalUnit_Scalar>점</WR_SignalUnit_Scalar>
+  <WR_SignalUnit_SkillLevels>기술 수준</WR_SignalUnit_SkillLevels>
+  <WR_SignalUnit_StatValue>능력치 값</WR_SignalUnit_StatValue>
+  <WR_SignalUnknownMod>알 수 없는 모드</WR_SignalUnknownMod>
+</LanguageData>

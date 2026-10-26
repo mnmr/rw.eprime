@@ -32,11 +32,15 @@ namespace QualityJobs.Patches
         public struct FailState
         {
             public ConstructionPlan? plan;
+            public Frame? frame;
             public Map? map;
             public IntVec3 position;
             public ThingDef? blueprintDef;
         }
 
+        // Capture before ordinary replacement prefixes consume the frame.
+        // Explicit Harmony ordering dependencies still take precedence.
+        [HarmonyPriority(int.MaxValue)]
         public static void Prefix(Frame __instance, out FailState __state)
         {
             __state = default;
@@ -45,6 +49,7 @@ namespace QualityJobs.Patches
             ConstructionPlan? plan = store.FindPlan(__instance);
             if (plan == null) return;
             __state.plan = plan;
+            __state.frame = __instance;
             __state.map = __instance.Map;
             __state.position = __instance.Position;
             __state.blueprintDef = __instance.def.entityDefToBuild?.blueprintDef;
@@ -53,9 +58,10 @@ namespace QualityJobs.Patches
         public static void Postfix(FailState __state)
         {
             ConstructionPlan? plan = __state.plan;
-            if (plan == null) return;
+            // A suppressed failure leaves the frame and its plan intact.
+            if (plan == null || __state.frame == null || !__state.frame.Destroyed) return;
             QualityJobsStore? store = QualityJobsStore.Active;
-            if (store == null) return;
+            if (store == null || !ReferenceEquals(store.FindPlan(__state.frame), plan)) return;
             Thing? blueprint = __state.map != null && __state.blueprintDef != null
                 ? __state.map.thingGrid.ThingAt(__state.position, __state.blueprintDef)
                 : null;
@@ -79,6 +85,8 @@ namespace QualityJobs.Patches
         public struct DestroyState
         {
             public ConstructionPlan? plan;
+            public Building? building;
+            public BuildingRebuildSettings? rebuildSettings;
             public Map? map;
             public IntVec3 position;
             public Rot4 rotation;
@@ -89,6 +97,9 @@ namespace QualityJobs.Patches
             public Faction? faction;
         }
 
+        // Capture the original location/settings before ordinary replacements;
+        // explicit Harmony ordering dependencies still take precedence.
+        [HarmonyPriority(int.MaxValue)]
         public static void Prefix(Building __instance, DestroyMode mode, out DestroyState __state)
         {
             __state = default;
@@ -105,10 +116,15 @@ namespace QualityJobs.Patches
             ConstructionPlan? plan = store.FindPlan(__instance);
             if (plan == null) return;
             __state.plan = plan;
+            __state.building = __instance;
             if (plan.state == ConstructionPlanState.AwaitingRebuild
                 && mode == DestroyMode.Deconstruct && __instance.Spawned)
             {
-                store.CaptureRebuildSettings(plan, __instance);
+                // Stage settings before destruction clears them, but publish
+                // only after it succeeds. A cancelled attempt must not freeze
+                // settings the player can still edit on the surviving building.
+                if (plan.rebuildSettings == null)
+                    __state.rebuildSettings = BuildingRebuildSettings.Capture(__instance);
                 __state.map = __instance.Map;
                 __state.position = __instance.Position;
                 __state.rotation = __instance.Rotation;
@@ -123,9 +139,10 @@ namespace QualityJobs.Patches
         public static void Postfix(DestroyState __state)
         {
             ConstructionPlan? plan = __state.plan;
-            if (plan == null) return;
+            if (plan == null || __state.building == null || !__state.building.Destroyed) return;
             QualityJobsStore? store = QualityJobsStore.Active;
-            if (store == null) return;
+            // Another callback may already have removed or retargeted this plan.
+            if (store == null || !ReferenceEquals(store.FindPlan(__state.building), plan)) return;
 
             if (__state.map == null || __state.def == null)
             {
@@ -134,6 +151,9 @@ namespace QualityJobs.Patches
                 store.RemovePlan(plan);
                 return;
             }
+
+            if (__state.rebuildSettings != null)
+                store.PreserveRebuildSettings(plan, __state.rebuildSettings);
 
             // Suppress the spawn hook for this blueprint: PlaceBlueprintForBuild
             // spawns synchronously (firing Patch_BlueprintSpawn before it returns),

@@ -64,7 +64,7 @@ Clique em um espaço para definir suas opções de exibição. Clique com o bot�
   <EPR.ShowSearchFilter>Mostrar filtro de pesquisa</EPR.ShowSearchFilter>
   <EPR.SearchHideZero>Ocultar resultados zerados</EPR.SearchHideZero>
   <EPR.SearchStorageOnly>Contar apenas itens armazenados</EPR.SearchStorageOnly>
-  <EPR.SearchStorageOnlyTip>Quando ativado, conta apenas itens elegíveis e não apodrecidos em zonas de armazenamento ou edifícios de armazenamento, como estantes. Os itens soltos em outras partes do mapa são excluídos. Itens transportados por personagens, salvos em inventários ou recipientes, ou ocultos em áreas ainda não reveladas nunca são contados. Os itens proibidos são incluídos, exceto se “Ignorar itens proibidos” também estiver ativado.</EPR.SearchStorageOnlyTip>
+  <EPR.SearchStorageOnlyTip>Quando ativado, conta apenas itens elegíveis e não apodrecidos em zonas de armazenamento ou edifícios de armazenamento, como estantes. Os itens soltos em outras partes do mapa são excluídos. Itens transportados, guardados em inventários ou recipientes, ou ocultos em áreas ainda não reveladas nunca são contados. Os itens proibidos são incluídos, exceto se “Ignorar itens proibidos” também estiver ativado.</EPR.SearchStorageOnlyTip>
   <EPR.SearchHideForbidden>Ignorar itens proibidos</EPR.SearchHideForbidden>
   <EPR.SelectJumpCamera>Mover a câmera para o recurso clicado</EPR.SelectJumpCamera>
   <EPR.DisplayOptions>Opções de exibição</EPR.DisplayOptions>
@@ -73,7 +73,7 @@ Clique em um espaço para definir suas opções de exibição. Clique com o bot�
   <EPR.TierLayoutOptions>Disposição dos níveis</EPR.TierLayoutOptions>
   <EPR.TierLayoutHorizontal>Horizontal</EPR.TierLayoutHorizontal>
   <EPR.TierLayoutVertical>Vertical</EPR.TierLayoutVertical>
-  <EPR.TierLayoutTip>Como um grupo expandido apresenta os níveis adicionais, quer tenha usado os triângulos, quer tenha passado o mouse sobre ele. Horizontal acrescenta-os à direita mesmo assim linha. Vertical dá uma linha a cada nível e aumenta a altura da faixa.</EPR.TierLayoutTip>
+  <EPR.TierLayoutTip>Como um grupo expandido apresenta os níveis adicionais, quer tenha usado os triângulos, quer tenha passado o mouse sobre ele. Horizontal acrescenta-os à direita, na mesma linha. Vertical dá uma linha a cada nível e aumenta a altura da faixa.</EPR.TierLayoutTip>
   <EPR.ExpandOnHover>Expandir ao passar o cursor</EPR.ExpandOnHover>
   <EPR.CollapseWhenIdle>Recolher ao retirar o cursor</EPR.CollapseWhenIdle>
   <EPR.ShowModName>Mostrar nome do mod</EPR.ShowModName>
@@ -150,4 +150,7 @@ Para adicionar um conjunto a um grupo, mude para o Editor de grupos e use o ramo
   <EPR.PreviewPoolRow>{0} ({1} membros)</EPR.PreviewPoolRow>
   <EPR.PreviewGroupRow>{0} ({1} níveis, {2} espaços)</EPR.PreviewGroupRow>
   <EPR.PreviewNone>(nenhum)</EPR.PreviewNone>
+  <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout exibe seu próprio painel de recursos no modo personalizado ou predefinido. Esse painel disputa o mesmo espaço de exibição com EPrime's Readouts.</EPR.CompatibilityCustomResourceReadout>
+  <EPR.CompatibilityReadoutsPlus>Readouts+ adiciona controles de clique ao painel de recursos do jogo base. Esses controles são ignorados enquanto o painel do EPrime está ativado.</EPR.CompatibilityReadoutsPlus>
+  <EPR.CompatibilityToggleableReadouts>Toggleable Readouts (incluindo Continued) substitui a renderização dos painéis do jogo base. Seus filtros e opções de fixação são ignorados enquanto o painel do EPrime está ativado.</EPR.CompatibilityToggleableReadouts>
 </LanguageData>

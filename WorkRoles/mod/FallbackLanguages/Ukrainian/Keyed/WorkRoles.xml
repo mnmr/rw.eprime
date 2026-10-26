@@ -1,0 +1,636 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_ActAltClick>Alt + клацання</WR_ActAltClick>
+  <WR_ActChipClick>Перемкнути: увімкнено, вимкнено, примусово ввімкнено</WR_ActChipClick>
+  <WR_ActChipDrag>Змінити порядок або перенести іншому колоністу</WR_ActChipDrag>
+  <WR_ActChipRightClick>Параметри закріплення</WR_ActChipRightClick>
+  <WR_ActChipX>Вилучити</WR_ActChipX>
+  <WR_ActClick>Клацання</WR_ActClick>
+  <WR_ActCtrlShiftClick>Ctrl+Shift + клацання</WR_ActCtrlShiftClick>
+  <WR_ActDrag>Перетягування</WR_ActDrag>
+  <WR_ActPaletteAltClick>Додати вибраним колоністам на рекомендоване місце</WR_ActPaletteAltClick>
+  <WR_ActPaletteClick>Глобально перемкнути роль</WR_ActPaletteClick>
+  <WR_ActPaletteCtrlShiftClick>Додати вибраним колоністам одразу після основних робіт</WR_ActPaletteCtrlShiftClick>
+  <WR_ActPaletteDrag>Призначити колоністу</WR_ActPaletteDrag>
+  <WR_ActPaletteShiftClick>Додати вибраним колоністам у кінець рядка</WR_ActPaletteShiftClick>
+  <WR_ActRightClick>Права кнопка</WR_ActRightClick>
+  <WR_ActShiftClick>Shift + клацання</WR_ActShiftClick>
+  <WR_ActTreeClick>Вибрати для редагування</WR_ActTreeClick>
+  <WR_ActTreeDrag>Упорядкувати або перенести між групами</WR_ActTreeDrag>
+  <WR_ActTreeRightClick>Змінити склад ролі (включити/виключити)</WR_ActTreeRightClick>
+  <WR_ActX>X</WR_ActX>
+  <WR_ActiveHours>Активні години</WR_ActiveHours>
+  <WR_AddAllJobs>Додати всі окремо (зі змінним порядком)</WR_AddAllJobs>
+  <WR_AddNew>Додати</WR_AddNew>
+  <WR_AddRole>Додати роль</WR_AddRole>
+  <WR_AddRoleTip>Призначити роль.</WR_AddRoleTip>
+  <WR_AddSkill>Додати навичку</WR_AddSkill>
+  <WR_AddSkillTip>Додати обов'язкову вимогу до навички. Це не змінює визначені завданнями задіяні й треновані навички.</WR_AddSkillTip>
+  <WR_AllJobs>Усі завдання</WR_AllJobs>
+  <WR_AllRolesAssigned>Усі ролі призначено</WR_AllRolesAssigned>
+  <WR_AllWork>усю роботу</WR_AllWork>
+  <WR_AlreadyAssigned>Уже призначено</WR_AlreadyAssigned>
+  <WR_Apply>Застосувати</WR_Apply>
+  <WR_AssignedRoleCaption>Призначена роль</WR_AssignedRoleCaption>
+  <WR_AssignedTo>Призначено</WR_AssignedTo>
+  <WR_AutoAssign>Автопризначення</WR_AutoAssign>
+  <WR_AutoAssignTip>Новоприбулі, зокрема новобранці й мандрівники, отримують роль автоматично, якщо входять до її вікових груп.</WR_AutoAssignTip>
+  <WR_AutoManaged>Автокерування</WR_AutoManaged>
+  <WR_AutoManagedTip>WorkRoles автоматично оновлює призначення ролей у кожній колонії на початку ігрової години.
+
+Закріплені призначення зберігаються, зокрема виключені ролі.
+
+Вимкніть «Автооптимізація колоній щогодини» на вкладці «Параметри», щоб повернути кнопку впорядкування колонії.</WR_AutoManagedTip>
+  <WR_AutoOptimizeConfirmApply>«Застосувати» негайно вносить наведені зміни й умикає щогодинну автооптимізацію. Поки вона ввімкнена, кнопки «Впорядкувати колонію» та «Виконати» приховані; призначати, впорядковувати й закріплювати ролі можна як завжди.</WR_AutoOptimizeConfirmApply>
+  <WR_AutoOptimizeGlobalWarning>У вас кілька колоній: автооптимізація діє ГЛОБАЛЬНО й щогодини змінюватиме призначення в УСІХ. Нижче показано зміни лише поточної колонії.</WR_AutoOptimizeGlobalWarning>
+  <WR_AutomationSection>Автоматизація</WR_AutomationSection>
+  <WR_AvailableJobs>Доступні завдання</WR_AvailableJobs>
+  <WR_AvailableRoles>Доступні ролі</WR_AvailableRoles>
+  <WR_BadDirectory>Введіть коректний шлях до папки.</WR_BadDirectory>
+  <WR_BadFileName>Введіть коректну назву файлу.</WR_BadFileName>
+  <WR_BadgeBlocker>блокування</WR_BadgeBlocker>
+  <WR_BadgeHours>обмежені години</WR_BadgeHours>
+  <WR_BadgeLocation>обмежені місця</WR_BadgeLocation>
+  <WR_BandChipTip>Перетягуйте край для зміни меж навички, середину — для переміщення діапазону.</WR_BandChipTip>
+  <WR_BillRoleOption>Роль: {0}</WR_BillRoleOption>
+  <WR_BillWorkerRoleTip>Замовлення виконують лише колоністи, для яких ця роль активна; умовна роль дотримується своїх правил, зокрема годин. Вибір працівника скасовує обмеження роллю й навпаки.</WR_BillWorkerRoleTip>
+  <WR_BlockerRole>Блокувальна роль</WR_BlockerRole>
+  <WR_BlockerRoleTipWhat>Завдання блокувальної ролі ніколи не виконуються: вони заборонені, навіть якщо є в пізнішій ролі.</WR_BlockerRoleTipWhat>
+  <WR_BlockerRoleTipWhy>Ролі вище блокувальної зберігають перевагу, тому винятки можна дозволити, поставивши роль раніше.</WR_BlockerRoleTipWhy>
+  <WR_ChampionPenalty>Штраф за кілька провідних ролей</WR_ChampionPenalty>
+  <WR_ChampionPenaltyTip>Якщо ввімкнено, колоніст із провідними позиціями в інших ролях отримує штраф у доборі на цю. Вимкніть для ролей, де суміщення прийнятне, наприклад нерегулярної роботи.</WR_ChampionPenaltyTip>
+  <WR_ChipLayoutGridTip>Значки вирівняні в однакові стовпці. Довгі назви згасають біля краю; додаткове місце надається лише для розрізнення подібних назв. Підказка показує всю назву. Клацніть для природної ширини. Права кнопка задає, яку частину назв уміщує сітка.</WR_ChipLayoutGridTip>
+  <WR_ChipLayoutStackTip>Значки мають природну ширину. Клацніть для вирівнювання в однакові стовпці. Права кнопка задає, яку частину назв уміщує сітка.</WR_ChipLayoutStackTip>
+  <WR_ChipsCompact>Ролі: ініціали</WR_ChipsCompact>
+  <WR_ChipsIcons>Ролі: значки</WR_ChipsIcons>
+  <WR_ChipsNormal>Ролі: повні назви</WR_ChipsNormal>
+  <WR_ClearRulesConfirm>Вилучити всі правила з «{0}»? Роль знову стане ручною.</WR_ClearRulesConfirm>
+  <WR_ClusterEveryone>Усі</WR_ClusterEveryone>
+  <WR_ClusterUnskilled>Некваліфіковані</WR_ClusterUnskilled>
+  <WR_ColColonist>Колоніст</WR_ColColonist>
+  <WR_ColonistClearFiltersTip>Очищує пошук імен, фільтри ролі й завдання. Місце, групування, стовпці навичок та вигляд ролей не змінюються.</WR_ColonistClearFiltersTip>
+  <WR_ColonistGroupTip>Ділить видимих колоністів на розділи за вибраною ознакою. Групування не змінює відповідності фільтрам; заголовки розділів можна згортати.</WR_ColonistGroupTip>
+  <WR_ColonistJobFilterTip>Вибрано: {0}
+
+Показує колоністів, чиї призначені неблокувальні ролі містять це завдання. Перевіряє охоплення ролями, а не поточну діяльність чи звичайний пріоритет роботи.</WR_ColonistJobFilterTip>
+  <WR_ColonistNameCaption>Ім'я колоніста</WR_ColonistNameCaption>
+  <WR_ColonistRoleDisplayTip>Вибирає вміст значків ролей: повні назви, ініціали чи значки. Сусідня кнопка перемикає вільне розташування та сітку. Це особистий параметр відображення.</WR_ColonistRoleDisplayTip>
+  <WR_ColonistRoleFilterTip>Показує колоністів із вибраною роллю. Призначена неблокувальна роль також підходить, якщо її завдання повністю охоплюють вибрану. Поєднується з пошуком, фільтрами завдань і місця.</WR_ColonistRoleFilterTip>
+  <WR_ColonistScopeTip>Вибирає місця, звідки колоністи потрапляють до таблиці. Поточне місце відповідає активній мапі; «Усюди» включає поселення, каравани й гравкорабель у подорожі.</WR_ColonistScopeTip>
+  <WR_ColonistSearchTip>Пошук за іменами колоністів. Розділяйте слова пробілами; збігтися мають усі. Префікс r: або role: шукає назви призначених ролей, j: або job: — завдання цих ролей. Приклад: бо r:лікар.</WR_ColonistSearchTip>
+  <WR_ColonistSkillColumnsTip>Вибирає до трьох стовпців навичок. Клацніть заголовок навички для сортування або X для вилучення стовпця.</WR_ColonistSkillColumnsTip>
+  <WR_ColonistsTab>Колоністи</WR_ColonistsTab>
+  <WR_CompatSection>Сумісність</WR_CompatSection>
+  <WR_CompatibilityFreeWill>Free Will задає робочі пріоритети колоністів, але WorkRoles керує ними для своїх колоністів і блокує ці зміни.</WR_CompatibilityFreeWill>
+  <WR_CompatibilityPriorityMaster>PriorityMaster змінює ручні числа пріоритетів та їхній діапазон. WorkRoles замінює ці елементи керування й визначає пріоритети за ролями.</WR_CompatibilityPriorityMaster>
+  <WR_CompatibilityWorkTab>{0} замінює вкладку роботи й керує пріоритетами, що конфліктує з керуванням через ролі WorkRoles.</WR_CompatibilityWorkTab>
+  <WR_CompositeConfirm>Зробити «{0}» складеною роллю? Її вибрані завдання буде вилучено.</WR_CompositeConfirm>
+  <WR_CompositeRevertConfirm>Зробити «{0}» звичайною роллю? Її ролі-складники буде вилучено.</WR_CompositeRevertConfirm>
+  <WR_CompositeRole>Складена роль</WR_CompositeRole>
+  <WR_CompositeRoleTip>Складена роль об'єднує інші: виконавці працюють за завданнями складників у їхньому порядку. Власного списку завдань вона не має.</WR_CompositeRoleTip>
+  <WR_ConditionalRole>Умовна роль</WR_ConditionalRole>
+  <WR_ConditionalRoleTip>Умовні ролі самі вмикаються й вимикаються за правилами часу та місця. Будь-яке задане правило робить роль умовною.</WR_ConditionalRoleTip>
+  <WR_ContributesTip>Тренує для цієї ролі: {0}.</WR_ContributesTip>
+  <WR_CopiedRoles>Скопійовано ролі: {0}.</WR_CopiedRoles>
+  <WR_CopiedToClipboard>Скопійовано до буфера обміну.</WR_CopiedToClipboard>
+  <WR_Copy>Копіювати</WR_Copy>
+  <WR_CopyClipboard>Копіювати до буфера</WR_CopyClipboard>
+  <WR_CopyPath>Копіювати шлях</WR_CopyPath>
+  <WR_CopyRoleTitle>Копія ролі</WR_CopyRoleTitle>
+  <WR_CopyRolesTip>Копіювати ролі цього колоніста.</WR_CopyRolesTip>
+  <WR_CopySource>Копіювання: {0}</WR_CopySource>
+  <WR_CoveredByTypeTip>Охоплено видом роботи. Клацніть, щоб надати завданню окремий запис зі змінним порядком.</WR_CoveredByTypeTip>
+  <WR_CoveredJobCaption>Охоплене завдання</WR_CoveredJobCaption>
+  <WR_CustomSwatchEmpty>Порожня комірка: клацніть, щоб вибрати власний колір. Власні кольори спільні для всіх ролей.</WR_CustomSwatchEmpty>
+  <WR_CustomSwatchTip>Клацніть для використання кольору. Права кнопка змінює колір комірки.</WR_CustomSwatchTip>
+  <WR_DeadEntryTip>Без ефекту: усе охоплено записами вище. Підніміть запис для пріоритету або вилучіть.</WR_DeadEntryTip>
+  <WR_Delete>Видалити</WR_Delete>
+  <WR_DeleteConfirm>Видалити роль «{0}»? Її буде вилучено в усіх колоністів.</WR_DeleteConfirm>
+  <WR_DisplayButton>Вигляд</WR_DisplayButton>
+  <WR_DisplayModeLabel>Режим відображення</WR_DisplayModeLabel>
+  <WR_DisplayOptions>Параметри відображення</WR_DisplayOptions>
+  <WR_DisplaySection>Відображення</WR_DisplaySection>
+  <WR_EffectQuality>Покращує якість</WR_EffectQuality>
+  <WR_EffectSpeed>Прискорює роботу</WR_EffectSpeed>
+  <WR_EffectSuccess>Підвищує імовірність успіху</WR_EffectSuccess>
+  <WR_EffectYield>Збільшує вихід продукції</WR_EffectYield>
+  <WR_EmergencySuffix> (нагальне)</WR_EmergencySuffix>
+  <WR_EnterPath>Введіть шлях</WR_EnterPath>
+  <WR_Export>Експорт</WR_Export>
+  <WR_ExportFailed>Не вдалося зберегти: {0}</WR_ExportFailed>
+  <WR_ExportLocationLabel>Місце експорту</WR_ExportLocationLabel>
+  <WR_ExportOverwriteConfirm>{0} уже існує. Замінити?</WR_ExportOverwriteConfirm>
+  <WR_ExportSaved>Збережено в {0}</WR_ExportSaved>
+  <WR_ExportTip>Записати всі описи ролей без призначень до:\n{0}</WR_ExportTip>
+  <WR_ExportTitle>Експорт ролей</WR_ExportTitle>
+  <WR_FilterAllRoles>Усі ролі</WR_FilterAllRoles>
+  <WR_FilterAnyJob>Будь-яке завдання</WR_FilterAnyJob>
+  <WR_FixMyColony>Впорядкувати колонію</WR_FixMyColony>
+  <WR_FixMyColonyTip>Замінити ролі всіх колоністів рекомендованими.</WR_FixMyColonyTip>
+  <WR_FixNeedsSingleLocation>Рекомендації обчислюються для окремого місця. Виберіть одне поселення чи корабель, щоб упорядкувати колонію.</WR_FixNeedsSingleLocation>
+  <WR_GatedSkillsLabel>Потрібні</WR_GatedSkillsLabel>
+  <WR_GatedSkillsTip>Навички, потрібні для певних завдань ролі. Мінімальний рівень залежить від рецепта, рослини чи споруди. Наведіть для подробиць.\n\nВизначено з вибраних завдань і наведено для довідки.</WR_GatedSkillsTip>
+  <WR_GiverBypassBody>{0}: розпочато завдання «{1}», якого немає в жодній призначеній ролі.
+
+WorkRoles надає керованим колоністам списки завдань через стандартні методи гри. Схоже, інший мод добирає роботу з власного списку, оминаючи обмеження ролей. Із цим модом колоністи іноді можуть працювати поза своїми ролями.
+
+Завдання не перервано. Повідомлення показується раз на збереження.</WR_GiverBypassBody>
+  <WR_GiverBypassTitle>Завдання оминуло списки ролей</WR_GiverBypassTitle>
+  <WR_GridModeRaw>Пріоритети WorkRoles</WR_GridModeRaw>
+  <WR_GridModeVanilla>Пріоритети базової гри</WR_GridModeVanilla>
+  <WR_GridNamesAutomatic>Автоматично</WR_GridNamesAutomatic>
+  <WR_GridNamesFull>Повні</WR_GridNamesFull>
+  <WR_GridNamesLong>Довгі</WR_GridNamesLong>
+  <WR_GridNamesMedium>Середні</WR_GridNamesMedium>
+  <WR_GridNamesShort>Короткі</WR_GridNamesShort>
+  <WR_GroupAge>Вік</WR_GroupAge>
+  <WR_GroupButton>Група: {0}</WR_GroupButton>
+  <WR_GroupByCaption>Групувати за</WR_GroupByCaption>
+  <WR_GroupColonyGroups>Colony Groups</WR_GroupColonyGroups>
+  <WR_GroupCompositeTip>Складені ролі показуються у своїй окремій групі.</WR_GroupCompositeTip>
+  <WR_GroupComposites>Складені ролі</WR_GroupComposites>
+  <WR_GroupConditionalRoles>Умовні ролі</WR_GroupConditionalRoles>
+  <WR_GroupDefault>Типова</WR_GroupDefault>
+  <WR_GroupFaction>Фракція</WR_GroupFaction>
+  <WR_GroupGender>Стать</WR_GroupGender>
+  <WR_GroupIdeo>Ідеолігія</WR_GroupIdeo>
+  <WR_GroupLabel>Група</WR_GroupLabel>
+  <WR_GroupNewOption>Нова...</WR_GroupNewOption>
+  <WR_GroupNone>Без групування</WR_GroupNone>
+  <WR_GroupOverlayTip>Ролі з правилами показуються серед умовних. Збережена група повертається після очищення правил.</WR_GroupOverlayTip>
+  <WR_GroupRace>Раса</WR_GroupRace>
+  <WR_GroupSlaves>Рабство</WR_GroupSlaves>
+  <WR_GroupTitleColonists>Колоністи</WR_GroupTitleColonists>
+  <WR_GroupTitleSlaves>Раби</WR_GroupTitleSlaves>
+  <WR_GroupTitleUngrouped>Без групи</WR_GroupTitleUngrouped>
+  <WR_GroupXenotype>Ксенотип</WR_GroupXenotype>
+  <WR_HelpChapterAdvanced>Додатково</WR_HelpChapterAdvanced>
+  <WR_HelpChapterBasics>Основи</WR_HelpChapterBasics>
+  <WR_HelpChapterEditing>Редагування ролей</WR_HelpChapterEditing>
+  <WR_HelpChapterOrganizing>Упорядкування</WR_HelpChapterOrganizing>
+  <WR_HelpChapterRecommendations>Рекомендації</WR_HelpChapterRecommendations>
+  <WR_HelpChapterStart>Початок</WR_HelpChapterStart>
+  <WR_HelpDemoChipA>Лікар</WR_HelpDemoChipA>
+  <WR_HelpDemoChipB>Фермер</WR_HelpDemoChipB>
+  <WR_HelpDemoChipC>Носій</WR_HelpDemoChipC>
+  <WR_HelpReload>Перезавантажити</WR_HelpReload>
+  <WR_HelpTab>Довідка</WR_HelpTab>
+  <WR_HelpTourComplete>Ви готові!</WR_HelpTourComplete>
+  <WR_HelpTourCompleteHint>Основи вже знайомі. Решту пояснюють розділи вище.</WR_HelpTourCompleteHint>
+  <WR_HelpTourHeader>Ознайомлення</WR_HelpTourHeader>
+  <WR_HelpTourProgress>Прочитано тем: {0} із {1}</WR_HelpTourProgress>
+  <WR_HoursActive>Активна</WR_HoursActive>
+  <WR_HoursInactive>Неактивна</WR_HoursInactive>
+  <WR_Import>Імпорт</WR_Import>
+  <WR_ImportClipboardInvalid>Буфер обміну не містить експорту WorkRoles.</WR_ImportClipboardInvalid>
+  <WR_ImportFileMissing>Файл не знайдено: {0}</WR_ImportFileMissing>
+  <WR_ImportFromClipboard>Із буфера обміну</WR_ImportFromClipboard>
+  <WR_ImportLocationLabel>Джерело імпорту</WR_ImportLocationLabel>
+  <WR_ImportParseFailed>Не вдалося прочитати ролі: {0}</WR_ImportParseFailed>
+  <WR_ImportSummary>Імпорт завершено: додано {0}, оновлено {1}, видалено {2}, змін палітри {3}, шляхів навчання {4}.</WR_ImportSummary>
+  <WR_ImportTip>Додати описи ролей із:\n{0}</WR_ImportTip>
+  <WR_ImportTitle>Імпорт ролей</WR_ImportTitle>
+  <WR_InvalidRoleTip>Роль ніколи не діятиме: немає завдань або всіх зазначених місць уже не існує.</WR_InvalidRoleTip>
+  <WR_JobColumn>Завдання</WR_JobColumn>
+  <WR_JobFilterLabel>Фільтр завдань</WR_JobFilterLabel>
+  <WR_LocCustom>Інше...</WR_LocCustom>
+  <WR_LocDesktop>Робочий стіл</WR_LocDesktop>
+  <WR_LocGameData>Папка даних гри</WR_LocGameData>
+  <WR_LocUserHome>Домашня папка</WR_LocUserHome>
+  <WR_LocationAny>Будь-де</WR_LocationAny>
+  <WR_LocationCaption>Місце</WR_LocationCaption>
+  <WR_LocationCaravans>Каравани</WR_LocationCaravans>
+  <WR_LocationCount>Місць: {0}</WR_LocationCount>
+  <WR_LocationGone>(зникло)</WR_LocationGone>
+  <WR_LocationNowhere>Ніде</WR_LocationNowhere>
+  <WR_LocationNowhereTip>Роль обмежена місцями, яких уже немає. Вона залишиться вимкненою до вибору іншого місця.</WR_LocationNowhereTip>
+  <WR_LocationSettlementItem>Поселення: {0}</WR_LocationSettlementItem>
+  <WR_LocationSettlements>Поселення</WR_LocationSettlements>
+  <WR_LocationShipItem>Корабель: {0}</WR_LocationShipItem>
+  <WR_MakeItSo>Виконати</WR_MakeItSo>
+  <WR_MemberLockTip>Заблоковано: роль входить до складеної. Вилучіть її з усіх складених ролей, щоб змінити параметр.</WR_MemberLockTip>
+  <WR_MemberRoles>Ролі-складники (за порядком)</WR_MemberRoles>
+  <WR_MissingDef>{0} відсутній у поточному наборі модів і неактивний до повернення свого мода.</WR_MissingDef>
+  <WR_ModeMerge>Об'єднати</WR_ModeMerge>
+  <WR_ModeOverwrite>Перезаписати</WR_ModeOverwrite>
+  <WR_MoveSelectedDownTip>Перемістити вибрані рядки на крок униз.</WR_MoveSelectedDownTip>
+  <WR_MoveSelectedUpTip>Перемістити вибрані рядки на крок угору. Клацання вибирає рядок, Shift — діапазон, Ctrl — додає або вилучає один рядок із вибору.</WR_MoveSelectedUpTip>
+  <WR_MtcHatedWorkSignalDescription>More Than Capable дозволяє цю роботу, але вона спричиняє значні й дедалі більші штрафи.</WR_MtcHatedWorkSignalDescription>
+  <WR_MtcHatedWorkSignalLabel>Ненависть до {0}</WR_MtcHatedWorkSignalLabel>
+  <WR_NameTaken>Роль із такою назвою вже існує.</WR_NameTaken>
+  <WR_New>Створити</WR_New>
+  <WR_NewGroupTitle>Нова група</WR_NewGroupTitle>
+  <WR_NewRoleTitle>Нова роль</WR_NewRoleTitle>
+  <WR_NewWorkDetected>Виявлено нові види роботи. Створено або розширено ролі: {0}</WR_NewWorkDetected>
+  <WR_NoCandidatesHint>Немає придатних ролей. Складники мають бути звичайними ролями без правил часу чи місця; складена роль не може містити іншу складену.</WR_NoCandidatesHint>
+  <WR_NoContributionRoleTip>Не тренує жодної потрібної навички, тому шлях не може використати її як навчальний крок. Моди можуть змінювати джерела досвіду, тож її все одно можна додати.</WR_NoContributionRoleTip>
+  <WR_NoFilterMatches>Жоден колоніст не відповідає фільтру.</WR_NoFilterMatches>
+  <WR_NoMembersHint>Додайте ролі зі списку ліворуч. Виконавці працюють за завданнями складників у показаному порядку.</WR_NoMembersHint>
+  <WR_Nobody>Нікому</WR_Nobody>
+  <WR_NothingToMerge>Усе збігається: нічого об'єднувати.</WR_NothingToMerge>
+  <WR_NothingToRestore>Нічого відновлювати: усі готові ролі й шляхи навчання наявні з типовими групами, кольорами та параметрами виконавців; переміщених завдань немає.</WR_NothingToRestore>
+  <WR_NowBusy>Зайнятість</WR_NowBusy>
+  <WR_NowDrafted>Мобілізовано</WR_NowDrafted>
+  <WR_NowForced>Наказ гравця</WR_NowForced>
+  <WR_NowIdle>Без роботи</WR_NowIdle>
+  <WR_NowMental>Психічний стан</WR_NowMental>
+  <WR_NowNeeds>Особисті потреби</WR_NowNeeds>
+  <WR_NowRecreation>Розваги</WR_NowRecreation>
+  <WR_NowSleeping>Сон</WR_NowSleeping>
+  <WR_NowTip>{0}: {1}</WR_NowTip>
+  <WR_OddJobsRole>Різні роботи</WR_OddJobsRole>
+  <WR_OptAutoOptimize>Автооптимізація колоній щогодини</WR_OptAutoOptimize>
+  <WR_OptAutoOptimizeTipOff>Призначення ролей змінюються лише за вашими діями</WR_OptAutoOptimizeTipOff>
+  <WR_OptAutoOptimizeTipOn>Рекомендовані призначення застосовуються на початку кожної ігрової години</WR_OptAutoOptimizeTipOn>
+  <WR_OptAutoOptimizeTipWhat>Автоматично запускає «Впорядкувати колонію» для кожної колонії та застосовує зміни в цьому збереженні.</WR_OptAutoOptimizeTipWhat>
+  <WR_OptAutoOptimizeTipWhy>Закріплені призначення зберігаються, зокрема виключені ролі. Якщо колоніст уже відповідає рекомендації, нічого не записується.</WR_OptAutoOptimizeTipWhy>
+  <WR_OptEmergencyRule>Лише перші 5 ролей переривають у нагальних випадках</WR_OptEmergencyRule>
+  <WR_OptEmergencyRuleTipOff>Кожне нагальне завдання ввімкненої ролі перериває поточну роботу колоніста</WR_OptEmergencyRuleTipOff>
+  <WR_OptEmergencyRuleTipOn>Переривають лише нагальні завдання перших 5 увімкнених ролей; пізніші ролі виконують їх у звичайному порядку</WR_OptEmergencyRuleTipOn>
+  <WR_OptEmergencyRuleTipWhat>Визначає для цього збереження, які нагальні завдання (гасіння пожеж, термінове лікування й відпочинок для невідкладної допомоги) можуть переривати сон, їжу та будь-яку іншу роботу.</WR_OptEmergencyRuleTipWhat>
+  <WR_OptEmergencyRuleTipWhy>Типово ввімкнено: запасні ролі наприкінці рядка чекають своєї черги. Колоніст із лікарем на шостому місці продовжує готувати, поки основний лікар лікує термінового пацієнта. Вимкніть, якщо всі колоністи мають реагувати на кожен доступний їм нагальний випадок.</WR_OptEmergencyRuleTipWhy>
+  <WR_OptNumeric>Числові пріоритети в таблицях</WR_OptNumeric>
+  <WR_OptNumericTipOff>Таблиці пріоритетів, зокрема в модах як Numbers, показують позначки</WR_OptNumericTipOff>
+  <WR_OptNumericTipOn>Таблиці пріоритетів показують числа</WR_OptNumericTipOn>
+  <WR_OptNumericTipWhat>Перемикач ручних пріоритетів базової гри для цього збереження.</WR_OptNumericTipWhat>
+  <WR_OptNumericTipWhy>Він тут, бо WorkRoles замінює звичайну вкладку роботи, де він був.</WR_OptNumericTipWhy>
+  <WR_OptPaletteGrouping>Групування палітри ролей</WR_OptPaletteGrouping>
+  <WR_OptSkillCaptions>Кращі навички під іменами</WR_OptSkillCaptions>
+  <WR_OptSkillCaptionsTip>Під ім'ям кожного колоніста в таблиці показується короткий підпис із найкращими робочими навичками та їхніми рівнями, забарвленими за придатністю. Вимкніть, щоб показувати лише ім'я.</WR_OptSkillCaptionsTip>
+  <WR_OptVanillaRange>Передавати модам пріоритети 0–4</WR_OptVanillaRange>
+  <WR_OptVanillaRangeTipOff>Інші моди бачать ці пріоритети без змін</WR_OptVanillaRangeTipOff>
+  <WR_OptVanillaRangeTipOn>Пріоритети перетворюються на звичайний діапазон 0–4</WR_OptVanillaRangeTipOn>
+  <WR_OptVanillaRangeTipWhat>WorkRoles впорядковує роботу унікальними пріоритетами — послідовними числами від 1.</WR_OptVanillaRangeTipWhat>
+  <WR_OptVerdictsColonists>Оцінки на значках ролей колоністів</WR_OptVerdictsColonists>
+  <WR_OptVerdictsColonistsTip>Кожен значок ролі в таблиці колоністів показує пару зірок придатності за оцінкою рекомендацій: білі для позитивних оцінок (одна — вправність, дві — висока вправність, золоті — виняткова), червоні для негативних (одна — слабкість, дві — непридатність), сірі — нейтральність.</WR_OptVerdictsColonistsTip>
+  <WR_OptVerdictsPalette>Оцінки вибраного колоніста на палітрі ролей</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>Значки палітри показують, наскільки кожна роль підходить вибраному колоністу.</WR_OptVerdictsPaletteTip>
+  <WR_OptVerdictsRecommendations>Оцінки на рекомендованих ролях</WR_OptVerdictsRecommendations>
+  <WR_OptVerdictsRecommendationsTip>Рекомендовані значки ролей у панелі характеристик і перегляді змін показують придатність колоніста, якому їх рекомендують.</WR_OptVerdictsRecommendationsTip>
+  <WR_OptionsTab>Параметри</WR_OptionsTab>
+  <WR_OrderSuffixAZ>(за абеткою)</WR_OrderSuffixAZ>
+  <WR_OrderSuffixBar>(панель колоністів)</WR_OrderSuffixBar>
+  <WR_OverwriteDeletes>Видаляє відсутні у файлі: {0}. Колоністи втратять ці призначення.</WR_OverwriteDeletes>
+  <WR_OverwriteReplaces>Застосовує всі ролі з файлу: {0}. Відповідні ролі (та сама готова роль або така сама назва) зберігають призначення колоністів.</WR_OverwriteReplaces>
+  <WR_PaletteByGroups>Групи</WR_PaletteByGroups>
+  <WR_PaletteBySkills>Навички</WR_PaletteBySkills>
+  <WR_PaletteModeTip>Упорядкувати палітру ролей за відповідними навичками або вашими групами.</WR_PaletteModeTip>
+  <WR_PaletteOverwriteInfo>Замінює всі власні кольори записами палітри файлу: {0}.</WR_PaletteOverwriteInfo>
+  <WR_PartialCapability>Дозволити часткову здатність</WR_PartialCapability>
+  <WR_PartialCapabilityLockedTip>Ця роль уже рекомендується тим, хто здатен виконати частину її завдань. Ролі без кваліфікованої роботи та мисливські завжди це дозволяють.</WR_PartialCapabilityLockedTip>
+  <WR_PartialCapabilityTip>Якщо ввімкнено, роль рекомендується тим, хто здатен виконати частину її завдань. Ті, хто не може виконати жодного, ніколи її не отримують. Корисно для широких ролей усіх колоністів, наприклад спільної роботи під час простою.</WR_PartialCapabilityTip>
+  <WR_PasteRolesTip>Вставити скопійовані ролі цьому колоністу.</WR_PasteRolesTip>
+  <WR_PathAddRoleTip>Додає роль до цього шляху.</WR_PathAddRoleTip>
+  <WR_PathsOverwriteInfo>Замінює всі наявні шляхи навчання шляхами файлу: {0}.</WR_PathsOverwriteInfo>
+  <WR_PinAssignment>Закріпити</WR_PinAssignment>
+  <WR_PinnedTip>Закріплено: застосування рекомендацій, упорядкування колонії та автооптимізація зберігають це призначення, навіть якщо роль або складник виключені з рекомендацій.</WR_PinnedTip>
+  <WR_PlusOthers>та ще {0}</WR_PlusOthers>
+  <WR_PreviewNoChanges>Без змін.</WR_PreviewNoChanges>
+  <WR_PreviewStale>Поки перегляд був відкритий, колонія змінилася; нічого не застосовано.</WR_PreviewStale>
+  <WR_PriorityGridTitle>Таблиця пріоритетів</WR_PriorityGridTitle>
+  <WR_ReasonCoverage>Охоплення колонії: найкращий доступний виконавець.</WR_ReasonCoverage>
+  <WR_ReasonEveryone>Автоматично призначено всім.</WR_ReasonEveryone>
+  <WR_ReasonFireFear>Генетичний жах перед вогнем: гасіння пожеж заблоковане.</WR_ReasonFireFear>
+  <WR_ReasonHunter>Має далекобійну зброю; полювання також тренує стрільбу.</WR_ReasonHunter>
+  <WR_ReasonRemoved>Не в рекомендаціях. Перед застосуванням закріпіть ролі, які хочете залишити.</WR_ReasonRemoved>
+  <WR_ReasonSignal>Ознаки рекомендацій сприяють {0}.</WR_ReasonSignal>
+  <WR_RecClassificationSection>Класифікація</WR_RecClassificationSection>
+  <WR_RecDecisionAptitudeSurplus>Додатковий кандидат: сукупні здібності до навичок досягають потрібного для ролі рівня.</WR_RecDecisionAptitudeSurplus>
+  <WR_RecDecisionAuto>Автоматично призначено всім здатним до цієї роботи.</WR_RecDecisionAuto>
+  <WR_RecDecisionAwful>Виключено через ознаку непридатності.</WR_RecDecisionAwful>
+  <WR_RecDecisionControlledByTraining>Керується {0}: призначається через його шлях навчання, а не самостійно.</WR_RecDecisionControlledByTraining>
+  <WR_RecDecisionCoverageDraft>Найкращий із решти кандидатів для потрібного охоплення.</WR_RecDecisionCoverageDraft>
+  <WR_RecDecisionCoverageFilled>Потрібне охоплення забезпечили кандидати вищого рангу.</WR_RecDecisionCoverageFilled>
+  <WR_RecDecisionCoverageRepairSlot>Прямий добір на незаповнене обов'язкове місце {0} із {1} для {2}.</WR_RecDecisionCoverageRepairSlot>
+  <WR_RecDecisionCovered>Охоплено рекомендованою роллю: {0}.</WR_RecDecisionCovered>
+  <WR_RecDecisionCoveredUnknown>Охоплено іншою рекомендованою роллю.</WR_RecDecisionCoveredUnknown>
+  <WR_RecDecisionDirectFallbackSlot>Прямий добір на місце {0} із {1} для {2}: придатної навчальної заміни немає.</WR_RecDecisionDirectFallbackSlot>
+  <WR_RecDecisionDirectSlot>Прямий добір на місце {0} із {1} для {2}.</WR_RecDecisionDirectSlot>
+  <WR_RecDecisionDisabled>Роль вимкнена.</WR_RecDecisionDisabled>
+  <WR_RecDecisionExcluded>Роль керується правилами й виключена зі звичайних рекомендацій.</WR_RecDecisionExcluded>
+  <WR_RecDecisionFire>Страх вогню потребує блокування гасіння пожеж.</WR_RecDecisionFire>
+  <WR_RecDecisionHunter>Має далекобійну зброю та здатен полювати.</WR_RecDecisionHunter>
+  <WR_RecDecisionHunterRequirements>Не споряджено далекобійну зброю.</WR_RecDecisionHunterRequirements>
+  <WR_RecDecisionIncapable>Не здатен до роботи цієї ролі.</WR_RecDecisionIncapable>
+  <WR_RecDecisionIncapacitated>Колоніст знерухомлений. Його невиключені ролі й закріплені призначення зберігаються, але не покривають потреб колонії до одужання.</WR_RecDecisionIncapacitated>
+  <WR_RecDecisionNever>Роль налаштована без рекомендацій.</WR_RecDecisionNever>
+  <WR_RecDecisionNotMechanitor>Немає мехлінка, тому робота механітора недоступна.</WR_RecDecisionNotMechanitor>
+  <WR_RecDecisionNotSelected>Не вибрано жодним правилом рекомендацій.</WR_RecDecisionNotSelected>
+  <WR_RecDecisionOutOfBand>Рівень навички належить іншому діапазону шляху навчання.</WR_RecDecisionOutOfBand>
+  <WR_RecDecisionOutqualified>На доступні місця вибрано інших, кваліфікованіших кандидатів.</WR_RecDecisionOutqualified>
+  <WR_RecDecisionProtected>Збережено захищене призначення.</WR_RecDecisionProtected>
+  <WR_RecDecisionRecommended>Вибрано системою рекомендацій.</WR_RecDecisionRecommended>
+  <WR_RecDecisionRetained>Збережено наявну некваліфіковану роль.</WR_RecDecisionRetained>
+  <WR_RecDecisionSignalSurplus>Додатковий кандидат за оцінкою ознак.</WR_RecDecisionSignalSurplus>
+  <WR_RecDecisionSignals>Відповідає заданому порогу ознаки.</WR_RecDecisionSignals>
+  <WR_RecDecisionTraining>Призначено через шлях навчання для {0}.</WR_RecDecisionTraining>
+  <WR_RecDecisionTrainingSlot>Добір на місце {0} із {1} для {2}. Навчальна заміна: замість {2} призначено {3} ({4}; {2} потребує {5}).</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>Добір на місце {0} із {1} для {2}. Навчальна заміна: замість {2} призначено {3}.</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>Добір на місце {0} із {1} через навчальну заміну; призначено {2}.</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecDecisionTrainingUnknown>Призначено через шлях навчання.</WR_RecDecisionTrainingUnknown>
+  <WR_RecDecisionUnavailable>Робота недоступна до завершення дослідження.</WR_RecDecisionUnavailable>
+  <WR_RecDecisionWeakSignal>Оцінка ознак нижча за поріг, і працівник не потрібен для обов'язкового охоплення.</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionWorkAversion>Відраза знижує оцінку нижче порога необов'язкової роботи.</WR_RecDecisionWorkAversion>
+  <WR_RecExcludedAddTip>Виберіть роль, яку ніколи не слід рекомендувати. Можна виключити будь-яку: навчальну, автоматичну, умовну, блокувальну чи складену.</WR_RecExcludedAddTip>
+  <WR_RecExcludedChipTip>Ця роль ніколи не рекомендується. Клацніть значок вилучення, щоб знову дозволити рекомендації й повернути її до параметрів ролей. Збережені параметри залишаються.</WR_RecExcludedChipTip>
+  <WR_RecExcludedHeader>Виключені ролі</WR_RecExcludedHeader>
+  <WR_RecExcludedHelp>Ці ролі ніколи не рекомендуються, навіть через шляхи навчання чи автоматичні ролі. Наявні закріплені призначення захищені. «Додати роль» виключає роль; вилучення її значка знову дозволяє рекомендації.</WR_RecExcludedHelp>
+  <WR_RecExcludedReason>Роль виключена з рекомендацій. Вилучіть її зі списку виключених ролей на вкладці «Рекомендації», щоб дозволити знову.</WR_RecExcludedReason>
+  <WR_RecExcludedTip>Виключення стосуються всіх колоністів збереження, включно з упорядкуванням колонії та автооптимізацією. Виключені ролі можна призначати вручну. Редагування списку не змінює поточних призначень. Застосування рекомендацій вилучає незакріплені виключені ролі й зберігає закріплені.</WR_RecExcludedTip>
+  <WR_RecGlobalPanel>Загальні параметри</WR_RecGlobalPanel>
+  <WR_RecGlobalPanelHelp>Ці параметри змінюють оцінювання й упорядкування кандидатів та місце ролей у підсумкових рекомендаціях. Кнопки скидання повертають типові значення.</WR_RecGlobalPanelHelp>
+  <WR_RecMoreContentGates>Ще {0}</WR_RecMoreContentGates>
+  <WR_RecRolePanel>Параметри ролей</WR_RecRolePanel>
+  <WR_RecRolePanelHelp>Тут усі ролі, крім виключених. Розгорніть роль для налаштування рекомендацій. Порядок ролей визначається автоматично для кожного колоніста; місце мисливця залежить від стрільби.</WR_RecRolePanelHelp>
+  <WR_RecScalingSection>Масштаб призначень</WR_RecScalingSection>
+  <WR_RecSkillsSection>Навички</WR_RecSkillsSection>
+  <WR_RecTipAssignmentsMany>Потрібно призначень: {0}</WR_RecTipAssignmentsMany>
+  <WR_RecTipAssignmentsOne>Потрібне 1 призначення</WR_RecTipAssignmentsOne>
+  <WR_RecTipColonyNeed>Потреби колонії</WR_RecTipColonyNeed>
+  <WR_RecTipEveryoneCapable>Призначено всім здатним</WR_RecTipEveryoneCapable>
+  <WR_RecTipSelection>Добір</WR_RecTipSelection>
+  <WR_RecTipSignalVerdict>Оцінка ознак</WR_RecTipSignalVerdict>
+  <WR_RecTipSkills>Враховані навички</WR_RecTipSkills>
+  <WR_RecTipWithWaiverOne>{0} (1 навчальна заміна)</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0} (навчальних замін: {1})</WR_RecTipWithWaiversMany>
+  <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
+  <WR_RecTuneCandidateMinimumSignal>Мінімальна ознака кандидата</WR_RecTuneCandidateMinimumSignal>
+  <WR_RecTuneCandidateMinimumSignalDesc>Найнижча ознака для звичайного добору ролей. Підвищення відсіює слабших до вибору провідного виконавця й мінімальної кількості працівників.</WR_RecTuneCandidateMinimumSignalDesc>
+  <WR_RecTuneCategoryPointsRow>Бали категорії</WR_RecTuneCategoryPointsRow>
+  <WR_RecTuneCategoryPointsRowDesc>Бали за важливість для колонії: важливі обов'язки випереджають виробництво з тією самою ознакою, необов'язкові ролі зміщуються в кінець.</WR_RecTuneCategoryPointsRowDesc>
+  <WR_RecTuneCellHint>Ліва кнопка збільшує значення, права — зменшує.</WR_RecTuneCellHint>
+  <WR_RecTuneChampionMultiSkillMinimumCount>Поріг поєднання навичок</WR_RecTuneChampionMultiSkillMinimumCount>
+  <WR_RecTuneChampionMultiSkillMinimumCountDesc>Мінімальна кількість придатних цільових навичок для підсумовування оцінок. Нижче порога враховується лише найкраща навичка ролі.</WR_RecTuneChampionMultiSkillMinimumCountDesc>
+  <WR_RecTuneChampionMultiplierRow>Множник ознаки</WR_RecTuneChampionMultiplierRow>
+  <WR_RecTuneChampionMultiplierRowDesc>Множить округлений внесок навички для кожної сили ознаки під час вибору провідного виконавця.</WR_RecTuneChampionMultiplierRowDesc>
+  <WR_RecTuneChampionSection>Вибір провідного виконавця</WR_RecTuneChampionSection>
+  <WR_RecTuneChampionSectionIntro>Спершу кожна роль отримує провідного виконавця — найпридатнішого колоніста для її основи. Ці параметри визначають допуск і співвідношення навички та сили ознак.</WR_RecTuneChampionSectionIntro>
+  <WR_RecTuneChampionSkillDivisor>Дільник навички провідного</WR_RecTuneChampionSkillDivisor>
+  <WR_RecTuneChampionSkillDivisorDesc>Внесок навички — рівень, поділений на це число й округлений угору. Більший дільник зменшує вплив самої навички.</WR_RecTuneChampionSkillDivisorDesc>
+  <WR_RecTuneChampionTieBreakRow>Бали за рівності</WR_RecTuneChampionTieBreakRow>
+  <WR_RecTuneChampionTieBreakRowDesc>Бали ознак для порівняння за рівних оцінок провідних виконавців. Для багатонавичкових ролей підсумовуються придатні ознаки.</WR_RecTuneChampionTieBreakRowDesc>
+  <WR_RecTuneHunterSection>Місце мисливця</WR_RecTuneHunterSection>
+  <WR_RecTuneHunterSectionIntro>Незакріплений мисливець розміщується за навичкою стрільби: вправніші стрільці полюють пізніше, бо їхній час цінніший для іншої роботи.</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneHunterTiersRow>Максимальна стрільба рівня</WR_RecTuneHunterTiersRow>
+  <WR_RecTuneHunterTiersRowDesc>Межі стрільби для місця мисливця. Рівень 1 ставить мисливця одразу після основних робіт, 2 і 3 — після середніх та останніх робочих ролей, а понад рівень 4 — останнім.</WR_RecTuneHunterTiersRowDesc>
+  <WR_RecTuneLeadMinimumConnectedTargets>Пов'язані цілі для розподілу</WR_RecTuneLeadMinimumConnectedTargets>
+  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Мінімум пов'язаних навчальних цілей, за якого планувальник розподіляє їхні провідні ролі між різними працівниками.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
+  <WR_RecTuneLeadMinimumSignal>Мінімальна ознака провідної ролі</WR_RecTuneLeadMinimumSignal>
+  <WR_RecTuneLeadMinimumSignalDesc>Найнижча ознака ролі для працівника, обраного окремим провідним виконавцем шляху навчання.</WR_RecTuneLeadMinimumSignalDesc>
+  <WR_RecTuneLeadSection>Розподіл провідних ролей</WR_RecTuneLeadSection>
+  <WR_RecTuneLeadSectionIntro>Коли кілька шляхів навчання мають спільну ціль, ці параметри розподіляють провідні ролі між різними колоністами.</WR_RecTuneLeadSectionIntro>
+  <WR_RecTuneMinimumPickRow>Бонус мінімального добору</WR_RecTuneMinimumPickRow>
+  <WR_RecTuneMinimumPickRowDesc>Бали порядку для першого, другого, третього й кожного наступного працівника, вибраного для мінімального забезпечення ролі.</WR_RecTuneMinimumPickRowDesc>
+  <WR_RecTuneMultiplierAwfulTip>Непридатність. Стовпець діє лише тоді, коли мінімальна ознака допускає таких кандидатів.</WR_RecTuneMultiplierAwfulTip>
+  <WR_RecTuneOptionalSection>Навчання й необов'язкові цілі</WR_RecTuneOptionalSection>
+  <WR_RecTuneOptionalSectionIntro>Ці параметри визначають активацію шляху навчання й доцільність рекомендації необов'язкової ролі з кількома навичками.</WR_RecTuneOptionalSectionIntro>
+  <WR_RecTuneOptionalTargetGreatLevel>Високий рівень підвищення</WR_RecTuneOptionalTargetGreatLevel>
+  <WR_RecTuneOptionalTargetGreatLevelDesc>На цьому рівні слабша придатна ознака підвищується до заданої високої для додаткового однонавичкового добору й оцінювання необов'язкової цілі.</WR_RecTuneOptionalTargetGreatLevelDesc>
+  <WR_RecTuneOptionalTargetGreatPromotedSignal>Висока підвищена ознака</WR_RecTuneOptionalTargetGreatPromotedSignal>
+  <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>Ознака для додаткового однонавичкового добору й оцінювання здібностей на високому рівні підвищення чи вище.</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumPoints>Мінімум балів необов'язкової цілі</WR_RecTuneOptionalTargetMinimumPoints>
+  <WR_RecTuneOptionalTargetMinimumPointsDesc>Мінімальна сума кроків ознак понад задану нижню межу для рекомендації необов'язкової багатонавичкової цілі.</WR_RecTuneOptionalTargetMinimumPointsDesc>
+  <WR_RecTuneOptionalTargetMinimumSignal>Мінімальна ознака необов'язкової цілі</WR_RecTuneOptionalTargetMinimumSignal>
+  <WR_RecTuneOptionalTargetMinimumSignalDesc>Навичка має досягти цієї ознаки, щоб підвищення за рівнем впливало на додаткове однонавичкове призначення або давало бали здібностей необов'язковій цілі.</WR_RecTuneOptionalTargetMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumSkillCount>Поріг навичок необов'язкової цілі</WR_RecTuneOptionalTargetMinimumSkillCount>
+  <WR_RecTuneOptionalTargetMinimumSkillCountDesc>Кількість придатних цільових навичок, за якої застосовується перевірка здібностей. Ролі з меншою кількістю її оминають.</WR_RecTuneOptionalTargetMinimumSkillCountDesc>
+  <WR_RecTuneOptionalTargetStrongLevel>Середній рівень підвищення</WR_RecTuneOptionalTargetStrongLevel>
+  <WR_RecTuneOptionalTargetStrongLevelDesc>На цьому рівні слабша придатна ознака підвищується до заданої середньої для додаткового однонавичкового добору й оцінювання необов'язкової цілі.</WR_RecTuneOptionalTargetStrongLevelDesc>
+  <WR_RecTuneOptionalTargetStrongPromotedSignal>Середня підвищена ознака</WR_RecTuneOptionalTargetStrongPromotedSignal>
+  <WR_RecTuneOptionalTargetStrongPromotedSignalDesc>Ознака для додаткового однонавичкового добору й оцінювання здібностей на середньому рівні підвищення чи вище.</WR_RecTuneOptionalTargetStrongPromotedSignalDesc>
+  <WR_RecTuneOrderingPointsRow>Бали ознак</WR_RecTuneOrderingPointsRow>
+  <WR_RecTuneOrderingPointsRowDesc>Внесок кожної сили ознаки в підсумковий порядок рекомендованих ролей.</WR_RecTuneOrderingPointsRowDesc>
+  <WR_RecTuneOrderingSection>Підсумковий порядок ролей</WR_RecTuneOrderingSection>
+  <WR_RecTuneOrderingSectionIntro>Після вибору ролей ці параметри визначають їхній порядок, який також є порядком робочих пріоритетів.</WR_RecTuneOrderingSectionIntro>
+  <WR_RecTuneOrderingSkillDivisor>Дільник навички для порядку</WR_RecTuneOrderingSkillDivisor>
+  <WR_RecTuneOrderingSkillDivisorDesc>Бали навички для порядку — рівень, поділений на це число й округлений угору. Більший дільник зменшує вплив навички на порядок.</WR_RecTuneOrderingSkillDivisorDesc>
+  <WR_RecTunePathMinimumSignal>Мінімальна ознака навчання</WR_RecTunePathMinimumSignal>
+  <WR_RecTunePathMinimumSignalDesc>Найнижча ознака ролі для участі в активному шляху навчання.</WR_RecTunePathMinimumSignalDesc>
+  <WR_RecTuneRankedCandidatePrioritySignal>Пріоритетна ознака кандидатів</WR_RecTuneRankedCandidatePrioritySignal>
+  <WR_RecTuneRankedCandidatePrioritySignalDesc>Кандидати, крім провідного, з цією чи вищою ознакою випереджають слабших перед заповненням мінімальних місць.</WR_RecTuneRankedCandidatePrioritySignalDesc>
+  <WR_RecTuneReset>Скинути</WR_RecTuneReset>
+  <WR_RecTuneResetTip>Повертає типові значення цього розділу.</WR_RecTuneResetTip>
+  <WR_RecTuneSurplusMinimumSignal>Мінімальна ознака додаткових</WR_RecTuneSurplusMinimumSignal>
+  <WR_RecTuneSurplusMinimumSignalDesc>Після заповнення обов'язкових місць звичайні кандидати з цією чи вищою ознакою також можуть отримати роль. Підвищення за рівнем діє для однонавичкових ролей у заданому діапазоні навчання; багатонавичкові цілі використовують вимоги до здібностей необов'язкової цілі.</WR_RecTuneSurplusMinimumSignalDesc>
+  <WR_RecTuneTimePointsRow>Бали витрат часу</WR_RecTuneTimePointsRow>
+  <WR_RecTuneTimePointsRowDesc>Бали за витрати часу: часткова зайнятість піднімає короткі обов'язки над повною з рівною ознакою, робота за нагоди зміщується в кінець.</WR_RecTuneTimePointsRowDesc>
+  <WR_RecWorkAversion>{0} заперечує {1}; оцінка рекомендації знижена.</WR_RecWorkAversion>
+  <WR_RecommendationsTab>Рекомендації</WR_RecommendationsTab>
+  <WR_RecommendedRoles>Рекомендовані ролі</WR_RecommendedRoles>
+  <WR_RemoveSelectedTip>Вилучити вибрані рядки.</WR_RemoveSelectedTip>
+  <WR_RemoveSkillTip>Вилучити цю обов'язкову вимогу до навички.</WR_RemoveSkillTip>
+  <WR_RenameGroup>Перейменувати групу</WR_RenameGroup>
+  <WR_RenameGroupTitle>Перейменувати групу</WR_RenameGroupTitle>
+  <WR_RenameRoleTitle>Перейменувати роль</WR_RenameRoleTitle>
+  <WR_RequiredSkillsLabel>Обов'язкові</WR_RequiredSkillsLabel>
+  <WR_RequiredSkillsTip>Додаткові обов'язкові вимоги цієї ролі. Якщо потрібна навичка недоступна колоністу, роль не рекомендується. Рівень навички не впливає на цей допуск; він окремий від мінімумів завдань у розділі «Потрібні».</WR_RequiredSkillsTip>
+  <WR_ResizeGripTip>Перетягуйте для зміни розміру вікна; воно не може бути меншим за вміст. Подвійне клацання повертає автоматичний розмір.</WR_ResizeGripTip>
+  <WR_RestoreColorItem>{0} (відновити типовий колір)</WR_RestoreColorItem>
+  <WR_RestoreDefaultExclusions>Типові виключені ролі</WR_RestoreDefaultExclusions>
+  <WR_RestoreDefaults>Відновити типові</WR_RestoreDefaults>
+  <WR_RestoreDefaultsTip>Відтворити відсутні готові ролі й шляхи навчання, відновити типові виключення та повернути готовим ролям їхні групи, кольори й параметри виконавців. Перегляд дозволяє вибрати, що відновити.</WR_RestoreDefaultsTip>
+  <WR_RestoreDefaultsTitle>Відновити типові</WR_RestoreDefaultsTitle>
+  <WR_RestoreDuplicateHint>(роль із такою назвою вже існує)</WR_RestoreDuplicateHint>
+  <WR_RestoreExplainBackfill>Повертає переміщені модами завдання: {0}.</WR_RestoreExplainBackfill>
+  <WR_RestoreExplainColor>Повертає типовий колір шаблону.</WR_RestoreExplainColor>
+  <WR_RestoreExplainCoverage>Створює роль для цього виду роботи.</WR_RestoreExplainCoverage>
+  <WR_RestoreExplainDefaultExclusions>Повертає відсутні типові виключення до відповідної панелі. Інші ваші виключення зберігаються.</WR_RestoreExplainDefaultExclusions>
+  <WR_RestoreExplainGroup>Повертає роль до групи «{0}».</WR_RestoreExplainGroup>
+  <WR_RestoreExplainHolders>Повертає типову шкалу виконавців із шаблону.</WR_RestoreExplainHolders>
+  <WR_RestoreExplainJobs>Відновлює поточний типовий список завдань мода. Колоністи зберігають роботу загалом: ролі для вилучених завдань призначаються автоматично.</WR_RestoreExplainJobs>
+  <WR_RestoreExplainPath>Створює шлях навчання.</WR_RestoreExplainPath>
+  <WR_RestoreExplainRecOrder>Очищує ваш власний порядок.</WR_RestoreExplainRecOrder>
+  <WR_RestoreExplainRole>Створює роль із шаблону мода.</WR_RestoreExplainRole>
+  <WR_RestoreExplainSnapColor>Замінює створений колір найближчим із палітри, щоб він позначався у виборі кольору.</WR_RestoreExplainSnapColor>
+  <WR_RestoreGroupItem>{0} (перенести до групи «{1}»)</WR_RestoreGroupItem>
+  <WR_RestoreHoldersItem>{0} (відновити типові параметри виконавців)</WR_RestoreHoldersItem>
+  <WR_RestoreJobsItem>{0} (відновити типові завдання)</WR_RestoreJobsItem>
+  <WR_RestoreMovedJobs>{0} (повернути переміщені завдання: {1})</WR_RestoreMovedJobs>
+  <WR_RestoreOverwriteWarning>⚠ Виділені записи перезапишуть ваші зміни.</WR_RestoreOverwriteWarning>
+  <WR_RestorePathItem>{0} (шлях навчання)</WR_RestorePathItem>
+  <WR_RestoreRecOrder>Порядок рекомендацій (відновити типовий)</WR_RestoreRecOrder>
+  <WR_RestoreSnapColorItem>{0} (узгодити колір із палітрою)</WR_RestoreSnapColorItem>
+  <WR_RoleAgeBandsLabel>Вікові групи, яким доступна роль:</WR_RoleAgeBandsLabel>
+  <WR_RoleAgeBandsTip>Колоністам поза вибраними віковими групами роль не призначається й не рекомендується. Клацніть групу поза вибором, щоб включити всі до неї; першу або останню вибрану — щоб вилучити; середню — щоб вибрати лише її. Межі відповідають віку відкриття робіт у грі. Усі завдання цієї ролі можливі з віку {0}.</WR_RoleAgeBandsTip>
+  <WR_RoleAwfulSignal>{0} має ознаку непридатності до цієї ролі: {1}.</WR_RoleAwfulSignal>
+  <WR_RoleCapAllJobs>жодного завдання цієї ролі</WR_RoleCapAllJobs>
+  <WR_RoleCapNeverDo>{0} ніколи не виконуватиме {1}</WR_RoleCapNeverDo>
+  <WR_RoleCapSomeJobs>{0} із {1} завдань цієї ролі</WR_RoleCapSomeJobs>
+  <WR_RoleCategoryImportant>Важлива</WR_RoleCategoryImportant>
+  <WR_RoleCategoryLabel>Важливість для колонії:</WR_RoleCategoryLabel>
+  <WR_RoleCategoryNone>Не задано</WR_RoleCategoryNone>
+  <WR_RoleCategoryNormal>Звичайна</WR_RoleCategoryNormal>
+  <WR_RoleCategoryOptional>Необов'язкова</WR_RoleCategoryOptional>
+  <WR_RoleCategoryTip>Важливість ролі під час планування колонії. «Не задано» залишає її без класифікації.</WR_RoleCategoryTip>
+  <WR_RoleColonyMinLabel>Мінімум у колонії:</WR_RoleColonyMinLabel>
+  <WR_RoleColonyMinTip>Мінімальна кількість призначень цієї ролі.</WR_RoleColonyMinTip>
+  <WR_RoleCoverageLabel>Охоплення:</WR_RoleCoverageLabel>
+  <WR_RoleCoverageTip>Який відсоток колоністів бажано призначити на цю роль.</WR_RoleCoverageTip>
+  <WR_RoleDisplayCaption>Вигляд ролей</WR_RoleDisplayCaption>
+  <WR_RoleJobIncapable>не здатен до цієї роботи</WR_RoleJobIncapable>
+  <WR_RoleJobNoRangedWeapon>немає далекобійної зброї</WR_RoleJobNoRangedWeapon>
+  <WR_RoleJobTooYoung>замалий вік, можливо від {0}</WR_RoleJobTooYoung>
+  <WR_RoleLabelOff>{0} (вимкнено)</WR_RoleLabelOff>
+  <WR_RoleMissingRequiredSkills>Недоступні обов'язкові навички для {0}: {1}.</WR_RoleMissingRequiredSkills>
+  <WR_RoleTimeFullTime>Повна зайнятість</WR_RoleTimeFullTime>
+  <WR_RoleTimeLabel>Витрати часу:</WR_RoleTimeLabel>
+  <WR_RoleTimeNone>Не задано</WR_RoleTimeNone>
+  <WR_RoleTimeOpportunistic>За нагоди</WR_RoleTimeOpportunistic>
+  <WR_RoleTimePartTime>Часткова зайнятість</WR_RoleTimePartTime>
+  <WR_RoleTimeTip>Яку частину дня колоніста зазвичай займає ця робота.</WR_RoleTimeTip>
+  <WR_RoleTipDisabled>ВИМКНЕНО глобально</WR_RoleTipDisabled>
+  <WR_RoleTipDisabledBoth>ВИМКНЕНО глобально й для цього колоніста</WR_RoleTipDisabledBoth>
+  <WR_RoleTipDisabledHere>ВИМКНЕНО для цього колоніста</WR_RoleTipDisabledHere>
+  <WR_RoleTipEnabled>увімкнено</WR_RoleTipEnabled>
+  <WR_RoleTipForcedOn>увімкнено примусово для цього колоніста</WR_RoleTipForcedOn>
+  <WR_RoleTipForcedOnGlobalOff>ПРИМУСОВО ВВІМКНЕНО для цього колоніста (глобально ВИМКНЕНО)</WR_RoleTipForcedOnGlobalOff>
+  <WR_RoleTooOld>{0}: завеликий вік для ролі (максимум {1}).</WR_RoleTooOld>
+  <WR_RoleTooYoung>{0}: замалий вік для ролі (мінімум {1}).</WR_RoleTooYoung>
+  <WR_RoleWorkAversion>{0}: припис {1} заперечує {2}. Рекомендації застосовують обмежений штраф: два кроки пріоритету або шість умовних балів навички під час вибору провідного виконавця. Обов'язкове охоплення все одно може вибрати працівника. Мисливець зміщується на два рівні пізніше, максимум до п'ятого; наявний запасний варіант першого рівня зберігається.</WR_RoleWorkAversion>
+  <WR_RolesRestored>Відновлено: {0}</WR_RolesRestored>
+  <WR_RolesTab>Ролі</WR_RolesTab>
+  <WR_RowNew>{0} (нова)</WR_RowNew>
+  <WR_RowNewColor>{0} {1} (новий колір)</WR_RowNewColor>
+  <WR_RowRecolors>{0} → {1} (зміна кольору: {2})</WR_RowRecolors>
+  <WR_RowUpdate>{0} (оновлення)</WR_RowUpdate>
+  <WR_Save>Зберегти</WR_Save>
+  <WR_ScaleControlledBy>Керується {0}</WR_ScaleControlledBy>
+  <WR_ScaleDeleteConfirm>Видалити шкалу «{0}»?\n\n{1}. Ці ролі натомість використовуватимуть «Ніколи».</WR_ScaleDeleteConfirm>
+  <WR_ScaleDirectTip>Прямий мінімум діапазону; решту загальної потреби можуть покривати навчальні заміни. Підняття вище загальної потреби піднімає і її. Ліва кнопка +1 (після 8 знову початок), права −1. Перетягування лівою копіює значення між діапазонами; права під час нього змінює значення в напрямку руху. Перетягування правою змінює на крок за діапазон: праворуч збільшує, ліворуч зменшує.</WR_ScaleDirectTip>
+  <WR_ScaleMinsCaption>Прямий мінімум для {0}</WR_ScaleMinsCaption>
+  <WR_ScaleNewTitle>Нова шкала (копія поточної)</WR_ScaleNewTitle>
+  <WR_ScaleRenameTip>Перейменувати шкалу; усі ролі з нею отримають нову назву.</WR_ScaleRenameTip>
+  <WR_ScaleRenameTitle>Перейменувати шкалу</WR_ScaleRenameTitle>
+  <WR_ScaleReset>Скинути</WR_ScaleReset>
+  <WR_ScaleResetTip>Відновити значення до ваших змін від моменту вибору ролі чи шкали.</WR_ScaleResetTip>
+  <WR_ScaleSaveAs>Зберегти як</WR_ScaleSaveAs>
+  <WR_ScaleSaveAsTitle>Зберегти зміни новою шкалою; поточна повернеться до збережених значень</WR_ScaleSaveAsTitle>
+  <WR_ScaleTotalTip>Загальна потреба діапазону з навчальними замінами. Підвищення створює місця для замін; зниження спершу прибирає їх, потім прямий мінімум. Ліва кнопка +1, права −1. Перетягування лівою копіює між діапазонами; права під час нього змінює значення в напрямку руху. Перетягування правою змінює на крок за діапазон: праворуч збільшує, ліворуч зменшує.</WR_ScaleTotalTip>
+  <WR_ScaleTotalsCaption>Загальна потреба (із навчальними замінами)</WR_ScaleTotalsCaption>
+  <WR_ScaleTrainingHelp>Це навчальна роль для {0}, тому її призначення керуються параметрами {0}, навіть зі значенням «Ніколи». Проте тут можна задати обов'язковий мінімум призначень для {1}.</WR_ScaleTrainingHelp>
+  <WR_ScaleUsedBy>Використовує: {0}</WR_ScaleUsedBy>
+  <WR_ScopeAll>Усюди</WR_ScopeAll>
+  <WR_ScopeCurrent>Поточне місце</WR_ScopeCurrent>
+  <WR_ScopeCurrentNamed>{0} (поточне місце)</WR_ScopeCurrentNamed>
+  <WR_Search>Пошук</WR_Search>
+  <WR_SectionPalette>Палітра</WR_SectionPalette>
+  <WR_SectionRoles>Ролі</WR_SectionRoles>
+  <WR_SeedDropFailure>{0}: втрачено {1} (був пріоритет {2})</WR_SeedDropFailure>
+  <WR_SeedPawnFailure>{0}: помилка перенесення ({1})</WR_SeedPawnFailure>
+  <WR_SeedReportBody>Створено ролей: {0}; набори призначено колоністам: {1} за їхніми робочими пріоритетами.</WR_SeedReportBody>
+  <WR_SeedReportFailures>Частину роботи не вдалося перенести:</WR_SeedReportFailures>
+  <WR_SeedReportGenerated>Створено для роботи модів: {0}.</WR_SeedReportGenerated>
+  <WR_SeedReportTitle>WorkRoles налаштовано</WR_SeedReportTitle>
+  <WR_SelectAll>Вибрати всіх</WR_SelectAll>
+  <WR_SelectOrCreateRole>Виберіть або створіть роль.</WR_SelectOrCreateRole>
+  <WR_SelectRoleIcon>Вибрати значок ролі</WR_SelectRoleIcon>
+  <WR_SelectedJobs>Вибрані завдання (за порядком)</WR_SelectedJobs>
+  <WR_SelectedRows>Вибрано: {0}</WR_SelectedRows>
+  <WR_SetPriorityBlockedBody>{0} намагався задати робочі пріоритети ({1}).
+
+WorkRoles заблокував змін пріоритетів: {2} від попереднього повідомлення або початку сеансу.
+
+WorkRoles керує пріоритетами колоністів із ролями, тому зміну проігноровано; інші можливості мода не зачеплено.
+
+Для подібного результату створіть або змініть роль із потрібною роботою на вкладці «Ролі» й поставте її на бажане місце в списку кожного колоніста. Або використайте блокувальну роль для повної заборони.
+
+Це повідомлення показується один раз для кожного мода в кожному збереженні.</WR_SetPriorityBlockedBody>
+  <WR_SetPriorityBlockedTitle>Пріоритетами керує WorkRoles</WR_SetPriorityBlockedTitle>
+  <WR_ShipFallback>Гравкорабель</WR_ShipFallback>
+  <WR_ShipTip>Гравкорабель поза стоянкою в поселенні; клітинка поселення має перевагу.</WR_ShipTip>
+  <WR_ShowPriorityGridTip>Показати пріоритети всіх перелічених колоністів з урахуванням фільтрів ролей і місця. У діалозі можна перемкнути прямі ранги та звичайні 0–4.</WR_ShowPriorityGridTip>
+  <WR_SignalAlreadyReflected>Уже враховано в показаному рівні навички</WR_SignalAlreadyReflected>
+  <WR_SignalCapabilityAwful>{0}: вважається непридатністю</WR_SignalCapabilityAwful>
+  <WR_SignalCapabilityOff>{0}: недоступно</WR_SignalCapabilityOff>
+  <WR_SignalColEffects>Ефекти</WR_SignalColEffects>
+  <WR_SignalColSignal>Ознака</WR_SignalColSignal>
+  <WR_SignalCondition>Умова</WR_SignalCondition>
+  <WR_SignalDescriptive>Описова</WR_SignalDescriptive>
+  <WR_SignalDisabled>Недоступно</WR_SignalDisabled>
+  <WR_SignalExpertiseScale>основа {0}, рівень майстерності {1}, зараз {2}</WR_SignalExpertiseScale>
+  <WR_SignalFromSkill>(від {0})</WR_SignalFromSkill>
+  <WR_SignalLetterAwful>НП</WR_SignalLetterAwful>
+  <WR_SignalLetterExceptional>ВН</WR_SignalLetterExceptional>
+  <WR_SignalLetterGreat>ДВ</WR_SignalLetterGreat>
+  <WR_SignalLetterNeutral>Н</WR_SignalLetterNeutral>
+  <WR_SignalLetterPoor>С</WR_SignalLetterPoor>
+  <WR_SignalLetterStrong>В</WR_SignalLetterStrong>
+  <WR_SignalSkillPromotion>Висока навичка</WR_SignalSkillPromotion>
+  <WR_SignalSkillPromotionCondition>Рівень {0} досягає порога {1}</WR_SignalSkillPromotionCondition>
+  <WR_SignalSkillPromotionEffect>{0} → {1}</WR_SignalSkillPromotionEffect>
+  <WR_SignalSource>Джерело</WR_SignalSource>
+  <WR_SignalVerdict>Оцінка</WR_SignalVerdict>
+  <WR_SkillColumnsCaption>Стовпці навичок</WR_SkillColumnsCaption>
+  <WR_SkillTipGiverSource>Джерело завдання: {0} ({1})</WR_SkillTipGiverSource>
+  <WR_SkillTipTypeSource>Вид роботи: {0} ({1})</WR_SkillTipTypeSource>
+  <WR_SkillTipUnknownMod>невідомий мод</WR_SkillTipUnknownMod>
+  <WR_SkillsButton>Навички</WR_SkillsButton>
+  <WR_SkillsButtonCount>Навички ({0}/{1})</WR_SkillsButtonCount>
+  <WR_SkillsUsedLabel>Задіяні навички:</WR_SkillsUsedLabel>
+  <WR_StepModifiersTip>Клацання: 1 крок.\nShift: 5 кроків.\nCtrl: 10 кроків.\nCtrl+Shift: до межі.</WR_StepModifiersTip>
+  <WR_SuppressedHours>Вимкнено: поза активними годинами</WR_SuppressedHours>
+  <WR_SuppressedLocation>Вимкнено: поза місцями цієї ролі</WR_SuppressedLocation>
+  <WR_SurgeryWorkerRoleTip>Хто може виконати операцію. «Будь-який працівник» не обмежує роллю. Роль допускає лише колоністів з активною цією роллю; умовна дотримується своїх правил, зокрема годин.</WR_SurgeryWorkerRoleTip>
+  <WR_TipActivityLabel>Поточна діяльність</WR_TipActivityLabel>
+  <WR_TipActivityValue>{0}: {1}</WR_TipActivityValue>
+  <WR_TipBestFitsLabel>Найкращі кандидати</WR_TipBestFitsLabel>
+  <WR_TipJobsLabel>Завдання</WR_TipJobsLabel>
+  <WR_TipLevelN>Рівень {0}</WR_TipLevelN>
+  <WR_TipMore>ще +{0}</WR_TipMore>
+  <WR_TipOff>Вимкнено</WR_TipOff>
+  <WR_TipOn>Увімкнено</WR_TipOn>
+  <WR_TipReqBills>{0} {1} (вимоги до навички у {2} із {3} замовлень)</WR_TipReqBills>
+  <WR_TipReqItems>{0} {1} (предметів із вимогою навички: {2})</WR_TipReqItems>
+  <WR_TipReqJobs>{0} {1} (завдань із вимогою навички: {2})</WR_TipReqJobs>
+  <WR_TipRequiresLabel>Потребує</WR_TipRequiresLabel>
+  <WR_TipSkillsLabel>Навички</WR_TipSkillsLabel>
+  <WR_TipTrainingHeader>Навчання</WR_TipTrainingHeader>
+  <WR_TipTrainingPath>на шляху до {0}</WR_TipTrainingPath>
+  <WR_TipTrainingRecommend>Рекомендовано колоністам із навичкою {0}</WR_TipTrainingRecommend>
+  <WR_TipTrainsLabel>Тренує</WR_TipTrainsLabel>
+  <WR_TipTrainsNothing>Нічого (без досвіду навичок)</WR_TipTrainsNothing>
+  <WR_TipUnlockAgeLabel>Мінімальний вік</WR_TipUnlockAgeLabel>
+  <WR_TipUnlockAgeValue>{0} (молодші колоністи не можуть виконувати цю роботу)</WR_TipUnlockAgeValue>
+  <WR_TipWholeType>{0} (усі завдання)</WR_TipWholeType>
+  <WR_TipXpLabel>Дає досвід</WR_TipXpLabel>
+  <WR_TipXpValue>{0} із {1} завдань</WR_TipXpValue>
+  <WR_TrainedSkillsLabel>Треновані</WR_TrainedSkillsLabel>
+  <WR_TrainedSkillsTip>Навички, які отримують досвід від завдань ролі.\n\nВизначено з вибраних завдань і наведено для довідки.</WR_TrainedSkillsTip>
+  <WR_TrainingHelp>Визначте, як колоністи здобувають навички й просуваються до цієї ролі. Шлях може мати кілька діапазонів, що перекриваються. Якщо шлях рекомендований колоністу, він отримує рекомендації всіх ролей свого поточного рівня навички.</WR_TrainingHelp>
+  <WR_TrainingSection>Шлях навчання</WR_TrainingSection>
+  <WR_TrainingTipBands>Діапазони, що перекриваються, співіснують; інакше пізніша роль замінює ранню.</WR_TrainingTipBands>
+  <WR_TrainingTipOrder>Призначення віддають перевагу вищим нижнім межам. За однакових діапазонів першою йде найслабша навичка працівника, потім — збережений порядок шляху.</WR_TrainingTipOrder>
+  <WR_TrainingTipWhat>Власний розвиток ролі: кожна роль-учасниця має діапазон навички для рекомендації. Сама роль завжди залишається у своєму шляху.</WR_TrainingTipWhat>
+  <WR_TreeFlat>Списком</WR_TreeFlat>
+  <WR_TreeNested>Вкладено</WR_TreeNested>
+  <WR_TreeToggleTip>Перемкнути вкладення охоплених ролей під об'єднаною роллю.</WR_TreeToggleTip>
+  <WR_TypeColumn>Вид</WR_TypeColumn>
+  <WR_UnpinAssignment>Відкріпити</WR_UnpinAssignment>
+  <WR_UnusedJobsWarning>Є завдання, яких немає в жодній ролі.</WR_UnusedJobsWarning>
+  <WR_UsedSkillsLabel>Задіяні</WR_UsedSkillsLabel>
+  <WR_UsedSkillsTip>Навички, що впливають на завдання ролі. Наведіть, щоб побачити вплив.\n\nВизначено з вибраних завдань і наведено для довідки.</WR_UsedSkillsTip>
+  <WR_VerdictAwful>Непридатний</WR_VerdictAwful>
+  <WR_VerdictExceptional>Винятковий</WR_VerdictExceptional>
+  <WR_VerdictGreat>Дуже вправний</WR_VerdictGreat>
+  <WR_VerdictNeutral>Нейтральний</WR_VerdictNeutral>
+  <WR_VerdictPoor>Слабкий</WR_VerdictPoor>
+  <WR_VerdictStrong>Вправний</WR_VerdictStrong>
+  <WR_VirtualRoleTip>Показано, бо завдання цієї ролі охоплює батьківська роль. Вона належить до групи «{0}».</WR_VirtualRoleTip>
+  <WR_WarningPrefix>Увага:</WR_WarningPrefix>
+  <WR_WelcomeBody>WorkRoles визначає робочі пріоритети колоністів за призначеними ролями, як-от лікар, коваль чи фермер.</WR_WelcomeBody>
+  <WR_WelcomeFind>Відкрийте WorkRoles кнопкою роботи внизу екрана. Вкладка «Довідка» починається з ознайомлення.</WR_WelcomeFind>
+  <WR_WelcomeSmallScreen>Ваш ігровий екран — {0}x{1} (роздільність, поділена на масштаб інтерфейсу). WorkRoles розрахований на {2}x{3} або більше, наприклад 1920x1080 за масштабу 1.25. На меншому екрані він працює, але деякі написи скорочені, а вкладки потребують більше прокручування. Зменшення масштабу в параметрах гри надасть вікну більше місця.</WR_WelcomeSmallScreen>
+  <WR_WelcomeTakeMeThere>Відкрити зараз</WR_WelcomeTakeMeThere>
+  <WR_WelcomeTitle>WorkRoles</WR_WelcomeTitle>
+  <WR_WhenPanelCaption>Розвиток ролі: задайте рівні навички для рекомендації показаних ролей. Ролі з перекриттям доповнюють одна одну.</WR_WhenPanelCaption>
+  <WR_WillBeRemoved>Не в рекомендаціях. Перед застосуванням закріпіть ролі, які хочете залишити.</WR_WillBeRemoved>
+  <WR_WorkBlockedCapacity>бракує потрібної функції організму</WR_WorkBlockedCapacity>
+  <WR_WorkBlockedPrecept>відмова через {0}</WR_WorkBlockedPrecept>
+  <WR_WorkBlockedRace>заборонено робочими обмеженнями раси</WR_WorkBlockedRace>
+  <WR_WorkBlockedRecipe>заборонено обмеженнями рецептів раси</WR_WorkBlockedRecipe>
+  <WR_WorkBlockedTags>недоступні категорії роботи</WR_WorkBlockedTags>
+  <WR_WorkBlockedViviGathering>потрібні додатні швидкість і вихід збирання Vivi; відповідні інструменти можуть дозволити цю роботу</WR_WorkBlockedViviGathering>
+  <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
+  <WR_WorkTypesLabel>Види роботи</WR_WorkTypesLabel>
+  <WR_WorkTypesTip>Роль доступна лише колоністам, здатним виконувати зазначені види роботи.\n\nВизначено з вибраних завдань і наведено для довідки.</WR_WorkTypesTip>
+</LanguageData>

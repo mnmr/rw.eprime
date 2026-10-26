@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_GroupAnimals.label>Động vật</WS_GroupAnimals.label>
+  <WS_GroupEssentials.label>Thiết yếu</WS_GroupEssentials.label>
+  <WS_GroupFood.label>Thực phẩm</WS_GroupFood.label>
+  <WS_GroupIndoors.label>Trong nhà</WS_GroupIndoors.label>
+  <WS_GroupMedical.label>Y tế</WS_GroupMedical.label>
+  <WS_GroupOutdoors.label>Ngoài trời</WS_GroupOutdoors.label>
+  <WS_GroupResearch.label>Nghiên cứu</WS_GroupResearch.label>
+  <WS_GroupSocial.label>Giao tiếp</WS_GroupSocial.label>
+</LanguageData>

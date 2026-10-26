@@ -1,0 +1,156 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <EPR.Title>EPrime's Readouts</EPR.Title>
+  <EPR.Results>Tulokset</EPR.Results>
+  <EPR.NoMatches>Ei osumia</EPR.NoMatches>
+  <EPR.MoreResults>…ja {0} muuta</EPR.MoreResults>
+  <EPR.CycleTip>Vaihda näkyviä tasoja</EPR.CycleTip>
+  <EPR.UseVanilla>Käytä peruspelin resurssinäyttöä</EPR.UseVanilla>
+  <EPR.OffsetX>Vaakasiirtymä</EPR.OffsetX>
+  <EPR.OffsetY>Pystysiirtymä</EPR.OffsetY>
+  <EPR.PanelWidth>Paneelin leveys</EPR.PanelWidth>
+  <EPR.BottomMargin>Alamarginaali</EPR.BottomMargin>
+  <EPR.Groups>Ryhmät</EPR.Groups>
+  <EPR.Resources>Resurssit</EPR.Resources>
+  <EPR.AllStorableItems>Kaikki varastoitavat esineet</EPR.AllStorableItems>
+  <EPR.All>Kaikki</EPR.All>
+  <EPR.Vanilla>Peruspeli</EPR.Vanilla>
+  <EPR.SearchFilter>Hakusuodatin</EPR.SearchFilter>
+  <EPR.ItemFilter>Esinesuodatin</EPR.ItemFilter>
+  <EPR.SourceFilter>Lähdesuodatin</EPR.SourceFilter>
+  <EPR.NoMatchingItems>Ei vastaavia esineitä</EPR.NoMatchingItems>
+  <EPR.Editor>Muokkain</EPR.Editor>
+  <EPR.GroupEditor>Ryhmämuokkain</EPR.GroupEditor>
+  <EPR.Add>Lisää</EPR.Add>
+  <EPR.DeleteConfirm>Poistetaanko ryhmä ”{0}”?</EPR.DeleteConfirm>
+  <EPR.SelectGroupHint>Valitse tai luo ryhmä muokataksesi sitä.</EPR.SelectGroupHint>
+  <EPR.Thresholds>Raja-arvot</EPR.Thresholds>
+  <EPR.Low>Matala</EPR.Low>
+  <EPR.Critical>Kriittinen</EPR.Critical>
+  <EPR.Set>Aseta</EPR.Set>
+  <EPR.Clear>Tyhjennä</EPR.Clear>
+  <EPR.ShowWhenZero>Näytä myös nolla</EPR.ShowWhenZero>
+  <EPR.PoolTip>Lisää koontimerkintänä: yksi paikka näyttää tämän luokan kaikkien esineiden yhteismäärän</EPR.PoolTip>
+  <EPR.EnableTip>Näytä tämä ryhmä resurssinäytössä</EPR.EnableTip>
+  <EPR.RestoreDefaults>Palauta oletukset</EPR.RestoreDefaults>
+  <EPR.RestoreConfirm>Korvataanko KAIKKI ryhmät ja raja-arvot oletuksilla? Tämä vaikuttaa jokaiseen pelaajaan moninpelissä.</EPR.RestoreConfirm>
+  <EPR.Help>Ohje</EPR.Help>
+  <EPR.HelpGroups>Nämä ovat resurssinäytön ryhmäsi. Jokainen ryhmä näkyy omana kaistanaan.
+
+Vaihda näkyvyyttä napsauttamalla valintamerkkiä tai poista ryhmä napsauttamalla [x].
+
+Lisää uusia ryhmiä nimikentän ja Lisää-painikkeen avulla.</EPR.HelpGroups>
+  <EPR.HelpResources>Selaa resursseja ja määritettyjä resurssikoosteita lisätäksesi niitä valittuun ryhmään.
+
+Napsauta merkintää lisätäksesi sen ryhmän loppuun tai vedä se tiettyyn tason paikkaan. Lisätyt merkinnät ovat himmennettyjä ja merkittyjä; poista ne napsauttamalla oikealla tai niiden valintamerkkiä.</EPR.HelpResources>
+  <EPR.HelpEditor>Tämä paneeli näyttää valitun ryhmän tasot.
+
+Ryhmällä voi olla enintään kolme näyttötasoa. Uusi taso tulee automaattisesti saataville, kun edellinen ei ole tyhjä.
+
+Lisää esineitä valittuun ryhmään napsauttamalla tai vetämällä niitä oikeanpuoleisesta paneelista.
+
+Avaa näyttöasetukset napsauttamalla paikkaa. Tyhjennä määritys oikealla napsautuksella. Järjestä esineitä vetämällä tason sisällä tai tasojen välillä.</EPR.HelpEditor>
+  <EPR.Options>Asetukset</EPR.Options>
+  <EPR.Overview>Yleiskatsaus</EPR.Overview>
+  <EPR.HelpChapterBasics>Perusteet</EPR.HelpChapterBasics>
+  <EPR.HelpChapterGroups>Ryhmät</EPR.HelpChapterGroups>
+  <EPR.HelpChapterPools>Resurssikoosteet</EPR.HelpChapterPools>
+  <EPR.HelpChapterOptions>Asetukset</EPR.HelpChapterOptions>
+  <EPR.HelpReload>Lataa uudelleen</EPR.HelpReload>
+  <EPR.WelcomeTitle>EPrime's Readouts</EPR.WelcomeTitle>
+  <EPR.WelcomeBody>Readouts korvaa vasemman yläkulman resurssinäytön määrittämilläsi ryhmillä. Jokaisessa ryhmässä on enintään kolme resurssien tai resurssikoosteiden tasoa, ja laskurit vaihtavat väriä asettamiesi raja-arvojen kohdalla.</EPR.WelcomeBody>
+  <EPR.WelcomeFind>Avaa muokkain resurssipaneelin yläosan hammasrataspainikkeella. Asetukset-välilehdellä ovat näyttöasetukset, ja Ohje-välilehti selittää loput.</EPR.WelcomeFind>
+  <EPR.WelcomeTakeMeThere>Siirry sinne nyt</EPR.WelcomeTakeMeThere>
+  <EPR.ShowSearchFilter>Näytä hakusuodatin</EPR.ShowSearchFilter>
+  <EPR.SearchHideZero>Piilota nollamääräiset tulokset</EPR.SearchHideZero>
+  <EPR.SearchStorageOnly>Laske vain varastossa olevat esineet</EPR.SearchStorageOnly>
+  <EPR.SearchStorageOnlyTip>Kun käytössä, laskee vain kelvolliset, pilaantumattomat esineet varastoalueilla tai säilytysrakennuksissa, kuten hyllyillä. Muualla kartalla olevia irtoesineitä ei lasketa. Kannossa olevia, tavaraluetteloissa tai säiliöissä olevia tai paljastamattomille alueille kätkettyjä esineitä ei lasketa koskaan. Kielletyt esineet sisältyvät määrään, ellei myös ”Ohita kielletyt esineet” ole käytössä.</EPR.SearchStorageOnlyTip>
+  <EPR.SearchHideForbidden>Ohita kielletyt esineet</EPR.SearchHideForbidden>
+  <EPR.SelectJumpCamera>Siirrä kamera napsautettuun resurssiin</EPR.SelectJumpCamera>
+  <EPR.DisplayOptions>Näyttöasetukset</EPR.DisplayOptions>
+  <EPR.KeepReadoutToggle>Säilytä resurssinäytön kytkin työkalurivillä</EPR.KeepReadoutToggle>
+  <EPR.KeepReadoutToggleTip>Säilyttää pelin oman resurssinäyttöpainikkeen oikean alakulman työkalurivillä. Napsautus näyttää tai piilottaa ryhmät; ryhmien ollessa piilossa paneeliin jäävät vain hammasratas ja hakukenttä.</EPR.KeepReadoutToggleTip>
+  <EPR.TierLayoutOptions>Tasojen asettelu</EPR.TierLayoutOptions>
+  <EPR.TierLayoutHorizontal>Vaaka</EPR.TierLayoutHorizontal>
+  <EPR.TierLayoutVertical>Pysty</EPR.TierLayoutVertical>
+  <EPR.TierLayoutTip>Miten laajennettu ryhmä näyttää lisätasot, avattiinpa ne kolmioilla tai osoittamalla. Vaaka lisää ne oikealle samalle riville. Pysty antaa jokaiselle tasolle oman rivin ja kasvattaa kaistan korkeutta.</EPR.TierLayoutTip>
+  <EPR.ExpandOnHover>Laajenna osoitettaessa</EPR.ExpandOnHover>
+  <EPR.CollapseWhenIdle>Kutista, kun ei osoiteta</EPR.CollapseWhenIdle>
+  <EPR.ShowModName>Näytä modin nimi</EPR.ShowModName>
+  <EPR.CountOptions>Laskenta-asetukset</EPR.CountOptions>
+  <EPR.PlannedWorkOptions>Suunniteltu työ</EPR.PlannedWorkOptions>
+  <EPR.ReserveForBills>Varaa resurssit tilausten esineille</EPR.ReserveForBills>
+  <EPR.ReserveForBillsTip>Vähentää ainesosat, jotka keskeneräiset tilauksesi vielä kuluttavat. Tilaus varaa vain ainesosan, jonka voi täyttää täsmälleen yhdellä tavalla. ”Mikä tahansa nahka” ja vastaavat avoimet valinnat eivät varaa mitään.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBuildables>Varaa resurssit rakennuskohteille</EPR.ReserveForBuildables>
+  <EPR.ReserveForBuildablesTip>Vähentää materiaalit, joita piirustuksesi ja keskeneräiset rungot vielä tarvitsevat. Runkoon jo kannettuja materiaaleja ei lasketa uudelleen, ja kielletyt piirustukset ohitetaan.</EPR.ReserveForBuildablesTip>
+  <EPR.ShowNegativeCounts>Näytä vajaus negatiivisina lukuina</EPR.ShowNegativeCounts>
+  <EPR.ShowNegativeCountsTip>Kun suunniteltu työ tarvitsee enemmän kuin sinulla on, näytä puuttuva määrä nollaan pysähtymisen sijaan.</EPR.ShowNegativeCountsTip>
+  <EPR.QualityJobsRework>Quality Jobs -tuki</EPR.QualityJobsRework>
+  <EPR.QualityJobsReworkTip>Arvioi tavoitelaadullisten tilausten ja rakennuskohteiden yritysmäärän ja varaa resurssit niille kaikille. Uudelleenrakennettavista rakenteista palautuu peruspelin purkamisessa palauttama osuus.</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsMissingTip>Vaatii EPrime's Quality Jobsin, jota ei ole asennettu.</EPR.QualityJobsMissingTip>
+  <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs on asennettu, mutta se ei tarjoa tarvittavaa integraatiota. Päivitä se ottaaksesi asetuksen käyttöön.</EPR.QualityJobsOutdatedTip>
+  <EPR.TipPlannedWork>Suunniteltu työ</EPR.TipPlannedWork>
+  <EPR.TipResource>Resurssi</EPR.TipResource>
+  <EPR.TipQueued>Jonossa</EPR.TipQueued>
+  <EPR.TipEach>Kukin</EPR.TipEach>
+  <EPR.TipDrain>Kulutus</EPR.TipDrain>
+  <EPR.TipInStock>Varastossa</EPR.TipInStock>
+  <EPR.TipAvailableStock>{0} käytettävissä · {1} varastossa</EPR.TipAvailableStock>
+  <EPR.TipOtherPlannedWork>Muut ({0})</EPR.TipOtherPlannedWork>
+  <EPR.TipMixedResources>Sekalaiset</EPR.TipMixedResources>
+  <EPR.ClickOptions>Napsautusasetukset</EPR.ClickOptions>
+  <EPR.SearchOptions>Hakuasetukset</EPR.SearchOptions>
+  <EPR.HoverOptions>Osoitusasetukset</EPR.HoverOptions>
+  <EPR.OptionsFor>Kohteen {0} näyttöasetukset</EPR.OptionsFor>
+  <EPR.ThresholdCaption>Mukauta värillisten laskurien raja-arvoja</EPR.ThresholdCaption>
+  <EPR.CountRuleCaption>Ohita tämän resurssin/koosteen laskenta-asetukset</EPR.CountRuleCaption>
+  <EPR.RuleDefault>Oletus</EPR.RuleDefault>
+  <EPR.RuleAlwaysOn>Aina käytössä</EPR.RuleAlwaysOn>
+  <EPR.RuleAlwaysOff>Aina pois käytöstä</EPR.RuleAlwaysOff>
+  <EPR.Pools>Resurssikoosteet</EPR.Pools>
+  <EPR.ResourcePoolEditor>Resurssikoosteiden muokkain</EPR.ResourcePoolEditor>
+  <EPR.HelpPools>Luo resurssikooste ja valitse se tästä muokataksesi sen sisältöä Resurssit-paneelissa. Nimeä kooste uudelleen tai poista se rivin toiminnoilla.
+
+Lisää kooste ryhmään siirtymällä ryhmämuokkaimeen ja käyttämällä resurssipuun Resurssikoosteet-haaraa.</EPR.HelpPools>
+  <EPR.HelpPoolEditor>Rajaa resurssipuuta yhteisillä suodattimilla. Valitse luokkia tai yksittäisiä resursseja sisällyttääksesi ne valittuun koosteeseen. Käytä resurssin kuvaketta koosteen kuvakkeena napsauttamalla sitä.</EPR.HelpPoolEditor>
+  <EPR.SelectOrCreatePool>Aloita valitsemalla tai luomalla resurssikooste.</EPR.SelectOrCreatePool>
+  <EPR.DeletePoolConfirm>Poistetaanko kooste ”{0}”? Sitä käyttävät paikat poistetaan kaikista ryhmistä.</EPR.DeletePoolConfirm>
+  <EPR.NameLabel>Nimi</EPR.NameLabel>
+  <EPR.PoolNameTaken>Tämänniminen resurssikooste on jo olemassa.</EPR.PoolNameTaken>
+  <EPR.GroupNameTaken>Tämänniminen ryhmä on jo olemassa.</EPR.GroupNameTaken>
+  <EPR.Export>Vie</EPR.Export>
+  <EPR.Import>Tuo</EPR.Import>
+  <EPR.Exported>Viety kohteeseen {0}</EPR.Exported>
+  <EPR.ExportOverwriteConfirm>{0} on jo olemassa. Korvataanko se?</EPR.ExportOverwriteConfirm>
+  <EPR.Imported>Tuonti otettu käyttöön.</EPR.Imported>
+  <EPR.NoFiles>Vientitiedostoja ei löytynyt.</EPR.NoFiles>
+  <EPR.ExportPreviewTitle>Vie Readouts</EPR.ExportPreviewTitle>
+  <EPR.CopyToClipboard>Kopioi leikepöydälle</EPR.CopyToClipboard>
+  <EPR.CopiedToClipboard>Kopioitu leikepöydälle.</EPR.CopiedToClipboard>
+  <EPR.Save>Tallenna</EPR.Save>
+  <EPR.ExportLocationLabel>Tallennussijainti</EPR.ExportLocationLabel>
+  <EPR.CopyPath>Kopioi polku</EPR.CopyPath>
+  <EPR.LocGameData>Pelitietojen kansio</EPR.LocGameData>
+  <EPR.LocDesktop>Työpöytä</EPR.LocDesktop>
+  <EPR.LocUserHome>Käyttäjän kotikansio</EPR.LocUserHome>
+  <EPR.LocCustom>Mukautettu...</EPR.LocCustom>
+  <EPR.EnterPath>Anna polku</EPR.EnterPath>
+  <EPR.BadFileName>Anna kelvollinen tiedostonimi.</EPR.BadFileName>
+  <EPR.BadDirectory>Anna kelvollinen kansiopolku.</EPR.BadDirectory>
+  <EPR.ImportTitle>Tuo Readouts</EPR.ImportTitle>
+  <EPR.ImportLocationLabel>Tuontisijainti</EPR.ImportLocationLabel>
+  <EPR.FromClipboard>Leikepöydältä</EPR.FromClipboard>
+  <EPR.ClipboardEmpty>Leikepöytä on tyhjä tai ei sisällä resurssinäytön vientiä.</EPR.ClipboardEmpty>
+  <EPR.ImportWarning>VAROITUS: Tämä KORVAA kaikki nykyiset koosteet, ryhmät ja raja-arvot. Tämä vaikuttaa jokaiseen pelaajaan moninpelissä.</EPR.ImportWarning>
+  <EPR.ImportParseFailed>Resurssinäytön XML:n jäsennys epäonnistui: {0}</EPR.ImportParseFailed>
+  <EPR.DeleteFileConfirm>Poistetaanko tiedosto ”{0}”? Tätä ei voi kumota.</EPR.DeleteFileConfirm>
+  <EPR.ContentSummary>{0} koostetta, {1} ryhmää</EPR.ContentSummary>
+  <EPR.PreviewPoolsHeader>Koosteet</EPR.PreviewPoolsHeader>
+  <EPR.PreviewGroupsHeader>Ryhmät</EPR.PreviewGroupsHeader>
+  <EPR.PreviewPoolRow>{0} ({1} jäsentä)</EPR.PreviewPoolRow>
+  <EPR.PreviewGroupRow>{0} ({1} tasoa, {2} paikkaa)</EPR.PreviewGroupRow>
+  <EPR.PreviewNone>(ei mitään)</EPR.PreviewNone>
+  <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout piirtää oman resurssipaneelinsa mukautetussa tai esiasetustilassa. Tämä paneeli kilpailee EPrime's Readoutsin kanssa samasta näyttötilasta.</EPR.CompatibilityCustomResourceReadout>
+  <EPR.CompatibilityReadoutsPlus>Readouts+ lisää napsautustoimintoja peruspelin resurssinäkymään. Nämä toiminnot ohitetaan, kun EPrime's Readoutsin näkymä on käytössä.</EPR.CompatibilityReadoutsPlus>
+  <EPR.CompatibilityToggleableReadouts>Toggleable Readouts (myös Continued-versio) korvaa peruspelin resurssinäkymän piirtämisen. Sen suodatus ja kiinnitys ohitetaan, kun EPrime's Readoutsin näkymä on käytössä.</EPR.CompatibilityToggleableReadouts>
+</LanguageData>

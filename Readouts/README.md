@@ -24,7 +24,7 @@ EPrime's Readouts replaces [RimWorld](https://rimworldgame.com/)'s resource read
 - Safe to add to or remove from existing saves. Removing a content mod cleans its resources from your groups automatically.
 - Multiplayer compatible ([RimWorld Multiplayer](https://steamcommunity.com/sharedfiles/filedetails/?id=2606448745)): group definitions are shared and synced; what each player shows is their own choice.
 - MultiFloors mod support: readouts show combined resource counts across all floors of a level stack. Other multi-floor mods (Strata, 'As above, so below 2') do not need special support to work.
-- Not compatible with other mods that replace the resource readout (Readouts+, Custom Resource Readout, Toggleable Readouts, and similar).
+- Not compatible with mods that replace or extend the vanilla resource readout: Readouts+, Custom Resource Readout, and Toggleable Readouts (including Continued). The welcome dialog names active conflicts once per player per save, and reopens when a newly encountered conflict is added.
 
 Newly seeded group and pool names follow the display language without changing
 their saved names. Custom names stay verbatim. Older saves and exports do not

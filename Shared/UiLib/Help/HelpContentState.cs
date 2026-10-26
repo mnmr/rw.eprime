@@ -131,8 +131,9 @@ namespace RimShared.UiLib
                 // once in BuildDrawModel (StyledDrawSlack).
                 if (ReferenceEquals(markup, word))
                     width = Text.CalcSize(markup).x;
-                else if (word.Length == 1
-                    && LineBreakRules.IsCharacterBreakable(word[0]))
+                else if (word.Length > 0
+                    && TextElements.NextBoundary(word, 0) == word.Length
+                    && LineBreakRules.IsCharacterBreakable(TextElements.ScalarAt(word, 0)))
                     width = Text.CalcSize(markup).x * 1.02f;
                 else
                     width = WrText.MeasureFitWidth(markup);

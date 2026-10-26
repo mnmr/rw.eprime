@@ -1,0 +1,156 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <EPR.Add>Ekle</EPR.Add>
+  <EPR.All>Tümü</EPR.All>
+  <EPR.AllStorableItems>Depolanabilir tüm eşyalar</EPR.AllStorableItems>
+  <EPR.BadDirectory>Geçerli bir dizin yolu girin.</EPR.BadDirectory>
+  <EPR.BadFileName>Geçerli bir dosya adı girin.</EPR.BadFileName>
+  <EPR.BottomMargin>Alt boşluk</EPR.BottomMargin>
+  <EPR.Clear>Temizle</EPR.Clear>
+  <EPR.ClickOptions>Tıklama seçenekleri</EPR.ClickOptions>
+  <EPR.ClipboardEmpty>Pano boş veya bir Readouts dışa aktarımı içermiyor.</EPR.ClipboardEmpty>
+  <EPR.CollapseWhenIdle>İmleç uzaktayken daralt</EPR.CollapseWhenIdle>
+  <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout, özel veya hazır ayar modunda kendi kaynak panelini çizer. Bu panel, EPrime's Readouts ile aynı gösterim alanı için çakışır.</EPR.CompatibilityCustomResourceReadout>
+  <EPR.CompatibilityReadoutsPlus>Readouts+, temel oyunun kaynak göstergesine tıklama kontrolleri ekler. EPrime's Readouts etkinken bu kontroller devre dışı kalır.</EPR.CompatibilityReadoutsPlus>
+  <EPR.CompatibilityToggleableReadouts>Toggleable Readouts (Continued dâhil), temel oyunun kaynak gösterimini değiştirir. EPrime's Readouts etkinken onun filtreleme ve sabitleme özellikleri devre dışı kalır.</EPR.CompatibilityToggleableReadouts>
+  <EPR.ContentSummary>{0} havuz, {1} grup</EPR.ContentSummary>
+  <EPR.CopiedToClipboard>Panoya kopyalandı.</EPR.CopiedToClipboard>
+  <EPR.CopyPath>Yolu kopyala</EPR.CopyPath>
+  <EPR.CopyToClipboard>Panoya kopyala</EPR.CopyToClipboard>
+  <EPR.CountOptions>Sayım seçenekleri</EPR.CountOptions>
+  <EPR.CountRuleCaption>Bu kaynak/havuz için sayım seçeneklerini değiştir</EPR.CountRuleCaption>
+  <EPR.Critical>Kritik</EPR.Critical>
+  <EPR.CycleTip>Görünür kademeler arasında geçiş yap</EPR.CycleTip>
+  <EPR.DeleteConfirm>"{0}" grubu silinsin mi?</EPR.DeleteConfirm>
+  <EPR.DeleteFileConfirm>"{0}" dosyası silinsin mi? Bu işlem geri alınamaz.</EPR.DeleteFileConfirm>
+  <EPR.DeletePoolConfirm>"{0}" havuzu silinsin mi? Onu kullanan yuvalar tüm gruplardan kaldırılır.</EPR.DeletePoolConfirm>
+  <EPR.DisplayOptions>Görünüm seçenekleri</EPR.DisplayOptions>
+  <EPR.Editor>Düzenleyici</EPR.Editor>
+  <EPR.EnableTip>Bu grubu kaynak göstergesinde göster</EPR.EnableTip>
+  <EPR.EnterPath>Yol gir</EPR.EnterPath>
+  <EPR.ExpandOnHover>Üzerine gelince genişlet</EPR.ExpandOnHover>
+  <EPR.Export>Dışa aktar</EPR.Export>
+  <EPR.ExportLocationLabel>Kayıt konumu</EPR.ExportLocationLabel>
+  <EPR.ExportOverwriteConfirm>{0} zaten var. Üzerine yazılsın mı?</EPR.ExportOverwriteConfirm>
+  <EPR.ExportPreviewTitle>Göstergeleri dışa aktar</EPR.ExportPreviewTitle>
+  <EPR.Exported>{0} konumuna aktarıldı</EPR.Exported>
+  <EPR.FromClipboard>Panodan</EPR.FromClipboard>
+  <EPR.GroupEditor>Grup düzenleyici</EPR.GroupEditor>
+  <EPR.GroupNameTaken>Bu adda bir grup zaten var.</EPR.GroupNameTaken>
+  <EPR.Groups>Gruplar</EPR.Groups>
+  <EPR.Help>Yardım</EPR.Help>
+  <EPR.HelpChapterBasics>Temel bilgiler</EPR.HelpChapterBasics>
+  <EPR.HelpChapterGroups>Gruplar</EPR.HelpChapterGroups>
+  <EPR.HelpChapterOptions>Seçenekler</EPR.HelpChapterOptions>
+  <EPR.HelpChapterPools>Kaynak havuzları</EPR.HelpChapterPools>
+  <EPR.HelpEditor>Bu panel seçili grubun kademelerini gösterir.
+
+Bir grubun en fazla üç görüntüleme kademesi olabilir. Önceki kademe boş olmaktan çıkınca yenisi otomatik kullanılabilir olur.
+
+Seçili gruba eklemek için sağdaki panelden öğelere tıklayın veya sürükleyin.
+
+Görünüm seçenekleri için bir yuvaya tıklayın. Atamayı kaldırmak için sağ tıklayın. Öğeleri kademe içinde veya kademeler arasında sıralamak için sürükleyin.</EPR.HelpEditor>
+  <EPR.HelpGroups>Bunlar kaynak gösterim gruplarınızdır. Her grup ayrı bir şerit olarak çizilir.
+
+Görünürlüğü değiştirmek için onay işaretine, grubu silmek için [x] düğmesine tıklayın.
+
+Ad alanını ve Ekle düğmesini kullanarak yeni gruplar ekleyin.</EPR.HelpGroups>
+  <EPR.HelpPoolEditor>Kaynak ağacını daraltmak için ortak filtreleri kullanın. Seçili havuza katmak için kategorileri veya tek tek kaynakları işaretleyin. Bir kaynağın simgesini havuz simgesi olarak kullanmak için ona tıklayın.</EPR.HelpPoolEditor>
+  <EPR.HelpPools>Bir kaynak havuzu oluşturun, ardından Kaynaklar panelinde içeriğini düzenlemek için burada seçin. Havuzu yeniden adlandırmak veya silmek için satır eylemlerini kullanın.
+
+Bir havuzu gruba eklemek için Grup düzenleyiciye geçin ve Kaynaklar ağacındaki Kaynak havuzları dalını kullanın.</EPR.HelpPools>
+  <EPR.HelpReload>Yeniden yükle</EPR.HelpReload>
+  <EPR.HelpResources>Seçili gruba eklemek için kaynakları ve tanımlı kaynak havuzlarını inceleyin.
+
+Grubun sonuna eklemek için bir girdiye tıklayın veya belirli bir kademe yuvasına yerleştirmek için sürükleyin. Atanmış girdiler soluk ve işaretli görünür; kaldırmak için sağ tıklayın veya onay işaretlerine tıklayın.</EPR.HelpResources>
+  <EPR.HoverOptions>Üzerine gelme seçenekleri</EPR.HoverOptions>
+  <EPR.Import>İçe aktar</EPR.Import>
+  <EPR.ImportLocationLabel>İçe aktarım konumu</EPR.ImportLocationLabel>
+  <EPR.ImportParseFailed>Gösterge XML'i çözümlenemedi: {0}</EPR.ImportParseFailed>
+  <EPR.ImportTitle>Göstergeleri içe aktar</EPR.ImportTitle>
+  <EPR.ImportWarning>UYARI: Mevcut tüm havuzlar, gruplar ve eşikler DEĞİŞTİRİLECEK. Bu, çok oyunculu oyunda herkesi etkiler.</EPR.ImportWarning>
+  <EPR.Imported>İçe aktarım başarıyla uygulandı.</EPR.Imported>
+  <EPR.ItemFilter>Eşya filtresi</EPR.ItemFilter>
+  <EPR.KeepReadoutToggle>Kaynak göstergesi düğmesini araç çubuğunda tut</EPR.KeepReadoutToggle>
+  <EPR.KeepReadoutToggleTip>Oyunun kendi kaynak göstergesi düğmesini sağ alttaki araç çubuğunda tutar. Düğmeye tıklamak grupları gösterir veya gizler; gruplar gizliyken panelde yalnızca dişli simgesi ve arama alanı kalır.</EPR.KeepReadoutToggleTip>
+  <EPR.LocCustom>Özel...</EPR.LocCustom>
+  <EPR.LocDesktop>Masaüstü</EPR.LocDesktop>
+  <EPR.LocGameData>Oyun verisi klasörü</EPR.LocGameData>
+  <EPR.LocUserHome>Kullanıcı klasörü</EPR.LocUserHome>
+  <EPR.Low>Düşük</EPR.Low>
+  <EPR.MoreResults>…ve {0} sonuç daha</EPR.MoreResults>
+  <EPR.NameLabel>Ad</EPR.NameLabel>
+  <EPR.NoFiles>Dışa aktarım dosyası bulunamadı.</EPR.NoFiles>
+  <EPR.NoMatches>Eşleşme yok</EPR.NoMatches>
+  <EPR.NoMatchingItems>Eşleşen eşya yok</EPR.NoMatchingItems>
+  <EPR.OffsetX>Yatay kaydırma</EPR.OffsetX>
+  <EPR.OffsetY>Dikey kaydırma</EPR.OffsetY>
+  <EPR.Options>Seçenekler</EPR.Options>
+  <EPR.OptionsFor>{0} görünüm seçenekleri</EPR.OptionsFor>
+  <EPR.Overview>Genel bakış</EPR.Overview>
+  <EPR.PanelWidth>Panel genişliği</EPR.PanelWidth>
+  <EPR.PlannedWorkOptions>Planlanan işler</EPR.PlannedWorkOptions>
+  <EPR.PoolNameTaken>Bu adda bir kaynak havuzu zaten var.</EPR.PoolNameTaken>
+  <EPR.PoolTip>Havuz girdisi olarak ekle: bu kategorideki her şeyin toplamını gösteren tek yuva</EPR.PoolTip>
+  <EPR.Pools>Kaynak havuzları</EPR.Pools>
+  <EPR.PreviewGroupRow>{0} ({1} kademe, {2} yuva)</EPR.PreviewGroupRow>
+  <EPR.PreviewGroupsHeader>Gruplar</EPR.PreviewGroupsHeader>
+  <EPR.PreviewNone>(yok)</EPR.PreviewNone>
+  <EPR.PreviewPoolRow>{0} ({1} üye)</EPR.PreviewPoolRow>
+  <EPR.PreviewPoolsHeader>Havuzlar</EPR.PreviewPoolsHeader>
+  <EPR.QualityJobsMissingTip>Kurulu olmayan EPrime's Quality Jobs gereklidir.</EPR.QualityJobsMissingTip>
+  <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs kurulu ama gereken entegrasyonu sunmuyor. Bu seçeneği açmak için güncelleyin.</EPR.QualityJobsOutdatedTip>
+  <EPR.QualityJobsRework>Quality Jobs desteği</EPR.QualityJobsRework>
+  <EPR.QualityJobsReworkTip>Kalite hedefi olan siparişler ve yapılar için hedefe kaç denemede ulaşılacağını tahmin eder ve tümü için kaynak ayırır. Yeniden yapılan yapılar söküldüğünde temel oyunun iade ettiği malzeme payını geri verir.</EPR.QualityJobsReworkTip>
+  <EPR.ReserveForBills>Siparişler için kaynak ayır</EPR.ReserveForBills>
+  <EPR.ReserveForBillsTip>Bekleyen siparişlerin henüz tüketeceği malzemeleri çıkarır. Bir sipariş, yalnızca tam olarak tek şekilde karşılanabilen malzemeyi ayırır. "Herhangi bir deri" gibi açık seçenekler için hiçbir şey ayrılmaz.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBuildables>Yapılar için kaynak ayır</EPR.ReserveForBuildables>
+  <EPR.ReserveForBuildablesTip>Planların ve yarım inşa iskeletlerinin hâlâ ihtiyaç duyduğu malzemeleri çıkarır. İskelete taşınmış malzemeler tekrar sayılmaz, yasaklı planlar yok sayılır.</EPR.ReserveForBuildablesTip>
+  <EPR.ResourcePoolEditor>Kaynak havuzu düzenleyici</EPR.ResourcePoolEditor>
+  <EPR.Resources>Kaynaklar</EPR.Resources>
+  <EPR.RestoreConfirm>TÜM gruplar ve eşikler varsayılan kümeyle değiştirilsin mi? Bu, çok oyunculu oyunda herkesi etkiler.</EPR.RestoreConfirm>
+  <EPR.RestoreDefaults>Varsayılanları geri yükle</EPR.RestoreDefaults>
+  <EPR.Results>Sonuçlar</EPR.Results>
+  <EPR.RuleAlwaysOff>Daima kapalı</EPR.RuleAlwaysOff>
+  <EPR.RuleAlwaysOn>Daima açık</EPR.RuleAlwaysOn>
+  <EPR.RuleDefault>Varsayılan</EPR.RuleDefault>
+  <EPR.Save>Kaydet</EPR.Save>
+  <EPR.SearchFilter>Arama filtresi</EPR.SearchFilter>
+  <EPR.SearchHideForbidden>Yasaklı eşyaları yok say</EPR.SearchHideForbidden>
+  <EPR.SearchHideZero>Sayısı sıfır olan sonuçları gizle</EPR.SearchHideZero>
+  <EPR.SearchOptions>Arama seçenekleri</EPR.SearchOptions>
+  <EPR.SearchStorageOnly>Yalnızca depodaki eşyaları say</EPR.SearchStorageOnly>
+  <EPR.SearchStorageOnlyTip>Açıkken yalnızca stok alanlarında veya raf gibi depo binalarında bulunan uygun, çürümemiş eşyaları sayar. Haritanın başka yerlerindeki eşyalar dışlanır. Taşınan, envanterde veya kaplarda tutulan ve keşfedilmemiş alanlardaki eşyalar hiçbir zaman sayılmaz. "Yasaklı eşyaları yok say" da açık değilse yasaklı eşyalar dâhildir.</EPR.SearchStorageOnlyTip>
+  <EPR.SelectGroupHint>Düzenlemek için bir grup seçin veya oluşturun.</EPR.SelectGroupHint>
+  <EPR.SelectJumpCamera>Kamerayı tıklanan kaynağa götür</EPR.SelectJumpCamera>
+  <EPR.SelectOrCreatePool>Başlamak için bir kaynak havuzu seçin veya oluşturun.</EPR.SelectOrCreatePool>
+  <EPR.Set>Ayarla</EPR.Set>
+  <EPR.ShowModName>Mod adını göster</EPR.ShowModName>
+  <EPR.ShowNegativeCounts>Eksikleri negatif sayılarla göster</EPR.ShowNegativeCounts>
+  <EPR.ShowNegativeCountsTip>Planlanan işler elinizdekinden fazlasını gerektiriyorsa sıfırda durmak yerine ne kadar eksik olduğunu gösterir.</EPR.ShowNegativeCountsTip>
+  <EPR.ShowSearchFilter>Arama filtresini göster</EPR.ShowSearchFilter>
+  <EPR.ShowWhenZero>Sıfırken göster</EPR.ShowWhenZero>
+  <EPR.SourceFilter>Kaynak mod filtresi</EPR.SourceFilter>
+  <EPR.ThresholdCaption>Renkli sayaçların eşiklerini özelleştir</EPR.ThresholdCaption>
+  <EPR.Thresholds>Eşikler</EPR.Thresholds>
+  <EPR.TierLayoutHorizontal>Yatay</EPR.TierLayoutHorizontal>
+  <EPR.TierLayoutOptions>Kademe düzeni</EPR.TierLayoutOptions>
+  <EPR.TierLayoutTip>Üçgenlerle geçiş yaptığınızda veya imleci üzerine getirdiğinizde genişleyen grubun ek kademelerinin nasıl gösterileceği. Yatay, bunları aynı satırda sağa ekler. Dikey, her kademeyi ayrı satıra koyarak şeridi yükseltir.</EPR.TierLayoutTip>
+  <EPR.TierLayoutVertical>Dikey</EPR.TierLayoutVertical>
+  <EPR.TipAvailableStock>{0} kullanılabilir · {1} stokta</EPR.TipAvailableStock>
+  <EPR.TipDrain>Tüketim</EPR.TipDrain>
+  <EPR.TipEach>Birim</EPR.TipEach>
+  <EPR.TipInStock>Stokta</EPR.TipInStock>
+  <EPR.TipMixedResources>Karışık</EPR.TipMixedResources>
+  <EPR.TipOtherPlannedWork>Diğer ({0})</EPR.TipOtherPlannedWork>
+  <EPR.TipPlannedWork>Planlanan işler</EPR.TipPlannedWork>
+  <EPR.TipQueued>Sırada</EPR.TipQueued>
+  <EPR.TipResource>Kaynak</EPR.TipResource>
+  <EPR.Title>EPrime's Readouts</EPR.Title>
+  <EPR.UseVanilla>Temel oyunun göstergesini kullan</EPR.UseVanilla>
+  <EPR.Vanilla>Temel oyun</EPR.Vanilla>
+  <EPR.WelcomeBody>Readouts, sol üstteki kaynak göstergesini sizin ayarladığınız gruplarla değiştirir. Her grup en fazla üç kademe kaynak veya kaynak havuzu içerir; sayaçlar belirlediğiniz eşiklerde renk değiştirir.</EPR.WelcomeBody>
+  <EPR.WelcomeFind>Düzenleyiciyi kaynak panelinin üstündeki dişli düğmesiyle açın. Seçenekler sekmesinde görünüm ayarları, Yardım sekmesinde diğer açıklamalar bulunur.</EPR.WelcomeFind>
+  <EPR.WelcomeTakeMeThere>Şimdi aç</EPR.WelcomeTakeMeThere>
+  <EPR.WelcomeTitle>EPrime's Readouts</EPR.WelcomeTitle>
+</LanguageData>

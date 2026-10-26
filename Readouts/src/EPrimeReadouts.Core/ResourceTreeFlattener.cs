@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using RimShared.Common;
 
 namespace EPrimeReadouts.Core
@@ -35,12 +36,13 @@ namespace EPrimeReadouts.Core
     public static class ResourceTreeFlattener
     {
         public static List<TreeRow> Flatten(List<ResourceTreeNode> roots,
-            HashSet<string> expanded, string filter, IResourceCatalog catalog)
+            HashSet<string> expanded, string filter, IResourceCatalog catalog,
+            CultureInfo? searchCulture = null)
         {
             var rows = new List<TreeRow>();
             bool filtering = SearchMatcher.IsActive(filter);
             foreach (var root in roots)
-                AddNode(root, 0, rows, expanded, filter, filtering, false, catalog);
+                AddNode(root, 0, rows, expanded, filter, filtering, false, catalog, searchCulture);
             return rows;
         }
 
@@ -58,26 +60,27 @@ namespace EPrimeReadouts.Core
             return rows;
         }
 
-        private static bool CategoryMatches(ResourceTreeNode node, string query, bool ancestorMatched)
-            => ancestorMatched || SearchMatcher.Matches(node.Label, query);
+        private static bool CategoryMatches(ResourceTreeNode node, string query, bool ancestorMatched,
+            CultureInfo? culture)
+            => ancestorMatched || SearchMatcher.Matches(node.Label, query, culture);
 
         private static bool HasMatch(ResourceTreeNode node, string filter, bool ancestorMatched,
-            IResourceCatalog catalog)
+            IResourceCatalog catalog, CultureInfo? culture)
         {
-            bool matched = CategoryMatches(node, filter, ancestorMatched);
+            bool matched = CategoryMatches(node, filter, ancestorMatched, culture);
             foreach (var defName in node.DefNames)
-                if (matched || SearchMatcher.Matches(catalog.LabelOf(defName), filter)) return true;
+                if (matched || SearchMatcher.Matches(catalog.LabelOf(defName), filter, culture)) return true;
             foreach (var child in node.Children)
-                if (HasMatch(child, filter, matched, catalog)) return true;
+                if (HasMatch(child, filter, matched, catalog, culture)) return true;
             return false;
         }
 
         private static void AddNode(ResourceTreeNode node, int indent, List<TreeRow> rows,
             HashSet<string> expanded, string filter, bool filtering, bool ancestorMatched,
-            IResourceCatalog catalog)
+            IResourceCatalog catalog, CultureInfo? culture)
         {
-            if (filtering && !HasMatch(node, filter, ancestorMatched, catalog)) return;
-            bool matched = filtering && CategoryMatches(node, filter, ancestorMatched);
+            if (filtering && !HasMatch(node, filter, ancestorMatched, catalog, culture)) return;
+            bool matched = filtering && CategoryMatches(node, filter, ancestorMatched, culture);
             bool open = filtering || expanded.Contains(node.Id);
             rows.Add(new TreeRow
             {
@@ -91,11 +94,11 @@ namespace EPrimeReadouts.Core
             });
             if (!open) return;
             foreach (var child in node.Children)
-                AddNode(child, indent + 1, rows, expanded, filter, filtering, matched, catalog);
+                AddNode(child, indent + 1, rows, expanded, filter, filtering, matched, catalog, culture);
             foreach (var defName in node.DefNames)
             {
                 if (filtering && !matched
-                    && !SearchMatcher.Matches(catalog.LabelOf(defName), filter)) continue;
+                    && !SearchMatcher.Matches(catalog.LabelOf(defName), filter, culture)) continue;
                 rows.Add(new TreeRow
                 {
                     Indent = indent + 1,
@@ -109,7 +112,7 @@ namespace EPrimeReadouts.Core
             ItemTreeFilter filter, bool ancestorMatched, IItemPickerCatalog catalog,
             Dictionary<ResourceTreeNode, List<string>> matchesByNode)
         {
-            bool matched = CategoryMatches(node, filter.Query, ancestorMatched);
+            bool matched = CategoryMatches(node, filter.Query, ancestorMatched, filter.SearchCulture);
             var result = new List<string>();
             foreach (var child in node.Children)
             {
@@ -138,7 +141,7 @@ namespace EPrimeReadouts.Core
 
             return categoryMatched
                 || !SearchMatcher.IsActive(filter.Query)
-                || SearchMatcher.Matches(catalog.LabelOf(defName), filter.Query);
+                || SearchMatcher.Matches(catalog.LabelOf(defName), filter.Query, filter.SearchCulture);
         }
 
         private static void AddFilteredNode(ResourceTreeNode node, int indent, List<TreeRow> rows,
@@ -149,7 +152,7 @@ namespace EPrimeReadouts.Core
             var matchingDefs = matchesByNode[node];
             if (matchingDefs.Count == 0) return;
 
-            bool matched = queryActive && CategoryMatches(node, filter.Query, ancestorMatched);
+            bool matched = queryActive && CategoryMatches(node, filter.Query, ancestorMatched, filter.SearchCulture);
             bool open = queryActive || expanded.Contains(node.Id);
             rows.Add(new TreeRow
             {

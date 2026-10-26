@@ -111,6 +111,7 @@
   <IMP_WelcomeBody>Implanner plans colonist implants and optionally automates the work needed to produce and install them.</IMP_WelcomeBody>
   <IMP_WelcomeFind>Open Implanner with this button in the toolbar at the bottom right of the screen, next to the view toggles.</IMP_WelcomeFind>
   <IMP_WelcomeTakeMeThere>Take me there now</IMP_WelcomeTakeMeThere>
+  <IMP_CompatibilityLevelMod>{0}: Implanner automation is disabled with this multi-level mod. Planning and tracking still work.</IMP_CompatibilityLevelMod>
 
   <!-- ===== States ===== -->
   <IMP_StateWaiting>Waiting</IMP_StateWaiting>
@@ -200,7 +201,7 @@
   <IMP_OptSurgery>Surgery</IMP_OptSurgery>
   <IMP_OptIteration>Iteration strategy</IMP_OptIteration>
   <IMP_OptSurgeryConcurrency>Concurrent surgeries</IMP_OptSurgeryConcurrency>
-  <IMP_OptCountHospitalized>Count hospitalized pawns</IMP_OptCountHospitalized>
+  <IMP_OptCountHospitalized>Count existing patients</IMP_OptCountHospitalized>
   <IMP_OptUpgradeByPriority>Give the best implants to high-priority colonists</IMP_OptUpgradeByPriority>
   <IMP_IterTier>Tier batching</IMP_IterTier>
   <IMP_IterColonist>Full sets</IMP_IterColonist>
@@ -235,7 +236,7 @@
 
   <!-- ===== Automation tooltips ===== -->
   <IMP_OptEnableTip>The master switch for everything Implanner does on its own: reserving implant items, scheduling operations, and creating crafting bills. Switched off, Implanner still tracks plans and progress; it just stops acting on them. Switching it off also asks which of its existing bills to keep.</IMP_OptEnableTip>
-  <IMP_OptIterationTip>The order automation works through missing implants. Colonist priority on the Overview tab always decides who goes first.\n\nTier batching: everyone receives the highest-tier implants first, then work moves down the tier list. A colonist goes into surgery once their whole tier is reserved.\n\nFull sets: finish one colonist's whole plan before starting the next. Surgery waits until the whole plan is reserved.\n\nASAP: every implant in stock is scheduled right away for the highest-priority colonist missing it. At equal priority, legs go to the slowest colonist, and arms go to melee fighters first, then to the best crafter or researcher.</IMP_OptIterationTip>
+  <IMP_OptIterationTip>The order automation works through missing implants. Colonist priority on the Overview tab always decides who goes first.\n\nTier batching: everyone receives the highest-tier implants first, then work moves down the tier list. A colonist goes into surgery once their whole tier is reserved.\n\nFull sets: finish one colonist's whole plan before starting the next. Surgery waits until the whole plan is reserved.\n\nASAP: every implant in stock is scheduled right away for the highest-priority colonist missing it. At equal priority, legs go to the slowest colonist, and arms go first to colonists with an equipped melee weapon, then to the colonist with the highest sum of Crafting and Intellectual skill levels.</IMP_OptIterationTip>
   <IMP_OptAutoFloorTip>Surgery bills are restricted to your best available doctor, so a novice medic never fumbles a bionic installation just because they reached the operating table first. The restriction follows the best doctor at each colony as people come and go. Nobody can operate on themselves, so the best doctor's own surgeries go to the next best doctor.\n\nTurn this off to set a fixed minimum skill yourself.</IMP_OptAutoFloorTip>
   <IMP_OptSurgeryConcurrencyTip>How many colonists per colony may have surgeries planned at the same time. Higher values queue more colonists in parallel; lower values keep the hospital and your doctors free. Starts at one per ten colonists. Hold Shift while clicking +/- to change by 10, or Ctrl to change by 5.</IMP_OptSurgeryConcurrencyTip>
   <IMP_OptCountHospitalizedTip>Colonists and slaves lying in medical beds or downed and awaiting treatment also take up surgery slots. New Implanner surgeries wait until the hospital has room under the limit above. Prisoners, guests and visiting patients from other factions never take up a slot. Switch it off to schedule implant surgeries regardless of who is already being treated.</IMP_OptCountHospitalizedTip>

@@ -10,6 +10,6 @@ L'onglet Vue d'ensemble liste tous les colons pouvant recevoir des implants.
 - **Progression** compte les implants posés par rapport au plan.
 - **État** résume en un mot la situation du colon par rapport au plan.
 
-Les colonnes T et M affichent les compétences de Tir et de Mêlée ; les petites icônes montrent l'arme et l'objet de ceinture équipés. Ces indications sont seulement informatives ; l'automatisation les ignore.
+Les colonnes T et M affichent les compétences de Tir et de Mêlée ; les petites icônes montrent l'arme et l'objet de ceinture équipés. Les valeurs de ces compétences et la ceinture sont seulement informatives. En mode Dès que possible, la priorité des colons passe avant tout. Parmi les colons de même priorité auxquels il manque le même implant, les jambes vont au plus lent ; les bras vont d'abord à ceux équipés d'une arme de mêlée, puis à celui ayant le meilleur total en Artisanat et en Intellectuel.
 
 Cliquez sur le nom d'un colon pour ouvrir ses détails à droite.

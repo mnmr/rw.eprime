@@ -39,7 +39,7 @@ Agrupar divide la tabla en secciones plegables, aquí por género:
 
 ![Tabla agrupada por género](grouped-table.png)
 
-Solo organiza filas; los filtros deciden quién aparece. Con Colony Groups instalado se ofrece su agrupación de personajes.
+Solo organiza filas; los filtros deciden quién aparece. Con Colony Groups instalado se ofrece su agrupación.
 
 ## Columnas de habilidades
 
@@ -53,6 +53,6 @@ Haz clic en la cabecera para ordenar por esa habilidad o la X para quitarla. Los
 
 Hay más interruptores visuales en Opciones:
 
-![Configuración visuales de Opciones](options-display.png)
+![Configuración visual de Opciones](options-display.png)
 
 Son preferencias personales: cada jugador conserva las suyas y ninguna cambia asignaciones.

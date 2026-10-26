@@ -47,7 +47,7 @@ Haz clic en una entrada para añadirla al final del grupo, o arrástrala a una c
 
 Un grupo puede tener hasta tres niveles. El siguiente nivel aparece automáticamente cuando el anterior contiene algo.
 
-Haz clic en o arrastra objetos desde el panel derecho para añadirlos al grupo seleccionado.
+Haz clic en los objetos del panel derecho o arrástralos para añadirlos al grupo seleccionado.
 
 Haz clic en una casilla para configurar su visualización. Haz clic derecho para quitar la asignación. Arrastra objetos para reordenarlos dentro de un nivel o entre niveles.</EPR.HelpEditor>
   <EPR.Options>Opciones</EPR.Options>
@@ -59,17 +59,17 @@ Haz clic en una casilla para configurar su visualización. Haz clic derecho para
   <EPR.HelpReload>Recargar</EPR.HelpReload>
   <EPR.WelcomeTitle>EPrime's Readouts</EPR.WelcomeTitle>
   <EPR.WelcomeBody>Readouts sustituye el panel de recursos de la esquina superior izquierda por grupos que tú configuras. Cada grupo admite hasta tres niveles de recursos o conjuntos de recursos, y sus contadores cambian de color según los umbrales que establezcas.</EPR.WelcomeBody>
-  <EPR.WelcomeFind>Abre el editor con el botón del engranaje situado arriba del panel. La pestaña Opciones contiene los configuración de visualización y la pestaña Ayuda explica el resto.</EPR.WelcomeFind>
+  <EPR.WelcomeFind>Abre el editor con el botón del engranaje situado arriba del panel. La pestaña Opciones contiene la configuración de visualización y la pestaña Ayuda explica el resto.</EPR.WelcomeFind>
   <EPR.WelcomeTakeMeThere>Abrir ahora</EPR.WelcomeTakeMeThere>
   <EPR.ShowSearchFilter>Mostrar filtro de búsqueda</EPR.ShowSearchFilter>
   <EPR.SearchHideZero>Ocultar resultados con cantidad cero</EPR.SearchHideZero>
   <EPR.SearchStorageOnly>Contar solo objetos almacenados</EPR.SearchStorageOnly>
-  <EPR.SearchStorageOnlyTip>Al activarlo, solo se cuentan los objetos válidos y no podridos que estén en zonas de almacenaje o edificios de almacenamiento, como estanterías. Se excluyen los objetos sueltos del resto del mapa. Nunca se cuentan los objetos que los personajes transportan, guardan en inventarios o contenedores, ni los ocultos en zonas sin revelar. Los objetos prohibidos se incluyen salvo que también se active «Ignorar objetos prohibidos».</EPR.SearchStorageOnlyTip>
+  <EPR.SearchStorageOnlyTip>Al activarlo, solo se cuentan los objetos válidos y no podridos que estén en zonas de almacenaje o edificios de almacenamiento, como estanterías. Se excluyen los objetos sueltos del resto del mapa. Nunca se cuentan los objetos transportados, los guardados en inventarios o contenedores, ni los ocultos en zonas sin revelar. Los objetos prohibidos se incluyen salvo que también se active «Ignorar objetos prohibidos».</EPR.SearchStorageOnlyTip>
   <EPR.SearchHideForbidden>Ignorar objetos prohibidos</EPR.SearchHideForbidden>
-  <EPR.SelectJumpCamera>Mover la cámara al recurso haz clic endo</EPR.SelectJumpCamera>
+  <EPR.SelectJumpCamera>Mover cámara al hacer clic en un recurso</EPR.SelectJumpCamera>
   <EPR.DisplayOptions>Opciones de visualización</EPR.DisplayOptions>
   <EPR.KeepReadoutToggle>Mantener el botón del panel en la barra de herramientas</EPR.KeepReadoutToggle>
-  <EPR.KeepReadoutToggleTip>Mantiene el botón original del panel de recursos en la barra inferior derecha. Al haz clic enrlo se muestran u ocultan los grupos; cuando están ocultos, el panel conserva solo el engranaje y el campo de búsqueda.</EPR.KeepReadoutToggleTip>
+  <EPR.KeepReadoutToggleTip>Mantiene el botón original del panel de recursos en la barra inferior derecha. Al hacer clic en él se muestran u ocultan los grupos; cuando están ocultos, el panel conserva solo el engranaje y el campo de búsqueda.</EPR.KeepReadoutToggleTip>
   <EPR.TierLayoutOptions>Disposición de niveles</EPR.TierLayoutOptions>
   <EPR.TierLayoutHorizontal>Horizontal</EPR.TierLayoutHorizontal>
   <EPR.TierLayoutVertical>Vertical</EPR.TierLayoutVertical>
@@ -79,14 +79,14 @@ Haz clic en una casilla para configurar su visualización. Haz clic derecho para
   <EPR.ShowModName>Mostrar nombre del mod</EPR.ShowModName>
   <EPR.CountOptions>Opciones de recuento</EPR.CountOptions>
   <EPR.PlannedWorkOptions>Trabajo previsto</EPR.PlannedWorkOptions>
-  <EPR.ReserveForBills>Reservar recursos para tareas de producción</EPR.ReserveForBills>
-  <EPR.ReserveForBillsTip>Resta los ingredientes que aún consumirán las tareas pendientes. Una tarea solo reserva un ingrediente cuando hay exactamente una forma de satisfacerlo. «Cualquier cuero» y otras opciones abiertas no reservan nada.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBills>Reservar recursos para proyectos</EPR.ReserveForBills>
+  <EPR.ReserveForBillsTip>Resta los ingredientes que aún consumirán los proyectos pendientes. Un proyecto solo reserva un ingrediente cuando hay exactamente una forma de satisfacerlo. «Cualquier cuero» y otras opciones abiertas no reservan nada.</EPR.ReserveForBillsTip>
   <EPR.ReserveForBuildables>Reservar recursos para construcciones</EPR.ReserveForBuildables>
   <EPR.ReserveForBuildablesTip>Resta los materiales que aún necesitan los planos y las estructuras en construcción. No vuelve a contar los materiales ya transportados a una estructura e ignora los planos prohibidos.</EPR.ReserveForBuildablesTip>
   <EPR.ShowNegativeCounts>Mostrar los déficits como números negativos</EPR.ShowNegativeCounts>
   <EPR.ShowNegativeCountsTip>Si el trabajo previsto necesita más de lo que tienes, muestra cuánto falta en lugar de detenerse en cero.</EPR.ShowNegativeCountsTip>
   <EPR.QualityJobsRework>Compatibilidad con Quality Jobs</EPR.QualityJobsRework>
-  <EPR.QualityJobsReworkTip>Para tareas y construcciones con un objetivo de calidad, estima cuántos intentos harán falta y reserva recursos para todos ellos. Las estructuras reconstruidas devuelven la proporción de materiales que recupera el juego original al desmantelarlas.</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsReworkTip>Para proyectos y construcciones con un objetivo de calidad, estima cuántos intentos harán falta y reserva recursos para todos ellos. Las estructuras reconstruidas devuelven la proporción de materiales que recupera el juego original al desmantelarlas.</EPR.QualityJobsReworkTip>
   <EPR.QualityJobsMissingTip>Requiere EPrime's Quality Jobs, que no está instalado.</EPR.QualityJobsMissingTip>
   <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs está instalado, pero no ofrece la integración necesaria. Actualízalo para activar esta opción.</EPR.QualityJobsOutdatedTip>
   <EPR.TipPlannedWork>Trabajo previsto</EPR.TipPlannedWork>
@@ -150,4 +150,7 @@ Para añadir un conjunto a un grupo, cambia al Editor de grupos y utiliza la ram
   <EPR.PreviewPoolRow>{0} ({1} miembros)</EPR.PreviewPoolRow>
   <EPR.PreviewGroupRow>{0} ({1} niveles, {2} casillas)</EPR.PreviewGroupRow>
   <EPR.PreviewNone>(ninguno)</EPR.PreviewNone>
+  <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout muestra su propio panel de recursos en modo personalizado o predefinido. Ese panel compite con EPrime's Readouts por el mismo espacio en pantalla.</EPR.CompatibilityCustomResourceReadout>
+  <EPR.CompatibilityReadoutsPlus>Readouts+ añade controles de clic al panel de recursos del juego base. Esos controles no se utilizan mientras el panel de EPrime esté activado.</EPR.CompatibilityReadoutsPlus>
+  <EPR.CompatibilityToggleableReadouts>Toggleable Readouts (incluido Continued) reemplaza la visualización de los paneles del juego base. Sus funciones de filtrado y fijación no se utilizan mientras el panel de EPrime esté activado.</EPR.CompatibilityToggleableReadouts>
 </LanguageData>

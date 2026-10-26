@@ -46,6 +46,9 @@ try {
     & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $PSCommandPath -CheckUnsupportedRuntime
     Check ($LASTEXITCODE -eq 0) 'Windows PowerShell compatibility regression failed.'
 
+    & (Join-Path $PSHOME 'pwsh.exe') -NoProfile -File "$PSScriptRoot\publish-content.tests.ps1"
+    Check ($LASTEXITCODE -eq 0) 'Publishing localization and assembly freshness regression failed.'
+
     & (Join-Path $PSHOME 'pwsh.exe') -NoProfile -File "$PSScriptRoot\steam-upload.tests.ps1"
     Check ($LASTEXITCODE -eq 0) 'Desktop Steam publishing regression failed.'
 

@@ -11,10 +11,26 @@ import re
 from typing import NamedTuple
 import xml.etree.ElementTree as ET
 
-MODS = ('WorkRoles', 'Readouts', 'QualityJobs', 'Implanner')
-LOCALES = ('Danish', 'German', 'French', 'Spanish', 'Italian',
-           'PortugueseBrazilian', 'Dutch', 'Swedish', 'Finnish', 'Norwegian',
-           'Portuguese', 'SpanishLatin', 'ChineseSimplified', 'ChineseTraditional')
+MODS = ('WorkRoles', 'Readouts', 'QualityJobs', 'Implanner', 'Shared')
+# Only active bundled locales are CLI inputs. Retired catalogs and their frozen
+# English-source manifests live outside content roots in Translations/Retired.
+LOCALES = ('German', 'French', 'Spanish', 'Italian', 'PortugueseBrazilian',
+           'SpanishLatin', 'ChineseSimplified', 'ChineseTraditional',
+           'Ukrainian', 'Japanese', 'Korean', 'Turkish', 'Vietnamese')
+# Brand-only titles intentionally keep their names in every language. Pin both
+# key and English text so later prose under the same key is still reviewed.
+BRAND_TITLES = {
+    'Implanner/Keyed/IMP_WelcomeTitle': "EPrime's Implanner",
+    'QualityJobs/Keyed/QJ_WelcomeTitle': "EPrime's Quality Jobs",
+    'Readouts/Keyed/EPR.Title': "EPrime's Readouts",
+    'Readouts/Keyed/EPR.WelcomeTitle': "EPrime's Readouts",
+}
+# Reviewed wording that happens to be identical in this specific language.
+# Do not waive reviews of the same key in another locale or after a text edit.
+UNCHANGED_TRANSLATIONS = {
+    ('French', 'Implanner/Keyed/IMP_ExportSummary'): '{0} plans, {1} implants',
+    ('French', 'WorkRoles/Keyed/WR_RecClassificationSection'): 'Classification',
+}
 PLACEHOLDER = re.compile(r'(?<!\{)\{[^{}]+\}(?!\})')
 LINK = re.compile(r'\]\(([^)\n]+)\)')
 DIRECTIVE = re.compile(r'^\s*(@[A-Za-z][^\r\n]*)$', re.MULTILINE)
@@ -57,11 +73,15 @@ def _merge(target, entries, issues):
             target[key] = text
 
 
+def content_root(root, mod):
+    return root / mod / ('Translations' if mod == 'Shared' else 'mod')
+
+
 def catalog(root, locale, mods):
     """Flatten actual game content by semantic key, independent of XML order."""
     entries, issues = {}, []
     for mod in mods:
-        base = root / mod / 'mod'
+        base = content_root(root, mod)
         keyed = base / ('Languages/English' if locale == 'English' else f'FallbackLanguages/{locale}') / 'Keyed'
         for path in sorted(keyed.rglob('*.xml')):
             _merge(entries, _xml(path, f'{mod}/Keyed/', issues), issues)
@@ -125,6 +145,9 @@ def _balanced_rich_tags(text):
 
 def check_locale(root, locale, mods=MODS, require_manifest=False):
     source, issues = catalog(root, 'English', mods)
+    for mod in mods:
+        if not any(key.startswith(mod + '/') for key in source):
+            issues.append(Issue('source', mod, 'No English localization source found; check the repository root'))
     target, target_issues = catalog(root, locale, mods)
     issues.extend(target_issues)
     for key in sorted(source.keys() - target.keys()):
@@ -156,12 +179,19 @@ def check_locale(root, locale, mods=MODS, require_manifest=False):
                 issues.append(Issue('directive', key, 'Help demo/directive identifier differs'))
         # Exact equality is only a review signal: many valid cognates and brand
         # names are identical. It must never force deliberately wrong wording.
-        if original.strip() == translated.strip() and len(re.findall(r'[A-Za-z]', original)) > 12:
+        if (original.strip() == translated.strip()
+                and len(re.findall(r'[A-Za-z]', original)) > 12
+                and BRAND_TITLES.get(key) != original.strip()
+                and UNCHANGED_TRANSLATIONS.get((locale, key)) != original.strip()):
             issues.append(Issue('unchanged', key, 'Text matches English; check whether intentional', 'warning'))
     path = manifest_path(root, locale)
     if path.exists():
         try:
             recorded = json.loads(path.read_text(encoding='utf-8'))['source_sha256']
+            if (not isinstance(recorded, dict)
+                    or any(not isinstance(value, str) or not re.fullmatch(r'[0-9a-f]{64}', value)
+                           for value in recorded.values())):
+                raise ValueError('source_sha256 must map entry keys to SHA-256 hex strings')
             for key, original in source.items():
                 if recorded.get(key) != _digest(original):
                     issues.append(Issue('stale', key, 'English changed or was added since the translation snapshot'))
@@ -185,7 +215,7 @@ def snapshot_locale(root, locale, mods=MODS):
     path = manifest_path(root, locale)
     path.parent.mkdir(parents=True, exist_ok=True)
     value = {'schema_version': 1, 'locale': locale,
-             'translation_method': 'automated; Danish/German pilot includes owner corrections',
+             'translation_method': 'automated; Danish/German translations include owner corrections',
              'source_sha256': {key: _digest(text) for key, text in sorted(source.items())}}
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 

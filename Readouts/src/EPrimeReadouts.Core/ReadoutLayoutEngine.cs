@@ -21,6 +21,8 @@ namespace EPrimeReadouts.Core
         /// filter toggles are those options.
         public IReadOnlyDictionary<string, CountRule>? CountRules;
         public string SearchText = "";
+        /// Explicit presentation culture supplied with translated catalog labels.
+        public System.Globalization.CultureInfo? SearchCulture;
         /// Per-def search breakdown; null falls back to Counts with every
         /// stack treated as stored and unforbidden.
         public IReadOnlyDictionary<string, SearchCount>? SearchCounts;
@@ -672,18 +674,18 @@ namespace EPrimeReadouts.Core
                     if (slot.HighlightName != null)
                     {
                         // #poolId: match pool name
-                        match = SearchMatcher.Matches(slot.HighlightName, input.SearchText);
+                        match = SearchMatcher.Matches(slot.HighlightName, input.SearchText, input.SearchCulture);
                     }
                     else
                     {
                         // Plain def or @category: match member labels
                         foreach (var m in slot.Members)
-                            if (SearchMatcher.Matches(input.Catalog.LabelOf(m), input.SearchText))
+                            if (SearchMatcher.Matches(input.Catalog.LabelOf(m), input.SearchText, input.SearchCulture))
                             { match = true; break; }
                         if (!match && SlotToken.IsPool(slot.Token))
                             match = SearchMatcher.Matches(
                                 input.Catalog.CategoryLabelOf(SlotToken.MemberName(slot.Token)),
-                                input.SearchText);
+                                input.SearchText, input.SearchCulture);
                     }
                     if (match)
                         model.Cells.Add(new RenderCell
@@ -962,7 +964,7 @@ namespace EPrimeReadouts.Core
             LayoutInput input, List<ResultEntry> matches, string defName, int raw)
         {
             string label = input.Catalog.LabelOf(defName);
-            if (!SearchMatcher.Matches(label, input.SearchText)) return;
+            if (!SearchMatcher.Matches(label, input.SearchText, input.SearchCulture)) return;
             SearchCount search = ResolveSearchCount(input, defName, raw);
             int basisTotal = input.SearchStorageOnly ? search.Stored : search.Total;
             int basisUnforbidden = input.SearchStorageOnly

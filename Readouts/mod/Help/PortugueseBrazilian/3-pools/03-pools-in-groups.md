@@ -1,7 +1,7 @@
 ---
 title: Conjuntos nos grupos
 ---
-No Editor de grupos, conjuntos ficam no ramo Conjuntos de recursos, no topo de Recursos. Adicione como um recurso: clique ou arraste para um espaço (veja [Níveis no Editor de grupos](topic:tiers-in-the-group-editor)). Buscar “meal” encontra Refeições nesse ramo, já no grupo:
+No Editor de grupos, conjuntos ficam no ramo Conjuntos de recursos, no topo de Recursos. Adicione como um recurso: clique ou arraste para um espaço (veja [Níveis no Editor de grupos](topic:tiers-in-the-group-editor)). Buscar “refei” encontra Refeições nesse ramo, já no grupo:
 
 ![Ramo de conjuntos com Refeições já no grupo](resources-search.png)
 

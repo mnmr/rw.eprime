@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <RS_CompatibilityHeading>Mahdollisia modiristiriitoja havaittu</RS_CompatibilityHeading>
+  <RS_CompatibilityRemove>Poista yllä luetellut modit välttääksesi nämä ristiriidat.</RS_CompatibilityRemove>
+  <RS_CompatibilityRestoreAutomation>Poista yllä luetellut modit ottaaksesi automaation käyttöön.</RS_CompatibilityRestoreAutomation>
+</LanguageData>

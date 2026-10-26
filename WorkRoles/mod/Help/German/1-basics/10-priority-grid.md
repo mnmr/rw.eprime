@@ -5,7 +5,7 @@ Vermisst du die alten Zahlen? Die zwei kleinen nummerierten Schaltflächen ![Pri
 
 ![Die Prioritätstabelle](priority-grid.png)
 
-Sie zeigt die von WorkRoles berechneten Prioritäten aller gelisteten Kolonisten unter Beachtung aktiver Filter. Oben wechselst du zwischen direkten Rängen und der vertrauten Grundspielansicht von 0 bis 4. Ziehe den Eckgriff zum Vergrößern; Doppelklick setzt die Größe zurück.
+Sie zeigt die von WorkRoles berechneten Prioritäten aller gelisteten Kolonisten unter Beachtung aktiver Filter. Oben wechselst du zwischen direkten Rängen und der vertrauten Grundspielansicht von 0 bis 4.
 
 Zwei verwandte Schalter stehen im Optionsreiter:
 

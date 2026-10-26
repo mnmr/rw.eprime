@@ -239,7 +239,7 @@ namespace WorkRoles.UI
             Text.Font = GameFont.Medium;
             float roleLabelWidth = Mathf.Min(
                 WrText.FitWidth(role.DisplayLabel), titleMaxWidth);
-            string shownRoleLabel = role.DisplayLabel.Truncate(roleLabelWidth);
+            string shownRoleLabel = WrText.Truncate(role.DisplayLabel, roleLabelWidth);
             Text.Font = GameFont.Small;
 
             var customSwatches = new List<Color>(store.customSwatches.Count);
@@ -273,6 +273,14 @@ namespace WorkRoles.UI
             for (int i = 1; i <= holders.Count; i++)
                 holderOverflowLabels.Add(
                     "WR_PlusOthers".Translate(i).ToString());
+            // Same stacked swatch boundary as the header's draw geometry.
+            float holderContainerWidth = width < SwatchCols * 20f - 2f + 400f + TopBoxPadding * 2f
+                ? width : width / 2f;
+            float holderRowWidth = Mathf.Max(0f, holderContainerWidth - checksWidth
+                - 8f - TopBoxPadding - assignedLabelWidth - 6f);
+            RoleHolderLabel[] holderLabels = BuildHolderLabels(holders,
+                holderOverflowLabels, holderRowWidth);
+            float assignedRowHeight = Mathf.Max(22f, Mathf.Ceil(Text.LineHeight));
 
             string defaultGroupLabel = "WR_GroupDefault".Translate().ToString();
             // Rules move any role (composite or not) to Conditional Roles;
@@ -285,7 +293,7 @@ namespace WorkRoles.UI
             string groupButtonFull = "WR_GroupButton".Translate(currentGroup);
             float groupButtonWidth = Mathf.Min(
                 checksX - 8f - TopBoxPadding, 180f);
-            string groupButtonShown = groupButtonFull.Truncate(
+            string groupButtonShown = WrText.Truncate(groupButtonFull,
                 groupButtonWidth - 16f);
             var groups = new List<RoleGroupOptionSnapshot>();
             for (int i = 0; i < store.groups.Count; i++)
@@ -312,7 +320,7 @@ namespace WorkRoles.UI
                 "WR_CompositeConfirm".Translate(role.DisplayLabel).ToString(),
                 "WR_CompositeRevertConfirm".Translate(role.DisplayLabel).ToString(),
                 assignedLabel, assignedLabelWidth,
-                holders, holderOverflowLabels,
+                holders, holderOverflowLabels, holderLabels, assignedRowHeight,
                 "WR_Nobody".Translate().ToString(),
                 groupButtonFull, groupButtonShown, groups, defaultGroupLabel,
                 "WR_GroupNewOption".Translate().ToString(),
@@ -779,7 +787,40 @@ namespace WorkRoles.UI
                 cache.Clear();
                 cachedWidth = width;
             }
-            return value.Truncate(width, cache);
+            return WrText.Truncate(value, width, cache);
+        }
+
+        private static RoleHolderLabel[] BuildHolderLabels(
+            IReadOnlyList<RoleHolderPresentation> holders,
+            IReadOnlyList<string> overflowLabels, float width)
+        {
+            var nameWidths = new float[holders.Count];
+            var overflowWidths = new float[overflowLabels.Count];
+            for (int i = 0; i < holders.Count; i++)
+                nameWidths[i] = WrText.FitWidth(holders[i].Label);
+            for (int i = 1; i < overflowLabels.Count; i++)
+                overflowWidths[i] = WrText.FitWidth(overflowLabels[i]);
+            float separatorWidth = WrText.FitWidth(", ");
+            int visible = InlineNameList.VisibleCount(width, nameWidths, separatorWidth, overflowWidths);
+            var labels = new List<RoleHolderLabel>();
+            float x = 0f;
+            for (int i = 0; i < visible; i++)
+            {
+                string label = WrText.Truncate(holders[i].Label, width - x);
+                float labelWidth = Mathf.Min(nameWidths[i], width - x);
+                labels.Add(new RoleHolderLabel(label, x, labelWidth, false));
+                x += labelWidth;
+                if (i + 1 < holders.Count)
+                {
+                    labels.Add(new RoleHolderLabel(", ", x, separatorWidth, true));
+                    x += separatorWidth;
+                }
+            }
+            if (visible < holders.Count)
+                labels.Add(new RoleHolderLabel(WrText.Truncate(
+                    overflowLabels[holders.Count - visible], width - x),
+                    x, Mathf.Max(0f, width - x), true));
+            return labels.ToArray();
         }
 
         private void ClearEntryLabels()
@@ -926,7 +967,7 @@ namespace WorkRoles.UI
         }
 
         private bool Matches(string value) => value != null
-            && value.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) >= 0;
+            && SearchMatcher.Matches(value, Filter, UiLanguage.CaseCulture);
 
         internal bool IsWorkTypeExpanded(string defName)
             => expandedWorkTypes.Contains(defName);
@@ -1119,6 +1160,7 @@ namespace WorkRoles.UI
         private readonly List<Color> customSwatches;
         private readonly IReadOnlyList<RoleHolderPresentation> holders;
         private readonly List<string> holderOverflowLabels;
+        private readonly RoleHolderLabel[] holderLabels;
         private readonly IReadOnlyList<RoleSkillPresentation> skills;
         private readonly List<RoleGroupOptionSnapshot> groups;
 
@@ -1135,7 +1177,8 @@ namespace WorkRoles.UI
             string compositeRevertConfirmation,
             string assignedLabel, float assignedLabelWidth,
             IReadOnlyList<RoleHolderPresentation> holders,
-            List<string> holderOverflowLabels, string nobodyLabel,
+            List<string> holderOverflowLabels, RoleHolderLabel[] holderLabels,
+            float assignedRowHeight, string nobodyLabel,
             string groupButtonFull, string groupButtonShown,
             List<RoleGroupOptionSnapshot> groups,
             string defaultGroupLabel, string newGroupLabel,
@@ -1175,6 +1218,8 @@ namespace WorkRoles.UI
             AssignedLabelWidth = assignedLabelWidth;
             this.holders = holders;
             this.holderOverflowLabels = holderOverflowLabels;
+            this.holderLabels = holderLabels;
+            AssignedRowHeight = assignedRowHeight;
             NobodyLabel = nobodyLabel;
             GroupButtonFull = groupButtonFull;
             GroupButtonShown = groupButtonShown;
@@ -1221,6 +1266,9 @@ namespace WorkRoles.UI
         internal string AssignedLabel { get; }
         internal float AssignedLabelWidth { get; }
         internal int HolderCount => holders.Count;
+        internal float AssignedRowHeight { get; }
+        internal int HolderLabelCount => holderLabels.Length;
+        internal RoleHolderLabel HolderLabelAt(int index) => holderLabels[index];
         internal RoleHolderPresentation HolderAt(int index) => holders[index];
         internal string HolderOverflowLabel(int remaining) =>
             holderOverflowLabels[remaining];
@@ -1388,6 +1436,16 @@ namespace WorkRoles.UI
 
         internal string Label { get; }
         internal bool Primary { get; }
+    }
+
+    internal readonly struct RoleHolderLabel
+    {
+        internal RoleHolderLabel(string text, float x, float width, bool dim)
+        { Text = text; X = x; Width = width; Dim = dim; }
+        internal string Text { get; }
+        internal float X { get; }
+        internal float Width { get; }
+        internal bool Dim { get; }
     }
 
     internal readonly struct RoleHolderPresentation

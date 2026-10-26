@@ -1,7 +1,7 @@
 ---
 title: Posición y tamaño del panel
 ---
-Se configuran en los configuración de mods del juego. Abre Opciones, elige Configuración de mods y selecciona EPrime's Readouts.
+Se configuran en la configuración de mods del juego. Abre Opciones, elige Configuración de mods y selecciona EPrime's Readouts.
 
 - Usar el panel original vuelve al panel del juego y a su botón de categorías, sin desinstalar el mod.
 - Desplazamiento horizontal y vertical alejan el panel de la esquina entre 0 y 200 píxeles. Ambos empiezan en 7.

@@ -26,6 +26,7 @@ namespace EPrimeReadouts.UI
         public RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot>? RenderData;
         private int iconScaleRevision = -1;
         internal int IconDataRevision => iconScaleRevision;
+        private static readonly System.Func<string, float> MeasureLabel = WrText.MeasureFitWidth;
 
         public static DrawModel Resolve(
             RenderModel model,
@@ -66,11 +67,19 @@ namespace EPrimeReadouts.UI
                 else if (cell.Kind == CellKind.Counter)
                     counterContents[i] = new GUIContent(cell.Text ?? "");
                 else if (cell.Kind == CellKind.Label)
+                {
                     // Count > 0 marks a parameterized label ("…and {0} more");
                     // formatted here so drawing never builds strings.
-                    labels[i] = cell.Count > 0
+                    string full = cell.Count > 0
                         ? string.Format(UiText.Get(cell.Text!), cell.Count) // label cells carry a key
                         : UiText.Get(cell.Text!);
+                    // Resolve is the shared, revision-gated draw-model builder.
+                    // Every renderer receives the same fitted caption, including
+                    // the direct glyph path whose generator permits overflow.
+                    using (TinyText.UseFont())
+                        labels[i] = HeadTruncation.Fit(full, cell.Rect.W,
+                            MeasureLabel, out _);
+                }
             }
             var resolved = new DrawModel
             {

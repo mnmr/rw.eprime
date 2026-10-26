@@ -11,6 +11,6 @@ title: 悬停选项
 
 悬停时仅显示你手动打开的层级，不会增加更多层：
 
-![悬停药物横带，显示其两层](collapse-hover.png)
+![悬停成瘾品横带，显示其两层](collapse-hover.png)
 
 两项选项都遵循所选层级排列方式（参见[层级排列](topic:tier-layout)）。

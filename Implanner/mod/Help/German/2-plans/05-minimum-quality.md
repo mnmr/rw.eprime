@@ -1,13 +1,13 @@
 ---
 title: Mindestqualität
 ---
-Mit Quality Bionics Remastered oder Vanilla Genetics Expanded besitzen Implantate Qualitätsstufen von miserabel bis legendär, die ihre Leistung beeinflussen. Ein Plan zeigt dann neben **Plan löschen** die Schaltfläche **Mindestqualität**.
+Mit Quality Bionics Remastered oder Vanilla Genetics Expanded besitzen Implantate Qualitätsstufen von übel bis legendär, die ihre Leistung beeinflussen. Ein Plan zeigt dann neben **Plan löschen** die Schaltfläche **Mindestqualität**.
 
 ![Plankopf mit Mindestqualität](plan-min-quality.png)
 
 Jedes Implantat des Plans, auch geerbte, wird mindestens in dieser Qualität hergestellt und eingesetzt. Implantate ohne Qualität bleiben unverändert. Ein neuer erweiternder Plan beginnt mit derselben Mindestqualität.
 
-Implanner ersetzt nie ein gesundes Körperteil durch ein schlechteres. Ein miserabler bionischer Arm arbeitet schlechter als ein natürlicher und wartet daher auf ein besseres Exemplar, außer der Arm fehlt oder ist schwer beschädigt. Passen mehrere Gegenstände, erhält der zuerst bediente Kolonist den besten.
+Implanner ersetzt nie ein gesundes Körperteil durch ein schlechteres. Ein übler bionischer Arm arbeitet schlechter als ein natürlicher und wartet daher auf ein besseres Exemplar, außer der Arm fehlt oder ist schwer beschädigt. Passen mehrere Gegenstände, erhält der zuerst bediente Kolonist den besten.
 
 Bereits vorhandene geplante Implantate bleiben auch unter der Mindestqualität erhalten, sofern die folgende Option aus ist.
 

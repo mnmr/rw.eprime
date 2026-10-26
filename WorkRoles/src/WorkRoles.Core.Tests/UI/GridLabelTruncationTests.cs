@@ -4,6 +4,19 @@ namespace WorkRoles.Core.Tests.UI;
 
 public class GridLabelTruncationTests
 {
+    [Test]
+    public async Task PrefixSizingCountsCompleteDisplayedCharacters()
+    {
+        await Assert.That(GridLabelTruncation.SizingPrefix("Aか\u3099BCDEF", 2))
+            .IsEqualTo("Aか\u3099");
+        await Assert.That(GridLabelTruncation.SizingPrefix("A\U00020000BCDEF", 2))
+            .IsEqualTo("A\U00020000");
+        await Assert.That(GridLabelTruncation.IsCut("Aか\u3099B", 2)).IsFalse();
+        await Assert.That(GridLabelTruncation.RequiredPrefixLengths(
+                Labels("か\u3099く", "か\u3099き")))
+            .IsEquivalentTo(new[] { 2, 2 });
+    }
+
     private static readonly string[] ShippedCatalog =
     {
         "Basics", "Doctor", "Medic", "Cook", "Butcher", "Brewer",

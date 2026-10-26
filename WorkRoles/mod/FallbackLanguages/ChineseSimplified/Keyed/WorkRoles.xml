@@ -88,7 +88,7 @@
   <WR_RecTuneOrderingPointsRow>信号分值</WR_RecTuneOrderingPointsRow>
   <WR_RecTuneOrderingPointsRowDesc>最终推荐职责排序时，各信号强度提供的分值。</WR_RecTuneOrderingPointsRowDesc>
   <WR_RecTuneMinimumPickRow>最低人数入选加分</WR_RecTuneMinimumPickRow>
-  <WR_RecTuneMinimumPickRowDesc>为满足职责最低人数而选中的第一、第二、第三及以后角色获得的排序分值。</WR_RecTuneMinimumPickRowDesc>
+  <WR_RecTuneMinimumPickRowDesc>为满足职责最低人数而选中的第一、第二、第三及后续工作者获得的排序分值。</WR_RecTuneMinimumPickRowDesc>
   <WR_RecTuneCategoryPointsRow>类别分值</WR_RecTuneCategoryPointsRow>
   <WR_RecTuneCategoryPointsRowDesc>按殖民地重要性增加排序分值：“重要”让值勤职责排在同信号的生产工作之前；“可选”则使职责靠后。</WR_RecTuneCategoryPointsRowDesc>
   <WR_RecTuneTimePointsRow>时间需求分值</WR_RecTuneTimePointsRow>
@@ -110,16 +110,16 @@
   <WR_RecTuneOptionalTargetMinimumPoints>可选目标最低分值</WR_RecTuneOptionalTargetMinimumPoints>
   <WR_RecTuneOptionalTargetMinimumPointsDesc>推荐多技能可选目标时，各信号高于配置底线的级差总和至少须达到此值。</WR_RecTuneOptionalTargetMinimumPointsDesc>
   <WR_RecTuneLeadMinimumConnectedTargets>触发分散的关联目标数</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>关联训练目标达到此最少数量后，规划器才尝试把负责职责分配给不同角色。</WR_RecTuneLeadMinimumConnectedTargetsDesc>
+  <WR_RecTuneLeadMinimumConnectedTargetsDesc>关联训练目标达到此最少数量后，规划器才尝试把负责职责分配给不同工作者。</WR_RecTuneLeadMinimumConnectedTargetsDesc>
   <WR_RecTuneLeadMinimumSignal>负责人最低信号</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>选择角色作为分散训练路径负责人时，职责信号必须达到的最低值。</WR_RecTuneLeadMinimumSignalDesc>
+  <WR_RecTuneLeadMinimumSignalDesc>选择工作者作为分散训练路径负责人时，职责信号必须达到的最低值。</WR_RecTuneLeadMinimumSignalDesc>
   <WR_RecTuneHunterTiersRow>各档最高射击等级</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>“猎人”动态位置的射击等级分界。第 1 档将猎人放在基础工作之后，第 2、3 档分别放在中间和最后的工作职责之后，超过第 4 档则排在末尾。</WR_RecTuneHunterTiersRowDesc>
   <WR_TrainingSection>训练路径</WR_TrainingSection>
   <WR_TrainingHelp>在此定义殖民者如何学习新技能并逐步胜任此职责。训练路径可包含多个区间，职责可以重叠。路径被推荐时，会推荐该殖民者当前技能等级所涵盖的全部职责。</WR_TrainingHelp>
   <WR_TrainingTipWhat>职责自身的成长路线：每个成员职责都有对应推荐技能区间。目标职责本身始终保留在路径中。</WR_TrainingTipWhat>
   <WR_TrainingTipBands>重叠区间的职责同时存在；区间不重叠时，后续职责替换前一个。</WR_TrainingTipBands>
-  <WR_TrainingTipOrder>分配优先排列区间下限更高的职责。区间相同时，先按角色最弱的职责技能，再按路径保存顺序排序。</WR_TrainingTipOrder>
+  <WR_TrainingTipOrder>分配优先排列区间下限更高的职责。区间相同时，先按工作者最弱的职责技能，再按路径保存顺序排序。</WR_TrainingTipOrder>
   <WR_AddNew>新增</WR_AddNew>
   <WR_WhenPanelCaption>职责成长：设置所示职责在哪些技能等级获得推荐。重叠职责会相互补充。</WR_WhenPanelCaption>
   <WR_AddRole>添加职责</WR_AddRole>
@@ -254,7 +254,7 @@
   <WR_GroupByCaption>分组方式</WR_GroupByCaption>
   <WR_SkillColumnsCaption>技能列</WR_SkillColumnsCaption>
   <WR_RoleDisplayCaption>职责显示</WR_RoleDisplayCaption>
-  <WR_ColonistSearchTip>搜索殖民者姓名。用空格分隔条件，须全部匹配。条件前加 r: 或 role: 可搜索已分配职责名称，加 j: 或 job: 可搜索这些职责提供的工作。例如：br r:doc。</WR_ColonistSearchTip>
+  <WR_ColonistSearchTip>搜索殖民者姓名。用空格分隔条件，须全部匹配。条件前加 r: 或 role: 可搜索已分配职责名称，加 j: 或 job: 可搜索这些职责提供的工作。例如：br r:医生。</WR_ColonistSearchTip>
   <WR_ColonistRoleFilterTip>列出分配了所选职责的殖民者。若已分配的非阻止职责完全涵盖所选职责的工作，也算匹配。与搜索、工作和地点筛选共同生效。</WR_ColonistRoleFilterTip>
   <WR_ColonistJobFilterTip>已选择：{0}
 
@@ -292,7 +292,7 @@
   <WR_ChipsNormal>标签：完整名称</WR_ChipsNormal>
   <WR_ChipsCompact>标签：首字母</WR_ChipsCompact>
   <WR_ChipsIcons>标签：图标</WR_ChipsIcons>
-  <WR_OrderSuffixBar>（页签顺序）</WR_OrderSuffixBar>
+  <WR_OrderSuffixBar>（头像顺序）</WR_OrderSuffixBar>
   <WR_OrderSuffixAZ>（A-Z）</WR_OrderSuffixAZ>
   <WR_DisplayButton>显示</WR_DisplayButton>
   <WR_DisplayOptions>显示选项</WR_DisplayOptions>
@@ -375,8 +375,8 @@ WorkRoles 通过游戏标准方法为受管理殖民者提供工作列表。另�
   <WR_RecTipWithWaiverOne>{0}（1 次训练替代）</WR_RecTipWithWaiverOne>
   <WR_RecTipWithWaiversMany>{0}（{1} 次训练替代）</WR_RecTipWithWaiversMany>
   <WR_RecTipEveryoneCapable>分配给所有能胜任者</WR_RecTipEveryoneCapable>
-  <WR_RecDecisionAuto>自动分配给所有能胜任的角色。</WR_RecDecisionAuto>
-  <WR_RecDecisionSignals>此角色达到配置的信号门槛。</WR_RecDecisionSignals>
+  <WR_RecDecisionAuto>自动分配给所有能胜任者。</WR_RecDecisionAuto>
+  <WR_RecDecisionSignals>达到配置的信号门槛。</WR_RecDecisionSignals>
   <WR_RecDecisionCoverageDraft>选中剩余候选人中的最佳者，以满足必需覆盖人数。</WR_RecDecisionCoverageDraft>
   <WR_RecDecisionTraining>通过 {0} 的训练路径分配。</WR_RecDecisionTraining>
   <WR_RecDecisionTrainingUnknown>通过训练路径分配。</WR_RecDecisionTrainingUnknown>
@@ -399,16 +399,16 @@ WorkRoles 通过游戏标准方法为受管理殖民者提供工作列表。另�
   <WR_RecDecisionDisabled>此职责已禁用。</WR_RecDecisionDisabled>
   <WR_RecDecisionUnavailable>研究完成前，此职责的工作不可用。</WR_RecDecisionUnavailable>
   <WR_RecDecisionExcluded>此职责由规则管理，不参与普通推荐。</WR_RecDecisionExcluded>
-  <WR_RecDecisionIncapable>此角色无法执行此职责的工作。</WR_RecDecisionIncapable>
+  <WR_RecDecisionIncapable>无法执行此职责的工作。</WR_RecDecisionIncapable>
   <WR_RecDecisionNotMechanitor>此殖民者没有机控中枢，无法执行机械师工作。</WR_RecDecisionNotMechanitor>
-  <WR_RecDecisionHunterRequirements>此角色未携带远程武器。</WR_RecDecisionHunterRequirements>
-  <WR_RecDecisionAwful>“极差”信号使此角色失去资格。</WR_RecDecisionAwful>
+  <WR_RecDecisionHunterRequirements>未装备远程武器。</WR_RecDecisionHunterRequirements>
+  <WR_RecDecisionAwful>因“极差”信号失去资格。</WR_RecDecisionAwful>
   <WR_RecDecisionCovered>已由推荐职责涵盖：{0}。</WR_RecDecisionCovered>
   <WR_RecDecisionCoveredUnknown>已由其他推荐职责涵盖。</WR_RecDecisionCoveredUnknown>
   <WR_RecDecisionCoverageFilled>更高排名候选人已满足必需覆盖人数。</WR_RecDecisionCoverageFilled>
-  <WR_RecDecisionWeakSignal>信号评价低于配置门槛，必需覆盖也未选中此角色。</WR_RecDecisionWeakSignal>
-  <WR_RecDecisionNotSelected>没有任何推荐规则选中此角色。</WR_RecDecisionNotSelected>
-  <WR_RecDecisionOutOfBand>此角色的技能处于训练路径的其他区间。</WR_RecDecisionOutOfBand>
+  <WR_RecDecisionWeakSignal>信号评价低于配置门槛，也未因必需覆盖而入选。</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionNotSelected>未被任何推荐规则选中。</WR_RecDecisionNotSelected>
+  <WR_RecDecisionOutOfBand>技能等级处于训练路径的其他区间。</WR_RecDecisionOutOfBand>
   <WR_RecDecisionOutqualified>可用名额已选用其他更合格的候选人。</WR_RecDecisionOutqualified>
   <WR_RecDecisionRecommended>由推荐引擎选中。</WR_RecDecisionRecommended>
   <WR_MakeItSo>就这样安排</WR_MakeItSo>
@@ -565,7 +565,7 @@ WorkRoles 通过游戏标准方法为受管理殖民者提供工作列表。另�
   <WR_ConditionalRole>条件职责</WR_ConditionalRole>
   <WR_ConditionalRoleTip>条件职责根据活动时段和地点规则自行开启或关闭。设置了任意规则的职责即属于条件职责。</WR_ConditionalRoleTip>
   <WR_AutoAssign>自动分配</WR_AutoAssign>
-  <WR_AutoAssignTip>新加入者（招募者、流浪者）处于此职责年龄范围时，会自动获得此职责。</WR_AutoAssignTip>
+  <WR_AutoAssignTip>新加入者（新成员、流浪者）处于此职责年龄范围时，会自动获得此职责。</WR_AutoAssignTip>
   <WR_CustomSwatchEmpty>空槽：点击选择自定义颜色。所有职责共用自定义颜色。</WR_CustomSwatchEmpty>
   <WR_CustomSwatchTip>点击使用此颜色。右键点击重新定义此槽。</WR_CustomSwatchTip>
   <WR_ClearRulesConfirm>移除“{0}”的所有规则？它将恢复为手动职责。</WR_ClearRulesConfirm>
@@ -620,7 +620,7 @@ WorkRoles 通过游戏标准方法为受管理殖民者提供工作列表。另�
   <WR_WelcomeFind>点击屏幕底部的“工作”按钮打开 WorkRoles。“帮助”页以引导教程开始。</WR_WelcomeFind>
   <WR_WelcomeTakeMeThere>立即打开</WR_WelcomeTakeMeThere>
   <WR_WelcomeSmallScreen>当前游戏界面为 {0}x{1}（分辨率除以界面缩放）。WorkRoles 按 {2}x{3} 或更大尺寸设计，例如 1920x1080、界面缩放 1.25。更小屏幕仍可使用，但部分标签会缩短，页签需要更多滚动。降低游戏选项中的界面缩放可增加窗口空间。</WR_WelcomeSmallScreen>
-  <WR_RoleWorkAversion>{0} 的戒律 {1} 反对 {2}。推荐会施加有限分数惩罚：两个优先级档位，或选择主力时六点虚拟技能分。必需覆盖仍可选中此角色。猎人顺序后移两档，最多至第五档；原有第一档后备规则仍适用。</WR_RoleWorkAversion>
+  <WR_RoleWorkAversion>{0} 的戒律 {1} 反对 {2}。推荐会施加有限分数惩罚：两个优先级档位，或选择主力时六点虚拟技能分。必需覆盖仍可使其入选。猎人顺序后移两档，最多至第五档；原有第一档后备规则仍适用。</WR_RoleWorkAversion>
   <WR_WorkBlockedTags>工作标签已禁用</WR_WorkBlockedTags>
   <WR_WorkBlockedCapacity>缺少必需的身体能力</WR_WorkBlockedCapacity>
   <WR_WorkBlockedRace>此种族的工作限制不允许</WR_WorkBlockedRace>
@@ -630,4 +630,7 @@ WorkRoles 通过游戏标准方法为受管理殖民者提供工作列表。另�
   <WR_WorkRecipeWarning>{0}：{1}</WR_WorkRecipeWarning>
   <WR_RecWorkAversion>{0} 反对 {1}；推荐评分降低。</WR_RecWorkAversion>
   <WR_RecDecisionWorkAversion>厌恶使分数低于可选工作门槛。</WR_RecDecisionWorkAversion>
+  <WR_CompatibilityFreeWill>Free Will 会设置殖民者的工作优先级，但受 WorkRoles 管理的殖民者的优先级由 WorkRoles 控制，因此这些修改会被阻止。</WR_CompatibilityFreeWill>
+  <WR_CompatibilityPriorityMaster>PriorityMaster 会更改手动优先级数值及其范围。WorkRoles 会替换这些控件，并根据职责确定受管理殖民者的优先级。</WR_CompatibilityPriorityMaster>
+  <WR_CompatibilityWorkTab>{0} 会替换工作面板并控制优先级，与 WorkRoles 基于职责的工作管理功能冲突。</WR_CompatibilityWorkTab>
 </LanguageData>

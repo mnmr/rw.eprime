@@ -45,6 +45,11 @@ namespace Implanner
             "astryl.AsAboveSoBelow2",
         };
 
+        // The welcome notice reads this same catalog without exposing its
+        // backing array or changing the deterministic automation gate.
+        internal static int LevelModCount => LevelModPackageIds.Length;
+        internal static string LevelModPackageIdAt(int index) => LevelModPackageIds[index];
+
         private static bool resolved;
         private static bool available = true;
         private static string blockedBy = "";

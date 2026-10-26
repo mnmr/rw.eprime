@@ -28,6 +28,11 @@ namespace Implanner
         public System.Collections.Generic.List<string> welcomeShownSaves =
             new System.Collections.Generic.List<string>();
 
+        // Per-player acknowledgement of each active conflict in a particular
+        // save. A newly encountered level mod shows the welcome again once.
+        public System.Collections.Generic.List<string> compatibilityWarningsSeen =
+            new System.Collections.Generic.List<string>();
+
         public override void ExposeData()
         {
             base.ExposeData();
@@ -38,8 +43,10 @@ namespace Implanner
             Scribe_Values.Look(ref helpPlanTiersFolded, "helpPlanTiersFolded", false);
             Scribe_Collections.Look(ref helpTopicsRead, "helpTopicsRead", LookMode.Value);
             Scribe_Collections.Look(ref welcomeShownSaves, "welcomeShownSaves", LookMode.Value);
+            Scribe_Collections.Look(ref compatibilityWarningsSeen, "compatibilityWarningsSeen", LookMode.Value);
             helpTopicsRead ??= new System.Collections.Generic.List<string>();
             welcomeShownSaves ??= new System.Collections.Generic.List<string>();
+            compatibilityWarningsSeen ??= new System.Collections.Generic.List<string>();
         }
     }
 }

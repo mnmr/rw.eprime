@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimShared.Common;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -450,10 +451,10 @@ namespace WorkRoles.UI
             private readonly ColonistsRosterCatalogSnapshot catalog;
             private readonly Dictionary<string, HashSet<int>?> roles =
                 new Dictionary<string, HashSet<int>?>(
-                    StringComparer.OrdinalIgnoreCase);
+                    StringComparer.Ordinal);
             private readonly Dictionary<string, HashSet<string>?> jobs =
                 new Dictionary<string, HashSet<string>?>(
-                    StringComparer.OrdinalIgnoreCase);
+                    StringComparer.Ordinal);
 
             internal ColonistSearchMatches(
                 ColonistsRosterCatalogSnapshot catalog)
@@ -500,8 +501,7 @@ namespace WorkRoles.UI
             }
 
             public bool NameContains(string term) =>
-                pawn.LabelShortCap.IndexOf(term,
-                    StringComparison.OrdinalIgnoreCase) >= 0;
+                SearchMatcher.Matches(pawn.LabelShortCap, term, UiLanguage.CaseCulture);
 
             public bool HasRoleContaining(string term)
             {

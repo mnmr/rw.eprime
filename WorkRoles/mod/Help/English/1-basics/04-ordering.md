@@ -33,6 +33,6 @@ doctor work at its position in the row. Moving Core down the row past the
 fifth position turns firefighting into ordinary work for that colonist
 too.
 
-The Options tab switch "Only the first 5 roles interrupt for emergencies"
-turns this off. Then every emergency job covered by an enabled role goes
-on the list, regardless of where the role sits in the row.
+Turn off "Only the first 5 roles interrupt for emergencies" on the Options
+tab to remove this limit. Then every emergency job covered by an enabled
+role goes on the list, regardless of where the role sits in the row.

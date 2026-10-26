@@ -1,4 +1,11 @@
-﻿# Changelog
+# Changelog
+
+## 1.7.2 — 2026-10-26
+
+- Added: Built-in translations. Available languages: English, French, German, Italian, Japanese, Korean, Brazilian Portuguese, Spanish (European and Latin American), Simplified Chinese, Traditional Chinese, Turkish, Ukrainian, and Vietnamese.
+- Added: Welcome warnings for conflicting Work tab and priority-management mods.
+- Fixed: Refined Japanese wording and corrected the priority-grid help.
+- Fixed: Improved CJK help wrapping, Turkish searches, accented names, and crowded assignment labels.
 
 ## 1.7.1 — 2026-10-19
 

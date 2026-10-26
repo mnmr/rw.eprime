@@ -9,6 +9,6 @@ Implanner benötigt keine Liste unterstützter Mods. Es liest alle geladenen Ope
 - **Operationen, die ein Körperteil leeren**: Manche entfernen dort alles, bevor sie ein Implantat hinzufügen, das das Körperteil nicht ersetzt. Spätere Implantate bleiben. Implanner setzt solche Implantate zuerst ein und setzt Verdrängtes wieder ein.
 - **Module auf Bionik**: Eine Operation, deren Ausführung ausdrücklich für künstliche Körperteile geschrieben wurde, teilt das Körperteil mit der Bionik, statt sie zu ersetzen.
 - **Direkte Verbesserungen**: Eine Operation, die ein Implantat entfernt und ein anderes hinzufügt, verbessert das eingebaute Teil. Die verbesserte Version erscheint als eigenes Implantat.
-- **Nur erwerbbare Gegenstände**: Implantate, die keine Werkbank fertigen kann, bleiben bis zur entsprechenden Option verborgen.
+- **Nicht herstellbare Gegenstände**: Implantate, die keine Werkbank fertigen kann, bleiben bis zur entsprechenden Option verborgen.
 
 Zwei Dinge sind nicht lesbar: Module, die Kolonisten ohne Operation aus dem Inventar einsetzen, werden nie aufgelistet. Regeln, die nur im Modcode und nicht in Daten stehen, sind ebenfalls unsichtbar. Alles, was eine Mod durch Operationsdaten ausdrückt, funktioniert ohne Änderung an Implanner.

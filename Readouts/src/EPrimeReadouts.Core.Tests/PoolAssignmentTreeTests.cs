@@ -5,6 +5,22 @@ namespace EPrimeReadouts.Core.Tests;
 public class PoolAssignmentTreeTests
 {
     [Test]
+    public async Task TurkishPoolSearchPreservesDottedAndDotlessLetters()
+    {
+        var pools = PoolSnapshot.Build(new List<ResourcePool>
+        {
+            new ResourcePool { Id = 1, Name = "Işık", Members = ["Steel"] }
+        }, StaticResources.Catalog());
+        var culture = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+        var rows = PoolAssignmentTree.Build(pools, true,
+            new ItemTreeFilter("ışık", ItemPickerType.Resources, "", culture), "Havuzlar");
+        await Assert.That(rows.Length).IsEqualTo(2);
+        rows = PoolAssignmentTree.Build(pools, true,
+            new ItemTreeFilter("işik", ItemPickerType.Resources, "", culture), "Havuzlar");
+        await Assert.That(rows).IsEmpty();
+    }
+
+    [Test]
     public async Task CustomSeedEquivalentNameRemainsVerbatimAfterExportAndImport()
     {
         var original = new ReadoutModel();

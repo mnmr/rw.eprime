@@ -1,0 +1,43 @@
+# Clean Waylith compatibility checks against the saved colony.
+# Keep Harmony, official content, the four repository mods and our runtime.
+remove zetrith.prepatcher
+remove brrainz.rimbridgeserver
+remove mehni.pickupandhaul
+remove brrainz.rangefinder
+remove jaxe.rimhud
+remove com.bymarcin.architecticons
+remove mehni.numbers
+remove dubwise.dubsmintminimap
+remove rimworld.randomcoughdrop.geneassistant
+remove carnysenpai.traitraritycolors
+remove tac.genetrader
+remove mlie.haulminedchunks
+remove kota.inventorytab
+remove mlie.relevantstatsindescription
+remove bp.showbuildablematerialcount
+remove mlie.usethisinstead
+remove bodlosh.weaponstats
+remove mlie.smarterdeconstructionandmining
+remove defi.generipper
+remove avilmask.nonunopinata
+remove dubwise.dubsperformanceanalyzer.steam
+after eprime.qualityjobs
+rimshared.welcomeconflicts.probe
+fixture.arof.fluffy.worktab
+fixture.arof.fluffy.worktab.continued
+fixture.astryl.asabovesobelow
+fixture.astryl.asabovesobelow2
+fixture.azraelgodking.strata
+fixture.coolnether123.betterworktab
+fixture.customresourcereadout.1trickpwnyta
+fixture.doug.nojobauthors
+fixture.fluffy.worktab
+fixture.freemapa.freewill
+fixture.garwel.readoutsplus
+fixture.hatti.qualitybuilder
+fixture.lauriichan.prioritymaster
+fixture.natee.enhancedworktab
+fixture.owlchemist.toggleablereadouts
+fixture.telardo.multifloors
+fixture.xandrmoro.rim.finishit
+rimshared.welcomeconflicts.community

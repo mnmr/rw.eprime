@@ -32,7 +32,7 @@ exclusion makes those options available again.
 Exclusions apply across the save, including [Fix My Colony](topic:fix-my-colony)
 and [Auto-optimize](topic:auto-optimize). They override colony demand,
 training paths, automatic and special roles, composite substitution, and
-unpinned retained assignments, including those on incapacitated pawns.
+unpinned retained assignments, including those on incapacitated workers.
 Excluding a composite leaves its eligible member roles available; excluding
 a member prevents it from returning through a recommended composite.
 

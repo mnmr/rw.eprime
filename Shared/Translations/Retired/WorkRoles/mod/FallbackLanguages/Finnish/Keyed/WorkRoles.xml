@@ -1,0 +1,636 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_ColonistsTab>Siirtolaiset</WR_ColonistsTab>
+  <WR_RecommendationsTab>Suositukset</WR_RecommendationsTab>
+  <WR_OptionsTab>Asetukset</WR_OptionsTab>
+  <WR_CompatSection>Yhteensopivuusasetukset</WR_CompatSection>
+  <WR_OptNumeric>Näytä numeeriset prioriteetit ruudukoissa</WR_OptNumeric>
+  <WR_TipOff>Pois</WR_TipOff>
+  <WR_TipOn>Päällä</WR_TipOn>
+  <WR_OptNumericTipWhat>Peruspelin manuaalisten prioriteettien kytkin, tallennuskohtainen.</WR_OptNumericTipWhat>
+  <WR_OptNumericTipOff>Prioriteettiruudukot (myös modeissa kuten Numbers) näyttävät valintamerkkejä</WR_OptNumericTipOff>
+  <WR_OptNumericTipOn>Prioriteettiruudukot näyttävät numeroita</WR_OptNumericTipOn>
+  <WR_OptNumericTipWhy>Se on täällä, koska WorkRoles korvaa peruspelin Työ-välilehden, jolla se oli.</WR_OptNumericTipWhy>
+  <WR_OptVanillaRange>Ilmoita peruspelin 0–4-prioriteetit muille modeille</WR_OptVanillaRange>
+  <WR_OptVanillaRangeTipWhat>WorkRoles järjestää työt yksilöllisillä prioriteeteilla (peräkkäiset luvut alkaen yhdestä).</WR_OptVanillaRangeTipWhat>
+  <WR_OptVanillaRangeTipOff>Muut modit näkevät prioriteetit sellaisinaan</WR_OptVanillaRangeTipOff>
+  <WR_OptVanillaRangeTipOn>Prioriteetit muunnetaan peruspelin 0–4-asteikolle</WR_OptVanillaRangeTipOn>
+  <WR_OptEmergencyRule>Vain ensimmäiset 5 roolia keskeyttävät hätätilanteissa</WR_OptEmergencyRule>
+  <WR_OptEmergencyRuleTipWhat>Määrittää tallennuskohtaisesti, mitkä hätätyöt (palontorjunta, kiireellinen hoito ja vuoteeseen meno hätähoitoa varten) saavat keskeyttää unen, ateriat ja muut työt.</WR_OptEmergencyRuleTipWhat>
+  <WR_OptEmergencyRuleTipOff>Jokainen käytössä olevan roolin hätätyö keskeyttää siirtolaisen nykyisen työn</WR_OptEmergencyRuleTipOff>
+  <WR_OptEmergencyRuleTipOn>Vain siirtolaisen 5 ensimmäisen käytössä olevan roolin hätätyöt keskeyttävät; myöhemmät roolit tekevät ne normaalilla paikallaan</WR_OptEmergencyRuleTipOn>
+  <WR_OptEmergencyRuleTipWhy>Oletuksena käytössä: rivin lopun vararoolit odottavat vuoroaan. Siirtolainen, jonka kuudes rooli on Lääkäri, jatkaa ruoanlaittoa varsinaisen lääkärin hoitaessa kiireellistä potilasta. Poista käytöstä, jos kaikkien siirtolaisten tulisi vastata jokaiseen hätätilanteeseen, johon he pystyvät.</WR_OptEmergencyRuleTipWhy>
+  <WR_AutomationSection>Automaatioasetukset</WR_AutomationSection>
+  <WR_OptAutoOptimize>Optimoi siirtokunnat automaattisesti joka pelitunti</WR_OptAutoOptimize>
+  <WR_OptAutoOptimizeTipWhat>Suorittaa Korjaa siirtokuntani -toiminnon automaattisesti jokaiselle siirtokunnalle ja toteuttaa muutokset tallennuskohtaisesti.</WR_OptAutoOptimizeTipWhat>
+  <WR_OptAutoOptimizeTipOff>Roolimääritykset muuttuvat vain, kun muokkaat niitä</WR_OptAutoOptimizeTipOff>
+  <WR_OptAutoOptimizeTipOn>Suositellut määritykset toteutetaan jokaisen pelitunnin alussa</WR_OptAutoOptimizeTipOn>
+  <WR_OptAutoOptimizeTipWhy>Kiinnitetyt määritykset säilyvät, myös poissuljetut roolit. Mitään ei kirjoiteta, jos siirtolainen vastaa jo suositusta.</WR_OptAutoOptimizeTipWhy>
+  <WR_AutoOptimizeConfirmApply>Toteuta tekee alla olevat muutokset nyt ja ottaa tuntikohtaisen automaattioptimoinnin käyttöön. Sen ollessa käytössä Korjaa siirtokuntani- ja Toteuta-painikkeet piilotetaan; voit silti määrätä, järjestää ja kiinnittää rooleja tavalliseen tapaan.</WR_AutoOptimizeConfirmApply>
+  <WR_AutoOptimizeGlobalWarning>Sinulla on useita siirtokuntia: automaattioptimointi on YLEINEN ja muuttaa KAIKKIEN roolimäärityksiä joka tunti. Alla oleva esikatselu näyttää vain nykyisen siirtokunnan muutokset.</WR_AutoOptimizeGlobalWarning>
+  <WR_DisplaySection>Näyttöasetukset</WR_DisplaySection>
+  <WR_OptSkillCaptions>Näytä parhaat taidot siirtolaisten nimien alla</WR_OptSkillCaptions>
+  <WR_OptSkillCaptionsTip>Taulukon jokaisen siirtolaisrivin nimen alla on pieni teksti, joka luettelee parhaat työtaidot tasoineen, soveltuvuuden mukaan väritettyinä. Poista käytöstä näyttääksesi nimen omalla rivillään.</WR_OptSkillCaptionsTip>
+  <WR_OptVerdictsColonists>Näytä arviot siirtolaisten roolitunnisteissa</WR_OptVerdictsColonists>
+  <WR_OptVerdictsColonistsTip>Siirtolaistaulukon jokainen roolitunniste näyttää haltijan soveltuvuutta kuvaavan tähtiparin suositusmoottorin arvion mukaan: valkoiset tähdet hyville arvioille (yksi vahva, kaksi erinomainen, kulta poikkeuksellinen), punaiset huonoille (yksi heikko, kaksi surkea), harmaat neutraalille.</WR_OptVerdictsColonistsTip>
+  <WR_OptVerdictsPalette>Näytä valitun siirtolaisen arviot roolivalikoimassa</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>Valikoiman tunnisteet näyttävät, kuinka hyvin kukin rooli sopii valitulle siirtolaiselle.</WR_OptVerdictsPaletteTip>
+  <WR_OptVerdictsRecommendations>Näytä arviot suositelluissa roolitunnisteissa</WR_OptVerdictsRecommendations>
+  <WR_OptPaletteGrouping>Roolivalikoiman ryhmittely</WR_OptPaletteGrouping>
+  <WR_OptVerdictsRecommendationsTip>Suositellut roolitunnisteet (tilastopaneelissa ja muutosesikatseluissa) näyttävät soveltuvuusarvion siirtolaiselle, jolle niitä suositellaan.</WR_OptVerdictsRecommendationsTip>
+  <WR_RecGlobalPanel>Yleiset asetukset</WR_RecGlobalPanel>
+  <WR_RecGlobalPanelHelp>Nämä asetukset muuttavat sitä, miten suositusmoottori pisteyttää ja järjestää ehdokkaat sekä sijoittaa työt lopulliseen suosituslistaan. Palauta oletukset Palauta-painikkeilla, jos haluat kumota muutoksesi.</WR_RecGlobalPanelHelp>
+  <WR_RecRolePanel>Rooliasetukset</WR_RecRolePanel>
+  <WR_RecRolePanelHelp>Täällä luetellaan kaikki paitsi Poissuljetut roolit. Laajenna rooli säätääksesi sen suositusasetuksia. Roolit järjestetään automaattisesti kullekin siirtolaiselle; Metsästäjä säilyttää ampumistaitoon perustuvan paikkansa.</WR_RecRolePanelHelp>
+  <WR_RecExcludedHeader>Poissuljetut roolit</WR_RecExcludedHeader>
+  <WR_RecExcludedHelp>Tämän listan rooleja ei koskaan suositella, ei edes harjoittelupolkujen tai automaattisten roolien kautta. Nykyiset kiinnitetyt määritykset pysyvät suojattuina. Sulje rooli pois Lisää rooli -toiminnolla; poista tunniste salliaksesi suositukset uudelleen.</WR_RecExcludedHelp>
+  <WR_RecExcludedTip>Poissulkeminen koskee tämän tallennuksen kaikkien siirtolaisten suosituksia, myös Korjaa siirtokuntani -toimintoa ja automaattioptimointia. Voit silti määrätä poissuljettuja rooleja käsin. Listan muokkaaminen ei muuta nykyisiä määrityksiä. Suositusten toteutus poistaa kiinnittämättömät poissuljetut roolit ja säilyttää kiinnitetyt määritykset.</WR_RecExcludedTip>
+  <WR_RecExcludedChipTip>Tätä roolia ei koskaan suositella. Napsauta poistokuvaketta salliaksesi suositukset uudelleen ja palauttaaksesi roolin Rooliasetuksiin. Tallennetut asetukset säilyvät.</WR_RecExcludedChipTip>
+  <WR_RecExcludedAddTip>Valitse rooli, jota suositusmoottorin ei koskaan pidä suositella. Minkä tahansa roolin voi sulkea pois, myös harjoittelu-, automaattisen, ehdollisen, esto- tai yhdistelmäroolin.</WR_RecExcludedAddTip>
+  <WR_RecExcludedReason>Tämä rooli on suljettu pois suosituksista. Poista se Suositukset-välilehden Poissuljetuista rooleista salliaksesi sen uudelleen.</WR_RecExcludedReason>
+  <WR_RecTuneReset>Palauta</WR_RecTuneReset>
+  <WR_RecTuneResetTip>Palauttaa tämän osion asetusten oletusarvot.</WR_RecTuneResetTip>
+  <WR_RecTuneCellHint>Suurenna arvoa napsauttamalla, pienennä oikealla napsautuksella.</WR_RecTuneCellHint>
+  <WR_StepModifiersTip>Napsautus: 1 askel.\nVaihto: 5 askelta.\nCtrl: 10 askelta.\nCtrl+Vaihto: siirry rajalle.</WR_StepModifiersTip>
+  <WR_SignalLetterAwful>S</WR_SignalLetterAwful>
+  <WR_SignalLetterPoor>H</WR_SignalLetterPoor>
+  <WR_SignalLetterNeutral>N</WR_SignalLetterNeutral>
+  <WR_SignalLetterStrong>V</WR_SignalLetterStrong>
+  <WR_SignalLetterGreat>E</WR_SignalLetterGreat>
+  <WR_SignalLetterExceptional>P</WR_SignalLetterExceptional>
+  <WR_RecTuneChampionSection>Vastuuhenkilön valinta-asetukset</WR_RecTuneChampionSection>
+  <WR_RecTuneChampionSectionIntro>Jokainen rooli saa ensin vastuuhenkilön: siirtolaisen, joka sopii parhaiten sen perustaksi. Nämä asetukset ratkaisevat kelpoisuuden sekä taidon ja signaalin vahvuuden keskinäisen painotuksen.</WR_RecTuneChampionSectionIntro>
+  <WR_RecTuneOrderingSection>Lopullisen roolijärjestyksen asetukset</WR_RecTuneOrderingSection>
+  <WR_RecTuneOrderingSectionIntro>Kun siirtolaisen roolit on valittu, nämä asetukset ratkaisevat niiden listajärjestyksen, joka on myös töiden prioriteettijärjestys.</WR_RecTuneOrderingSectionIntro>
+  <WR_RecTuneOptionalSection>Harjoittelupolkujen ja valinnaisten tavoitteiden asetukset</WR_RecTuneOptionalSection>
+  <WR_RecTuneOptionalSectionIntro>Nämä asetukset ratkaisevat, milloin harjoittelupolku aktivoituu siirtolaiselle ja milloin valinnaista monen taidon roolia kannattaa ylipäätään suositella.</WR_RecTuneOptionalSectionIntro>
+  <WR_RecTuneLeadSection>Johtoroolien hajautusasetukset</WR_RecTuneLeadSection>
+  <WR_RecTuneLeadSectionIntro>Kun useat harjoittelupolut jakavat tavoitteen, nämä asetukset jakavat johtoroolit eri siirtolaisille sen sijaan, että ne kasautuisivat yhdelle.</WR_RecTuneLeadSectionIntro>
+  <WR_RecTuneHunterSection>Metsästäjän sijoitusasetukset</WR_RecTuneHunterSection>
+  <WR_RecTuneHunterSectionIntro>Kiinnittämätön Metsästäjä-rooli sijoitetaan dynaamisesti ampumistaidon perusteella: paremmat ampujat metsästävät myöhemmin prioriteettijärjestyksessä, koska heidän aikansa on arvokkaampaa muualla.</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneCandidateMinimumSignal>Ehdokkaan vähimmäissignaali</WR_RecTuneCandidateMinimumSignal>
+  <WR_RecTuneCandidateMinimumSignalDesc>Heikoin tavalliseen roolivalintaan hyväksytty signaali. Suurempi arvo poistaa heikommat ehdokkaat ennen vastuuhenkilön ja haltijoiden vähimmäismäärän valintaa.</WR_RecTuneCandidateMinimumSignalDesc>
+  <WR_RecTuneChampionSkillDivisor>Vastuuhenkilön taitojakaja</WR_RecTuneChampionSkillDivisor>
+  <WR_RecTuneChampionSkillDivisorDesc>Vastuuhenkilön taitopisteet ovat taitotaso ÷ tämä arvo, pyöristettynä ylöspäin. Arvon suurentaminen vähentää pelkän taidon vaikutusta.</WR_RecTuneChampionSkillDivisorDesc>
+  <WR_RecTuneChampionMultiSkillMinimumCount>Yhdistettyjen taitojen raja</WR_RecTuneChampionMultiSkillMinimumCount>
+  <WR_RecTuneChampionMultiSkillMinimumCountDesc>Kelvollisten kohdetaitojen vähimmäismäärä vastuuhenkilöpisteiden summaamiseksi. Tätä pienemmällä määrällä pisteytetään vain roolin paras taito.</WR_RecTuneChampionMultiSkillMinimumCountDesc>
+  <WR_RecTuneChampionMultiplierRow>Signaalikerroin</WR_RecTuneChampionMultiplierRow>
+  <WR_RecTuneChampionMultiplierRowDesc>Kertoo kunkin signaalivahvuuden pyöristetyt taitopisteet vastuuhenkilön valinnassa.</WR_RecTuneChampionMultiplierRowDesc>
+  <WR_RecTuneMultiplierAwfulTip>Surkea. Sarakkeella on merkitystä vain, kun ehdokkaan vähimmäissignaali sallii surkeat ehdokkaat.</WR_RecTuneMultiplierAwfulTip>
+  <WR_RecTuneChampionTieBreakRow>Tasatilannepisteet</WR_RecTuneChampionTieBreakRow>
+  <WR_RecTuneChampionTieBreakRowDesc>Signaalipisteet, joita verrataan vastuuhenkilöpisteiden ollessa tasan. Monen taidon rooleissa pisteet summataan kelvollisista signaaleista.</WR_RecTuneChampionTieBreakRowDesc>
+  <WR_RecTuneRankedCandidatePrioritySignal>Järjestettyjen ehdokkaiden etusijasignaali</WR_RecTuneRankedCandidatePrioritySignal>
+  <WR_RecTuneRankedCandidatePrioritySignalDesc>Muut kuin vastuuhenkilöehdokkaat, joiden signaali on vähintään tämä, sijoitetaan heikompien edelle ennen vähimmäispaikkojen täyttämistä.</WR_RecTuneRankedCandidatePrioritySignalDesc>
+  <WR_RecTuneSurplusMinimumSignal>Lisämääritysten vähimmäissignaali</WR_RecTuneSurplusMinimumSignal>
+  <WR_RecTuneSurplusMinimumSignalDesc>Pakollisten paikkojen täytyttyä tavalliset ehdokkaat, joiden signaali on vähintään tämä, voivat silti saada roolin. Tasoon perustuva korotus koskee yhden taidon rooleja määritetyllä harjoitteluvälillä; monen taidon tavoitteet käyttävät valinnaisen tavoitteen soveltuvuusvaatimuksia.</WR_RecTuneSurplusMinimumSignalDesc>
+  <WR_RecTuneOrderingSkillDivisor>Järjestyksen taitojakaja</WR_RecTuneOrderingSkillDivisor>
+  <WR_RecTuneOrderingSkillDivisorDesc>Lopullisen järjestyksen taitopisteet ovat taitotaso ÷ tämä arvo, pyöristettynä ylöspäin. Arvon suurentaminen vähentää taidon vaikutusta roolijärjestykseen.</WR_RecTuneOrderingSkillDivisorDesc>
+  <WR_RecTuneOrderingPointsRow>Signaalipisteet</WR_RecTuneOrderingPointsRow>
+  <WR_RecTuneOrderingPointsRowDesc>Pisteet, jotka kukin signaalivahvuus antaa lopullisten suositeltujen roolien järjestämiseen.</WR_RecTuneOrderingPointsRowDesc>
+  <WR_RecTuneMinimumPickRow>Vähimmäisvalinnan bonus</WR_RecTuneMinimumPickRow>
+  <WR_RecTuneMinimumPickRowDesc>Järjestyspisteet ensimmäiselle, toiselle, kolmannelle ja jokaiselle myöhemmälle tekijälle, joka valitaan täyttämään roolin haltijoiden vähimmäismäärä.</WR_RecTuneMinimumPickRowDesc>
+  <WR_RecTuneCategoryPointsRow>Luokkapisteet</WR_RecTuneCategoryPointsRow>
+  <WR_RecTuneCategoryPointsRowDesc>Järjestyspisteet siirtokuntamerkityksen mukaan: Tärkeä nostaa velvollisuusroolit saman signaalin tuotantotyön edelle, Valinnainen siirtää rooleja listan loppua kohti.</WR_RecTuneCategoryPointsRowDesc>
+  <WR_RecTuneTimePointsRow>Ajantarvepisteet</WR_RecTuneTimePointsRow>
+  <WR_RecTuneTimePointsRowDesc>Järjestyspisteet ajantarpeen mukaan: osa-aikainen nostaa nopeat velvollisuudet saman signaalin kokoaikatyön edelle, tilaisuuden tullen siirtää täytetyöt loppua kohti.</WR_RecTuneTimePointsRowDesc>
+  <WR_RecTunePathMinimumSignal>Harjoitteluroolin vähimmäissignaali</WR_RecTunePathMinimumSignal>
+  <WR_RecTunePathMinimumSignalDesc>Heikoin signaali, joka roolilla saa olla aktivoidulla harjoittelupolulla.</WR_RecTunePathMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumSkillCount>Valinnaisen tavoitteen taitoraja</WR_RecTuneOptionalTargetMinimumSkillCount>
+  <WR_RecTuneOptionalTargetMinimumSkillCountDesc>Kelvollisten kohdetaitojen määrä, joka vaaditaan ennen valinnaisen tavoitteen soveltuvuustestiä. Roolit, joilla on vähemmän kelvollisia taitoja, ohittavat testin.</WR_RecTuneOptionalTargetMinimumSkillCountDesc>
+  <WR_RecTuneOptionalTargetMinimumSignal>Valinnaisen tavoitteen vähimmäissignaali</WR_RecTuneOptionalTargetMinimumSignal>
+  <WR_RecTuneOptionalTargetMinimumSignalDesc>Taidon on saavutettava tämä signaali, ennen kuin tasokorotus voi vaikuttaa yhden taidon lisämäärityskelpoisuuteen tai antaa soveltuvuuspisteitä valinnaiselle tavoitteelle.</WR_RecTuneOptionalTargetMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetStrongLevel>Taitokorotuksen keskitaso</WR_RecTuneOptionalTargetStrongLevel>
+  <WR_RecTuneOptionalTargetStrongLevelDesc>Tällä taitotasolla heikompi kelvollinen signaali korotetaan määritettyyn keskisignaaliin yhden taidon lisämäärityskelpoisuudessa ja valinnaisen tavoitteen pisteytyksessä.</WR_RecTuneOptionalTargetStrongLevelDesc>
+  <WR_RecTuneOptionalTargetStrongPromotedSignal>Korotettu keskisignaali</WR_RecTuneOptionalTargetStrongPromotedSignal>
+  <WR_RecTuneOptionalTargetStrongPromotedSignalDesc>Signaali yhden taidon lisämäärityskelpoisuuteen ja valinnaisen tavoitteen soveltuvuuspisteisiin taitokorotuksen keskitasolla tai sen yläpuolella.</WR_RecTuneOptionalTargetStrongPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetGreatLevel>Taitokorotuksen korkea taso</WR_RecTuneOptionalTargetGreatLevel>
+  <WR_RecTuneOptionalTargetGreatLevelDesc>Tällä taitotasolla heikompi kelvollinen signaali korotetaan määritettyyn korkeaan signaaliin yhden taidon lisämäärityskelpoisuudessa ja valinnaisen tavoitteen pisteytyksessä.</WR_RecTuneOptionalTargetGreatLevelDesc>
+  <WR_RecTuneOptionalTargetGreatPromotedSignal>Korotettu korkea signaali</WR_RecTuneOptionalTargetGreatPromotedSignal>
+  <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>Signaali yhden taidon lisämäärityskelpoisuuteen ja valinnaisen tavoitteen soveltuvuuspisteisiin taitokorotuksen korkealla tasolla tai sen yläpuolella.</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumPoints>Valinnaisen tavoitteen vähimmäispisteet</WR_RecTuneOptionalTargetMinimumPoints>
+  <WR_RecTuneOptionalTargetMinimumPointsDesc>Määritetyn signaalin alarajan ylittävien signaaliaskelten vähimmäissumma valinnaisen monen taidon tavoitteen suosittelemiseksi.</WR_RecTuneOptionalTargetMinimumPointsDesc>
+  <WR_RecTuneLeadMinimumConnectedTargets>Hajautuksen yhdistetyt tavoitteet</WR_RecTuneLeadMinimumConnectedTargets>
+  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Yhdistettyjen harjoittelutavoitteiden vähimmäismäärä, ennen kuin suunnittelija yrittää määrätä niiden johtoroolit eri tekijöille.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
+  <WR_RecTuneLeadMinimumSignal>Johtajan vähimmäissignaali</WR_RecTuneLeadMinimumSignal>
+  <WR_RecTuneLeadMinimumSignalDesc>Heikoin roolisignaali, joka sallitaan hajautetun harjoittelupolun johtajaksi valitulle tekijälle.</WR_RecTuneLeadMinimumSignalDesc>
+  <WR_RecTuneHunterTiersRow>Tason ampumistaidon enimmäisarvo</WR_RecTuneHunterTiersRow>
+  <WR_RecTuneHunterTiersRowDesc>Metsästäjän dynaamisen paikan ampumistaitorajat. Taso 1 sijoittaa Metsästäjän heti perustöiden jälkeen, tasot 2 ja 3 keskimmäisten ja viimeisten työroolien jälkeen, ja tason 4 rajan ylittävät taitotasot sijoittavat Metsästäjän viimeiseksi.</WR_RecTuneHunterTiersRowDesc>
+  <WR_TrainingSection>Harjoittelupolku</WR_TrainingSection>
+  <WR_TrainingHelp>Tässä määrität, miten siirtolaiset oppivat uusia taitoja ja etenevät kohti tätä roolia. Harjoittelupolulla voi olla useita taitovälejä, jotta roolit voivat olla päällekkäisiä. Siirtolaiselle suositellaan kaikkia hänen nykyisen taitotasonsa rooleja, jos harjoittelupolkua suositellaan hänelle.</WR_TrainingHelp>
+  <WR_TrainingTipWhat>Roolin oma eteneminen: jokaisella jäsenroolilla on taitoväli, jolla sitä suositellaan. Rooli itse pysyy aina omassa polussaan.</WR_TrainingTipWhat>
+  <WR_TrainingTipBands>Päällekkäiset taitovälit ovat voimassa yhdessä; jos ne eivät ole päällekkäisiä, myöhempi rooli korvaa aiemman.</WR_TrainingTipBands>
+  <WR_TrainingTipOrder>Määritykset priorisoivat korkeampia taitovälien alarajoja. Yhtäläisillä taitoväleillä etusijan ratkaisee tekijän heikoin roolitaito ja sitten tallennettu polkujärjestys.</WR_TrainingTipOrder>
+  <WR_AddNew>Lisää uusi</WR_AddNew>
+  <WR_WhenPanelCaption>Roolin eteneminen: Tässä määrität, millä taitotasolla näytettyjä rooleja suositellaan. Päällekkäiset roolit täydentävät toisiaan.</WR_WhenPanelCaption>
+  <WR_AddRole>Lisää rooli</WR_AddRole>
+  <WR_NoContributionRoleTip>Ei harjoita mitään tämän roolin tarvitsemista taidoista, joten polku ei voi käyttää sitä harjoitteluvaiheena. Modit voivat muuttaa kokemuksen lähteitä, joten voit lisätä sen silti.</WR_NoContributionRoleTip>
+  <WR_ContributesTip>Harjoittaa kohti tätä roolia: {0}.</WR_ContributesTip>
+  <WR_RecClassificationSection>Luokittelu</WR_RecClassificationSection>
+  <WR_RecSkillsSection>Taidot</WR_RecSkillsSection>
+  <WR_RecScalingSection>Määritysten mitoitus</WR_RecScalingSection>
+  <WR_RoleColonyMinLabel>Siirtokunnan vähimmäismäärä:</WR_RoleColonyMinLabel>
+  <WR_RoleColonyMinTip>Tämän roolin määritysten vähimmäismäärä.</WR_RoleColonyMinTip>
+  <WR_RoleCoverageLabel>Kattavuus:</WR_RoleCoverageLabel>
+  <WR_RoleCoverageTip>Kuinka monelle prosentille siirtolaisista rooli pitäisi ihannetilanteessa antaa.</WR_RoleCoverageTip>
+  <WR_RoleCategoryLabel>Merkitys siirtokunnalle:</WR_RoleCategoryLabel>
+  <WR_RoleCategoryTip>Kuinka tärkeää roolin hoitaminen on siirtokuntaa suunniteltaessa. ”Ei asetettu” jättää roolin luokittelematta.</WR_RoleCategoryTip>
+  <WR_RoleCategoryNone>Ei asetettu</WR_RoleCategoryNone>
+  <WR_RoleCategoryImportant>Tärkeä</WR_RoleCategoryImportant>
+  <WR_RoleCategoryNormal>Tavallinen</WR_RoleCategoryNormal>
+  <WR_RoleCategoryOptional>Valinnainen</WR_RoleCategoryOptional>
+  <WR_RoleTimeLabel>Ajantarve:</WR_RoleTimeLabel>
+  <WR_RoleTimeTip>Kuinka suuren osan siirtolaisen päivästä roolin työt yleensä vievät.</WR_RoleTimeTip>
+  <WR_RoleTimeNone>Ei asetettu</WR_RoleTimeNone>
+  <WR_RoleTimePartTime>Osa-aikainen</WR_RoleTimePartTime>
+  <WR_RoleTimeFullTime>Kokoaikainen</WR_RoleTimeFullTime>
+  <WR_RoleTimeOpportunistic>Tilaisuuden tullen</WR_RoleTimeOpportunistic>
+  <WR_ChampionPenalty>Usean vastuualueen rangaistus</WR_ChampionPenalty>
+  <WR_ChampionPenaltyTip>Kun käytössä, muista rooleista jo vastaava siirtolainen saa vähennyksen kilpaillessaan tämän roolin vastuuhenkilöksi. Poista käytöstä rooleille, joissa useat vastuut sopivat, kuten satunnaisessa työssä.</WR_ChampionPenaltyTip>
+  <WR_PartialCapability>Salli osittainen työkyky</WR_PartialCapability>
+  <WR_PartialCapabilityTip>Kun käytössä, roolia suositellaan siirtolaisille, jotka voivat tehdä osan sen töistä mutta eivät kaikkia. Sitä ei koskaan suositella siirtolaisille, jotka eivät voi tehdä yhtään sen työtä. Hyödyllinen laajoille kaikille kuuluville rooleille, kuten muun työn puuttuessa tehtävien töiden yhteiselle roolille.</WR_PartialCapabilityTip>
+  <WR_PartialCapabilityLockedTip>Tätä roolia suositellaan jo siirtolaisille, jotka voivat tehdä osan sen töistä mutta eivät kaikkia. Roolit ilman taitotyötä sekä metsästysroolit sallivat tämän aina.</WR_PartialCapabilityLockedTip>
+  <WR_RoleAgeBandsLabel>Ikäryhmät, joille tämä rooli voidaan määrätä:</WR_RoleAgeBandsLabel>
+  <WR_RoleAgeBandsTip>Valittujen ikävälien ulkopuolisille siirtolaisille ei koskaan määrätä tai suositella roolia. Napsauta valinnan ulkopuolista väliä sisällyttääksesi kaiken siihen asti, ensimmäistä tai viimeistä valittua väliä poistaaksesi sen tai keskimmäistä valitaksesi vain sen. Rajat noudattavat pelin töiden avautumisikiä. Kaikki roolin työt ovat mahdollisia {0} vuoden iästä alkaen.</WR_RoleAgeBandsTip>
+  <WR_WorkTypesLabel>Työtyypit</WR_WorkTypesLabel>
+  <WR_WorkTypesTip>Vain määritettyjä työtyyppejä tekemään kykenevät siirtolaiset kelpaavat tähän rooliin.\n\nJohdetaan valituista töistä ja näytetään tiedoksi.</WR_WorkTypesTip>
+  <WR_UsedSkillsLabel>Käytetyt</WR_UsedSkillsLabel>
+  <WR_UsedSkillsTip>Näyttää roolin töihin vaikuttavat taidot. Näet vaikutuksen osoittamalla taitoa.\n\nJohdetaan valituista töistä ja näytetään tiedoksi.</WR_UsedSkillsTip>
+  <WR_TrainedSkillsLabel>Harjoitetut</WR_TrainedSkillsLabel>
+  <WR_TrainedSkillsTip>Näyttää taidot, jotka saavat kokemusta roolin töistä.\n\nJohdetaan valituista töistä ja näytetään tiedoksi.</WR_TrainedSkillsTip>
+  <WR_GatedSkillsLabel>Vaaditut</WR_GatedSkillsLabel>
+  <WR_GatedSkillsTip>Näyttää taidot, joita siirtolaiset tarvitsevat roolin tiettyihin töihin. Vähimmäistaitotaso riippuu reseptistä, kasvista tai rakennuksesta. Osoita taitoja nähdäksesi lisätiedot.\n\nJohdetaan valituista töistä ja näytetään tiedoksi.</WR_GatedSkillsTip>
+  <WR_RecMoreContentGates>{0} muuta</WR_RecMoreContentGates>
+  <WR_EffectSpeed>Nopeuttaa työtä</WR_EffectSpeed>
+  <WR_EffectQuality>Parantaa laatua</WR_EffectQuality>
+  <WR_EffectYield>Lisää tuottoa</WR_EffectYield>
+  <WR_EffectSuccess>Parantaa onnistumismahdollisuutta</WR_EffectSuccess>
+  <WR_RequiredSkillsLabel>Pakolliset</WR_RequiredSkillsLabel>
+  <WR_RequiredSkillsTip>Roolille valitut valinnaiset ehdottomat taitovaatimukset. Roolia ei voida suositella siirtolaiselle, jonka jokin vaadittu taito on poissa käytöstä. Taitotaso ei vaikuta tähän ehtoon, ja se on erillinen Vaaditut-kohdan sisältökohtaisista vähimmäisvaatimuksista.</WR_RequiredSkillsTip>
+  <WR_AddSkill>Lisää taito</WR_AddSkill>
+  <WR_AddSkillTip>Lisää erillinen ehdoton taitovaatimus. Tämä ei muuta roolin johdettuja Käytetyt- tai Harjoitetut-taitoja.</WR_AddSkillTip>
+  <WR_RemoveSkillTip>Poista tämä erillinen ehdoton taitovaatimus.</WR_RemoveSkillTip>
+  <WR_RoleMissingRequiredSkills>Vaaditut taidot poissa käytöstä henkilöllä {0}: {1}.</WR_RoleMissingRequiredSkills>
+  <WR_PathAddRoleTip>Lisää roolin tähän polkuun.</WR_PathAddRoleTip>
+  <WR_BandChipTip>Muuta taitovälin kokoa vetämällä päästä, siirrä sitä vetämällä keskeltä.</WR_BandChipTip>
+  <WR_PriorityGridTitle>Prioriteettiruudukko</WR_PriorityGridTitle>
+  <WR_ShowPriorityGridTip>Näytä kaikkien listattujen siirtolaisten prioriteettiruudukko nykyisten rooli- ja sijaintisuodattimien mukaisesti (suorat järjestysluvut tai peruspelin 0–4, vaihdettavissa ikkunassa).</WR_ShowPriorityGridTip>
+  <WR_GridModeRaw>WorkRoles-prioriteetit</WR_GridModeRaw>
+  <WR_GridModeVanilla>Peruspelin prioriteetit</WR_GridModeVanilla>
+  <WR_ResizeGripTip>Muuta ikkunan kokoa vetämällä (se voi vain kasvaa sisältöön sovitetusta koosta). Palaa automaattiseen kokoon kaksoisnapsauttamalla.</WR_ResizeGripTip>
+  <WR_RolesTab>Roolit</WR_RolesTab>
+  <WR_HelpTab>Ohje</WR_HelpTab>
+  <WR_HelpChapterStart>Aloitus</WR_HelpChapterStart>
+  <WR_HelpChapterBasics>Perusteet</WR_HelpChapterBasics>
+  <WR_HelpChapterEditing>Roolien muokkaus</WR_HelpChapterEditing>
+  <WR_HelpChapterOrganizing>Järjestäminen</WR_HelpChapterOrganizing>
+  <WR_HelpChapterRecommendations>Suositukset</WR_HelpChapterRecommendations>
+  <WR_HelpChapterAdvanced>Lisätiedot</WR_HelpChapterAdvanced>
+  <WR_HelpReload>Lataa uudelleen</WR_HelpReload>
+  <WR_HelpDemoChipA>Lääkäri</WR_HelpDemoChipA>
+  <WR_HelpDemoChipB>Viljelijä</WR_HelpDemoChipB>
+  <WR_HelpDemoChipC>Kantaja</WR_HelpDemoChipC>
+  <WR_HelpTourHeader>Opastettu kierros</WR_HelpTourHeader>
+  <WR_HelpTourProgress>{0}/{1} aihetta luettu</WR_HelpTourProgress>
+  <WR_HelpTourComplete>Olet valmis!</WR_HelpTourComplete>
+  <WR_HelpTourCompleteHint>Tunnet perusteet. Yllä olevat luvut kattavat loput.</WR_HelpTourCompleteHint>
+  <WR_ClusterEveryone>Kaikki</WR_ClusterEveryone>
+  <WR_ClusterUnskilled>Taitoa vaatimaton</WR_ClusterUnskilled>
+  <WR_OddJobsRole>Sekatyöt</WR_OddJobsRole>
+  <WR_BlockerRole>Estorooli</WR_BlockerRole>
+  <WR_BlockerRoleTipWhat>Estoroolin töitä ei koskaan tehdä: ne estetään (”ei tee”), vaikka myöhempi rooli sisältäisi ne.</WR_BlockerRoleTipWhat>
+  <WR_BlockerRoleTipWhy>Estoroolin yläpuolella olevat roolit voittavat silti, joten voit sallia poikkeuksia sijoittamalla roolin ylemmäs.</WR_BlockerRoleTipWhy>
+  <WR_ReasonFireFear>Geneettinen tulen kauhu: estää palontorjunnan.</WR_ReasonFireFear>
+  <WR_RoleTipEnabled>käytössä</WR_RoleTipEnabled>
+  <WR_RoleTipDisabled>POIS KÄYTÖSTÄ yleisesti</WR_RoleTipDisabled>
+  <WR_RoleTipDisabledHere>POIS KÄYTÖSTÄ tällä siirtolaisella</WR_RoleTipDisabledHere>
+  <WR_RoleTipDisabledBoth>POIS KÄYTÖSTÄ yleisesti ja tällä siirtolaisella</WR_RoleTipDisabledBoth>
+  <WR_RoleTipForcedOn>käytössä, pakotettu käyttöön tällä siirtolaisella</WR_RoleTipForcedOn>
+  <WR_RoleTipForcedOnGlobalOff>PAKOTETTU KÄYTTÖÖN tällä siirtolaisella (rooli yleisesti POIS KÄYTÖSTÄ)</WR_RoleTipForcedOnGlobalOff>
+  <WR_BadgeBlocker>esto</WR_BadgeBlocker>
+  <WR_BadgeHours>rajatut tunnit</WR_BadgeHours>
+  <WR_BadgeLocation>rajatut sijainnit</WR_BadgeLocation>
+  <WR_TipJobsLabel>Työt</WR_TipJobsLabel>
+  <WR_TipSkillsLabel>Taidot</WR_TipSkillsLabel>
+  <WR_TipTrainingHeader>Harjoittelu</WR_TipTrainingHeader>
+  <WR_TipTrainingRecommend>Suositellaan siirtolaisille, joiden taitotaso on {0}</WR_TipTrainingRecommend>
+  <WR_TipTrainingPath>polulla kohti roolia {0}</WR_TipTrainingPath>
+  <WR_TipBestFitsLabel>Sopivimmat</WR_TipBestFitsLabel>
+  <WR_TipWholeType>{0} (kaikki työt)</WR_TipWholeType>
+  <WR_TipMore>+{0} muuta</WR_TipMore>
+  <WR_RoleCapNeverDo>{0} ei koskaan tee: {1}</WR_RoleCapNeverDo>
+  <WR_RoleCapAllJobs>yhtäkään tämän roolin työtä</WR_RoleCapAllJobs>
+  <WR_RoleCapSomeJobs>{0}/{1} tämän roolin työtä</WR_RoleCapSomeJobs>
+  <WR_RoleJobIncapable>ei kykene tähän työhön</WR_RoleJobIncapable>
+  <WR_RoleJobNoRangedWeapon>ei etäasetta</WR_RoleJobNoRangedWeapon>
+  <WR_RoleJobTooYoung>liian nuori, mahdollista {0} vuoden iästä</WR_RoleJobTooYoung>
+  <WR_RoleTooYoung>{0} on liian nuori tähän rooliin (vähimmäisikä {1}).</WR_RoleTooYoung>
+  <WR_RoleTooOld>{0} on liian vanha tähän rooliin (enimmäisikä {1}).</WR_RoleTooOld>
+  <WR_MtcHatedWorkSignalLabel>Vihaa: {0}</WR_MtcHatedWorkSignalLabel>
+  <WR_MtcHatedWorkSignalDescription>More Than Capable sallii tämän työn, mutta se aiheuttaa vakavia ja kasvavia haittoja.</WR_MtcHatedWorkSignalDescription>
+  <WR_RoleAwfulSignal>Henkilöllä {0} on surkea signaali tähän rooliin: {1}.</WR_RoleAwfulSignal>
+  <WR_ActClick>Napsautus</WR_ActClick>
+  <WR_ActShiftClick>Vaihto-napsautus</WR_ActShiftClick>
+  <WR_ActCtrlShiftClick>Ctrl+Vaihto-napsautus</WR_ActCtrlShiftClick>
+  <WR_ActAltClick>Alt-napsautus</WR_ActAltClick>
+  <WR_ActDrag>Vedä</WR_ActDrag>
+  <WR_ActRightClick>Oikea napsautus</WR_ActRightClick>
+  <WR_ActX>X</WR_ActX>
+  <WR_ActPaletteClick>Vaihda roolin yleistä käyttötilaa</WR_ActPaletteClick>
+  <WR_ActPaletteShiftClick>Määrää valituille siirtolaisille rivin loppuun</WR_ActPaletteShiftClick>
+  <WR_ActPaletteCtrlShiftClick>Määrää valituille siirtolaisille heti Perustöiden jälkeen</WR_ActPaletteCtrlShiftClick>
+  <WR_ActPaletteAltClick>Määrää valituille siirtolaisille suositusmoottorin määrittämään paikkaan</WR_ActPaletteAltClick>
+  <WR_ActPaletteDrag>Määrää siirtolaiselle</WR_ActPaletteDrag>
+  <WR_ActTreeClick>Valitse muokattavaksi</WR_ActTreeClick>
+  <WR_ActTreeDrag>Järjestä tai siirrä ryhmien välillä</WR_ActTreeDrag>
+  <WR_ActTreeRightClick>Koosta rooli (sisällytä/sulje pois)</WR_ActTreeRightClick>
+  <WR_ActChipClick>Vaihda tämän siirtolaisen tilaksi käytössä, pois tai pakotettu käyttöön</WR_ActChipClick>
+  <WR_ActChipRightClick>Kiinnitysasetukset</WR_ActChipRightClick>
+  <WR_ActChipDrag>Järjestä tai siirrä toiselle siirtolaiselle</WR_ActChipDrag>
+  <WR_ActChipX>Poista</WR_ActChipX>
+  <WR_ColonistNameCaption>Siirtolaisen nimi</WR_ColonistNameCaption>
+  <WR_AssignedRoleCaption>Määrätty rooli</WR_AssignedRoleCaption>
+  <WR_CoveredJobCaption>Katettu työ</WR_CoveredJobCaption>
+  <WR_LocationCaption>Sijainti</WR_LocationCaption>
+  <WR_GroupByCaption>Ryhmittely</WR_GroupByCaption>
+  <WR_SkillColumnsCaption>Taitosarakkeet</WR_SkillColumnsCaption>
+  <WR_RoleDisplayCaption>Roolinäyttö</WR_RoleDisplayCaption>
+  <WR_ColonistSearchTip>Hakee siirtolaisten nimistä. Erota hakusanat välilyönneillä; jokaisen on täsmättävä. Lisää sanan eteen r: tai role: hakeaksesi määrättyjen roolien nimistä tai j: tai job: hakeaksesi määrättyjen roolien töistä. Esimerkki: br r:lää.</WR_ColonistSearchTip>
+  <WR_ColonistRoleFilterTip>Luettelee siirtolaiset, joille valittu rooli on määrätty. Myös määrätty muu kuin estorooli vastaa, kun sen työt kattavat valitun roolin kokonaan. Yhdistyy haku-, työ- ja sijaintisuodattimiin.</WR_ColonistRoleFilterTip>
+  <WR_ColonistJobFilterTip>Valittu: {0}
+
+Luettelee siirtolaiset, joiden määrätyt muut kuin estoroolit sisältävät tämän työn. Tarkistaa roolien kattavuuden, ei siirtolaisen nykyistä toimintaa tai peruspelin työprioriteettia.</WR_ColonistJobFilterTip>
+  <WR_ColonistScopeTip>Valitsee, mistä siirtokunnan sijainneista taulukon siirtolaiset otetaan. Nykyinen sijainti seuraa aktiivista karttaa; Kaikkialla sisältää asutukset, karavaanit ja matkustavan gravitaatioaluksen.</WR_ColonistScopeTip>
+  <WR_ColonistGroupTip>Jakaa näkyvät siirtolaiset osioihin valitun ominaisuuden mukaan. Ryhmittely ei muuta suodattimiin täsmääviä siirtolaisia; osioiden otsikot voi supistaa.</WR_ColonistGroupTip>
+  <WR_ColonistSkillColumnsTip>Valitsee taulukkoon enintään kolme taitosaraketta. Lajittele taidon mukaan napsauttamalla otsikkoa tai poista sarake sen X-painikkeella.</WR_ColonistSkillColumnsTip>
+  <WR_ColonistRoleDisplayTip>Valitsee, mitä määrätyt roolitunnisteet näyttävät siirtolaistaulukossa: kokonaiset nimet, alkukirjaimet tai kuvakkeet. Viereinen painike vaihtaa pinottujen tunnisteiden ja ruudukkosarakkeiden välillä. Asetus on pelaajakohtainen.</WR_ColonistRoleDisplayTip>
+  <WR_ChipLayoutGridTip>Tunnisteet tasataan samanlevyisiin ruudukkosarakkeisiin. Pitkät kokonaiset nimet häivyttyvät reunassa ja saavat lisätilaa vain, jos samankaltaiset nimet sitä tarvitsevat; työkaluvihje näyttää koko nimen. Napsauta pinotaksesi tunnisteet niiden luonnollisilla leveyksillä. Valitse oikealla napsautuksella, kuinka suuri osa nimestä mahtuu sarakkeisiin.</WR_ChipLayoutGridTip>
+  <WR_ChipLayoutStackTip>Tunnisteet pinotaan luonnollisilla leveyksillään. Napsauta tasataksesi ne samanlevyisiin ruudukkosarakkeisiin. Valitse oikealla napsautuksella, kuinka suuri osa nimestä mahtuu ruudukkosarakkeisiin.</WR_ChipLayoutStackTip>
+  <WR_GridNamesAutomatic>Automaattinen</WR_GridNamesAutomatic>
+  <WR_GridNamesShort>Lyhyt</WR_GridNamesShort>
+  <WR_GridNamesMedium>Keskipitkä</WR_GridNamesMedium>
+  <WR_GridNamesLong>Pitkä</WR_GridNamesLong>
+  <WR_GridNamesFull>Kokonainen</WR_GridNamesFull>
+  <WR_ColonistClearFiltersTip>Tyhjentää siirtolaisnimen haun sekä määrätyn roolin ja katetun työn suodattimet. Sijaintirajaus, ryhmittely, taitosarakkeet ja roolinäyttö säilyvät ennallaan.</WR_ColonistClearFiltersTip>
+  <WR_FilterAllRoles>Kaikki roolit</WR_FilterAllRoles>
+  <WR_ScopeAll>Kaikkialla</WR_ScopeAll>
+  <WR_ScopeCurrent>Nykyinen sijainti</WR_ScopeCurrent>
+  <WR_ScopeCurrentNamed>{0} (nykyinen sijainti)</WR_ScopeCurrentNamed>
+  <WR_ShipFallback>Gravitaatioalus</WR_ShipFallback>
+  <WR_ShipTip>Gravitaatioalus, kun se ei ole pysäköity asutukseen (asutuksen ruutu on etusijalla).</WR_ShipTip>
+  <WR_GroupNone>Ei ryhmittelyä</WR_GroupNone>
+  <WR_GroupFaction>Ryhmittymä</WR_GroupFaction>
+  <WR_GroupRace>Rotu</WR_GroupRace>
+  <WR_GroupGender>Sukupuoli</WR_GroupGender>
+  <WR_GroupAge>Ikä</WR_GroupAge>
+  <WR_GroupXenotype>Ksenotyyppi</WR_GroupXenotype>
+  <WR_GroupIdeo>Ideologia</WR_GroupIdeo>
+  <WR_GroupSlaves>Orjuus</WR_GroupSlaves>
+  <WR_GroupTitleColonists>Siirtolaiset</WR_GroupTitleColonists>
+  <WR_GroupTitleSlaves>Orjat</WR_GroupTitleSlaves>
+  <WR_GroupColonyGroups>Colony Groups</WR_GroupColonyGroups>
+  <WR_GroupTitleUngrouped>Ryhmittelemättömät</WR_GroupTitleUngrouped>
+  <WR_ChipsNormal>Tunnisteet: kokonaiset nimet</WR_ChipsNormal>
+  <WR_ChipsCompact>Tunnisteet: alkukirjaimet</WR_ChipsCompact>
+  <WR_ChipsIcons>Tunnisteet: kuvakkeet</WR_ChipsIcons>
+  <WR_OrderSuffixBar>(Palkkijärjestys)</WR_OrderSuffixBar>
+  <WR_OrderSuffixAZ>(A–Ö)</WR_OrderSuffixAZ>
+  <WR_DisplayButton>Näyttö</WR_DisplayButton>
+  <WR_DisplayOptions>Näyttöasetukset</WR_DisplayOptions>
+  <WR_CopyRolesTip>Kopioi tämän siirtolaisen roolit.</WR_CopyRolesTip>
+  <WR_PasteRolesTip>Liitä kopioidut roolit tälle siirtolaiselle.</WR_PasteRolesTip>
+  <WR_AddRoleTip>Määrää rooli.</WR_AddRoleTip>
+  <WR_SkillsButton>Taidot</WR_SkillsButton>
+  <WR_SkillsButtonCount>Taidot ({0}/{1})</WR_SkillsButtonCount>
+  <WR_ColColonist>Siirtolainen</WR_ColColonist>
+  <WR_NoFilterMatches>Yksikään siirtolainen ei vastaa suodatinta.</WR_NoFilterMatches>
+  <WR_FixMyColony>Korjaa siirtokuntani</WR_FixMyColony>
+  <WR_FixMyColonyTip>Korvaa jokaisen siirtolaisen roolit suositelluilla rooleilla.</WR_FixMyColonyTip>
+  <WR_FixNeedsSingleLocation>Suositukset lasketaan sijaintikohtaisesti. Rajaa sijaintisuodatin yhteen asutukseen tai alukseen käyttääksesi Korjaa siirtokuntani -toimintoa.</WR_FixNeedsSingleLocation>
+  <WR_AutoManaged>Automaattinen hallinta</WR_AutoManaged>
+  <WR_AutoManagedTip>WorkRoles päivittää jokaisen siirtokunnan roolimääritykset automaattisesti jokaisen pelitunnin alussa.
+
+Kiinnitetyt määritykset säilyvät, myös poissuljetut roolit.
+
+Poista ”Optimoi siirtokunnat automaattisesti joka pelitunti” käytöstä Asetukset-välilehdellä palauttaaksesi Korjaa siirtokuntani -toiminnon.</WR_AutoManagedTip>
+  <WR_SetPriorityBlockedTitle>WorkRoles hallitsee prioriteetteja</WR_SetPriorityBlockedTitle>
+  <WR_SetPriorityBlockedBody>{0} yritti asettaa työprioriteetteja ({1}).
+
+WorkRoles esti {2} prioriteettimuutosta edellisen ilmoituksen tai tämän peli-istunnon alun jälkeen.
+
+WorkRoles hallitsee rooliohjattujen siirtolaisten prioriteetteja, joten muutos ohitettiin. Modin muut toiminnot eivät muutu.
+
+Saat vastaavan vaikutuksen rooleilla: luo tai muokkaa työn sisältävää roolia Roolit-välilehdellä ja sijoita se haluamaasi kohtaan jokaisen siirtolaisen roolilistalla, tai estä työ kokonaan estoroolilla.
+
+Tämä ilmoitus näytetään kerran modia ja tallennusta kohti.</WR_SetPriorityBlockedBody>
+  <WR_AllWork>kaikki työt</WR_AllWork>
+  <WR_GiverBypassTitle>Työ ohitti roolilistat</WR_GiverBypassTitle>
+  <WR_GiverBypassBody>{0} aloitti työn ”{1}”, mutta yksikään hänelle määrätty rooli ei sisällä sitä.
+
+WorkRoles antaa kullekin hallitulle siirtolaiselle työlistan pelin vakiomenetelmillä. Toinen modi näyttää valitsevan työtä omasta listastaan ja ohittavan roolirajoitukset. Siirtolaiset voivat joskus tehdä rooliensa ulkopuolisia töitä kyseisen modin ollessa käytössä.
+
+Työtä ei keskeytetty. Ilmoitus näytetään kerran tallennusta kohti.</WR_GiverBypassBody>
+  <WR_Apply>Toteuta</WR_Apply>
+  <WR_SelectAll>Valitse kaikki</WR_SelectAll>
+  <WR_PreviewNoChanges>Ei muutoksia.</WR_PreviewNoChanges>
+  <WR_PreviewStale>Siirtokunta muuttui esikatselun ollessa auki; mitään ei toteutettu.</WR_PreviewStale>
+  <WR_ReasonEveryone>Määrätään automaattisesti kaikille.</WR_ReasonEveryone>
+  <WR_ReasonHunter>Kantaa etäasetta; metsästys harjoittaa myös ampumista.</WR_ReasonHunter>
+  <WR_ReasonSignal>Suositussignaalit suosivat: {0}.</WR_ReasonSignal>
+  <WR_ReasonCoverage>Siirtokunnan kattavuus: paras käytettävissä oleva tähän työhön.</WR_ReasonCoverage>
+  <WR_ReasonRemoved>Ei suosituslistalla. Kiinnitä säilytettävät roolit ennen toteutusta.</WR_ReasonRemoved>
+  <WR_SignalColSignal>Signaali</WR_SignalColSignal>
+  <WR_SignalColEffects>Vaikutukset</WR_SignalColEffects>
+  <WR_SignalCondition>Ehto</WR_SignalCondition>
+  <WR_SignalSource>Lähde</WR_SignalSource>
+  <WR_SignalVerdict>Arvio</WR_SignalVerdict>
+  <WR_SignalSkillPromotion>Korkea taito</WR_SignalSkillPromotion>
+  <WR_SignalSkillPromotionEffect>{0} → {1}</WR_SignalSkillPromotionEffect>
+  <WR_SignalSkillPromotionCondition>Taso {0} täyttää rajan {1}</WR_SignalSkillPromotionCondition>
+  <WR_SignalFromSkill>(lähde: {0})</WR_SignalFromSkill>
+  <WR_SignalAlreadyReflected>Sisältyy jo näytettyyn taitotasoon</WR_SignalAlreadyReflected>
+  <WR_SignalDisabled>Pois käytöstä</WR_SignalDisabled>
+  <WR_SignalCapabilityOff>{0} poissa käytöstä</WR_SignalCapabilityOff>
+  <WR_SignalCapabilityAwful>{0} käsitellään surkeana</WR_SignalCapabilityAwful>
+  <WR_SignalDescriptive>Kuvaileva</WR_SignalDescriptive>
+  <WR_SignalExpertiseScale>perusarvo {0}, asiantuntemustaso {1}, nykyinen {2}</WR_SignalExpertiseScale>
+  <WR_VerdictAwful>Surkea</WR_VerdictAwful>
+  <WR_VerdictPoor>Heikko</WR_VerdictPoor>
+  <WR_VerdictNeutral>Neutraali</WR_VerdictNeutral>
+  <WR_VerdictStrong>Vahva</WR_VerdictStrong>
+  <WR_VerdictGreat>Erinomainen</WR_VerdictGreat>
+  <WR_VerdictExceptional>Poikkeuksellinen</WR_VerdictExceptional>
+  <WR_PinAssignment>Kiinnitä</WR_PinAssignment>
+  <WR_UnpinAssignment>Irrota</WR_UnpinAssignment>
+  <WR_PinnedTip>Kiinnitetty: Toteuta, Korjaa siirtokuntani ja automaattioptimointi säilyttävät tämän määrityksen, vaikka rooli tai yhdistelmäroolin jäsen olisi suljettu pois suosituksista.</WR_PinnedTip>
+  <WR_CopiedRoles>Henkilön {0} roolit kopioitu.</WR_CopiedRoles>
+  <WR_RecommendedRoles>Suositellut roolit</WR_RecommendedRoles>
+  <WR_AlreadyAssigned>Jo määrätty</WR_AlreadyAssigned>
+  <WR_WillBeRemoved>Ei suosituslistalla. Kiinnitä säilytettävät roolit ennen toteutusta.</WR_WillBeRemoved>
+  <WR_RecTipColonyNeed>Siirtokunnan tarpeet</WR_RecTipColonyNeed>
+  <WR_RecTipSkills>Huomioidut taidot</WR_RecTipSkills>
+  <WR_RecTipSignalVerdict>Signaaliarvio</WR_RecTipSignalVerdict>
+  <WR_RecTipSelection>Valinta</WR_RecTipSelection>
+  <WR_RecTipAssignmentsOne>1 määritys pyydetty</WR_RecTipAssignmentsOne>
+  <WR_RecTipAssignmentsMany>{0} määritystä pyydetty</WR_RecTipAssignmentsMany>
+  <WR_RecTipWithWaiverOne>{0} (1 harjoittelupoikkeus)</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0} ({1} harjoittelupoikkeusta)</WR_RecTipWithWaiversMany>
+  <WR_RecTipEveryoneCapable>Määrätään kaikille kykeneville</WR_RecTipEveryoneCapable>
+  <WR_RecDecisionAuto>Määrätään automaattisesti kaikille työhön kykeneville.</WR_RecDecisionAuto>
+  <WR_RecDecisionSignals>Täyttää määritetyn signaalirajan.</WR_RecDecisionSignals>
+  <WR_RecDecisionCoverageDraft>Paras jäljellä oleva ehdokas valittiin täyttämään vaadittu kattavuus.</WR_RecDecisionCoverageDraft>
+  <WR_RecDecisionTraining>Määrätty roolin {0} harjoittelupolun kautta.</WR_RecDecisionTraining>
+  <WR_RecDecisionTrainingUnknown>Määrätty harjoittelupolun kautta.</WR_RecDecisionTrainingUnknown>
+  <WR_RecDecisionDirectSlot>Valittu suoraan paikalle {0}/{1} rooliin {2}.</WR_RecDecisionDirectSlot>
+  <WR_RecDecisionTrainingSlot>Valittu paikalle {0}/{1} rooliin {2}. Harjoittelupoikkeus korvasi roolin {2} roolilla {3} ({4}; {2} vaatii {5}).</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>Valittu paikalle {0}/{1} rooliin {2}. Harjoittelupoikkeus korvasi roolin {2} roolilla {3}.</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>Valittu paikalle {0}/{1} harjoittelupoikkeuksella, määrityksenä {2}.</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
+  <WR_RecDecisionDirectFallbackSlot>Valittu suoraan paikalle {0}/{1} rooliin {2}, koska yksikään harjoittelukorvaaja ei kelvannut paikalle.</WR_RecDecisionDirectFallbackSlot>
+  <WR_RecDecisionCoverageRepairSlot>Valittu suoraan jäljellä olevalle pakolliselle paikalle {0}/{1} rooliin {2}.</WR_RecDecisionCoverageRepairSlot>
+  <WR_RecDecisionSignalSurplus>Valittu lisäehdokkaaksi signaaliarvion perusteella.</WR_RecDecisionSignalSurplus>
+  <WR_RecDecisionAptitudeSurplus>Valittu lisäehdokkaaksi, koska yhdistetty taitosoveltuvuus on vähintään tämän roolin vaatima.</WR_RecDecisionAptitudeSurplus>
+  <WR_RecDecisionHunter>Kantaa etäasetta ja kykenee metsästämään.</WR_RecDecisionHunter>
+  <WR_RecDecisionFire>Tulen pelko vaatii palontorjunnan estoroolin.</WR_RecDecisionFire>
+  <WR_RecDecisionRetained>Nykyinen taitoa vaatimaton rooli säilytetty.</WR_RecDecisionRetained>
+  <WR_RecDecisionProtected>Nykyinen suojattu määritys säilytetty.</WR_RecDecisionProtected>
+  <WR_RecDecisionIncapacitated>Tämä siirtolainen on maahan kaatunut. Hänen muut kuin poissuljetut roolinsa ja kiinnitetyt määrityksensä säilytetään ennallaan, eikä niitä lasketa siirtokunnan tarpeisiin ennen toipumista.</WR_RecDecisionIncapacitated>
+  <WR_RecDecisionNever>Tämä rooli on määritetty niin, ettei sitä suositella.</WR_RecDecisionNever>
+  <WR_RecDecisionControlledByTraining>Roolin {0} hallitsema: määrätään sen harjoittelupolun kautta, ei itsenäisesti.</WR_RecDecisionControlledByTraining>
+  <WR_RecDecisionDisabled>Tämä rooli on pois käytöstä.</WR_RecDecisionDisabled>
+  <WR_RecDecisionUnavailable>Tämän roolin työ ei ole saatavilla ennen tutkimuksen valmistumista.</WR_RecDecisionUnavailable>
+  <WR_RecDecisionExcluded>Tätä roolia hallitaan säännöillä, ja se on suljettu pois tavallisista suosituksista.</WR_RecDecisionExcluded>
+  <WR_RecDecisionIncapable>Ei kykene roolin töihin.</WR_RecDecisionIncapable>
+  <WR_RecDecisionNotMechanitor>Tällä siirtolaisella ei ole mekalinkkiä, joten hän ei voi tehdä mekanitorin töitä.</WR_RecDecisionNotMechanitor>
+  <WR_RecDecisionHunterRequirements>Ei etäasetta varustettuna.</WR_RecDecisionHunterRequirements>
+  <WR_RecDecisionAwful>Hylätty Surkea-signaalin vuoksi.</WR_RecDecisionAwful>
+  <WR_RecDecisionCovered>Suositellun roolin kattama: {0}.</WR_RecDecisionCovered>
+  <WR_RecDecisionCoveredUnknown>Toisen suositellun roolin kattama.</WR_RecDecisionCoveredUnknown>
+  <WR_RecDecisionCoverageFilled>Korkeammalle sijoitetut ehdokkaat täyttivät vaaditun kattavuuden.</WR_RecDecisionCoverageFilled>
+  <WR_RecDecisionWeakSignal>Signaaliarvio on määritetyn rajan alapuolella, eikä vaadittu kattavuus valinnut tätä tekijää.</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionNotSelected>Ei valittu minkään suositussäännön perusteella.</WR_RecDecisionNotSelected>
+  <WR_RecDecisionOutOfBand>Taitotaso osuu harjoittelupolun eri taitovälille.</WR_RecDecisionOutOfBand>
+  <WR_RecDecisionOutqualified>Vapaille paikoille valittiin muita, pätevämpiä ehdokkaita.</WR_RecDecisionOutqualified>
+  <WR_RecDecisionRecommended>Suositusmoottorin valitsema.</WR_RecDecisionRecommended>
+  <WR_MakeItSo>Toteuta</WR_MakeItSo>
+  <WR_AllRolesAssigned>Kaikki roolit määrätty</WR_AllRolesAssigned>
+  <WR_NowDrafted>Aseissa</WR_NowDrafted>
+  <WR_NowMental>Mielentilahäiriö</WR_NowMental>
+  <WR_NowIdle>Joutilas</WR_NowIdle>
+  <WR_NowForced>Pelaajan määräys</WR_NowForced>
+  <WR_NowSleeping>Nukkuu</WR_NowSleeping>
+  <WR_NowRecreation>Virkistys</WR_NowRecreation>
+  <WR_NowNeeds>Henkilökohtaiset tarpeet</WR_NowNeeds>
+  <WR_NowBusy>Kiireinen</WR_NowBusy>
+  <WR_NowTip>{0}: {1}</WR_NowTip>
+  <WR_TipActivityLabel>Nykyinen toiminta</WR_TipActivityLabel>
+  <WR_TipActivityValue>{0}: {1}</WR_TipActivityValue>
+  <WR_RestoreDefaults>Palauta oletukset</WR_RestoreDefaults>
+  <WR_RestoreDefaultsTip>Luo puuttuvat valmiit roolit ja harjoittelupolut uudelleen, palauta oletuspoissulkemiset sekä valmiiden roolien oletusryhmät, värit ja haltija-asetukset. Esikatselussa voit valita palautettavat kohteet.</WR_RestoreDefaultsTip>
+  <WR_RestoreDefaultsTitle>Palauta oletukset</WR_RestoreDefaultsTitle>
+  <WR_Export>Vie</WR_Export>
+  <WR_Import>Tuo</WR_Import>
+  <WR_ExportTip>Kirjoita kaikki roolimääritelmät (ei määrityksiä) kohteeseen:\n{0}</WR_ExportTip>
+  <WR_ImportTip>Lisää roolimääritelmät kohteesta:\n{0}</WR_ImportTip>
+  <WR_ExportTitle>Vie roolit</WR_ExportTitle>
+  <WR_CopyClipboard>Kopioi leikepöydälle</WR_CopyClipboard>
+  <WR_CopyPath>Kopioi polku</WR_CopyPath>
+  <WR_Save>Tallenna</WR_Save>
+  <WR_ExportLocationLabel>Vientisijainti</WR_ExportLocationLabel>
+  <WR_LocGameData>Pelitietojen kansio</WR_LocGameData>
+  <WR_LocDesktop>Työpöytä</WR_LocDesktop>
+  <WR_LocUserHome>Käyttäjän kotikansio</WR_LocUserHome>
+  <WR_LocCustom>Mukautettu...</WR_LocCustom>
+  <WR_EnterPath>Anna polku</WR_EnterPath>
+  <WR_BadFileName>Anna kelvollinen tiedostonimi.</WR_BadFileName>
+  <WR_BadDirectory>Anna kelvollinen kansiopolku.</WR_BadDirectory>
+  <WR_ImportTitle>Tuo roolit</WR_ImportTitle>
+  <WR_ImportFromClipboard>Leikepöydältä</WR_ImportFromClipboard>
+  <WR_ImportLocationLabel>Tuontisijainti</WR_ImportLocationLabel>
+  <WR_ImportClipboardInvalid>Leikepöytä ei sisällä WorkRoles-vientiä.</WR_ImportClipboardInvalid>
+  <WR_ImportFileMissing>Tiedostoa ei löytynyt kohteesta {0}</WR_ImportFileMissing>
+  <WR_ImportParseFailed>Roolien lukeminen epäonnistui: {0}</WR_ImportParseFailed>
+  <WR_SectionPalette>Paletti</WR_SectionPalette>
+  <WR_SectionRoles>Roolit</WR_SectionRoles>
+  <WR_ModeMerge>Yhdistä</WR_ModeMerge>
+  <WR_ModeOverwrite>Korvaa</WR_ModeOverwrite>
+  <WR_RowNew>{0} (uusi)</WR_RowNew>
+  <WR_RowUpdate>{0} (päivitys)</WR_RowUpdate>
+  <WR_RowRecolors>{0} → {1} (värimuutokset: {2})</WR_RowRecolors>
+  <WR_RowNewColor>{0} {1} (uusi väri)</WR_RowNewColor>
+  <WR_NothingToMerge>Kaikki täsmää: ei yhdistettävää.</WR_NothingToMerge>
+  <WR_PaletteOverwriteInfo>Korvaa kaikki mukautetut värit tiedoston {0} palettimerkinnällä.</WR_PaletteOverwriteInfo>
+  <WR_OverwriteReplaces>Toteuttaa kaikki tiedoston {0} roolia. Vastaavat roolit (sama valmis rooli, muuten sama nimi) säilyttävät siirtolaismäärityksensä.</WR_OverwriteReplaces>
+  <WR_OverwriteDeletes>Poistaa (ei tiedostossa): {0} (siirtolaiset menettävät nämä määritykset).</WR_OverwriteDeletes>
+  <WR_PathsOverwriteInfo>Korvaa kaikki nykyiset harjoittelupolut tiedoston {0} polulla.</WR_PathsOverwriteInfo>
+  <WR_ImportSummary>Tuonti valmis: {0} lisätty, {1} päivitetty, {2} poistettu, {3} palettimuutosta, {4} harjoittelupolkua.</WR_ImportSummary>
+  <WR_CopiedToClipboard>Kopioitu leikepöydälle.</WR_CopiedToClipboard>
+  <WR_ExportSaved>Tallennettu kohteeseen {0}</WR_ExportSaved>
+  <WR_ExportFailed>Tallennus epäonnistui: {0}</WR_ExportFailed>
+  <WR_ExportOverwriteConfirm>{0} on jo olemassa. Korvataanko se?</WR_ExportOverwriteConfirm>
+  <WR_RestoreMovedJobs>{0} (palauta {1} siirrettyä työtä)</WR_RestoreMovedJobs>
+  <WR_RestorePathItem>{0} (harjoittelupolku)</WR_RestorePathItem>
+  <WR_RestoreGroupItem>{0} (siirrä ryhmään ”{1}”)</WR_RestoreGroupItem>
+  <WR_RestoreColorItem>{0} (palauta oletusväri)</WR_RestoreColorItem>
+  <WR_RestoreJobsItem>{0} (palauta oletustyöt)</WR_RestoreJobsItem>
+  <WR_RestoreSnapColorItem>{0} (sovita väri palettiin)</WR_RestoreSnapColorItem>
+  <WR_RestoreHoldersItem>{0} (palauta haltijoiden oletukset)</WR_RestoreHoldersItem>
+  <WR_RestoreRecOrder>Suositusjärjestys (palauta oletus)</WR_RestoreRecOrder>
+  <WR_RestoreDefaultExclusions>Oletuksena poissuljetut roolit</WR_RestoreDefaultExclusions>
+  <WR_RestoreExplainDefaultExclusions>Lisää puuttuvat oletuspoissulkemiset takaisin Poissuljetut roolit -paneeliin. Säilyttää muut poissulkemasi roolit.</WR_RestoreExplainDefaultExclusions>
+  <WR_RestoreOverwriteWarning>⚠ Korostetut kohteet korvaavat tekemäsi muutokset.</WR_RestoreOverwriteWarning>
+  <WR_RestoreDuplicateHint>(tämänniminen rooli on jo olemassa)</WR_RestoreDuplicateHint>
+  <WR_RestoreExplainRole>Luo roolin modin mallista.</WR_RestoreExplainRole>
+  <WR_RestoreExplainCoverage>Luo tämän työtyypin kattavan roolin.</WR_RestoreExplainCoverage>
+  <WR_RestoreExplainBackfill>Lisää takaisin {0} modien siirtämää työtä.</WR_RestoreExplainBackfill>
+  <WR_RestoreExplainGroup>Siirtää roolin takaisin ryhmään ”{0}”.</WR_RestoreExplainGroup>
+  <WR_RestoreExplainColor>Palauttaa värin mallin oletusarvoon.</WR_RestoreExplainColor>
+  <WR_RestoreExplainJobs>Palauttaa roolin työlistan modin nykyiseen oletukseen. Siirtolaiset säilyttävät kaikki työnsä: poistettuja töitä kattavat roolit määrätään heille automaattisesti.</WR_RestoreExplainJobs>
+  <WR_RestoreExplainSnapColor>Korvaa luodun värin lähimmällä palettivärillä, jotta värivalitsin korostaa sen.</WR_RestoreExplainSnapColor>
+  <WR_RestoreExplainHolders>Palauttaa haltija-asteikon mallin oletukseen.</WR_RestoreExplainHolders>
+  <WR_RestoreExplainRecOrder>Tyhjentää mukautetun järjestyksesi.</WR_RestoreExplainRecOrder>
+  <WR_RestoreExplainPath>Luo harjoittelupolun.</WR_RestoreExplainPath>
+  <WR_NothingToRestore>Ei palautettavaa: kaikki valmiit roolit ja harjoittelupolut ovat olemassa oletusryhmineen, väreineen ja haltija-asetuksineen, eikä töitä ole siirretty.</WR_NothingToRestore>
+  <WR_RolesRestored>Palautettu: {0}</WR_RolesRestored>
+  <WR_FilterAnyJob>Mikä tahansa työ</WR_FilterAnyJob>
+  <WR_RoleLabelOff>{0} (pois)</WR_RoleLabelOff>
+  <WR_SelectOrCreateRole>Valitse tai luo rooli.</WR_SelectOrCreateRole>
+  <WR_New>Uusi</WR_New>
+  <WR_Copy>Kopioi</WR_Copy>
+  <WR_Delete>Poista</WR_Delete>
+  <WR_NewRoleTitle>Uusi rooli</WR_NewRoleTitle>
+  <WR_CopyRoleTitle>Kopioi rooli</WR_CopyRoleTitle>
+  <WR_CopySource>Kopioidaan: {0}</WR_CopySource>
+  <WR_NameTaken>Tämänniminen rooli on jo olemassa.</WR_NameTaken>
+  <WR_DeleteConfirm>Poistetaanko rooli ”{0}”? Se poistetaan kaikilta siirtolaisilta.</WR_DeleteConfirm>
+  <WR_AssignedTo>Määrätty henkilöille</WR_AssignedTo>
+  <WR_Nobody>Ei kukaan</WR_Nobody>
+  <WR_PlusOthers>+{0} muuta</WR_PlusOthers>
+  <WR_AvailableJobs>Saatavilla olevat työt</WR_AvailableJobs>
+  <WR_Search>Haku</WR_Search>
+  <WR_WarningPrefix>Varoitus:</WR_WarningPrefix>
+  <WR_UnusedJobsWarning>Sinulla on töitä, jotka eivät kuulu yhteenkään rooliin.</WR_UnusedJobsWarning>
+  <WR_SelectedJobs>Valitut työt (järjestyksessä)</WR_SelectedJobs>
+  <WR_TypeColumn>Tyyppi</WR_TypeColumn>
+  <WR_JobColumn>Työ</WR_JobColumn>
+  <WR_AllJobs>Kaikki työt</WR_AllJobs>
+  <WR_CoveredByTypeTip>Työtyypin kattama. Napsauta antaaksesi työlle oman siirrettävän merkinnän.</WR_CoveredByTypeTip>
+  <WR_AddAllJobs>Lisää kaikki työt (yksittäin, järjesteltävissä)</WR_AddAllJobs>
+  <WR_SelectedRows>{0} valittu</WR_SelectedRows>
+  <WR_MoveSelectedUpTip>Siirrä valittuja rivejä askel ylöspäin. Valitse rivi napsauttamalla, riviväli Vaihto-napsautuksella, ja lisää tai poista yksi rivi Ctrl-napsautuksella.</WR_MoveSelectedUpTip>
+  <WR_MoveSelectedDownTip>Siirrä valittuja rivejä askel alaspäin.</WR_MoveSelectedDownTip>
+  <WR_RemoveSelectedTip>Poista valitut rivit.</WR_RemoveSelectedTip>
+  <WR_MissingDef>{0} puuttuu nykyisestä modilistasta (ei käytössä, kunnes sen modi palaa).</WR_MissingDef>
+  <WR_DeadEntryTip>Ei vaikutusta: kaikki merkinnän kattama sisältyy jo ylempiin merkintöihin. Siirrä sitä ylöspäin priorisoidaksesi sen tai poista se.</WR_DeadEntryTip>
+  <WR_CompositeRole>Yhdistelmärooli</WR_CompositeRole>
+  <WR_CompositeRoleTip>Yhdistelmäroolit kokoavat muita rooleja: haltijat tekevät jäsenroolien työt jäsenjärjestyksessä. Yhdistelmäroolilla ei ole omaa työlistaa.</WR_CompositeRoleTip>
+  <WR_CompositeConfirm>Muutetaanko ”{0}” yhdistelmärooliksi? Sen valitut työt poistetaan.</WR_CompositeConfirm>
+  <WR_CompositeRevertConfirm>Muutetaanko ”{0}” takaisin tavalliseksi rooliksi? Sen jäsenroolit poistetaan.</WR_CompositeRevertConfirm>
+  <WR_MemberRoles>Jäsenroolit (järjestyksessä)</WR_MemberRoles>
+  <WR_AvailableRoles>Saatavilla olevat roolit</WR_AvailableRoles>
+  <WR_NoMembersHint>Lisää rooleja vasemmanpuoleisesta listasta. Tämän roolin haltijat tekevät jäsenroolien työt tässä näytetyssä järjestyksessä.</WR_NoMembersHint>
+  <WR_NoCandidatesHint>Yhtään roolia ei voi lisätä. Jäsenten on oltava tavallisia rooleja ilman tunti- tai sijaintisääntöjä, eikä yhdistelmärooli voi sisältää toista yhdistelmäroolia.</WR_NoCandidatesHint>
+  <WR_MemberLockTip>Lukittu: tämä rooli on yhdistelmäroolin jäsen. Poista se kaikista yhdistelmärooleista muuttaaksesi asetusta.</WR_MemberLockTip>
+  <WR_ScaleRenameTip>Nimeä asteikko uudelleen (siihen viittaavat roolit seuraavat mukana).</WR_ScaleRenameTip>
+  <WR_ScaleRenameTitle>Nimeä asteikko uudelleen</WR_ScaleRenameTitle>
+  <WR_ScaleNewTitle>Uusi asteikko (kopioi nykyisen)</WR_ScaleNewTitle>
+  <WR_ScaleUsedBy>Käyttäjät: {0}</WR_ScaleUsedBy>
+  <WR_ScaleReset>Palauta</WR_ScaleReset>
+  <WR_ScaleResetTip>Palauta muutoksia edeltäneet arvot (roolin tai asteikon valintahetkestä).</WR_ScaleResetTip>
+  <WR_ScaleSaveAs>Tallenna nimellä</WR_ScaleSaveAs>
+  <WR_ScaleDeleteConfirm>Poistetaanko asteikko ”{0}”?\n\n{1}. Nämä roolit käyttävät sen sijaan Ei koskaan -asetusta.</WR_ScaleDeleteConfirm>
+  <WR_ScaleSaveAsTitle>Tallenna muutokset uutena asteikkona (tämä asteikko palautuu tallennettuihin arvoihin)</WR_ScaleSaveAsTitle>
+  <WR_ScaleDirectTip>Tämän välin suora vähimmäismäärä; loput vaaditusta kokonaismäärästä voidaan täyttää harjoittelupoikkeuksilla. Sen nostaminen kokonaismäärän yli nostaa myös kokonaismäärää. Napsautus +1 (kiertää 8:ssa), oikea napsautus −1. Vedä vasemmalla painikkeella kopioidaksesi väleille (oikea napsautus vetäessä muuttaa arvoa vetosuunnan mukaan). Vedä oikealla painikkeella porrastaaksesi: yksi askel väliä kohti, oikealle kasvaa, vasemmalle pienenee.</WR_ScaleDirectTip>
+  <WR_ScaleTotalsCaption>Vaadittu kokonaismäärä (harjoittelupoikkeukset mukaan lukien)</WR_ScaleTotalsCaption>
+  <WR_ScaleMinsCaption>Suora vähimmäismäärä roolille {0}</WR_ScaleMinsCaption>
+  <WR_ScaleTrainingHelp>Tämä rooli on roolin {0} harjoittelurooli, joten roolin {0} säätöasetukset hallitsevat määrityksiä (vaikka tässä olisi Ei koskaan). Voit silti pakottaa roolin {1} vähimmäismääritysmäärät tässä.</WR_ScaleTrainingHelp>
+  <WR_ScaleControlledBy>Hallitsija: {0}</WR_ScaleControlledBy>
+  <WR_ScaleTotalTip>Tämän välin vaadittu kokonaismäärä harjoittelupoikkeuksineen. Suurentaminen luo harjoittelupoikkeuspaikkoja; pienentäminen kuluttaa ne ennen suoran vähimmäismäärän laskemista. Napsautus +1, oikea napsautus −1. Vedä vasemmalla painikkeella kopioidaksesi väleille (oikea napsautus vetäessä muuttaa arvoa vetosuunnan mukaan). Vedä oikealla painikkeella porrastaaksesi: yksi askel väliä kohti, oikealle kasvaa, vasemmalle pienenee.</WR_ScaleTotalTip>
+  <WR_SkillsUsedLabel>Käytetyt taidot:</WR_SkillsUsedLabel>
+  <WR_VirtualRoleTip>Näkyy tässä, koska ylempi rooli kattaa tämän roolin työt. Kuuluu ryhmään ”{0}”.</WR_VirtualRoleTip>
+  <WR_TipTrainsLabel>Harjoittaa</WR_TipTrainsLabel>
+  <WR_TipTrainsNothing>Ei mitään (ei taitokokemusta)</WR_TipTrainsNothing>
+  <WR_TipRequiresLabel>Vaatii</WR_TipRequiresLabel>
+  <WR_TipReqBills>{0} {1} ({2}/{3} tilauksesta vaatii taitoa)</WR_TipReqBills>
+  <WR_TipReqItems>{0} {1} ({2} esinettä vaatii taitoa)</WR_TipReqItems>
+  <WR_TipReqJobs>{0} {1} ({2} työtä vaatii taitoa)</WR_TipReqJobs>
+  <WR_TipLevelN>Taso {0}</WR_TipLevelN>
+  <WR_TipXpLabel>Antaa kokemusta</WR_TipXpLabel>
+  <WR_TipXpValue>{0}/{1} työtä</WR_TipXpValue>
+  <WR_TipUnlockAgeLabel>Vähimmäisikä</WR_TipUnlockAgeLabel>
+  <WR_TipUnlockAgeValue>{0} (nuoremmat siirtolaiset eivät voi tehdä tätä työtä)</WR_TipUnlockAgeValue>
+  <WR_SkillTipGiverSource>Työn tarjoaja: {0} ({1})</WR_SkillTipGiverSource>
+  <WR_SkillTipTypeSource>Työtyyppi: {0} ({1})</WR_SkillTipTypeSource>
+  <WR_SkillTipUnknownMod>tuntematon modi</WR_SkillTipUnknownMod>
+  <WR_EmergencySuffix> (hätätilanne)</WR_EmergencySuffix>
+  <WR_ConditionalRole>Ehdollinen rooli</WR_ConditionalRole>
+  <WR_ConditionalRoleTip>Ehdolliset roolit kytkeytyvät päälle ja pois sääntöjen, kuten aktiivisten tuntien ja sijainnin, perusteella. Rooli on ehdollinen aina, kun jokin sääntö on asetettu.</WR_ConditionalRoleTip>
+  <WR_AutoAssign>Määrää automaattisesti</WR_AutoAssign>
+  <WR_AutoAssignTip>Tulokkaat (värvätyt, vaeltajat) saavat roolin automaattisesti, jos he kuuluvat sen ikäryhmiin.</WR_AutoAssignTip>
+  <WR_CustomSwatchEmpty>Tyhjä paikka: valitse mukautettu väri napsauttamalla. Mukautetut värit jaetaan kaikkien roolien kesken.</WR_CustomSwatchEmpty>
+  <WR_CustomSwatchTip>Käytä väriä napsauttamalla. Määritä paikka uudelleen oikealla napsautuksella.</WR_CustomSwatchTip>
+  <WR_ClearRulesConfirm>Poistetaanko kaikki säännöt roolista ”{0}”? Siitä tulee jälleen manuaalinen rooli.</WR_ClearRulesConfirm>
+  <WR_ActiveHours>Aktiiviset tunnit</WR_ActiveHours>
+  <WR_HoursActive>Aktiivinen</WR_HoursActive>
+  <WR_HoursInactive>Ei aktiivinen</WR_HoursInactive>
+  <WR_LocationAny>Missä tahansa</WR_LocationAny>
+  <WR_LocationNowhere>Ei missään</WR_LocationNowhere>
+  <WR_LocationNowhereTip>Tämä rooli oli rajattu sijainteihin, joita ei enää ole. Se pysyy poissa käytöstä, kunnes valitset toisen sijainnin.</WR_LocationNowhereTip>
+  <WR_LocationSettlements>Asutukset</WR_LocationSettlements>
+  <WR_LocationCaravans>Karavaanit</WR_LocationCaravans>
+  <WR_LocationShipItem>Alus: {0}</WR_LocationShipItem>
+  <WR_LocationSettlementItem>Asutus: {0}</WR_LocationSettlementItem>
+  <WR_LocationCount>{0} sijaintia</WR_LocationCount>
+  <WR_LocationGone>(poistunut)</WR_LocationGone>
+  <WR_InvalidRoleTip>Tämä rooli ei voi koskaan toteutua: sillä ei ole töitä tai kaikki sen nimeämät sijainnit ovat lakanneet olemasta.</WR_InvalidRoleTip>
+  <WR_GroupDefault>Oletus</WR_GroupDefault>
+  <WR_GroupConditionalRoles>Ehdolliset roolit</WR_GroupConditionalRoles>
+  <WR_GroupComposites>Yhdistelmäroolit</WR_GroupComposites>
+  <WR_GroupLabel>Ryhmä</WR_GroupLabel>
+  <WR_GroupButton>Ryhmä: {0}</WR_GroupButton>
+  <WR_GroupNewOption>Uusi...</WR_GroupNewOption>
+  <WR_NewGroupTitle>Uusi ryhmä</WR_NewGroupTitle>
+  <WR_RenameGroup>Nimeä ryhmä uudelleen</WR_RenameGroup>
+  <WR_RenameGroupTitle>Nimeä ryhmä uudelleen</WR_RenameGroupTitle>
+  <WR_GroupOverlayTip>Sääntöjä sisältävät roolit näkyvät Ehdollisissa rooleissa. Tallennettu ryhmä palautuu, kun säännöt poistetaan.</WR_GroupOverlayTip>
+  <WR_GroupCompositeTip>Yhdistelmäroolit näkyvät Yhdistelmäroolit-ryhmässä.</WR_GroupCompositeTip>
+  <WR_TreeNested>Sisäkkäinen</WR_TreeNested>
+  <WR_TreeFlat>Tasainen</WR_TreeFlat>
+  <WR_TreeToggleTip>Vaihda katettujen roolien sisäkkäistä näyttöä niitä kattavan roolin alla.</WR_TreeToggleTip>
+  <WR_DisplayModeLabel>Näyttötila</WR_DisplayModeLabel>
+  <WR_JobFilterLabel>Työsuodatin</WR_JobFilterLabel>
+  <WR_PaletteBySkills>Taidot</WR_PaletteBySkills>
+  <WR_PaletteByGroups>Ryhmät</WR_PaletteByGroups>
+  <WR_PaletteModeTip>Järjestä roolivalikoima olennaisen taidon tai rooliryhmiesi mukaan.</WR_PaletteModeTip>
+  <WR_SuppressedHours>Pois: aktiivisten tuntien ulkopuolella</WR_SuppressedHours>
+  <WR_SuppressedLocation>Pois: ei tämän roolin sijainneissa</WR_SuppressedLocation>
+  <WR_BillRoleOption>Rooli: {0}</WR_BillRoleOption>
+  <WR_BillWorkerRoleTip>Vain roolia aktiivisesti hoitavat siirtolaiset tekevät tämän tilauksen; ehdollinen rooli käyttää sääntöjään (esim. aktiiviset tunnit). Työntekijän valinta poistaa roolirajoituksen ja päinvastoin.</WR_BillWorkerRoleTip>
+  <WR_SurgeryWorkerRoleTip>Kuka saa tehdä tämän leikkauksen. Kuka tahansa työntekijä tarkoittaa, ettei roolirajoitusta ole. Rooli rajaa leikkauksen sitä aktiivisesti hoitaville siirtolaisille; ehdollinen rooli käyttää sääntöjään (esim. aktiiviset tunnit).</WR_SurgeryWorkerRoleTip>
+  <WR_SelectRoleIcon>Valitse roolikuvake</WR_SelectRoleIcon>
+  <WR_RenameRoleTitle>Nimeä rooli uudelleen</WR_RenameRoleTitle>
+  <WR_NewWorkDetected>Uusia työtyyppejä havaittu. Luodut tai laajennetut roolit: {0}</WR_NewWorkDetected>
+  <WR_SeedReportTitle>WorkRoles määritetty</WR_SeedReportTitle>
+  <WR_SeedReportBody>Luotiin {0} roolia ja määrättiin roolisarjat {1} siirtolaiselle heidän työprioriteettiensa perusteella.</WR_SeedReportBody>
+  <WR_SeedReportGenerated>Luotu modien töille: {0}.</WR_SeedReportGenerated>
+  <WR_SeedReportFailures>Joitakin töitä ei voitu siirtää:</WR_SeedReportFailures>
+  <WR_SeedDropFailure>{0}: menetti työn {1} (prioriteetti oli {2})</WR_SeedDropFailure>
+  <WR_SeedPawnFailure>{0}: siirto epäonnistui ({1})</WR_SeedPawnFailure>
+  <WR_WelcomeTitle>WorkRoles</WR_WelcomeTitle>
+  <WR_WelcomeBody>WorkRoles asettaa siirtolaistesi työprioriteetit heille määräämiesi nimettyjen roolien, kuten Lääkäri, Seppä tai Viljelijä, perusteella.</WR_WelcomeBody>
+  <WR_WelcomeFind>Avaa WorkRoles näytön alareunan Työ-painikkeella. Ohje-välilehti alkaa opastetulla kierroksella.</WR_WelcomeFind>
+  <WR_WelcomeTakeMeThere>Siirry sinne nyt</WR_WelcomeTakeMeThere>
+  <WR_WelcomeSmallScreen>Peliruutusi on {0}x{1} (resoluutio jaettuna käyttöliittymän skaalalla). WorkRoles on suunniteltu koolle {2}x{3} tai suuremmalle, esimerkiksi 1920x1080 skaalalla 1,25. Se toimii myös pienemmällä ruudulla, mutta osa teksteistä lyhennetään ja välilehdet vaativat enemmän vieritystä. Käyttöliittymän skaalan pienentäminen pelin asetuksissa antaa ikkunalle enemmän tilaa.</WR_WelcomeSmallScreen>
+  <WR_RoleWorkAversion>Henkilön {0} periaate {1} vastustaa työtä {2}. Suositukset vähentävät rajallisen määrän pisteitä: kaksi prioriteettiaskelta tai kuusi virtuaalista taitopistettä vastuuhenkilöä valittaessa. Vaadittu kattavuus voi silti valita tämän tekijän. Metsästäjän prioriteetti siirtyy kaksi tasoa myöhemmäksi, enintään tasolle viisi; nykyinen ensimmäisen tason varasijoitus pätee edelleen.</WR_RoleWorkAversion>
+  <WR_WorkBlockedTags>työtunnisteet poissa käytöstä</WR_WorkBlockedTags>
+  <WR_WorkBlockedCapacity>vaadittu terveydellinen toimintakyky puuttuu</WR_WorkBlockedCapacity>
+  <WR_WorkBlockedRace>rodun työrajoitukset eivät salli</WR_WorkBlockedRace>
+  <WR_WorkBlockedRecipe>rodun reseptirajoitukset eivät salli</WR_WorkBlockedRecipe>
+  <WR_WorkBlockedViviGathering>vaatii positiivisen Vivi-keräysnopeuden ja -tuoton; sopivat keräystyökalut voivat mahdollistaa tämän työn</WR_WorkBlockedViviGathering>
+  <WR_WorkBlockedPrecept>kieltäytyy syystä {0}</WR_WorkBlockedPrecept>
+  <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
+  <WR_RecWorkAversion>{0} vastustaa työtä {1}; suosituspisteitä vähennetään.</WR_RecWorkAversion>
+  <WR_RecDecisionWorkAversion>Vastenmielisyys laskee pisteet valinnaisen työn rajan alle.</WR_RecDecisionWorkAversion>
+  <WR_CompatibilityFreeWill>Free Will asettaa siirtolaisten työprioriteetit, mutta WorkRoles hallitsee hallinnoimiensa siirtolaisten prioriteetteja ja estää nämä muutokset.</WR_CompatibilityFreeWill>
+  <WR_CompatibilityPriorityMaster>PriorityMaster muuttaa manuaalisten prioriteettien numeroita ja niiden arvoaluetta. WorkRoles korvaa nämä säätimet ja määrittää hallinnoimiensa siirtolaisten prioriteetit roolien perusteella.</WR_CompatibilityPriorityMaster>
+  <WR_CompatibilityWorkTab>{0} korvaa Työ-välilehden ja hallitsee prioriteetteja, mikä on ristiriidassa WorkRolesin roolipohjaisen työnhallinnan kanssa.</WR_CompatibilityWorkTab>
+</LanguageData>

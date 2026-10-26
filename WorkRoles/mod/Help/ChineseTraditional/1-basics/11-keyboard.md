@@ -7,7 +7,7 @@ title: 鍵盤導航
 - Home 和 End 跳到首人或末人。按住 Ctrl 可忽略分組分區。
 - Page Up 和 Page Down 每次移動一頁或一個分組。
 - Ctrl+A 選擇表格中全部殖民者，包括折疊組內人員。
-- Ctrl+C 復制所選殖民者職責行，Ctrl+V 粘貼，作用與[復制粘貼按鈕](topic:copy-paste)相同。
+- Ctrl+C 複製所選殖民者職責行，Ctrl+V 貼上，作用與[複製貼上按鈕](topic:copy-paste)相同。
 - Ctrl+F 將光標移入搜索框。
 
-六個移動快捷鍵位于游戲鍵盤設定的 WorkRoles 分類下，可自行重新綁定。
+六個移動快捷鍵位於遊戲鍵盤設定的 WorkRoles 分類下，可自行重新綁定。

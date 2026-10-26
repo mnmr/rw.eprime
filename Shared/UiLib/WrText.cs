@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 
@@ -7,6 +8,20 @@ namespace RimShared.UiLib
     /// Fit-width measurement and device-pixel hairlines shared by every mod.
     internal static class WrText
     {
+        private static readonly System.Func<string, float> measureTruncation = MeasureFitWidth;
+
+        /// Character-safe shortening for revision-gated presentation builders.
+        /// Optional caller-owned caches must already invalidate for font,
+        /// available width, text and UiRevision; no cache is retained here.
+        public static string Truncate(string text, float width,
+            Dictionary<string, string>? cache = null)
+        {
+            if (cache != null && cache.TryGetValue(text, out string? fitted)) return fitted!;
+            string result = HeadTruncation.Fit(text, width, measureTruncation, out _);
+            if (cache != null) cache[text] = result;
+            return result;
+        }
+
         /// Device-pixel hairlines, tinted by the ambient GUI.color: exactly
         /// one physical pixel thick at any UI scale. An unsnapped hairline
         /// blurs (or doubles) at fractional UI scales, so the geometry comes

@@ -2,9 +2,9 @@
 title: Under the hood
 ---
 Each colonist's ordered roles compile into one strict job order, fed to
-the game through the same lists vanilla job selection already reads. Pawn
-AI behaves exactly as it would with a hand-tuned priority grid, no tick
-patches, no per-frame work.
+the game through the same lists vanilla job selection already reads. Work
+behavior matches a hand-tuned priority grid, with no tick patches or
+per-frame work.
 
 Everything recomputes when assignments or roles change, then sits in a
 cache. Conditional roles additionally refresh at hour boundaries and when

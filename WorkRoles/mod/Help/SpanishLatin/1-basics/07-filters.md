@@ -5,7 +5,7 @@ La fila de filtros limita la tabla sin cambiar asignaciones:
 
 ![Fila de filtros](filter-row.png)
 
-- **Buscar** coincide con nombres. Deben cumplirse todos los términos separados por espacios. r: o role: busca roles asignados; j: o job: busca sus trabajos. «br r:doc» encuentra nombres que contienen *br* con un rol de nombre similar a *doc*.
+- **Buscar** coincide con nombres. Deben cumplirse todos los términos separados por espacios. r: o role: busca roles asignados; j: o job: busca sus trabajos. «br r:méd» encuentra nombres que contienen *br* con un rol como *Médico*.
 - **Rol asignado** muestra quienes tengan ese rol o uno no [bloqueador](topic:blocker-roles) que cubra todos sus trabajos.
 - **Trabajo cubierto** muestra quienes tengan ese trabajo en roles no bloqueadores.
 - **Ubicación** elige mapa actual, todas partes, asentamiento o nave. Los colonos en caravana cuentan en su lugar de origen.

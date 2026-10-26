@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_SignalCondition_after_mental_break>Etter et mentalt sammenbrudd</WR_SignalCondition_after_mental_break>
+  <WR_SignalCondition_age_min_18>18 år eller eldre</WR_SignalCondition_age_min_18>
+  <WR_SignalCondition_apparel_not_nude>Iført klær</WR_SignalCondition_apparel_not_nude>
+  <WR_SignalCondition_apparel_nude>Naken</WR_SignalCondition_apparel_nude>
+  <WR_SignalCondition_author_is_bad>Kildemodden merker denne lidenskapen som dårlig</WR_SignalCondition_author_is_bad>
+  <WR_SignalCondition_body_artificial_parts>Har kunstige kroppsdeler</WR_SignalCondition_body_artificial_parts>
+  <WR_SignalCondition_body_no_artificial_parts>Ingen kunstige kroppsdeler</WR_SignalCondition_body_no_artificial_parts>
+  <WR_SignalCondition_colony_best_at_skill>Best i kolonien i ferdigheten</WR_SignalCondition_colony_best_at_skill>
+  <WR_SignalCondition_colony_loss_within_3_days>En kolonist gikk tapt i løpet av de siste 3 dagene</WR_SignalCondition_colony_loss_within_3_days>
+  <WR_SignalCondition_colony_no_recent_loss>Ingen nylige kolonisttap</WR_SignalCondition_colony_no_recent_loss>
+  <WR_SignalCondition_colony_not_best_at_skill>Ikke best i kolonien i ferdigheten</WR_SignalCondition_colony_not_best_at_skill>
+  <WR_SignalCondition_cycle_daily>Endres daglig</WR_SignalCondition_cycle_daily>
+  <WR_SignalCondition_environment_near_fire>Nær ild</WR_SignalCondition_environment_near_fire>
+  <WR_SignalCondition_equipment_ranged_weapon>Med avstandsvåpen utstyrt</WR_SignalCondition_equipment_ranged_weapon>
+  <WR_SignalCondition_location_away_from_home>Borte hjemmefra</WR_SignalCondition_location_away_from_home>
+  <WR_SignalCondition_location_home>Hjemme</WR_SignalCondition_location_home>
+  <WR_SignalCondition_mood_tier_apathetic>Apatisk fase</WR_SignalCondition_mood_tier_apathetic>
+  <WR_SignalCondition_mood_tier_greater>Lidenskapelig fase</WR_SignalCondition_mood_tier_greater>
+  <WR_SignalCondition_mood_tier_interested>Interessert fase</WR_SignalCondition_mood_tier_interested>
+  <WR_SignalCondition_mood_tier_major>Svært interessert fase</WR_SignalCondition_mood_tier_major>
+  <WR_SignalCondition_mood_tier_none>Fase uten lidenskap</WR_SignalCondition_mood_tier_none>
+  <WR_SignalCondition_pain_max_0_3>Smerte høyst 30%</WR_SignalCondition_pain_max_0_3>
+  <WR_SignalCondition_pain_min_0_3>Smerte minst 30%</WR_SignalCondition_pain_min_0_3>
+  <WR_SignalCondition_passion_conflicting>Skytelidenskap strider mot egenskapen</WR_SignalCondition_passion_conflicting>
+  <WR_SignalCondition_psychic_sensitivity_tier_critical>Kritisk psykisk følsomhet</WR_SignalCondition_psychic_sensitivity_tier_critical>
+  <WR_SignalCondition_psychic_sensitivity_tier_major>Stor psykisk følsomhet</WR_SignalCondition_psychic_sensitivity_tier_major>
+  <WR_SignalCondition_psychic_sensitivity_tier_minor>Liten psykisk følsomhet</WR_SignalCondition_psychic_sensitivity_tier_minor>
+  <WR_SignalCondition_psychic_sensitivity_tier_normal>Normal psykisk følsomhet</WR_SignalCondition_psychic_sensitivity_tier_normal>
+  <WR_SignalCondition_psychic_sensitivity_tier_nullified>Psykisk følsomhet opphevet</WR_SignalCondition_psychic_sensitivity_tier_nullified>
+  <WR_SignalCondition_range_long>På lang avstand</WR_SignalCondition_range_long>
+  <WR_SignalCondition_range_medium>På middels avstand</WR_SignalCondition_range_medium>
+  <WR_SignalCondition_ritual_no_recent_quality_outcome>Intet nylig vellykket ritual</WR_SignalCondition_ritual_no_recent_quality_outcome>
+  <WR_SignalCondition_ritual_recent_quality_outcome>Nylig vellykket ritual</WR_SignalCondition_ritual_recent_quality_outcome>
+  <WR_SignalCondition_setting_vse_critical_affects_other_skills>Kritisk lidenskap påvirker andre ferdigheter i moddens innstillinger</WR_SignalCondition_setting_vse_critical_affects_other_skills>
+  <WR_SignalCondition_sight_blind>Blind</WR_SignalCondition_sight_blind>
+  <WR_SignalCondition_sight_not_blind>Ikke blind</WR_SignalCondition_sight_not_blind>
+  <WR_SignalCondition_social_same_passion_opinion>Forbedrer oppfatningen av andre med samme lidenskap</WR_SignalCondition_social_same_passion_opinion>
+  <WR_SignalCondition_state_drunk>Beruset</WR_SignalCondition_state_drunk>
+  <WR_SignalCondition_state_no_recent_lovin>Ingen nylig elskov</WR_SignalCondition_state_no_recent_lovin>
+  <WR_SignalCondition_state_not_drunk>Ikke beruset</WR_SignalCondition_state_not_drunk>
+  <WR_SignalCondition_state_not_smokeleaf_high>Ikke påvirket av røkeblad</WR_SignalCondition_state_not_smokeleaf_high>
+  <WR_SignalCondition_state_recent_lovin>Nylig elskov</WR_SignalCondition_state_recent_lovin>
+  <WR_SignalCondition_state_smokeleaf_high>Påvirket av røkeblad</WR_SignalCondition_state_smokeleaf_high>
+  <WR_SignalCondition_time_20_5>Mellom 20:00 og 05:00</WR_SignalCondition_time_20_5>
+  <WR_SignalCondition_time_day>På dagtid</WR_SignalCondition_time_day>
+  <WR_SignalCondition_weather_not_raining>Det regner ikke</WR_SignalCondition_weather_not_raining>
+  <WR_SignalCondition_weather_raining>Det regner</WR_SignalCondition_weather_raining>
+  <WR_SignalCondition_work_type_hated>Hatet arbeid</WR_SignalCondition_work_type_hated>
+  <WR_SignalCondition_work_compelled_aversion>Hater ferdigheten, men føler seg tvunget til å lære den</WR_SignalCondition_work_compelled_aversion>
+  <WR_SignalCondition_work_enjoyment>Stor glede av relatert arbeid</WR_SignalCondition_work_enjoyment>
+  <WR_SignalCondition_work_passionate>Humør fra lidenskapelig arbeid</WR_SignalCondition_work_passionate>
+  <WR_SignalEffect_SkillLevel>Ferdighetsnivå</WR_SignalEffect_SkillLevel>
+  <WR_SignalEffect_Passion>Lidenskap</WR_SignalEffect_Passion>
+  <WR_SignalEffect_LearningRate>Læringshastighet</WR_SignalEffect_LearningRate>
+  <WR_SignalEffect_SkillDecay>Ferdighetsforfall</WR_SignalEffect_SkillDecay>
+  <WR_SignalEffect_WorkSpeed>Arbeidshastighet</WR_SignalEffect_WorkSpeed>
+  <WR_SignalEffect_Accuracy>Treffsikkerhet</WR_SignalEffect_Accuracy>
+  <WR_SignalEffect_AimingDelay>Sikteforsinkelse</WR_SignalEffect_AimingDelay>
+  <WR_SignalEffect_Quality>Kvalitet</WR_SignalEffect_Quality>
+  <WR_SignalEffect_Yield>Utbytte</WR_SignalEffect_Yield>
+  <WR_SignalEffect_Damage>Skade</WR_SignalEffect_Damage>
+  <WR_SignalEffect_HitChance>Treffsjanse</WR_SignalEffect_HitChance>
+  <WR_SignalEffect_Dodge>Unnvikelse</WR_SignalEffect_Dodge>
+  <WR_SignalEffect_Mood>Humør</WR_SignalEffect_Mood>
+  <WR_SignalEffect_WorkPreference>Arbeidspreferanse</WR_SignalEffect_WorkPreference>
+  <WR_SignalEffect_Capability>Evne</WR_SignalEffect_Capability>
+  <WR_SignalEffect_MentalBreak>Mentalt sammenbrudd</WR_SignalEffect_MentalBreak>
+  <WR_SignalEffect_StatModifier>Statistikkmodifikator</WR_SignalEffect_StatModifier>
+  <WR_SignalUnit_Scalar>poeng</WR_SignalUnit_Scalar>
+  <WR_SignalUnit_StatValue>statistikkverdi</WR_SignalUnit_StatValue>
+  <WR_SignalUnit_SkillLevels>ferdighetsnivåer</WR_SignalUnit_SkillLevels>
+  <WR_SignalUnit_PassionLevels>lidenskapsnivåer</WR_SignalUnit_PassionLevels>
+  <WR_SignalUnit_MoodPoints>humørpoeng</WR_SignalUnit_MoodPoints>
+  <WR_SignalUnit_Days>dager</WR_SignalUnit_Days>
+  <WR_SignalMinorPassion>Mild lidenskap</WR_SignalMinorPassion>
+  <WR_SignalMajorPassion>Brennende lidenskap</WR_SignalMajorPassion>
+  <WR_SignalOtherSkills>Andre ferdigheter</WR_SignalOtherSkills>
+  <WR_SignalCurrentSkill>Nåværende ferdighet</WR_SignalCurrentSkill>
+  <WR_SignalUnknownMod>Ukjent mod</WR_SignalUnknownMod>
+  <WR_SignalConditionHediff>Helsetilstand: {0}</WR_SignalConditionHediff>
+  <WR_SignalConditionPrecept>Forskrift: {0}</WR_SignalConditionPrecept>
+  <WR_SignalConditionTrait>Egenskap: {0}</WR_SignalConditionTrait>
+  <WR_SignalEffectSubject>{0}: {1}</WR_SignalEffectSubject>
+  <WR_SignalTargetViolentWork>Voldelig arbeid</WR_SignalTargetViolentWork>
+  <WR_SignalTargetRangedWeapon>Avstandsvåpen</WR_SignalTargetRangedWeapon>
+  <WR_SignalTargetConstantDebuff>Konstant humørtrekk</WR_SignalTargetConstantDebuff>
+</LanguageData>

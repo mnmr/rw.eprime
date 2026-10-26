@@ -20,6 +20,30 @@ namespace RimShared.UiLib
     /// adding the window, so no text is resolved during drawing.
     public sealed class WelcomeDialog : Window
     {
+        /// Resolve the caller's catalog once at the welcome lifecycle boundary.
+        /// Installed but inactive mods do not produce conflicts. The returned
+        /// immutable notice is shared by admission and the window's presentation.
+        public static WelcomeConflictNotice FindConflicts(IReadOnlyList<WelcomeModConflict> configured)
+        {
+            var packages = new List<string>();
+            var mods = LoadedModManager.RunningModsListForReading;
+            for (int i = 0; i < mods.Count; i++) packages.Add(mods[i].PackageIdPlayerFacing);
+            return WelcomeConflictNotice.ForActivePackages(configured, packages);
+        }
+
+        /// Reopen once for each newly encountered conflict, even for an existing
+        /// save. Caller persists both player-owned lists after successful admission.
+        public static bool ClaimSave(List<string> shownSaves, Action retry,
+            WelcomeConflictNotice conflicts, List<string> conflictsSeen)
+        {
+            if (Find.World == null) return false;
+            string id = Find.World.info.persistentRandomValue.ToString();
+            var seen = conflicts.HasUnseen(id, conflictsSeen) ? new List<string>() : shownSaves;
+            if (!ClaimSave(seen, retry)) return false;
+            if (!shownSaves.Contains(id)) shownSaves.Add(id);
+            conflicts.MarkSeen(id, conflictsSeen);
+            return true;
+        }
         /// Callers skip the welcome (without marking the save seen) while
         /// dev mode is on: mod authors start many throwaway games and must
         /// not be greeted on every one.
@@ -221,6 +245,14 @@ namespace RimShared.UiLib
         public Color FindTextColor { get; set; } = Color.white;
         /// Amber panel below the find panel; null or empty shows none.
         public string? Warning { get; set; }
+        /// Optional active-conflict notice, resolved by FindConflicts and shared
+        /// with ClaimSave. Empty/null notices allocate no warning geometry.
+        /// Set before opening, together with the translated heading/advice.
+        /// Conflicts appear above the artwork; Warning remains below the find panel.
+        public WelcomeConflictNotice? ConflictingMods { get; set; }
+        public string? ConflictHeading { get; set; }
+        public string? ConflictAdvice { get; set; }
+        public string? AdditionalConflictAdvice { get; set; }
 
         // Owner: window. Key: none. Value: the preview PNG loaded from disk
         // (never a ContentFinder asset) and its crop texcoords; window-owned
@@ -230,7 +262,8 @@ namespace RimShared.UiLib
         private Rect previewTexCoords;
         private float previewAspect = 1f;
 
-        // Owner: window. Key: inner width/height and UiRevision.Current.
+        // Owner: window. Key: compact tile width/height, maximum row-band height
+        // and UiRevision.Current. The band depends on screen size and membership.
         // Value: immutable published text/control rectangles and dimensions.
         // Dependencies: those dimensions, active font/UI metrics, constructor
         // text and pre-open adornment/warning properties, loaded preview aspect.
@@ -245,13 +278,18 @@ namespace RimShared.UiLib
         private float adornmentWidth;
         private float adornmentHeight;
         private float warningHeight;
+        private string conflictText = string.Empty;
+        private float conflictHeight;
         private float linkWidth;
         private float linkHeight;
         private float windowHeight = 520f;
+        private WelcomeTile layoutTile;
         private int metricRevision = -1;
         private float measuredWidth = -1f, measuredHeight = -1f;
+        private float measuredMaximumHeight = -1f;
         private Rect titleRect, viewportRect, contentRect, previewRect, bodyRect;
         private Rect findPanelRect, adornmentRect, findLabelRect, warningRect;
+        private Rect conflictRect;
         private Rect closeRect, linkRect;
         private Vector2 scroll;
         private bool suspendOnClose;
@@ -281,11 +319,20 @@ namespace RimShared.UiLib
 
         public override void PreOpen()
         {
+            if (ConflictingMods != null && ConflictingMods.Count != 0)
+            {
+                string advice = ConflictAdvice ?? "RS_CompatibilityRemove".Translate().ToString();
+                if (!string.IsNullOrEmpty(AdditionalConflictAdvice)) advice += " " + AdditionalConflictAdvice;
+                conflictText = ConflictingMods.Format(
+                    ConflictHeading ?? "RS_CompatibilityHeading".Translate().ToString(), advice);
+            }
+            else conflictText = string.Empty;
             suspendOnClose = false;
             // A suspended instance reloads its owned image. Its availability
             // and aspect may change, even when the restored tile has the same
             // dimensions, so every open starts a new geometry lifetime.
             measuredWidth = measuredHeight = -1f;
+            measuredMaximumHeight = -1f;
             metricRevision = -1;
             previewAspect = 1f;
             try
@@ -325,7 +372,9 @@ namespace RimShared.UiLib
             WelcomeTilePlan tiles = WelcomeTileLayout.Create(UI.screenWidth, UI.screenHeight, count);
             suspendOnClose = !tiles.TryGetTile(index, out WelcomeTile tile);
             if (suspendOnClose) return;
-            windowRect = new Rect(tile.X, tile.Y, tile.Width, tile.Height);
+            layoutTile = tile;
+            WelcomeTile fitted = tile.FitContentHeight(windowHeight);
+            windowRect = new Rect(fitted.X, fitted.Y, fitted.Width, fitted.Height);
             BuildLayout();
         }
 
@@ -361,12 +410,14 @@ namespace RimShared.UiLib
         private void BuildLayout()
         {
             UiRevision.ObserveCurrentMetrics();
-            float width = windowRect.width - Margin * 2f;
-            float height = windowRect.height - Margin * 2f;
+            float width = layoutTile.Width - Margin * 2f;
+            float compactHeight = layoutTile.Height - Margin * 2f;
             int revision = UiRevision.Current;
-            if (measuredWidth == width && measuredHeight == height && metricRevision == revision) return;
+            if (measuredWidth == width && measuredHeight == compactHeight
+                && measuredMaximumHeight == layoutTile.MaximumHeight && metricRevision == revision) return;
             measuredWidth = width;
-            measuredHeight = height;
+            measuredHeight = compactHeight;
+            measuredMaximumHeight = layoutTile.MaximumHeight;
             metricRevision = revision;
             float contentWidth = Mathf.Max(1f, width - 20f);
             float buttonHeight, closeWidth;
@@ -401,23 +452,27 @@ namespace RimShared.UiLib
                 findHeight = Mathf.Ceil(Text.CalcHeight(find, FindTextWidth(contentWidth)));
                 warningHeight = string.IsNullOrEmpty(Warning) ? 0f
                     : Mathf.Ceil(Text.CalcHeight(Warning, contentWidth - PanelPad * 2f));
+                conflictHeight = conflictText.Length == 0 ? 0f
+                    : Mathf.Ceil(Text.CalcHeight(conflictText, contentWidth - PanelPad * 2f));
             }
             bool stacked = closeWidth + linkWidth + Gap > width;
             float footerHeight = stacked ? buttonHeight + Gap + linkHeight : Mathf.Max(buttonHeight, linkHeight);
-            closeRect = new Rect(0f, height - footerHeight, closeWidth, buttonHeight);
-            linkRect = stacked
-                ? new Rect(0f, height - linkHeight, width, linkHeight)
-                : new Rect(width - linkWidth, height - footerHeight + (footerHeight - linkHeight) / 2f, linkWidth, linkHeight);
-            titleRect = new Rect(0f, 0f, width, titleHeight);
-            viewportRect = new Rect(0f, titleHeight + Gap, width,
-                Mathf.Max(24f, height - titleHeight - footerHeight - Gap * 2f));
+            // Keep the existing artwork footprint while adding space for text.
+            // Growing the art with the viewport would consume the extra room.
+            float compactViewportHeight = Mathf.Max(24f,
+                compactHeight - titleHeight - footerHeight - Gap * 2f);
             findPanelHeight = Mathf.Max(adornmentHeight, findHeight)
                 + PanelPad * 2f;
             float y = 0f;
+            if (conflictHeight > 0f)
+            {
+                conflictRect = new Rect(0f, y, contentWidth, conflictHeight + PanelPad * 2f);
+                y += conflictRect.height + Gap;
+            }
             if (preview != null)
             {
                 float h = Mathf.Min(Mathf.Min(PreviewWidth, contentWidth) / previewAspect,
-                    Mathf.Max(64f, viewportRect.height * 0.4f));
+                    Mathf.Max(64f, compactViewportHeight * 0.4f));
                 float w = h * previewAspect;
                 previewRect = new Rect((contentWidth - w) / 2f, y, w, h);
                 y += h + Gap;
@@ -434,6 +489,20 @@ namespace RimShared.UiLib
             warningRect = new Rect(0f, y, contentWidth, warningHeight + PanelPad * 2f);
             if (warningHeight > 0f) y += warningRect.height + Gap;
             contentRect = new Rect(0f, 0f, contentWidth, y);
+
+            WelcomeTile fitted = layoutTile.FitContentHeight(
+                y + titleHeight + footerHeight + Gap * 2f + Margin * 2f);
+            windowRect.y -= (fitted.Height - windowRect.height) / 2f;
+            windowRect.height = windowHeight = fitted.Height;
+            windowRect = windowRect.Rounded();
+            float height = fitted.Height - Margin * 2f;
+            titleRect = new Rect(0f, 0f, width, titleHeight);
+            viewportRect = new Rect(0f, titleHeight + Gap, width,
+                Mathf.Max(24f, height - titleHeight - footerHeight - Gap * 2f));
+            closeRect = new Rect(0f, height - footerHeight, closeWidth, buttonHeight);
+            linkRect = stacked
+                ? new Rect(0f, height - linkHeight, width, linkHeight)
+                : new Rect(width - linkWidth, height - footerHeight + (footerHeight - linkHeight) / 2f, linkWidth, linkHeight);
             scroll.y = Mathf.Clamp(scroll.y, 0f, Mathf.Max(0f, y - viewportRect.height));
         }
 
@@ -476,6 +545,14 @@ namespace RimShared.UiLib
                 Widgets.BeginScrollView(viewportRect, ref scroll, contentRect);
                 try
                 {
+                    if (conflictHeight > 0f)
+                    {
+                        Widgets.DrawBoxSolidWithOutline(conflictRect, WarningBackground, WarningOutline);
+                        Color previous = GUI.color;
+                        GUI.color = WarningText;
+                        Widgets.Label(conflictRect.ContractedBy(PanelPad), conflictText);
+                        GUI.color = previous;
+                    }
                     if (preview != null)
                         GUI.DrawTextureWithTexCoords(previewRect, preview, previewTexCoords);
                     Widgets.Label(bodyRect, body);

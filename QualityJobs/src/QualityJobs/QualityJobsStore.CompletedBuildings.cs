@@ -116,10 +116,10 @@ namespace QualityJobs
             }
         }
 
-        internal void CaptureRebuildSettings(ConstructionPlan plan, Building building)
+        internal void PreserveRebuildSettings(ConstructionPlan plan, BuildingRebuildSettings settings)
         {
             if (plan.rebuildSettings == null)
-                plan.rebuildSettings = BuildingRebuildSettings.Capture(building);
+                plan.rebuildSettings = settings;
         }
 
         internal void CompleteBuiltPlan(ConstructionPlan plan, Thing built)

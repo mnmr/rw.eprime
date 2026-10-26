@@ -97,7 +97,7 @@
   <WR_RecTuneOrderingPointsRow>Signal points</WR_RecTuneOrderingPointsRow>
   <WR_RecTuneOrderingPointsRowDesc>Points each signal strength contributes when final recommended roles are ordered.</WR_RecTuneOrderingPointsRowDesc>
   <WR_RecTuneMinimumPickRow>Minimum-pick bonus</WR_RecTuneMinimumPickRow>
-  <WR_RecTuneMinimumPickRowDesc>Ordering points granted to the first, second, third and every later pawn selected to satisfy a role's required holder minimum.</WR_RecTuneMinimumPickRowDesc>
+  <WR_RecTuneMinimumPickRowDesc>Ordering points granted to the first, second, third and every later worker selected to satisfy a role's required holder minimum.</WR_RecTuneMinimumPickRowDesc>
   <WR_RecTuneCategoryPointsRow>Category points</WR_RecTuneCategoryPointsRow>
   <WR_RecTuneCategoryPointsRowDesc>Ordering points added by colony importance: Important promotes duty roles above same-signal production work, Optional pushes roles toward the end of the list.</WR_RecTuneCategoryPointsRowDesc>
   <WR_RecTuneTimePointsRow>Time demand points</WR_RecTuneTimePointsRow>
@@ -121,9 +121,9 @@
   <WR_RecTuneOptionalTargetMinimumPointsDesc>Minimum summed signal steps above the configured signal floor needed to recommend an optional multi-skill target.</WR_RecTuneOptionalTargetMinimumPointsDesc>
 
   <WR_RecTuneLeadMinimumConnectedTargets>Connected targets for diversification</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Minimum number of connected training targets before the planner tries to assign their lead roles to different pawns.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
+  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Minimum number of connected training targets before the planner tries to assign their lead roles to different workers.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
   <WR_RecTuneLeadMinimumSignal>Lead minimum signal</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>Lowest role signal allowed for a pawn chosen as a diversified training-path lead.</WR_RecTuneLeadMinimumSignalDesc>
+  <WR_RecTuneLeadMinimumSignalDesc>Lowest role signal allowed for a worker chosen as a diversified training-path lead.</WR_RecTuneLeadMinimumSignalDesc>
 
   <WR_RecTuneHunterTiersRow>Tier maximum shooting level</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Shooting-level cutoffs for the dynamic Hunter slot. Tier 1 places Hunter right after basic work, tiers 2 and 3 after the middle and last work roles, and levels above tier 4 place Hunter last.</WR_RecTuneHunterTiersRowDesc>
@@ -134,7 +134,7 @@
   <WR_TrainingHelp>Here you can define how colonists acquire new skills and progress toward this role. A training path can have multiple bands, so that roles can overlap. Colonists will be recommended all roles at their current skill level if the training path is recommended for them.</WR_TrainingHelp>
   <WR_TrainingTipWhat>The role's own progression: each member role carries a skill band where it is recommended. The role itself always stays in its path.</WR_TrainingTipWhat>
   <WR_TrainingTipBands>Overlapping bands coexist; where bands do not overlap the later role replaces the earlier.</WR_TrainingTipBands>
-  <WR_TrainingTipOrder>Assignments prioritize higher band minimums. Equal bands prioritize the pawn's weakest role skill, then the stored path order.</WR_TrainingTipOrder>
+  <WR_TrainingTipOrder>Assignments prioritize higher band minimums. Equal bands prioritize the worker's weakest role skill, then the stored path order.</WR_TrainingTipOrder>
   <WR_AddNew>Add New</WR_AddNew>
   <WR_WhenPanelCaption>Role progression: Here you can define at what skill the displayed roles are recommended. Overlapping roles complement.</WR_WhenPanelCaption>
   <WR_AddRole>Add Role</WR_AddRole>
@@ -336,7 +336,7 @@ Lists colonists whose assigned non-blocker roles contain this job. This checks r
   <WR_ChipsNormal>Chips: Full names</WR_ChipsNormal>
   <WR_ChipsCompact>Chips: Initials</WR_ChipsCompact>
   <WR_ChipsIcons>Chips: Icons</WR_ChipsIcons>
-  <WR_OrderSuffixBar>(Tab order)</WR_OrderSuffixBar>
+  <WR_OrderSuffixBar>(Colonist bar)</WR_OrderSuffixBar>
   <WR_OrderSuffixAZ>(A-Z)</WR_OrderSuffixAZ>
   <WR_DisplayButton>Display</WR_DisplayButton>
   <WR_DisplayOptions>Display options</WR_DisplayOptions>
@@ -439,8 +439,8 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <WR_RecTipWithWaiverOne>{0} (1 training waiver)</WR_RecTipWithWaiverOne>
   <WR_RecTipWithWaiversMany>{0} ({1} training waivers)</WR_RecTipWithWaiversMany>
   <WR_RecTipEveryoneCapable>Assigned to everyone capable</WR_RecTipEveryoneCapable>
-  <WR_RecDecisionAuto>Assigned automatically to every capable pawn.</WR_RecDecisionAuto>
-  <WR_RecDecisionSignals>The configured signal threshold qualifies this pawn.</WR_RecDecisionSignals>
+  <WR_RecDecisionAuto>Assigned automatically to everyone capable of the work.</WR_RecDecisionAuto>
+  <WR_RecDecisionSignals>Meets the configured signal threshold.</WR_RecDecisionSignals>
   <WR_RecDecisionCoverageDraft>Best remaining candidate selected to meet required coverage.</WR_RecDecisionCoverageDraft>
   <WR_RecDecisionTraining>Assigned through the training path for {0}.</WR_RecDecisionTraining>
   <WR_RecDecisionTrainingUnknown>Assigned through a training path.</WR_RecDecisionTrainingUnknown>
@@ -464,16 +464,16 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <WR_RecDecisionDisabled>This role is disabled.</WR_RecDecisionDisabled>
   <WR_RecDecisionUnavailable>This role's work is unavailable until its research is finished.</WR_RecDecisionUnavailable>
   <WR_RecDecisionExcluded>This role is managed by rules and excluded from ordinary recommendations.</WR_RecDecisionExcluded>
-  <WR_RecDecisionIncapable>This pawn is incapable of this role's work.</WR_RecDecisionIncapable>
+  <WR_RecDecisionIncapable>Incapable of this role's work.</WR_RecDecisionIncapable>
   <WR_RecDecisionNotMechanitor>This colonist has no mechlink, so they cannot do mechanitor work.</WR_RecDecisionNotMechanitor>
-  <WR_RecDecisionHunterRequirements>This pawn does not carry a ranged weapon.</WR_RecDecisionHunterRequirements>
-  <WR_RecDecisionAwful>An Awful signal disqualifies this pawn.</WR_RecDecisionAwful>
+  <WR_RecDecisionHunterRequirements>No ranged weapon equipped.</WR_RecDecisionHunterRequirements>
+  <WR_RecDecisionAwful>Disqualified by an Awful signal.</WR_RecDecisionAwful>
   <WR_RecDecisionCovered>Covered by recommended role: {0}.</WR_RecDecisionCovered>
   <WR_RecDecisionCoveredUnknown>Covered by another recommended role.</WR_RecDecisionCoveredUnknown>
   <WR_RecDecisionCoverageFilled>Required coverage was filled by higher-ranked candidates.</WR_RecDecisionCoverageFilled>
-  <WR_RecDecisionWeakSignal>The signal verdict is below the configured threshold and required coverage did not select this pawn.</WR_RecDecisionWeakSignal>
-  <WR_RecDecisionNotSelected>This pawn was not selected by any recommendation rule.</WR_RecDecisionNotSelected>
-  <WR_RecDecisionOutOfBand>This pawn's skill places it in a different band of the training path.</WR_RecDecisionOutOfBand>
+  <WR_RecDecisionWeakSignal>The signal verdict is below the configured threshold, and required coverage did not select this worker.</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionNotSelected>Not selected by any recommendation rule.</WR_RecDecisionNotSelected>
+  <WR_RecDecisionOutOfBand>Skill level falls in a different band of the training path.</WR_RecDecisionOutOfBand>
   <WR_RecDecisionOutqualified>Other, more qualified candidates were picked for the available slots.</WR_RecDecisionOutqualified>
   <WR_RecDecisionRecommended>Selected by the recommendation engine.</WR_RecDecisionRecommended>
   <WR_MakeItSo>Make It So</WR_MakeItSo>
@@ -494,7 +494,7 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <WR_NowTip>{0}: {1}</WR_NowTip>
   <WR_TipActivityLabel>Current activity</WR_TipActivityLabel>
   <!-- {0} = colonist short name, {1} = activity phrase (job report or activity label) -->
-  <WR_TipActivityValue>{0} is {1}</WR_TipActivityValue>
+  <WR_TipActivityValue>{0}: {1}</WR_TipActivityValue>
 
   <!-- ===== Roles tab ===== -->
 
@@ -790,10 +790,14 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <WR_WelcomeBody>WorkRoles sets your colonists' work priorities from named roles like Doctor, Smith or Farmer that you assign to them.</WR_WelcomeBody>
   <WR_WelcomeFind>Open WorkRoles with the Work button at the bottom of the screen. The Help tab starts with a guided tour.</WR_WelcomeFind>
   <WR_WelcomeTakeMeThere>Take me there now</WR_WelcomeTakeMeThere>
+  <!-- {0} = the incompatible Work tab mod's name -->
+  <WR_CompatibilityWorkTab>{0} replaces the Work tab and controls priorities, conflicting with WorkRoles' role-based work management.</WR_CompatibilityWorkTab>
+  <WR_CompatibilityFreeWill>Free Will sets colonists' work priorities, but WorkRoles owns priorities for managed colonists and blocks those writes.</WR_CompatibilityFreeWill>
+  <WR_CompatibilityPriorityMaster>PriorityMaster changes manual priority numbers and their range. WorkRoles replaces those controls and derives managed colonists' priorities from roles.</WR_CompatibilityPriorityMaster>
   <!-- {0}x{1} = the game screen (resolution divided by UI scale), {2}x{3} = the design size -->
   <WR_WelcomeSmallScreen>Your game screen is {0}x{1} (resolution divided by UI scale). WorkRoles is designed for {2}x{3} or larger, for example 1920x1080 at UI scale 1.25. It still works on a smaller screen, but some labels are shortened and the tabs need more scrolling. Lowering the UI scale in the game's options gives the window more room.</WR_WelcomeSmallScreen>
 
-  <WR_RoleWorkAversion>{0}'s precept {1} opposes {2}. Recommendations apply a finite score penalty: two priority steps, or six virtual skill points when choosing a champion. Required coverage can still select this pawn. Hunter priority moves two tiers later, capped at tier five; its existing first-tier fallback still applies.</WR_RoleWorkAversion>
+  <WR_RoleWorkAversion>{0}'s precept {1} opposes {2}. Recommendations apply a finite score penalty: two priority steps, or six virtual skill points when choosing a champion. Required coverage can still select this worker. Hunter priority moves two tiers later, capped at tier five; its existing first-tier fallback still applies.</WR_RoleWorkAversion>
   <WR_WorkBlockedTags>disabled work tags</WR_WorkBlockedTags>
   <WR_WorkBlockedCapacity>missing a required health capacity</WR_WorkBlockedCapacity>
   <WR_WorkBlockedRace>not permitted by this race's work restrictions</WR_WorkBlockedRace>

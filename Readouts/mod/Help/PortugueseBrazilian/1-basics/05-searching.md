@@ -3,7 +3,7 @@ title: Pesquisar
 ---
 Digite no campo superior para encontrar qualquer recurso, esteja ou não em um grupo:
 
-![Resultados da busca por “meal”](search-results.png)
+![Resultados da busca por “meal” (exemplo em inglês)](search-results.png)
 
 As correspondências aparecem em Resultados, acima dos grupos, em até três linhas e uma indicação de quantas ainda faltam. Recursos com quantidade diferente de zero vêm primeiro, em ordem alfabética; os de quantidade zero vêm depois, se as opções permitirem. Espaços correspondentes nos seus grupos também são destacados; conjuntos correspondem pelo nome do conjunto. Clique no X ou pressione Escape enquanto digita para limpar a busca.
 

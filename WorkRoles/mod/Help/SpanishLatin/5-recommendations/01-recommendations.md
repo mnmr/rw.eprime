@@ -9,7 +9,7 @@ Los preceptos opuestos al trabajo reducen su puntuación. Es más probable elegi
 
 Son datos para recomendar. Los roles condicionales siguen decidiendo cuándo y dónde está activa una asignación.
 
-En versiones compatibles de Vivi, la recolección usa la velocidad y rendimiento reales del personaje. Un humano con una pajita Vivi puede recoger miel y polen; un cepillo multiusos permite recoger plantas. Equipar o retirar herramientas actualiza la capacidad incluso en pausa. Poder hacer algunas recetas mantiene la elegibilidad, pero las no disponibles se excluyen de las opciones de formación. Las versiones desconocidas y reglas personalizadas de Vivi conservan el comportamiento anterior.
+En versiones compatibles de Vivi, la recolección usa la velocidad y rendimiento reales del trabajador. Un humano con una pajita Vivi puede recoger miel y polen; un cepillo multiusos permite recoger plantas. Equipar o retirar herramientas actualiza la capacidad incluso en pausa. Poder hacer algunas recetas mantiene la elegibilidad, pero las no disponibles se excluyen de las opciones de formación. Las versiones desconocidas y reglas personalizadas de Vivi conservan el comportamiento anterior.
 
 El motor considera todos los roles aptos y los ordena por colono. Opciones de roles enumera todos salvo los excluidos. Para impedir siempre una recomendación, añade el rol a **Roles excluidos** arriba. La exclusión prevalece sobre necesidades y tratamientos especiales; las asignaciones ya fijadas siguen protegidas. Véase [Orden y exclusiones](topic:recommendation-order).
 

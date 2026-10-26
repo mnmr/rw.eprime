@@ -1,0 +1,636 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_ColonistsTab>Kolonisten</WR_ColonistsTab>
+  <WR_RecommendationsTab>Aanbevelingen</WR_RecommendationsTab>
+  <WR_OptionsTab>Opties</WR_OptionsTab>
+  <WR_CompatSection>Compatibiliteitsinstellingen</WR_CompatSection>
+  <WR_OptNumeric>Numerieke prioriteiten in rasters tonen</WR_OptNumeric>
+  <WR_TipOff>Uit</WR_TipOff>
+  <WR_TipOn>Aan</WR_TipOn>
+  <WR_OptNumericTipWhat>De schakelaar voor ‘handmatige prioriteiten’ uit het basisspel, per opgeslagen spel.</WR_OptNumericTipWhat>
+  <WR_OptNumericTipOff>Prioriteitsrasters (ook in mods zoals Numbers) tonen vinkjes</WR_OptNumericTipOff>
+  <WR_OptNumericTipOn>Prioriteitsrasters tonen getallen</WR_OptNumericTipOn>
+  <WR_OptNumericTipWhy>Deze instelling staat hier omdat WorkRoles het oorspronkelijke tabblad Werk vervangt waar ze stond.</WR_OptNumericTipWhy>
+  <WR_OptVanillaRange>Prioriteiten van 0–4 aan andere mods doorgeven</WR_OptVanillaRange>
+  <WR_OptVanillaRangeTipWhat>WorkRoles ordent werk met unieke prioriteiten (opeenvolgende getallen vanaf 1).</WR_OptVanillaRangeTipWhat>
+  <WR_OptVanillaRangeTipOff>Andere mods zien deze prioriteiten ongewijzigd</WR_OptVanillaRangeTipOff>
+  <WR_OptVanillaRangeTipOn>Prioriteiten worden naar het bereik 0–4 van het basisspel omgezet</WR_OptVanillaRangeTipOn>
+  <WR_OptEmergencyRule>Alleen de eerste 5 rollen onderbreken voor noodgevallen</WR_OptEmergencyRule>
+  <WR_OptEmergencyRuleTipWhat>Bepaalt per opgeslagen spel welke noodtaken (brandbestrijding, dringende verzorging en naar bed gaan voor spoedbehandeling) slaap, maaltijden en andere taken mogen onderbreken.</WR_OptEmergencyRuleTipWhat>
+  <WR_OptEmergencyRuleTipOff>Elke noodtaak in een ingeschakelde rol onderbreekt de huidige taak van de kolonist</WR_OptEmergencyRuleTipOff>
+  <WR_OptEmergencyRuleTipOn>Alleen noodtaken uit de eerste 5 ingeschakelde rollen onderbreken; latere rollen voeren ze op hun normale plaats uit</WR_OptEmergencyRuleTipOn>
+  <WR_OptEmergencyRuleTipWhy>Met deze standaard ingeschakelde optie wachten reserverollen achteraan op hun beurt: een kolonist met Dokter als zesde rol blijft koken terwijl de aangewezen dokter de spoedpatiënt behandelt. Schakel dit uit als elke kolonist op elk noodgeval moet reageren waarbij die kan helpen.</WR_OptEmergencyRuleTipWhy>
+  <WR_AutomationSection>Automatiseringsinstellingen</WR_AutomationSection>
+  <WR_OptAutoOptimize>Kolonies elk speluur automatisch optimaliseren</WR_OptAutoOptimize>
+  <WR_OptAutoOptimizeTipWhat>Voert ‘Verbeter mijn kolonie’ automatisch uit voor elke kolonie en past de wijzigingen toe, per opgeslagen spel.</WR_OptAutoOptimizeTipWhat>
+  <WR_OptAutoOptimizeTipOff>Roltoewijzingen veranderen alleen wanneer je ze bewerkt</WR_OptAutoOptimizeTipOff>
+  <WR_OptAutoOptimizeTipOn>Aanbevolen toewijzingen worden aan het begin van elk speluur toegepast</WR_OptAutoOptimizeTipOn>
+  <WR_OptAutoOptimizeTipWhy>Vastgezette toewijzingen blijven behouden, ook uitgesloten rollen. Er wordt niets geschreven als een kolonist al aan de aanbeveling voldoet.</WR_OptAutoOptimizeTipWhy>
+  <WR_AutoOptimizeConfirmApply>Toepassen voert de onderstaande wijzigingen nu uit en schakelt automatische optimalisatie per uur in. Zolang dit aanstaat, zijn ‘Verbeter mijn kolonie’ en ‘Voer het uit’ verborgen; je kunt rollen nog gewoon toewijzen, verplaatsen en vastzetten.</WR_AutoOptimizeConfirmApply>
+  <WR_AutoOptimizeGlobalWarning>Je hebt meerdere kolonies: automatische optimalisatie is GLOBAAL en verandert elk uur de roltoewijzingen in ALLE kolonies. Het voorbeeld hieronder toont alleen wijzigingen voor de huidige kolonie.</WR_AutoOptimizeGlobalWarning>
+  <WR_DisplaySection>Weergave-instellingen</WR_DisplaySection>
+  <WR_OptSkillCaptions>Beste vaardigheden onder kolonistennamen tonen</WR_OptSkillCaptions>
+  <WR_OptSkillCaptionsTip>Elke kolonistenrij toont onder de naam een klein bijschrift met de beste werkvaardigheden en hun niveaus, gekleurd naar geschiktheid. Schakel dit uit om de naam op een eigen regel te tonen.</WR_OptSkillCaptionsTip>
+  <WR_OptVerdictsColonists>Beoordelingen op rolkaartjes van kolonisten tonen</WR_OptVerdictsColonists>
+  <WR_OptVerdictsColonistsTip>Elk rolkaartje in de kolonistentabel toont geschiktheidssterren volgens het aanbevelingssysteem: witte sterren voor goede beoordelingen (één sterk, twee geweldig, goud uitzonderlijk), rode voor slechte (één zwak, twee vreselijk) en grijs voor neutraal.</WR_OptVerdictsColonistsTip>
+  <WR_OptVerdictsPalette>Beoordelingen voor de geselecteerde kolonist in het rollenpalet tonen</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>De paletkaartjes tonen hoe geschikt elke rol is voor de geselecteerde kolonist.</WR_OptVerdictsPaletteTip>
+  <WR_OptVerdictsRecommendations>Beoordelingen op aanbevolen rolkaartjes tonen</WR_OptVerdictsRecommendations>
+  <WR_OptPaletteGrouping>Groepering van rollenpalet</WR_OptPaletteGrouping>
+  <WR_OptVerdictsRecommendationsTip>Aanbevolen rolkaartjes (statistiekenpaneel en wijzigingsvoorbeelden) tonen de geschiktheidsbeoordeling voor de kolonist aan wie ze worden aanbevolen.</WR_OptVerdictsRecommendationsTip>
+  <WR_RecGlobalPanel>Algemene opties</WR_RecGlobalPanel>
+  <WR_RecGlobalPanelHelp>Deze opties wijzigen hoe het aanbevelingssysteem kandidaten beoordeelt en rangschikt en waar rollen in de uiteindelijke lijst komen. Gebruik Herstellen om terug te keren naar de standaardwaarden als je spijt hebt van wijzigingen.</WR_RecGlobalPanelHelp>
+  <WR_RecRolePanel>Rolopties</WR_RecRolePanel>
+  <WR_RecRolePanelHelp>Hier staan alle rollen behalve uitgesloten rollen. Klap een rol open om de aanbevelingsopties aan te passen. Rollen worden automatisch voor elke kolonist geordend; Jager behoudt zijn plaats op basis van schietvaardigheid.</WR_RecRolePanelHelp>
+  <WR_RecExcludedHeader>Uitgesloten rollen</WR_RecExcludedHeader>
+  <WR_RecExcludedHelp>Rollen in deze lijst worden nooit aanbevolen, ook niet via trainingspaden of automatische rollen. Bestaande vastgezette toewijzingen blijven beschermd. Gebruik Rol toevoegen om een rol uit te sluiten; verwijder het kaartje om aanbevelingen weer toe te staan.</WR_RecExcludedHelp>
+  <WR_RecExcludedTip>Uitsluitingen gelden voor aanbevelingen voor alle kolonisten in dit spel, ook bij Verbeter mijn kolonie en automatisch optimaliseren. Je kunt uitgesloten rollen nog handmatig toewijzen. Deze lijst bewerken verandert de huidige toewijzingen niet. Aanbevelingen toepassen verwijdert niet-vastgezette uitgesloten rollen en behoudt vastgezette toewijzingen.</WR_RecExcludedTip>
+  <WR_RecExcludedChipTip>Deze rol wordt nooit aanbevolen. Klik op het verwijderpictogram om aanbevelingen weer toe te staan en de vermelding onder Rolopties te herstellen. De opgeslagen opties blijven behouden.</WR_RecExcludedChipTip>
+  <WR_RecExcludedAddTip>Kies een rol die het aanbevelingssysteem nooit mag aanbevelen. Alle rollen kunnen worden uitgesloten, ook trainingsrollen, automatische, voorwaardelijke, blokkerende en samengestelde rollen.</WR_RecExcludedAddTip>
+  <WR_RecExcludedReason>Deze rol is uitgesloten van aanbevelingen. Verwijder haar uit Uitgesloten rollen op het tabblad Aanbevelingen om haar weer toe te staan.</WR_RecExcludedReason>
+  <WR_RecTuneReset>Herstellen</WR_RecTuneReset>
+  <WR_RecTuneResetTip>Herstelt de standaardwaarden van dit gedeelte.</WR_RecTuneResetTip>
+  <WR_RecTuneCellHint>Klik op een waarde om die te verhogen, rechtsklik om die te verlagen.</WR_RecTuneCellHint>
+  <WR_StepModifiersTip>Klik: 1 stap.\nShift: 5 stappen.\nCtrl: 10 stappen.\nCtrl+Shift: naar de grens springen.</WR_StepModifiersTip>
+  <WR_SignalLetterAwful>V</WR_SignalLetterAwful>
+  <WR_SignalLetterPoor>Z</WR_SignalLetterPoor>
+  <WR_SignalLetterNeutral>N</WR_SignalLetterNeutral>
+  <WR_SignalLetterStrong>S</WR_SignalLetterStrong>
+  <WR_SignalLetterGreat>G</WR_SignalLetterGreat>
+  <WR_SignalLetterExceptional>U</WR_SignalLetterExceptional>
+  <WR_RecTuneChampionSection>Opties voor keuze van hoofdverantwoordelijke</WR_RecTuneChampionSection>
+  <WR_RecTuneChampionSectionIntro>Elke rol krijgt eerst een hoofdverantwoordelijke: de kolonist die het geschiktst is om die rol te dragen. Deze opties bepalen wie in aanmerking komt en hoe vaardigheid en signaalsterkte worden afgewogen.</WR_RecTuneChampionSectionIntro>
+  <WR_RecTuneOrderingSection>Opties voor uiteindelijke rolvolgorde</WR_RecTuneOrderingSection>
+  <WR_RecTuneOrderingSectionIntro>Nadat de rollen van een kolonist zijn gekozen, bepalen deze opties hun volgorde, die ook de werkprioriteit bepaalt.</WR_RecTuneOrderingSectionIntro>
+  <WR_RecTuneOptionalSection>Opties voor trainingspaden en optionele doelen</WR_RecTuneOptionalSection>
+  <WR_RecTuneOptionalSectionIntro>Deze opties bepalen wanneer een trainingspad voor een kolonist actief wordt en wanneer een optionele rol met meerdere vaardigheden een aanbeveling waard is.</WR_RecTuneOptionalSectionIntro>
+  <WR_RecTuneLeadSection>Opties voor spreiding van leidende rollen</WR_RecTuneLeadSection>
+  <WR_RecTuneLeadSectionIntro>Wanneer meerdere trainingspaden een doel delen, spreiden deze opties de leidende rollen over verschillende kolonisten in plaats van ze bij één op te stapelen.</WR_RecTuneLeadSectionIntro>
+  <WR_RecTuneHunterSection>Opties voor plaatsing van Jager</WR_RecTuneHunterSection>
+  <WR_RecTuneHunterSectionIntro>Een niet-vastgezette Jagerrol krijgt dynamisch een plek op basis van schietvaardigheid: betere schutters jagen later in de prioriteitsvolgorde omdat hun tijd elders meer waard is.</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneCandidateMinimumSignal>Minimumsignaal voor kandidaten</WR_RecTuneCandidateMinimumSignal>
+  <WR_RecTuneCandidateMinimumSignalDesc>Laagste signaal voor gewone rolselectie. Verhogen verwijdert zwakkere kandidaten vóór de keuze van hoofdverantwoordelijke en minimumbezetting.</WR_RecTuneCandidateMinimumSignalDesc>
+  <WR_RecTuneChampionSkillDivisor>Vaardigheidsdeler voor hoofdverantwoordelijke</WR_RecTuneChampionSkillDivisor>
+  <WR_RecTuneChampionSkillDivisorDesc>De vaardigheidsbijdrage is ceil(vaardigheidsniveau ÷ deze waarde). Verhogen vermindert de invloed van ruwe vaardigheid.</WR_RecTuneChampionSkillDivisorDesc>
+  <WR_RecTuneChampionMultiSkillMinimumCount>Drempel voor gecombineerde vaardigheden</WR_RecTuneChampionMultiSkillMinimumCount>
+  <WR_RecTuneChampionMultiSkillMinimumCountDesc>Minimumaantal kwalificerende doelvaardigheden om scores voor de hoofdverantwoordelijke op te tellen. Daaronder telt alleen de beste vaardigheid van de rol.</WR_RecTuneChampionMultiSkillMinimumCountDesc>
+  <WR_RecTuneChampionMultiplierRow>Signaalvermenigvuldiger</WR_RecTuneChampionMultiplierRow>
+  <WR_RecTuneChampionMultiplierRowDesc>Vermenigvuldigt de afgeronde vaardigheidsbijdrage van elke signaalsterkte bij de keuze van hoofdverantwoordelijke.</WR_RecTuneChampionMultiplierRowDesc>
+  <WR_RecTuneMultiplierAwfulTip>Vreselijk. Deze kolom telt alleen als het minimumsignaal voor kandidaten vreselijke kandidaten toelaat.</WR_RecTuneMultiplierAwfulTip>
+  <WR_RecTuneChampionTieBreakRow>Punten bij gelijke stand</WR_RecTuneChampionTieBreakRow>
+  <WR_RecTuneChampionTieBreakRowDesc>Signaalpunten die bij gelijke scores voor hoofdverantwoordelijke worden vergeleken. Bij rollen met meerdere vaardigheden worden punten van kwalificerende signalen opgeteld.</WR_RecTuneChampionTieBreakRowDesc>
+  <WR_RecTuneRankedCandidatePrioritySignal>Voorrangssignaal voor gerangschikte kandidaten</WR_RecTuneRankedCandidatePrioritySignal>
+  <WR_RecTuneRankedCandidatePrioritySignalDesc>Kandidaten zonder hoofdverantwoordelijkheid met minstens dit signaal komen vóór zwakkere kandidaten voordat de minimumplaatsen worden gevuld.</WR_RecTuneRankedCandidatePrioritySignalDesc>
+  <WR_RecTuneSurplusMinimumSignal>Minimumsignaal voor extra toewijzingen</WR_RecTuneSurplusMinimumSignal>
+  <WR_RecTuneSurplusMinimumSignalDesc>Na het vullen van verplichte plaatsen kunnen gewone kandidaten met minstens dit signaal de rol alsnog krijgen. Opwaardering op basis van niveau geldt voor rollen met één vaardigheid binnen hun trainingsbereik; doelen met meerdere vaardigheden gebruiken de geschiktheidseisen voor optionele doelen.</WR_RecTuneSurplusMinimumSignalDesc>
+  <WR_RecTuneOrderingSkillDivisor>Vaardigheidsdeler voor volgorde</WR_RecTuneOrderingSkillDivisor>
+  <WR_RecTuneOrderingSkillDivisorDesc>Vaardigheidspunten voor de eindvolgorde zijn ceil(vaardigheidsniveau ÷ deze waarde). Verhogen vermindert de invloed van vaardigheid op de rolvolgorde.</WR_RecTuneOrderingSkillDivisorDesc>
+  <WR_RecTuneOrderingPointsRow>Signaalpunten</WR_RecTuneOrderingPointsRow>
+  <WR_RecTuneOrderingPointsRowDesc>Punten die elke signaalsterkte bijdraagt aan de uiteindelijke volgorde van aanbevolen rollen.</WR_RecTuneOrderingPointsRowDesc>
+  <WR_RecTuneMinimumPickRow>Bonus voor minimumbezetting</WR_RecTuneMinimumPickRow>
+  <WR_RecTuneMinimumPickRowDesc>Volgordepunten voor de eerste, tweede, derde en elke volgende werker die is gekozen om de minimale rolbezetting te halen.</WR_RecTuneMinimumPickRowDesc>
+  <WR_RecTuneCategoryPointsRow>Categoriepunten</WR_RecTuneCategoryPointsRow>
+  <WR_RecTuneCategoryPointsRowDesc>Volgordepunten op basis van koloniebelang: Belangrijk plaatst plichtrollen boven productiewerk met hetzelfde signaal; Optioneel schuift rollen naar het einde.</WR_RecTuneCategoryPointsRowDesc>
+  <WR_RecTuneTimePointsRow>Tijdbehoeftepunten</WR_RecTuneTimePointsRow>
+  <WR_RecTuneTimePointsRowDesc>Volgordepunten op basis van tijdbehoefte: Deeltijd plaatst korte plichten boven voltijdwerk met hetzelfde signaal; Gelegenheidswerk schuift opvulwerk naar het einde.</WR_RecTuneTimePointsRowDesc>
+  <WR_RecTunePathMinimumSignal>Minimumsignaal voor trainingsrollen</WR_RecTunePathMinimumSignal>
+  <WR_RecTunePathMinimumSignalDesc>Laagste toegestane signaal van een rol in een actief trainingspad.</WR_RecTunePathMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumSkillCount>Vaardigheidsdrempel voor optionele doelen</WR_RecTuneOptionalTargetMinimumSkillCount>
+  <WR_RecTuneOptionalTargetMinimumSkillCountDesc>Aantal kwalificerende doelvaardigheden voordat de geschiktheidstest voor optionele doelen geldt. Rollen met minder kwalificerende vaardigheden slaan deze test over.</WR_RecTuneOptionalTargetMinimumSkillCountDesc>
+  <WR_RecTuneOptionalTargetMinimumSignal>Minimumsignaal voor optionele doelen</WR_RecTuneOptionalTargetMinimumSignal>
+  <WR_RecTuneOptionalTargetMinimumSignalDesc>Een vaardigheid moet dit signaal halen voordat niveau-opwaardering extra toewijzingen voor één vaardigheid beïnvloedt of geschiktheidspunten aan een optioneel doel bijdraagt.</WR_RecTuneOptionalTargetMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetStrongLevel>Middelste vaardigheidsniveau voor opwaardering</WR_RecTuneOptionalTargetStrongLevel>
+  <WR_RecTuneOptionalTargetStrongLevelDesc>Op dit vaardigheidsniveau wordt een zwakker kwalificerend signaal opgewaardeerd naar het ingestelde middelste signaal voor extra toewijzingen met één vaardigheid en scores voor optionele doelen.</WR_RecTuneOptionalTargetStrongLevelDesc>
+  <WR_RecTuneOptionalTargetStrongPromotedSignal>Middelste opgewaardeerde signaal</WR_RecTuneOptionalTargetStrongPromotedSignal>
+  <WR_RecTuneOptionalTargetStrongPromotedSignalDesc>Signaal voor extra toewijzingen met één vaardigheid en geschiktheidsscores voor optionele doelen vanaf het middelste opwaarderingsniveau.</WR_RecTuneOptionalTargetStrongPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetGreatLevel>Hoog vaardigheidsniveau voor opwaardering</WR_RecTuneOptionalTargetGreatLevel>
+  <WR_RecTuneOptionalTargetGreatLevelDesc>Op dit vaardigheidsniveau wordt een zwakker kwalificerend signaal opgewaardeerd naar het ingestelde hoge signaal voor extra toewijzingen met één vaardigheid en scores voor optionele doelen.</WR_RecTuneOptionalTargetGreatLevelDesc>
+  <WR_RecTuneOptionalTargetGreatPromotedSignal>Hoog opgewaardeerd signaal</WR_RecTuneOptionalTargetGreatPromotedSignal>
+  <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>Signaal voor extra toewijzingen met één vaardigheid en geschiktheidsscores voor optionele doelen vanaf het hoge opwaarderingsniveau.</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumPoints>Minimumpunten voor optionele doelen</WR_RecTuneOptionalTargetMinimumPoints>
+  <WR_RecTuneOptionalTargetMinimumPointsDesc>Minimale som van signaalstappen boven de ingestelde ondergrens om een optioneel doel met meerdere vaardigheden aan te bevelen.</WR_RecTuneOptionalTargetMinimumPointsDesc>
+  <WR_RecTuneLeadMinimumConnectedTargets>Verbonden doelen voor spreiding</WR_RecTuneLeadMinimumConnectedTargets>
+  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Minimumaantal verbonden trainingsdoelen voordat de planner hun leidende rollen over verschillende werkers probeert te verdelen.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
+  <WR_RecTuneLeadMinimumSignal>Minimumsignaal voor leidende rol</WR_RecTuneLeadMinimumSignal>
+  <WR_RecTuneLeadMinimumSignalDesc>Laagste toegestane rolsignaal voor een werker die als leidende deelnemer aan een gespreid trainingspad wordt gekozen.</WR_RecTuneLeadMinimumSignalDesc>
+  <WR_RecTuneHunterTiersRow>Maximaal schietniveau per trede</WR_RecTuneHunterTiersRow>
+  <WR_RecTuneHunterTiersRowDesc>Schietniveaugrenzen voor de dynamische Jagerpositie. Trede 1 zet Jager direct na basiswerk, treden 2 en 3 na de middelste en laatste werkrollen, en niveaus boven trede 4 zetten Jager als laatste.</WR_RecTuneHunterTiersRowDesc>
+  <WR_TrainingSection>Trainingspad</WR_TrainingSection>
+  <WR_TrainingHelp>Hier stel je in hoe kolonisten nieuwe vaardigheden leren en naar deze rol toegroeien. Een trainingspad kan meerdere bereiken hebben, zodat rollen kunnen overlappen. Als het pad wordt aanbevolen, krijgt een kolonist alle rollen aanbevolen die bij het huidige vaardigheidsniveau horen.</WR_TrainingHelp>
+  <WR_TrainingTipWhat>Het eigen groeipad van de rol: elke deelnemende rol heeft een vaardigheidsbereik waarin ze wordt aanbevolen. De rol zelf blijft altijd in haar pad.</WR_TrainingTipWhat>
+  <WR_TrainingTipBands>Overlappende bereiken bestaan naast elkaar; zonder overlap vervangt de latere rol de eerdere.</WR_TrainingTipBands>
+  <WR_TrainingTipOrder>Toewijzingen geven voorrang aan hogere bereikminima. Bij gelijke bereiken komt de zwakste rolvaardigheid van de werker eerst, daarna de opgeslagen padvolgorde.</WR_TrainingTipOrder>
+  <WR_AddNew>Nieuwe toevoegen</WR_AddNew>
+  <WR_WhenPanelCaption>Rolontwikkeling: hier stel je in bij welke vaardigheid de getoonde rollen worden aanbevolen. Overlappende rollen vullen elkaar aan.</WR_WhenPanelCaption>
+  <WR_AddRole>Rol toevoegen</WR_AddRole>
+  <WR_NoContributionRoleTip>Traint geen van de vaardigheden die deze rol nodig heeft en kan dus niet als trainingsstap dienen. Mods kunnen veranderen wat XP oplevert, dus je kunt haar toch toevoegen.</WR_NoContributionRoleTip>
+  <WR_ContributesTip>Traint richting deze rol: {0}.</WR_ContributesTip>
+  <WR_RecClassificationSection>Classificatie</WR_RecClassificationSection>
+  <WR_RecSkillsSection>Vaardigheden</WR_RecSkillsSection>
+  <WR_RecScalingSection>Schaling van toewijzingen</WR_RecScalingSection>
+  <WR_RoleColonyMinLabel>Kolonieminimum:</WR_RoleColonyMinLabel>
+  <WR_RoleColonyMinTip>Het minimale aantal toewijzingen voor deze rol.</WR_RoleColonyMinTip>
+  <WR_RoleCoverageLabel>Dekking:</WR_RoleCoverageLabel>
+  <WR_RoleCoverageTip>Welk percentage kolonisten deze rol idealiter moet krijgen.</WR_RoleCoverageTip>
+  <WR_RoleCategoryLabel>Belang voor de kolonie:</WR_RoleCategoryLabel>
+  <WR_RoleCategoryTip>Hoe belangrijk het vervullen van deze rol is bij kolonieplanning. ‘Niet ingesteld’ laat de rol ongeclassificeerd.</WR_RoleCategoryTip>
+  <WR_RoleCategoryNone>Niet ingesteld</WR_RoleCategoryNone>
+  <WR_RoleCategoryImportant>Belangrijk</WR_RoleCategoryImportant>
+  <WR_RoleCategoryNormal>Normaal</WR_RoleCategoryNormal>
+  <WR_RoleCategoryOptional>Optioneel</WR_RoleCategoryOptional>
+  <WR_RoleTimeLabel>Tijdbehoefte:</WR_RoleTimeLabel>
+  <WR_RoleTimeTip>Hoeveel van de dag van een kolonist deze rol doorgaans inneemt.</WR_RoleTimeTip>
+  <WR_RoleTimeNone>Niet ingesteld</WR_RoleTimeNone>
+  <WR_RoleTimePartTime>Deeltijd</WR_RoleTimePartTime>
+  <WR_RoleTimeFullTime>Voltijd</WR_RoleTimeFullTime>
+  <WR_RoleTimeOpportunistic>Gelegenheidswerk</WR_RoleTimeOpportunistic>
+  <WR_ChampionPenalty>Straf voor herhaalde hoofdverantwoordelijkheid</WR_ChampionPenalty>
+  <WR_ChampionPenaltyTip>Wanneer aan, krijgt een kolonist die al hoofdverantwoordelijk is voor andere rollen een aftrek bij de keuze voor deze rol. Schakel uit voor rollen waarbij herhaalde hoofdverantwoordelijkheid prima is, zoals incidenteel werk.</WR_ChampionPenaltyTip>
+  <WR_PartialCapability>Gedeeltelijke geschiktheid toestaan</WR_PartialCapability>
+  <WR_PartialCapabilityTip>Wanneer aan, wordt deze rol aanbevolen aan kolonisten die sommige maar niet alle taken kunnen uitvoeren. Kolonisten die geen enkele taak kunnen doen krijgen haar nooit aanbevolen. Handig voor brede rollen voor iedereen, zoals een gedeelde rol voor vrije werktijd.</WR_PartialCapabilityTip>
+  <WR_PartialCapabilityLockedTip>Deze rol wordt al aanbevolen aan kolonisten die sommige maar niet alle taken kunnen uitvoeren. Rollen zonder vaardigheidswerk en jachtrollen staan dit altijd toe.</WR_PartialCapabilityLockedTip>
+  <WR_RoleAgeBandsLabel>Leeftijdsgroepen die deze rol mogen krijgen:</WR_RoleAgeBandsLabel>
+  <WR_RoleAgeBandsTip>Kolonisten buiten de gekozen leeftijdsbereiken krijgen deze rol nooit toegewezen of aanbevolen. Klik buiten de selectie om alles tot dat bereik op te nemen; klik op het eerste of laatste geselecteerde bereik om het te verwijderen, of op een middelste om alleen dat te kiezen. Grenzen volgen de leeftijden waarop het spel werk vrijgeeft. Alle taken van deze rol zijn mogelijk vanaf {0} jaar.</WR_RoleAgeBandsTip>
+  <WR_WorkTypesLabel>Werktypen</WR_WorkTypesLabel>
+  <WR_WorkTypesTip>Alleen kolonisten die de opgegeven werktypen kunnen uitvoeren komen voor deze rol in aanmerking.\n\nAfgeleid van de gekozen taken en ter informatie getoond.</WR_WorkTypesTip>
+  <WR_UsedSkillsLabel>Gebruikt</WR_UsedSkillsLabel>
+  <WR_UsedSkillsTip>Toont vaardigheden die taken in deze rol beïnvloeden. Wijs een vaardigheid aan om het effect te zien.\n\nAfgeleid van de gekozen taken en ter informatie getoond.</WR_UsedSkillsTip>
+  <WR_TrainedSkillsLabel>Getraind</WR_TrainedSkillsLabel>
+  <WR_TrainedSkillsTip>Toont vaardigheden die XP krijgen door taken van deze rol.\n\nAfgeleid van de gekozen taken en ter informatie getoond.</WR_TrainedSkillsTip>
+  <WR_GatedSkillsLabel>Niveauvereisten</WR_GatedSkillsLabel>
+  <WR_GatedSkillsTip>Toont vaardigheden die kolonisten voor bepaalde taken nodig hebben. Het minimumniveau hangt af van het recept, de plant of het gebouw. Wijs vaardigheden aan voor details.\n\nAfgeleid van de gekozen taken en ter informatie getoond.</WR_GatedSkillsTip>
+  <WR_RecMoreContentGates>Nog {0}</WR_RecMoreContentGates>
+  <WR_EffectSpeed>Versnelt werk</WR_EffectSpeed>
+  <WR_EffectQuality>Verbetert kwaliteit</WR_EffectQuality>
+  <WR_EffectYield>Verhoogt opbrengst</WR_EffectYield>
+  <WR_EffectSuccess>Verhoogt slaagkans</WR_EffectSuccess>
+  <WR_RequiredSkillsLabel>Vereist</WR_RequiredSkillsLabel>
+  <WR_RequiredSkillsTip>Optionele harde eisen voor deze rol. Een kolonist met een uitgeschakelde vereiste vaardigheid kan de rol niet aanbevolen krijgen. Het niveau beïnvloedt deze eis niet; ze staat los van inhoudelijke minima onder Niveauvereisten.</WR_RequiredSkillsTip>
+  <WR_AddSkill>Vaardigheid toevoegen</WR_AddSkill>
+  <WR_AddSkillTip>Voeg een expliciete harde vaardigheidseis toe. Dit verandert de afgeleide gebruikte of getrainde vaardigheden niet.</WR_AddSkillTip>
+  <WR_RemoveSkillTip>Deze expliciete vaardigheidseis verwijderen.</WR_RemoveSkillTip>
+  <WR_RoleMissingRequiredSkills>Vereiste vaardigheden uitgeschakeld voor {0}: {1}.</WR_RoleMissingRequiredSkills>
+  <WR_PathAddRoleTip>Voegt een rol aan dit pad toe.</WR_PathAddRoleTip>
+  <WR_BandChipTip>Sleep een uiteinde om het vaardigheidsbereik te wijzigen, of het midden om het te verplaatsen.</WR_BandChipTip>
+  <WR_PriorityGridTitle>Prioriteitsraster</WR_PriorityGridTitle>
+  <WR_ShowPriorityGridTip>Toont het prioriteitsraster voor alle vermelde kolonisten met de actieve rol- en locatiefilters (ruwe rangorde of 0–4 van het basisspel, wisselbaar in het venster).</WR_ShowPriorityGridTip>
+  <WR_GridModeRaw>WorkRoles-prioriteiten</WR_GridModeRaw>
+  <WR_GridModeVanilla>Basisspelprioriteiten</WR_GridModeVanilla>
+  <WR_ResizeGripTip>Sleep om het venster te vergroten; het kan niet kleiner worden dan de op de inhoud afgestemde grootte. Dubbelklik om automatische grootte te herstellen.</WR_ResizeGripTip>
+  <WR_RolesTab>Rollen</WR_RolesTab>
+  <WR_HelpTab>Help</WR_HelpTab>
+  <WR_HelpChapterStart>Start</WR_HelpChapterStart>
+  <WR_HelpChapterBasics>Basis</WR_HelpChapterBasics>
+  <WR_HelpChapterEditing>Rollen bewerken</WR_HelpChapterEditing>
+  <WR_HelpChapterOrganizing>Organiseren</WR_HelpChapterOrganizing>
+  <WR_HelpChapterRecommendations>Aanbevelingen</WR_HelpChapterRecommendations>
+  <WR_HelpChapterAdvanced>Geavanceerd</WR_HelpChapterAdvanced>
+  <WR_HelpReload>Opnieuw laden</WR_HelpReload>
+  <WR_HelpDemoChipA>Dokter</WR_HelpDemoChipA>
+  <WR_HelpDemoChipB>Landbouwer</WR_HelpDemoChipB>
+  <WR_HelpDemoChipC>Drager</WR_HelpDemoChipC>
+  <WR_HelpTourHeader>Rondleiding</WR_HelpTourHeader>
+  <WR_HelpTourProgress>{0} van {1} onderwerpen gelezen</WR_HelpTourProgress>
+  <WR_HelpTourComplete>Je bent er klaar voor!</WR_HelpTourComplete>
+  <WR_HelpTourCompleteHint>Je kent de basis. De hoofdstukken hierboven behandelen de rest.</WR_HelpTourCompleteHint>
+  <WR_ClusterEveryone>Iedereen</WR_ClusterEveryone>
+  <WR_ClusterUnskilled>Ongeschoold</WR_ClusterUnskilled>
+  <WR_OddJobsRole>Klusjes</WR_OddJobsRole>
+  <WR_BlockerRole>Blokkerende rol</WR_BlockerRole>
+  <WR_BlockerRoleTipWhat>Taken van een blokkerende rol worden nooit uitgevoerd: ze zijn geblokkeerd (‘wordt niet gedaan’), ook als een latere rol ze bevat.</WR_BlockerRoleTipWhat>
+  <WR_BlockerRoleTipWhy>Rollen vóór de blokkerende rol hebben nog voorrang, dus je kunt uitzonderingen toestaan door een rol eerder te plaatsen.</WR_BlockerRoleTipWhy>
+  <WR_ReasonFireFear>Genetisch doodsbang voor vuur: blokkeert brandbestrijding.</WR_ReasonFireFear>
+  <WR_RoleTipEnabled>ingeschakeld</WR_RoleTipEnabled>
+  <WR_RoleTipDisabled>globaal UITGESCHAKELD</WR_RoleTipDisabled>
+  <WR_RoleTipDisabledHere>UITGESCHAKELD voor deze kolonist</WR_RoleTipDisabledHere>
+  <WR_RoleTipDisabledBoth>globaal en voor deze kolonist UITGESCHAKELD</WR_RoleTipDisabledBoth>
+  <WR_RoleTipForcedOn>ingeschakeld, geforceerd aan voor deze kolonist</WR_RoleTipForcedOn>
+  <WR_RoleTipForcedOnGlobalOff>GEFORCEERD AAN voor deze kolonist (rol globaal UITGESCHAKELD)</WR_RoleTipForcedOnGlobalOff>
+  <WR_BadgeBlocker>blokkerend</WR_BadgeBlocker>
+  <WR_BadgeHours>beperkte uren</WR_BadgeHours>
+  <WR_BadgeLocation>beperkte locaties</WR_BadgeLocation>
+  <WR_TipJobsLabel>Taken</WR_TipJobsLabel>
+  <WR_TipSkillsLabel>Vaardigheden</WR_TipSkillsLabel>
+  <WR_TipTrainingHeader>Training</WR_TipTrainingHeader>
+  <WR_TipTrainingRecommend>Aanbevolen voor kolonisten met vaardigheid {0}</WR_TipTrainingRecommend>
+  <WR_TipTrainingPath>op weg naar {0}</WR_TipTrainingPath>
+  <WR_TipBestFitsLabel>Beste kandidaten</WR_TipBestFitsLabel>
+  <WR_TipWholeType>{0} (alle taken)</WR_TipWholeType>
+  <WR_TipMore>+{0} meer</WR_TipMore>
+  <WR_RoleCapNeverDo>{0} zal nooit {1} uitvoeren</WR_RoleCapNeverDo>
+  <WR_RoleCapAllJobs>een van de taken in deze rol</WR_RoleCapAllJobs>
+  <WR_RoleCapSomeJobs>{0} van de {1} taken in deze rol</WR_RoleCapSomeJobs>
+  <WR_RoleJobIncapable>niet in staat tot dit werk</WR_RoleJobIncapable>
+  <WR_RoleJobNoRangedWeapon>geen afstandswapen</WR_RoleJobNoRangedWeapon>
+  <WR_RoleJobTooYoung>te jong, mogelijk vanaf {0} jaar</WR_RoleJobTooYoung>
+  <WR_RoleTooYoung>{0} is te jong voor deze rol (minimumleeftijd {1}).</WR_RoleTooYoung>
+  <WR_RoleTooOld>{0} is te oud voor deze rol (maximumleeftijd {1}).</WR_RoleTooOld>
+  <WR_MtcHatedWorkSignalLabel>Haat {0}</WR_MtcHatedWorkSignalLabel>
+  <WR_MtcHatedWorkSignalDescription>More Than Capable staat dit werk toe, maar het veroorzaakt ernstige en oplopende nadelen.</WR_MtcHatedWorkSignalDescription>
+  <WR_RoleAwfulSignal>{0} heeft een vreselijk signaal voor deze rol: {1}.</WR_RoleAwfulSignal>
+  <WR_ActClick>Klik</WR_ActClick>
+  <WR_ActShiftClick>Shift-klik</WR_ActShiftClick>
+  <WR_ActCtrlShiftClick>Ctrl+Shift-klik</WR_ActCtrlShiftClick>
+  <WR_ActAltClick>Alt-klik</WR_ActAltClick>
+  <WR_ActDrag>Slepen</WR_ActDrag>
+  <WR_ActRightClick>Rechtsklik</WR_ActRightClick>
+  <WR_ActX>X</WR_ActX>
+  <WR_ActPaletteClick>Rol globaal in- of uitschakelen</WR_ActPaletteClick>
+  <WR_ActPaletteShiftClick>Achteraan toewijzen aan geselecteerde kolonisten</WR_ActPaletteShiftClick>
+  <WR_ActPaletteCtrlShiftClick>Toewijzen aan geselecteerde kolonisten direct na Basis</WR_ActPaletteCtrlShiftClick>
+  <WR_ActPaletteAltClick>Toewijzen aan geselecteerde kolonisten op de aanbevolen positie</WR_ActPaletteAltClick>
+  <WR_ActPaletteDrag>Toewijzen aan een kolonist</WR_ActPaletteDrag>
+  <WR_ActTreeClick>Selecteren om te bewerken</WR_ActTreeClick>
+  <WR_ActTreeDrag>Herschikken of tussen groepen verplaatsen</WR_ActTreeDrag>
+  <WR_ActTreeRightClick>Rol samenstellen (opnemen/uitsluiten)</WR_ActTreeRightClick>
+  <WR_ActChipClick>Wisselen tussen aan, uit en geforceerd aan voor deze kolonist</WR_ActChipClick>
+  <WR_ActChipRightClick>Vastzetopties</WR_ActChipRightClick>
+  <WR_ActChipDrag>Herschikken of naar een andere kolonist verplaatsen</WR_ActChipDrag>
+  <WR_ActChipX>Verwijderen</WR_ActChipX>
+  <WR_ColonistNameCaption>Kolonistennaam</WR_ColonistNameCaption>
+  <WR_AssignedRoleCaption>Toegewezen rol</WR_AssignedRoleCaption>
+  <WR_CoveredJobCaption>Gedekte taak</WR_CoveredJobCaption>
+  <WR_LocationCaption>Locatie</WR_LocationCaption>
+  <WR_GroupByCaption>Groeperen op</WR_GroupByCaption>
+  <WR_SkillColumnsCaption>Vaardigheidskolommen</WR_SkillColumnsCaption>
+  <WR_RoleDisplayCaption>Rolweergave</WR_RoleDisplayCaption>
+  <WR_ColonistSearchTip>Zoekt kolonistennamen. Scheid termen met spaties; elke term moet overeenkomen. Gebruik r: of role: voor toegewezen rolnamen, of j: of job: voor taken uit toegewezen rollen. Voorbeeld: br r:dok.</WR_ColonistSearchTip>
+  <WR_ColonistRoleFilterTip>Toont kolonisten met de gekozen rol. Een toegewezen niet-blokkerende rol telt ook als haar taken de gekozen rol volledig dekken. Combineert met zoek-, taak- en locatiefilters.</WR_ColonistRoleFilterTip>
+  <WR_ColonistJobFilterTip>Geselecteerd: {0}
+
+Toont kolonisten wier toegewezen niet-blokkerende rollen deze taak bevatten. Dit controleert roldekking, niet de huidige activiteit of werkprioriteit van het basisspel.</WR_ColonistJobFilterTip>
+  <WR_ColonistScopeTip>Kiest welke kolonielocaties kolonisten voor de tabel leveren. Huidige locatie volgt de actieve kaart; Overal omvat nederzettingen, karavanen en een reizend gravschip.</WR_ColonistScopeTip>
+  <WR_ColonistGroupTip>Verdeelt zichtbare kolonisten op basis van het gekozen kenmerk in secties. Groepering verandert de filterresultaten niet; sectiekoppen kunnen worden ingeklapt.</WR_ColonistGroupTip>
+  <WR_ColonistSkillColumnsTip>Kiest maximaal drie vaardigheidskolommen. Klik op een kolomkop om erop te sorteren, of op de X om de kolom te verwijderen.</WR_ColonistSkillColumnsTip>
+  <WR_ColonistRoleDisplayTip>Kiest wat toegewezen rolkaartjes tonen: volledige namen, initialen of pictogrammen. De knop ernaast wisselt tussen aaneengesloten kaartjes en rasterkolommen. Dit is een weergave-instelling per speler.</WR_ColonistRoleDisplayTip>
+  <WR_ChipLayoutGridTip>Kaartjes staan in even brede rasterkolommen. Lange namen vervagen aan de rand en krijgen alleen extra ruimte waar vergelijkbare rolnamen dat nodig hebben; de tooltip toont de hele naam. Klik voor kaartjes op natuurlijke breedte. Rechtsklik om te kiezen hoeveel van elke naam in de kolommen past.</WR_ChipLayoutGridTip>
+  <WR_ChipLayoutStackTip>Kaartjes staan op hun natuurlijke breedte. Klik voor even brede rasterkolommen. Rechtsklik om te kiezen hoeveel van elke naam in de rasterkolommen past.</WR_ChipLayoutStackTip>
+  <WR_GridNamesAutomatic>Automatisch</WR_GridNamesAutomatic>
+  <WR_GridNamesShort>Kort</WR_GridNamesShort>
+  <WR_GridNamesMedium>Middel</WR_GridNamesMedium>
+  <WR_GridNamesLong>Lang</WR_GridNamesLong>
+  <WR_GridNamesFull>Volledig</WR_GridNamesFull>
+  <WR_ColonistClearFiltersTip>Wist de naamzoekopdracht en filters voor toegewezen rol en gedekte taak. Locatiebereik, groepering, vaardigheidskolommen en rolweergave blijven ongewijzigd.</WR_ColonistClearFiltersTip>
+  <WR_FilterAllRoles>Alle rollen</WR_FilterAllRoles>
+  <WR_ScopeAll>Overal</WR_ScopeAll>
+  <WR_ScopeCurrent>Huidige locatie</WR_ScopeCurrent>
+  <WR_ScopeCurrentNamed>{0} (huidige locatie)</WR_ScopeCurrentNamed>
+  <WR_ShipFallback>Gravschip</WR_ShipFallback>
+  <WR_ShipTip>Het gravschip wanneer het niet bij een nederzetting geparkeerd is (een nederzettingstegel heeft voorrang).</WR_ShipTip>
+  <WR_GroupNone>Geen groepering</WR_GroupNone>
+  <WR_GroupFaction>Factie</WR_GroupFaction>
+  <WR_GroupRace>Ras</WR_GroupRace>
+  <WR_GroupGender>Geslacht</WR_GroupGender>
+  <WR_GroupAge>Leeftijd</WR_GroupAge>
+  <WR_GroupXenotype>Xenotype</WR_GroupXenotype>
+  <WR_GroupIdeo>Ideoligie</WR_GroupIdeo>
+  <WR_GroupSlaves>Slavernij</WR_GroupSlaves>
+  <WR_GroupTitleColonists>Kolonisten</WR_GroupTitleColonists>
+  <WR_GroupTitleSlaves>Slaven</WR_GroupTitleSlaves>
+  <WR_GroupColonyGroups>Colony Groups</WR_GroupColonyGroups>
+  <WR_GroupTitleUngrouped>Ongegroepeerd</WR_GroupTitleUngrouped>
+  <WR_ChipsNormal>Kaartjes: Volledige namen</WR_ChipsNormal>
+  <WR_ChipsCompact>Kaartjes: Initialen</WR_ChipsCompact>
+  <WR_ChipsIcons>Kaartjes: Pictogrammen</WR_ChipsIcons>
+  <WR_OrderSuffixBar>(Balkvolgorde)</WR_OrderSuffixBar>
+  <WR_OrderSuffixAZ>(A-Z)</WR_OrderSuffixAZ>
+  <WR_DisplayButton>Weergave</WR_DisplayButton>
+  <WR_DisplayOptions>Weergaveopties</WR_DisplayOptions>
+  <WR_CopyRolesTip>Kopieer de rollen van deze kolonist.</WR_CopyRolesTip>
+  <WR_PasteRolesTip>Plak de gekopieerde rollen op deze kolonist.</WR_PasteRolesTip>
+  <WR_AddRoleTip>Wijs een rol toe.</WR_AddRoleTip>
+  <WR_SkillsButton>Vaardigheden</WR_SkillsButton>
+  <WR_SkillsButtonCount>Vaardigheden ({0}/{1})</WR_SkillsButtonCount>
+  <WR_ColColonist>Kolonist</WR_ColColonist>
+  <WR_NoFilterMatches>Geen kolonisten passen bij het filter.</WR_NoFilterMatches>
+  <WR_FixMyColony>Verbeter mijn kolonie</WR_FixMyColony>
+  <WR_FixMyColonyTip>Vervangt de rollen van elke kolonist door de aanbevolen rollen.</WR_FixMyColonyTip>
+  <WR_FixNeedsSingleLocation>Aanbevelingen worden per locatie berekend. Beperk het locatiefilter tot één nederzetting of schip om Verbeter mijn kolonie te gebruiken.</WR_FixNeedsSingleLocation>
+  <WR_AutoManaged>Automatisch beheerd</WR_AutoManaged>
+  <WR_AutoManagedTip>WorkRoles werkt de roltoewijzingen van elke kolonie aan het begin van elk speluur automatisch bij.
+
+Vastgezette toewijzingen blijven behouden, ook uitgesloten rollen.
+
+Schakel ‘Kolonies elk speluur automatisch optimaliseren’ uit op het tabblad Opties om Verbeter mijn kolonie terug te krijgen.</WR_AutoManagedTip>
+  <WR_SetPriorityBlockedTitle>WorkRoles beheert prioriteiten</WR_SetPriorityBlockedTitle>
+  <WR_SetPriorityBlockedBody>{0} probeerde werkprioriteiten in te stellen ({1}).
+
+WorkRoles heeft sinds de vorige melding of het begin van deze sessie {2} prioriteitsschrijfacties geblokkeerd.
+
+WorkRoles beheert de prioriteiten van rolgestuurde kolonisten, dus de wijziging is genegeerd. Andere functies van de mod blijven ongewijzigd.
+
+Voor een vergelijkbaar effect met rollen: maak of bewerk op het tabblad Rollen een rol met dat werk en plaats die op de gewenste plek in de rollenlijst van elke kolonist. Gebruik een blokkerende rol om het werk geheel te verbieden.
+
+Deze melding verschijnt één keer per mod per opgeslagen spel.</WR_SetPriorityBlockedBody>
+  <WR_AllWork>al het werk</WR_AllWork>
+  <WR_GiverBypassTitle>Een taak heeft de rollenlijsten omzeild</WR_GiverBypassTitle>
+  <WR_GiverBypassBody>{0} begon de taak ‘{1}’, maar geen toegewezen rol bevat die taak.
+
+WorkRoles geeft elke beheerde kolonist een takenlijst via de standaardmethoden van het spel. Een andere mod lijkt werk uit een eigen lijst te kiezen en omzeilt daarmee rolbeperkingen. Kolonisten kunnen soms buiten hun rollen werken zolang die mod actief is.
+
+De taak is niet onderbroken. Deze melding verschijnt één keer per opgeslagen spel.</WR_GiverBypassBody>
+  <WR_Apply>Toepassen</WR_Apply>
+  <WR_SelectAll>Alles selecteren</WR_SelectAll>
+  <WR_PreviewNoChanges>Geen wijzigingen.</WR_PreviewNoChanges>
+  <WR_PreviewStale>De kolonie veranderde terwijl het voorbeeld openstond; er is niets toegepast.</WR_PreviewStale>
+  <WR_ReasonEveryone>Automatisch aan iedereen toegewezen.</WR_ReasonEveryone>
+  <WR_ReasonHunter>Draagt een afstandswapen; jagen traint ook Schieten.</WR_ReasonHunter>
+  <WR_ReasonSignal>Aanbevelingssignalen zijn gunstig voor {0}.</WR_ReasonSignal>
+  <WR_ReasonCoverage>Koloniedekking: beste beschikbare kandidaat voor dit werk.</WR_ReasonCoverage>
+  <WR_ReasonRemoved>Niet in de aanbevelingslijst. Zet rollen die je wilt behouden vast vóór toepassen.</WR_ReasonRemoved>
+  <WR_SignalColSignal>Signaal</WR_SignalColSignal>
+  <WR_SignalColEffects>Effecten</WR_SignalColEffects>
+  <WR_SignalCondition>Voorwaarde</WR_SignalCondition>
+  <WR_SignalSource>Bron</WR_SignalSource>
+  <WR_SignalVerdict>Beoordeling</WR_SignalVerdict>
+  <WR_SignalSkillPromotion>Hoge vaardigheid</WR_SignalSkillPromotion>
+  <WR_SignalSkillPromotionEffect>{0} → {1}</WR_SignalSkillPromotionEffect>
+  <WR_SignalSkillPromotionCondition>Niveau {0} haalt drempel {1}</WR_SignalSkillPromotionCondition>
+  <WR_SignalFromSkill>(van {0})</WR_SignalFromSkill>
+  <WR_SignalAlreadyReflected>Al verwerkt in het getoonde vaardigheidsniveau</WR_SignalAlreadyReflected>
+  <WR_SignalDisabled>Uitgeschakeld</WR_SignalDisabled>
+  <WR_SignalCapabilityOff>{0} uitgeschakeld</WR_SignalCapabilityOff>
+  <WR_SignalCapabilityAwful>{0} geldt als vreselijk</WR_SignalCapabilityAwful>
+  <WR_SignalDescriptive>Beschrijvend</WR_SignalDescriptive>
+  <WR_SignalExpertiseScale>basis {0}, expertiseniveau {1}, huidig {2}</WR_SignalExpertiseScale>
+  <WR_VerdictAwful>Vreselijk</WR_VerdictAwful>
+  <WR_VerdictPoor>Zwak</WR_VerdictPoor>
+  <WR_VerdictNeutral>Neutraal</WR_VerdictNeutral>
+  <WR_VerdictStrong>Sterk</WR_VerdictStrong>
+  <WR_VerdictGreat>Geweldig</WR_VerdictGreat>
+  <WR_VerdictExceptional>Uitzonderlijk</WR_VerdictExceptional>
+  <WR_PinAssignment>Vastzetten</WR_PinAssignment>
+  <WR_UnpinAssignment>Losmaken</WR_UnpinAssignment>
+  <WR_PinnedTip>Vastgezet: Voer het uit, Verbeter mijn kolonie en automatisch optimaliseren behouden deze toewijzing, ook als de rol of een lid van een samengestelde rol is uitgesloten.</WR_PinnedTip>
+  <WR_CopiedRoles>Rollen van {0} gekopieerd.</WR_CopiedRoles>
+  <WR_RecommendedRoles>Aanbevolen rollen</WR_RecommendedRoles>
+  <WR_AlreadyAssigned>Al toegewezen</WR_AlreadyAssigned>
+  <WR_WillBeRemoved>Niet in de aanbevelingslijst. Zet rollen die je wilt behouden vast vóór toepassen.</WR_WillBeRemoved>
+  <WR_RecTipColonyNeed>Koloniebehoefte</WR_RecTipColonyNeed>
+  <WR_RecTipSkills>Meegewogen vaardigheden</WR_RecTipSkills>
+  <WR_RecTipSignalVerdict>Signaalbeoordeling</WR_RecTipSignalVerdict>
+  <WR_RecTipSelection>Selectie</WR_RecTipSelection>
+  <WR_RecTipAssignmentsOne>1 toewijzing gevraagd</WR_RecTipAssignmentsOne>
+  <WR_RecTipAssignmentsMany>{0} toewijzingen gevraagd</WR_RecTipAssignmentsMany>
+  <WR_RecTipWithWaiverOne>{0} (1 trainingsvrijstelling)</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0} ({1} trainingsvrijstellingen)</WR_RecTipWithWaiversMany>
+  <WR_RecTipEveryoneCapable>Toegewezen aan iedereen die ertoe in staat is</WR_RecTipEveryoneCapable>
+  <WR_RecDecisionAuto>Automatisch toegewezen aan iedereen die het werk kan uitvoeren.</WR_RecDecisionAuto>
+  <WR_RecDecisionSignals>Voldoet aan de ingestelde signaaldrempel.</WR_RecDecisionSignals>
+  <WR_RecDecisionCoverageDraft>Beste overgebleven kandidaat gekozen om de vereiste dekking te halen.</WR_RecDecisionCoverageDraft>
+  <WR_RecDecisionTraining>Toegewezen via het trainingspad voor {0}.</WR_RecDecisionTraining>
+  <WR_RecDecisionTrainingUnknown>Toegewezen via een trainingspad.</WR_RecDecisionTrainingUnknown>
+  <WR_RecDecisionDirectSlot>Direct gekozen voor plaats {0} van {1} voor {2}.</WR_RecDecisionDirectSlot>
+  <WR_RecDecisionTrainingSlot>Gekozen voor plaats {0} van {1} voor {2}. Een trainingsvrijstelling verving {2} door {3} ({4}; {2} vereist {5}).</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>Gekozen voor plaats {0} van {1} voor {2}. Een trainingsvrijstelling verving {2} door {3}.</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>Via een trainingsvrijstelling gekozen voor plaats {0} van {1}, met toewijzing van {2}.</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
+  <WR_RecDecisionDirectFallbackSlot>Direct gekozen voor plaats {0} van {1} voor {2} omdat geen trainingsvervanger voor die plaats geschikt was.</WR_RecDecisionDirectFallbackSlot>
+  <WR_RecDecisionCoverageRepairSlot>Direct gekozen voor de resterende verplichte plaats {0} van {1} voor {2}.</WR_RecDecisionCoverageRepairSlot>
+  <WR_RecDecisionSignalSurplus>Als extra kandidaat gekozen op basis van de signaalbeoordeling.</WR_RecDecisionSignalSurplus>
+  <WR_RecDecisionAptitudeSurplus>Als extra kandidaat gekozen omdat de gecombineerde vaardigheidsgeschiktheid minstens het vereiste niveau van de rol haalt.</WR_RecDecisionAptitudeSurplus>
+  <WR_RecDecisionHunter>Draagt een afstandswapen en kan jagen.</WR_RecDecisionHunter>
+  <WR_RecDecisionFire>Vuurangst vereist de brandbestrijdingsblokkade.</WR_RecDecisionFire>
+  <WR_RecDecisionRetained>Bestaande ongeschoolde rol behouden.</WR_RecDecisionRetained>
+  <WR_RecDecisionProtected>Bestaande beschermde toewijzing behouden.</WR_RecDecisionProtected>
+  <WR_RecDecisionIncapacitated>Deze kolonist is neergehaald. Niet-uitgesloten rollen en vastgezette toewijzingen blijven ongewijzigd en tellen niet mee voor koloniebehoeften tot de kolonist herstelt.</WR_RecDecisionIncapacitated>
+  <WR_RecDecisionNever>Deze rol is ingesteld om nooit aanbevolen te worden.</WR_RecDecisionNever>
+  <WR_RecDecisionControlledByTraining>Gestuurd door {0}: toegewezen via diens trainingspad, niet zelfstandig.</WR_RecDecisionControlledByTraining>
+  <WR_RecDecisionDisabled>Deze rol is uitgeschakeld.</WR_RecDecisionDisabled>
+  <WR_RecDecisionUnavailable>Het werk van deze rol is niet beschikbaar totdat het onderzoek klaar is.</WR_RecDecisionUnavailable>
+  <WR_RecDecisionExcluded>Deze rol wordt door regels beheerd en is uitgesloten van gewone aanbevelingen.</WR_RecDecisionExcluded>
+  <WR_RecDecisionIncapable>Kan het werk van deze rol niet uitvoeren.</WR_RecDecisionIncapable>
+  <WR_RecDecisionNotMechanitor>Deze kolonist heeft geen mechlink en kan dus geen mechanitorwerk uitvoeren.</WR_RecDecisionNotMechanitor>
+  <WR_RecDecisionHunterRequirements>Geen afstandswapen uitgerust.</WR_RecDecisionHunterRequirements>
+  <WR_RecDecisionAwful>Uitgesloten door een vreselijk signaal.</WR_RecDecisionAwful>
+  <WR_RecDecisionCovered>Gedekt door aanbevolen rol: {0}.</WR_RecDecisionCovered>
+  <WR_RecDecisionCoveredUnknown>Gedekt door een andere aanbevolen rol.</WR_RecDecisionCoveredUnknown>
+  <WR_RecDecisionCoverageFilled>De vereiste dekking is ingevuld door hoger gerangschikte kandidaten.</WR_RecDecisionCoverageFilled>
+  <WR_RecDecisionWeakSignal>De signaalbeoordeling ligt onder de ingestelde drempel en de vereiste dekking selecteerde deze werker niet.</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionNotSelected>Door geen enkele aanbevelingsregel gekozen.</WR_RecDecisionNotSelected>
+  <WR_RecDecisionOutOfBand>Het vaardigheidsniveau valt in een ander bereik van het trainingspad.</WR_RecDecisionOutOfBand>
+  <WR_RecDecisionOutqualified>Andere, beter gekwalificeerde kandidaten zijn voor de beschikbare plaatsen gekozen.</WR_RecDecisionOutqualified>
+  <WR_RecDecisionRecommended>Gekozen door het aanbevelingssysteem.</WR_RecDecisionRecommended>
+  <WR_MakeItSo>Voer het uit</WR_MakeItSo>
+  <WR_AllRolesAssigned>Alle rollen toegewezen</WR_AllRolesAssigned>
+  <WR_NowDrafted>Wapen getrokken</WR_NowDrafted>
+  <WR_NowMental>Mentale toestand</WR_NowMental>
+  <WR_NowIdle>Inactief</WR_NowIdle>
+  <WR_NowForced>Spelersbevel</WR_NowForced>
+  <WR_NowSleeping>Slapend</WR_NowSleeping>
+  <WR_NowRecreation>Ontspanning</WR_NowRecreation>
+  <WR_NowNeeds>Persoonlijke behoeften</WR_NowNeeds>
+  <WR_NowBusy>Bezig</WR_NowBusy>
+  <WR_NowTip>{0}: {1}</WR_NowTip>
+  <WR_TipActivityLabel>Huidige activiteit</WR_TipActivityLabel>
+  <WR_TipActivityValue>{0}: {1}</WR_TipActivityValue>
+  <WR_RestoreDefaults>Standaarden herstellen</WR_RestoreDefaults>
+  <WR_RestoreDefaultsTip>Maakt ontbrekende standaardrollen en trainingspaden opnieuw, herstelt standaarduitsluitingen en zet groepen, kleuren en bezettingsinstellingen van standaardrollen terug. In een voorbeeld kies je wat wordt hersteld.</WR_RestoreDefaultsTip>
+  <WR_RestoreDefaultsTitle>Standaarden herstellen</WR_RestoreDefaultsTitle>
+  <WR_Export>Exporteren</WR_Export>
+  <WR_Import>Importeren</WR_Import>
+  <WR_ExportTip>Schrijf alle roldefinities (geen toewijzingen) naar:\n{0}</WR_ExportTip>
+  <WR_ImportTip>Voeg roldefinities toe uit:\n{0}</WR_ImportTip>
+  <WR_ExportTitle>Rollen exporteren</WR_ExportTitle>
+  <WR_CopyClipboard>Naar klembord kopiëren</WR_CopyClipboard>
+  <WR_CopyPath>Pad kopiëren</WR_CopyPath>
+  <WR_Save>Opslaan</WR_Save>
+  <WR_ExportLocationLabel>Exportlocatie</WR_ExportLocationLabel>
+  <WR_LocGameData>Map met spelgegevens</WR_LocGameData>
+  <WR_LocDesktop>Bureaublad</WR_LocDesktop>
+  <WR_LocUserHome>Gebruikersmap</WR_LocUserHome>
+  <WR_LocCustom>Aangepast...</WR_LocCustom>
+  <WR_EnterPath>Pad invoeren</WR_EnterPath>
+  <WR_BadFileName>Voer een geldige bestandsnaam in.</WR_BadFileName>
+  <WR_BadDirectory>Voer een geldig mappad in.</WR_BadDirectory>
+  <WR_ImportTitle>Rollen importeren</WR_ImportTitle>
+  <WR_ImportFromClipboard>Van klembord</WR_ImportFromClipboard>
+  <WR_ImportLocationLabel>Importlocatie</WR_ImportLocationLabel>
+  <WR_ImportClipboardInvalid>Het klembord bevat geen WorkRoles-export.</WR_ImportClipboardInvalid>
+  <WR_ImportFileMissing>Geen bestand gevonden op {0}</WR_ImportFileMissing>
+  <WR_ImportParseFailed>Rollen konden niet worden gelezen: {0}</WR_ImportParseFailed>
+  <WR_SectionPalette>Palet</WR_SectionPalette>
+  <WR_SectionRoles>Rollen</WR_SectionRoles>
+  <WR_ModeMerge>Samenvoegen</WR_ModeMerge>
+  <WR_ModeOverwrite>Overschrijven</WR_ModeOverwrite>
+  <WR_RowNew>{0} (nieuw)</WR_RowNew>
+  <WR_RowUpdate>{0} (bijwerken)</WR_RowUpdate>
+  <WR_RowRecolors>{0} → {1} (herkleurt: {2})</WR_RowRecolors>
+  <WR_RowNewColor>{0} {1} (nieuwe kleur)</WR_RowNewColor>
+  <WR_NothingToMerge>Alles komt overeen: niets samen te voegen.</WR_NothingToMerge>
+  <WR_PaletteOverwriteInfo>Vervangt alle aangepaste kleuren door de {0} paletitems uit het bestand.</WR_PaletteOverwriteInfo>
+  <WR_OverwriteReplaces>Past alle {0} rollen uit het bestand toe. Overeenkomende rollen (dezelfde standaardrol, anders dezelfde naam) behouden hun kolonistentoewijzingen.</WR_OverwriteReplaces>
+  <WR_OverwriteDeletes>Verwijdert (niet in bestand): {0} (kolonisten verliezen deze toewijzingen).</WR_OverwriteDeletes>
+  <WR_PathsOverwriteInfo>Vervangt alle bestaande trainingspaden door de {0} paden uit het bestand.</WR_PathsOverwriteInfo>
+  <WR_ImportSummary>Import voltooid: {0} toegevoegd, {1} bijgewerkt, {2} verwijderd, {3} paletwijzigingen, {4} trainingspaden.</WR_ImportSummary>
+  <WR_CopiedToClipboard>Naar klembord gekopieerd.</WR_CopiedToClipboard>
+  <WR_ExportSaved>Opgeslagen in {0}</WR_ExportSaved>
+  <WR_ExportFailed>Opslaan mislukt: {0}</WR_ExportFailed>
+  <WR_ExportOverwriteConfirm>{0} bestaat al. Vervangen?</WR_ExportOverwriteConfirm>
+  <WR_RestoreMovedJobs>{0} ({1} verplaatste taken herstellen)</WR_RestoreMovedJobs>
+  <WR_RestorePathItem>{0} (trainingspad)</WR_RestorePathItem>
+  <WR_RestoreGroupItem>{0} (naar groep '{1}' verplaatsen)</WR_RestoreGroupItem>
+  <WR_RestoreColorItem>{0} (standaardkleur herstellen)</WR_RestoreColorItem>
+  <WR_RestoreJobsItem>{0} (standaardtaken herstellen)</WR_RestoreJobsItem>
+  <WR_RestoreSnapColorItem>{0} (kleur op palet afstemmen)</WR_RestoreSnapColorItem>
+  <WR_RestoreHoldersItem>{0} (standaardbezetting herstellen)</WR_RestoreHoldersItem>
+  <WR_RestoreRecOrder>Aanbevelingsvolgorde (standaard herstellen)</WR_RestoreRecOrder>
+  <WR_RestoreDefaultExclusions>Standaard uitgesloten rollen</WR_RestoreDefaultExclusions>
+  <WR_RestoreExplainDefaultExclusions>Voegt ontbrekende standaarduitsluitingen weer toe aan Uitgesloten rollen. Andere door jou uitgesloten rollen blijven behouden.</WR_RestoreExplainDefaultExclusions>
+  <WR_RestoreOverwriteWarning>⚠ Gemarkeerde items overschrijven jouw wijzigingen.</WR_RestoreOverwriteWarning>
+  <WR_RestoreDuplicateHint>(er bestaat al een rol met deze naam)</WR_RestoreDuplicateHint>
+  <WR_RestoreExplainRole>Maakt de rol vanuit het sjabloon van de mod.</WR_RestoreExplainRole>
+  <WR_RestoreExplainCoverage>Maakt een rol die dit werktype dekt.</WR_RestoreExplainCoverage>
+  <WR_RestoreExplainBackfill>Voegt {0} door mods verplaatste taken opnieuw toe.</WR_RestoreExplainBackfill>
+  <WR_RestoreExplainGroup>Verplaatst de rol terug naar groep '{0}'.</WR_RestoreExplainGroup>
+  <WR_RestoreExplainColor>Herstelt de standaardkleur van het sjabloon.</WR_RestoreExplainColor>
+  <WR_RestoreExplainJobs>Herstelt de huidige standaardtakenlijst van de mod. Kolonisten behouden hun totale werk: rollen die verwijderde taken dekken worden automatisch toegewezen.</WR_RestoreExplainJobs>
+  <WR_RestoreExplainSnapColor>Vervangt de gegenereerde kleur door de dichtstbijzijnde paletkleur zodat de kleurkiezer die markeert.</WR_RestoreExplainSnapColor>
+  <WR_RestoreExplainHolders>Herstelt de standaardschaling voor bezetting van het sjabloon.</WR_RestoreExplainHolders>
+  <WR_RestoreExplainRecOrder>Wist je aangepaste volgorde.</WR_RestoreExplainRecOrder>
+  <WR_RestoreExplainPath>Maakt het trainingspad.</WR_RestoreExplainPath>
+  <WR_NothingToRestore>Niets te herstellen: alle standaardrollen en trainingspaden bestaan met hun standaardgroepen, kleuren en bezettingsinstellingen, en er zijn geen taken verplaatst.</WR_NothingToRestore>
+  <WR_RolesRestored>Hersteld: {0}</WR_RolesRestored>
+  <WR_FilterAnyJob>Elke taak</WR_FilterAnyJob>
+  <WR_RoleLabelOff>{0} (uit)</WR_RoleLabelOff>
+  <WR_SelectOrCreateRole>Selecteer of maak een rol.</WR_SelectOrCreateRole>
+  <WR_New>Nieuw</WR_New>
+  <WR_Copy>Kopiëren</WR_Copy>
+  <WR_Delete>Verwijderen</WR_Delete>
+  <WR_NewRoleTitle>Nieuwe rol</WR_NewRoleTitle>
+  <WR_CopyRoleTitle>Rol kopiëren</WR_CopyRoleTitle>
+  <WR_CopySource>Kopieert {0}</WR_CopySource>
+  <WR_NameTaken>Er bestaat al een rol met deze naam.</WR_NameTaken>
+  <WR_DeleteConfirm>Rol '{0}' verwijderen? Ze wordt van alle kolonisten verwijderd.</WR_DeleteConfirm>
+  <WR_AssignedTo>Toegewezen aan</WR_AssignedTo>
+  <WR_Nobody>Niemand</WR_Nobody>
+  <WR_PlusOthers>+{0} anderen</WR_PlusOthers>
+  <WR_AvailableJobs>Beschikbare taken</WR_AvailableJobs>
+  <WR_Search>Zoeken</WR_Search>
+  <WR_WarningPrefix>Waarschuwing:</WR_WarningPrefix>
+  <WR_UnusedJobsWarning>Je hebt taken die in geen enkele rol zitten.</WR_UnusedJobsWarning>
+  <WR_SelectedJobs>Geselecteerde taken (geordend)</WR_SelectedJobs>
+  <WR_TypeColumn>Type</WR_TypeColumn>
+  <WR_JobColumn>Taak</WR_JobColumn>
+  <WR_AllJobs>Alle taken</WR_AllJobs>
+  <WR_CoveredByTypeTip>Gedekt door het werktype. Klik om deze taak een eigen verplaatsbare vermelding te geven.</WR_CoveredByTypeTip>
+  <WR_AddAllJobs>Alle taken toevoegen (afzonderlijk, verplaatsbaar)</WR_AddAllJobs>
+  <WR_SelectedRows>{0} geselecteerd</WR_SelectedRows>
+  <WR_MoveSelectedUpTip>Verplaats de geselecteerde rijen één stap omhoog. Klik om een rij te kiezen, Shift-klik voor een bereik en Ctrl-klik om één rij toe te voegen of te verwijderen.</WR_MoveSelectedUpTip>
+  <WR_MoveSelectedDownTip>Verplaats de geselecteerde rijen één stap omlaag.</WR_MoveSelectedDownTip>
+  <WR_RemoveSelectedTip>Verwijder de geselecteerde rijen.</WR_RemoveSelectedTip>
+  <WR_MissingDef>{0} bestaat niet in de huidige modlijst (inactief totdat de mod terugkeert).</WR_MissingDef>
+  <WR_DeadEntryTip>Geen effect: alles in deze vermelding wordt al door eerdere vermeldingen gedekt. Verplaats haar omhoog om voorrang te geven, of verwijder haar.</WR_DeadEntryTip>
+  <WR_CompositeRole>Samengestelde rol</WR_CompositeRole>
+  <WR_CompositeRoleTip>Samengestelde rollen bundelen andere rollen: houders voeren de taken van lidrollen uit in de lidvolgorde. Een samengestelde rol heeft geen eigen takenlijst.</WR_CompositeRoleTip>
+  <WR_CompositeConfirm>'{0}' omzetten naar een samengestelde rol? De geselecteerde taken worden verwijderd.</WR_CompositeConfirm>
+  <WR_CompositeRevertConfirm>'{0}' terugzetten naar een gewone rol? De lidrollen worden verwijderd.</WR_CompositeRevertConfirm>
+  <WR_MemberRoles>Lidrollen (geordend)</WR_MemberRoles>
+  <WR_AvailableRoles>Beschikbare rollen</WR_AvailableRoles>
+  <WR_NoMembersHint>Voeg rollen toe uit de lijst links. Houders voeren de taken van lidrollen in deze volgorde uit.</WR_NoMembersHint>
+  <WR_NoCandidatesHint>Er kunnen geen rollen worden toegevoegd. Leden moeten gewone rollen zonder tijd- of locatieregels zijn; een samengestelde rol kan geen andere samengestelde rol bevatten.</WR_NoCandidatesHint>
+  <WR_MemberLockTip>Vergrendeld: deze rol is lid van een samengestelde rol. Verwijder haar uit alle samengestelde rollen om deze instelling te wijzigen.</WR_MemberLockTip>
+  <WR_ScaleRenameTip>Schaal hernoemen (rollen die haar gebruiken volgen mee).</WR_ScaleRenameTip>
+  <WR_ScaleRenameTitle>Schaal hernoemen</WR_ScaleRenameTitle>
+  <WR_ScaleNewTitle>Nieuwe schaal (kopieert de huidige)</WR_ScaleNewTitle>
+  <WR_ScaleUsedBy>Gebruikt door {0}</WR_ScaleUsedBy>
+  <WR_ScaleReset>Herstellen</WR_ScaleReset>
+  <WR_ScaleResetTip>Herstelt de waarden van vóór je wijzigingen (sinds het kiezen van deze rol of schaal).</WR_ScaleResetTip>
+  <WR_ScaleSaveAs>Opslaan als</WR_ScaleSaveAs>
+  <WR_ScaleDeleteConfirm>Schaal '{0}' verwijderen?\n\n{1}. Deze rollen gebruiken voortaan Nooit.</WR_ScaleDeleteConfirm>
+  <WR_ScaleSaveAsTitle>Wijzigingen als nieuwe schaal opslaan (deze schaal keert terug naar opgeslagen waarden)</WR_ScaleSaveAsTitle>
+  <WR_ScaleDirectTip>Direct minimum voor dit bereik; de rest van het vereiste totaal kan via trainingsvrijstellingen worden ingevuld. Verhogen boven het totaal verhoogt ook dat totaal. Klik +1 (begint opnieuw bij 8), rechtsklik -1. Links slepen kopieert over bereiken; rechtsklik tijdens slepen past de waarde in de sleeprichting aan. Rechts slepen maakt een verloop: één stap per bereik, omhoog naar rechts en omlaag naar links.</WR_ScaleDirectTip>
+  <WR_ScaleTotalsCaption>Vereist totaal (inclusief trainingsvrijstellingen)</WR_ScaleTotalsCaption>
+  <WR_ScaleMinsCaption>Direct minimum voor {0}</WR_ScaleMinsCaption>
+  <WR_ScaleTrainingHelp>Deze rol traint richting {0}; toewijzingen worden daarom door de opties voor {0} bepaald, zelfs als hier Nooit staat. Je kunt hier toch minimumtoewijzingen voor {1} afdwingen.</WR_ScaleTrainingHelp>
+  <WR_ScaleControlledBy>Gestuurd door {0}</WR_ScaleControlledBy>
+  <WR_ScaleTotalTip>Vereist totaal voor dit bereik, inclusief trainingsvrijstellingen. Verhogen maakt vrijstellingsplaatsen; verlagen verwijdert die eerst voordat het directe minimum daalt. Klik +1, rechtsklik -1. Links slepen kopieert over bereiken; rechtsklik tijdens slepen past de waarde in de sleeprichting aan. Rechts slepen maakt een verloop: één stap per bereik, omhoog naar rechts en omlaag naar links.</WR_ScaleTotalTip>
+  <WR_SkillsUsedLabel>Gebruikte vaardigheden:</WR_SkillsUsedLabel>
+  <WR_VirtualRoleTip>Hier getoond omdat de bovenliggende rol deze taken dekt. Ze hoort bij de groep ‘{0}’.</WR_VirtualRoleTip>
+  <WR_TipTrainsLabel>Traint</WR_TipTrainsLabel>
+  <WR_TipTrainsNothing>Niets (geen vaardigheids-XP)</WR_TipTrainsNothing>
+  <WR_TipRequiresLabel>Vereist</WR_TipRequiresLabel>
+  <WR_TipReqBills>{0} {1} ({2} van {3} opdrachten hebben vaardigheidseisen)</WR_TipReqBills>
+  <WR_TipReqItems>{0} {1} ({2} voorwerpen hebben vaardigheidseisen)</WR_TipReqItems>
+  <WR_TipReqJobs>{0} {1} ({2} taken hebben vaardigheidseisen)</WR_TipReqJobs>
+  <WR_TipLevelN>Niveau {0}</WR_TipLevelN>
+  <WR_TipXpLabel>Geeft XP</WR_TipXpLabel>
+  <WR_TipXpValue>{0} van {1} taken</WR_TipXpValue>
+  <WR_TipUnlockAgeLabel>Minimumleeftijd</WR_TipUnlockAgeLabel>
+  <WR_TipUnlockAgeValue>{0} (jongere kolonisten kunnen dit werk niet uitvoeren)</WR_TipUnlockAgeValue>
+  <WR_SkillTipGiverSource>Taakgever: {0} ({1})</WR_SkillTipGiverSource>
+  <WR_SkillTipTypeSource>Werktype: {0} ({1})</WR_SkillTipTypeSource>
+  <WR_SkillTipUnknownMod>onbekende mod</WR_SkillTipUnknownMod>
+  <WR_EmergencySuffix> (noodgeval)</WR_EmergencySuffix>
+  <WR_ConditionalRole>Voorwaardelijke rol</WR_ConditionalRole>
+  <WR_ConditionalRoleTip>Voorwaardelijke rollen schakelen zichzelf in en uit op basis van actieve uren en locatie. Een rol is voorwaardelijk zodra er een regel is ingesteld.</WR_ConditionalRoleTip>
+  <WR_AutoAssign>Automatisch toewijzen</WR_AutoAssign>
+  <WR_AutoAssignTip>Nieuwkomers (rekruten, zwervers) krijgen deze rol automatisch als ze binnen haar leeftijdsgroepen vallen.</WR_AutoAssignTip>
+  <WR_CustomSwatchEmpty>Leeg vak: klik om een aangepaste kleur te kiezen. Aangepaste kleuren worden door alle rollen gedeeld.</WR_CustomSwatchEmpty>
+  <WR_CustomSwatchTip>Klik om deze kleur te gebruiken. Rechtsklik om het vak opnieuw in te stellen.</WR_CustomSwatchTip>
+  <WR_ClearRulesConfirm>Alle regels van '{0}' verwijderen? Ze wordt weer een handmatige rol.</WR_ClearRulesConfirm>
+  <WR_ActiveHours>Actieve uren</WR_ActiveHours>
+  <WR_HoursActive>Actief</WR_HoursActive>
+  <WR_HoursInactive>Inactief</WR_HoursInactive>
+  <WR_LocationAny>Overal</WR_LocationAny>
+  <WR_LocationNowhere>Nergens</WR_LocationNowhere>
+  <WR_LocationNowhereTip>Deze rol was beperkt tot locaties die niet meer bestaan. Ze blijft uitgeschakeld totdat je een andere locatie kiest.</WR_LocationNowhereTip>
+  <WR_LocationSettlements>Nederzettingen</WR_LocationSettlements>
+  <WR_LocationCaravans>Karavanen</WR_LocationCaravans>
+  <WR_LocationShipItem>Schip: {0}</WR_LocationShipItem>
+  <WR_LocationSettlementItem>Nederzetting: {0}</WR_LocationSettlementItem>
+  <WR_LocationCount>{0} locaties</WR_LocationCount>
+  <WR_LocationGone>(verdwenen)</WR_LocationGone>
+  <WR_InvalidRoleTip>Deze rol kan nooit actief zijn: ze heeft geen taken of alle genoemde locaties bestaan niet meer.</WR_InvalidRoleTip>
+  <WR_GroupDefault>Standaard</WR_GroupDefault>
+  <WR_GroupConditionalRoles>Voorwaardelijke rollen</WR_GroupConditionalRoles>
+  <WR_GroupComposites>Samengestelde rollen</WR_GroupComposites>
+  <WR_GroupLabel>Groep</WR_GroupLabel>
+  <WR_GroupButton>Groep: {0}</WR_GroupButton>
+  <WR_GroupNewOption>Nieuw...</WR_GroupNewOption>
+  <WR_NewGroupTitle>Nieuwe groep</WR_NewGroupTitle>
+  <WR_RenameGroup>Groep hernoemen</WR_RenameGroup>
+  <WR_RenameGroupTitle>Groep hernoemen</WR_RenameGroupTitle>
+  <WR_GroupOverlayTip>Rollen met regels verschijnen onder Voorwaardelijke rollen. De opgeslagen groep keert terug als de regels worden gewist.</WR_GroupOverlayTip>
+  <WR_GroupCompositeTip>Samengestelde rollen verschijnen onder Samengestelde rollen.</WR_GroupCompositeTip>
+  <WR_TreeNested>Genest</WR_TreeNested>
+  <WR_TreeFlat>Plat</WR_TreeFlat>
+  <WR_TreeToggleTip>Wissel het nesten van gedekte rollen onder hun combinatierol.</WR_TreeToggleTip>
+  <WR_DisplayModeLabel>Weergavestand</WR_DisplayModeLabel>
+  <WR_JobFilterLabel>Taakfilter</WR_JobFilterLabel>
+  <WR_PaletteBySkills>Vaardigheden</WR_PaletteBySkills>
+  <WR_PaletteByGroups>Groepen</WR_PaletteByGroups>
+  <WR_PaletteModeTip>Ordent het rollenpalet op relevante vaardigheid of je rolgroepen.</WR_PaletteModeTip>
+  <WR_SuppressedHours>Uit: buiten actieve uren</WR_SuppressedHours>
+  <WR_SuppressedLocation>Uit: niet op de locaties van deze rol</WR_SuppressedLocation>
+  <WR_BillRoleOption>Rol: {0}</WR_BillRoleOption>
+  <WR_BillWorkerRoleTip>Alleen kolonisten die deze rol actief hebben voeren de opdracht uit; een voorwaardelijke rol past haar regels toe, zoals actieve uren. Een werker kiezen wist de rolbeperking en andersom.</WR_BillWorkerRoleTip>
+  <WR_SurgeryWorkerRoleTip>Wie deze operatie mag uitvoeren. Elke werker betekent geen rolbeperking. Een rol beperkt de operatie tot kolonisten die haar actief hebben; een voorwaardelijke rol past haar regels toe, zoals actieve uren.</WR_SurgeryWorkerRoleTip>
+  <WR_SelectRoleIcon>Rolpictogram kiezen</WR_SelectRoleIcon>
+  <WR_RenameRoleTitle>Rol hernoemen</WR_RenameRoleTitle>
+  <WR_NewWorkDetected>Nieuwe werktypen ontdekt. Rollen gemaakt of uitgebreid: {0}</WR_NewWorkDetected>
+  <WR_SeedReportTitle>WorkRoles ingesteld</WR_SeedReportTitle>
+  <WR_SeedReportBody>{0} rollen gemaakt en rollensets aan {1} kolonisten toegewezen op basis van hun werkprioriteiten.</WR_SeedReportBody>
+  <WR_SeedReportGenerated>Gemaakt voor werk uit mods: {0}.</WR_SeedReportGenerated>
+  <WR_SeedReportFailures>Sommig werk kon niet worden overgezet:</WR_SeedReportFailures>
+  <WR_SeedDropFailure>{0}: {1} verloren (was prioriteit {2})</WR_SeedDropFailure>
+  <WR_SeedPawnFailure>{0}: overzetten mislukt ({1})</WR_SeedPawnFailure>
+  <WR_WelcomeTitle>WorkRoles</WR_WelcomeTitle>
+  <WR_WelcomeBody>WorkRoles bepaalt de werkprioriteiten van je kolonisten via rollen zoals Dokter, Smid of Landbouwer die je aan hen toewijst.</WR_WelcomeBody>
+  <WR_WelcomeFind>Open WorkRoles met de knop Werk onderaan het scherm. Het tabblad Help begint met een rondleiding.</WR_WelcomeFind>
+  <WR_WelcomeTakeMeThere>Nu openen</WR_WelcomeTakeMeThere>
+  <WR_WelcomeSmallScreen>Je spelscherm is {0}x{1} (resolutie gedeeld door UI-schaal). WorkRoles is ontworpen voor minstens {2}x{3}, bijvoorbeeld 1920x1080 bij UI-schaal 1.25. Het werkt ook op kleinere schermen, maar sommige teksten worden ingekort en tabbladen vergen meer scrollen. Een lagere UI-schaal in de spelopties geeft het venster meer ruimte.</WR_WelcomeSmallScreen>
+  <WR_RoleWorkAversion>Het voorschrift {1} van {0} keurt {2} af. Aanbevelingen krijgen een eindige scoreaftrek: twee prioriteitsstappen of zes virtuele vaardigheidspunten bij de keuze van hoofdverantwoordelijke. Vereiste dekking kan deze werker nog kiezen. Jager schuift twee treden later, maximaal tot trede vijf; de bestaande terugval op trede één blijft gelden.</WR_RoleWorkAversion>
+  <WR_WorkBlockedTags>uitgeschakelde werklabels</WR_WorkBlockedTags>
+  <WR_WorkBlockedCapacity>mist een vereiste gezondheidscapaciteit</WR_WorkBlockedCapacity>
+  <WR_WorkBlockedRace>niet toegestaan door werkbeperkingen van dit ras</WR_WorkBlockedRace>
+  <WR_WorkBlockedRecipe>niet toegestaan door receptbeperkingen van dit ras</WR_WorkBlockedRecipe>
+  <WR_WorkBlockedViviGathering>vereist positieve Vivi-verzamelsnelheid en opbrengst; geschikt verzamelgereedschap kan dit werk mogelijk maken</WR_WorkBlockedViviGathering>
+  <WR_WorkBlockedPrecept>geweigerd vanwege {0}</WR_WorkBlockedPrecept>
+  <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
+  <WR_RecWorkAversion>{0} keurt {1} af; de aanbevelingsscore wordt verlaagd.</WR_RecWorkAversion>
+  <WR_RecDecisionWorkAversion>Afkeer verlaagt de score tot onder de drempel voor optioneel werk.</WR_RecDecisionWorkAversion>
+  <WR_CompatibilityFreeWill>Free Will stelt de werkprioriteiten van kolonisten in, maar WorkRoles beheert de prioriteiten van beheerde kolonisten en blokkeert die wijzigingen.</WR_CompatibilityFreeWill>
+  <WR_CompatibilityPriorityMaster>PriorityMaster wijzigt de handmatige prioriteitswaarden en hun bereik. WorkRoles vervangt die bediening en leidt de prioriteiten van beheerde kolonisten af uit hun rollen.</WR_CompatibilityPriorityMaster>
+  <WR_CompatibilityWorkTab>{0} vervangt het tabblad Werk en bepaalt de prioriteiten, wat conflicteert met het op rollen gebaseerde werkbeheer van WorkRoles.</WR_CompatibilityWorkTab>
+</LanguageData>

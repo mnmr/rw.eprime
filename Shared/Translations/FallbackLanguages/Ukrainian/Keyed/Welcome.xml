@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <RS_CompatibilityHeading>Виявлено можливі конфлікти модів</RS_CompatibilityHeading>
+  <RS_CompatibilityRemove>Видаліть перелічені вище моди, щоб уникнути цих конфліктів.</RS_CompatibilityRemove>
+  <RS_CompatibilityRestoreAutomation>Видаліть перелічені вище моди, щоб увімкнути автоматизацію.</RS_CompatibilityRestoreAutomation>
+</LanguageData>

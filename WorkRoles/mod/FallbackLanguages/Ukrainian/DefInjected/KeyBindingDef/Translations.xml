@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_FirstColonist.label>перший колоніст (Ctrl: ігнорувати групи)</WR_FirstColonist.label>
+  <WR_LastColonist.label>останній колоніст (Ctrl: ігнорувати групи)</WR_LastColonist.label>
+  <WR_NextColonist.label>наступний колоніст</WR_NextColonist.label>
+  <WR_NextPage.label>наступна сторінка/група</WR_NextPage.label>
+  <WR_PrevColonist.label>попередній колоніст</WR_PrevColonist.label>
+  <WR_PrevPage.label>попередня сторінка/група</WR_PrevPage.label>
+</LanguageData>

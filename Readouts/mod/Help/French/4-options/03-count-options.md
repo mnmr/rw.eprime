@@ -5,7 +5,7 @@ Les options de comptage choisissent quelles piles entrent dans tous les compteur
 
 Compter uniquement les objets stockés compte les piles dans les zones ou bâtiments de stockage, comme les étagères. Les objets posés ailleurs sur la carte sont exclus :
 
-![Ressources brutes avec comptage limité au stockage](storage-only-on.png)
+![Aliments crus avec comptage limité au stockage](storage-only-on.png)
 
 Désactivée, cette option permet de compter les objets partout sur la carte :
 

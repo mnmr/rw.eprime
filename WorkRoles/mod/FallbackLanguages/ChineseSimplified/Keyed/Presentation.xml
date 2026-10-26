@@ -36,13 +36,13 @@
   <WR_SignalCondition_setting_vse_critical_affects_other_skills>模组设置中极度热情会影响其他技能</WR_SignalCondition_setting_vse_critical_affects_other_skills>
   <WR_SignalCondition_sight_blind>失明</WR_SignalCondition_sight_blind>
   <WR_SignalCondition_sight_not_blind>未失明</WR_SignalCondition_sight_not_blind>
-  <WR_SignalCondition_social_same_passion_opinion>提高对拥有相同热情角色的好感</WR_SignalCondition_social_same_passion_opinion>
+  <WR_SignalCondition_social_same_passion_opinion>提高对有相同热情者的好感</WR_SignalCondition_social_same_passion_opinion>
   <WR_SignalCondition_state_drunk>醉酒</WR_SignalCondition_state_drunk>
   <WR_SignalCondition_state_no_recent_lovin>近期无亲热</WR_SignalCondition_state_no_recent_lovin>
   <WR_SignalCondition_state_not_drunk>未醉酒</WR_SignalCondition_state_not_drunk>
-  <WR_SignalCondition_state_not_smokeleaf_high>未受烟叶影响</WR_SignalCondition_state_not_smokeleaf_high>
+  <WR_SignalCondition_state_not_smokeleaf_high>未处于大麻沉醉状态</WR_SignalCondition_state_not_smokeleaf_high>
   <WR_SignalCondition_state_recent_lovin>近期有亲热</WR_SignalCondition_state_recent_lovin>
-  <WR_SignalCondition_state_smokeleaf_high>烟叶兴奋中</WR_SignalCondition_state_smokeleaf_high>
+  <WR_SignalCondition_state_smokeleaf_high>大麻沉醉中</WR_SignalCondition_state_smokeleaf_high>
   <WR_SignalCondition_time_20_5>20:00 至 05:00 之间</WR_SignalCondition_time_20_5>
   <WR_SignalCondition_time_day>白天</WR_SignalCondition_time_day>
   <WR_SignalCondition_weather_not_raining>未下雨</WR_SignalCondition_weather_not_raining>

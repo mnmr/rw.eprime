@@ -5,6 +5,19 @@ namespace RimShared.Common.Tests;
 public class SearchMatcherTests
 {
     [Test]
+    public async Task TurkishDisplaySearchUsesSelectedLanguageAndKeepsDistinctLetters()
+    {
+        var turkish = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+        await Assert.That(SearchMatcher.Matches("İnşaatçı", "inşaatçı", turkish)).IsTrue();
+        await Assert.That(SearchMatcher.Matches("İtfaiyeci", "itfaiye", turkish)).IsTrue();
+        await Assert.That(SearchMatcher.Matches("Işık", "ışık", turkish)).IsTrue();
+        await Assert.That(SearchMatcher.Matches("Işık", "işik", turkish)).IsFalse();
+        // The explicit display choice never changes identifier/default matching.
+        await Assert.That(SearchMatcher.Matches("IRON", "iron")).IsTrue();
+        await Assert.That(SearchMatcher.Matches("İnşaatçı", "inşaatçı")).IsFalse();
+    }
+
+    [Test]
     public async Task WhitespaceQueryIsInactive()
     {
         await Assert.That(SearchMatcher.IsActive(null)).IsFalse();

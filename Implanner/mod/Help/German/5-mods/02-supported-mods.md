@@ -27,7 +27,7 @@ Jedes eingesetzte Hybridimplantat verdrängt alles bereits auf diesem Körpertei
 
 Hybridimplantate erhalten ihre Qualität vom verwendeten Genorahmen (siehe [Mindestqualität](topic:minimum-quality)).
 
-**Quality Bionics Remastered**: Bionische Teile besitzen Qualität; bessere Teile arbeiten besser und haben mehr Trefferpunkte. Der Tooltip zeigt die Effizienz von miserabel bis legendär. Jeder Plan legt seine Mindestqualität fest (siehe [Mindestqualität](topic:minimum-quality)).
+**Quality Bionics Remastered**: Bionische Teile besitzen Qualität; bessere Teile arbeiten besser und haben mehr Trefferpunkte. Der Tooltip zeigt die Effizienz von übel bis legendär. Jeder Plan legt seine Mindestqualität fest (siehe [Mindestqualität](topic:minimum-quality)).
 
 **Elite Bionics Framework**: Implantate, die Trefferpunkte eines Körperteils verändern, zeigen dies im Tooltip.
 

@@ -260,7 +260,7 @@ namespace EPrimeReadouts.UI
             List<TreeRow> flat = ResourceTreeFlattener.Flatten(
                 GameResourceTree.GetRoots(filters.Type),
                 expanded,
-                new ItemTreeFilter(filters.Query, filters.Type, filters.SourceId),
+                new ItemTreeFilter(filters.Query, filters.Type, filters.SourceId, UiLanguage.CaseCulture),
                 GameResourceCatalog.Instance);
             var builtResources = new ResourceRenderRow[flat.Count];
             for (int i = 0; i < flat.Count; i++)
@@ -290,7 +290,7 @@ namespace EPrimeReadouts.UI
             PoolAssignmentTreeRow[] logicalPools = PoolAssignmentTree.Build(
                 owner.PoolsSnapshot,
                 poolExpanded,
-                new ItemTreeFilter(filters.Query, filters.Type, filters.SourceId),
+                new ItemTreeFilter(filters.Query, filters.Type, filters.SourceId, UiLanguage.CaseCulture),
                 UiText.Get("EPR.Pools"), SeededReadoutNames.Resolve);
             var builtPoolRows = new PoolRenderRow[logicalPools.Length];
             for (int i = 0; i < logicalPools.Length; i++)

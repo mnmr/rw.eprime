@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][ValidatePattern('^[A-Za-z0-9._-]+$')][string]$EvidenceName,
-    [string[]]$Locales = @('Danish','German','French','Spanish','Italian','PortugueseBrazilian','Dutch','Swedish','Finnish','Norwegian','Portuguese','SpanishLatin','ChineseSimplified','ChineseTraditional'),
+    [string[]]$Locales = @('German','French','Spanish','Italian','PortugueseBrazilian','SpanishLatin','ChineseSimplified','ChineseTraditional','Ukrainian','Japanese','Korean','Turkish','Vietnamese'),
     [switch]$Persistence,
     [switch]$LayoutChecks,
     [switch]$Resize
@@ -16,7 +16,6 @@ New-Item -ItemType Directory -Path $evidence | Out-Null
 $languageRoot = 'C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Data\Core\Languages'
 $summary = [Collections.Generic.List[object]]::new()
 foreach ($locale in $Locales) {
-    if (Test-Path -LiteralPath (Join-Path $evidence 'stop-after-current.request')) { break }
     $destination = Join-Path $evidence $locale
     New-Item -ItemType Directory -Path $destination | Out-Null
     $run = & (Join-Path $automation 'create-run.ps1') -Purpose "Bundled locale UI $locale; $EvidenceName" `
@@ -113,9 +112,10 @@ foreach ($locale in $Locales) {
                 }
             }
         }
+        $null = Send-LocaleRequest 'complete'
     } finally {
         & (Join-Path $automation 'stop.ps1') -RunId $run.runId | Out-Null
-        foreach ($name in @('run.json','launch.json','host.json','activity.json','ready.json','Player.log','locale-ready.json','locale-report.json','locale-response.json','locale-metric-diagnostic.json','fixture-repairs.json','stall.json')) {
+        foreach ($name in @('run.json','launch.json','host.json','activity.json','ready.json','Player.log','locale-ready.json','locale-report.json','locale-response.json','fixture-repairs.json','stall.json')) {
             $path = Join-Path $run.profile $name
             if (Test-Path -LiteralPath $path) { Copy-Item -LiteralPath $path -Destination (Join-Path $destination $name) }
         }

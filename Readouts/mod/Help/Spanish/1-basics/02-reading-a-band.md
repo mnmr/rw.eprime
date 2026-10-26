@@ -11,4 +11,4 @@ Cada grupo activado ocupa una franja. De izquierda a derecha, muestra la raya de
 
 Las cantidades superiores a diez mil se abrevian: 12.800 aparece como 12.8k. La descripción muestra la cifra exacta (consulta [Pasar el cursor y pulsar una casilla](topic:hovering-and-clicking-a-slot)).
 
-El contador cambia de color cuando la cantidad baja hasta un límite configurado (consulta [Opciones de casilla](topic:slot-options)). También se vuelve naranja si es negativo: tus tareas y planos necesitan más de lo que tienes (consulta [Trabajo previsto](topic:planned-work)).
+El contador cambia de color cuando la cantidad baja hasta un límite configurado (consulta [Opciones de casilla](topic:slot-options)). También se vuelve naranja si es negativo: tus proyectos y planos necesitan más de lo que tienes (consulta [Trabajo previsto](topic:planned-work)).

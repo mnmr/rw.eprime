@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_GroupAnimals.label>Тварини</WS_GroupAnimals.label>
+  <WS_GroupEssentials.label>Основне</WS_GroupEssentials.label>
+  <WS_GroupFood.label>Їжа</WS_GroupFood.label>
+  <WS_GroupIndoors.label>У приміщенні</WS_GroupIndoors.label>
+  <WS_GroupMedical.label>Медицина</WS_GroupMedical.label>
+  <WS_GroupOutdoors.label>Надворі</WS_GroupOutdoors.label>
+  <WS_GroupResearch.label>Дослідження</WS_GroupResearch.label>
+  <WS_GroupSocial.label>Спілкування</WS_GroupSocial.label>
+</LanguageData>

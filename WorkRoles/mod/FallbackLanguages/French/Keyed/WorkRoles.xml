@@ -88,7 +88,7 @@
   <WR_RecTuneOrderingPointsRow>Points de signal</WR_RecTuneOrderingPointsRow>
   <WR_RecTuneOrderingPointsRowDesc>Points apportés par chaque force de signal lors du classement final des rôles recommandés.</WR_RecTuneOrderingPointsRowDesc>
   <WR_RecTuneMinimumPickRow>Bonus de sélection minimale</WR_RecTuneMinimumPickRow>
-  <WR_RecTuneMinimumPickRowDesc>Points d'ordre accordés au premier, au deuxième, au troisième et à chaque personnage suivant choisi pour satisfaire l'effectif minimal d'un rôle.</WR_RecTuneMinimumPickRowDesc>
+  <WR_RecTuneMinimumPickRowDesc>Points d'ordre accordés au premier, au deuxième, au troisième et à chaque travailleur suivant choisi pour satisfaire l'effectif minimal d'un rôle.</WR_RecTuneMinimumPickRowDesc>
   <WR_RecTuneCategoryPointsRow>Points de catégorie</WR_RecTuneCategoryPointsRow>
   <WR_RecTuneCategoryPointsRowDesc>Points d'ordre ajoutés selon l'importance pour la colonie : Important place les rôles de service avant la production à signal égal ; Facultatif repousse les rôles vers la fin.</WR_RecTuneCategoryPointsRowDesc>
   <WR_RecTuneTimePointsRow>Points de temps requis</WR_RecTuneTimePointsRow>
@@ -110,16 +110,16 @@
   <WR_RecTuneOptionalTargetMinimumPoints>Points minimaux des objectifs facultatifs</WR_RecTuneOptionalTargetMinimumPoints>
   <WR_RecTuneOptionalTargetMinimumPointsDesc>Somme minimale des crans de signal dépassant le plancher configuré pour recommander un objectif facultatif à plusieurs compétences.</WR_RecTuneOptionalTargetMinimumPointsDesc>
   <WR_RecTuneLeadMinimumConnectedTargets>Objectifs liés pour la diversification</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Nombre minimal d'objectifs de formation liés avant que le planificateur tente de confier leurs rôles de responsable à différents personnages.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
+  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Nombre minimal d'objectifs de formation liés avant que le planificateur tente de confier leurs rôles de responsable à différents travailleurs.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
   <WR_RecTuneLeadMinimumSignal>Signal minimal du responsable</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>Signal de rôle minimal autorisé pour un personnage choisi comme responsable diversifié d'un parcours de formation.</WR_RecTuneLeadMinimumSignalDesc>
+  <WR_RecTuneLeadMinimumSignalDesc>Signal de rôle minimal autorisé pour un travailleur choisi comme responsable diversifié d'un parcours de formation.</WR_RecTuneLeadMinimumSignalDesc>
   <WR_RecTuneHunterTiersRow>Niveau de tir maximal par palier</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Seuils de tir pour la place dynamique du Chasseur. Le palier 1 le place juste après les travaux de base, les paliers 2 et 3 après les rôles de travail intermédiaires et derniers ; au-delà du palier 4, il passe en dernier.</WR_RecTuneHunterTiersRowDesc>
   <WR_TrainingSection>Parcours de formation</WR_TrainingSection>
   <WR_TrainingHelp>Définissez ici comment les colons acquièrent des compétences et progressent vers ce rôle. Un parcours peut avoir plusieurs plages qui se chevauchent. Si le parcours est recommandé à un colon, tous les rôles correspondant à son niveau actuel lui sont recommandés.</WR_TrainingHelp>
   <WR_TrainingTipWhat>Progression propre au rôle : chaque rôle membre possède une plage de compétence où il est recommandé. Le rôle lui-même reste toujours dans son parcours.</WR_TrainingTipWhat>
   <WR_TrainingTipBands>Les plages qui se chevauchent coexistent ; sinon, le rôle suivant remplace le précédent.</WR_TrainingTipBands>
-  <WR_TrainingTipOrder>Les affectations privilégient les minima de plage les plus élevés. À plage égale, elles privilégient la compétence de rôle la plus faible du personnage, puis l'ordre enregistré du parcours.</WR_TrainingTipOrder>
+  <WR_TrainingTipOrder>Les affectations privilégient les minima de plage les plus élevés. À plage égale, elles privilégient la compétence de rôle la plus faible du travailleur, puis l'ordre enregistré du parcours.</WR_TrainingTipOrder>
   <WR_AddNew>Ajouter</WR_AddNew>
   <WR_WhenPanelCaption>Progression des rôles : définissez à quel niveau les rôles affichés sont recommandés. Les rôles qui se chevauchent se complètent.</WR_WhenPanelCaption>
   <WR_AddRole>Ajouter un rôle</WR_AddRole>
@@ -147,8 +147,8 @@
   <WR_ChampionPenalty>Pénalité de champion multiple</WR_ChampionPenalty>
   <WR_ChampionPenaltyTip>Si activée, un colon déjà champion d'autres rôles est pénalisé pour devenir champion de celui-ci. Désactivez-la lorsque cumuler les rôles convient, notamment pour le travail occasionnel.</WR_ChampionPenaltyTip>
   <WR_PartialCapability>Autoriser une capacité partielle</WR_PartialCapability>
-  <WR_PartialCapabilityTip>Si activée, ce rôle est recommandé aux colons pouvant effectuer certaines de ses tâches, même pas toutes. Il n'est jamais recommandé à ceux qui ne peuvent en effectuer aucune. Utile pour les rôles larges que tous devraient avoir, comme les tâches communes pendant les temps libres.</WR_PartialCapabilityTip>
-  <WR_PartialCapabilityLockedTip>Ce rôle est déjà recommandé aux colons pouvant effectuer certaines de ses tâches, même pas toutes. Les rôles sans travail qualifié et les rôles de chasse l'autorisent toujours.</WR_PartialCapabilityLockedTip>
+  <WR_PartialCapabilityTip>Si activée, ce rôle est recommandé aux colons pouvant effectuer certaines de ses tâches, mais pas toutes. Il n'est jamais recommandé à ceux qui ne peuvent en effectuer aucune. Utile pour les rôles larges que tous devraient avoir, comme les tâches communes pendant les temps libres.</WR_PartialCapabilityTip>
+  <WR_PartialCapabilityLockedTip>Ce rôle est déjà recommandé aux colons pouvant effectuer certaines de ses tâches, mais pas toutes. Les rôles sans travail qualifié et les rôles de chasse l'autorisent toujours.</WR_PartialCapabilityLockedTip>
   <WR_RoleAgeBandsLabel>Tranches d'âge autorisées pour ce rôle :</WR_RoleAgeBandsLabel>
   <WR_RoleAgeBandsTip>Les colons hors des tranches choisies ne reçoivent jamais ce rôle ni sa recommandation. Cliquez sur une tranche extérieure pour étendre la sélection jusqu'à elle, sur la première ou la dernière sélectionnée pour la retirer, ou sur une tranche centrale pour ne garder qu'elle. Les limites suivent les âges de déblocage du travail dans le jeu. Toutes les tâches de ce rôle sont possibles dès {0} ans.</WR_RoleAgeBandsTip>
   <WR_WorkTypesLabel>Types de travail</WR_WorkTypesLabel>
@@ -254,7 +254,7 @@
   <WR_GroupByCaption>Regrouper par</WR_GroupByCaption>
   <WR_SkillColumnsCaption>Colonnes de compétences</WR_SkillColumnsCaption>
   <WR_RoleDisplayCaption>Affichage des rôles</WR_RoleDisplayCaption>
-  <WR_ColonistSearchTip>Recherche les noms des colons. Séparez les termes par des espaces ; tous doivent correspondre. Préfixez un terme par r: ou role: pour chercher les noms de rôles affectés, ou par j: ou job: pour les tâches fournies par ces rôles. Exemple : br r:doc.</WR_ColonistSearchTip>
+  <WR_ColonistSearchTip>Recherche les noms des colons. Séparez les termes par des espaces ; tous doivent correspondre. Préfixez un terme par r: ou role: pour chercher les noms de rôles affectés, ou par j: ou job: pour les tâches fournies par ces rôles. Exemple : br r:méd.</WR_ColonistSearchTip>
   <WR_ColonistRoleFilterTip>Liste les colons affectés au rôle choisi. Un rôle non bloqueur affecté correspond aussi si ses tâches couvrent entièrement le rôle choisi. Se combine avec les filtres de recherche, de tâche et de lieu.</WR_ColonistRoleFilterTip>
   <WR_ColonistJobFilterTip>Sélection : {0}
 
@@ -292,7 +292,7 @@ Liste les colons dont les rôles non bloqueurs affectés contiennent cette tâch
   <WR_ChipsNormal>Pastilles : noms complets</WR_ChipsNormal>
   <WR_ChipsCompact>Pastilles : initiales</WR_ChipsCompact>
   <WR_ChipsIcons>Pastilles : icônes</WR_ChipsIcons>
-  <WR_OrderSuffixBar>(ordre des onglets)</WR_OrderSuffixBar>
+  <WR_OrderSuffixBar>(barre des colons)</WR_OrderSuffixBar>
   <WR_OrderSuffixAZ>(A–Z)</WR_OrderSuffixAZ>
   <WR_DisplayButton>Affichage</WR_DisplayButton>
   <WR_DisplayOptions>Options d'affichage</WR_DisplayOptions>
@@ -375,8 +375,8 @@ La tâche n'a pas été interrompue. Cet avertissement apparaît une fois par sa
   <WR_RecTipWithWaiverOne>{0} (1 dérogation de formation)</WR_RecTipWithWaiverOne>
   <WR_RecTipWithWaiversMany>{0} ({1} dérogations de formation)</WR_RecTipWithWaiversMany>
   <WR_RecTipEveryoneCapable>Affecté à tous ceux qui en sont capables</WR_RecTipEveryoneCapable>
-  <WR_RecDecisionAuto>Affecté automatiquement à chaque personnage capable.</WR_RecDecisionAuto>
-  <WR_RecDecisionSignals>Ce personnage atteint le seuil de signal configuré.</WR_RecDecisionSignals>
+  <WR_RecDecisionAuto>Affecté automatiquement à toute personne capable d'effectuer ce travail.</WR_RecDecisionAuto>
+  <WR_RecDecisionSignals>Atteint le seuil de signal configuré.</WR_RecDecisionSignals>
   <WR_RecDecisionCoverageDraft>Meilleur candidat restant choisi pour satisfaire la couverture requise.</WR_RecDecisionCoverageDraft>
   <WR_RecDecisionTraining>Affecté par le parcours de formation de {0}.</WR_RecDecisionTraining>
   <WR_RecDecisionTrainingUnknown>Affecté par un parcours de formation.</WR_RecDecisionTrainingUnknown>
@@ -399,16 +399,16 @@ La tâche n'a pas été interrompue. Cet avertissement apparaît une fois par sa
   <WR_RecDecisionDisabled>Ce rôle est désactivé.</WR_RecDecisionDisabled>
   <WR_RecDecisionUnavailable>Le travail de ce rôle est indisponible tant que sa recherche n'est pas terminée.</WR_RecDecisionUnavailable>
   <WR_RecDecisionExcluded>Ce rôle est géré par des règles et exclu des recommandations ordinaires.</WR_RecDecisionExcluded>
-  <WR_RecDecisionIncapable>Ce personnage est incapable d'effectuer le travail de ce rôle.</WR_RecDecisionIncapable>
+  <WR_RecDecisionIncapable>Incapable d'effectuer le travail de ce rôle.</WR_RecDecisionIncapable>
   <WR_RecDecisionNotMechanitor>Ce colon n'a pas de mécalien et ne peut donc pas effectuer le travail de méchanitor.</WR_RecDecisionNotMechanitor>
-  <WR_RecDecisionHunterRequirements>Ce personnage ne porte pas d'arme à distance.</WR_RecDecisionHunterRequirements>
-  <WR_RecDecisionAwful>Un signal Désastreux disqualifie ce personnage.</WR_RecDecisionAwful>
+  <WR_RecDecisionHunterRequirements>Aucune arme à distance équipée.</WR_RecDecisionHunterRequirements>
+  <WR_RecDecisionAwful>Disqualifié par un signal Désastreux.</WR_RecDecisionAwful>
   <WR_RecDecisionCovered>Couvert par le rôle recommandé : {0}.</WR_RecDecisionCovered>
   <WR_RecDecisionCoveredUnknown>Couvert par un autre rôle recommandé.</WR_RecDecisionCoveredUnknown>
   <WR_RecDecisionCoverageFilled>La couverture requise a été remplie par des candidats mieux classés.</WR_RecDecisionCoverageFilled>
-  <WR_RecDecisionWeakSignal>L'évaluation du signal est sous le seuil configuré et la couverture requise n'a pas retenu ce personnage.</WR_RecDecisionWeakSignal>
-  <WR_RecDecisionNotSelected>Aucune règle de recommandation n'a choisi ce personnage.</WR_RecDecisionNotSelected>
-  <WR_RecDecisionOutOfBand>La compétence de ce personnage le place dans une autre plage du parcours de formation.</WR_RecDecisionOutOfBand>
+  <WR_RecDecisionWeakSignal>L'évaluation du signal est sous le seuil configuré et la couverture requise n'a pas retenu ce travailleur.</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionNotSelected>Non retenu par les règles de recommandation.</WR_RecDecisionNotSelected>
+  <WR_RecDecisionOutOfBand>Le niveau de compétence correspond à une autre plage du parcours de formation.</WR_RecDecisionOutOfBand>
   <WR_RecDecisionOutqualified>D'autres candidats, plus qualifiés, ont été choisis pour les places disponibles.</WR_RecDecisionOutqualified>
   <WR_RecDecisionRecommended>Choisi par le moteur de recommandations.</WR_RecDecisionRecommended>
   <WR_MakeItSo>Appliquer les recommandations</WR_MakeItSo>
@@ -423,7 +423,7 @@ La tâche n'a pas été interrompue. Cet avertissement apparaît une fois par sa
   <WR_NowBusy>Occupé</WR_NowBusy>
   <WR_NowTip>{0} : {1}</WR_NowTip>
   <WR_TipActivityLabel>Activité actuelle</WR_TipActivityLabel>
-  <WR_TipActivityValue>{0} est {1}</WR_TipActivityValue>
+  <WR_TipActivityValue>{0} : {1}</WR_TipActivityValue>
   <WR_RestoreDefaults>Rétablir les valeurs par défaut</WR_RestoreDefaults>
   <WR_RestoreDefaultsTip>Recréer les rôles prédéfinis et parcours de formation manquants, rétablir les exclusions par défaut et rendre aux rôles prédéfinis leurs groupes, couleurs et réglages d'effectifs par défaut. Un aperçu permet de choisir quoi rétablir.</WR_RestoreDefaultsTip>
   <WR_RestoreDefaultsTitle>Rétablir les valeurs par défaut</WR_RestoreDefaultsTitle>
@@ -620,7 +620,7 @@ La tâche n'a pas été interrompue. Cet avertissement apparaît une fois par sa
   <WR_WelcomeFind>Ouvrez WorkRoles avec le bouton Travail en bas de l'écran. L'onglet Aide commence par une visite guidée.</WR_WelcomeFind>
   <WR_WelcomeTakeMeThere>Y accéder maintenant</WR_WelcomeTakeMeThere>
   <WR_WelcomeSmallScreen>Votre écran de jeu mesure {0}x{1} (résolution divisée par l'échelle de l'interface). WorkRoles est conçu pour au moins {2}x{3}, par exemple 1920x1080 avec une échelle de 1,25. Il fonctionne sur un écran plus petit, mais certains libellés sont abrégés et les onglets nécessitent plus de défilement. Réduire l'échelle de l'interface dans les options du jeu laisse plus d'espace à la fenêtre.</WR_WelcomeSmallScreen>
-  <WR_RoleWorkAversion>Le précepte {1} de {0} s'oppose à {2}. Les recommandations appliquent une pénalité limitée : deux crans de priorité, ou six points de compétence virtuels pour choisir un champion. La couverture requise peut toujours retenir ce personnage. La priorité du Chasseur recule de deux paliers, au maximum jusqu'au cinquième ; son repli existant vers le premier palier reste applicable.</WR_RoleWorkAversion>
+  <WR_RoleWorkAversion>Le précepte {1} de {0} s'oppose à {2}. Les recommandations appliquent une pénalité limitée : deux crans de priorité, ou six points de compétence virtuels pour choisir un champion. La couverture requise peut toujours retenir ce travailleur. La priorité du Chasseur recule de deux paliers, au maximum jusqu'au cinquième ; son repli existant vers le premier palier reste applicable.</WR_RoleWorkAversion>
   <WR_WorkBlockedTags>catégories de travail désactivées</WR_WorkBlockedTags>
   <WR_WorkBlockedCapacity>capacité de santé requise manquante</WR_WorkBlockedCapacity>
   <WR_WorkBlockedRace>interdit par les restrictions de travail de cette race</WR_WorkBlockedRace>
@@ -630,4 +630,7 @@ La tâche n'a pas été interrompue. Cet avertissement apparaît une fois par sa
   <WR_WorkRecipeWarning>{0} : {1}</WR_WorkRecipeWarning>
   <WR_RecWorkAversion>{0} s'oppose à {1} ; le score de recommandation est réduit.</WR_RecWorkAversion>
   <WR_RecDecisionWorkAversion>L'aversion réduit le score sous le seuil du travail facultatif.</WR_RecDecisionWorkAversion>
+  <WR_CompatibilityFreeWill>Free Will définit les priorités de travail des colons, mais WorkRoles contrôle celles des colons qu'il gère et bloque ces modifications.</WR_CompatibilityFreeWill>
+  <WR_CompatibilityPriorityMaster>PriorityMaster modifie les valeurs numériques des priorités manuelles et leur plage. WorkRoles remplace ces commandes et détermine les priorités des colons qu'il gère à partir de leurs rôles.</WR_CompatibilityPriorityMaster>
+  <WR_CompatibilityWorkTab>{0} remplace l'onglet Travail et contrôle les priorités, ce qui entre en conflit avec la gestion du travail par rôles de WorkRoles.</WR_CompatibilityWorkTab>
 </LanguageData>

@@ -13,6 +13,6 @@ Soccorritore, Pompiere, Paziente, Riposo a letto e Manovale sono esclusi per imp
 
 Le [Opzioni dei ruoli](topic:role-options) sottostanti elencano tutti quelli non esclusi. L'esclusione ne nasconde le opzioni senza cancellarle; rimuovendola, tornano disponibili.
 
-Le esclusioni valgono in tutto il salvataggio, compresi [Ottimizza la colonia](topic:fix-my-colony) e [Ottimizzazione automatica](topic:auto-optimize). Prevalgono su fabbisogno, percorsi formativi, ruoli automatici e speciali, sostituzione tramite composti e assegnazioni conservate non fissate, anche su pedine incapaci di agire. Escludere un composto lascia disponibili i membri idonei; escludere un membro ne impedisce il ritorno tramite un composto consigliato.
+Le esclusioni valgono in tutto il salvataggio, compresi [Ottimizza la colonia](topic:fix-my-colony) e [Ottimizzazione automatica](topic:auto-optimize). Prevalgono su fabbisogno, percorsi formativi, ruoli automatici e speciali, sostituzione tramite composti e assegnazioni conservate non fissate, anche su lavoratori incapaci di agire. Escludere un composto lascia disponibili i membri idonei; escludere un membro ne impedisce il ritorno tramite un composto consigliato.
 
 Puoi ancora assegnare manualmente i ruoli esclusi. Modificare l'elenco non cambia le assegnazioni attuali. Applicare i consigli rimuove i ruoli esclusi non fissati dai coloni interessati. **Le assegnazioni fissate restano protette**, anche se il ruolo o un membro del composto è escluso. Un'assegnazione fissata conservata è una tua scelta esistente, non un nuovo consiglio.

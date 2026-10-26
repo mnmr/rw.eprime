@@ -1,9 +1,9 @@
 ---
 title: Organización de la paleta
 ---
-La paleta de Colonos tiene dos modos, elegidos al final de los configuración visuales de Opciones:
+La paleta de Colonos tiene dos modos, elegidos al final de la configuración visual de Opciones:
 
-![Configuración visuales con selector de paleta](options-display.png)
+![Configuración visual con selector de paleta](options-display.png)
 
 Habilidades agrupa según la habilidad principal; es el modo predeterminado usado en este manual. Grupos refleja tus [grupos de roles](topic:role-groups) en su orden.
 

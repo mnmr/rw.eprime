@@ -1016,6 +1016,7 @@ namespace EPrimeReadouts.UI
                 Thresholds = store.Model.Thresholds,
                 CountRules = store.Model.CountRules,
                 SearchText = SearchText,
+                SearchCulture = UiLanguage.CaseCulture,
                 SearchCounts = renderData.Counts.SearchCounts,
                 SearchHideZero = settings.searchHideZero,
                 SearchStorageOnly = settings.searchStorageOnly,
@@ -1035,8 +1036,11 @@ namespace EPrimeReadouts.UI
             RenderModel nextModel = ReadoutLayoutEngine.Build(input);
             bool changed = draw == null
                 || !RenderModelEquality.ContentEquals(draw.Model, nextModel);
-            if (changed)
-                draw = DrawModel.Resolve(nextModel, renderData);
+            bool presentationChanged = builtUiRevision != UiRevision.Current;
+            if (changed || presentationChanged)
+                // Labels are translated and fitted in Resolve. Equal core
+                // cells do not imply equal language/font presentation.
+                draw = DrawModel.Resolve(changed ? nextModel : draw!.Model, renderData);
             else
                 // Equal content: keep the published model identity; only the
                 // snapshot reference behind tooltips needs refreshing (equal
@@ -1053,7 +1057,7 @@ namespace EPrimeReadouts.UI
             builtCounts = renderData.Counts;
             builtUiRevision = UiRevision.Current;
             builtHoverId = hoveredGroupId;
-            return changed;
+            return changed || presentationChanged;
         }
 
         private static void EnsurePresentationText()

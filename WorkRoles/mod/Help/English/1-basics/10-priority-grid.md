@@ -9,8 +9,7 @@ table's scrollbar open a read-only priority grid, one for each view:
 
 The grid shows the priorities WorkRoles computed for every listed
 colonist, respecting the active filters. The button at the top switches
-between the mod's raw ranks and the familiar vanilla 0 to 4 view. Drag
-the corner grip to resize; double-click it to snap back.
+between the mod's raw ranks and the familiar vanilla 0 to 4 view.
 
 Two related switches live on the Options tab:
 

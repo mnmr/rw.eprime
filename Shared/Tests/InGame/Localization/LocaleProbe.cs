@@ -34,6 +34,10 @@ public sealed class LocaleProbe : GameComponent
     private string responseAction = "";
     private string responseError = "";
     private static bool layoutChecks;
+    private const string HarmonyId = "rimshared.tests.localization.locale-layout";
+    private static LocaleProbe? active;
+    private static bool hooked;
+    private bool cacheOnRepaint;
     public LocaleProbe(Game game) { }
 
     public override void GameComponentUpdate()
@@ -51,6 +55,16 @@ public sealed class LocaleProbe : GameComponent
             if (!RunIdentity.Matches(profile, token) || !File.Exists(Path.Combine(profile, "Config", "locale-probe.enabled"))) { profile = ""; return; }
             Prefs.DevMode = false;
             layoutChecks = File.Exists(Path.Combine(profile, "Config", "locale-layout-checks.enabled"));
+            if (layoutChecks)
+            {
+                active = this;
+                if (!hooked)
+                {
+                    new Harmony(HarmonyId).Patch(AccessTools.Method(typeof(Window), nameof(Window.WindowOnGUI)),
+                        postfix: new HarmonyMethod(typeof(LocaleProbe), nameof(AfterWindowRepaint)));
+                    hooked = true;
+                }
+            }
             AccessTools.Field(typeof(EditWindow_Log), "canAutoOpen").SetValue(null, false);
             EditWindow_Log.wantsToOpen = false;
             Find.WindowStack.TryRemove(typeof(EditWindow_Log), false);
@@ -76,6 +90,7 @@ public sealed class LocaleProbe : GameComponent
         if (profile.Length == 0) return;
         if (responseRequest != 0)
         {
+            if (cacheOnRepaint) return;
             if (--settle > 0) return;
             PublishResponse();
             return;
@@ -91,7 +106,16 @@ public sealed class LocaleProbe : GameComponent
         try
         {
             if (action == "inspect") { }
-            else if (action == "help-cache") CheckHelpCache();
+            else if (action == "help-cache") cacheOnRepaint = true;
+            else if (action == "complete")
+            {
+                window?.Close(false); window = null; help = null;
+                if (hooked)
+                {
+                    new Harmony(HarmonyId).Unpatch(AccessTools.Method(typeof(Window), nameof(Window.WindowOnGUI)), HarmonyPatchType.Postfix, HarmonyId);
+                    hooked = false; active = null;
+                }
+            }
             else if (action == "help-next")
             {
                 Require(help != null, "No help window");
@@ -119,6 +143,18 @@ public sealed class LocaleProbe : GameComponent
             else Open(action);
         }
         catch (Exception ex) { responseError = ex.ToString(); }
+    }
+
+    private static void AfterWindowRepaint(Window __instance)
+    {
+        // Match the production builder's GUI context; native text measurement
+        // outside repaint can differ even with the same font and dimensions.
+        LocaleProbe? probe = active;
+        if (probe == null || !probe.cacheOnRepaint || !ReferenceEquals(probe.window, __instance)
+            || Event.current.type != EventType.Repaint) return;
+        try { probe.CheckHelpCache(); }
+        catch (Exception error) { probe.responseError = error.ToString(); }
+        finally { probe.cacheOnRepaint = false; }
     }
 
     private void Open(string action)
@@ -234,9 +270,10 @@ public sealed class LocaleProbe : GameComponent
 
     private void CheckHelpCache()
     {
+        // Screenshots cannot prove reference reuse or content-cache isolation;
+        // inspect those lifecycle invariants on the actual rendered window.
         Require(layoutChecks && help != null, "Layout test requires a live help view");
         object view = help!;
-        object entryState = MetricState();
         object topics = Get(view, "topicLayoutSource")!;
         object before = Get(view, "topicRowRects")!;
         float width = (float)Get(view, "topicLayoutWidth")!, height = (float)Get(view, "topicLayoutHeight")!;
@@ -244,7 +281,6 @@ public sealed class LocaleProbe : GameComponent
         object? generation = Get(content, "Generation");
         Call(view.GetType(), "EnsureTopicLayout", view, topics, width, height);
         Require(ReferenceEquals(before, Get(view, "topicRowRects")), "Unchanged help layout rebuilt");
-        object measurementsBeforeNarrow = SmallMeasurements((Array)topics, width - 32f);
         Call(view.GetType(), "EnsureTopicLayout", view, topics, width - 20f, height);
         object narrower = Get(view, "topicRowRects")!;
         Require(!ReferenceEquals(before, narrower), "Changed help width retained obsolete geometry");
@@ -254,25 +290,12 @@ public sealed class LocaleProbe : GameComponent
         Type metrics = view.GetType().Assembly.GetType("RimShared.UiLib.UiRevision", true)!;
         int oldMetric = (int)Get(view, "topicLayoutMetrics")!;
         bool oldTiny = Prefs.DisableTinyText;
-        object metricBefore = MetricState();
-        object measurementsBeforeMetric = SmallMeasurements((Array)topics, width - 32f);
         try
         {
             Prefs.DisableTinyText = !oldTiny;
             Call(metrics, "ObserveCurrentMetrics", null);
             Call(view.GetType(), "EnsureTopicLayout", view, topics, width - 20f, height);
             Require((int)Get(view, "topicLayoutMetrics")! != oldMetric, "Metric preference not observed");
-            Rect[] metricRows = (Rect[])Get(view, "topicRowRects")!;
-            Publish("locale-metric-diagnostic.json", new {
-                language = LanguageDatabase.activeLanguage.LegacyFolderName,
-                window = window!.GetType().Name, oldTiny, entryState, metricBefore,
-                measurementsBeforeNarrow, measurementsBeforeMetric, measurementsAfterMetric = SmallMeasurements((Array)topics, width - 32f),
-                metricAfter = MetricState(),
-                titles = ((Array)topics).Cast<object>().Select(t => Get(t, "ListTitle")).ToArray(),
-                before = ((Rect[])narrower).Select(r => new { r.x, r.y, r.width, r.height }).ToArray(),
-                after = metricRows.Select(r => new { r.x, r.y, r.width, r.height }).ToArray(),
-                sameIdentity = ReferenceEquals(narrower, metricRows)
-            });
             // Small-font help rows are equal under a Tiny preference change,
             // so this unrelated metric rebuild must preserve row identity.
             Require(ReferenceEquals(narrower, Get(view, "topicRowRects")), "Equal metric rebuild lost row identity");
@@ -281,30 +304,6 @@ public sealed class LocaleProbe : GameComponent
             Require(Equals(generation, Get(content, "Generation")), "Metric preference invalidated help content");
         }
         finally { Prefs.DisableTinyText = oldTiny; Call(metrics, "ObserveCurrentMetrics", null); Call(view.GetType(), "EnsureTopicLayout", view, topics, width, height); }
-    }
-
-    private static object MetricState() => new {
-        font = Text.Font.ToString(), style = Text.CurFontStyle.fontStyle.ToString(),
-        fontSize = Text.CurFontStyle.fontSize, fontAsset = Text.CurFontStyle.font?.name,
-        lineHeight = Text.LineHeight, wrap = Text.WordWrap,
-        smallStyle = Text.fontStyles[(int)GameFont.Small].fontStyle.ToString(),
-        smallSize = Text.fontStyles[(int)GameFont.Small].fontSize,
-        smallFontAsset = Text.fontStyles[(int)GameFont.Small].font?.name
-    };
-
-    private static object SmallMeasurements(Array topics, float width)
-    {
-        GUIStyle style = Text.fontStyles[(int)GameFont.Small];
-        bool oldWrap = style.wordWrap;
-        try
-        {
-            style.wordWrap = true;
-            return topics.Cast<object>().Select(t => {
-                var text = new GUIContent((string)Get(t, "ListTitle")!);
-                return new { first = style.CalcHeight(text, width), second = style.CalcHeight(text, width) };
-            }).ToArray();
-        }
-        finally { style.wordWrap = oldWrap; }
     }
 
     private void CheckControlGeometry()

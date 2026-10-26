@@ -1,6 +1,6 @@
 ---
-title: Récupération de l'affichage
+title: Affichage de secours
 ---
-Readouts restaure automatiquement les images mises en cache de son panneau lorsque les ressources graphiques sont perdues, par exemple au réveil de l'ordinateur.
+Readouts utilise des images du panneau mises en cache pour réduire le travail de dessin. S'il détecte un problème lors de leur affichage, le panneau est dessiné directement à la place.
 
-Si le rendu échoue, le panneau passe au dessin direct et son engrenage devient ambré. Des échecs répétés rendent ensuite la main à l'affichage du jeu jusqu'au prochain chargement d'une partie. Chaque changement de mode est inscrit dans le journal du jeu.
+Si le rendu en mémoire tampon est désactivé après des échecs, l'engrenage devient ambré. Si les échecs se répètent encore, l'affichage du jeu prend le relais jusqu'au prochain chargement d'une partie. Ces changements de mode sont inscrits dans le journal du jeu.

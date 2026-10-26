@@ -23,6 +23,7 @@ namespace RimShared.GameLib.Localization
 
         public static void Install()
         {
+            SharedKeyed.Install();
             MethodInfo load = AccessTools.Method(typeof(LoadedLanguage), nameof(LoadedLanguage.LoadData));
             Patches? patches = Harmony.GetPatchInfo(load);
             if (patches != null && patches.Owners.Contains(HarmonyId)) return;
@@ -36,6 +37,7 @@ namespace RimShared.GameLib.Localization
         /// <summary>Process shutdown/test teardown; call only when all consumers stop.</summary>
         public static void Uninstall()
         {
+            SharedKeyed.Uninstall();
             new Harmony(HarmonyId).Unpatch(
                 AccessTools.Method(typeof(LoadedLanguage), nameof(LoadedLanguage.LoadData)),
                 HarmonyPatchType.All, HarmonyId);
@@ -48,8 +50,7 @@ namespace RimShared.GameLib.Localization
 
         private static void AfterLoad(LoadedLanguage __instance, bool __state)
         {
-            if (!__state || string.Equals(__instance.folderName, "English", StringComparison.OrdinalIgnoreCase))
-                return;
+            if (!__state || string.Equals(__instance.folderName, "English", StringComparison.OrdinalIgnoreCase)) return;
             string[] languages = LanguageFolders.Candidates(
                 __instance.folderName, __instance.LegacyFolderName);
             List<ModContentPack> mods = LoadedModManager.RunningModsListForReading;
@@ -67,6 +68,54 @@ namespace RimShared.GameLib.Localization
                         LoadDefs(__instance, Path.Combine(root, "DefInjected"));
                     }
                 }
+            }
+        }
+
+        // Separate ownership from the older loose-file loader: an older host
+        // may have installed that patch first, without embedded-key support.
+        private static class SharedKeyed
+        {
+            private const string Id = "rimshared.embedded-shared-translations";
+            internal static void Install()
+            {
+                MethodInfo load = AccessTools.Method(typeof(LoadedLanguage), nameof(LoadedLanguage.LoadData));
+                Patches? patches = Harmony.GetPatchInfo(load);
+                if (patches != null && patches.Owners.Contains(Id)) return;
+                new Harmony(Id).Patch(load,
+                    prefix: new HarmonyMethod(typeof(SharedKeyed), nameof(Before)),
+                    postfix: new HarmonyMethod(typeof(SharedKeyed), nameof(After))
+                    { priority = Priority.Last, after = new[] { HarmonyId } });
+            }
+            internal static void Uninstall() => new Harmony(Id).Unpatch(
+                AccessTools.Method(typeof(LoadedLanguage), nameof(LoadedLanguage.LoadData)), HarmonyPatchType.All, Id);
+            private static void Before(bool ___dataIsLoaded, out bool __state) => __state = !___dataIsLoaded;
+            private static void After(LoadedLanguage __instance, bool __state)
+            {
+                if (!__state) return;
+                string[] languages = LanguageFolders.Candidates(__instance.folderName, __instance.LegacyFolderName);
+                for (int i = 0; i < languages.Length; i++)
+                    LoadSharedKeyed(__instance, "FallbackLanguages." + languages[i] + ".");
+                // Let Translator fall through to the default language. Putting
+                // built-in English into another language would shadow a
+                // community override supplied in the English dictionary.
+                if (string.Equals(__instance.folderName, "English", StringComparison.OrdinalIgnoreCase))
+                    LoadSharedKeyed(__instance, "Languages.English.");
+            }
+        }
+
+        private static void LoadSharedKeyed(LoadedLanguage language, string folder)
+        {
+            Assembly assembly = typeof(BundledTranslationFallback).Assembly;
+            string prefix = "RimShared.Translations." + folder + "Keyed.";
+            string[] resources = assembly.GetManifestResourceNames();
+            Array.Sort(resources, StringComparer.Ordinal);
+            for (int i = 0; i < resources.Length; i++)
+            {
+                string name = resources[i];
+                if (!name.StartsWith(prefix, StringComparison.Ordinal) || !name.EndsWith(".xml", StringComparison.Ordinal)) continue;
+                using (Stream stream = assembly.GetManifestResourceStream(name)!)
+                using (var reader = new StreamReader(stream))
+                    PublishKeyed(language, reader.ReadToEnd(), name);
             }
         }
 
@@ -94,35 +143,36 @@ namespace RimShared.GameLib.Localization
             for (int f = 0; f < paths.Length; f++)
             {
                 string path = paths[f];
-                var entries = new List<DirectXmlLoaderSimple.XmlKeyValuePair>();
                 try
                 {
-                    // Parse the whole file before publishing any of its values.
-                    foreach (DirectXmlLoaderSimple.XmlKeyValuePair entry in
-                        DirectXmlLoaderSimple.ValuesFromXmlFile(File.ReadAllText(path)))
-                        entries.Add(entry);
+                    PublishKeyed(language, File.ReadAllText(path), path);
                 }
                 catch (Exception exception) when (exception is IOException
                     || exception is UnauthorizedAccessException || exception is XmlException)
                 {
                     language.loadErrors.Add("Could not load bundled translation file " + path + ": " + exception.Message);
-                    continue;
                 }
-                for (int e = 0; e < entries.Count; e++)
+            }
+        }
+
+        private static void PublishKeyed(LoadedLanguage language, string xml, string source)
+        {
+            // Fully parse before publishing, including for embedded catalogs.
+            var entries = new List<DirectXmlLoaderSimple.XmlKeyValuePair>();
+            foreach (DirectXmlLoaderSimple.XmlKeyValuePair entry in DirectXmlLoaderSimple.ValuesFromXmlFile(xml))
+                entries.Add(entry);
+            for (int e = 0; e < entries.Count; e++)
+            {
+                DirectXmlLoaderSimple.XmlKeyValuePair entry = entries[e];
+                if (entry.value == LoadedLanguage.PlaceholderText) continue;
+                if (language.keyedReplacements.TryGetValue(entry.key, out LoadedLanguage.KeyedReplacement? existing)
+                    && !existing.isPlaceholder) continue;
+                language.keyedReplacements[entry.key] = new LoadedLanguage.KeyedReplacement
                 {
-                    DirectXmlLoaderSimple.XmlKeyValuePair entry = entries[e];
-                    if (entry.value == LoadedLanguage.PlaceholderText) continue;
-                    if (language.keyedReplacements.TryGetValue(entry.key, out LoadedLanguage.KeyedReplacement? existing)
-                        && !existing.isPlaceholder) continue;
-                    language.keyedReplacements[entry.key] = new LoadedLanguage.KeyedReplacement
-                    {
-                        key = entry.key,
-                        value = entry.value,
-                        fileSource = Path.GetFileName(path),
-                        fileSourceFullPath = path,
-                        fileSourceLine = entry.lineNumber
-                    };
-                }
+                    key = entry.key, value = entry.value,
+                    fileSource = Path.GetFileName(source), fileSourceFullPath = source,
+                    fileSourceLine = entry.lineNumber
+                };
             }
         }
 

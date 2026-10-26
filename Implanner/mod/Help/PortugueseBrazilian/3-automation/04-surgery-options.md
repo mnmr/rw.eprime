@@ -5,11 +5,11 @@ title: Opções de cirurgia
 
 A **estratégia de progressão** define a ordem de entrega. A prioridade na Visão geral sempre determina quem vem primeiro.
 
-- **Lotes por nível**: todos recebem o melhor nível antes de avançar aos inferiores. O colono opera quando seu nível inteiro está reservado. Cada pessoa precisa de mais cirurgias, mas todos se beneficiam antes.
+- **Lotes por nível**: todos recebem o melhor nível antes de avançar aos inferiores. O colono vai para cirurgia quando seu nível inteiro está reservado. Cada pessoa precisa de mais cirurgias, mas todos se beneficiam antes.
 - **Conjuntos completos**: termina todo o plano de um colono antes do próximo. A cirurgia espera a reserva completa. Cada pessoa precisa de menos cirurgias, mas a última espera mais.
 - **Assim que possível**: cada implante disponível é agendado para quem mais precisa segundo a prioridade. Em empate, pernas vão ao mais lento; braços primeiro a quem carrega arma corpo a corpo, depois à maior soma de Fabricação e Intelectual. Nada espera lote: uma perna é agendada assim que estiver reservada e no local, mesmo que seja uma cirurgia por implante.
 
-**Cirurgias simultâneas** limita os colonos com operações agendadas por colônia. Começa com um a cada dez. Com **Contar personagens hospitalizadas**, colonos e escravos em camas médicas ou incapacitados aguardando tratamento também ocupam vagas. Novas cirurgias esperam espaço. Prisioneiros, hóspedes e pacientes visitantes de outras facções nunca ocupam vagas.
+**Cirurgias simultâneas** limita os colonos com operações agendadas por colônia. Começa com um a cada dez. Com **Contar pacientes atuais**, colonos e escravos em camas médicas ou incapacitados aguardando tratamento também ocupam vagas. Novas cirurgias esperam espaço. Prisioneiros, hóspedes e pacientes visitantes de outras facções nunca ocupam vagas.
 
 **Dar os melhores implantes aos colonos mais prioritários** aparece quando um mod atribui qualidade a implantes. Veja [Qualidade mínima](topic:minimum-quality).
 

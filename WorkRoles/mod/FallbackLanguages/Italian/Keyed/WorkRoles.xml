@@ -88,7 +88,7 @@
   <WR_RecTuneOrderingPointsRow>Punti dei segnali</WR_RecTuneOrderingPointsRow>
   <WR_RecTuneOrderingPointsRowDesc>Punti assegnati da ogni forza del segnale quando si ordina l'elenco finale dei ruoli consigliati.</WR_RecTuneOrderingPointsRowDesc>
   <WR_RecTuneMinimumPickRow>Bonus per la copertura minima</WR_RecTuneMinimumPickRow>
-  <WR_RecTuneMinimumPickRowDesc>Punti per l'ordine attribuiti alla prima, seconda, terza e a ogni successiva pedina scelta per soddisfare il numero minimo di titolari di un ruolo.</WR_RecTuneMinimumPickRowDesc>
+  <WR_RecTuneMinimumPickRowDesc>Punti per l'ordine attribuiti al primo, secondo, terzo e a ogni successivo lavoratore scelto per soddisfare il numero minimo di titolari di un ruolo.</WR_RecTuneMinimumPickRowDesc>
   <WR_RecTuneCategoryPointsRow>Punti della categoria</WR_RecTuneCategoryPointsRow>
   <WR_RecTuneCategoryPointsRowDesc>Punti per l'ordine aggiunti dall'importanza per la colonia: Importante porta i ruoli essenziali sopra i lavori produttivi con lo stesso segnale; Facoltativo li sposta verso il fondo.</WR_RecTuneCategoryPointsRowDesc>
   <WR_RecTuneTimePointsRow>Punti del tempo richiesto</WR_RecTuneTimePointsRow>
@@ -110,16 +110,16 @@
   <WR_RecTuneOptionalTargetMinimumPoints>Punti minimi degli obiettivi facoltativi</WR_RecTuneOptionalTargetMinimumPoints>
   <WR_RecTuneOptionalTargetMinimumPointsDesc>Somma minima dei passi dei segnali sopra la soglia configurata necessaria per consigliare un obiettivo facoltativo con più abilità.</WR_RecTuneOptionalTargetMinimumPointsDesc>
   <WR_RecTuneLeadMinimumConnectedTargets>Obiettivi collegati per la distribuzione</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Numero minimo di obiettivi formativi collegati prima che il sistema cerchi di assegnarne i ruoli guida a pedine diverse.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
+  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Numero minimo di obiettivi formativi collegati prima che il sistema cerchi di assegnarne i ruoli guida a lavoratori diversi.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
   <WR_RecTuneLeadMinimumSignal>Segnale minimo del ruolo guida</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>Il segnale più basso consentito a una pedina scelta come titolare di un ruolo guida distribuito tra i percorsi formativi.</WR_RecTuneLeadMinimumSignalDesc>
+  <WR_RecTuneLeadMinimumSignalDesc>Il segnale più basso consentito a un lavoratore scelto come titolare di un ruolo guida distribuito tra i percorsi formativi.</WR_RecTuneLeadMinimumSignalDesc>
   <WR_RecTuneHunterTiersRow>Livello massimo di Tiro per fascia</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Soglie di Tiro per la posizione dinamica del Cacciatore. La fascia 1 lo colloca subito dopo i lavori di base, le fasce 2 e 3 dopo i ruoli lavorativi intermedi e finali; i livelli sopra la fascia 4 lo collocano per ultimo.</WR_RecTuneHunterTiersRowDesc>
   <WR_TrainingSection>Percorso formativo</WR_TrainingSection>
   <WR_TrainingHelp>Qui puoi definire come i coloni acquisiscono nuove abilità e progrediscono verso questo ruolo. Un percorso formativo può avere più fasce, consentendo la sovrapposizione dei ruoli. Se il percorso è consigliato a un colono, gli saranno consigliati tutti i ruoli validi per il suo livello di abilità attuale.</WR_TrainingHelp>
   <WR_TrainingTipWhat>La progressione propria del ruolo: ogni ruolo membro ha una fascia di abilità in cui viene consigliato. Il ruolo stesso rimane sempre nel proprio percorso.</WR_TrainingTipWhat>
   <WR_TrainingTipBands>Le fasce sovrapposte coesistono; dove non si sovrappongono, il ruolo successivo sostituisce il precedente.</WR_TrainingTipBands>
-  <WR_TrainingTipOrder>Le assegnazioni danno precedenza alle fasce con minimo più alto. A parità di fascia, prevale l'abilità più debole della pedina per il ruolo, poi l'ordine salvato del percorso.</WR_TrainingTipOrder>
+  <WR_TrainingTipOrder>Le assegnazioni danno precedenza alle fasce con minimo più alto. A parità di fascia, prevale l'abilità più debole del lavoratore per il ruolo, poi l'ordine salvato del percorso.</WR_TrainingTipOrder>
   <WR_AddNew>Aggiungi nuovo</WR_AddNew>
   <WR_WhenPanelCaption>Progressione del ruolo: qui puoi definire a quali livelli di abilità vengono consigliati i ruoli mostrati. I ruoli sovrapposti si completano a vicenda.</WR_WhenPanelCaption>
   <WR_AddRole>Aggiungi ruolo</WR_AddRole>
@@ -254,7 +254,7 @@
   <WR_GroupByCaption>Raggruppa per</WR_GroupByCaption>
   <WR_SkillColumnsCaption>Colonne abilità</WR_SkillColumnsCaption>
   <WR_RoleDisplayCaption>Visualizzazione dei ruoli</WR_RoleDisplayCaption>
-  <WR_ColonistSearchTip>Cerca nei nomi dei coloni. Separa i termini con spazi: devono corrispondere tutti. Aggiungi r: o role: prima di un termine per cercare nei nomi dei ruoli assegnati, oppure j: o job: per cercare nelle attività dei ruoli assegnati. Esempio: br r:doc.</WR_ColonistSearchTip>
+  <WR_ColonistSearchTip>Cerca nei nomi dei coloni. Separa i termini con spazi: devono corrispondere tutti. Aggiungi r: o role: prima di un termine per cercare nei nomi dei ruoli assegnati, oppure j: o job: per cercare nelle attività dei ruoli assegnati. Esempio: br r:med.</WR_ColonistSearchTip>
   <WR_ColonistRoleFilterTip>Elenca i coloni con il ruolo selezionato. Corrisponde anche un ruolo assegnato non di blocco le cui attività coprano interamente il ruolo selezionato. Si combina con i filtri di ricerca, attività e luogo.</WR_ColonistRoleFilterTip>
   <WR_ColonistJobFilterTip>Selezionato: {0}
 
@@ -292,7 +292,7 @@ Elenca i coloni i cui ruoli assegnati non di blocco contengono questa attività.
   <WR_ChipsNormal>Tessere: nomi completi</WR_ChipsNormal>
   <WR_ChipsCompact>Tessere: iniziali</WR_ChipsCompact>
   <WR_ChipsIcons>Tessere: icone</WR_ChipsIcons>
-  <WR_OrderSuffixBar>(ordine delle schede)</WR_OrderSuffixBar>
+  <WR_OrderSuffixBar>(ordine della barra)</WR_OrderSuffixBar>
   <WR_OrderSuffixAZ>(A-Z)</WR_OrderSuffixAZ>
   <WR_DisplayButton>Visualizzazione</WR_DisplayButton>
   <WR_DisplayOptions>Opzioni di visualizzazione</WR_DisplayOptions>
@@ -375,8 +375,8 @@ L'attività non è stata interrotta. Questo avviso appare una volta per salvatag
   <WR_RecTipWithWaiverOne>{0} (1 sostituzione formativa)</WR_RecTipWithWaiverOne>
   <WR_RecTipWithWaiversMany>{0} ({1} sostituzioni formative)</WR_RecTipWithWaiversMany>
   <WR_RecTipEveryoneCapable>Assegnato a tutti gli idonei</WR_RecTipEveryoneCapable>
-  <WR_RecDecisionAuto>Assegnato automaticamente a ogni pedina capace.</WR_RecDecisionAuto>
-  <WR_RecDecisionSignals>La soglia configurata dei segnali rende idonea questa pedina.</WR_RecDecisionSignals>
+  <WR_RecDecisionAuto>Assegnato automaticamente a chiunque sia capace di svolgere il lavoro.</WR_RecDecisionAuto>
+  <WR_RecDecisionSignals>Soddisfa la soglia configurata dei segnali.</WR_RecDecisionSignals>
   <WR_RecDecisionCoverageDraft>Miglior candidato rimasto, scelto per raggiungere la copertura richiesta.</WR_RecDecisionCoverageDraft>
   <WR_RecDecisionTraining>Assegnato tramite il percorso formativo per {0}.</WR_RecDecisionTraining>
   <WR_RecDecisionTrainingUnknown>Assegnato tramite un percorso formativo.</WR_RecDecisionTrainingUnknown>
@@ -399,16 +399,16 @@ L'attività non è stata interrotta. Questo avviso appare una volta per salvatag
   <WR_RecDecisionDisabled>Questo ruolo è disattivato.</WR_RecDecisionDisabled>
   <WR_RecDecisionUnavailable>Il lavoro di questo ruolo non è disponibile finché non termina la ricerca necessaria.</WR_RecDecisionUnavailable>
   <WR_RecDecisionExcluded>Questo ruolo è gestito da regole ed escluso dai consigli ordinari.</WR_RecDecisionExcluded>
-  <WR_RecDecisionIncapable>Questa pedina non è capace di svolgere il lavoro del ruolo.</WR_RecDecisionIncapable>
+  <WR_RecDecisionIncapable>Incapace di svolgere il lavoro del ruolo.</WR_RecDecisionIncapable>
   <WR_RecDecisionNotMechanitor>Questo colono non ha un mechlink, quindi non può svolgere il lavoro da meccanitor.</WR_RecDecisionNotMechanitor>
-  <WR_RecDecisionHunterRequirements>Questa pedina non ha un'arma a distanza.</WR_RecDecisionHunterRequirements>
-  <WR_RecDecisionAwful>Un segnale Pessimo esclude questa pedina.</WR_RecDecisionAwful>
+  <WR_RecDecisionHunterRequirements>Nessun'arma a distanza equipaggiata.</WR_RecDecisionHunterRequirements>
+  <WR_RecDecisionAwful>Escluso da un segnale Pessimo.</WR_RecDecisionAwful>
   <WR_RecDecisionCovered>Coperto dal ruolo consigliato: {0}.</WR_RecDecisionCovered>
   <WR_RecDecisionCoveredUnknown>Coperto da un altro ruolo consigliato.</WR_RecDecisionCoveredUnknown>
   <WR_RecDecisionCoverageFilled>La copertura richiesta è stata raggiunta con candidati meglio classificati.</WR_RecDecisionCoverageFilled>
-  <WR_RecDecisionWeakSignal>Il giudizio dei segnali è sotto la soglia configurata e questa pedina non è stata scelta per la copertura richiesta.</WR_RecDecisionWeakSignal>
-  <WR_RecDecisionNotSelected>Questa pedina non è stata scelta da nessuna regola di consiglio.</WR_RecDecisionNotSelected>
-  <WR_RecDecisionOutOfBand>L'abilità di questa pedina la colloca in un'altra fascia del percorso formativo.</WR_RecDecisionOutOfBand>
+  <WR_RecDecisionWeakSignal>Il giudizio dei segnali è sotto la soglia configurata e questo lavoratore non è stato scelto per la copertura richiesta.</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionNotSelected>Non selezionato da nessuna regola di consiglio.</WR_RecDecisionNotSelected>
+  <WR_RecDecisionOutOfBand>Il livello di abilità rientra in un'altra fascia del percorso formativo.</WR_RecDecisionOutOfBand>
   <WR_RecDecisionOutqualified>Per i posti disponibili sono stati scelti altri candidati più qualificati.</WR_RecDecisionOutqualified>
   <WR_RecDecisionRecommended>Scelto dal sistema di consigli.</WR_RecDecisionRecommended>
   <WR_MakeItSo>Applica tutto</WR_MakeItSo>
@@ -620,7 +620,7 @@ L'attività non è stata interrotta. Questo avviso appare una volta per salvatag
   <WR_WelcomeFind>Apri WorkRoles con il pulsante Lavoro in fondo allo schermo. La scheda Aiuto inizia con una visita guidata.</WR_WelcomeFind>
   <WR_WelcomeTakeMeThere>Apri subito</WR_WelcomeTakeMeThere>
   <WR_WelcomeSmallScreen>La tua area di gioco è {0}x{1}, cioè la risoluzione divisa per la scala dell'interfaccia. WorkRoles è progettato per almeno {2}x{3}, per esempio 1920x1080 con scala 1.25. Funziona anche su schermi più piccoli, ma alcune etichette vengono accorciate e le schede richiedono più scorrimento. Ridurre la scala dell'interfaccia nelle opzioni del gioco offre più spazio alla finestra.</WR_WelcomeSmallScreen>
-  <WR_RoleWorkAversion>Il precetto {1} di {0} si oppone a {2}. I consigli applicano una penalità finita: due passi di priorità, oppure sei punti abilità virtuali nella scelta del responsabile. La copertura obbligatoria può comunque selezionare questa pedina. La priorità di Cacciatore scende di due fasce, fino alla quinta; continua ad applicarsi il ripiego già previsto per la prima fascia.</WR_RoleWorkAversion>
+  <WR_RoleWorkAversion>Il precetto {1} di {0} si oppone a {2}. I consigli applicano una penalità finita: due passi di priorità, oppure sei punti abilità virtuali nella scelta del responsabile. La copertura obbligatoria può comunque selezionare questo lavoratore. La priorità di Cacciatore scende di due fasce, fino alla quinta; continua ad applicarsi il ripiego già previsto per la prima fascia.</WR_RoleWorkAversion>
   <WR_WorkBlockedTags>categorie di lavoro disattivate</WR_WorkBlockedTags>
   <WR_WorkBlockedCapacity>manca una capacità fisica richiesta</WR_WorkBlockedCapacity>
   <WR_WorkBlockedRace>non consentito dalle restrizioni lavorative di questa specie</WR_WorkBlockedRace>
@@ -630,4 +630,7 @@ L'attività non è stata interrotta. Questo avviso appare una volta per salvatag
   <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
   <WR_RecWorkAversion>{0} si oppone a {1}; il punteggio del consiglio viene ridotto.</WR_RecWorkAversion>
   <WR_RecDecisionWorkAversion>L'avversione porta il punteggio sotto la soglia dei lavori facoltativi.</WR_RecDecisionWorkAversion>
+  <WR_CompatibilityFreeWill>Free Will imposta le priorità di lavoro dei coloni, ma WorkRoles controlla quelle dei coloni gestiti e blocca tali modifiche.</WR_CompatibilityFreeWill>
+  <WR_CompatibilityPriorityMaster>PriorityMaster modifica i valori numerici delle priorità manuali e il loro intervallo. WorkRoles sostituisce questi comandi e ricava le priorità dei coloni gestiti dai ruoli.</WR_CompatibilityPriorityMaster>
+  <WR_CompatibilityWorkTab>{0} sostituisce la scheda Lavoro e controlla le priorità, entrando in conflitto con la gestione del lavoro basata sui ruoli di WorkRoles.</WR_CompatibilityWorkTab>
 </LanguageData>

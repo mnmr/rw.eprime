@@ -655,7 +655,7 @@ namespace WorkRoles.UI
             {
                 float addTextWidth = Mathf.Max(0f, addSkillWidth - 16f);
                 addSkillLabel = addTextWidth > 0f
-                    ? addSkillLabel.Truncate(addTextWidth)
+                    ? WrText.Truncate(addSkillLabel, addTextWidth)
                     : string.Empty;
             }
             float requiredAddX = halfWidth - addSkillWidth;
@@ -853,8 +853,7 @@ namespace WorkRoles.UI
         private static string FitLabel(string label, float width)
         {
             if (WrText.FitWidth(label) <= width) return label;
-            float room = (width - 2f) / 1.02f;
-            return room > 0f ? label.Truncate(room) : string.Empty;
+            return width > 0f ? WrText.Truncate(label, width) : string.Empty;
         }
 
         private static void LayoutInlineSkillChips(
@@ -871,7 +870,7 @@ namespace WorkRoles.UI
                 float fittedWidth = Mathf.Min(remaining, fullWidth);
                 if (fullWidth > remaining)
                     label = remaining > 0f
-                        ? label.Truncate(remaining) : string.Empty;
+                        ? WrText.Truncate(label, remaining) : string.Empty;
                 chips[i] = new RecSkillChip(
                     chip.DefName, label,
                     new Rect(x, 0f, fittedWidth, rowHeight), chip.Tip);

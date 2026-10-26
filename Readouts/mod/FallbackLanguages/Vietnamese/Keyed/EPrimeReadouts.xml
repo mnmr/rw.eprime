@@ -1,0 +1,156 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <EPR.Add>Thêm</EPR.Add>
+  <EPR.All>Tất cả</EPR.All>
+  <EPR.AllStorableItems>Mọi vật phẩm có thể lưu kho</EPR.AllStorableItems>
+  <EPR.BadDirectory>Nhập đường dẫn thư mục hợp lệ.</EPR.BadDirectory>
+  <EPR.BadFileName>Nhập tên tệp hợp lệ.</EPR.BadFileName>
+  <EPR.BottomMargin>Lề dưới</EPR.BottomMargin>
+  <EPR.Clear>Xóa</EPR.Clear>
+  <EPR.ClickOptions>Tùy chọn nhấp</EPR.ClickOptions>
+  <EPR.ClipboardEmpty>Bộ nhớ tạm trống hoặc không chứa dữ liệu xuất Readouts.</EPR.ClipboardEmpty>
+  <EPR.CollapseWhenIdle>Thu gọn khi không trỏ chuột</EPR.CollapseWhenIdle>
+  <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout vẽ bảng tài nguyên riêng trong chế độ tùy chỉnh hoặc đặt sẵn. Bảng đó tranh chỗ hiển thị với EPrime's Readouts.</EPR.CompatibilityCustomResourceReadout>
+  <EPR.CompatibilityReadoutsPlus>Readouts+ thêm điều khiển nhấp cho bảng tài nguyên gốc. Những điều khiển đó bị bỏ qua khi bật bảng EPrime.</EPR.CompatibilityReadoutsPlus>
+  <EPR.CompatibilityToggleableReadouts>Toggleable Readouts (kể cả Continued) thay cách vẽ bảng gốc. Bộ lọc và ghim của nó bị bỏ qua khi bật bảng EPrime.</EPR.CompatibilityToggleableReadouts>
+  <EPR.ContentSummary>{0} tập tài nguyên, {1} nhóm</EPR.ContentSummary>
+  <EPR.CopiedToClipboard>Đã chép vào bộ nhớ tạm.</EPR.CopiedToClipboard>
+  <EPR.CopyPath>Chép đường dẫn</EPR.CopyPath>
+  <EPR.CopyToClipboard>Chép vào bộ nhớ tạm</EPR.CopyToClipboard>
+  <EPR.CountOptions>Tùy chọn đếm</EPR.CountOptions>
+  <EPR.CountRuleCaption>Đổi cách đếm riêng cho tài nguyên/tập này</EPR.CountRuleCaption>
+  <EPR.Critical>Nguy cấp</EPR.Critical>
+  <EPR.CycleTip>Chuyển bậc hiển thị</EPR.CycleTip>
+  <EPR.DeleteConfirm>Xóa nhóm "{0}"?</EPR.DeleteConfirm>
+  <EPR.DeleteFileConfirm>Xóa tệp "{0}"? Không thể hoàn tác.</EPR.DeleteFileConfirm>
+  <EPR.DeletePoolConfirm>Xóa tập tài nguyên "{0}"? Các ô dùng nó sẽ bị xóa khỏi mọi nhóm.</EPR.DeletePoolConfirm>
+  <EPR.DisplayOptions>Tùy chọn hiển thị</EPR.DisplayOptions>
+  <EPR.Editor>Chỉnh sửa</EPR.Editor>
+  <EPR.EnableTip>Hiện nhóm này trên bảng</EPR.EnableTip>
+  <EPR.EnterPath>Nhập đường dẫn</EPR.EnterPath>
+  <EPR.ExpandOnHover>Mở rộng khi trỏ chuột</EPR.ExpandOnHover>
+  <EPR.Export>Xuất</EPR.Export>
+  <EPR.ExportLocationLabel>Nơi lưu</EPR.ExportLocationLabel>
+  <EPR.ExportOverwriteConfirm>{0} đã tồn tại. Thay thế?</EPR.ExportOverwriteConfirm>
+  <EPR.ExportPreviewTitle>Xuất Readouts</EPR.ExportPreviewTitle>
+  <EPR.Exported>Đã xuất vào {0}</EPR.Exported>
+  <EPR.FromClipboard>Từ bộ nhớ tạm</EPR.FromClipboard>
+  <EPR.GroupEditor>Sửa nhóm</EPR.GroupEditor>
+  <EPR.GroupNameTaken>Đã có nhóm mang tên này.</EPR.GroupNameTaken>
+  <EPR.Groups>Nhóm</EPR.Groups>
+  <EPR.Help>Trợ giúp</EPR.Help>
+  <EPR.HelpChapterBasics>Cơ bản</EPR.HelpChapterBasics>
+  <EPR.HelpChapterGroups>Nhóm</EPR.HelpChapterGroups>
+  <EPR.HelpChapterOptions>Tùy chọn</EPR.HelpChapterOptions>
+  <EPR.HelpChapterPools>Tập tài nguyên</EPR.HelpChapterPools>
+  <EPR.HelpEditor>Bảng này hiện các bậc của nhóm đang chọn.
+
+Một nhóm có tối đa ba bậc hiển thị. Bậc mới tự xuất hiện khi bậc trước không còn trống.
+
+Nhấp hoặc kéo vật phẩm từ bảng bên phải để thêm vào nhóm đã chọn.
+
+Nhấp ô để đặt tùy chọn hiển thị. Nhấp phải để bỏ gán. Kéo vật phẩm để đổi vị trí trong hoặc giữa các bậc.</EPR.HelpEditor>
+  <EPR.HelpGroups>Đây là các nhóm hiển thị tài nguyên của bạn. Mỗi nhóm hiện thành một dải riêng.
+
+Nhấp dấu chọn để bật/tắt hiển thị, hoặc [x] để xóa nhóm.
+
+Nhập tên rồi nhấn Thêm để tạo nhóm mới.</EPR.HelpGroups>
+  <EPR.HelpPoolEditor>Dùng bộ lọc chung để thu hẹp cây tài nguyên. Chọn danh mục hoặc từng tài nguyên để thêm vào tập đang chọn. Nhấp biểu tượng tài nguyên để dùng làm biểu tượng tập.</EPR.HelpPoolEditor>
+  <EPR.HelpPools>Tạo tập tài nguyên rồi chọn ở đây để sửa nội dung trong bảng Tài nguyên. Dùng thao tác trên hàng để đổi tên hoặc xóa tập.
+
+Để thêm tập vào nhóm, chuyển sang Sửa nhóm và dùng nhánh Tập tài nguyên trong cây Tài nguyên.</EPR.HelpPools>
+  <EPR.HelpReload>Tải lại</EPR.HelpReload>
+  <EPR.HelpResources>Duyệt tài nguyên và các tập đã tạo để thêm vào nhóm đang chọn.
+
+Nhấp mục để thêm vào cuối nhóm, hoặc kéo vào một ô ở bậc cụ thể. Mục đã gán được làm mờ và đánh dấu; nhấp phải hoặc nhấp dấu chọn để bỏ chúng.</EPR.HelpResources>
+  <EPR.HoverOptions>Tùy chọn trỏ chuột</EPR.HoverOptions>
+  <EPR.Import>Nhập</EPR.Import>
+  <EPR.ImportLocationLabel>Nơi nhập</EPR.ImportLocationLabel>
+  <EPR.ImportParseFailed>Không phân tích được XML Readouts: {0}</EPR.ImportParseFailed>
+  <EPR.ImportTitle>Nhập Readouts</EPR.ImportTitle>
+  <EPR.ImportWarning>CẢNH BÁO: Thao tác này THAY THẾ mọi tập tài nguyên, nhóm và ngưỡng hiện có. Ảnh hưởng mọi người chơi trong chế độ nhiều người.</EPR.ImportWarning>
+  <EPR.Imported>Đã nhập thành công.</EPR.Imported>
+  <EPR.ItemFilter>Lọc vật phẩm</EPR.ItemFilter>
+  <EPR.KeepReadoutToggle>Giữ nút bật/tắt bảng trên thanh công cụ</EPR.KeepReadoutToggle>
+  <EPR.KeepReadoutToggleTip>Giữ nút bảng tài nguyên gốc của trò chơi trên thanh công cụ ở góc dưới bên phải. Nhấp nút để hiện/ẩn các nhóm; khi ẩn nhóm, bảng chỉ còn bánh răng và ô tìm kiếm.</EPR.KeepReadoutToggleTip>
+  <EPR.LocCustom>Tùy chọn...</EPR.LocCustom>
+  <EPR.LocDesktop>Màn hình nền</EPR.LocDesktop>
+  <EPR.LocGameData>Thư mục dữ liệu trò chơi</EPR.LocGameData>
+  <EPR.LocUserHome>Thư mục cá nhân</EPR.LocUserHome>
+  <EPR.Low>Thấp</EPR.Low>
+  <EPR.MoreResults>…và {0} mục nữa</EPR.MoreResults>
+  <EPR.NameLabel>Tên</EPR.NameLabel>
+  <EPR.NoFiles>Không tìm thấy tệp xuất.</EPR.NoFiles>
+  <EPR.NoMatches>Không khớp</EPR.NoMatches>
+  <EPR.NoMatchingItems>Không có vật phẩm khớp</EPR.NoMatchingItems>
+  <EPR.OffsetX>Độ lệch ngang</EPR.OffsetX>
+  <EPR.OffsetY>Độ lệch dọc</EPR.OffsetY>
+  <EPR.Options>Tùy chọn</EPR.Options>
+  <EPR.OptionsFor>Tùy chọn hiển thị cho {0}</EPR.OptionsFor>
+  <EPR.Overview>Tổng quan</EPR.Overview>
+  <EPR.PanelWidth>Chiều rộng bảng</EPR.PanelWidth>
+  <EPR.PlannedWorkOptions>Việc dự kiến</EPR.PlannedWorkOptions>
+  <EPR.PoolNameTaken>Đã có tập tài nguyên mang tên này.</EPR.PoolNameTaken>
+  <EPR.PoolTip>Thêm dưới dạng tập: một ô hiện tổng số lượng mọi thứ trong danh mục này</EPR.PoolTip>
+  <EPR.Pools>Tập tài nguyên</EPR.Pools>
+  <EPR.PreviewGroupRow>{0} ({1} bậc, {2} ô)</EPR.PreviewGroupRow>
+  <EPR.PreviewGroupsHeader>Nhóm</EPR.PreviewGroupsHeader>
+  <EPR.PreviewNone>(không có)</EPR.PreviewNone>
+  <EPR.PreviewPoolRow>{0} ({1} thành viên)</EPR.PreviewPoolRow>
+  <EPR.PreviewPoolsHeader>Tập tài nguyên</EPR.PreviewPoolsHeader>
+  <EPR.QualityJobsMissingTip>Cần EPrime's Quality Jobs, hiện chưa được cài.</EPR.QualityJobsMissingTip>
+  <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs đã cài nhưng chưa có tích hợp cần thiết. Cập nhật để bật tùy chọn này.</EPR.QualityJobsOutdatedTip>
+  <EPR.QualityJobsRework>Hỗ trợ Quality Jobs</EPR.QualityJobsRework>
+  <EPR.QualityJobsReworkTip>Với lệnh và công trình có chất lượng mục tiêu, ước tính số lần cần thử và dành nguyên liệu cho tất cả. Công trình xây lại hoàn trả phần nguyên liệu theo trò chơi gốc khi tháo dỡ.</EPR.QualityJobsReworkTip>
+  <EPR.ReserveForBills>Dành tài nguyên cho lệnh</EPR.ReserveForBills>
+  <EPR.ReserveForBillsTip>Trừ nguyên liệu các lệnh chưa hoàn thành còn cần. Lệnh chỉ dành trước nguyên liệu nếu có đúng một cách đáp ứng. "Bất kỳ da nào" và lựa chọn mở tương tự không dành trước gì.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBuildables>Dành tài nguyên cho công trình</EPR.ReserveForBuildables>
+  <EPR.ReserveForBuildablesTip>Trừ nguyên liệu bản thiết kế và khung đang xây còn cần. Không tính lại vật liệu đã chuyển vào khung; bỏ qua bản thiết kế bị cấm.</EPR.ReserveForBuildablesTip>
+  <EPR.ResourcePoolEditor>Sửa tập tài nguyên</EPR.ResourcePoolEditor>
+  <EPR.Resources>Tài nguyên</EPR.Resources>
+  <EPR.RestoreConfirm>Thay TẤT CẢ nhóm và ngưỡng bằng bộ mặc định? Ảnh hưởng mọi người chơi trong chế độ nhiều người.</EPR.RestoreConfirm>
+  <EPR.RestoreDefaults>Khôi phục mặc định</EPR.RestoreDefaults>
+  <EPR.Results>Kết quả</EPR.Results>
+  <EPR.RuleAlwaysOff>Luôn tắt</EPR.RuleAlwaysOff>
+  <EPR.RuleAlwaysOn>Luôn bật</EPR.RuleAlwaysOn>
+  <EPR.RuleDefault>Mặc định</EPR.RuleDefault>
+  <EPR.Save>Lưu</EPR.Save>
+  <EPR.SearchFilter>Lọc tìm kiếm</EPR.SearchFilter>
+  <EPR.SearchHideForbidden>Bỏ qua vật phẩm bị cấm</EPR.SearchHideForbidden>
+  <EPR.SearchHideZero>Ẩn kết quả bằng 0</EPR.SearchHideZero>
+  <EPR.SearchOptions>Tùy chọn tìm kiếm</EPR.SearchOptions>
+  <EPR.SearchStorageOnly>Chỉ đếm đồ trong kho</EPR.SearchStorageOnly>
+  <EPR.SearchStorageOnlyTip>Khi bật, chỉ đếm đồ hợp lệ, chưa thối trong vùng kho hoặc công trình lưu trữ như kệ. Không tính đồ nằm rải rác nơi khác trên bản đồ. Không bao giờ tính đồ đang được mang, trong hành trang hoặc vật chứa, hay ở khu vực chưa khám phá. Vẫn tính đồ bị cấm trừ khi cũng bật “Bỏ qua vật phẩm bị cấm”.</EPR.SearchStorageOnlyTip>
+  <EPR.SelectGroupHint>Chọn hoặc tạo nhóm để chỉnh sửa.</EPR.SelectGroupHint>
+  <EPR.SelectJumpCamera>Đưa máy quay tới tài nguyên được nhấp</EPR.SelectJumpCamera>
+  <EPR.SelectOrCreatePool>Chọn hoặc tạo tập tài nguyên để bắt đầu.</EPR.SelectOrCreatePool>
+  <EPR.Set>Đặt</EPR.Set>
+  <EPR.ShowModName>Hiện tên mod</EPR.ShowModName>
+  <EPR.ShowNegativeCounts>Hiện thiếu hụt bằng số âm</EPR.ShowNegativeCounts>
+  <EPR.ShowNegativeCountsTip>Khi việc dự kiến cần nhiều hơn số đang có, hiện lượng thiếu thay vì dừng ở 0.</EPR.ShowNegativeCountsTip>
+  <EPR.ShowSearchFilter>Hiện bộ lọc tìm kiếm</EPR.ShowSearchFilter>
+  <EPR.ShowWhenZero>Hiện khi bằng 0</EPR.ShowWhenZero>
+  <EPR.SourceFilter>Lọc nguồn</EPR.SourceFilter>
+  <EPR.ThresholdCaption>Tùy chỉnh ngưỡng đổi màu số đếm</EPR.ThresholdCaption>
+  <EPR.Thresholds>Ngưỡng</EPR.Thresholds>
+  <EPR.TierLayoutHorizontal>Ngang</EPR.TierLayoutHorizontal>
+  <EPR.TierLayoutOptions>Bố trí bậc</EPR.TierLayoutOptions>
+  <EPR.TierLayoutTip>Cách nhóm mở rộng hiển thị các bậc phụ, dù mở bằng nút tam giác hay trỏ chuột. Ngang thêm chúng bên phải trên cùng hàng. Dọc đặt mỗi bậc trên hàng riêng và làm dải cao hơn.</EPR.TierLayoutTip>
+  <EPR.TierLayoutVertical>Dọc</EPR.TierLayoutVertical>
+  <EPR.TipAvailableStock>{0} có thể dùng · {1} trong kho</EPR.TipAvailableStock>
+  <EPR.TipDrain>Tiêu hao</EPR.TipDrain>
+  <EPR.TipEach>Mỗi</EPR.TipEach>
+  <EPR.TipInStock>Trong kho</EPR.TipInStock>
+  <EPR.TipMixedResources>Hỗn hợp</EPR.TipMixedResources>
+  <EPR.TipOtherPlannedWork>Khác ({0})</EPR.TipOtherPlannedWork>
+  <EPR.TipPlannedWork>Việc dự kiến</EPR.TipPlannedWork>
+  <EPR.TipQueued>Đang chờ</EPR.TipQueued>
+  <EPR.TipResource>Tài nguyên</EPR.TipResource>
+  <EPR.Title>EPrime's Readouts</EPR.Title>
+  <EPR.UseVanilla>Dùng bảng tài nguyên gốc</EPR.UseVanilla>
+  <EPR.Vanilla>Trò chơi gốc</EPR.Vanilla>
+  <EPR.WelcomeBody>Readouts thay bảng tài nguyên góc trên bên trái bằng các nhóm do bạn cấu hình. Mỗi nhóm chứa tối đa ba bậc tài nguyên hoặc tập tài nguyên; số đếm đổi màu theo ngưỡng bạn đặt.</EPR.WelcomeBody>
+  <EPR.WelcomeFind>Mở trình chỉnh sửa bằng nút bánh răng ở đầu bảng tài nguyên. Thẻ Tùy chọn chứa thiết lập hiển thị; thẻ Trợ giúp giải thích phần còn lại.</EPR.WelcomeFind>
+  <EPR.WelcomeTakeMeThere>Mở ngay</EPR.WelcomeTakeMeThere>
+  <EPR.WelcomeTitle>EPrime's Readouts</EPR.WelcomeTitle>
+</LanguageData>

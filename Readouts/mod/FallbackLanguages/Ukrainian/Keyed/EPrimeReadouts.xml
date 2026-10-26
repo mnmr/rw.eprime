@@ -1,0 +1,156 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <EPR.Add>Додати</EPR.Add>
+  <EPR.All>Усі</EPR.All>
+  <EPR.AllStorableItems>Усі предмети для зберігання</EPR.AllStorableItems>
+  <EPR.BadDirectory>Введіть коректний шлях до папки.</EPR.BadDirectory>
+  <EPR.BadFileName>Введіть коректну назву файлу.</EPR.BadFileName>
+  <EPR.BottomMargin>Нижній відступ</EPR.BottomMargin>
+  <EPR.Clear>Очистити</EPR.Clear>
+  <EPR.ClickOptions>Клацання</EPR.ClickOptions>
+  <EPR.ClipboardEmpty>Буфер обміну порожній або не містить експорту Readouts.</EPR.ClipboardEmpty>
+  <EPR.CollapseWhenIdle>Згортати без наведення</EPR.CollapseWhenIdle>
+  <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout малює власну панель ресурсів у довільному або готовому режимі. Ця панель конкурує з EPrime's Readouts за те саме місце.</EPR.CompatibilityCustomResourceReadout>
+  <EPR.CompatibilityReadoutsPlus>Readouts+ додає керування клацанням до звичайної панелі ресурсів. Воно не діє, поки ввімкнено панель EPrime.</EPR.CompatibilityReadoutsPlus>
+  <EPR.CompatibilityToggleableReadouts>Toggleable Readouts (зокрема Continued) замінює відображення звичайної панелі ресурсів. Його фільтри й закріплення не діють, поки ввімкнено панель EPrime.</EPR.CompatibilityToggleableReadouts>
+  <EPR.ContentSummary>Наборів: {0}, груп: {1}</EPR.ContentSummary>
+  <EPR.CopiedToClipboard>Скопійовано до буфера обміну.</EPR.CopiedToClipboard>
+  <EPR.CopyPath>Копіювати шлях</EPR.CopyPath>
+  <EPR.CopyToClipboard>Копіювати до буфера</EPR.CopyToClipboard>
+  <EPR.CountOptions>Підрахунок</EPR.CountOptions>
+  <EPR.CountRuleCaption>Окремі правила підрахунку ресурсу чи набору</EPR.CountRuleCaption>
+  <EPR.Critical>Критичний</EPR.Critical>
+  <EPR.CycleTip>Перемкнути видимі рівні</EPR.CycleTip>
+  <EPR.DeleteConfirm>Видалити групу «{0}»?</EPR.DeleteConfirm>
+  <EPR.DeleteFileConfirm>Видалити файл «{0}»? Цю дію неможливо скасувати.</EPR.DeleteFileConfirm>
+  <EPR.DeletePoolConfirm>Видалити набір «{0}»? Комірки з ним буде вилучено з усіх груп.</EPR.DeletePoolConfirm>
+  <EPR.DisplayOptions>Відображення</EPR.DisplayOptions>
+  <EPR.Editor>Редактор</EPR.Editor>
+  <EPR.EnableTip>Показувати цю групу на панелі ресурсів</EPR.EnableTip>
+  <EPR.EnterPath>Введіть шлях</EPR.EnterPath>
+  <EPR.ExpandOnHover>Розгортати при наведенні</EPR.ExpandOnHover>
+  <EPR.Export>Експорт</EPR.Export>
+  <EPR.ExportLocationLabel>Місце збереження</EPR.ExportLocationLabel>
+  <EPR.ExportOverwriteConfirm>{0} уже існує. Замінити?</EPR.ExportOverwriteConfirm>
+  <EPR.ExportPreviewTitle>Експорт Readouts</EPR.ExportPreviewTitle>
+  <EPR.Exported>Експортовано до {0}</EPR.Exported>
+  <EPR.FromClipboard>Із буфера обміну</EPR.FromClipboard>
+  <EPR.GroupEditor>Редактор груп</EPR.GroupEditor>
+  <EPR.GroupNameTaken>Група з такою назвою вже існує.</EPR.GroupNameTaken>
+  <EPR.Groups>Групи</EPR.Groups>
+  <EPR.Help>Довідка</EPR.Help>
+  <EPR.HelpChapterBasics>Основи</EPR.HelpChapterBasics>
+  <EPR.HelpChapterGroups>Групи</EPR.HelpChapterGroups>
+  <EPR.HelpChapterOptions>Параметри</EPR.HelpChapterOptions>
+  <EPR.HelpChapterPools>Набори ресурсів</EPR.HelpChapterPools>
+  <EPR.HelpEditor>Ця панель показує рівні вибраної групи.
+
+Група може мати до трьох рівнів відображення. Новий рівень з'являється автоматично, коли попередній містить хоча б один елемент.
+
+Клацайте або перетягуйте предмети з правої панелі, щоб додати їх до вибраної групи.
+
+Клацніть комірку, щоб задати параметри відображення. Клацніть правою кнопкою, щоб очистити її. Перетягуйте предмети для зміни порядку в межах рівня або між рівнями.</EPR.HelpEditor>
+  <EPR.HelpGroups>Це ваші групи відображення ресурсів. Кожна група має окрему смугу.
+
+Клацніть позначку, щоб змінити видимість, або [x], щоб видалити групу.
+
+Додавайте групи за допомогою поля назви та кнопки «Додати».</EPR.HelpGroups>
+  <EPR.HelpPoolEditor>Спільні фільтри звужують дерево ресурсів. Позначайте категорії або окремі ресурси, щоб включити їх до вибраного набору. Клацніть значок ресурсу, щоб зробити його значком набору.</EPR.HelpPoolEditor>
+  <EPR.HelpPools>Створіть набір ресурсів і виберіть його тут, щоб змінити склад на панелі «Ресурси». Кнопки рядка дозволяють перейменувати або видалити набір.
+
+Щоб додати набір до групи, відкрийте редактор груп і скористайтеся гілкою «Набори ресурсів» у дереві ресурсів.</EPR.HelpPools>
+  <EPR.HelpReload>Перезавантажити</EPR.HelpReload>
+  <EPR.HelpResources>Переглядайте ресурси й наявні набори ресурсів, щоб додати їх до вибраної групи.
+
+Клацніть запис, щоб додати його в кінець групи, або перетягніть у потрібну комірку рівня. Додані записи приглушені й позначені; клацніть їх правою кнопкою або клацніть позначку, щоб вилучити.</EPR.HelpResources>
+  <EPR.HoverOptions>Наведення</EPR.HoverOptions>
+  <EPR.Import>Імпорт</EPR.Import>
+  <EPR.ImportLocationLabel>Джерело імпорту</EPR.ImportLocationLabel>
+  <EPR.ImportParseFailed>Не вдалося прочитати XML Readouts: {0}</EPR.ImportParseFailed>
+  <EPR.ImportTitle>Імпорт Readouts</EPR.ImportTitle>
+  <EPR.ImportWarning>УВАГА: це ЗАМІНИТЬ усі поточні набори, групи й пороги. У мережевій грі це впливає на всіх гравців.</EPR.ImportWarning>
+  <EPR.Imported>Імпорт успішно застосовано.</EPR.Imported>
+  <EPR.ItemFilter>Фільтр предметів</EPR.ItemFilter>
+  <EPR.KeepReadoutToggle>Залишити перемикач на панелі</EPR.KeepReadoutToggle>
+  <EPR.KeepReadoutToggleTip>Залишає звичайну кнопку панелі ресурсів у правому нижньому куті. Клацання показує або приховує групи; коли групи приховані, залишаються лише шестерня та поле пошуку.</EPR.KeepReadoutToggleTip>
+  <EPR.LocCustom>Інше...</EPR.LocCustom>
+  <EPR.LocDesktop>Робочий стіл</EPR.LocDesktop>
+  <EPR.LocGameData>Папка даних гри</EPR.LocGameData>
+  <EPR.LocUserHome>Домашня папка</EPR.LocUserHome>
+  <EPR.Low>Низький</EPR.Low>
+  <EPR.MoreResults>…та ще {0}</EPR.MoreResults>
+  <EPR.NameLabel>Назва</EPR.NameLabel>
+  <EPR.NoFiles>Файлів експорту не знайдено.</EPR.NoFiles>
+  <EPR.NoMatches>Немає збігів</EPR.NoMatches>
+  <EPR.NoMatchingItems>Немає відповідних предметів</EPR.NoMatchingItems>
+  <EPR.OffsetX>Горизонтальний відступ</EPR.OffsetX>
+  <EPR.OffsetY>Вертикальний відступ</EPR.OffsetY>
+  <EPR.Options>Параметри</EPR.Options>
+  <EPR.OptionsFor>Відображення: {0}</EPR.OptionsFor>
+  <EPR.Overview>Огляд</EPR.Overview>
+  <EPR.PanelWidth>Ширина панелі</EPR.PanelWidth>
+  <EPR.PlannedWorkOptions>Заплановані роботи</EPR.PlannedWorkOptions>
+  <EPR.PoolNameTaken>Набір ресурсів із такою назвою вже існує.</EPR.PoolNameTaken>
+  <EPR.PoolTip>Додати набір ресурсів: одна комірка із загальною кількістю всіх предметів цієї категорії</EPR.PoolTip>
+  <EPR.Pools>Набори ресурсів</EPR.Pools>
+  <EPR.PreviewGroupRow>{0} (рівнів: {1}, комірок: {2})</EPR.PreviewGroupRow>
+  <EPR.PreviewGroupsHeader>Групи</EPR.PreviewGroupsHeader>
+  <EPR.PreviewNone>(немає)</EPR.PreviewNone>
+  <EPR.PreviewPoolRow>{0} (елементів: {1})</EPR.PreviewPoolRow>
+  <EPR.PreviewPoolsHeader>Набори</EPR.PreviewPoolsHeader>
+  <EPR.QualityJobsMissingTip>Потрібен EPrime's Quality Jobs, який не встановлено.</EPR.QualityJobsMissingTip>
+  <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs установлено, але ця версія не підтримує потрібну інтеграцію. Оновіть мод, щоб увімкнути цей параметр.</EPR.QualityJobsOutdatedTip>
+  <EPR.QualityJobsRework>Підтримка Quality Jobs</EPR.QualityJobsRework>
+  <EPR.QualityJobsReworkTip>Для замовлень і споруд із цільовою якістю оцінює кількість потрібних спроб та резервує матеріали на всі. Під час розбирання споруд повертається та частка матеріалів, яку повертає базова гра.</EPR.QualityJobsReworkTip>
+  <EPR.ReserveForBills>Резервувати для замовлень</EPR.ReserveForBills>
+  <EPR.ReserveForBillsTip>Віднімає інгредієнти, які ще потрібні незавершеним замовленням. Замовлення резервує інгредієнт лише тоді, коли є рівно один спосіб задовольнити цю вимогу. «Будь-яка шкіра» й подібні відкриті варіанти нічого не резервують.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBuildables>Резервувати для будівництва</EPR.ReserveForBuildables>
+  <EPR.ReserveForBuildablesTip>Віднімає матеріали, які ще потрібні кресленням і недобудованим каркасам. Уже доставлені до каркаса матеріали не враховуються повторно, а заборонені креслення ігноруються.</EPR.ReserveForBuildablesTip>
+  <EPR.ResourcePoolEditor>Редактор наборів ресурсів</EPR.ResourcePoolEditor>
+  <EPR.Resources>Ресурси</EPR.Resources>
+  <EPR.RestoreConfirm>Замінити ВСІ групи й пороги типовим набором? У мережевій грі це впливає на всіх гравців.</EPR.RestoreConfirm>
+  <EPR.RestoreDefaults>Відновити типові</EPR.RestoreDefaults>
+  <EPR.Results>Результати</EPR.Results>
+  <EPR.RuleAlwaysOff>Завжди вимкнено</EPR.RuleAlwaysOff>
+  <EPR.RuleAlwaysOn>Завжди ввімкнено</EPR.RuleAlwaysOn>
+  <EPR.RuleDefault>Типово</EPR.RuleDefault>
+  <EPR.Save>Зберегти</EPR.Save>
+  <EPR.SearchFilter>Пошук</EPR.SearchFilter>
+  <EPR.SearchHideForbidden>Ігнорувати заборонені предмети</EPR.SearchHideForbidden>
+  <EPR.SearchHideZero>Приховувати нульові результати</EPR.SearchHideZero>
+  <EPR.SearchOptions>Пошук</EPR.SearchOptions>
+  <EPR.SearchStorageOnly>Рахувати лише на складах</EPR.SearchStorageOnly>
+  <EPR.SearchStorageOnlyTip>Коли ввімкнено, враховуються лише придатні, незіпсовані предмети в зонах складу та спорудах для зберігання, зокрема на полицях. Предмети в інших місцях мапи не враховуються. Предмети, які несуть, тримають в інвентарі чи контейнерах, а також предмети в невідкритих ділянках ніколи не враховуються. Заборонені предмети враховуються, якщо не ввімкнено «Ігнорувати заборонені предмети».</EPR.SearchStorageOnlyTip>
+  <EPR.SelectGroupHint>Виберіть або створіть групу для редагування.</EPR.SelectGroupHint>
+  <EPR.SelectJumpCamera>Камера до вибраного ресурсу</EPR.SelectJumpCamera>
+  <EPR.SelectOrCreatePool>Спершу виберіть або створіть набір ресурсів.</EPR.SelectOrCreatePool>
+  <EPR.Set>Задати</EPR.Set>
+  <EPR.ShowModName>Показувати назву мода</EPR.ShowModName>
+  <EPR.ShowNegativeCounts>Показувати нестачу від'ємно</EPR.ShowNegativeCounts>
+  <EPR.ShowNegativeCountsTip>Якщо запланованим роботам потрібно більше, ніж є, показувати нестачу замість нуля.</EPR.ShowNegativeCountsTip>
+  <EPR.ShowSearchFilter>Показувати поле пошуку</EPR.ShowSearchFilter>
+  <EPR.ShowWhenZero>Показувати за нуля</EPR.ShowWhenZero>
+  <EPR.SourceFilter>Фільтр джерел</EPR.SourceFilter>
+  <EPR.ThresholdCaption>Пороги зміни кольору лічильників</EPR.ThresholdCaption>
+  <EPR.Thresholds>Пороги</EPR.Thresholds>
+  <EPR.TierLayoutHorizontal>Горизонтальне</EPR.TierLayoutHorizontal>
+  <EPR.TierLayoutOptions>Розташування рівнів</EPR.TierLayoutOptions>
+  <EPR.TierLayoutTip>Як розгорнута група показує додаткові рівні — після клацання трикутників чи наведення. Горизонтальне додає їх праворуч у тому самому рядку. Вертикальне відводить кожному рівню окремий рядок і збільшує висоту смуги.</EPR.TierLayoutTip>
+  <EPR.TierLayoutVertical>Вертикальне</EPR.TierLayoutVertical>
+  <EPR.TipAvailableStock>{0} доступно · {1} у запасі</EPR.TipAvailableStock>
+  <EPR.TipDrain>Витрати</EPR.TipDrain>
+  <EPR.TipEach>На одиницю</EPR.TipEach>
+  <EPR.TipInStock>У запасі</EPR.TipInStock>
+  <EPR.TipMixedResources>Різні</EPR.TipMixedResources>
+  <EPR.TipOtherPlannedWork>Інші ({0})</EPR.TipOtherPlannedWork>
+  <EPR.TipPlannedWork>Заплановані роботи</EPR.TipPlannedWork>
+  <EPR.TipQueued>У черзі</EPR.TipQueued>
+  <EPR.TipResource>Ресурс</EPR.TipResource>
+  <EPR.Title>EPrime's Readouts</EPR.Title>
+  <EPR.UseVanilla>Панель ресурсів базової гри</EPR.UseVanilla>
+  <EPR.Vanilla>Базова гра</EPR.Vanilla>
+  <EPR.WelcomeBody>Readouts замінює панель ресурсів у лівому верхньому куті групами, які ви налаштовуєте самі. Кожна група містить до трьох рівнів ресурсів або їхніх наборів, а лічильники змінюють колір за заданими порогами.</EPR.WelcomeBody>
+  <EPR.WelcomeFind>Відкрийте редактор кнопкою із шестернею вгорі панелі ресурсів. Вкладка «Параметри» містить налаштування відображення, а вкладка «Довідка» пояснює решту.</EPR.WelcomeFind>
+  <EPR.WelcomeTakeMeThere>Відкрити зараз</EPR.WelcomeTakeMeThere>
+  <EPR.WelcomeTitle>EPrime's Readouts</EPR.WelcomeTitle>
+</LanguageData>

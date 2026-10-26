@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <QJ_FinishBillLabel>Voltooi {0} ({1})</QJ_FinishBillLabel>
+  <QJ_AtStockCap>voorraadlimiet voor onafgemaakte voorwerpen bereikt</QJ_AtStockCap>
+  <QJ_UnfinishedWorkWaiting>het onafgemaakte voorwerp van deze opdracht wacht op hervatting</QJ_UnfinishedWorkWaiting>
+  <QJ_QualityPanelTitle>Quality Jobs</QJ_QualityPanelTitle>
+  <QJ_ManageBill>Deze opdracht beheren</QJ_ManageBill>
+  <QJ_FinisherSkill>Min. niveau: {0}</QJ_FinisherSkill>
+  <QJ_FinisherSkillTip>Alleen kolonisten met minstens dit vaardigheidsniveau mogen het werk voltooien. Iedereen mag het eerdere werk uitvoeren.</QJ_FinisherSkillTip>
+  <QJ_AutoBest>Beste afwerker volgen</QJ_AutoBest>
+  <QJ_AutoBestTip>Aan: Alleen de beste beschikbare afwerker in de kolonie mag dit werk voltooien; de vaardigheidseis volgt die kolonist automatisch. Afwezige, neergehaalde of bezige kolonisten tellen voor deze vergelijking nog steeds als beschikbaar.\n\nUit: Elke kolonist die aan de ingestelde vaardigheidseis voldoet, mag het werk voltooien.</QJ_AutoBestTip>
+  <QJ_AutoBestCurrent>Momenteel: {0}</QJ_AutoBestCurrent>
+  <QJ_AutoBestNone>Geen geschikte kolonist</QJ_AutoBestNone>
+  <QJ_MigrationTitle>Bestaande kwaliteitsopdrachten</QJ_MigrationTitle>
+  <QJ_MigrationBody>Quality Jobs heeft {0} bestaande kwaliteitsopdrachten gevonden. Ze blijven onbeheerd zodat ze hun huidige gedrag behouden. Onafgemaakt werk delen blijft in beide gevallen beschikbaar.</QJ_MigrationBody>
+  <QJ_MigrationEnableExisting>Quality Jobs inschakelen voor bestaande opdrachten voor kwaliteitsvoorwerpen?</QJ_MigrationEnableExisting>
+  <QJ_MigrationEnableExistingTip>Aan: Bestaande opdrachten gebruiken Quality Jobs met automatische aanpassing van de vaardigheid voor voltooiing. De beste geschikte kolonist in de kolonie doet de laatste handeling; tijdelijk onbeschikbare kolonisten tellen nog mee. Inspiratie en productiespecialisatie zijn niet vereist en resultaten van lage kwaliteit worden niet opnieuw geprobeerd.\n\nUit: Bestaande opdrachten behouden het voltooiingsgedrag van het basisspel. Onafgemaakt werk delen blijft ongewijzigd.</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationContinue>Doorgaan</QJ_MigrationContinue>
+  <QJ_RequireInspired>Creatief fanatisme vereist</QJ_RequireInspired>
+  <QJ_RequireSpecialist>Productiespecialist vereist</QJ_RequireSpecialist>
+  <QJ_StockCapLabel>Voorraadlimiet: {0}</QJ_StockCapLabel>
+  <QJ_StockCapTooltip>Het maximale aantal onafgemaakte voorwerpen van dit product. De limiet geldt per product: alle opdrachten die dit voorwerp maken tellen mee.\n\n0 betekent onbeperkt.</QJ_StockCapTooltip>
+  <QJ_StatusHeader>Status</QJ_StatusHeader>
+  <QJ_StatusQueue>Wacht: {0} · Afwerken: {1}</QJ_StatusQueue>
+  <QJ_StatusQueueShared>Onaf: {0} · Wacht: {1} · Afwerken: {2}</QJ_StatusQueueShared>
+  <QJ_StatusQueueTip>Onaf: voorwerpen in de gedeelde voorraad waaraan elke toegestane ambachtsman verder mag werken. Wacht: gepauzeerde voorwerpen die een geschikte afwerker nodig hebben. Afwerken: voorwerpen die aan een afwerker zijn toegewezen.</QJ_StatusQueueTip>
+  <QJ_StatusFinishers>Geschikte afwerkers: {0}</QJ_StatusFinishers>
+  <QJ_StatusFinishersNone>Geschikte afwerkers: geen</QJ_StatusFinishersNone>
+  <QJ_StatusFinishersTip>Kolonisten op deze kaart die momenteel de laatste handeling mogen uitvoeren, met de beste kandidaat vooraan. Een kolonist is geschikt als het vereiste werktype is ingeschakeld en aan de bovenstaande eisen is voldaan.\n\nNeergehaalde kolonisten, kolonisten in een mentale toestand en kolonisten buiten deze kaart tellen niet mee.</QJ_StatusFinishersTip>
+  <QJ_StatusStalled>Geen geschikte afwerker</QJ_StatusStalled>
+  <QJ_StatusStalledTip>Onafgemaakte voorwerpen wachten, maar geen kolonist voldoet momenteel aan de eisen om ze te voltooien. Er worden daarom geen voltooiingstaken gemaakt.\n\nControleer de vaardigheidseis, de eisen voor inspiratie en specialisatie, en of de beoogde afwerker het werktype heeft ingeschakeld en op deze kaart is. Tijdens de stilstand kan de voorraadlimiet ook verhinderen dat nieuwe voorwerpen worden gestart.</QJ_StatusStalledTip>
+  <QJ_StatusStalledConstruction>Bouw wacht op geschikte afwerker</QJ_StatusStalledConstruction>
+  <QJ_StatusStalledConstructionTip>Dit gebouw is gepauzeerd en wacht op de laatste handeling, maar geen kolonist voldoet momenteel aan de eisen. Het wordt daarom niet voltooid.\n\nControleer de vaardigheidseis, de eisen voor inspiratie en specialisatie, en of de beoogde bouwer Bouwen heeft ingeschakeld en op deze kaart is.</QJ_StatusStalledConstructionTip>
+  <QJ_OddsHeader>Kwaliteitskansen</QJ_OddsHeader>
+  <QJ_NormalOrWorse>Normaal of lager</QJ_NormalOrWorse>
+  <QJ_OddsColConfig>Inst.</QJ_OddsColConfig>
+  <QJ_OddsColBest>Beste</QJ_OddsColBest>
+  <QJ_SettingsBillDefaults>Standaardopties voor opdrachten</QJ_SettingsBillDefaults>
+  <QJ_SettingsConstructionDefaults>Standaardopties voor bouwwerk</QJ_SettingsConstructionDefaults>
+  <QJ_SettingsGlobalOptions>Algemene opties</QJ_SettingsGlobalOptions>
+  <QJ_SettingsManageNewBills>Nieuwe kwaliteitsopdrachten beheren</QJ_SettingsManageNewBills>
+  <QJ_SettingsManageNewBillsTip>Aan: Quality Jobs beheert opdrachten met kwaliteitsproducten standaard met de opties in deze kolom. Afzonderlijke opdrachten kunnen deze opties in hun instellingen overschrijven.\n\nUit: Opdrachten gebruiken het gedrag van het basisspel tenzij Quality Jobs in het opdrachtscherm is ingeschakeld.</QJ_SettingsManageNewBillsTip>
+  <QJ_SettingsManageNewConstruction>Nieuw bouwwerk beheren</QJ_SettingsManageNewConstruction>
+  <QJ_SettingsManageNewConstructionTip>Aan: Nieuwe gebouwen met kwaliteit worden automatisch beheerd met de opties in deze kolom. Afzonderlijke gebouwen kunnen met de knop Quality Job worden ingesteld of vrijgegeven.\n\nUit: Nieuwe gebouwen gebruiken het gedrag van het basisspel tenzij ze afzonderlijk worden ingeschakeld.</QJ_SettingsManageNewConstructionTip>
+  <QJ_RequireInspiredTip>Aan: Alleen een kolonist met Creatief fanatisme mag de laatste handeling uitvoeren; andere werkers mogen het eerdere werk doen. De inspiratie wordt bij voltooiing verbruikt, zoals in het basisspel.\n\nUit: Creatief fanatisme is niet vereist.</QJ_RequireInspiredTip>
+  <QJ_RequireSpecialistTip>Aan: Alleen een kolonist wiens ideologierol een bonus op productiekwaliteit geeft, mag de laatste handeling uitvoeren; andere werkers mogen het eerdere werk doen.\n\nUit: Een rol als productiespecialist is niet vereist.</QJ_RequireSpecialistTip>
+  <QJ_SettingsFinisherSkillTip>Alleen kolonisten met minstens dit vaardigheidsniveau mogen de laatste handeling uitvoeren; andere werkers mogen het eerdere werk doen.\n\nWanneer automatische aanpassing is ingeschakeld, blijft deze waarde als handmatige standaard bewaard maar wordt niet gebruikt.</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsShareWork>Onafgemaakt werk delen</QJ_SettingsShareWork>
+  <QJ_SettingsShareWorkTip>Aan: Onafgemaakte voorwerpen worden vrijgegeven zodat elke bevoegde werker werk kan voortzetten dat een ander heeft gestart.\n\nUit: Het gedrag van het basisspel, waarbij een onafgemaakt voorwerp gebonden blijft aan de werker die eraan begon.</QJ_SettingsShareWorkTip>
+  <QJ_SettingsHighPriorityFinish>Afwerkers een taak met hoge prioriteit geven</QJ_SettingsHighPriorityFinish>
+  <QJ_SettingsHighPriorityFinishTip>Aan: Een kolonist die is gekozen om een voorwerp te voltooien, neemt die taak bij de volgende werkzoekronde, vóór alle andere werksoorten behalve brandbestrijding, medische zorg, redding en bedrust. De huidige taak wordt niet onderbroken.\n\nUit: De voltooiingstaak komt als eerste binnen haar werktype, maar werktypen met een hogere prioriteit komen nog steeds eerder.</QJ_SettingsHighPriorityFinishTip>
+  <QJ_SettingsDefaultCap>Standaardlimiet voor onafgemaakte voorraad: {0}</QJ_SettingsDefaultCap>
+  <QJ_SettingsDefaultCapTip>Stelt het standaardmaximum aan onafgemaakte voorwerpen per product in. Alle opdrachten die hetzelfde voorwerp maken delen de limiet.\n\nWanneer de limiet is bereikt, starten opdrachten geen nieuwe voorwerpen; lopend werk mag nog worden voltooid. 0 betekent onbeperkt.</QJ_SettingsDefaultCapTip>
+  <QJ_SettingsUnlimitedHint>0 = onbeperkt</QJ_SettingsUnlimitedHint>
+  <QJ_SettingsShowToolbarButton>Werkbalkknop tonen</QJ_SettingsShowToolbarButton>
+  <QJ_SettingsShowToolbarButtonTip>Voegt een knop toe naast de weergaveknoppen rechtsonder in het scherm. De knop opent de instellingen van Quality Jobs.</QJ_SettingsShowToolbarButtonTip>
+  <QJ_ToolbarButtonTip>Open de instellingen van Quality Jobs.</QJ_ToolbarButtonTip>
+  <QJ_SettingsEnabledNote>De schakelaar geldt voor het geladen spel. Uitschakelen herstelt alle voorwerpen naar het basisspel en verwijdert de Quality Jobs-configuratie van dit opgeslagen spel.\n\nAls de mod geïnstalleerd blijft, wordt hij bij de volgende keer laden weer geactiveerd met standaardinstellingen. Uitschakelen is bedoeld als voorbereiding op het verwijderen van de mod.</QJ_SettingsEnabledNote>
+  <QJ_DisableButton>Quality Jobs uitschakelen</QJ_DisableButton>
+  <QJ_EnableButton>Quality Jobs inschakelen</QJ_EnableButton>
+  <QJ_DisableWarning>Uitschakelen geeft alle apart gehouden voorwerpen terug aan het eigendomsbeheer van het basisspel en verwijdert de Quality Jobs-configuratie voor dit opgeslagen spel permanent (opdrachtvoorwaarden en voorraadlimieten). Spellen die je daarna opslaat bevatten geen spoor van de mod; dit is de schone voorbereiding op verwijdering.\n\nLaat vervangende gebouwen eerst voltooien om hun opgeslagen bedinstellingen en verf te behouden. Zodra het origineel is afgebroken, hebben deze instellingen Quality Jobs nodig totdat de vervanging klaar is.\n\nLet op: als de mod geïnstalleerd blijft, wordt hij bij de volgende keer laden weer geactiveerd met standaardinstellingen.\n\nQuality Jobs uitschakelen?</QJ_DisableWarning>
+  <QJ_NoGameLoaded>Laad een opgeslagen spel om het gedrag per spel te wijzigen.</QJ_NoGameLoaded>
+  <QJ_GizmoQualityJobLabel>Quality Job</QJ_GizmoQualityJobLabel>
+  <QJ_GizmoRebuildDesc>Kies een doelkwaliteit en bouwereisen voor dit voltooide gebouw. Start herbouwen om het af te breken en te vervangen totdat het doel is bereikt.</QJ_GizmoRebuildDesc>
+  <QJ_StartRebuilding>Herbouwen starten</QJ_StartRebuilding>
+  <QJ_RebuildNote>Kies een doelkwaliteit om te beginnen. Gebouwen onder dat niveau worden afgebroken en herbouwd. Dit kost materialen en maakt ze tijdens het werk onbruikbaar. Gebouwen die het doel al halen blijven behouden.</QJ_RebuildNote>
+  <QJ_NoRebuildNeeded>Geen geschikte gebouwen hoeven te worden herbouwd. Gebouwen moeten onder de doelkwaliteit liggen, bouwbaar zijn en geen andere afbraak- of herinstallatieopdrachten hebben.</QJ_NoRebuildNeeded>
+  <QJ_GizmoManageDesc>Beheer dit bouwwerk met Quality Jobs: pauzeer de voltooiing totdat er een geschikte bouwer is en herbouw desgewenst totdat de doelkwaliteit wordt behaald.\n\nLinksklik schakelt dit in of uit. Inschakelen past je bouwstandaarden toe. Rechtsklik opent de instellingen.</QJ_GizmoManageDesc>
+  <QJ_MinQualityLabel>Doelkwaliteit</QJ_MinQualityLabel>
+  <QJ_NoRetries>Geen nieuwe pogingen</QJ_NoRetries>
+  <QJ_AnyQuality>Elke</QJ_AnyQuality>
+  <QJ_RetriedUntilTip>Het gebouw wordt afgebroken en herbouwd totdat het de gekozen kwaliteit of beter krijgt, tenzij Geen nieuwe pogingen is geselecteerd.\n\nBij elke nieuwe poging gaan materialen verloren.</QJ_RetriedUntilTip>
+  <QJ_BillTargetQualityTip>Als een voltooid voorwerp onder deze kwaliteit uitvalt, wordt het opdrachtaantal met één verhoogd zodat er een vervanging wordt gemaakt. Het voorwerp zelf blijft behouden.\n\nDit geldt voor opdrachten met een vast aantal voorwerpen; de andere herhaalstanden bepalen al zelf wanneer ze stoppen.</QJ_BillTargetQualityTip>
+  <QJ_Clear>Wissen</QJ_Clear>
+  <QJ_ConstructionPanelTitle>Quality Job</QJ_ConstructionPanelTitle>
+  <QJ_FinishGiverLabel>kwaliteitswerk voltooien</QJ_FinishGiverLabel>
+  <QJ_FinishGiverVerb>voltooien</QJ_FinishGiverVerb>
+  <QJ_FinishGiverGerund>kwaliteitswerk voltooien</QJ_FinishGiverGerund>
+  <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
+  <QJ_WelcomeBody>Met Quality Jobs mag elke kolonist aan een onafgemaakt voorwerp of gebouw werken, maar alleen een kolonist die aan jouw eisen voldoet mag het voltooien, omdat alleen de afwerker de kwaliteit bepaalt. Het werkt voor productieopdrachten en bouwwerk.</QJ_WelcomeBody>
+  <QJ_WelcomeFind>Open de instellingen van Quality Jobs met deze knop naast de weergaveknoppen rechtsonder. Het opdrachtscherm voor een kwaliteitsvoorwerp heeft een Quality Jobs-gedeelte, en een geselecteerde blauwdruk of bouwframe van een kwaliteitsgebouw heeft een Quality Job-knop.</QJ_WelcomeFind>
+  <QJ_WelcomeTakeMeThere>Nu openen</QJ_WelcomeTakeMeThere>
+  <QJ_CompatibilityFinishIt>Finish it! kan mislukken bij onvoltooid werk dat Quality Jobs van de bijbehorende opdracht heeft losgekoppeld.</QJ_CompatibilityFinishIt>
+  <QJ_CompatibilityNoJobAuthors>No Job Authors kan werk met een kwaliteitsreservering buiten Quality Jobs om hervatten als de opties voor geforceerd voltooien of Achtung-compatibiliteit zijn ingeschakeld.</QJ_CompatibilityNoJobAuthors>
+  <QJ_CompatibilityQualityBuilder>QualityBuilder bepaalt ook welke bouwers worden ingezet en wanneer bouwwerk opnieuw wordt geprobeerd. De regels ervan kunnen conflicteren met Quality Jobs.</QJ_CompatibilityQualityBuilder>
+  <QJ_CompatibilitySharingAdvice>Het uitschakelen van het delen van onvoltooid werk verhelpt niet al deze conflicten.</QJ_CompatibilitySharingAdvice>
+</LanguageData>

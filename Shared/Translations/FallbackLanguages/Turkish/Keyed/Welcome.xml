@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <RS_CompatibilityHeading>Olası mod çakışmaları saptandı</RS_CompatibilityHeading>
+  <RS_CompatibilityRemove>Bu çakışmaları önlemek için yukarıda listelenen modları kaldırın.</RS_CompatibilityRemove>
+  <RS_CompatibilityRestoreAutomation>Otomasyonu etkinleştirmek için yukarıda listelenen modları kaldırın.</RS_CompatibilityRestoreAutomation>
+</LanguageData>

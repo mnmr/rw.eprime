@@ -36,13 +36,13 @@
   <WR_SignalCondition_setting_vse_critical_affects_other_skills>La passione critica influenza altre abilità nelle impostazioni della mod</WR_SignalCondition_setting_vse_critical_affects_other_skills>
   <WR_SignalCondition_sight_blind>Cieco</WR_SignalCondition_sight_blind>
   <WR_SignalCondition_sight_not_blind>Non cieco</WR_SignalCondition_sight_not_blind>
-  <WR_SignalCondition_social_same_passion_opinion>Migliora l'opinione delle pedine con la stessa passione</WR_SignalCondition_social_same_passion_opinion>
+  <WR_SignalCondition_social_same_passion_opinion>Migliora l'opinione degli altri con la stessa passione</WR_SignalCondition_social_same_passion_opinion>
   <WR_SignalCondition_state_drunk>Ubriaco</WR_SignalCondition_state_drunk>
   <WR_SignalCondition_state_no_recent_lovin>Nessun rapporto amoroso recente</WR_SignalCondition_state_no_recent_lovin>
   <WR_SignalCondition_state_not_drunk>Non ubriaco</WR_SignalCondition_state_not_drunk>
-  <WR_SignalCondition_state_not_smokeleaf_high>Non sotto l'effetto di fogliafumosa</WR_SignalCondition_state_not_smokeleaf_high>
+  <WR_SignalCondition_state_not_smokeleaf_high>Non sotto l'effetto di smokeleaf</WR_SignalCondition_state_not_smokeleaf_high>
   <WR_SignalCondition_state_recent_lovin>Rapporto amoroso recente</WR_SignalCondition_state_recent_lovin>
-  <WR_SignalCondition_state_smokeleaf_high>Sotto l'effetto di fogliafumosa</WR_SignalCondition_state_smokeleaf_high>
+  <WR_SignalCondition_state_smokeleaf_high>Sotto l'effetto di smokeleaf</WR_SignalCondition_state_smokeleaf_high>
   <WR_SignalCondition_time_20_5>Tra le 20:00 e le 05:00</WR_SignalCondition_time_20_5>
   <WR_SignalCondition_time_day>Durante il giorno</WR_SignalCondition_time_day>
   <WR_SignalCondition_weather_not_raining>Non piove</WR_SignalCondition_weather_not_raining>

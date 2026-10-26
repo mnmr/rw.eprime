@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <QJ_FinishBillLabel>Завершити {0} ({1})</QJ_FinishBillLabel>
+  <QJ_AtStockCap>досягнуто ліміту незавершених виробів</QJ_AtStockCap>
+  <QJ_UnfinishedWorkWaiting>незавершений виріб цього замовлення чекає на продовження роботи</QJ_UnfinishedWorkWaiting>
+  <QJ_QualityPanelTitle>Quality Jobs</QJ_QualityPanelTitle>
+  <QJ_ManageBill>Керувати цим замовленням</QJ_ManageBill>
+  <QJ_FinisherSkill>Завершення від рівня {0}</QJ_FinisherSkill>
+  <QJ_FinisherSkillTip>Завершувати роботу можуть лише колоністи з цим або вищим рівнем навички. Попередні етапи може виконувати будь-який працівник.</QJ_FinisherSkillTip>
+  <QJ_AutoBest>Автовибір рівня завершення</QJ_AutoBest>
+  <QJ_AutoBestTip>Увімкнено: завершувати цю роботу може лише найкращий доступний майстер колонії, а вимога до навички автоматично відповідає його рівню. Відсутні, знерухомлені чи зайняті колоністи також враховуються в цьому порівнянні.\n\nВимкнено: роботу може завершити будь-який колоніст, що відповідає заданій вимозі до навички.</QJ_AutoBestTip>
+  <QJ_AutoBestCurrent>Зараз: {0}</QJ_AutoBestCurrent>
+  <QJ_AutoBestNone>Немає придатного колоніста</QJ_AutoBestNone>
+  <QJ_MigrationTitle>Наявні замовлення з якістю</QJ_MigrationTitle>
+  <QJ_MigrationBody>Quality Jobs знайшов наявні замовлення з якістю: {0}. Керування ними вимкнено, щоб зберегти їхню поточну поведінку. Спільна робота над незавершеними виробами доступна в обох випадках.</QJ_MigrationBody>
+  <QJ_MigrationEnableExisting>Увімкнути Quality Jobs для наявних замовлень виробів із якістю?</QJ_MigrationEnableExisting>
+  <QJ_MigrationEnableExistingTip>Увімкнено: наявними замовленнями керує Quality Jobs з автовибором рівня завершення. Останній штрих виконує найкращий придатний колоніст; тимчасово недоступні колоністи також враховуються. Вимоги до натхнення й виробничої спеціалізації вимкнені, а вироби низької якості не виготовляються повторно.\n\nВимкнено: наявні замовлення завершуються за правилами гри. Спільна робота над незавершеними виробами не змінюється.</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationContinue>Продовжити</QJ_MigrationContinue>
+  <QJ_RequireInspired>Потрібен творчий підйом</QJ_RequireInspired>
+  <QJ_RequireSpecialist>Потрібен виробничий спеціаліст</QJ_RequireSpecialist>
+  <QJ_StockCapLabel>Ліміт запасу: {0}</QJ_StockCapLabel>
+  <QJ_StockCapTooltip>Максимальна кількість незавершених виробів цього типу. Ліміт спільний для всіх замовлень, що виготовляють цей предмет.\n\n0 означає без обмежень.</QJ_StockCapTooltip>
+  <QJ_StatusHeader>Стан</QJ_StatusHeader>
+  <QJ_StatusQueue>Очікують: {0} · Завершуються: {1}</QJ_StatusQueue>
+  <QJ_StatusQueueShared>Незавершені: {0} · Очікують: {1} · Завершуються: {2}</QJ_StatusQueueShared>
+  <QJ_StatusQueueTip>Незавершені: спільні вироби, роботу над якими може продовжити будь-який допущений майстер. Очікують: призупинені вироби, яким потрібен кваліфікований майстер для завершення. Завершуються: вироби, призначені такому майстру.</QJ_StatusQueueTip>
+  <QJ_StatusFinishers>Можуть завершити: {0}</QJ_StatusFinishers>
+  <QJ_StatusFinishersNone>Можуть завершити: ніхто</QJ_StatusFinishersNone>
+  <QJ_StatusFinishersTip>Колоністи на цій мапі, які зараз можуть виконати останній штрих; найкращий кандидат перший. Колоніст придатний, якщо потрібний вид роботи дозволений і виконано наведені вище вимоги до завершення.\n\nЗнерухомлені колоністи, колоністи з психічним зривом і ті, кого немає на цій мапі, не враховуються.</QJ_StatusFinishersTip>
+  <QJ_StatusStalled>Немає кому завершити вироби, що очікують</QJ_StatusStalled>
+  <QJ_StatusStalledTip>Незавершені вироби очікують, але жоден колоніст зараз не відповідає вимогам до завершення, тому відповідні завдання не створюються.\n\nПеревірте вимоги до навички, натхнення та спеціалізації, а також чи дозволено потрібному майстру цей вид роботи й чи є він на цій мапі. Під час простою ліміт запасу також може перешкоджати початку нових виробів.</QJ_StatusStalledTip>
+  <QJ_StatusStalledConstruction>Немає кому завершити — будівництво зупинене</QJ_StatusStalledConstruction>
+  <QJ_StatusStalledConstructionTip>Будівництво призупинене в очікуванні останнього штриха, але жоден колоніст зараз не відповідає вимогам, тому його не буде завершено.\n\nПеревірте вимоги до навички, натхнення та спеціалізації, а також чи дозволено потрібному будівельнику будівництво й чи є він на цій мапі.</QJ_StatusStalledConstructionTip>
+  <QJ_OddsHeader>Імовірність якості</QJ_OddsHeader>
+  <QJ_NormalOrWorse>Нормально або гірше</QJ_NormalOrWorse>
+  <QJ_OddsColConfig>Налашт.</QJ_OddsColConfig>
+  <QJ_OddsColBest>Найкращий</QJ_OddsColBest>
+  <QJ_SettingsBillDefaults>Типові параметри замовлень</QJ_SettingsBillDefaults>
+  <QJ_SettingsConstructionDefaults>Типові параметри будівництва</QJ_SettingsConstructionDefaults>
+  <QJ_SettingsGlobalOptions>Загальні параметри</QJ_SettingsGlobalOptions>
+  <QJ_SettingsManageNewBills>Керувати новими замовленнями з якістю</QJ_SettingsManageNewBills>
+  <QJ_SettingsManageNewBillsTip>Увімкнено: Quality Jobs автоматично керує замовленнями виробів із якістю за параметрами цього стовпця. Для окремого замовлення їх можна змінити в його налаштуваннях.\n\nВимкнено: замовлення діють за правилами гри, якщо Quality Jobs не ввімкнено у вікні налаштувань замовлення.</QJ_SettingsManageNewBillsTip>
+  <QJ_SettingsManageNewConstruction>Керувати новим будівництвом</QJ_SettingsManageNewConstruction>
+  <QJ_SettingsManageNewConstructionTip>Увімкнено: нові споруди з якістю автоматично керуються за параметрами цього стовпця. Окремі споруди можна налаштувати або звільнити від керування кнопкою «Якісна робота».\n\nВимкнено: нові споруди діють за правилами гри, якщо керування не ввімкнено окремо.</QJ_SettingsManageNewConstructionTip>
+  <QJ_RequireInspiredTip>Увімкнено: лише колоніст із творчим підйомом може виконати останній штрих; попередні етапи можуть виконувати інші працівники. Натхнення витрачається після завершення, як і в базовій грі.\n\nВимкнено: творчий підйом не потрібен.</QJ_RequireInspiredTip>
+  <QJ_RequireSpecialistTip>Увімкнено: лише колоніст, чия роль в Ideology дає бонус до якості виробів, може виконати останній штрих; попередні етапи можуть виконувати інші працівники.\n\nВимкнено: роль виробничого спеціаліста не потрібна.</QJ_RequireSpecialistTip>
+  <QJ_SettingsFinisherSkillTip>Лише колоністи з цим або вищим рівнем навички можуть виконати останній штрих; попередні етапи можуть виконувати інші працівники.\n\nЯкщо ввімкнено автовибір рівня завершення, це значення зберігається як типове ручне налаштування, але не використовується.</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsShareWork>Спільні незавершені вироби</QJ_SettingsShareWork>
+  <QJ_SettingsShareWorkTip>Увімкнено: незавершені вироби розблоковані, тож будь-який придатний працівник може продовжити чужу роботу.\n\nВимкнено: за правилами гри незавершений виріб залишається закріпленим за тим, хто його почав.</QJ_SettingsShareWorkTip>
+  <QJ_SettingsHighPriorityFinish>Високий пріоритет завершення</QJ_SettingsHighPriorityFinish>
+  <QJ_SettingsHighPriorityFinishTip>Увімкнено: колоніст, обраний для завершення виробу, береться за нього під час наступного пошуку роботи, раніше за всі інші роботи, крім гасіння пожеж, медичної допомоги, порятунку й постільного режиму. Поточна робота не переривається.\n\nВимкнено: завершення є першим завданням у своєму виді роботи, але види роботи з вищим пріоритетом колоніста все одно виконуються раніше.</QJ_SettingsHighPriorityFinishTip>
+  <QJ_SettingsDefaultCap>Типовий ліміт незавершених виробів: {0}</QJ_SettingsDefaultCap>
+  <QJ_SettingsDefaultCapTip>Задає типову максимальну кількість незавершених виробів кожного типу. Усі замовлення того самого предмета мають спільний ліміт.\n\nПісля досягнення ліміту нові вироби не починаються; розпочаті можна завершити. 0 означає без обмежень.</QJ_SettingsDefaultCapTip>
+  <QJ_SettingsUnlimitedHint>0 = без обмежень</QJ_SettingsUnlimitedHint>
+  <QJ_SettingsShowToolbarButton>Показувати кнопку на панелі</QJ_SettingsShowToolbarButton>
+  <QJ_SettingsShowToolbarButtonTip>Додає кнопку поряд із перемикачами відображення в правому нижньому куті екрана. Кнопка відкриває налаштування Quality Jobs.</QJ_SettingsShowToolbarButtonTip>
+  <QJ_ToolbarButtonTip>Відкрити налаштування Quality Jobs.</QJ_ToolbarButtonTip>
+  <QJ_SettingsEnabledNote>Перемикач діє на завантажене збереження. Вимкнення повертає всі предмети до правил базової гри та видаляє налаштування Quality Jobs із цього збереження.\n\nЯкщо мод залишається встановленим, він знову ввімкнеться з типовими налаштуваннями під час наступного завантаження. Вимкнення призначене для підготовки до видалення мода.</QJ_SettingsEnabledNote>
+  <QJ_DisableButton>Вимкнути Quality Jobs</QJ_DisableButton>
+  <QJ_EnableButton>Увімкнути Quality Jobs</QJ_EnableButton>
+  <QJ_DisableWarning>Вимкнення повертає всі відкладені вироби до звичайної прив'язки до працівника й назавжди видаляє налаштування Quality Jobs із цього збереження (умови замовлень, ліміти запасу). Наступні збереження не міститимуть слідів мода, тож це належна підготовка до його видалення.\n\nСпершу завершіть заміну споруд, щоб зберегти налаштування ліжок і фарбування. Після розбирання оригіналу для збереження цих налаштувань потрібен Quality Jobs, доки заміна не буде готова.\n\nЗауважте: якщо залишити мод установленим, він знову ввімкнеться з типовими налаштуваннями під час наступного завантаження цього збереження.\n\nВимкнути Quality Jobs?</QJ_DisableWarning>
+  <QJ_NoGameLoaded>Завантажте збереження, щоб змінити його параметри.</QJ_NoGameLoaded>
+  <QJ_GizmoQualityJobLabel>Якісна робота</QJ_GizmoQualityJobLabel>
+  <QJ_GizmoRebuildDesc>Виберіть цільову якість і вимоги до будівельника для готової споруди. Почніть перебудову: споруду розбиратимуть і замінюватимуть, доки не досягнуть мети.</QJ_GizmoRebuildDesc>
+  <QJ_StartRebuilding>Почати перебудову</QJ_StartRebuilding>
+  <QJ_RebuildNote>Спершу виберіть цільову якість. Споруди нижчої якості розбиратимуть і будуватимуть заново, витрачаючи матеріали; під час роботи вони будуть недоступні. Споруди, що вже відповідають меті, залишаться.</QJ_RebuildNote>
+  <QJ_NoRebuildNeeded>Немає придатних споруд для перебудови. Їхня якість має бути нижчою за цільову, будівництво — доступним, а інші накази на розбирання чи перевстановлення — відсутніми.</QJ_NoRebuildNeeded>
+  <QJ_GizmoManageDesc>Керувати цим будівництвом через Quality Jobs: відкласти завершення до появи придатного будівельника та, за бажанням, перебудовувати до досягнення цільової якості.\n\nЛіва кнопка миші вмикає або вимикає керування. Увімкнення застосовує типові параметри будівництва. Права кнопка відкриває налаштування.</QJ_GizmoManageDesc>
+  <QJ_MinQualityLabel>Цільова якість</QJ_MinQualityLabel>
+  <QJ_NoRetries>Без повторів</QJ_NoRetries>
+  <QJ_AnyQuality>Будь-яка</QJ_AnyQuality>
+  <QJ_RetriedUntilTip>Споруду розбирають і будують заново, доки її якість не буде вибраною або вищою, крім режиму «Без повторів».\n\nКожна повторна спроба призводить до втрати частини матеріалів.</QJ_RetriedUntilTip>
+  <QJ_BillTargetQualityTip>Якщо готовий виріб має нижчу якість, кількість у замовленні збільшується на один, щоб виготовити заміну. Сам виріб зберігається.\n\nЦе стосується замовлень на фіксовану кількість предметів; інші режими повторення самі визначають, коли зупинитися.</QJ_BillTargetQualityTip>
+  <QJ_Clear>Очистити</QJ_Clear>
+  <QJ_ConstructionPanelTitle>Якісна робота</QJ_ConstructionPanelTitle>
+  <QJ_FinishGiverLabel>завершити якісну роботу</QJ_FinishGiverLabel>
+  <QJ_FinishGiverVerb>завершувати</QJ_FinishGiverVerb>
+  <QJ_FinishGiverGerund>завершення якісної роботи</QJ_FinishGiverGerund>
+  <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
+  <QJ_CompatibilityQualityBuilder>QualityBuilder також керує будівельниками й повторними спробами будівництва. Його правила можуть конфліктувати з Quality Jobs.</QJ_CompatibilityQualityBuilder>
+  <QJ_CompatibilityNoJobAuthors>No Job Authors може продовжувати зарезервовану для завершення роботу поза Quality Jobs, якщо ввімкнено примусове завершення або сумісність з Achtung.</QJ_CompatibilityNoJobAuthors>
+  <QJ_CompatibilityFinishIt>Finish it! може давати збій на незавершених виробах, які Quality Jobs від'єднав від замовлення.</QJ_CompatibilityFinishIt>
+  <QJ_CompatibilitySharingAdvice>Вимкнення спільної роботи над незавершеними виробами не усуває всіх цих конфліктів.</QJ_CompatibilitySharingAdvice>
+  <QJ_WelcomeBody>Quality Jobs дозволяє будь-якому колоністу працювати над незавершеним виробом чи спорудою, але завершити роботу може лише колоніст, що відповідає вашим вимогам: саме він визначає якість. Це діє для виробничих замовлень і будівництва.</QJ_WelcomeBody>
+  <QJ_WelcomeFind>Відкривайте налаштування Quality Jobs цією кнопкою поряд із перемикачами відображення в правому нижньому куті екрана. Вікно замовлення виробу з якістю має розділ Quality Jobs, а вибране креслення чи каркас споруди з якістю — кнопку «Якісна робота».</QJ_WelcomeFind>
+  <QJ_WelcomeTakeMeThere>Відкрити зараз</QJ_WelcomeTakeMeThere>
+</LanguageData>

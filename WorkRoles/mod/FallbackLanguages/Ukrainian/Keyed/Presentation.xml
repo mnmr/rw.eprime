@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_SignalConditionHediff>Стан здоров'я: {0}</WR_SignalConditionHediff>
+  <WR_SignalConditionPrecept>Припис: {0}</WR_SignalConditionPrecept>
+  <WR_SignalConditionTrait>Риса: {0}</WR_SignalConditionTrait>
+  <WR_SignalCondition_after_mental_break>Після психічного зриву</WR_SignalCondition_after_mental_break>
+  <WR_SignalCondition_age_min_18>Вік від 18 років</WR_SignalCondition_age_min_18>
+  <WR_SignalCondition_apparel_not_nude>В одязі</WR_SignalCondition_apparel_not_nude>
+  <WR_SignalCondition_apparel_nude>Без одягу</WR_SignalCondition_apparel_nude>
+  <WR_SignalCondition_author_is_bad>Мод-джерело позначає це захоплення як негативне</WR_SignalCondition_author_is_bad>
+  <WR_SignalCondition_body_artificial_parts>Має штучні частини тіла</WR_SignalCondition_body_artificial_parts>
+  <WR_SignalCondition_body_no_artificial_parts>Без штучних частин тіла</WR_SignalCondition_body_no_artificial_parts>
+  <WR_SignalCondition_colony_best_at_skill>Найкраща навичка в колонії</WR_SignalCondition_colony_best_at_skill>
+  <WR_SignalCondition_colony_loss_within_3_days>За останні 3 дні втрачено колоніста</WR_SignalCondition_colony_loss_within_3_days>
+  <WR_SignalCondition_colony_no_recent_loss>Без недавніх втрат колоністів</WR_SignalCondition_colony_no_recent_loss>
+  <WR_SignalCondition_colony_not_best_at_skill>Не найкраща навичка в колонії</WR_SignalCondition_colony_not_best_at_skill>
+  <WR_SignalCondition_cycle_daily>Змінюється щодня</WR_SignalCondition_cycle_daily>
+  <WR_SignalCondition_environment_near_fire>Поряд із вогнем</WR_SignalCondition_environment_near_fire>
+  <WR_SignalCondition_equipment_ranged_weapon>Споряджено далекобійну зброю</WR_SignalCondition_equipment_ranged_weapon>
+  <WR_SignalCondition_location_away_from_home>Поза домом</WR_SignalCondition_location_away_from_home>
+  <WR_SignalCondition_location_home>Удома</WR_SignalCondition_location_home>
+  <WR_SignalCondition_mood_tier_apathetic>Фаза апатії</WR_SignalCondition_mood_tier_apathetic>
+  <WR_SignalCondition_mood_tier_greater>Фаза захоплення</WR_SignalCondition_mood_tier_greater>
+  <WR_SignalCondition_mood_tier_interested>Фаза зацікавлення</WR_SignalCondition_mood_tier_interested>
+  <WR_SignalCondition_mood_tier_major>Фаза сильного зацікавлення</WR_SignalCondition_mood_tier_major>
+  <WR_SignalCondition_mood_tier_none>Фаза без захоплення</WR_SignalCondition_mood_tier_none>
+  <WR_SignalCondition_pain_max_0_3>Біль до 30% включно</WR_SignalCondition_pain_max_0_3>
+  <WR_SignalCondition_pain_min_0_3>Біль від 30%</WR_SignalCondition_pain_min_0_3>
+  <WR_SignalCondition_passion_conflicting>Захоплення стрільбою суперечить цій рисі</WR_SignalCondition_passion_conflicting>
+  <WR_SignalCondition_psychic_sensitivity_tier_critical>Критична психічна чутливість</WR_SignalCondition_psychic_sensitivity_tier_critical>
+  <WR_SignalCondition_psychic_sensitivity_tier_major>Висока психічна чутливість</WR_SignalCondition_psychic_sensitivity_tier_major>
+  <WR_SignalCondition_psychic_sensitivity_tier_minor>Низька психічна чутливість</WR_SignalCondition_psychic_sensitivity_tier_minor>
+  <WR_SignalCondition_psychic_sensitivity_tier_normal>Звичайна психічна чутливість</WR_SignalCondition_psychic_sensitivity_tier_normal>
+  <WR_SignalCondition_psychic_sensitivity_tier_nullified>Психічну чутливість усунуто</WR_SignalCondition_psychic_sensitivity_tier_nullified>
+  <WR_SignalCondition_range_long>На великій відстані</WR_SignalCondition_range_long>
+  <WR_SignalCondition_range_medium>На середній відстані</WR_SignalCondition_range_medium>
+  <WR_SignalCondition_ritual_no_recent_quality_outcome>Без недавнього успішного ритуалу</WR_SignalCondition_ritual_no_recent_quality_outcome>
+  <WR_SignalCondition_ritual_recent_quality_outcome>Недавній успішний ритуал</WR_SignalCondition_ritual_recent_quality_outcome>
+  <WR_SignalCondition_setting_vse_critical_affects_other_skills>Критичне захоплення впливає на інші навички за налаштуваннями мода</WR_SignalCondition_setting_vse_critical_affects_other_skills>
+  <WR_SignalCondition_sight_blind>Сліпота</WR_SignalCondition_sight_blind>
+  <WR_SignalCondition_sight_not_blind>Без сліпоти</WR_SignalCondition_sight_not_blind>
+  <WR_SignalCondition_social_same_passion_opinion>Покращує ставлення до тих, хто поділяє захоплення</WR_SignalCondition_social_same_passion_opinion>
+  <WR_SignalCondition_state_drunk>Сп'яніння</WR_SignalCondition_state_drunk>
+  <WR_SignalCondition_state_no_recent_lovin>Без недавніх любощів</WR_SignalCondition_state_no_recent_lovin>
+  <WR_SignalCondition_state_not_drunk>Без сп'яніння</WR_SignalCondition_state_not_drunk>
+  <WR_SignalCondition_state_not_smokeleaf_high>Без дії димолисту</WR_SignalCondition_state_not_smokeleaf_high>
+  <WR_SignalCondition_state_recent_lovin>Недавні любощі</WR_SignalCondition_state_recent_lovin>
+  <WR_SignalCondition_state_smokeleaf_high>Під дією димолисту</WR_SignalCondition_state_smokeleaf_high>
+  <WR_SignalCondition_time_20_5>Між 20:00 та 05:00</WR_SignalCondition_time_20_5>
+  <WR_SignalCondition_time_day>Удень</WR_SignalCondition_time_day>
+  <WR_SignalCondition_weather_not_raining>Без дощу</WR_SignalCondition_weather_not_raining>
+  <WR_SignalCondition_weather_raining>Дощить</WR_SignalCondition_weather_raining>
+  <WR_SignalCondition_work_compelled_aversion>Ненавидить навичку, але відчуває потяг до її вивчення</WR_SignalCondition_work_compelled_aversion>
+  <WR_SignalCondition_work_enjoyment>Велике задоволення від відповідної роботи</WR_SignalCondition_work_enjoyment>
+  <WR_SignalCondition_work_passionate>Настрій від роботи за захопленням</WR_SignalCondition_work_passionate>
+  <WR_SignalCondition_work_type_hated>Ненависна робота</WR_SignalCondition_work_type_hated>
+  <WR_SignalCurrentSkill>Поточна навичка</WR_SignalCurrentSkill>
+  <WR_SignalEffectSubject>{0}: {1}</WR_SignalEffectSubject>
+  <WR_SignalEffect_Accuracy>Точність</WR_SignalEffect_Accuracy>
+  <WR_SignalEffect_AimingDelay>Час прицілювання</WR_SignalEffect_AimingDelay>
+  <WR_SignalEffect_Capability>Здатність</WR_SignalEffect_Capability>
+  <WR_SignalEffect_Damage>Шкода</WR_SignalEffect_Damage>
+  <WR_SignalEffect_Dodge>Ухилення</WR_SignalEffect_Dodge>
+  <WR_SignalEffect_HitChance>Імовірність влучання</WR_SignalEffect_HitChance>
+  <WR_SignalEffect_LearningRate>Швидкість навчання</WR_SignalEffect_LearningRate>
+  <WR_SignalEffect_MentalBreak>Психічний зрив</WR_SignalEffect_MentalBreak>
+  <WR_SignalEffect_Mood>Настрій</WR_SignalEffect_Mood>
+  <WR_SignalEffect_Passion>Захоплення</WR_SignalEffect_Passion>
+  <WR_SignalEffect_Quality>Якість</WR_SignalEffect_Quality>
+  <WR_SignalEffect_SkillDecay>Забування навички</WR_SignalEffect_SkillDecay>
+  <WR_SignalEffect_SkillLevel>Рівень навички</WR_SignalEffect_SkillLevel>
+  <WR_SignalEffect_StatModifier>Модифікатор показника</WR_SignalEffect_StatModifier>
+  <WR_SignalEffect_WorkPreference>Вподобання роботи</WR_SignalEffect_WorkPreference>
+  <WR_SignalEffect_WorkSpeed>Швидкість роботи</WR_SignalEffect_WorkSpeed>
+  <WR_SignalEffect_Yield>Вихід продукції</WR_SignalEffect_Yield>
+  <WR_SignalMajorPassion>Палке захоплення</WR_SignalMajorPassion>
+  <WR_SignalMinorPassion>Помірне захоплення</WR_SignalMinorPassion>
+  <WR_SignalOtherSkills>Інші навички</WR_SignalOtherSkills>
+  <WR_SignalTargetConstantDebuff>Постійне погіршення настрою</WR_SignalTargetConstantDebuff>
+  <WR_SignalTargetRangedWeapon>Далекобійна зброя</WR_SignalTargetRangedWeapon>
+  <WR_SignalTargetViolentWork>Насильницька робота</WR_SignalTargetViolentWork>
+  <WR_SignalUnit_Days>днів</WR_SignalUnit_Days>
+  <WR_SignalUnit_MoodPoints>балів настрою</WR_SignalUnit_MoodPoints>
+  <WR_SignalUnit_PassionLevels>рівнів захоплення</WR_SignalUnit_PassionLevels>
+  <WR_SignalUnit_Scalar>балів</WR_SignalUnit_Scalar>
+  <WR_SignalUnit_SkillLevels>рівнів навички</WR_SignalUnit_SkillLevels>
+  <WR_SignalUnit_StatValue>значення показника</WR_SignalUnit_StatValue>
+  <WR_SignalUnknownMod>Невідомий мод</WR_SignalUnknownMod>
+</LanguageData>

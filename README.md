@@ -15,9 +15,9 @@ Each mod folder is self-contained and follows the same layout:
 
 ```
 <Mod>/src/<Mod>.Core/         deterministic logic — no game references (netstandard2.0)
-<Mod>/src/<Mod>/              game integration: store, patches, commands, UI (net472)
+<Mod>/src/<Mod>/              game integration: net472 for 1.6, net10.0 for 1.7
 <Mod>/src/<Mod>.Core.Tests/   behavioral tests (TUnit, .NET 10)
-<Mod>/mod/                    the shippable mod (About, Textures, Languages, Assemblies)
+<Mod>/mod/                    the shippable mod (About, Textures, Languages, Help, versioned Assemblies)
 <Mod>/scripts/deploy.ps1      build output → RimWorld Mods folder
 ```
 
@@ -28,8 +28,53 @@ Code shared across the mods lives in [Shared](Shared/) and is compiled directly 
 - **[Shared/Common](Shared/Common/)** (`RimShared.Common`) — deterministic, game-independent building blocks: caching and snapshot publication, revision/invalidation gates, layout and viewport math, text/count formatting, tooltip policies, lifecycle helpers. No RimWorld, Unity or Harmony references, so it is fully unit-testable.
 - **[Shared/UiLib](Shared/UiLib/)** (`RimShared.UiLib`) — game-side UI helpers (tiny-text rendering, segmented controls, pixel-exact boxes). May reference Verse/Unity; compiled only into the game assemblies, never into `*.Core`.
 - **[Shared/GameLib](Shared/GameLib/)** (`RimShared.GameLib`) — game-side mechanics shared by some mods, opted into one subfolder at a time because a subfolder may carry Harmony patches. [Locations](Shared/GameLib/Locations/) (floor-map canonicalization, map classification, the player-faction binding and the location-transition patches) is compiled into Implanner and WorkRoles only; each mod supplies its side of the partial hooks.
-- **[Shared/Tests](Shared/Tests/)** — behavioral tests for `RimShared.Common` (`RimShared.Common.Tests`), plus test-only helpers in `Shared/Tests/Support` (`RimShared.Tests.Support`, e.g. `HelpContentChecks`). The helpers are source-included into the mods' `*.Core.Tests` projects and never shipped.
-- **[Shared/tools/automation](Shared/tools/automation/)** — shared commands for automated in-game verification (launch, input, capture, profile refresh) run against a disposable profile. The curated profile baseline is committed under [AutomationProfiles/Shared/Config](AutomationProfiles/Shared/Config/).
+- **[Shared/Tests](Shared/Tests/)** — behavioral tests for `RimShared.Common` (`RimShared.Common.Tests`), test-only helpers in `Shared/Tests/Support`, and isolated in-game regression probes. These are separate from the shipped mods.
+- **[Shared/tools/automation](Shared/tools/automation/)** — shared commands for automated in-game verification (run creation, launch, input, capture and cleanup). Each run owns an independent disposable profile and copied mod assemblies. The curated profile baseline is committed under [AutomationProfiles/Shared/Config](AutomationProfiles/Shared/Config/).
+- **[Shared/tools/localization](Shared/tools/localization/)** — translation checks and incremental updates through Codex CLI, with English-source hashes retained in [Shared/Translations/Manifests](Shared/Translations/Manifests/).
+
+## Localization and welcome dialogs
+
+All four mods follow RimWorld's selected language. Bundled translations cover
+Danish, German, French, Spanish, Italian, Brazilian Portuguese, Dutch, Swedish,
+Finnish, Norwegian Bokmål, European Portuguese, Latin American Spanish,
+Simplified Chinese and Traditional Chinese, including interface text,
+definition labels and help pages.
+
+Installed community translations take precedence regardless of mod load order.
+Partial packs retain bundled translations for missing content, with English as
+the final fallback. Player-authored names stay verbatim; names recorded as
+unchanged seeded defaults can follow the display language without changing
+their saved text. Legacy group and pool names without seed provenance remain
+as saved.
+
+Welcome dialogs can be dragged and are automatically tiled without overlap.
+When the available screen cannot fit every dialog, the remaining dialogs wait
+until space is available.
+
+Before publishing, run the localization helpers (Python 3.10+ on `PATH`):
+
+```powershell
+scripts\check-localization.cmd
+scripts\update-localization.cmd --dry-run
+scripts\update-localization.cmd
+scripts\check-localization.cmd
+```
+
+The checker runs offline and returns a failing exit code for missing, broken or
+stale translations. The updater requires a signed-in Codex CLI, translates only
+affected entries, removes retired content, and advances source hashes after all
+selected locales validate. Review its Git diff before publishing. Add repeatable
+`--locale Danish` / `--locale German` arguments to limit either helper to those
+languages; `--dry-run` previews updates without using Codex.
+
+Verification on 2026-10-25 covered all fourteen locales in RimWorld 1.7,
+community overrides in both load orders, custom-name save/reload across a
+language change, and welcome layout, overflow and lifecycle transitions.
+Both 1.6 and 1.7 builds and the shared/Core regression suites passed. Runtime
+coverage used 1.7; rendering checks do not constitute a comprehensive human
+linguistic review. See the [translation maintenance guide](Shared/tools/localization/README.md)
+and [in-game verification notes](Shared/Tests/InGame/Localization/README.md)
+for commands, evidence locations and known fixture limitations.
 
 ## Engineering contract
 
@@ -37,14 +82,25 @@ Code shared across the mods lives in [Shared](Shared/) and is compiled directly 
 
 ## Building
 
-Per mod:
+The default build targets RimWorld 1.6. Per mod:
 
 ```powershell
 dotnet build -c Release <Mod>/src/<Solution>.slnx
 dotnet test <Mod>/src/<Mod>.Core.Tests
 ```
 
-Everything at once (build + deploy, stops on first failure):
+For RimWorld 1.7, build each game project with `RimWorldVersion=1.7`, for example:
+
+```powershell
+dotnet build WorkRoles/src/WorkRoles/WorkRoles.csproj -c Release -p:RimWorldVersion=1.7
+```
+
+This uses the installed Waylith game and Harmony 3 through
+[Shared/Build/RimWorld17.props](Shared/Build/RimWorld17.props). Override
+`InstalledGameRoot` and `InstalledHarmonyPath` when necessary. Build both
+versions before packaging; their outputs are kept in separate version folders.
+
+Everything at once (default 1.6 build + deploy, stops on first failure):
 
 ```powershell
 scripts\build-deploy-all.cmd

@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_Artist.description>Скульптура й мистецькі роботи.</WS_Artist.description>
+  <WS_Artist.label>Митець</WS_Artist.label>
+  <WS_Basics.description>Догляд за собою та проста робота для кожного колоніста.</WS_Basics.description>
+  <WS_Basics.label>Основні роботи</WS_Basics.label>
+  <WS_Bedrest.description>Відпочинок у ліжку під час хвороби чи поранення.</WS_Bedrest.description>
+  <WS_Bedrest.label>Постільний режим</WS_Bedrest.label>
+  <WS_Brewer.description>Варіння сусла на пивоварні.</WS_Brewer.description>
+  <WS_Brewer.label>Пивовар</WS_Brewer.label>
+  <WS_Builder.description>Будівництво, ремонт і розбирання.</WS_Builder.description>
+  <WS_Builder.label>Будівельник</WS_Builder.label>
+  <WS_Butcher.description>Розбирання туш істот.</WS_Butcher.description>
+  <WS_Butcher.label>М'ясник</WS_Butcher.label>
+  <WS_Childminder.description>Догляд за дітьми й навчання.</WS_Childminder.description>
+  <WS_Childminder.label>Вихователь</WS_Childminder.label>
+  <WS_Cleaner.description>Прибирання.</WS_Cleaner.description>
+  <WS_Cleaner.label>Прибиральник</WS_Cleaner.label>
+  <WS_Cook.description>Приготування страв і розбирання туш.</WS_Cook.description>
+  <WS_Cook.label>Кухар</WS_Cook.label>
+  <WS_Core.description>Невідкладні роботи для всіх колоністів: гасіння пожеж, отримання лікування й порятунок.</WS_Core.description>
+  <WS_Core.label>Невідкладне</WS_Core.label>
+  <WS_Crafter.description>Загальне ремесло: обробка каменю, плавка, препарати й компоненти.</WS_Crafter.description>
+  <WS_Crafter.label>Ремісник</WS_Crafter.label>
+  <WS_DarkStudier.description>Вивчення аномальних сутностей.</WS_DarkStudier.description>
+  <WS_DarkStudier.label>Аномаліст</WS_DarkStudier.label>
+  <WS_Doctor.description>Медична допомога колоністам, ув'язненим і тваринам.</WS_Doctor.description>
+  <WS_Doctor.label>Лікар</WS_Doctor.label>
+  <WS_DrugMaker.description>Виготовлення препаратів у лабораторії й центрифузі сироваток.</WS_DrugMaker.description>
+  <WS_DrugMaker.label>Фармацевт</WS_DrugMaker.label>
+  <WS_Fabricator.description>Виготовлення предметів на складальному верстаті.</WS_Fabricator.description>
+  <WS_Fabricator.label>Технік</WS_Fabricator.label>
+  <WS_Farmer.description>Сівба, збирання врожаю та зрізання рослин.</WS_Farmer.description>
+  <WS_Farmer.label>Фермер</WS_Farmer.label>
+  <WS_Firefighter.description>Гасіння пожеж.</WS_Firefighter.description>
+  <WS_Firefighter.label>Пожежник</WS_Firefighter.label>
+  <WS_Fisher.description>Рибальство.</WS_Fisher.description>
+  <WS_Fisher.label>Рибалка</WS_Fisher.label>
+  <WS_Grower.description>Сівба й збирання врожаю в зонах вирощування.</WS_Grower.description>
+  <WS_Grower.label>Рільник</WS_Grower.label>
+  <WS_Grunt.description>Перенесення та прибирання.</WS_Grunt.description>
+  <WS_Grunt.label>Чорнороб</WS_Grunt.label>
+  <WS_Handler.description>Приручення, дресирування та забій тварин.</WS_Handler.description>
+  <WS_Handler.label>Дресирувальник</WS_Handler.label>
+  <WS_Hauler.description>Перенесення предметів.</WS_Hauler.description>
+  <WS_Hauler.label>Носій</WS_Hauler.label>
+  <WS_Herder.description>Догляд за загінними тваринами: загін, годування, доїння, стрижка й забій.</WS_Herder.description>
+  <WS_Herder.label>Скотар</WS_Herder.label>
+  <WS_Hunter.description>Полювання на диких тварин заради їжі.</WS_Hunter.description>
+  <WS_Hunter.label>Мисливець</WS_Hunter.label>
+  <WS_Jailor.description>Догляд за ув'язненими без допитів, поневолення й навернення: годування, супровід, бесіди, придушення, звільнення та страти.</WS_Jailor.description>
+  <WS_Jailor.label>Тюремник</WS_Jailor.label>
+  <WS_Laborer.description>Різноманітні прості завдання.</WS_Laborer.description>
+  <WS_Laborer.label>Робітник</WS_Laborer.label>
+  <WS_Mechanitor.description>Ремонт і вирощування механоїдів та кодування суб'ядер. Рекомендується лише колоністам із мехлінком.</WS_Mechanitor.description>
+  <WS_Mechanitor.label>Механітор</WS_Mechanitor.label>
+  <WS_Medic.description>Медична робота, крім операцій на колоністах.</WS_Medic.description>
+  <WS_Medic.label>Медик</WS_Medic.label>
+  <WS_Miner.description>Видобуток і буріння.</WS_Miner.description>
+  <WS_Miner.label>Шахтар</WS_Miner.label>
+  <WS_NoFirefighting.description>Блокування: колоністи з цією роллю не гасять пожеж, навіть якщо пізніша роль, як-от основні роботи, містить гасіння.</WS_NoFirefighting.description>
+  <WS_NoFirefighting.label>Пірофоб</WS_NoFirefighting.label>
+  <WS_Nurse.description>Годування, порятунок і відвідування пацієнтів; невідкладна самодопомога.</WS_Nurse.description>
+  <WS_Nurse.label>Санітар</WS_Nurse.label>
+  <WS_Painter.description>Фарбування та зняття фарби.</WS_Painter.description>
+  <WS_Painter.label>Маляр</WS_Painter.label>
+  <WS_Patient.description>Отримання медичної допомоги.</WS_Patient.description>
+  <WS_Patient.label>Пацієнт</WS_Patient.label>
+  <WS_PlantCutter.description>Зрізання та збирання диких рослин і дерев.</WS_PlantCutter.description>
+  <WS_PlantCutter.label>Лісоруб</WS_PlantCutter.label>
+  <WS_Repairer.description>Усі будівельні роботи, крім спорудження нових будівель.</WS_Repairer.description>
+  <WS_Repairer.label>Ремонтник</WS_Repairer.label>
+  <WS_Rescuer.description>Порятунок знерухомлених колоністів.</WS_Rescuer.description>
+  <WS_Rescuer.label>Рятувальник</WS_Rescuer.label>
+  <WS_Researcher.description>Дослідження за дослідницьким столом.</WS_Researcher.description>
+  <WS_Researcher.label>Дослідник</WS_Researcher.label>
+  <WS_Smith.description>Виготовлення зброї й броні.</WS_Smith.description>
+  <WS_Smith.label>Коваль</WS_Smith.label>
+  <WS_Tailor.description>Виготовлення одягу.</WS_Tailor.description>
+  <WS_Tailor.label>Кравець</WS_Tailor.label>
+  <WS_Warden.description>Взаємодія з ув'язненими: вербування, навернення, годування й звільнення.</WS_Warden.description>
+  <WS_Warden.label>Наглядач</WS_Warden.label>
+</LanguageData>

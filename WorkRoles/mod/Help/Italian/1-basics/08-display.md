@@ -39,7 +39,7 @@ Raggruppa per divide la tabella in sezioni comprimibili, qui per genere:
 
 ![La tabella raggruppata per genere](grouped-table.png)
 
-Il raggruppamento organizza soltanto le righe; i filtri continuano a decidere chi viene elencato. Con Colony Groups installato, i suoi gruppi di pedine compaiono tra le opzioni.
+Il raggruppamento organizza soltanto le righe; i filtri continuano a decidere chi viene elencato. Con Colony Groups installato, i suoi gruppi compaiono tra le opzioni.
 
 ## Colonne delle abilità
 

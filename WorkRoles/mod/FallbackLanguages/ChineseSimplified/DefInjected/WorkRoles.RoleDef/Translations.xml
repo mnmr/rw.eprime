@@ -35,9 +35,9 @@
   <WS_Handler.label>驯兽师</WS_Handler.label>
   <WS_Handler.description>驯服、训练和宰杀动物。</WS_Handler.description>
   <WS_Cook.label>厨师</WS_Cook.label>
-  <WS_Cook.description>准备餐食和屠宰。</WS_Cook.description>
+  <WS_Cook.description>准备餐食和屠宰尸体。</WS_Cook.description>
   <WS_Butcher.label>屠夫</WS_Butcher.label>
-  <WS_Butcher.description>屠宰生物。</WS_Butcher.description>
+  <WS_Butcher.description>屠宰生物尸体。</WS_Butcher.description>
   <WS_Brewer.label>酿酒师</WS_Brewer.label>
   <WS_Brewer.description>在酿造台制作麦芽汁。</WS_Brewer.description>
   <WS_Hunter.label>猎人</WS_Hunter.label>

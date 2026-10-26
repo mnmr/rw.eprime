@@ -88,7 +88,7 @@
   <WR_RecTuneOrderingPointsRow>Pontos de sinal</WR_RecTuneOrderingPointsRow>
   <WR_RecTuneOrderingPointsRowDesc>Pontos que cada intensidade de sinal acrescenta ao ordenar as funções recomendadas finais.</WR_RecTuneOrderingPointsRowDesc>
   <WR_RecTuneMinimumPickRow>Bônus de seleção mínima</WR_RecTuneMinimumPickRow>
-  <WR_RecTuneMinimumPickRowDesc>Pontos de ordenação atribuídos à primeira, segunda, terceira e a cada personagem seguinte escolhida para cumprir o número mínimo de titulares de uma função.</WR_RecTuneMinimumPickRowDesc>
+  <WR_RecTuneMinimumPickRowDesc>Pontos de ordenação atribuídos ao primeiro, segundo, terceiro e a cada trabalhador seguinte escolhido para cumprir o número mínimo de titulares de uma função.</WR_RecTuneMinimumPickRowDesc>
   <WR_RecTuneCategoryPointsRow>Pontos de categoria</WR_RecTuneCategoryPointsRow>
   <WR_RecTuneCategoryPointsRowDesc>Pontos de ordenação acrescentados pela importância para a colônia: Importante promove funções de serviço acima da produção com o mesmo sinal; Opcional empurra as funções para o fim.</WR_RecTuneCategoryPointsRowDesc>
   <WR_RecTuneTimePointsRow>Pontos de tempo necessário</WR_RecTuneTimePointsRow>
@@ -110,16 +110,16 @@
   <WR_RecTuneOptionalTargetMinimumPoints>Pontos mínimos dos objetivos opcionais</WR_RecTuneOptionalTargetMinimumPoints>
   <WR_RecTuneOptionalTargetMinimumPointsDesc>Soma mínima dos passos de sinal acima do limite configurado necessária para recomendar um objetivo opcional com várias habilidades.</WR_RecTuneOptionalTargetMinimumPointsDesc>
   <WR_RecTuneLeadMinimumConnectedTargets>Objetivos ligados para diversificação</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Número mínimo de objetivos de formação ligados antes de o planejador tentar atribuir as funções de responsável a personagens diferentes.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
+  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Número mínimo de objetivos de formação ligados antes de o planejador tentar atribuir as funções de responsável a trabalhadores diferentes.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
   <WR_RecTuneLeadMinimumSignal>Sinal mínimo do responsável</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>Sinal mínimo de função permitido a uma personagem escolhida como responsável diversificado de um percurso de formação.</WR_RecTuneLeadMinimumSignalDesc>
+  <WR_RecTuneLeadMinimumSignalDesc>Sinal mínimo de função permitido a um trabalhador escolhido como responsável diversificado de um percurso de formação.</WR_RecTuneLeadMinimumSignalDesc>
   <WR_RecTuneHunterTiersRow>Nível máximo de tiro por patamar</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Limites de tiro para a posição dinâmica do Caçador. O patamar 1 coloca-o logo após o trabalho básico, os patamares 2 e 3 após as funções de trabalho intermediárias e finais, e os níveis acima do patamar 4 colocam-no em último.</WR_RecTuneHunterTiersRowDesc>
   <WR_TrainingSection>Rota de formação</WR_TrainingSection>
   <WR_TrainingHelp>Defina aqui como os colonos adquirem habilidades e progridem até esta função. Um percurso pode ter várias faixas que se sobrepõem. Se o percurso for recomendado a um colono, receberá recomendações de todas as funções que correspondem ao seu nível atual.</WR_TrainingHelp>
   <WR_TrainingTipWhat>Progressão da própria função: cada função membro tem uma faixa de habilidade em que é recomendada. A função principal permanece sempre no seu percurso.</WR_TrainingTipWhat>
   <WR_TrainingTipBands>As faixas sobrepostas coexistem; sem sobreposição, a função posterior substitui a anterior.</WR_TrainingTipBands>
-  <WR_TrainingTipOrder>As atribuições dão prioridade aos limites mínimos de faixa mais altos. Com faixas iguais, dão prioridade à habilidade de função mais fraca da personagem e depois à ordem salva do percurso.</WR_TrainingTipOrder>
+  <WR_TrainingTipOrder>As atribuições dão prioridade aos limites mínimos de faixa mais altos. Com faixas iguais, dão prioridade à habilidade de função mais fraca do trabalhador e depois à ordem salva do percurso.</WR_TrainingTipOrder>
   <WR_AddNew>Adicionar nova</WR_AddNew>
   <WR_WhenPanelCaption>Progressão de funções: defina a que nível de habilidade as funções apresentadas são recomendadas. As funções sobrepostas complementam-se.</WR_WhenPanelCaption>
   <WR_AddRole>Adicionar função</WR_AddRole>
@@ -145,7 +145,7 @@
   <WR_RoleTimeFullTime>Tempo integral</WR_RoleTimeFullTime>
   <WR_RoleTimeOpportunistic>Oportunista</WR_RoleTimeOpportunistic>
   <WR_ChampionPenalty>Penalidade por campeão repetido</WR_ChampionPenalty>
-  <WR_ChampionPenaltyTip>Quando ativada, um colono que já é campeão de outras funções é penalizado ao disputar esta. Desative nas funções em que acumular campeonatos é aceitável, como no trabalho ocasional.</WR_ChampionPenaltyTip>
+  <WR_ChampionPenaltyTip>Quando ativada, um colono que já é campeão de outras funções é penalizado ao disputar esta. Desative nas funções em que ser campeão de várias funções é aceitável, como no trabalho ocasional.</WR_ChampionPenaltyTip>
   <WR_PartialCapability>Permitir capacidade parcial</WR_PartialCapability>
   <WR_PartialCapabilityTip>Quando ativada, esta função é recomendada a colonos que podem executar algumas das suas tarefas, mas não todas. Nunca é recomendada a quem não consegue executar nenhuma. Útil para funções abrangentes que todos devem ter, como tarefas comuns em períodos sem outro trabalho.</WR_PartialCapabilityTip>
   <WR_PartialCapabilityLockedTip>Esta função já é recomendada a colonos que podem executar algumas tarefas, mas não todas. As funções sem trabalho qualificado e as de caça permitem sempre isto.</WR_PartialCapabilityLockedTip>
@@ -254,7 +254,7 @@
   <WR_GroupByCaption>Agrupar por</WR_GroupByCaption>
   <WR_SkillColumnsCaption>Colunas de habilidades</WR_SkillColumnsCaption>
   <WR_RoleDisplayCaption>Exibição das funções</WR_RoleDisplayCaption>
-  <WR_ColonistSearchTip>Pesquisa os nomes dos colonos. Separe termos com espaços; todos precisam corresponder. Use r: ou role: antes de um termo para pesquisar nomes de funções atribuídas, ou j: ou job: para tarefas fornecidas por essas funções. Exemplo: br r:doc.</WR_ColonistSearchTip>
+  <WR_ColonistSearchTip>Pesquisa os nomes dos colonos. Separe termos com espaços; todos precisam corresponder. Use r: ou role: antes de um termo para pesquisar nomes de funções atribuídas, ou j: ou job: para tarefas fornecidas por essas funções. Exemplo: br r:méd.</WR_ColonistSearchTip>
   <WR_ColonistRoleFilterTip>Lista os colonos com a função selecionada. Uma função atribuída não bloqueadora também corresponde se as suas tarefas cobrirem totalmente a função selecionada. Combina-se com os filtros de pesquisa, tarefa e localização.</WR_ColonistRoleFilterTip>
   <WR_ColonistJobFilterTip>Selecionada: {0}
 
@@ -292,7 +292,7 @@ Lista os colonos cujas funções atribuídas não bloqueadoras contêm esta tare
   <WR_ChipsNormal>Fichas: nomes completos</WR_ChipsNormal>
   <WR_ChipsCompact>Fichas: iniciais</WR_ChipsCompact>
   <WR_ChipsIcons>Fichas: ícones</WR_ChipsIcons>
-  <WR_OrderSuffixBar>(ordem das abas)</WR_OrderSuffixBar>
+  <WR_OrderSuffixBar>(ordem da barra)</WR_OrderSuffixBar>
   <WR_OrderSuffixAZ>(A–Z)</WR_OrderSuffixAZ>
   <WR_DisplayButton>Exibição</WR_DisplayButton>
   <WR_DisplayOptions>Opções de exibição</WR_DisplayOptions>
@@ -305,7 +305,7 @@ Lista os colonos cujas funções atribuídas não bloqueadoras contêm esta tare
   <WR_NoFilterMatches>Nenhum colono corresponde ao filtro.</WR_NoFilterMatches>
   <WR_FixMyColony>Ajustar minha colônia</WR_FixMyColony>
   <WR_FixMyColonyTip>Substituir as funções de cada colono pelas funções recomendadas.</WR_FixMyColonyTip>
-  <WR_FixNeedsSingleLocation>As recomendações são calculadas por localização. Restrinja o filtro a uma única assentamento ou nave para usar Ajustar minha colônia.</WR_FixNeedsSingleLocation>
+  <WR_FixNeedsSingleLocation>As recomendações são calculadas por localização. Restrinja o filtro a um único assentamento ou a uma nave para usar Ajustar minha colônia.</WR_FixNeedsSingleLocation>
   <WR_AutoManaged>Gerenciamento automático</WR_AutoManaged>
   <WR_AutoManagedTip>WorkRoles atualiza automaticamente as atribuições de todas as colônias no início de cada hora do jogo.
 
@@ -375,8 +375,8 @@ A tarefa não foi interrompida. Este aviso aparece uma vez por partida salva.</W
   <WR_RecTipWithWaiverOne>{0} (1 dispensa de formação)</WR_RecTipWithWaiverOne>
   <WR_RecTipWithWaiversMany>{0} ({1} dispensas de formação)</WR_RecTipWithWaiversMany>
   <WR_RecTipEveryoneCapable>Atribuída a todos os capazes</WR_RecTipEveryoneCapable>
-  <WR_RecDecisionAuto>Atribuída automaticamente a todas as personagens capazes.</WR_RecDecisionAuto>
-  <WR_RecDecisionSignals>O limite de sinal configurado qualifica esta personagem.</WR_RecDecisionSignals>
+  <WR_RecDecisionAuto>Atribuída automaticamente a quem for capaz.</WR_RecDecisionAuto>
+  <WR_RecDecisionSignals>Atende ao limite de sinal configurado.</WR_RecDecisionSignals>
   <WR_RecDecisionCoverageDraft>Melhor candidato restante selecionado para cumprir a cobertura exigida.</WR_RecDecisionCoverageDraft>
   <WR_RecDecisionTraining>Atribuída através do percurso de formação de {0}.</WR_RecDecisionTraining>
   <WR_RecDecisionTrainingUnknown>Atribuída por meio de um percurso de formação.</WR_RecDecisionTrainingUnknown>
@@ -399,16 +399,16 @@ A tarefa não foi interrompida. Este aviso aparece uma vez por partida salva.</W
   <WR_RecDecisionDisabled>Esta função está desativada.</WR_RecDecisionDisabled>
   <WR_RecDecisionUnavailable>O trabalho desta função está indisponível até a respectiva pesquisa estar concluída.</WR_RecDecisionUnavailable>
   <WR_RecDecisionExcluded>Esta função é gerenciada por regras e excluída das recomendações normais.</WR_RecDecisionExcluded>
-  <WR_RecDecisionIncapable>Esta personagem é incapaz de executar o trabalho desta função.</WR_RecDecisionIncapable>
+  <WR_RecDecisionIncapable>Incapaz de executar o trabalho desta função.</WR_RecDecisionIncapable>
   <WR_RecDecisionNotMechanitor>Este colono não tem meca-conexão, portanto não pode realizar trabalho de mecanizador.</WR_RecDecisionNotMechanitor>
-  <WR_RecDecisionHunterRequirements>Esta personagem não transporta uma arma de longo alcance.</WR_RecDecisionHunterRequirements>
-  <WR_RecDecisionAwful>Um sinal Péssimo desqualifica este personagem.</WR_RecDecisionAwful>
+  <WR_RecDecisionHunterRequirements>Sem arma de longo alcance equipada.</WR_RecDecisionHunterRequirements>
+  <WR_RecDecisionAwful>Desqualificado por um sinal Péssimo.</WR_RecDecisionAwful>
   <WR_RecDecisionCovered>Abrangida pela função recomendada: {0}.</WR_RecDecisionCovered>
   <WR_RecDecisionCoveredUnknown>Abrangida por outra função recomendada.</WR_RecDecisionCoveredUnknown>
   <WR_RecDecisionCoverageFilled>A cobertura exigida foi preenchida por candidatos mais bem classificados.</WR_RecDecisionCoverageFilled>
-  <WR_RecDecisionWeakSignal>A avaliação do sinal está abaixo do limite configurado e a cobertura exigida não selecionou esta personagem.</WR_RecDecisionWeakSignal>
-  <WR_RecDecisionNotSelected>Nenhuma regra de recomendação selecionou esta personagem.</WR_RecDecisionNotSelected>
-  <WR_RecDecisionOutOfBand>A habilidade desta personagem coloca-a em outra faixa do percurso de formação.</WR_RecDecisionOutOfBand>
+  <WR_RecDecisionWeakSignal>A avaliação do sinal está abaixo do limite configurado e a cobertura exigida não selecionou este trabalhador.</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionNotSelected>Não selecionado por nenhuma regra de recomendação.</WR_RecDecisionNotSelected>
+  <WR_RecDecisionOutOfBand>O nível de habilidade está em outra faixa do percurso de formação.</WR_RecDecisionOutOfBand>
   <WR_RecDecisionOutqualified>Foram escolhidos outros candidatos mais qualificados para as vagas disponíveis.</WR_RecDecisionOutqualified>
   <WR_RecDecisionRecommended>Selecionado pelo motor de recomendações.</WR_RecDecisionRecommended>
   <WR_MakeItSo>Aplicar sugestões</WR_MakeItSo>
@@ -423,7 +423,7 @@ A tarefa não foi interrompida. Este aviso aparece uma vez por partida salva.</W
   <WR_NowBusy>Ocupado</WR_NowBusy>
   <WR_NowTip>{0}: {1}</WR_NowTip>
   <WR_TipActivityLabel>Atividade atual</WR_TipActivityLabel>
-  <WR_TipActivityValue>{0} está {1}</WR_TipActivityValue>
+  <WR_TipActivityValue>{0}: {1}</WR_TipActivityValue>
   <WR_RestoreDefaults>Restaurar padrões</WR_RestoreDefaults>
   <WR_RestoreDefaultsTip>Recriar funções padrão e percursos de formação em falta, restaurar exclusões padrão e devolver às funções os grupos, cores e configurações de titulares originais. Uma pré-visualização permite escolher o que restaurar.</WR_RestoreDefaultsTip>
   <WR_RestoreDefaultsTitle>Restaurar padrões</WR_RestoreDefaultsTitle>
@@ -464,7 +464,7 @@ A tarefa não foi interrompida. Este aviso aparece uma vez por partida salva.</W
   <WR_PathsOverwriteInfo>Substitui todos os percursos de formação existentes pelos {0} percursos do arquivo.</WR_PathsOverwriteInfo>
   <WR_ImportSummary>Importação concluída: {0} adicionadas, {1} atualizadas, {2} excluídas, {3} alterações de paleta, {4} percursos de formação.</WR_ImportSummary>
   <WR_CopiedToClipboard>Copiado para a área de transferência.</WR_CopiedToClipboard>
-  <WR_ExportSaved>Guardado em {0}</WR_ExportSaved>
+  <WR_ExportSaved>Salvo em {0}</WR_ExportSaved>
   <WR_ExportFailed>Não foi possível salvar: {0}</WR_ExportFailed>
   <WR_ExportOverwriteConfirm>{0} já existe. Substituir?</WR_ExportOverwriteConfirm>
   <WR_RestoreMovedJobs>{0} (recuperar {1} tarefas movidas)</WR_RestoreMovedJobs>
@@ -530,8 +530,8 @@ A tarefa não foi interrompida. Este aviso aparece uma vez por partida salva.</W
   <WR_NoMembersHint>Adicione funções da lista à esquerda. Os titulares desta função executam as tarefas das funções membro pela ordem aqui apresentada.</WR_NoMembersHint>
   <WR_NoCandidatesHint>Não há funções que possam ser adicionadas. Os membros precisam ser funções normais sem regras de horário ou localização, e uma composta não pode conter outra composta.</WR_NoCandidatesHint>
   <WR_MemberLockTip>Bloqueado: esta função pertence a uma função composta. Remova-a de todas as compostas para alterar esta configuração.</WR_MemberLockTip>
-  <WR_ScaleRenameTip>Renomear desta escala (as funções que a usam acompanham a alteração).</WR_ScaleRenameTip>
-  <WR_ScaleRenameTitle>Renomear da escala</WR_ScaleRenameTitle>
+  <WR_ScaleRenameTip>Renomear esta escala (as funções que a usam acompanham a alteração).</WR_ScaleRenameTip>
+  <WR_ScaleRenameTitle>Renomear escala</WR_ScaleRenameTitle>
   <WR_ScaleNewTitle>Nova escala (copia a atual)</WR_ScaleNewTitle>
   <WR_ScaleUsedBy>Usada por {0}</WR_ScaleUsedBy>
   <WR_ScaleReset>Restaurar</WR_ScaleReset>
@@ -589,8 +589,8 @@ A tarefa não foi interrompida. Este aviso aparece uma vez por partida salva.</W
   <WR_GroupButton>Grupo: {0}</WR_GroupButton>
   <WR_GroupNewOption>Novo...</WR_GroupNewOption>
   <WR_NewGroupTitle>Novo grupo</WR_NewGroupTitle>
-  <WR_RenameGroup>Renomear do grupo</WR_RenameGroup>
-  <WR_RenameGroupTitle>Renomear do grupo</WR_RenameGroupTitle>
+  <WR_RenameGroup>Renomear grupo</WR_RenameGroup>
+  <WR_RenameGroupTitle>Renomear grupo</WR_RenameGroupTitle>
   <WR_GroupOverlayTip>As funções com regras aparecem em Funções condicionais. O grupo salvo regressa quando as regras são removidas.</WR_GroupOverlayTip>
   <WR_GroupCompositeTip>As funções compostas aparecem em Funções compostas.</WR_GroupCompositeTip>
   <WR_TreeNested>Hierárquico</WR_TreeNested>
@@ -607,7 +607,7 @@ A tarefa não foi interrompida. Este aviso aparece uma vez por partida salva.</W
   <WR_BillWorkerRoleTip>Só colonos com esta função ativa executam esta ordem; uma função condicional aplica as suas regras (por exemplo, horário). Selecionar um trabalhador remove a restrição de função e vice-versa.</WR_BillWorkerRoleTip>
   <WR_SurgeryWorkerRoleTip>Quem pode executar esta operação. Qualquer trabalhador significa ausência de restrição de função. Uma função limita a operação aos colonos que a têm ativa; uma função condicional aplica as suas regras (por exemplo, horário).</WR_SurgeryWorkerRoleTip>
   <WR_SelectRoleIcon>Selecionar ícone da função</WR_SelectRoleIcon>
-  <WR_RenameRoleTitle>Renomear da função</WR_RenameRoleTitle>
+  <WR_RenameRoleTitle>Renomear função</WR_RenameRoleTitle>
   <WR_NewWorkDetected>Novos tipos de trabalho detectados. Funções criadas ou ampliadas: {0}</WR_NewWorkDetected>
   <WR_SeedReportTitle>WorkRoles configurado</WR_SeedReportTitle>
   <WR_SeedReportBody>Criadas {0} funções e atribuídos conjuntos de funções a {1} colono(s) com base nas prioridades de trabalho.</WR_SeedReportBody>
@@ -620,7 +620,7 @@ A tarefa não foi interrompida. Este aviso aparece uma vez por partida salva.</W
   <WR_WelcomeFind>Abra WorkRoles com o botão Trabalho na parte inferior da tela. A aba Ajuda começa com uma visita guiada.</WR_WelcomeFind>
   <WR_WelcomeTakeMeThere>Abrir agora</WR_WelcomeTakeMeThere>
   <WR_WelcomeSmallScreen>A tela do jogo mede {0}x{1} (resolução dividida pela escala da interface). WorkRoles foi projetado para {2}x{3} ou mais, por exemplo 1920x1080 com escala de interface 1,25. Funciona em telas menores, mas alguns rótulos são abreviados e as abas precisam de mais rolagem. Reduzir a escala da interface nas opções do jogo dá mais espaço à janela.</WR_WelcomeSmallScreen>
-  <WR_RoleWorkAversion>O preceito {1} de {0} opõe-se a {2}. As recomendações aplicam uma penalidade finita: dois passos de prioridade ou seis pontos virtuais de habilidade ao escolher um campeão. A cobertura exigida ainda pode selecionar esta personagem. A prioridade do Caçador recua dois patamares, até ao máximo de cinco; a alternativa existente do primeiro patamar continua a aplicar-se.</WR_RoleWorkAversion>
+  <WR_RoleWorkAversion>O preceito {1} de {0} opõe-se a {2}. As recomendações aplicam uma penalidade finita: dois passos de prioridade ou seis pontos virtuais de habilidade ao escolher um campeão. A cobertura exigida ainda pode selecionar este trabalhador. A prioridade do Caçador recua dois patamares, até ao máximo de cinco; a alternativa existente do primeiro patamar continua a aplicar-se.</WR_RoleWorkAversion>
   <WR_WorkBlockedTags>categorias de trabalho desativadas</WR_WorkBlockedTags>
   <WR_WorkBlockedCapacity>falta de uma capacidade de saúde obrigatória</WR_WorkBlockedCapacity>
   <WR_WorkBlockedRace>proibido pelas restrições de trabalho desta raça</WR_WorkBlockedRace>
@@ -630,4 +630,7 @@ A tarefa não foi interrompida. Este aviso aparece uma vez por partida salva.</W
   <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
   <WR_RecWorkAversion>{0} opõe-se a {1}; a pontuação de recomendação é reduzida.</WR_RecWorkAversion>
   <WR_RecDecisionWorkAversion>A aversão reduz a pontuação abaixo do limite do trabalho opcional.</WR_RecDecisionWorkAversion>
+  <WR_CompatibilityFreeWill>Free Will define as prioridades de trabalho dos colonos, mas WorkRoles controla as prioridades dos colonos gerenciados e bloqueia essas alterações.</WR_CompatibilityFreeWill>
+  <WR_CompatibilityPriorityMaster>PriorityMaster altera os valores das prioridades manuais e seu intervalo. WorkRoles substitui esses controles e define as prioridades dos colonos gerenciados com base em suas funções.</WR_CompatibilityPriorityMaster>
+  <WR_CompatibilityWorkTab>{0} substitui a aba Trabalho e controla as prioridades, entrando em conflito com o gerenciamento de trabalho baseado em funções do WorkRoles.</WR_CompatibilityWorkTab>
 </LanguageData>

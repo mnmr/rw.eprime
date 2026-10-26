@@ -11,6 +11,6 @@ Con un conjunto seleccionado, Recursos muestra casillas junto a cada categoría 
 
 ![Miembros de Comidas en el panel Recursos](pool-members.png)
 
-Marca una categoría para incluir todo su contenido o marca recursos individuales. Si solo se incluye parte de una categoría, aparece una marca parcial. Haz clic enr su nombre la abre o cierra. La casilla de categoría solo cambia los recursos que aparecen bajo ella: los filtros de búsqueda, objetos y origen limitan lo que añade o quita.
+Marca una categoría para incluir todo su contenido o marca recursos individuales. Si solo se incluye parte de una categoría, aparece una marca parcial. Hacer clic en su nombre la abre o cierra. La casilla de categoría solo cambia los recursos que aparecen bajo ella: los filtros de búsqueda, objetos y origen limitan lo que añade o quita.
 
 Haz clic en el icono de cualquier recurso para convertirlo en el icono del conjunto. Su nombre queda amarillo; el icono automático del primer miembro no se marca.

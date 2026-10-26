@@ -39,7 +39,7 @@ Gruppieren nach teilt die Tabelle in einklappbare Abschnitte, hier nach Geschlec
 
 ![Nach Geschlecht gruppierte Tabelle](grouped-table.png)
 
-Gruppierung ordnet nur Zeilen; Filter bestimmen weiterhin die angezeigten Kolonisten. Mit Colony Groups stehen auch dessen Bauerngruppen zur Wahl.
+Gruppierung ordnet nur Zeilen; Filter bestimmen weiterhin die angezeigten Kolonisten. Mit Colony Groups stehen auch dessen Gruppen zur Wahl.
 
 ## Fertigkeitsspalten
 

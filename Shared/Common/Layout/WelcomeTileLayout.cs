@@ -2,9 +2,19 @@ namespace RimShared.Common
 {
     public readonly struct WelcomeTile
     {
-        public readonly float X, Y, Width, Height;
+        public readonly float X, Y, Width, Height, MaximumHeight;
         public WelcomeTile(float x, float y, float width, float height)
-        { X = x; Y = y; Width = width; Height = height; }
+            : this(x, y, width, height, height) { }
+        internal WelcomeTile(float x, float y, float width, float height, float maximumHeight)
+        { X = x; Y = y; Width = width; Height = height; MaximumHeight = maximumHeight; }
+
+        public WelcomeTile FitContentHeight(float desiredHeight)
+        {
+            float height = System.Math.Min(MaximumHeight,
+                System.Math.Max(Height, (float)System.Math.Ceiling(desiredHeight)));
+            return new WelcomeTile(X, (float)System.Math.Ceiling(Y - (height - Height) / 2f),
+                Width, height, MaximumHeight);
+        }
     }
 
     public sealed class WelcomeTilePlan
@@ -54,11 +64,16 @@ namespace RimShared.Common
                 tileHeight = (float)System.Math.Floor(h);
             }
             float left = (float)System.Math.Floor((width - columns * tileWidth - (columns - 1) * gap) / 2f);
-            float top = (float)System.Math.Floor((height - 35f - rows * tileHeight - (rows - 1) * gap) / 2f);
+            // Reserve the full vertical row band, even while a short welcome
+            // uses its compact height. Independent assembly copies may then
+            // grow within their own bands without overlapping another window.
+            float rowHeight = (float)System.Math.Floor((availableHeight - (rows - 1) * gap) / rows);
+            float top = (float)System.Math.Floor((height - 35f - rows * rowHeight - (rows - 1) * gap) / 2f);
             var tiles = new WelcomeTile[count];
             for (int i = 0; i < count; i++)
                 tiles[i] = new WelcomeTile(left + (i % columns) * (tileWidth + gap),
-                    top + (i / columns) * (tileHeight + gap), tileWidth, tileHeight);
+                    (float)System.Math.Floor(top + (i / columns) * (rowHeight + gap)
+                        + (rowHeight - tileHeight) / 2f), tileWidth, tileHeight, rowHeight);
             return new WelcomeTilePlan(tiles);
         }
     }

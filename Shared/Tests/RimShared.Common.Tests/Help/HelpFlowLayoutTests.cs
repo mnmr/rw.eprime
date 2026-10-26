@@ -261,6 +261,43 @@ public class HelpFlowLayoutTests
             "H=156");
     }
 
+    [Test]
+    [Arguments("작업입니다.", 50f, "작업입니|다.")]
+    [Arguments("中文”测试", 20f, "中|文”|测试")]
+    [Arguments("(한국어)", 40f, "(한국|어)")]
+    [Arguments("中文“测试”", 30f, "中文|“测|试”")]
+    public async Task CjkWrappingKeepsAsciiAndQuotationPunctuationAttached(
+        string source, float width, string expectedLines)
+    {
+        var layout = Layout(HelpMarkdown.Parse(source), width);
+
+        await Assert.That(string.Join("|", layout.Items.Select(item => item.Text)))
+            .IsEqualTo(expectedLines);
+    }
+
+    [Test]
+    [Arguments("か\u3099く", "か\u3099|く")]
+    [Arguments("ｶﾞｸ", "ｶﾞ|ｸ")]
+    [Arguments("\U00020000文", "\U00020000|文")]
+    [Arguments("\u1112\u1161\u11AB글", "\u1112\u1161\u11AB|글")]
+    public async Task CjkWrappingKeepsCompleteTextElements(string source, string expectedLines)
+    {
+        var layout = HelpFlowLayout.Build(HelpMarkdown.Parse(source), 10f,
+            new ElementMeasurer(), Metrics(),
+            (string _, out float w, out float h) => { w = h = 0; return false; });
+
+        await Assert.That(string.Join("|", layout.Items.Select(item => item.Text)))
+            .IsEqualTo(expectedLines);
+    }
+
+    private sealed class ElementMeasurer : IHelpTextMeasurer
+    {
+        public float WordWidth(string text, HelpFont font, HelpRunStyle style) =>
+            new StringInfo(text).LengthInTextElements * 10f;
+        public float SpaceWidth(HelpFont font, HelpRunStyle style) => 10f;
+        public float LineHeight(HelpFont font) => 20f;
+    }
+
     private static HelpTopicLayout Layout(HelpDocument doc, float width,
         HelpFlowLayout.ImageSizeResolver? imageSize = null)
     {

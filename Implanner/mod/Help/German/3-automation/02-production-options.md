@@ -7,7 +7,7 @@ Gibt es mehrere Rezepte für ein Implantat, bevorzugt Implanner eine verfügbare
 
 Aktiviere **Implanner-Werkbank** im Auftragsreiter einer Bank, um sie der Implantatherstellung zu widmen. Das Kästchen erscheint nur an implantatfähigen Werkbänken. Bestehende Aufträge werden ausgesetzt; Implanner verwendet diese Bank vor allen anderen. Währenddessen kannst du keine Aufträge hinzufügen, einfügen, aussetzen oder fortsetzen.
 
-![Eine an Implanner übergebene Fabrikationsbank](implanner-bench.png)
+![Ein an Implanner übergebener Fabrikationstisch](implanner-bench.png)
 
 Deaktiviere das Kästchen, um die Bank zurückzunehmen. Zuvor bereits ausgesetzte Aufträge bleiben ausgesetzt, alle anderen laufen weiter. Entfernst du Implanner bei aktivem Kästchen, funktioniert die Bank weiter, aber du musst ihre Aufträge selbst fortsetzen.
 

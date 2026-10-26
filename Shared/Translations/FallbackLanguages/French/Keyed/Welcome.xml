@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <RS_CompatibilityHeading>Conflits potentiels entre mods détectés</RS_CompatibilityHeading>
+  <RS_CompatibilityRemove>Retirez les mods répertoriés ci-dessus pour éviter ces conflits.</RS_CompatibilityRemove>
+  <RS_CompatibilityRestoreAutomation>Retirez les mods répertoriés ci-dessus pour activer l'automatisation.</RS_CompatibilityRestoreAutomation>
+</LanguageData>

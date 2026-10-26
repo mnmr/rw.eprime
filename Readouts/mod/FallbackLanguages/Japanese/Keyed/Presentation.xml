@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <EPR.SeedDrugs>ドラッグ</EPR.SeedDrugs>
+  <EPR.SeedEggs>卵</EPR.SeedEggs>
+  <EPR.SeedFertilizedeggs>有精卵</EPR.SeedFertilizedeggs>
+  <EPR.SeedFood>食料</EPR.SeedFood>
+  <EPR.SeedHardDrugs>ハードドラッグ</EPR.SeedHardDrugs>
+  <EPR.SeedLeathers>革</EPR.SeedLeathers>
+  <EPR.SeedMaterials>資材</EPR.SeedMaterials>
+  <EPR.SeedMeals>食事</EPR.SeedMeals>
+  <EPR.SeedMeats>肉</EPR.SeedMeats>
+  <EPR.SeedMechs>メカノイド</EPR.SeedMechs>
+  <EPR.SeedMedicine>医薬品</EPR.SeedMedicine>
+  <EPR.SeedMortarshells>迫撃砲弾</EPR.SeedMortarshells>
+  <EPR.SeedPlantfood>植物性食材</EPR.SeedPlantfood>
+  <EPR.SeedRaw>生食材</EPR.SeedRaw>
+  <EPR.SeedSera>血清</EPR.SeedSera>
+  <EPR.SeedSocialDrugs>嗜好用ドラッグ</EPR.SeedSocialDrugs>
+  <EPR.SeedStoneblocks>石材</EPR.SeedStoneblocks>
+  <EPR.SeedStonechunks>岩塊</EPR.SeedStonechunks>
+  <EPR.SeedTextiles>繊維</EPR.SeedTextiles>
+  <EPR.SeedWealth>資産</EPR.SeedWealth>
+  <EPR.SeedWools>毛</EPR.SeedWools>
+</LanguageData>

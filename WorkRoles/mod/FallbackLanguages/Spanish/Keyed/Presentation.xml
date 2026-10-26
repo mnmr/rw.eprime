@@ -40,9 +40,9 @@
   <WR_SignalCondition_state_drunk>Borracho</WR_SignalCondition_state_drunk>
   <WR_SignalCondition_state_no_recent_lovin>Sin intimidad reciente</WR_SignalCondition_state_no_recent_lovin>
   <WR_SignalCondition_state_not_drunk>Sobrio</WR_SignalCondition_state_not_drunk>
-  <WR_SignalCondition_state_not_smokeleaf_high>Sin efecto de humohoja</WR_SignalCondition_state_not_smokeleaf_high>
+  <WR_SignalCondition_state_not_smokeleaf_high>Sin efecto de hierba de fumar</WR_SignalCondition_state_not_smokeleaf_high>
   <WR_SignalCondition_state_recent_lovin>Intimidad reciente</WR_SignalCondition_state_recent_lovin>
-  <WR_SignalCondition_state_smokeleaf_high>Bajo los efectos de humohoja</WR_SignalCondition_state_smokeleaf_high>
+  <WR_SignalCondition_state_smokeleaf_high>Bajo los efectos de hierba de fumar</WR_SignalCondition_state_smokeleaf_high>
   <WR_SignalCondition_time_20_5>Entre las 20:00 y las 05:00</WR_SignalCondition_time_20_5>
   <WR_SignalCondition_time_day>Durante el día</WR_SignalCondition_time_day>
   <WR_SignalCondition_weather_not_raining>Sin lluvia</WR_SignalCondition_weather_not_raining>

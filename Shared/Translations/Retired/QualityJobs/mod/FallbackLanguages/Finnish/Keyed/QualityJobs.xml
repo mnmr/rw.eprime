@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <QJ_FinishBillLabel>Viimeistele {0} ({1})</QJ_FinishBillLabel>
+  <QJ_AtStockCap>keskeneräisten esineiden enimmäismäärä saavutettu</QJ_AtStockCap>
+  <QJ_UnfinishedWorkWaiting>tämän tilauksen keskeneräinen esine odottaa työn jatkamista</QJ_UnfinishedWorkWaiting>
+  <QJ_QualityPanelTitle>Quality Jobs</QJ_QualityPanelTitle>
+  <QJ_ManageBill>Hallitse tätä tilausta</QJ_ManageBill>
+  <QJ_FinisherSkill>Vähimmäistaito: {0}</QJ_FinisherSkill>
+  <QJ_FinisherSkillTip>Vain vähintään tämän taitotason saavuttaneet siirtolaiset saavat viimeistellä työn. Kuka tahansa saa tehdä aiemmat valmistusvaiheet.</QJ_FinisherSkillTip>
+  <QJ_AutoBest>Automaattinen taitoraja</QJ_AutoBest>
+  <QJ_AutoBestTip>Valittu: Vain siirtokunnan paras käytettävissä oleva viimeistelijä saa viimeistellä työn, ja taitovaatimus seuraa häntä automaattisesti. Myös poissa olevat, maahan kaatuneet ja kiireiset siirtolaiset lasketaan tässä vertailussa käytettävissä oleviksi.\n\nEi valittu: Jokainen asettamasi taitovaatimuksen täyttävä siirtolainen saa viimeistellä työn.</QJ_AutoBestTip>
+  <QJ_AutoBestCurrent>Nyt: {0}</QJ_AutoBestCurrent>
+  <QJ_AutoBestNone>Ei kelvollista siirtolaista</QJ_AutoBestNone>
+  <QJ_MigrationTitle>Nykyiset laatutuotteiden tilaukset</QJ_MigrationTitle>
+  <QJ_MigrationBody>Quality Jobs löysi {0} olemassa olevaa laatutuotetilausta. Niiden hallintaa ei ole otettu käyttöön, joten ne toimivat edelleen entiseen tapaan. Keskeneräisen työn jakaminen on käytettävissä kummassakin tapauksessa.</QJ_MigrationBody>
+  <QJ_MigrationEnableExisting>Otetaanko Quality Jobs käyttöön nykyisille laatutuotetilauksille?</QJ_MigrationEnableExisting>
+  <QJ_MigrationEnableExistingTip>Valittu: Nykyiset tilaukset käyttävät Quality Jobsia ja viimeistelijän taitovaatimuksen automaattista säätöä. Siirtokunnan paras kelvollinen siirtolainen viimeistelee työn; myös tilapäisesti estyneet siirtolaiset huomioidaan. Inspiraatiota tai tuotantoasiantuntijaa ei vaadita, eikä heikkolaatuisia tuloksia yritetä uudelleen.\n\nEi valittu: Nykyiset tilaukset valmistuvat peruspelin tapaan. Keskeneräisen työn jakaminen ei muutu.</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationContinue>Jatka</QJ_MigrationContinue>
+  <QJ_RequireInspired>Vaadi Luova-inspiraatio</QJ_RequireInspired>
+  <QJ_RequireSpecialist>Vaadi tuotantoasiantuntija</QJ_RequireSpecialist>
+  <QJ_StockCapLabel>Varastoraja: {0}</QJ_StockCapLabel>
+  <QJ_StockCapTooltip>Tämän tuotteen keskeneräisten esineiden enimmäismäärä. Raja on tuotekohtainen, joten kaikki sitä valmistavat tilaukset lasketaan mukaan.\n\n0 tarkoittaa rajatonta.</QJ_StockCapTooltip>
+  <QJ_StatusHeader>Tila</QJ_StatusHeader>
+  <QJ_StatusQueue>Odottaa {0} · Viimeistely {1}</QJ_StatusQueue>
+  <QJ_StatusQueueShared>Kesken {0} · Odottaa {1} · Viimeistely {2}</QJ_StatusQueueShared>
+  <QJ_StatusQueueTip>Keskeneräisiä: jaettavan työn esineet, joita kuka tahansa sallittu valmistaja saa jatkaa. Odottaa: keskeytetyt esineet, jotka tarvitsevat vaatimukset täyttävän viimeistelijän. Viimeistellään: viimeistelijälle osoitetut esineet.</QJ_StatusQueueTip>
+  <QJ_StatusFinishers>Sopivia viimeistelijöitä: {0}</QJ_StatusFinishers>
+  <QJ_StatusFinishersNone>Sopivia viimeistelijöitä: 0</QJ_StatusFinishersNone>
+  <QJ_StatusFinishersTip>Tämän kartan siirtolaiset, jotka voivat juuri nyt viimeistellä työn, paras ehdokas ensin. Siirtolainen kelpaa, kun tarvittava työtyyppi on käytössä ja yllä olevat viimeistelyvaatimukset täyttyvät.\n\nMaahan kaatuneita, mielentilahäiriössä olevia tai tältä kartalta poissa olevia siirtolaisia ei lasketa mukaan.</QJ_StatusFinishersTip>
+  <QJ_StatusStalled>Ei sopivaa viimeistelijää</QJ_StatusStalled>
+  <QJ_StatusStalledTip>Keskeneräiset esineet odottavat, mutta kukaan siirtolainen ei juuri nyt täytä viimeistelyvaatimuksia, joten viimeistelytöitä ei luoda.\n\nTarkista taitovaatimus sekä inspiraatio- ja asiantuntijavaatimukset. Varmista myös, että tarkoitetun viimeistelijän työtyyppi on käytössä ja hän on tällä kartalla. Pysähdyksen aikana varastoraja voi estää uusien esineiden aloittamisen.</QJ_StatusStalledTip>
+  <QJ_StatusStalledConstruction>Ei sopivaa viimeistelijää</QJ_StatusStalledConstruction>
+  <QJ_StatusStalledConstructionTip>Rakennus odottaa viimeistelyä, mutta kukaan siirtolainen ei juuri nyt täytä vaatimuksia, joten se ei valmistu.\n\nTarkista taitovaatimus sekä inspiraatio- ja asiantuntijavaatimukset. Varmista myös, että tarkoitetulla rakentajalla on rakentaminen käytössä ja hän on tällä kartalla.</QJ_StatusStalledConstructionTip>
+  <QJ_OddsHeader>Laadun todennäköisyydet</QJ_OddsHeader>
+  <QJ_NormalOrWorse>Enintään normaali</QJ_NormalOrWorse>
+  <QJ_OddsColConfig>Asetus</QJ_OddsColConfig>
+  <QJ_OddsColBest>Paras</QJ_OddsColBest>
+  <QJ_SettingsBillDefaults>Tilausten oletusasetukset</QJ_SettingsBillDefaults>
+  <QJ_SettingsConstructionDefaults>Rakentamisen oletusasetukset</QJ_SettingsConstructionDefaults>
+  <QJ_SettingsGlobalOptions>Yleiset asetukset</QJ_SettingsGlobalOptions>
+  <QJ_SettingsManageNewBills>Hallitse uusia laatutuotetilauksia</QJ_SettingsManageNewBills>
+  <QJ_SettingsManageNewBillsTip>Valittu: Quality Jobs hallitsee oletusarvoisesti laatutuotteiden tilauksia tämän sarakkeen asetuksilla. Yksittäinen tilaus voi ohittaa ne omissa asetuksissaan.\n\nEi valittu: Tilaukset toimivat peruspelin tapaan, ellei Quality Jobsia ole otettu käyttöön tilauksen asetusikkunassa.</QJ_SettingsManageNewBillsTip>
+  <QJ_SettingsManageNewConstruction>Hallitse uusia rakennustöitä</QJ_SettingsManageNewConstruction>
+  <QJ_SettingsManageNewConstructionTip>Valittu: Uusia laatuluokiteltuja rakennuksia hallitaan automaattisesti tämän sarakkeen asetuksilla. Yksittäisiä rakennuksia voi määrittää tai poistaa hallinnasta Laatutyö-painikkeella.\n\nEi valittu: Uudet rakennukset toimivat peruspelin tapaan, ellei hallintaa oteta käyttöön erikseen.</QJ_SettingsManageNewConstructionTip>
+  <QJ_RequireInspiredTip>Valittu: Vain Luova-inspiraation saanut siirtolainen saa viimeistellä työn; muut saavat tehdä aiemmat vaiheet. Inspiraatio kuluu valmistuessa peruspelin tapaan.\n\nEi valittu: Luova-inspiraatiota ei vaadita.</QJ_RequireInspiredTip>
+  <QJ_RequireSpecialistTip>Valittu: Vain siirtolainen, jonka Ideology-rooli antaa tuotannon laatubonuksen, saa viimeistellä työn; muut saavat tehdä aiemmat vaiheet.\n\nEi valittu: Tuotantoasiantuntijan roolia ei vaadita.</QJ_RequireSpecialistTip>
+  <QJ_SettingsFinisherSkillTip>Vain vähintään tämän taitotason saavuttaneet siirtolaiset saavat viimeistellä työn; muut saavat tehdä aiemmat vaiheet.\n\nKun viimeistelijän taitovaatimuksen automaattinen säätö on valittu, arvo säilyy manuaalisena oletuksena, mutta sitä ei käytetä.</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsShareWork>Jaa keskeneräiset työt</QJ_SettingsShareWork>
+  <QJ_SettingsShareWorkTip>Valittu: Keskeneräisten esineiden lukitus vapautetaan, jotta kuka tahansa kelvollinen tekijä voi jatkaa toisen aloittamaa työtä.\n\nEi valittu: Peruspelin toiminta, jossa keskeneräinen esine pysyy sidottuna sen aloittaneeseen tekijään.</QJ_SettingsShareWorkTip>
+  <QJ_SettingsHighPriorityFinish>Käytä viimeistelijöille korkean prioriteetin työtä</QJ_SettingsHighPriorityFinish>
+  <QJ_SettingsHighPriorityFinishTip>Valittu: Esineen viimeistelijäksi valittu siirtolainen ottaa työn seuraavan kerran etsiessään työtä ennen kaikkia muita töitä paitsi palontorjuntaa, sairaanhoitoa, pelastamista ja vuodelepoa. Nykyistä työtä ei keskeytetä.\n\nEi valittu: Viimeistelytyö tulee ensin omassa työtyypissään, mutta siirtolaisen korkeammalle priorisoimat työtyypit menevät yhä edelle.</QJ_SettingsHighPriorityFinishTip>
+  <QJ_SettingsDefaultCap>Keskeneräisten oletusvarastoraja: {0}</QJ_SettingsDefaultCap>
+  <QJ_SettingsDefaultCapTip>Asettaa keskeneräisten esineiden oletusenimmäismäärän tuotetta kohti. Kaikki saman esineen tilaukset jakavat rajan.\n\nRajan täytyttyä tilaukset eivät aloita uusia esineitä; työn alla olevat voivat silti valmistua. 0 tarkoittaa rajatonta.</QJ_SettingsDefaultCapTip>
+  <QJ_SettingsUnlimitedHint>0 = rajaton</QJ_SettingsUnlimitedHint>
+  <QJ_SettingsShowToolbarButton>Näytä työkalurivin painike</QJ_SettingsShowToolbarButton>
+  <QJ_SettingsShowToolbarButtonTip>Lisää painikkeen näkymäkytkinten viereen näytön oikeaan alakulmaan. Painike avaa Quality Jobsin asetukset.</QJ_SettingsShowToolbarButtonTip>
+  <QJ_ToolbarButtonTip>Avaa Quality Jobsin asetukset.</QJ_ToolbarButtonTip>
+  <QJ_SettingsEnabledNote>Kytkin koskee ladattua tallennusta. Poistaminen käytöstä palauttaa kaikki esineet peruspelin hallintaan ja poistaa tallennuksen Quality Jobs -asetukset.\n\nJos modi jää asennetuksi, se aktivoituu oletusasetuksin, kun tallennus ladataan seuraavan kerran. Käytöstä poistaminen on tarkoitettu modin poistamisen valmisteluksi.</QJ_SettingsEnabledNote>
+  <QJ_DisableButton>Poista Quality Jobs käytöstä</QJ_DisableButton>
+  <QJ_EnableButton>Ota Quality Jobs käyttöön</QJ_EnableButton>
+  <QJ_DisableWarning>Käytöstä poistaminen palauttaa kaikki sivuun asetetut esineet peruspelin omistajuuteen ja poistaa pysyvästi tämän tallennuksen Quality Jobs -asetukset (tilausehdot ja varastorajat). Tämän jälkeen tehdyt tallennukset eivät sisällä jälkiä modista, joten näin voit valmistella sen puhtaan poistamisen.\n\nViimeistele korvaavat rakennukset ensin, jotta niiden tallennetut sänkyasetukset ja maalaukset säilyvät. Alkuperäisen purkamisen jälkeen nämä asetukset tarvitsevat Quality Jobsia, kunnes korvaava rakennus valmistuu.\n\nHuomaa: jos modi jää asennetuksi, se aktivoituu oletusasetuksin, kun lataat tallennuksen seuraavan kerran.\n\nPoistetaanko Quality Jobs käytöstä?</QJ_DisableWarning>
+  <QJ_NoGameLoaded>Lataa tallennus muuttaaksesi tallennuskohtaisia asetuksia.</QJ_NoGameLoaded>
+  <QJ_GizmoQualityJobLabel>Laatutyö</QJ_GizmoQualityJobLabel>
+  <QJ_GizmoRebuildDesc>Valitse tämän valmiin rakennuksen tavoitelaatu ja rakentajavaatimukset. Aloita uudelleenrakennus purkaaksesi ja korvataksesi sen, kunnes tavoite saavutetaan.</QJ_GizmoRebuildDesc>
+  <QJ_StartRebuilding>Aloita uudelleenrakennus</QJ_StartRebuilding>
+  <QJ_RebuildNote>Valitse tavoitelaatu aloittaaksesi. Sitä huonommat rakennukset puretaan ja rakennetaan uudelleen. Tämä kuluttaa materiaaleja, eivätkä rakennukset ole käytettävissä työn aikana. Tavoitteen jo täyttävät rakennukset säilytetään.</QJ_RebuildNote>
+  <QJ_NoRebuildNeeded>Yhtään kelvollista rakennusta ei tarvitse rakentaa uudelleen. Rakennusten on oltava tavoitelaatua huonompia, rakennettavissa ja vailla muita purku- tai uudelleenasennusmääräyksiä.</QJ_NoRebuildNeeded>
+  <QJ_GizmoManageDesc>Hallitse rakentamista Quality Jobsilla: odota viimeistelyssä vaatimukset täyttävää rakentajaa ja rakenna halutessasi uudelleen, kunnes tavoitelaatu saavutetaan.\n\nVasen napsautus ottaa käyttöön tai poistaa käytöstä. Käyttöönotto soveltaa rakentamisen oletusasetuksia. Oikea napsautus avaa asetukset.</QJ_GizmoManageDesc>
+  <QJ_MinQualityLabel>Tavoitelaatu</QJ_MinQualityLabel>
+  <QJ_NoRetries>Ei uusintayrityksiä</QJ_NoRetries>
+  <QJ_AnyQuality>Mikä tahansa</QJ_AnyQuality>
+  <QJ_RetriedUntilTip>Rakennus puretaan ja rakennetaan uudelleen, kunnes se saa valitun laadun tai paremman, paitsi jos Ei uusintayrityksiä on valittu.\n\nJokainen uusintayritys hukkaa osan materiaaleista.</QJ_RetriedUntilTip>
+  <QJ_BillTargetQualityTip>Kun valmiin esineen laatu jää tämän alle, tilausmäärää lisätään yhdellä korvaavan esineen valmistamiseksi. Itse esine säilytetään.\n\nTämä koskee kiinteän esinemäärän tilauksia; muut toistotilat päättävät jo itse, milloin valmistus lopetetaan.</QJ_BillTargetQualityTip>
+  <QJ_Clear>Tyhjennä</QJ_Clear>
+  <QJ_ConstructionPanelTitle>Laatutyö</QJ_ConstructionPanelTitle>
+  <QJ_FinishGiverLabel>viimeistele laatutyö</QJ_FinishGiverLabel>
+  <QJ_FinishGiverVerb>viimeistele</QJ_FinishGiverVerb>
+  <QJ_FinishGiverGerund>viimeistelee laatutyötä</QJ_FinishGiverGerund>
+  <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
+  <QJ_WelcomeBody>Quality Jobs sallii kenen tahansa siirtolaisen työskennellä keskeneräisen esineen tai rakennuksen parissa, mutta vain vaatimuksesi täyttävä siirtolainen saa viimeistellä sen, sillä viimeistelijä yksin ratkaisee laadun. Tämä toimii sekä valmistustilauksissa että rakentamisessa.</QJ_WelcomeBody>
+  <QJ_WelcomeFind>Avaa Quality Jobsin asetukset tällä painikkeella näytön oikean alakulman näkymäkytkinten vierestä. Laatutuotteen tilausikkunassa on Quality Jobs -osio, ja valitulla laatuluokitellun rakennuksen piirustuksella tai rungolla on Laatutyö-painike.</QJ_WelcomeFind>
+  <QJ_WelcomeTakeMeThere>Siirry sinne nyt</QJ_WelcomeTakeMeThere>
+  <QJ_CompatibilityFinishIt>Finish it! ei välttämättä toimi keskeneräisissä töissä, jotka Quality Jobs on irrottanut työmääräyksistään.</QJ_CompatibilityFinishIt>
+  <QJ_CompatibilityNoJobAuthors>No Job Authors voi jatkaa laatuvaatimusten perusteella varattuja töitä Quality Jobsin hallinnan ulkopuolella, jos sen pakkoviimeistely- tai Achtung-yhteensopivuusasetukset ovat käytössä.</QJ_CompatibilityNoJobAuthors>
+  <QJ_CompatibilityQualityBuilder>Myös QualityBuilder ohjaa rakentajia ja rakentamisen uusintayrityksiä. Sen säännöt voivat olla ristiriidassa Quality Jobsin kanssa.</QJ_CompatibilityQualityBuilder>
+  <QJ_CompatibilitySharingAdvice>Keskeneräisten töiden jakamisen poistaminen käytöstä ei poista kaikkia näitä ristiriitoja.</QJ_CompatibilitySharingAdvice>
+</LanguageData>

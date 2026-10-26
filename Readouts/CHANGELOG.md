@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.4.2 — 2026-10-26
+
+- Added: Built-in translations. Available languages: English, French, German, Italian, Japanese, Korean, Brazilian Portuguese, Spanish (European and Latin American), Simplified Chinese, Traditional Chinese, Turkish, Ukrainian, and Vietnamese.
+- Added: Welcome warnings for conflicting resource readout mods.
+
 ## 1.4.1 — 2026-10-19
 
 - Fixed: Font rendering in 1.7 could misalign counters at some UI interface scales. Counters are now pixel-aligned for a more crisp readout.

@@ -39,7 +39,7 @@ Agrupar divide la tabla en secciones plegables, aquí por género:
 
 ![Tabla agrupada por género](grouped-table.png)
 
-Solo organiza filas; los filtros deciden quién aparece. Con Colony Groups instalado se ofrece su agrupación de personajes.
+Solo organiza filas; los filtros deciden quién aparece. Con Colony Groups instalado se ofrece su agrupación.
 
 ## Columnas de habilidades
 

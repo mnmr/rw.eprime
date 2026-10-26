@@ -3,7 +3,7 @@
   <WR_PrevColonist.label>上一名殖民者</WR_PrevColonist.label>
   <WR_NextColonist.label>下一名殖民者</WR_NextColonist.label>
   <WR_FirstColonist.label>第一名殖民者（Ctrl：忽略分組）</WR_FirstColonist.label>
-  <WR_LastColonist.label>最后一名殖民者（Ctrl：忽略分組）</WR_LastColonist.label>
+  <WR_LastColonist.label>最後一名殖民者（Ctrl：忽略分組）</WR_LastColonist.label>
   <WR_PrevPage.label>上一頁／分組</WR_PrevPage.label>
   <WR_NextPage.label>下一頁／分組</WR_NextPage.label>
 </LanguageData>

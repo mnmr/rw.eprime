@@ -5,7 +5,7 @@ title: Opções de produção
 
 Quando várias receitas produzem o mesmo implante, Implanner prefere uma rota disponível que possa pagar agora. Pode melhorar um implante básico livre ou fabricar diretamente o avançado com materiais. Se só a melhoria estiver habilitada, a produção intermediária pode fazer a base primeiro. Receitas precisam estar pesquisadas e ter uma bancada elegível.
 
-Para dedicar uma bancada, marque **Bancada Implanner** na aba Ordens. A caixa só aparece onde é possível fabricar implantes. As ordens antigas são suspensas e o Implanner prioriza essa bancada. Enquanto marcada, não é possível adicionar, colar, suspender ou retomar ordens.
+Para dedicar uma bancada, marque **Bancada Implanner** na aba Tarefas. A caixa só aparece onde é possível fabricar implantes. As ordens antigas são suspensas e o Implanner prioriza essa bancada. Enquanto marcada, não é possível adicionar, colar, suspender ou retomar ordens.
 
 ![Bancada de fabricação entregue ao Implanner](implanner-bench.png)
 

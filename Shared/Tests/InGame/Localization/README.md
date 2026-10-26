@@ -1,5 +1,12 @@
 # Targeted runtime checks
 
+The default `verify-locales.ps1` matrix uses the thirteen active bundled locales:
+German, French, Spanish, Italian, Brazilian Portuguese, Latin American Spanish,
+Simplified Chinese, Traditional Chinese, Ukrainian, Japanese, Korean, Turkish
+and Vietnamese. Historical results below also cover
+translations retired on 2026-10-26; their files are preserved in
+`Shared/Translations/Retired` and are no longer part of the default matrix.
+
 These checks require an owned run created by the shared automation scripts.
 Use PowerShell 7 with working process-discovery and named-pipe permissions.
 The earlier low-integrity sandbox blocker was resolved by running the authorized
@@ -61,11 +68,22 @@ Executable additional scenarios:
 & Shared/Tests/InGame/Localization/verify-welcome-scenarios.ps1 -Scenario preview -EvidenceName <unique-name>
 & Shared/Tests/InGame/Localization/verify-welcome-scenarios.ps1 -Scenario metrics -EvidenceName <unique-name>
 & Shared/Tests/InGame/Localization/verify-welcome-scenarios.ps1 -Scenario lifecycle -EvidenceName <unique-name>
-& Shared/Tests/InGame/Localization/verify-locales.ps1 -EvidenceName <unique-name>
-& Shared/Tests/InGame/Localization/verify-locales.ps1 -Locales German -Persistence -EvidenceName <unique-name>
+& Shared/Tests/InGame/Localization/verify-locales.ps1 -LayoutChecks -EvidenceName <unique-name>
+& Shared/Tests/InGame/Localization/verify-locales.ps1 -Locales German -LayoutChecks -Resize -EvidenceName <unique-name>
+& Shared/Tests/InGame/Localization/verify-locales.ps1 -Locales German -LayoutChecks -Persistence -EvidenceName <unique-name>
 & Shared/Tests/InGame/Localization/verify-rename.ps1 -EvidenceName <unique-name>
 & Shared/Tests/InGame/Localization/verify-clean.ps1 -EvidenceName <unique-name>
+& Shared/Tests/InGame/Localization/verify-release-layout.ps1 -EvidenceName <unique-name> -Locales French,German,Italian,Japanese,Korean,Turkish -Final
 ```
+
+The release-layout probe records native font measurements, grapheme-safe name
+entry, fitted readout labels, implant-caption identity, translated holder
+summaries and metric-cache refreshes. It captures the real Quality Jobs bill
+panel with long status text, then opens a narrow Implanner Automation tab and
+checks every visible checkbox against its native wrapped text height. Turkish
+also exercises the actual search consumers. Each run is independently owned,
+stopped and removed; evidence is retained under
+`WorkRoles/temp/release-readiness-2026-10-26/ui/<evidence-name>`.
 
 `Fixture.cs` repairs three malformed jobs from the current Fisso source fixture
 in the in-memory Scribe XML before pawn initialization. It records each pawn in
@@ -99,8 +117,25 @@ captures: fixed-width action buttons, display selectors and help-topic rows
 clipped translated text. The corrected controls measure their labels behind
 language/metric gates; help-topic rows wrap with cached geometry.
 
+Help-cache checks execute during an actual window repaint to match the
+production builder's text-measurement context. The Dutch regression retains
+its strict identity assertion; `locale-dutch-repaint-20261025-01/Dutch` records
+the successful reproduction. Temporary measurement dumps were removed after
+diagnosis; the original evidence remains under the ignored `temp` directory.
+`locale-cleanup-20261025-01/Dutch` confirms the same assertions pass without
+that instrumentation.
+The private request protocol uses immutable numbered files to avoid a Windows
+file-replacement race observed in one earlier Brazilian Portuguese test.
+
 Additional final evidence:
 
+- `locale-final-index.json`: all fourteen requested locales passed native UI
+  and help navigation, scrolling, tooltip and geometry checks. It maps each
+  locale to its reports, captures and manifests. All twelve copied production
+  DLLs in every locale run match the final 1.7 artifacts. Long European text
+  and both Chinese glyph sets were visually reviewed; no clipping remained
+  in the reviewed final captures. `locale-final-runs-after.json` confirms no
+  verification games remain; only unrelated prepared management fixtures exist.
 - `locale-layout-smoke-20261025-01/German`: corrected translated controls,
   wrapped help topics, navigation, scrolling, cache reuse and teardown, and
   a real drag against the Readouts minimum resize width.
@@ -127,4 +162,30 @@ Additional final evidence:
 Runtime proof uses installed RimWorld 1.7.4985 rev1269; 1.6 was build- and
 regression-tested. Translation coverage and rendering checks are not a
 comprehensive human linguistic review. No Workshop availability audit is
-claimed by these companion-pack tests.
+claimed by these companion-pack tests. Locale-run logs also retain installed
+base-game translation/configuration diagnostics, including the native
+`Pawn_TrainingTracker` token `1_labelShort` in Dutch, Swedish and Finnish;
+these are distinct from the four mods' translation bundles.
+
+October 26 additions: Ukrainian, Japanese, Korean, Turkish and Vietnamese now
+cover all 1,347 current entries per locale, including 89 help pages. The active
+matrix is thirteen translations plus the English source. Evidence under
+`WorkRoles/temp/localization-additions-2026-10-26` includes final checks,
+both-version builds, package verification, research and `runtime-verification.json`.
+The latter indexes final native 1.7 UI runs and community precedence in both
+load orders, and checks all copied production DLLs and the selected locale's
+content against the final artifacts. All owned runs were removed.
+
+Screenshot review caught Vietnamese `WR_PlusOthers` wrapping in the assigned
+workers row. The compact `+{0} nữa` preserves its meaning; a fresh final run
+shows the complete label on one line. Japanese's initial run had one transient
+test-probe request-file sharing error; its fresh final run passed without that
+diagnostic. No production rendering or loader changes were needed.
+
+Turkish's 1.7 save load also reports native description trailing whitespace and
+the malformed `CannotTrainTooSmall` placeholder. `turkish-native-diagnostics.json`
+traces these exact texts to the installed official archives in both 1.6 and
+1.7. These are base-game text defects, separate from the clean mod catalogs and
+the source save's known orphaned reservations. The earlier native coverage
+audit did not exercise every formatted gameplay message. Turkish remains
+included in the owner-requested language set; no native assets were modified.

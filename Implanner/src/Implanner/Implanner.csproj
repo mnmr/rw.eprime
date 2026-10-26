@@ -32,4 +32,5 @@
     <ProjectReference Include="..\Implanner.Core\Implanner.Core.csproj" />
   </ItemGroup>
   <Import Project="$(RimSharedRoot)/Build/RimWorld17.props" Condition="'$(RimWorldVersion)' == '1.7'" />
+  <Import Project="$(RimSharedRoot)/Translations/Translations.props" />
 </Project>

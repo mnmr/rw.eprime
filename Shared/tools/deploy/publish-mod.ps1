@@ -37,6 +37,8 @@ $deployedAbout = Get-Content -LiteralPath (Join-Path $content "About\About.xml")
 if ($repoAbout -ne $deployedAbout) {
     throw "About.xml in the game's Mods folder ($content) is older than the repo's; the upload sends the deployed folder, so run dotnet build + scripts/deploy.ps1 first"
 }
+. "$PSScriptRoot\publish-content.ps1"
+Assert-WorkshopDeploymentContent -Source (Join-Path $repo 'mod') -Deployed $content
 $tags = [string[]]@(Get-WorkshopTags -About ([xml]$deployedAbout) -Source (Join-Path $content 'About\About.xml'))
 
 # Existing item -> update; missing id file -> first publish (Steam assigns the
@@ -114,22 +116,16 @@ if ($descriptionBytes -gt 8000) {
 # Change notes are write-once on Steam: collect deliberately, then confirm.
 if (-not $ChangeNote) {
     Write-Host "Enter the change note (BBCode allowed)."
-    Write-Host "Finish by pressing Enter three times in a row (two blank lines)."
+    Write-Host "Finish by pressing Enter twice after the last text (one empty line)."
     $lines = @()
-    $blanks = 0
     while ($true) {
         $line = Read-Host
-        if ($line -eq "") {
-            $blanks++
-            if ($blanks -ge 2) { break }
-        }
-        else {
-            $blanks = 0
-        }
+        if ($line -eq "") { break }
         $lines += $line
     }
     $ChangeNote = ($lines -join "`n").TrimEnd()
 }
+$ChangeNote = $ChangeNote.Replace('"', "'")
 Write-Host ""
 Write-Host "---- Change note (published immediately, can never be edited) ----"
 if ($ChangeNote) { Write-Host $ChangeNote } else { Write-Host "(none: the changelog entry will be blank)" }
@@ -141,7 +137,14 @@ if ($answer -notin @('y', 'yes')) {
 }
 
 $contentPath = (Resolve-Path -LiteralPath $content).Path
-$published = Invoke-SteamWorkshopSession -RimWorldDir (Split-Path -Parent $RimWorldMods) -Action {
+$published = Invoke-SteamWorkshopProcess -RimWorldDir (Split-Path -Parent $RimWorldMods) -Parameters @{
+    itemId = $itemId; firstPublish = $firstPublish; initializeListing = $initializeListing
+    pendingFirstPublishPath = $pendingFirstPublishPath; idFile = $idFile; repo = $repo
+    contentPath = $contentPath; description = $description; tags = $tags; title = $title
+    sendPreview = $sendPreview; previewFile = $previewFile; content = $content; ChangeNote = $ChangeNote
+} -Action {
+    param($itemId, $firstPublish, $initializeListing, $pendingFirstPublishPath, $idFile, $repo,
+          $contentPath, $description, [string[]]$tags, $title, $sendPreview, $previewFile, $content, $ChangeNote)
     $app = [Steamworks.AppId_t]::new(294100)
     $item = [Steamworks.PublishedFileId_t]::new($itemId)
     $needsAgreement = $false

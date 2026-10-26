@@ -1,6 +1,6 @@
 ---
-title: Ripristino della visualizzazione
+title: Visualizzazione alternativa
 ---
-Readouts ripristina automaticamente le immagini memorizzate del pannello quando si perdono risorse grafiche, per esempio dopo il risveglio del computer dalla sospensione.
+Readouts usa immagini del pannello memorizzate nella cache per ridurre il lavoro di disegno. Se rileva un problema nel mostrarle, disegna invece il pannello direttamente.
 
-Se la visualizzazione fallisce, il pannello passa al disegno diretto e l'ingranaggio diventa ambrato. Errori ripetuti lasciano poi il posto all'indicatore originale del gioco fino al prossimo caricamento di una partita. Ogni ripiego viene registrato nel log del gioco.
+Se il rendering con buffer viene disattivato dopo alcuni errori, l'ingranaggio diventa ambrato. Se gli errori continuano a ripetersi, subentra l'indicatore originale del gioco fino al prossimo caricamento di una partita. Questi cambi di modalità vengono registrati nel log del gioco.

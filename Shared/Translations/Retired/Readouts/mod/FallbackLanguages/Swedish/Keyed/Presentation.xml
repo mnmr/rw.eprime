@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <EPR.SeedEggs>Ägg</EPR.SeedEggs>
+  <EPR.SeedFertilizedeggs>Befruktade ägg</EPR.SeedFertilizedeggs>
+  <EPR.SeedHardDrugs>Tunga droger</EPR.SeedHardDrugs>
+  <EPR.SeedLeathers>Läder</EPR.SeedLeathers>
+  <EPR.SeedMeals>Måltider</EPR.SeedMeals>
+  <EPR.SeedMeats>Kött</EPR.SeedMeats>
+  <EPR.SeedMechs>Mekanoider</EPR.SeedMechs>
+  <EPR.SeedMortarshells>Granatkastargranater</EPR.SeedMortarshells>
+  <EPR.SeedPlantfood>Växtföda</EPR.SeedPlantfood>
+  <EPR.SeedSera>Serum</EPR.SeedSera>
+  <EPR.SeedSocialDrugs>Sällskapsdroger</EPR.SeedSocialDrugs>
+  <EPR.SeedStoneblocks>Stenblock</EPR.SeedStoneblocks>
+  <EPR.SeedStonechunks>Stenbumlingar</EPR.SeedStonechunks>
+  <EPR.SeedWools>Ull</EPR.SeedWools>
+  <EPR.SeedFood>Mat</EPR.SeedFood>
+  <EPR.SeedRaw>Rå mat</EPR.SeedRaw>
+  <EPR.SeedMedicine>Medicin</EPR.SeedMedicine>
+  <EPR.SeedDrugs>Droger</EPR.SeedDrugs>
+  <EPR.SeedTextiles>Textilier</EPR.SeedTextiles>
+  <EPR.SeedMaterials>Material</EPR.SeedMaterials>
+  <EPR.SeedWealth>Rikedom</EPR.SeedWealth>
+</LanguageData>

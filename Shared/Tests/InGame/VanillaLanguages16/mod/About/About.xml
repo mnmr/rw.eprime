@@ -1,0 +1,7 @@
+<ModMetaData>
+  <name>Vanilla Language Audit 1.6 Probe</name>
+  <author>RimShared test tooling</author>
+  <packageId>rimshared.vanillalanguages16.probe</packageId>
+  <supportedVersions><li>1.6</li></supportedVersions>
+  <description>Managed-run diagnostic probe. No localization keys or defs.</description>
+</ModMetaData>

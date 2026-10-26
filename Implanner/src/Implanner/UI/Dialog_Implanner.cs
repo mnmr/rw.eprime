@@ -33,11 +33,16 @@ namespace Implanner.UI
         private readonly OptionsTips optionsTips = new OptionsTips();
         private readonly SkillSliderState skillSliders = new SkillSliderState();
         private SkillSliderSnapshot? skillSliderFront;
+        private readonly ToggleRowState toggleRows = new ToggleRowState();
+        private ToggleRowSnapshot? toggleFront;
+        private ToggleRowSnapshot ToggleHeights => toggleFront ??= toggleRows.Current(ToggleLabelWidth);
         private bool skillSliderSettingsDirty;
         // The conservative shared label width reserves both the scrolling gutter
         // and the manual-floor indent, so each control fits the same cached row.
         private float SkillLabelWidth => Mathf.Max(1f,
             Mathf.Floor((windowRect.width - 2f * Margin - 2f * Pad - 16f - ColumnGap) / 2f) - 12f - 202f);
+        private float ToggleLabelWidth => Mathf.Max(1f,
+            Mathf.Floor((windowRect.width - 2f * Margin - 2f * Pad - 16f - ColumnGap) / 2f) - 12f - 24f);
         private readonly HelpTabView help = new HelpTabView(ImplannerHelpHost.Instance);
         private readonly StripTipSource productionTip =
             new StripTipSource(StripTipKind.Production);
@@ -133,6 +138,8 @@ namespace Implanner.UI
             optionsTips.Release();
             skillSliders.Release();
             skillSliderFront = null;
+            toggleRows.Release();
+            toggleFront = null;
             if (skillSliderSettingsDirty)
             {
                 ImplannerMod.Instance.WriteSettings();
@@ -335,7 +342,10 @@ namespace Implanner.UI
             // here: WindowUpdate runs before the first draw of a new window.
             PlannerLabels.Ensure();
             if (curTab == Tab.Automation || curTab == Tab.Options)
+            {
                 skillSliderFront = skillSliders.Current(SkillLabelWidth);
+                toggleFront = toggleRows.Current(ToggleLabelWidth);
+            }
             switch (curTab)
             {
                 case Tab.Overview: overviewFront = overview.Current(store); break;
@@ -1653,6 +1663,8 @@ namespace Implanner.UI
         /// synced command, and the next snapshot renders the published state.
         private void DrawAutomation(Rect rect, ImplannerStore store)
         {
+            Text.Font = GameFont.Small;
+            Text.WordWrap = true;
             // A level mod stood automation down; none of these controls does
             // anything, so explain instead of offering them.
             if (!PlannerAutomation.Available)
@@ -1670,7 +1682,7 @@ namespace Implanner.UI
 
             float leftHeight = ProductionColumnHeight(snapshot, slider.RowHeight);
             float rightHeight = SurgeryColumnHeight(snapshot, slider.RowHeight);
-            float innerHeight = RowHeight + Pad + Mathf.Max(leftHeight, rightHeight);
+            float innerHeight = ToggleHeights[ToggleRow.Enable] + Pad + Mathf.Max(leftHeight, rightHeight);
             // Symmetric layout: the scrollbar gutter is reserved only while
             // the content overflows, both columns share one width, and the
             // right column ends flush at the content edge — the leftover
@@ -1686,7 +1698,7 @@ namespace Implanner.UI
 
                 bool enabled = !snapshot.AutomationPaused;
                 bool now = enabled;
-                var enableRect = new Rect(0f, 0f, columnWidth, RowHeight);
+                var enableRect = new Rect(0f, 0f, columnWidth, ToggleHeights[ToggleRow.Enable]);
                 tips.Enable.Region(enableRect);
                 Widgets.CheckboxLabeled(enableRect, PlannerLabels.OptEnable, ref now);
                 if (now != enabled)
@@ -1699,7 +1711,7 @@ namespace Implanner.UI
                     else Dialog_AutomationCleanup.ShowToTurnOffAutomation(store);
                 }
 
-                float top = RowHeight + Pad;
+                float top = ToggleHeights[ToggleRow.Enable] + Pad;
                 DrawProductionColumn(new Rect(0f, top, columnWidth, leftHeight),
                     snapshot, tips);
                 DrawSurgeryColumn(new Rect(innerWidth - columnWidth, top,
@@ -1719,7 +1731,7 @@ namespace Implanner.UI
             y += SectionHeader.Primary(rect.x, y, width,
                 PlannerLabels.OptSurgery) + 2f;
             tips.Iteration.Region(
-                new Rect(rect.x, y, width, HeaderHeight + 2f + 30f));
+                new Rect(rect.x, y, width, HeaderHeight + 2f + ToggleHeights.IterationHeight));
             Widgets.Label(new Rect(rect.x, y, width, HeaderHeight),
                 PlannerLabels.OptIteration);
             y += HeaderHeight + 2f;
@@ -1727,12 +1739,12 @@ namespace Implanner.UI
             // table maps display index to the persisted enum values.
             int display = snapshot.IterationDisplayIndex;
             int clicked = SegmentedControl.Row(
-                new Rect(rect.x, y, width, 30f),
+                new Rect(rect.x, y, width, ToggleHeights.IterationHeight),
                 PlannerLabels.IterationModes, display);
             if (clicked >= 0 && clicked != display)
                 PlannerCommands.SetIteration(
                     (int)AutomationSnapshot.IterationByDisplay[clicked]);
-            y += 30f + Pad;
+            y += ToggleHeights.IterationHeight + Pad;
 
             DrawStepperRow(rect.x, ref y, width,
                 PlannerLabels.OptSurgeryConcurrency,
@@ -1744,34 +1756,34 @@ namespace Implanner.UI
             // Nested: refines what the concurrency limit above counts.
             bool hospitalized = snapshot.CountHospitalized;
             bool nowHospitalized = hospitalized;
-            var hospitalizedRect = new Rect(rect.x + 12f, y, width - 12f, RowHeight);
+            var hospitalizedRect = new Rect(rect.x + 12f, y, width - 12f, ToggleHeights[ToggleRow.CountHospitalized]);
             tips.CountHospitalized.Region(hospitalizedRect);
             Widgets.CheckboxLabeled(hospitalizedRect,
                 PlannerLabels.OptCountHospitalized, ref nowHospitalized);
             if (nowHospitalized != hospitalized)
                 PlannerCommands.SetCountHospitalized(nowHospitalized);
-            y += RowHeight + 2f;
+            y += ToggleHeights[ToggleRow.CountHospitalized] + 2f;
 
             if (snapshot.ShowUpgradeByPriority)
             {
                 bool upgrade = snapshot.UpgradeByPriority;
                 bool nowUpgrade = upgrade;
-                var upgradeRect = new Rect(rect.x, y, width, RowHeight);
+                var upgradeRect = new Rect(rect.x, y, width, ToggleHeights[ToggleRow.UpgradeByPriority]);
                 tips.UpgradeByPriority.Region(upgradeRect);
                 Widgets.CheckboxLabeled(upgradeRect,
                     PlannerLabels.OptUpgradeByPriority, ref nowUpgrade);
                 if (nowUpgrade != upgrade) PlannerCommands.SetUpgradeByPriority(nowUpgrade);
-                y += RowHeight + 2f;
+                y += ToggleHeights[ToggleRow.UpgradeByPriority] + 2f;
             }
 
             bool autoFloor = snapshot.AutoDoctorFloor;
             bool now = autoFloor;
-            var autoFloorRect = new Rect(rect.x, y, width, RowHeight);
+            var autoFloorRect = new Rect(rect.x, y, width, ToggleHeights[ToggleRow.AutoFloor]);
             tips.AutoFloor.Region(autoFloorRect);
             Widgets.CheckboxLabeled(autoFloorRect,
                 PlannerLabels.OptAutoFloor, ref now);
             if (now != autoFloor) PlannerCommands.SetAutoDoctorFloor(now);
-            y += RowHeight + 2f;
+            y += ToggleHeights[ToggleRow.AutoFloor] + 2f;
             if (!snapshot.AutoDoctorFloor)
             {
                 // The manual minimum applies only while the automatic mode is
@@ -1859,12 +1871,12 @@ namespace Implanner.UI
                 PlannerLabels.OptProduction) + 2f;
             bool autoProduction = snapshot.AutoProduction;
             bool now = autoProduction;
-            var autoProductionRect = new Rect(rect.x, y, width, RowHeight);
+            var autoProductionRect = new Rect(rect.x, y, width, ToggleHeights[ToggleRow.AutoProduction]);
             tips.AutoProduction.Region(autoProductionRect);
             Widgets.CheckboxLabeled(autoProductionRect,
                 PlannerLabels.OptAutoProduction, ref now);
             if (now != autoProduction) PlannerCommands.SetAutoProduction(now);
-            y += RowHeight + 2f;
+            y += ToggleHeights[ToggleRow.AutoProduction] + 2f;
             if (!snapshot.AutoProduction) return;
 
             DrawStepperRow(rect.x, ref y, width, PlannerLabels.OptConcurrency,
@@ -1875,21 +1887,21 @@ namespace Implanner.UI
 
             bool idle = snapshot.OnlyIdleBenches;
             now = idle;
-            var idleRect = new Rect(rect.x, y, width, RowHeight);
+            var idleRect = new Rect(rect.x, y, width, ToggleHeights[ToggleRow.IdleBenches]);
             tips.IdleBenches.Region(idleRect);
             Widgets.CheckboxLabeled(idleRect,
                 PlannerLabels.OptIdleBenches, ref now);
             if (now != idle) PlannerCommands.SetOnlyIdleBenches(now);
-            y += RowHeight + 2f;
+            y += ToggleHeights[ToggleRow.IdleBenches] + 2f;
 
             bool designatedOnly = snapshot.OnlyDesignatedBenches;
             now = designatedOnly;
-            var designatedRect = new Rect(rect.x, y, width, RowHeight);
+            var designatedRect = new Rect(rect.x, y, width, ToggleHeights[ToggleRow.DesignatedBenches]);
             tips.DesignatedBenches.Region(designatedRect);
             Widgets.CheckboxLabeled(designatedRect,
                 PlannerLabels.OptDesignatedBenches, ref now);
             if (now != designatedOnly) PlannerCommands.SetOnlyDesignatedBenches(now);
-            y += RowHeight + 2f;
+            y += ToggleHeights[ToggleRow.DesignatedBenches] + 2f;
 
             int skill = DrawSkillSliderRow(rect.x, ref y, width,
                 PlannerLabels.OptProductionSkill, snapshot.ProductionSkillText,
@@ -1898,12 +1910,12 @@ namespace Implanner.UI
 
             bool intermediaries = snapshot.AllowIntermediaries;
             now = intermediaries;
-            var intermediariesRect = new Rect(rect.x, y, width, RowHeight);
+            var intermediariesRect = new Rect(rect.x, y, width, ToggleHeights[ToggleRow.Intermediaries]);
             tips.Intermediaries.Region(intermediariesRect);
             Widgets.CheckboxLabeled(intermediariesRect,
                 PlannerLabels.OptIntermediaries, ref now);
             if (now != intermediaries) PlannerCommands.SetAllowIntermediaries(now);
-            y += RowHeight + 2f + Pad;
+            y += ToggleHeights[ToggleRow.Intermediaries] + 2f + Pad;
 
             tips.Reserves.Region(
                 new Rect(rect.x, y, width, SectionHeader.SubHeight));
@@ -1961,15 +1973,15 @@ namespace Implanner.UI
 
         /// Layout heights: pure arithmetic over the snapshot (no traversal,
         /// no measurement).
-        private static float SurgeryColumnHeight(AutomationSnapshot snapshot, float skillRowHeight)
+        private float SurgeryColumnHeight(AutomationSnapshot snapshot, float skillRowHeight)
         {
             float height = SectionHeader.PrimaryHeight + 2f
-                + HeaderHeight + 2f + 30f + Pad                  // iteration
+                + HeaderHeight + 2f + ToggleHeights.IterationHeight + Pad
                 + HeaderHeight + 4f                              // concurrency
-                + RowHeight + 2f                                 // hospitalized
-                + RowHeight + 2f;                                // auto floor
+                + ToggleHeights[ToggleRow.CountHospitalized] + 2f
+                + ToggleHeights[ToggleRow.AutoFloor] + 2f;
             if (snapshot.ShowUpgradeByPriority)
-                height += RowHeight + 2f;                        // upgrade by priority
+                height += ToggleHeights[ToggleRow.UpgradeByPriority] + 2f;
             if (!snapshot.AutoDoctorFloor)
                 height += skillRowHeight + 4f;                   // manual skill
             height += Pad + SectionHeader.SubHeight + 2f         // reservations
@@ -1978,16 +1990,16 @@ namespace Implanner.UI
             return height;
         }
 
-        private static float ProductionColumnHeight(AutomationSnapshot snapshot, float skillRowHeight)
+        private float ProductionColumnHeight(AutomationSnapshot snapshot, float skillRowHeight)
         {
             float height = SectionHeader.PrimaryHeight + 2f
-                + RowHeight + 2f;                                // auto bills
+                + ToggleHeights[ToggleRow.AutoProduction] + 2f;
             if (snapshot.AutoProduction)
                 height += HeaderHeight + 4f                      // concurrency
-                    + RowHeight + 2f                             // idle benches
-                    + RowHeight + 2f                             // Implanner benches only
+                    + ToggleHeights[ToggleRow.IdleBenches] + 2f
+                    + ToggleHeights[ToggleRow.DesignatedBenches] + 2f
                     + skillRowHeight + 4f                        // crafting skill
-                    + RowHeight + 2f                             // intermediaries
+                    + ToggleHeights[ToggleRow.Intermediaries] + 2f
                     + Pad + SectionHeader.SubHeight + 2f         // keep-in-stock
                     + snapshot.Reserves.Count * (CompactRowHeight + 4f);
             return height;
@@ -2024,6 +2036,8 @@ namespace Implanner.UI
         /// width.
         private void DrawOptions(Rect rect, ImplannerStore store)
         {
+            Text.Font = GameFont.Small;
+            Text.WordWrap = true;
             // Refreshed in WindowUpdate; the fallback covers a mid-frame
             // tab switch only.
             OptionsSnapshot snapshot = optionsFront ??= options.Current(store);
@@ -2034,10 +2048,10 @@ namespace Implanner.UI
             float width = Mathf.Floor((rect.width - ColumnGap) / 2f);
             float y = rect.y;
             y += SectionHeader.Primary(rect.x, y, width, PlannerLabels.OptModCompat) + 2f;
-            DrawOptionToggle(rect.x, ref y, width, PlannerLabels.OptAllowMultipleBladders,
+            DrawOptionToggle(rect.x, ref y, width, ToggleHeights[ToggleRow.MultipleBladders], PlannerLabels.OptAllowMultipleBladders,
                 snapshot.AllowMultipleBladders, tips.AllowMultipleBladders,
                 SetAllowMultipleBladders);
-            DrawOptionToggle(rect.x, ref y, width,
+            DrawOptionToggle(rect.x, ref y, width, ToggleHeights[ToggleRow.MultipleHygiene],
                 PlannerLabels.OptAllowMultipleHygieneEnhancers,
                 snapshot.AllowMultipleHygieneEnhancers, tips.AllowMultipleHygieneEnhancers,
                 SetAllowMultipleHygieneEnhancers);
@@ -2052,7 +2066,7 @@ namespace Implanner.UI
             y += Pad;
 
             y += SectionHeader.Primary(rect.x, y, width, PlannerLabels.OptCatalog) + 2f;
-            DrawOptionToggle(rect.x, ref y, width, PlannerLabels.OptShowPurchaseOnly,
+            DrawOptionToggle(rect.x, ref y, width, ToggleHeights[ToggleRow.PurchaseOnly], PlannerLabels.OptShowPurchaseOnly,
                 snapshot.ShowPurchaseOnly, tips.ShowPurchaseOnly, SetShowPurchaseOnly);
         }
 
@@ -2095,15 +2109,15 @@ namespace Implanner.UI
 
         /// A labeled checkbox row over a tip region; a change issues the
         /// synced command and the next snapshot renders the published state.
-        private static void DrawOptionToggle(float x, ref float y, float width,
+        private static void DrawOptionToggle(float x, ref float y, float width, float height,
             string label, bool value, WrTip tip, System.Action<bool> command)
         {
             bool now = value;
-            var rowRect = new Rect(x, y, width, RowHeight);
+            var rowRect = new Rect(x, y, width, height);
             tip.Region(rowRect);
             Widgets.CheckboxLabeled(rowRect, label, ref now);
             if (now != value) command(now);
-            y += RowHeight + 2f;
+            y += height + 2f;
         }
     }
 }

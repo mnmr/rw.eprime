@@ -1,0 +1,636 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_ActAltClick>Alt-nhấp</WR_ActAltClick>
+  <WR_ActChipClick>Chuyển bật, tắt hoặc buộc bật cho cư dân này</WR_ActChipClick>
+  <WR_ActChipDrag>Đổi thứ tự hoặc chuyển sang cư dân khác</WR_ActChipDrag>
+  <WR_ActChipRightClick>Tùy chọn ghim</WR_ActChipRightClick>
+  <WR_ActChipX>Bỏ</WR_ActChipX>
+  <WR_ActClick>Nhấp</WR_ActClick>
+  <WR_ActCtrlShiftClick>Ctrl+Shift-nhấp</WR_ActCtrlShiftClick>
+  <WR_ActDrag>Kéo</WR_ActDrag>
+  <WR_ActPaletteAltClick>Giao cho cư dân đã chọn tại vị trí bộ đề xuất xếp hạng</WR_ActPaletteAltClick>
+  <WR_ActPaletteClick>Bật/tắt vai trò trên toàn bộ khu định cư</WR_ActPaletteClick>
+  <WR_ActPaletteCtrlShiftClick>Giao cho cư dân đã chọn ngay sau Cơ bản</WR_ActPaletteCtrlShiftClick>
+  <WR_ActPaletteDrag>Giao cho một cư dân</WR_ActPaletteDrag>
+  <WR_ActPaletteShiftClick>Giao cho cư dân đã chọn ở cuối hàng</WR_ActPaletteShiftClick>
+  <WR_ActRightClick>Nhấp phải</WR_ActRightClick>
+  <WR_ActShiftClick>Shift-nhấp</WR_ActShiftClick>
+  <WR_ActTreeClick>Chọn để sửa</WR_ActTreeClick>
+  <WR_ActTreeDrag>Đổi thứ tự hoặc chuyển giữa các nhóm</WR_ActTreeDrag>
+  <WR_ActTreeRightClick>Ghép vai trò (gồm/loại)</WR_ActTreeRightClick>
+  <WR_ActX>X</WR_ActX>
+  <WR_ActiveHours>Giờ hoạt động</WR_ActiveHours>
+  <WR_AddAllJobs>Thêm mọi việc (riêng lẻ, đổi thứ tự được)</WR_AddAllJobs>
+  <WR_AddNew>Thêm mới</WR_AddNew>
+  <WR_AddRole>Thêm vai trò</WR_AddRole>
+  <WR_AddRoleTip>Giao một vai trò.</WR_AddRoleTip>
+  <WR_AddSkill>Thêm kỹ năng</WR_AddSkill>
+  <WR_AddSkillTip>Thêm điều kiện kỹ năng bắt buộc. Không đổi kỹ năng Được dùng hay Được rèn suy ra từ vai trò.</WR_AddSkillTip>
+  <WR_AllJobs>Mọi việc</WR_AllJobs>
+  <WR_AllRolesAssigned>Đã giao mọi vai trò</WR_AllRolesAssigned>
+  <WR_AllWork>mọi việc</WR_AllWork>
+  <WR_AlreadyAssigned>Đã giao</WR_AlreadyAssigned>
+  <WR_Apply>Áp dụng</WR_Apply>
+  <WR_AssignedRoleCaption>Vai trò đã giao</WR_AssignedRoleCaption>
+  <WR_AssignedTo>Được giao cho</WR_AssignedTo>
+  <WR_AutoAssign>Tự giao</WR_AutoAssign>
+  <WR_AutoAssignTip>Người mới (được tuyển, người lang thang) tự nhận vai trò này nếu thuộc nhóm tuổi được phép.</WR_AutoAssignTip>
+  <WR_AutoManaged>Đang tự quản lý</WR_AutoManaged>
+  <WR_AutoManagedTip>WorkRoles tự cập nhật vai trò cho mọi khu định cư vào đầu mỗi giờ trong trò chơi.
+
+Phân công đã ghim được giữ nguyên, kể cả vai trò bị loại khỏi đề xuất.
+
+Tắt "Tự tối ưu khu định cư mỗi giờ trong trò chơi" ở thẻ Tùy chọn để dùng lại Tối ưu khu định cư.</WR_AutoManagedTip>
+  <WR_AutoOptimizeConfirmApply>Áp dụng sẽ thực hiện ngay các thay đổi dưới đây và bật tự tối ưu mỗi giờ. Khi bật, nút Tối ưu khu định cư và Thực hiện bị ẩn; bạn vẫn có thể giao, đổi thứ tự và ghim vai trò như thường.</WR_AutoOptimizeConfirmApply>
+  <WR_AutoOptimizeGlobalWarning>Bạn có nhiều khu định cư: tự tối ưu áp dụng TOÀN CỤC và đổi phân công ở TẤT CẢ mỗi giờ. Bản xem trước dưới đây chỉ hiện thay đổi của khu định cư hiện tại.</WR_AutoOptimizeGlobalWarning>
+  <WR_AutomationSection>Thiết lập tự động hóa</WR_AutomationSection>
+  <WR_AvailableJobs>Việc hiện có</WR_AvailableJobs>
+  <WR_AvailableRoles>Vai trò hiện có</WR_AvailableRoles>
+  <WR_BadDirectory>Nhập đường dẫn thư mục hợp lệ.</WR_BadDirectory>
+  <WR_BadFileName>Nhập tên tệp hợp lệ.</WR_BadFileName>
+  <WR_BadgeBlocker>chặn</WR_BadgeBlocker>
+  <WR_BadgeHours>giới hạn giờ</WR_BadgeHours>
+  <WR_BadgeLocation>giới hạn nơi</WR_BadgeLocation>
+  <WR_BandChipTip>Kéo đầu để đổi khoảng kỹ năng, kéo giữa để di chuyển.</WR_BandChipTip>
+  <WR_BillRoleOption>Vai trò: {0}</WR_BillRoleOption>
+  <WR_BillWorkerRoleTip>Chỉ cư dân đang có vai trò này hoạt động mới làm lệnh; vai trò có điều kiện áp dụng quy tắc của nó (như giờ hoạt động). Chọn người làm sẽ xóa giới hạn vai trò và ngược lại.</WR_BillWorkerRoleTip>
+  <WR_BlockerRole>Vai trò chặn</WR_BlockerRole>
+  <WR_BlockerRoleTipWhat>Công việc của vai trò chặn không được làm: chúng bị chặn ("không làm") kể cả khi vai trò phía sau có chúng.</WR_BlockerRoleTipWhat>
+  <WR_BlockerRoleTipWhy>Vai trò đặt trước vai trò chặn vẫn được ưu tiên, nên có thể tạo ngoại lệ bằng cách đặt vai trò cao hơn.</WR_BlockerRoleTipWhy>
+  <WR_ChampionPenalty>Giảm ưu tiên người chủ lực kiêm nhiệm</WR_ChampionPenalty>
+  <WR_ChampionPenaltyTip>Khi bật, người đã là chủ lực của vai trò khác bị trừ điểm khi xét chủ lực cho vai trò này. Tắt ở vai trò cho phép kiêm nhiệm, như công việc thỉnh thoảng mới có.</WR_ChampionPenaltyTip>
+  <WR_ChipLayoutGridTip>Thẻ vai trò xếp thành cột lưới cùng chiều rộng. Tên dài mờ dần ở mép; chỉ tăng chỗ khi cần phân biệt tên gần giống. Chú giải hiện tên đầy đủ. Nhấp để xếp thẻ theo chiều rộng tự nhiên. Nhấp phải để chọn độ dài tên vừa cột.</WR_ChipLayoutGridTip>
+  <WR_ChipLayoutStackTip>Thẻ vai trò xếp theo chiều rộng tự nhiên. Nhấp để căn thành cột lưới bằng nhau. Nhấp phải để chọn độ dài tên vừa cột.</WR_ChipLayoutStackTip>
+  <WR_ChipsCompact>Thẻ: Chữ đầu</WR_ChipsCompact>
+  <WR_ChipsIcons>Thẻ: Biểu tượng</WR_ChipsIcons>
+  <WR_ChipsNormal>Thẻ: Tên đầy đủ</WR_ChipsNormal>
+  <WR_ClearRulesConfirm>Bỏ mọi quy tắc của '{0}'? Vai trò sẽ trở lại chế độ thủ công.</WR_ClearRulesConfirm>
+  <WR_ClusterEveryone>Mọi người</WR_ClusterEveryone>
+  <WR_ClusterUnskilled>Không cần kỹ năng</WR_ClusterUnskilled>
+  <WR_ColColonist>Cư dân</WR_ColColonist>
+  <WR_ColonistClearFiltersTip>Xóa tìm tên cư dân và bộ lọc vai trò đã giao, việc được đảm nhiệm. Phạm vi vị trí, nhóm, cột kỹ năng và cách hiện vai trò không đổi.</WR_ColonistClearFiltersTip>
+  <WR_ColonistGroupTip>Chia cư dân đang hiện thành các phần theo đặc điểm đã chọn. Nhóm không đổi cư dân nào khớp bộ lọc; có thể thu gọn tiêu đề phần.</WR_ColonistGroupTip>
+  <WR_ColonistJobFilterTip>Đã chọn: {0}
+
+Liệt kê cư dân có vai trò đã giao không phải vai trò chặn chứa việc này. Kiểm tra việc do vai trò cung cấp, không phải hoạt động hiện tại hay ưu tiên việc gốc.</WR_ColonistJobFilterTip>
+  <WR_ColonistNameCaption>Tên cư dân</WR_ColonistNameCaption>
+  <WR_ColonistRoleDisplayTip>Chọn nội dung thẻ vai trò trong bảng cư dân: tên đầy đủ, chữ đầu hoặc biểu tượng. Nút bên cạnh đổi giữa xếp tự nhiên và cột lưới. Đây là thiết lập hiển thị riêng từng người chơi.</WR_ColonistRoleDisplayTip>
+  <WR_ColonistRoleFilterTip>Liệt kê cư dân được giao vai trò đã chọn. Vai trò không chặn cũng khớp nếu công việc của nó bao phủ đầy đủ vai trò đã chọn. Kết hợp với bộ lọc tìm kiếm, việc và vị trí.</WR_ColonistRoleFilterTip>
+  <WR_ColonistScopeTip>Chọn nơi lấy cư dân cho bảng. Vị trí hiện tại theo bản đồ đang mở; Mọi nơi gồm khu định cư, đoàn lữ hành và tàu hấp dẫn đang di chuyển.</WR_ColonistScopeTip>
+  <WR_ColonistSearchTip>Tìm tên cư dân. Tách từ bằng dấu cách; mọi từ đều phải khớp. Thêm r: hoặc role: trước từ để tìm tên vai trò đã giao; j: hoặc job: để tìm việc từ vai trò đã giao. Ví dụ: an r:bác.</WR_ColonistSearchTip>
+  <WR_ColonistSkillColumnsTip>Chọn tối đa ba cột kỹ năng cho bảng. Nhấp tiêu đề kỹ năng để sắp xếp, hoặc X để bỏ cột.</WR_ColonistSkillColumnsTip>
+  <WR_ColonistsTab>Cư dân</WR_ColonistsTab>
+  <WR_CompatSection>Thiết lập tương thích</WR_CompatSection>
+  <WR_CompatibilityFreeWill>Free Will đặt ưu tiên công việc cư dân, nhưng WorkRoles quản lý ưu tiên của cư dân thuộc quyền quản lý và chặn các thay đổi đó.</WR_CompatibilityFreeWill>
+  <WR_CompatibilityPriorityMaster>PriorityMaster đổi số ưu tiên thủ công và phạm vi của chúng. WorkRoles thay các điều khiển này và suy ra ưu tiên từ vai trò.</WR_CompatibilityPriorityMaster>
+  <WR_CompatibilityWorkTab>{0} thay thẻ Công việc và kiểm soát ưu tiên, xung đột với cách quản lý công việc theo vai trò của WorkRoles.</WR_CompatibilityWorkTab>
+  <WR_CompositeConfirm>Chuyển '{0}' thành vai trò tổ hợp? Các việc đã chọn sẽ bị bỏ.</WR_CompositeConfirm>
+  <WR_CompositeRevertConfirm>Chuyển '{0}' về vai trò thường? Các vai trò thành viên sẽ bị bỏ.</WR_CompositeRevertConfirm>
+  <WR_CompositeRole>Vai trò tổ hợp</WR_CompositeRole>
+  <WR_CompositeRoleTip>Vai trò tổ hợp gom các vai trò khác: người giữ làm việc của các vai trò thành viên theo thứ tự thành viên. Vai trò tổ hợp không có danh sách việc riêng.</WR_CompositeRoleTip>
+  <WR_ConditionalRole>Vai trò có điều kiện</WR_ConditionalRole>
+  <WR_ConditionalRoleTip>Vai trò có điều kiện tự bật/tắt theo quy tắc về giờ hoạt động và vị trí. Có bất kỳ quy tắc nào thì vai trò được coi là có điều kiện.</WR_ConditionalRoleTip>
+  <WR_ContributesTip>Rèn luyện hướng tới vai trò này: {0}.</WR_ContributesTip>
+  <WR_CopiedRoles>Đã chép vai trò của {0}.</WR_CopiedRoles>
+  <WR_CopiedToClipboard>Đã chép vào bộ nhớ tạm.</WR_CopiedToClipboard>
+  <WR_Copy>Chép</WR_Copy>
+  <WR_CopyClipboard>Chép vào bộ nhớ tạm</WR_CopyClipboard>
+  <WR_CopyPath>Chép đường dẫn</WR_CopyPath>
+  <WR_CopyRoleTitle>Chép vai trò</WR_CopyRoleTitle>
+  <WR_CopyRolesTip>Chép vai trò của cư dân này.</WR_CopyRolesTip>
+  <WR_CopySource>Đang chép {0}</WR_CopySource>
+  <WR_CoveredByTypeTip>Đã được loại việc bao phủ. Nhấp để tách việc này thành mục riêng có thể đổi thứ tự.</WR_CoveredByTypeTip>
+  <WR_CoveredJobCaption>Việc được đảm nhiệm</WR_CoveredJobCaption>
+  <WR_CustomSwatchEmpty>Ô trống: nhấp để chọn màu riêng. Màu riêng dùng chung cho mọi vai trò.</WR_CustomSwatchEmpty>
+  <WR_CustomSwatchTip>Nhấp để dùng màu này. Nhấp phải để đổi màu ô.</WR_CustomSwatchTip>
+  <WR_DeadEntryTip>Không tác dụng: mọi việc của mục này đã được mục phía trên bao phủ. Đưa lên để ưu tiên hoặc xóa đi.</WR_DeadEntryTip>
+  <WR_Delete>Xóa</WR_Delete>
+  <WR_DeleteConfirm>Xóa vai trò '{0}'? Vai trò sẽ bị bỏ khỏi mọi cư dân.</WR_DeleteConfirm>
+  <WR_DisplayButton>Hiển thị</WR_DisplayButton>
+  <WR_DisplayModeLabel>Chế độ hiển thị</WR_DisplayModeLabel>
+  <WR_DisplayOptions>Tùy chọn hiển thị</WR_DisplayOptions>
+  <WR_DisplaySection>Thiết lập hiển thị</WR_DisplaySection>
+  <WR_EffectQuality>Tăng chất lượng</WR_EffectQuality>
+  <WR_EffectSpeed>Tăng tốc làm việc</WR_EffectSpeed>
+  <WR_EffectSuccess>Tăng xác suất thành công</WR_EffectSuccess>
+  <WR_EffectYield>Tăng sản lượng</WR_EffectYield>
+  <WR_EmergencySuffix> (khẩn cấp)</WR_EmergencySuffix>
+  <WR_EnterPath>Nhập đường dẫn</WR_EnterPath>
+  <WR_Export>Xuất</WR_Export>
+  <WR_ExportFailed>Không lưu được: {0}</WR_ExportFailed>
+  <WR_ExportLocationLabel>Nơi xuất</WR_ExportLocationLabel>
+  <WR_ExportOverwriteConfirm>{0} đã tồn tại. Thay thế?</WR_ExportOverwriteConfirm>
+  <WR_ExportSaved>Đã lưu vào {0}</WR_ExportSaved>
+  <WR_ExportTip>Ghi mọi định nghĩa vai trò (không gồm phân công) vào:\n{0}</WR_ExportTip>
+  <WR_ExportTitle>Xuất vai trò</WR_ExportTitle>
+  <WR_FilterAllRoles>Mọi vai trò</WR_FilterAllRoles>
+  <WR_FilterAnyJob>Bất kỳ việc nào</WR_FilterAnyJob>
+  <WR_FixMyColony>Tối ưu khu định cư</WR_FixMyColony>
+  <WR_FixMyColonyTip>Thay vai trò của từng cư dân bằng các vai trò được đề xuất.</WR_FixMyColonyTip>
+  <WR_FixNeedsSingleLocation>Đề xuất được tính riêng từng nơi. Thu hẹp bộ lọc phạm vi còn một khu định cư hoặc tàu để dùng Tối ưu khu định cư.</WR_FixNeedsSingleLocation>
+  <WR_GatedSkillsLabel>Có ngưỡng</WR_GatedSkillsLabel>
+  <WR_GatedSkillsTip>Hiện kỹ năng cư dân cần để làm một số việc trong vai trò. Cấp tối thiểu tùy công thức, cây trồng hoặc công trình. Trỏ vào kỹ năng để xem chi tiết.\n\nSuy ra từ việc đã chọn, chỉ để tham khảo.</WR_GatedSkillsTip>
+  <WR_GiverBypassBody>{0} bắt đầu việc "{1}" nhưng không có vai trò nào được giao bao gồm việc đó.
+
+WorkRoles cung cấp danh sách việc cho từng cư dân được quản lý qua phương thức chuẩn của trò chơi. Có vẻ một mod khác chọn việc từ danh sách riêng, bỏ qua giới hạn vai trò. Cư dân đôi khi có thể làm việc ngoài vai trò khi mod đó hoạt động.
+
+Việc không bị ngắt. Thông báo chỉ hiện một lần mỗi bản lưu.</WR_GiverBypassBody>
+  <WR_GiverBypassTitle>Một việc bỏ qua danh sách vai trò</WR_GiverBypassTitle>
+  <WR_GridModeRaw>Ưu tiên WorkRoles</WR_GridModeRaw>
+  <WR_GridModeVanilla>Ưu tiên gốc</WR_GridModeVanilla>
+  <WR_GridNamesAutomatic>Tự động</WR_GridNamesAutomatic>
+  <WR_GridNamesFull>Đầy đủ</WR_GridNamesFull>
+  <WR_GridNamesLong>Dài</WR_GridNamesLong>
+  <WR_GridNamesMedium>Vừa</WR_GridNamesMedium>
+  <WR_GridNamesShort>Ngắn</WR_GridNamesShort>
+  <WR_GroupAge>Tuổi</WR_GroupAge>
+  <WR_GroupButton>Nhóm: {0}</WR_GroupButton>
+  <WR_GroupByCaption>Nhóm theo</WR_GroupByCaption>
+  <WR_GroupColonyGroups>Colony Groups</WR_GroupColonyGroups>
+  <WR_GroupCompositeTip>Vai trò tổ hợp hiện trong Vai trò tổ hợp.</WR_GroupCompositeTip>
+  <WR_GroupComposites>Vai trò tổ hợp</WR_GroupComposites>
+  <WR_GroupConditionalRoles>Vai trò có điều kiện</WR_GroupConditionalRoles>
+  <WR_GroupDefault>Mặc định</WR_GroupDefault>
+  <WR_GroupFaction>Phe</WR_GroupFaction>
+  <WR_GroupGender>Giới tính</WR_GroupGender>
+  <WR_GroupIdeo>Tín ngưỡng</WR_GroupIdeo>
+  <WR_GroupLabel>Nhóm</WR_GroupLabel>
+  <WR_GroupNewOption>Mới...</WR_GroupNewOption>
+  <WR_GroupNone>Không nhóm</WR_GroupNone>
+  <WR_GroupOverlayTip>Vai trò có quy tắc hiện trong Vai trò có điều kiện. Nhóm đã lưu được khôi phục khi xóa quy tắc.</WR_GroupOverlayTip>
+  <WR_GroupRace>Chủng loài</WR_GroupRace>
+  <WR_GroupSlaves>Tình trạng nô lệ</WR_GroupSlaves>
+  <WR_GroupTitleColonists>Cư dân</WR_GroupTitleColonists>
+  <WR_GroupTitleSlaves>Nô lệ</WR_GroupTitleSlaves>
+  <WR_GroupTitleUngrouped>Chưa nhóm</WR_GroupTitleUngrouped>
+  <WR_GroupXenotype>Xenotype</WR_GroupXenotype>
+  <WR_HelpChapterAdvanced>Nâng cao</WR_HelpChapterAdvanced>
+  <WR_HelpChapterBasics>Cơ bản</WR_HelpChapterBasics>
+  <WR_HelpChapterEditing>Sửa vai trò</WR_HelpChapterEditing>
+  <WR_HelpChapterOrganizing>Sắp xếp</WR_HelpChapterOrganizing>
+  <WR_HelpChapterRecommendations>Đề xuất</WR_HelpChapterRecommendations>
+  <WR_HelpChapterStart>Bắt đầu</WR_HelpChapterStart>
+  <WR_HelpDemoChipA>Bác sĩ</WR_HelpDemoChipA>
+  <WR_HelpDemoChipB>Nông dân</WR_HelpDemoChipB>
+  <WR_HelpDemoChipC>Người vận chuyển</WR_HelpDemoChipC>
+  <WR_HelpReload>Tải lại</WR_HelpReload>
+  <WR_HelpTab>Trợ giúp</WR_HelpTab>
+  <WR_HelpTourComplete>Bạn đã sẵn sàng!</WR_HelpTourComplete>
+  <WR_HelpTourCompleteHint>Bạn đã nắm phần thiết yếu. Các chương trên giải thích phần còn lại.</WR_HelpTourCompleteHint>
+  <WR_HelpTourHeader>Hướng dẫn từng bước</WR_HelpTourHeader>
+  <WR_HelpTourProgress>Đã đọc {0} trên {1} chủ đề</WR_HelpTourProgress>
+  <WR_HoursActive>Hoạt động</WR_HoursActive>
+  <WR_HoursInactive>Không hoạt động</WR_HoursInactive>
+  <WR_Import>Nhập</WR_Import>
+  <WR_ImportClipboardInvalid>Bộ nhớ tạm không chứa dữ liệu xuất WorkRoles.</WR_ImportClipboardInvalid>
+  <WR_ImportFileMissing>Không có tệp tại {0}</WR_ImportFileMissing>
+  <WR_ImportFromClipboard>Từ bộ nhớ tạm</WR_ImportFromClipboard>
+  <WR_ImportLocationLabel>Nơi nhập</WR_ImportLocationLabel>
+  <WR_ImportParseFailed>Không đọc được vai trò: {0}</WR_ImportParseFailed>
+  <WR_ImportSummary>Đã nhập: thêm {0}, cập nhật {1}, xóa {2}, đổi bảng màu {3}, lộ trình rèn luyện {4}.</WR_ImportSummary>
+  <WR_ImportTip>Thêm định nghĩa vai trò từ:\n{0}</WR_ImportTip>
+  <WR_ImportTitle>Nhập vai trò</WR_ImportTitle>
+  <WR_InvalidRoleTip>Vai trò này không bao giờ áp dụng được: không có việc hoặc mọi vị trí đã nêu đều không còn tồn tại.</WR_InvalidRoleTip>
+  <WR_JobColumn>Công việc</WR_JobColumn>
+  <WR_JobFilterLabel>Lọc việc</WR_JobFilterLabel>
+  <WR_LocCustom>Tùy chọn...</WR_LocCustom>
+  <WR_LocDesktop>Màn hình nền</WR_LocDesktop>
+  <WR_LocGameData>Thư mục dữ liệu trò chơi</WR_LocGameData>
+  <WR_LocUserHome>Thư mục cá nhân</WR_LocUserHome>
+  <WR_LocationAny>Mọi nơi</WR_LocationAny>
+  <WR_LocationCaption>Vị trí</WR_LocationCaption>
+  <WR_LocationCaravans>Đoàn lữ hành</WR_LocationCaravans>
+  <WR_LocationCount>{0} vị trí</WR_LocationCount>
+  <WR_LocationGone>(không còn)</WR_LocationGone>
+  <WR_LocationNowhere>Không nơi nào</WR_LocationNowhere>
+  <WR_LocationNowhereTip>Vai trò bị giới hạn ở các nơi không còn tồn tại. Nó vẫn tắt cho đến khi bạn chọn nơi khác.</WR_LocationNowhereTip>
+  <WR_LocationSettlementItem>Khu định cư: {0}</WR_LocationSettlementItem>
+  <WR_LocationSettlements>Khu định cư</WR_LocationSettlements>
+  <WR_LocationShipItem>Tàu: {0}</WR_LocationShipItem>
+  <WR_MakeItSo>Thực hiện</WR_MakeItSo>
+  <WR_MemberLockTip>Đã khóa: vai trò là thành viên của vai trò tổ hợp. Bỏ khỏi mọi tổ hợp để đổi thiết lập này.</WR_MemberLockTip>
+  <WR_MemberRoles>Vai trò thành viên (có thứ tự)</WR_MemberRoles>
+  <WR_MissingDef>{0} không có trong danh sách mod hiện tại (ngừng hoạt động đến khi mod trở lại).</WR_MissingDef>
+  <WR_ModeMerge>Gộp</WR_ModeMerge>
+  <WR_ModeOverwrite>Ghi đè</WR_ModeOverwrite>
+  <WR_MoveSelectedDownTip>Đưa hàng đã chọn xuống một bước.</WR_MoveSelectedDownTip>
+  <WR_MoveSelectedUpTip>Đưa hàng đã chọn lên một bước. Nhấp để chọn hàng, Shift-nhấp để chọn khoảng, Ctrl-nhấp để thêm hoặc bỏ một hàng.</WR_MoveSelectedUpTip>
+  <WR_MtcHatedWorkSignalDescription>More Than Capable cho phép làm việc này, nhưng gây tác hại nặng và tăng dần.</WR_MtcHatedWorkSignalDescription>
+  <WR_MtcHatedWorkSignalLabel>Ghét {0}</WR_MtcHatedWorkSignalLabel>
+  <WR_NameTaken>Đã có vai trò mang tên này.</WR_NameTaken>
+  <WR_New>Mới</WR_New>
+  <WR_NewGroupTitle>Nhóm mới</WR_NewGroupTitle>
+  <WR_NewRoleTitle>Vai trò mới</WR_NewRoleTitle>
+  <WR_NewWorkDetected>Phát hiện loại việc mới. Vai trò đã tạo hoặc mở rộng: {0}</WR_NewWorkDetected>
+  <WR_NoCandidatesHint>Không thể thêm vai trò. Thành viên phải là vai trò thường, không có quy tắc giờ hoặc vị trí; tổ hợp không thể chứa tổ hợp khác.</WR_NoCandidatesHint>
+  <WR_NoContributionRoleTip>Không rèn kỹ năng nào vai trò này cần, nên lộ trình không dùng được làm bước rèn luyện. Mod có thể đổi nguồn kinh nghiệm, vì vậy bạn vẫn có thể thêm.</WR_NoContributionRoleTip>
+  <WR_NoFilterMatches>Không có cư dân khớp bộ lọc.</WR_NoFilterMatches>
+  <WR_NoMembersHint>Thêm vai trò từ danh sách bên trái. Người giữ vai trò làm việc của các thành viên theo thứ tự hiện ở đây.</WR_NoMembersHint>
+  <WR_Nobody>Không ai</WR_Nobody>
+  <WR_NothingToMerge>Mọi thứ đều khớp: không có gì để gộp.</WR_NothingToMerge>
+  <WR_NothingToRestore>Không có gì cần khôi phục: mọi vai trò và lộ trình tạo sẵn đều có nhóm, màu và thiết lập người giữ mặc định; không việc nào bị chuyển.</WR_NothingToRestore>
+  <WR_NowBusy>Đang bận</WR_NowBusy>
+  <WR_NowDrafted>Được huy động</WR_NowDrafted>
+  <WR_NowForced>Lệnh người chơi</WR_NowForced>
+  <WR_NowIdle>Rảnh</WR_NowIdle>
+  <WR_NowMental>Rối loạn tinh thần</WR_NowMental>
+  <WR_NowNeeds>Nhu cầu cá nhân</WR_NowNeeds>
+  <WR_NowRecreation>Giải trí</WR_NowRecreation>
+  <WR_NowSleeping>Đang ngủ</WR_NowSleeping>
+  <WR_NowTip>{0}: {1}</WR_NowTip>
+  <WR_OddJobsRole>Việc vặt</WR_OddJobsRole>
+  <WR_OptAutoOptimize>Tự tối ưu khu định cư mỗi giờ trong trò chơi</WR_OptAutoOptimize>
+  <WR_OptAutoOptimizeTipOff>Vai trò chỉ đổi khi bạn chỉnh sửa</WR_OptAutoOptimizeTipOff>
+  <WR_OptAutoOptimizeTipOn>Áp dụng phân công đề xuất vào đầu mỗi giờ trong trò chơi</WR_OptAutoOptimizeTipOn>
+  <WR_OptAutoOptimizeTipWhat>Tự chạy Tối ưu khu định cư và áp dụng thay đổi cho từng nơi, theo bản lưu.</WR_OptAutoOptimizeTipWhat>
+  <WR_OptAutoOptimizeTipWhy>Giữ phân công đã ghim, kể cả vai trò bị loại. Không ghi thay đổi nếu cư dân đã khớp đề xuất.</WR_OptAutoOptimizeTipWhy>
+  <WR_OptEmergencyRule>Chỉ 5 vai trò đầu ngắt việc khi khẩn cấp</WR_OptEmergencyRule>
+  <WR_OptEmergencyRuleTipOff>Mọi việc khẩn cấp trong vai trò đang bật đều ngắt việc hiện tại</WR_OptEmergencyRuleTipOff>
+  <WR_OptEmergencyRuleTipOn>Chỉ việc khẩn cấp từ 5 vai trò đầu đang bật ngắt việc; vai trò sau làm chúng theo thứ tự thường</WR_OptEmergencyRuleTipOn>
+  <WR_OptEmergencyRuleTipWhat>Quyết định việc khẩn cấp nào (chữa cháy, chữa trị khẩn, lên giường điều trị khẩn) được ngắt giấc ngủ, bữa ăn và việc khác, theo bản lưu.</WR_OptEmergencyRuleTipWhat>
+  <WR_OptEmergencyRuleTipWhy>Mặc định bật cho phép vai trò dự phòng cuối hàng chờ lượt: cư dân có Bác sĩ ở vị trí thứ sáu vẫn nấu ăn trong khi bác sĩ chính chữa bệnh nhân khẩn cấp. Tắt nếu muốn mọi cư dân đáp ứng mọi việc khẩn cấp họ có thể làm.</WR_OptEmergencyRuleTipWhy>
+  <WR_OptNumeric>Hiện số ưu tiên trong bảng</WR_OptNumeric>
+  <WR_OptNumericTipOff>Bảng ưu tiên (kể cả mod như Numbers) hiện dấu chọn</WR_OptNumericTipOff>
+  <WR_OptNumericTipOn>Bảng ưu tiên hiện số</WR_OptNumericTipOn>
+  <WR_OptNumericTipWhat>Công tắc "ưu tiên thủ công" của trò chơi gốc, theo bản lưu.</WR_OptNumericTipWhat>
+  <WR_OptNumericTipWhy>Nó ở đây vì WorkRoles thay thẻ Công việc gốc vốn chứa công tắc đó.</WR_OptNumericTipWhy>
+  <WR_OptPaletteGrouping>Nhóm bảng vai trò</WR_OptPaletteGrouping>
+  <WR_OptSkillCaptions>Hiện kỹ năng mạnh dưới tên cư dân</WR_OptSkillCaptions>
+  <WR_OptSkillCaptionsTip>Mỗi hàng cư dân có chú thích nhỏ dưới tên, liệt kê kỹ năng công việc tốt nhất cùng cấp và màu theo độ phù hợp. Tắt để chỉ hiện dòng tên.</WR_OptSkillCaptionsTip>
+  <WR_OptVanillaRange>Báo ưu tiên 0–4 kiểu gốc cho mod khác</WR_OptVanillaRange>
+  <WR_OptVanillaRangeTipOff>Mod khác thấy nguyên giá trị ưu tiên</WR_OptVanillaRangeTipOff>
+  <WR_OptVanillaRangeTipOn>Ánh xạ ưu tiên về phạm vi 0–4 của trò chơi gốc</WR_OptVanillaRangeTipOn>
+  <WR_OptVanillaRangeTipWhat>WorkRoles xếp việc bằng ưu tiên riêng biệt (số liên tiếp bắt đầu từ 1).</WR_OptVanillaRangeTipWhat>
+  <WR_OptVerdictsColonists>Hiện đánh giá trên thẻ vai trò cư dân</WR_OptVerdictsColonists>
+  <WR_OptVerdictsColonistsTip>Mỗi thẻ vai trò trong bảng cư dân hiện cặp sao phù hợp theo đánh giá của bộ đề xuất: sao trắng cho đánh giá tốt (một sao khá phù hợp, hai sao rất phù hợp, vàng đặc biệt phù hợp), đỏ cho kém (một sao ít phù hợp, hai sao rất không phù hợp), xám cho trung tính.</WR_OptVerdictsColonistsTip>
+  <WR_OptVerdictsPalette>Hiện đánh giá cho cư dân đã chọn trong bảng vai trò</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>Thẻ trong bảng vai trò hiện mức phù hợp của từng vai trò với cư dân đang chọn.</WR_OptVerdictsPaletteTip>
+  <WR_OptVerdictsRecommendations>Hiện đánh giá trên thẻ vai trò đề xuất</WR_OptVerdictsRecommendations>
+  <WR_OptVerdictsRecommendationsTip>Thẻ vai trò đề xuất (bảng chỉ số và xem trước thay đổi) hiện đánh giá phù hợp cho cư dân nhận đề xuất.</WR_OptVerdictsRecommendationsTip>
+  <WR_OptionsTab>Tùy chọn</WR_OptionsTab>
+  <WR_OrderSuffixAZ>(A-Z)</WR_OrderSuffixAZ>
+  <WR_OrderSuffixBar>(Thanh cư dân)</WR_OrderSuffixBar>
+  <WR_OverwriteDeletes>Xóa (không có trong tệp): {0} (cư dân mất các phân công này).</WR_OverwriteDeletes>
+  <WR_OverwriteReplaces>Áp dụng cả {0} vai trò từ tệp. Vai trò khớp (cùng vai trò tạo sẵn, nếu không thì cùng tên) giữ phân công cư dân.</WR_OverwriteReplaces>
+  <WR_PaletteByGroups>Nhóm</WR_PaletteByGroups>
+  <WR_PaletteBySkills>Kỹ năng</WR_PaletteBySkills>
+  <WR_PaletteModeTip>Sắp bảng vai trò theo kỹ năng liên quan hoặc nhóm vai trò của bạn.</WR_PaletteModeTip>
+  <WR_PaletteOverwriteInfo>Thay mọi màu riêng bằng {0} mục bảng màu trong tệp.</WR_PaletteOverwriteInfo>
+  <WR_PartialCapability>Cho phép làm được một phần</WR_PartialCapability>
+  <WR_PartialCapabilityLockedTip>Vai trò này đã được đề xuất cho cư dân làm được một số việc, không cần tất cả. Vai trò không cần kỹ năng và vai trò săn bắn luôn cho phép điều này.</WR_PartialCapabilityLockedTip>
+  <WR_PartialCapabilityTip>Khi bật, vai trò được đề xuất cho cư dân làm được một số việc, không cần tất cả. Người không làm được việc nào không bao giờ được đề xuất. Hữu ích với vai trò rộng mọi cư dân nên có, như việc chung khi rảnh.</WR_PartialCapabilityTip>
+  <WR_PasteRolesTip>Dán vai trò đã chép cho cư dân này.</WR_PasteRolesTip>
+  <WR_PathAddRoleTip>Thêm vai trò vào lộ trình.</WR_PathAddRoleTip>
+  <WR_PathsOverwriteInfo>Thay mọi lộ trình rèn luyện hiện có bằng {0} lộ trình trong tệp.</WR_PathsOverwriteInfo>
+  <WR_PinAssignment>Ghim</WR_PinAssignment>
+  <WR_PinnedTip>Đã ghim: Thực hiện, Tối ưu khu định cư và Tự tối ưu giữ phân công này, kể cả khi vai trò hoặc thành viên tổ hợp bị loại khỏi đề xuất.</WR_PinnedTip>
+  <WR_PlusOthers>+{0} nữa</WR_PlusOthers>
+  <WR_PreviewNoChanges>Không thay đổi.</WR_PreviewNoChanges>
+  <WR_PreviewStale>Khu định cư thay đổi trong lúc mở xem trước; không áp dụng gì.</WR_PreviewStale>
+  <WR_PriorityGridTitle>Bảng ưu tiên</WR_PriorityGridTitle>
+  <WR_ReasonCoverage>Đảm bảo nhân lực: người tốt nhất hiện có cho việc này.</WR_ReasonCoverage>
+  <WR_ReasonEveryone>Tự giao cho mọi người.</WR_ReasonEveryone>
+  <WR_ReasonFireFear>Sợ lửa do gen: chặn chữa cháy.</WR_ReasonFireFear>
+  <WR_ReasonHunter>Mang vũ khí tầm xa; săn bắn cũng rèn Bắn súng.</WR_ReasonHunter>
+  <WR_ReasonRemoved>Không có trong đề xuất. Ghim vai trò muốn giữ trước khi áp dụng.</WR_ReasonRemoved>
+  <WR_ReasonSignal>Dấu hiệu đề xuất thiên về {0}.</WR_ReasonSignal>
+  <WR_RecClassificationSection>Phân loại</WR_RecClassificationSection>
+  <WR_RecDecisionAptitudeSurplus>Được chọn bổ sung vì tổng năng khiếu kỹ năng đạt hoặc vượt mức vai trò cần.</WR_RecDecisionAptitudeSurplus>
+  <WR_RecDecisionAuto>Tự giao cho mọi người làm được việc.</WR_RecDecisionAuto>
+  <WR_RecDecisionAwful>Bị loại bởi dấu hiệu Rất không phù hợp.</WR_RecDecisionAwful>
+  <WR_RecDecisionControlledByTraining>Do {0} chi phối: được giao qua lộ trình rèn luyện của nó, không chọn độc lập.</WR_RecDecisionControlledByTraining>
+  <WR_RecDecisionCoverageDraft>Chọn ứng viên còn lại tốt nhất để đủ nhân lực bắt buộc.</WR_RecDecisionCoverageDraft>
+  <WR_RecDecisionCoverageFilled>Ứng viên xếp hạng cao hơn đã đáp ứng nhân lực bắt buộc.</WR_RecDecisionCoverageFilled>
+  <WR_RecDecisionCoverageRepairSlot>Chọn trực tiếp để lấp suất bắt buộc còn lại {0} trên {1} cho {2}.</WR_RecDecisionCoverageRepairSlot>
+  <WR_RecDecisionCovered>Được vai trò đề xuất bao phủ: {0}.</WR_RecDecisionCovered>
+  <WR_RecDecisionCoveredUnknown>Được vai trò đề xuất khác bao phủ.</WR_RecDecisionCoveredUnknown>
+  <WR_RecDecisionDirectFallbackSlot>Chọn trực tiếp để lấp suất {0} trên {1} cho {2} vì không có người thay thế rèn luyện đủ điều kiện cho suất đó.</WR_RecDecisionDirectFallbackSlot>
+  <WR_RecDecisionDirectSlot>Chọn trực tiếp để lấp suất {0} trên {1} cho {2}.</WR_RecDecisionDirectSlot>
+  <WR_RecDecisionDisabled>Vai trò đã tắt.</WR_RecDecisionDisabled>
+  <WR_RecDecisionExcluded>Vai trò do quy tắc quản lý và bị loại khỏi đề xuất thường.</WR_RecDecisionExcluded>
+  <WR_RecDecisionFire>Sợ lửa nên cần vai trò chặn chữa cháy.</WR_RecDecisionFire>
+  <WR_RecDecisionHunter>Mang vũ khí tầm xa và có thể săn bắn.</WR_RecDecisionHunter>
+  <WR_RecDecisionHunterRequirements>Chưa trang bị vũ khí tầm xa.</WR_RecDecisionHunterRequirements>
+  <WR_RecDecisionIncapable>Không làm được công việc của vai trò này.</WR_RecDecisionIncapable>
+  <WR_RecDecisionIncapacitated>Cư dân này đã gục ngã. Vai trò không bị loại và phân công đã ghim được giữ nguyên, không tính vào nhu cầu khu định cư đến khi hồi phục.</WR_RecDecisionIncapacitated>
+  <WR_RecDecisionNever>Vai trò được đặt không nhận đề xuất.</WR_RecDecisionNever>
+  <WR_RecDecisionNotMechanitor>Cư dân không có mechlink nên không thể làm việc điều khiển mechanoid.</WR_RecDecisionNotMechanitor>
+  <WR_RecDecisionNotSelected>Không được quy tắc đề xuất nào chọn.</WR_RecDecisionNotSelected>
+  <WR_RecDecisionOutOfBand>Cấp kỹ năng thuộc khoảng khác của lộ trình rèn luyện.</WR_RecDecisionOutOfBand>
+  <WR_RecDecisionOutqualified>Ứng viên phù hợp hơn đã được chọn cho các suất hiện có.</WR_RecDecisionOutqualified>
+  <WR_RecDecisionProtected>Giữ phân công được bảo vệ hiện có.</WR_RecDecisionProtected>
+  <WR_RecDecisionRecommended>Được bộ đề xuất chọn.</WR_RecDecisionRecommended>
+  <WR_RecDecisionRetained>Giữ vai trò không cần kỹ năng hiện có.</WR_RecDecisionRetained>
+  <WR_RecDecisionSignalSurplus>Được chọn bổ sung theo đánh giá dấu hiệu.</WR_RecDecisionSignalSurplus>
+  <WR_RecDecisionSignals>Đạt ngưỡng dấu hiệu đã đặt.</WR_RecDecisionSignals>
+  <WR_RecDecisionTraining>Được giao qua lộ trình rèn luyện cho {0}.</WR_RecDecisionTraining>
+  <WR_RecDecisionTrainingSlot>Được chọn lấp suất {0} trên {1} cho {2}. Ngoại lệ rèn luyện thay {2} bằng {3} ({4}; {2} cần {5}).</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>Được chọn lấp suất {0} trên {1} cho {2}. Ngoại lệ rèn luyện thay {2} bằng {3}.</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>Được chọn lấp suất {0} trên {1} qua ngoại lệ rèn luyện, giao {2}.</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecDecisionTrainingUnknown>Được giao qua lộ trình rèn luyện.</WR_RecDecisionTrainingUnknown>
+  <WR_RecDecisionUnavailable>Công việc của vai trò chưa có cho đến khi nghiên cứu xong.</WR_RecDecisionUnavailable>
+  <WR_RecDecisionWeakSignal>Đánh giá dấu hiệu dưới ngưỡng đã đặt; nhu cầu nhân lực bắt buộc cũng không chọn người này.</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionWorkAversion>Ác cảm kéo điểm xuống dưới ngưỡng việc tùy chọn.</WR_RecDecisionWorkAversion>
+  <WR_RecExcludedAddTip>Chọn vai trò bộ đề xuất không bao giờ nên đề xuất. Mọi vai trò đều có thể bị loại, kể cả rèn luyện, tự động, có điều kiện, chặn và tổ hợp.</WR_RecExcludedAddTip>
+  <WR_RecExcludedChipTip>Vai trò không bao giờ được đề xuất. Nhấp biểu tượng bỏ để cho phép đề xuất lại và khôi phục mục trong Tùy chọn vai trò. Thiết lập đã lưu được giữ.</WR_RecExcludedChipTip>
+  <WR_RecExcludedHeader>Vai trò bị loại</WR_RecExcludedHeader>
+  <WR_RecExcludedHelp>Vai trò trong danh sách không bao giờ được đề xuất, kể cả qua lộ trình rèn luyện hay vai trò tự động. Phân công đã ghim vẫn được bảo vệ. Dùng Thêm vai trò để loại; bỏ thẻ để cho phép đề xuất lại.</WR_RecExcludedHelp>
+  <WR_RecExcludedReason>Vai trò bị loại khỏi đề xuất. Bỏ khỏi Vai trò bị loại ở thẻ Đề xuất để cho phép lại.</WR_RecExcludedReason>
+  <WR_RecExcludedTip>Loại trừ áp dụng cho đề xuất của mọi cư dân trong bản lưu, kể cả Tối ưu khu định cư và Tự tối ưu. Vẫn có thể giao vai trò bị loại thủ công. Sửa danh sách không đổi phân công hiện tại. Áp dụng đề xuất bỏ vai trò bị loại chưa ghim và giữ phân công đã ghim.</WR_RecExcludedTip>
+  <WR_RecGlobalPanel>Tùy chọn chung</WR_RecGlobalPanel>
+  <WR_RecGlobalPanelHelp>Các tùy chọn này đổi cách bộ đề xuất chấm điểm, xếp hạng ứng viên và vị trí trong danh sách đề xuất cuối. Dùng nút Đặt lại để khôi phục mặc định nếu không muốn giữ chỉnh sửa.</WR_RecGlobalPanelHelp>
+  <WR_RecMoreContentGates>{0} mục nữa</WR_RecMoreContentGates>
+  <WR_RecRolePanel>Tùy chọn vai trò</WR_RecRolePanel>
+  <WR_RecRolePanelHelp>Liệt kê mọi vai trò trừ Vai trò bị loại. Mở vai trò để chỉnh tùy chọn đề xuất. Vai trò tự xếp thứ tự riêng cho mỗi cư dân; Thợ săn giữ vị trí theo kỹ năng bắn súng.</WR_RecRolePanelHelp>
+  <WR_RecScalingSection>Quy mô phân công</WR_RecScalingSection>
+  <WR_RecSkillsSection>Kỹ năng</WR_RecSkillsSection>
+  <WR_RecTipAssignmentsMany>Cần {0} phân công</WR_RecTipAssignmentsMany>
+  <WR_RecTipAssignmentsOne>Cần 1 phân công</WR_RecTipAssignmentsOne>
+  <WR_RecTipColonyNeed>Nhu cầu khu định cư</WR_RecTipColonyNeed>
+  <WR_RecTipEveryoneCapable>Giao cho mọi người có khả năng</WR_RecTipEveryoneCapable>
+  <WR_RecTipSelection>Lựa chọn</WR_RecTipSelection>
+  <WR_RecTipSignalVerdict>Đánh giá dấu hiệu</WR_RecTipSignalVerdict>
+  <WR_RecTipSkills>Kỹ năng được xét</WR_RecTipSkills>
+  <WR_RecTipWithWaiverOne>{0} (1 ngoại lệ rèn luyện)</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0} ({1} ngoại lệ rèn luyện)</WR_RecTipWithWaiversMany>
+  <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
+  <WR_RecTuneCandidateMinimumSignal>Dấu hiệu tối thiểu của ứng viên</WR_RecTuneCandidateMinimumSignal>
+  <WR_RecTuneCandidateMinimumSignalDesc>Dấu hiệu thấp nhất được chọn vai trò thường. Tăng để loại ứng viên yếu trước khi chọn chủ lực và số người tối thiểu.</WR_RecTuneCandidateMinimumSignalDesc>
+  <WR_RecTuneCategoryPointsRow>Điểm phân loại</WR_RecTuneCategoryPointsRow>
+  <WR_RecTuneCategoryPointsRowDesc>Điểm thứ tự cộng theo tầm quan trọng với khu định cư: Quan trọng đưa vai trò bổn phận lên trước sản xuất có cùng dấu hiệu; Tùy chọn đẩy về cuối.</WR_RecTuneCategoryPointsRowDesc>
+  <WR_RecTuneCellHint>Nhấp giá trị để tăng, nhấp phải để giảm.</WR_RecTuneCellHint>
+  <WR_RecTuneChampionMultiSkillMinimumCount>Ngưỡng kết hợp kỹ năng</WR_RecTuneChampionMultiSkillMinimumCount>
+  <WR_RecTuneChampionMultiSkillMinimumCountDesc>Số kỹ năng mục tiêu đạt chuẩn tối thiểu để cộng điểm chủ lực. Dưới số này chỉ chấm kỹ năng tốt nhất của vai trò.</WR_RecTuneChampionMultiSkillMinimumCountDesc>
+  <WR_RecTuneChampionMultiplierRow>Hệ số dấu hiệu</WR_RecTuneChampionMultiplierRow>
+  <WR_RecTuneChampionMultiplierRowDesc>Nhân phần đóng góp kỹ năng đã làm tròn của từng mức dấu hiệu khi chọn chủ lực.</WR_RecTuneChampionMultiplierRowDesc>
+  <WR_RecTuneChampionSection>Tùy chọn chọn người chủ lực</WR_RecTuneChampionSection>
+  <WR_RecTuneChampionSectionIntro>Mỗi vai trò trước hết có người chủ lực: cư dân phù hợp nhất làm trụ cột. Các tùy chọn quyết định ai đủ điều kiện và cân bằng kỹ năng với độ mạnh dấu hiệu.</WR_RecTuneChampionSectionIntro>
+  <WR_RecTuneChampionSkillDivisor>Số chia kỹ năng chủ lực</WR_RecTuneChampionSkillDivisor>
+  <WR_RecTuneChampionSkillDivisorDesc>Điểm kỹ năng chủ lực là làm tròn lên(cấp kỹ năng ÷ giá trị này). Tăng để giảm tác động của kỹ năng thuần.</WR_RecTuneChampionSkillDivisorDesc>
+  <WR_RecTuneChampionTieBreakRow>Điểm phân định hòa</WR_RecTuneChampionTieBreakRow>
+  <WR_RecTuneChampionTieBreakRowDesc>So sánh điểm dấu hiệu khi điểm chủ lực bằng nhau. Vai trò nhiều kỹ năng cộng điểm các dấu hiệu đạt chuẩn.</WR_RecTuneChampionTieBreakRowDesc>
+  <WR_RecTuneHunterSection>Tùy chọn vị trí Thợ săn</WR_RecTuneHunterSection>
+  <WR_RecTuneHunterSectionIntro>Vai trò Thợ săn chưa ghim đổi vị trí theo kỹ năng bắn súng: người bắn giỏi săn muộn hơn vì thời gian của họ có ích hơn ở việc khác.</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneHunterTiersRow>Cấp bắn súng tối đa mỗi bậc</WR_RecTuneHunterTiersRow>
+  <WR_RecTuneHunterTiersRowDesc>Ngưỡng Bắn súng cho vị trí động của Thợ săn. Bậc 1 đặt ngay sau việc cơ bản; bậc 2 và 3 đặt sau vai trò công việc giữa và cuối; trên bậc 4 đặt cuối cùng.</WR_RecTuneHunterTiersRowDesc>
+  <WR_RecTuneLeadMinimumConnectedTargets>Số mục tiêu nối để chia người dẫn</WR_RecTuneLeadMinimumConnectedTargets>
+  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Số mục tiêu rèn luyện liên kết tối thiểu trước khi bộ lập kế hoạch thử giao vai trò dẫn đầu cho những người khác nhau.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
+  <WR_RecTuneLeadMinimumSignal>Dấu hiệu tối thiểu người dẫn</WR_RecTuneLeadMinimumSignal>
+  <WR_RecTuneLeadMinimumSignalDesc>Dấu hiệu vai trò thấp nhất cho người được chọn dẫn đầu lộ trình khi chia người dẫn.</WR_RecTuneLeadMinimumSignalDesc>
+  <WR_RecTuneLeadSection>Tùy chọn chia người dẫn</WR_RecTuneLeadSection>
+  <WR_RecTuneLeadSectionIntro>Khi nhiều lộ trình cùng mục tiêu, các tùy chọn này chia vai trò dẫn đầu cho nhiều cư dân thay vì dồn một người.</WR_RecTuneLeadSectionIntro>
+  <WR_RecTuneMinimumPickRow>Điểm cộng chọn tối thiểu</WR_RecTuneMinimumPickRow>
+  <WR_RecTuneMinimumPickRowDesc>Điểm thứ tự cho người đầu, thứ hai, thứ ba và mọi người tiếp theo được chọn để đủ số người giữ tối thiểu.</WR_RecTuneMinimumPickRowDesc>
+  <WR_RecTuneMultiplierAwfulTip>Rất không phù hợp. Cột này chỉ có tác dụng khi ngưỡng dấu hiệu tối thiểu cho phép ứng viên Rất không phù hợp.</WR_RecTuneMultiplierAwfulTip>
+  <WR_RecTuneOptionalSection>Tùy chọn lộ trình và mục tiêu tùy chọn</WR_RecTuneOptionalSection>
+  <WR_RecTuneOptionalSectionIntro>Các tùy chọn quyết định khi nào lộ trình rèn luyện hoạt động cho cư dân và khi nào vai trò nhiều kỹ năng tùy chọn đáng được đề xuất.</WR_RecTuneOptionalSectionIntro>
+  <WR_RecTuneOptionalTargetGreatLevel>Cấp nâng dấu hiệu cao</WR_RecTuneOptionalTargetGreatLevel>
+  <WR_RecTuneOptionalTargetGreatLevelDesc>Ở cấp kỹ năng này, dấu hiệu yếu hơn đủ điều kiện được nâng lên mức cao đã đặt để xét người bổ sung cho vai trò một kỹ năng và chấm mục tiêu tùy chọn.</WR_RecTuneOptionalTargetGreatLevelDesc>
+  <WR_RecTuneOptionalTargetGreatPromotedSignal>Dấu hiệu được nâng cao</WR_RecTuneOptionalTargetGreatPromotedSignal>
+  <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>Dấu hiệu dùng để xét người bổ sung cho vai trò một kỹ năng và chấm năng khiếu mục tiêu tùy chọn từ cấp nâng cao trở lên.</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumPoints>Điểm tối thiểu mục tiêu tùy chọn</WR_RecTuneOptionalTargetMinimumPoints>
+  <WR_RecTuneOptionalTargetMinimumPointsDesc>Tổng số bậc dấu hiệu vượt ngưỡng tối thiểu cần có để đề xuất mục tiêu nhiều kỹ năng tùy chọn.</WR_RecTuneOptionalTargetMinimumPointsDesc>
+  <WR_RecTuneOptionalTargetMinimumSignal>Dấu hiệu tối thiểu mục tiêu tùy chọn</WR_RecTuneOptionalTargetMinimumSignal>
+  <WR_RecTuneOptionalTargetMinimumSignalDesc>Kỹ năng phải đạt dấu hiệu này trước khi nâng theo cấp tác động đến điều kiện bổ sung cho vai trò một kỹ năng hoặc đóng góp điểm năng khiếu cho mục tiêu tùy chọn.</WR_RecTuneOptionalTargetMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumSkillCount>Ngưỡng kỹ năng mục tiêu tùy chọn</WR_RecTuneOptionalTargetMinimumSkillCount>
+  <WR_RecTuneOptionalTargetMinimumSkillCountDesc>Số kỹ năng mục tiêu đạt chuẩn cần có trước khi áp dụng xét năng khiếu mục tiêu tùy chọn. Vai trò có ít kỹ năng đạt chuẩn hơn bỏ qua phép xét này.</WR_RecTuneOptionalTargetMinimumSkillCountDesc>
+  <WR_RecTuneOptionalTargetStrongLevel>Cấp nâng dấu hiệu trung bình</WR_RecTuneOptionalTargetStrongLevel>
+  <WR_RecTuneOptionalTargetStrongLevelDesc>Ở cấp kỹ năng này, dấu hiệu yếu hơn đủ điều kiện được nâng lên mức trung bình đã đặt để xét người bổ sung cho vai trò một kỹ năng và chấm mục tiêu tùy chọn.</WR_RecTuneOptionalTargetStrongLevelDesc>
+  <WR_RecTuneOptionalTargetStrongPromotedSignal>Dấu hiệu được nâng trung bình</WR_RecTuneOptionalTargetStrongPromotedSignal>
+  <WR_RecTuneOptionalTargetStrongPromotedSignalDesc>Dấu hiệu dùng để xét người bổ sung cho vai trò một kỹ năng và chấm năng khiếu mục tiêu tùy chọn từ cấp nâng trung bình trở lên.</WR_RecTuneOptionalTargetStrongPromotedSignalDesc>
+  <WR_RecTuneOrderingPointsRow>Điểm dấu hiệu</WR_RecTuneOrderingPointsRow>
+  <WR_RecTuneOrderingPointsRowDesc>Điểm mỗi mức dấu hiệu đóng góp khi xếp thứ tự vai trò đề xuất cuối.</WR_RecTuneOrderingPointsRowDesc>
+  <WR_RecTuneOrderingSection>Tùy chọn thứ tự vai trò cuối</WR_RecTuneOrderingSection>
+  <WR_RecTuneOrderingSectionIntro>Sau khi chọn vai trò của cư dân, các tùy chọn quyết định thứ tự liệt kê, cũng chính là thứ tự ưu tiên việc.</WR_RecTuneOrderingSectionIntro>
+  <WR_RecTuneOrderingSkillDivisor>Số chia kỹ năng xếp thứ tự</WR_RecTuneOrderingSkillDivisor>
+  <WR_RecTuneOrderingSkillDivisorDesc>Điểm kỹ năng thứ tự cuối là làm tròn lên(cấp kỹ năng ÷ giá trị này). Tăng để giảm tác động của kỹ năng đến thứ tự vai trò.</WR_RecTuneOrderingSkillDivisorDesc>
+  <WR_RecTunePathMinimumSignal>Dấu hiệu tối thiểu vai trò rèn luyện</WR_RecTunePathMinimumSignal>
+  <WR_RecTunePathMinimumSignalDesc>Dấu hiệu thấp nhất vai trò được phép có khi tham gia lộ trình rèn luyện đang hoạt động.</WR_RecTunePathMinimumSignalDesc>
+  <WR_RecTuneRankedCandidatePrioritySignal>Dấu hiệu ưu tiên ứng viên xếp hạng</WR_RecTuneRankedCandidatePrioritySignal>
+  <WR_RecTuneRankedCandidatePrioritySignalDesc>Ứng viên không phải chủ lực đạt dấu hiệu này trở lên được xếp trước người yếu hơn khi lấp suất tối thiểu.</WR_RecTuneRankedCandidatePrioritySignalDesc>
+  <WR_RecTuneReset>Đặt lại</WR_RecTuneReset>
+  <WR_RecTuneResetTip>Khôi phục các tùy chọn phần này về mặc định.</WR_RecTuneResetTip>
+  <WR_RecTuneSurplusMinimumSignal>Dấu hiệu tối thiểu người bổ sung</WR_RecTuneSurplusMinimumSignal>
+  <WR_RecTuneSurplusMinimumSignalDesc>Sau khi đủ suất bắt buộc, ứng viên thường đạt dấu hiệu này trở lên vẫn có thể nhận vai trò. Nâng theo cấp áp dụng cho vai trò một kỹ năng trong khoảng rèn luyện đã đặt; mục tiêu nhiều kỹ năng dùng yêu cầu năng khiếu mục tiêu tùy chọn.</WR_RecTuneSurplusMinimumSignalDesc>
+  <WR_RecTuneTimePointsRow>Điểm thời lượng</WR_RecTuneTimePointsRow>
+  <WR_RecTuneTimePointsRowDesc>Điểm thứ tự theo thời lượng: Bán thời gian đưa việc ngắn lên trước Toàn thời gian cùng dấu hiệu; Khi rảnh đẩy việc lấp chỗ trống về cuối.</WR_RecTuneTimePointsRowDesc>
+  <WR_RecWorkAversion>{0} phản đối {1}; điểm đề xuất bị giảm.</WR_RecWorkAversion>
+  <WR_RecommendationsTab>Đề xuất</WR_RecommendationsTab>
+  <WR_RecommendedRoles>Vai trò đề xuất</WR_RecommendedRoles>
+  <WR_RemoveSelectedTip>Bỏ các hàng đã chọn.</WR_RemoveSelectedTip>
+  <WR_RemoveSkillTip>Bỏ điều kiện kỹ năng bắt buộc này.</WR_RemoveSkillTip>
+  <WR_RenameGroup>Đổi tên nhóm</WR_RenameGroup>
+  <WR_RenameGroupTitle>Đổi tên nhóm</WR_RenameGroupTitle>
+  <WR_RenameRoleTitle>Đổi tên vai trò</WR_RenameRoleTitle>
+  <WR_RequiredSkillsLabel>Bắt buộc</WR_RequiredSkillsLabel>
+  <WR_RequiredSkillsTip>Điều kiện bắt buộc tùy chọn cho vai trò. Cư dân bị vô hiệu hóa bất kỳ kỹ năng bắt buộc nào sẽ không được đề xuất vai trò. Cấp kỹ năng không ảnh hưởng điều kiện này; nó tách biệt với mức tối thiểu nội dung ở Có ngưỡng.</WR_RequiredSkillsTip>
+  <WR_ResizeGripTip>Kéo để đổi cỡ cửa sổ (chỉ có thể lớn hơn kích thước vừa nội dung). Nhấp đúp để trở lại cỡ tự động.</WR_ResizeGripTip>
+  <WR_RestoreColorItem>{0} (khôi phục màu mặc định)</WR_RestoreColorItem>
+  <WR_RestoreDefaultExclusions>Vai trò bị loại mặc định</WR_RestoreDefaultExclusions>
+  <WR_RestoreDefaults>Khôi phục mặc định</WR_RestoreDefaults>
+  <WR_RestoreDefaultsTip>Tạo lại vai trò và lộ trình có sẵn còn thiếu, khôi phục loại trừ mặc định, đưa vai trò có sẵn về nhóm, màu và thiết lập người giữ mặc định. Bản xem trước cho chọn mục cần khôi phục.</WR_RestoreDefaultsTip>
+  <WR_RestoreDefaultsTitle>Khôi phục mặc định</WR_RestoreDefaultsTitle>
+  <WR_RestoreDuplicateHint>(đã có vai trò mang tên này)</WR_RestoreDuplicateHint>
+  <WR_RestoreExplainBackfill>Thêm lại {0} việc bị mod chuyển đi.</WR_RestoreExplainBackfill>
+  <WR_RestoreExplainColor>Đặt lại màu mặc định của mẫu.</WR_RestoreExplainColor>
+  <WR_RestoreExplainCoverage>Tạo vai trò bao phủ loại việc này.</WR_RestoreExplainCoverage>
+  <WR_RestoreExplainDefaultExclusions>Thêm lại loại trừ mặc định còn thiếu vào Vai trò bị loại. Giữ các vai trò khác bạn đã loại.</WR_RestoreExplainDefaultExclusions>
+  <WR_RestoreExplainGroup>Chuyển vai trò về nhóm '{0}'.</WR_RestoreExplainGroup>
+  <WR_RestoreExplainHolders>Đặt lại thang số người giữ về mặc định của mẫu.</WR_RestoreExplainHolders>
+  <WR_RestoreExplainJobs>Đặt lại danh sách việc về mặc định hiện tại của mod. Cư dân giữ tổng thể công việc: tự giao vai trò bao phủ các việc bị bỏ.</WR_RestoreExplainJobs>
+  <WR_RestoreExplainPath>Tạo lộ trình rèn luyện.</WR_RestoreExplainPath>
+  <WR_RestoreExplainRecOrder>Xóa thứ tự tùy chỉnh.</WR_RestoreExplainRecOrder>
+  <WR_RestoreExplainRole>Tạo vai trò từ mẫu của mod.</WR_RestoreExplainRole>
+  <WR_RestoreExplainSnapColor>Thay màu được tạo bằng màu gần nhất trong bảng màu để bộ chọn màu đánh dấu được.</WR_RestoreExplainSnapColor>
+  <WR_RestoreGroupItem>{0} (chuyển về nhóm '{1}')</WR_RestoreGroupItem>
+  <WR_RestoreHoldersItem>{0} (khôi phục mặc định người giữ)</WR_RestoreHoldersItem>
+  <WR_RestoreJobsItem>{0} (đặt lại việc mặc định)</WR_RestoreJobsItem>
+  <WR_RestoreMovedJobs>{0} (lấy lại {1} việc đã chuyển)</WR_RestoreMovedJobs>
+  <WR_RestoreOverwriteWarning>⚠ Mục được tô sáng sẽ ghi đè chỉnh sửa của bạn.</WR_RestoreOverwriteWarning>
+  <WR_RestorePathItem>{0} (lộ trình rèn luyện)</WR_RestorePathItem>
+  <WR_RestoreRecOrder>Thứ tự đề xuất (đặt lại mặc định)</WR_RestoreRecOrder>
+  <WR_RestoreSnapColorItem>{0} (khớp màu với bảng màu)</WR_RestoreSnapColorItem>
+  <WR_RoleAgeBandsLabel>Nhóm tuổi được giao vai trò này:</WR_RoleAgeBandsLabel>
+  <WR_RoleAgeBandsTip>Cư dân ngoài khoảng tuổi đã chọn không bao giờ được giao hoặc đề xuất vai trò này. Nhấp khoảng ngoài vùng chọn để gồm mọi khoảng đến đó; nhấp khoảng đầu/cuối đang chọn để bỏ; nhấp khoảng giữa để chỉ chọn khoảng đó. Ranh giới theo tuổi trò chơi mở khóa công việc. Mọi việc trong vai trò có thể làm từ tuổi {0}.</WR_RoleAgeBandsTip>
+  <WR_RoleAwfulSignal>{0} có dấu hiệu Rất không phù hợp cho vai trò này: {1}.</WR_RoleAwfulSignal>
+  <WR_RoleCapAllJobs>bất kỳ việc nào trong vai trò này</WR_RoleCapAllJobs>
+  <WR_RoleCapNeverDo>{0} sẽ không bao giờ làm {1}</WR_RoleCapNeverDo>
+  <WR_RoleCapSomeJobs>{0} trên {1} việc trong vai trò này</WR_RoleCapSomeJobs>
+  <WR_RoleCategoryImportant>Quan trọng</WR_RoleCategoryImportant>
+  <WR_RoleCategoryLabel>Tầm quan trọng:</WR_RoleCategoryLabel>
+  <WR_RoleCategoryNone>Chưa đặt</WR_RoleCategoryNone>
+  <WR_RoleCategoryNormal>Thông thường</WR_RoleCategoryNormal>
+  <WR_RoleCategoryOptional>Tùy chọn</WR_RoleCategoryOptional>
+  <WR_RoleCategoryTip>Mức quan trọng của việc giữ vai trò này khi lập kế hoạch khu định cư. "Chưa đặt" để vai trò chưa phân loại.</WR_RoleCategoryTip>
+  <WR_RoleColonyMinLabel>Tối thiểu mỗi khu:</WR_RoleColonyMinLabel>
+  <WR_RoleColonyMinTip>Số phân công tối thiểu cho vai trò.</WR_RoleColonyMinTip>
+  <WR_RoleCoverageLabel>Tỷ lệ nhân lực:</WR_RoleCoverageLabel>
+  <WR_RoleCoverageTip>Tỷ lệ cư dân lý tưởng nên nhận vai trò này.</WR_RoleCoverageTip>
+  <WR_RoleDisplayCaption>Hiện vai trò</WR_RoleDisplayCaption>
+  <WR_RoleJobIncapable>không làm được việc này</WR_RoleJobIncapable>
+  <WR_RoleJobNoRangedWeapon>không có vũ khí tầm xa</WR_RoleJobNoRangedWeapon>
+  <WR_RoleJobTooYoung>quá nhỏ tuổi, làm được từ tuổi {0}</WR_RoleJobTooYoung>
+  <WR_RoleLabelOff>{0} (tắt)</WR_RoleLabelOff>
+  <WR_RoleMissingRequiredSkills>Kỹ năng bắt buộc bị vô hiệu hóa của {0}: {1}.</WR_RoleMissingRequiredSkills>
+  <WR_RoleTimeFullTime>Toàn thời gian</WR_RoleTimeFullTime>
+  <WR_RoleTimeLabel>Thời lượng:</WR_RoleTimeLabel>
+  <WR_RoleTimeNone>Chưa đặt</WR_RoleTimeNone>
+  <WR_RoleTimeOpportunistic>Khi rảnh</WR_RoleTimeOpportunistic>
+  <WR_RoleTimePartTime>Bán thời gian</WR_RoleTimePartTime>
+  <WR_RoleTimeTip>Công việc của vai trò thường chiếm bao nhiêu thời gian trong ngày.</WR_RoleTimeTip>
+  <WR_RoleTipDisabled>TẮT toàn cục</WR_RoleTipDisabled>
+  <WR_RoleTipDisabledBoth>TẮT toàn cục và cho cư dân này</WR_RoleTipDisabledBoth>
+  <WR_RoleTipDisabledHere>TẮT cho cư dân này</WR_RoleTipDisabledHere>
+  <WR_RoleTipEnabled>bật</WR_RoleTipEnabled>
+  <WR_RoleTipForcedOn>bật, buộc bật cho cư dân này</WR_RoleTipForcedOn>
+  <WR_RoleTipForcedOnGlobalOff>BUỘC BẬT cho cư dân này (vai trò TẮT toàn cục)</WR_RoleTipForcedOnGlobalOff>
+  <WR_RoleTooOld>{0} quá lớn tuổi cho vai trò này (tối đa {1} tuổi).</WR_RoleTooOld>
+  <WR_RoleTooYoung>{0} quá nhỏ tuổi cho vai trò này (tối thiểu {1} tuổi).</WR_RoleTooYoung>
+  <WR_RoleWorkAversion>Giáo lý {1} của {0} phản đối {2}. Đề xuất trừ điểm hữu hạn: hai bậc ưu tiên, hoặc sáu điểm kỹ năng ảo khi chọn chủ lực. Nhu cầu bắt buộc vẫn có thể chọn người này. Thợ săn lùi hai bậc, tối đa bậc năm; phương án dự phòng bậc đầu hiện có vẫn áp dụng.</WR_RoleWorkAversion>
+  <WR_RolesRestored>Đã khôi phục: {0}</WR_RolesRestored>
+  <WR_RolesTab>Vai trò</WR_RolesTab>
+  <WR_RowNew>{0} (mới)</WR_RowNew>
+  <WR_RowNewColor>{0} {1} (màu mới)</WR_RowNewColor>
+  <WR_RowRecolors>{0} → {1} (đổi màu: {2})</WR_RowRecolors>
+  <WR_RowUpdate>{0} (cập nhật)</WR_RowUpdate>
+  <WR_Save>Lưu</WR_Save>
+  <WR_ScaleControlledBy>Do {0} chi phối</WR_ScaleControlledBy>
+  <WR_ScaleDeleteConfirm>Xóa thang '{0}'?\n\n{1}. Các vai trò này sẽ dùng Không bao giờ.</WR_ScaleDeleteConfirm>
+  <WR_ScaleDirectTip>Số trực tiếp tối thiểu cho khoảng này; phần tổng còn lại có thể dùng ngoại lệ rèn luyện. Tăng quá tổng bắt buộc cũng tăng tổng đó. Nhấp +1 (quay vòng ở 8), nhấp phải -1. Kéo trái chuột để chép qua các khoảng (nhấp phải khi kéo đổi giá trị theo hướng kéo). Kéo phải chuột để tăng/giảm dần: một bước mỗi khoảng, sang phải tăng, sang trái giảm.</WR_ScaleDirectTip>
+  <WR_ScaleMinsCaption>Tối thiểu trực tiếp cho {0}</WR_ScaleMinsCaption>
+  <WR_ScaleNewTitle>Thang mới (chép thang hiện tại)</WR_ScaleNewTitle>
+  <WR_ScaleRenameTip>Đổi tên thang (vai trò tham chiếu đổi theo).</WR_ScaleRenameTip>
+  <WR_ScaleRenameTitle>Đổi tên thang</WR_ScaleRenameTitle>
+  <WR_ScaleReset>Đặt lại</WR_ScaleReset>
+  <WR_ScaleResetTip>Khôi phục giá trị trước chỉnh sửa (từ lúc chọn vai trò hoặc thang này).</WR_ScaleResetTip>
+  <WR_ScaleSaveAs>Lưu thành</WR_ScaleSaveAs>
+  <WR_ScaleSaveAsTitle>Lưu thay đổi thành thang mới (thang này trở về giá trị đã lưu)</WR_ScaleSaveAsTitle>
+  <WR_ScaleTotalTip>Tổng bắt buộc cho khoảng này, gồm ngoại lệ rèn luyện. Tăng tạo suất ngoại lệ; giảm dùng hết suất ngoại lệ trước khi giảm tối thiểu trực tiếp. Nhấp +1, nhấp phải -1. Kéo trái chuột để chép qua các khoảng (nhấp phải khi kéo đổi giá trị theo hướng kéo). Kéo phải chuột để tăng/giảm dần: một bước mỗi khoảng, sang phải tăng, sang trái giảm.</WR_ScaleTotalTip>
+  <WR_ScaleTotalsCaption>Tổng bắt buộc (gồm ngoại lệ rèn luyện)</WR_ScaleTotalsCaption>
+  <WR_ScaleTrainingHelp>Vai trò này rèn luyện cho {0}, nên phân công do tùy chọn của {0} chi phối (kể cả khi đặt Không bao giờ). Tuy nhiên bạn vẫn có thể buộc số phân công tối thiểu cho {1} ở đây.</WR_ScaleTrainingHelp>
+  <WR_ScaleUsedBy>Được {0} sử dụng</WR_ScaleUsedBy>
+  <WR_ScopeAll>Mọi nơi</WR_ScopeAll>
+  <WR_ScopeCurrent>Vị trí hiện tại</WR_ScopeCurrent>
+  <WR_ScopeCurrentNamed>{0} (vị trí hiện tại)</WR_ScopeCurrentNamed>
+  <WR_Search>Tìm kiếm</WR_Search>
+  <WR_SectionPalette>Bảng màu</WR_SectionPalette>
+  <WR_SectionRoles>Vai trò</WR_SectionRoles>
+  <WR_SeedDropFailure>{0}: mất {1} (trước là ưu tiên {2})</WR_SeedDropFailure>
+  <WR_SeedPawnFailure>{0}: chuyển đổi thất bại ({1})</WR_SeedPawnFailure>
+  <WR_SeedReportBody>Đã tạo {0} vai trò và giao bộ vai trò cho {1} cư dân dựa trên ưu tiên công việc.</WR_SeedReportBody>
+  <WR_SeedReportFailures>Không chuyển đổi được một số việc:</WR_SeedReportFailures>
+  <WR_SeedReportGenerated>Đã tạo cho việc từ mod: {0}.</WR_SeedReportGenerated>
+  <WR_SeedReportTitle>Đã thiết lập WorkRoles</WR_SeedReportTitle>
+  <WR_SelectAll>Chọn tất cả</WR_SelectAll>
+  <WR_SelectOrCreateRole>Chọn hoặc tạo vai trò.</WR_SelectOrCreateRole>
+  <WR_SelectRoleIcon>Chọn biểu tượng vai trò</WR_SelectRoleIcon>
+  <WR_SelectedJobs>Việc đã chọn (có thứ tự)</WR_SelectedJobs>
+  <WR_SelectedRows>Đã chọn {0}</WR_SelectedRows>
+  <WR_SetPriorityBlockedBody>{0} đã thử đặt ưu tiên công việc ({1}).
+
+WorkRoles đã chặn {2} lần ghi ưu tiên từ thông báo trước hoặc đầu phiên chơi này.
+
+WorkRoles quản lý ưu tiên của cư dân dùng vai trò, nên bỏ qua thay đổi; tính năng khác của mod không bị ảnh hưởng.
+
+Để đạt hiệu quả tương tự bằng vai trò: ở thẻ Vai trò, tạo hoặc sửa vai trò chứa việc đó và đặt tại vị trí mong muốn trong danh sách của từng cư dân; hoặc dùng vai trò chặn để cấm hẳn việc.
+
+Thông báo hiện một lần mỗi mod trong mỗi bản lưu.</WR_SetPriorityBlockedBody>
+  <WR_SetPriorityBlockedTitle>WorkRoles quản lý ưu tiên</WR_SetPriorityBlockedTitle>
+  <WR_ShipFallback>Tàu hấp dẫn</WR_ShipFallback>
+  <WR_ShipTip>Tàu hấp dẫn khi không đỗ tại khu định cư (ô khu định cư được ưu tiên).</WR_ShipTip>
+  <WR_ShowPriorityGridTip>Hiện bảng ưu tiên cho mọi cư dân trong danh sách, theo bộ lọc vai trò và vị trí đang bật (hạng gốc hoặc 0–4 kiểu trò chơi, đổi được trong hộp thoại).</WR_ShowPriorityGridTip>
+  <WR_SignalAlreadyReflected>Đã phản ánh trong cấp kỹ năng hiển thị</WR_SignalAlreadyReflected>
+  <WR_SignalCapabilityAwful>{0} được coi là rất không phù hợp</WR_SignalCapabilityAwful>
+  <WR_SignalCapabilityOff>{0} bị vô hiệu hóa</WR_SignalCapabilityOff>
+  <WR_SignalColEffects>Hiệu ứng</WR_SignalColEffects>
+  <WR_SignalColSignal>Dấu hiệu</WR_SignalColSignal>
+  <WR_SignalCondition>Điều kiện</WR_SignalCondition>
+  <WR_SignalDescriptive>Mô tả</WR_SignalDescriptive>
+  <WR_SignalDisabled>Vô hiệu hóa</WR_SignalDisabled>
+  <WR_SignalExpertiseScale>cơ bản {0}, cấp chuyên môn {1}, hiện tại {2}</WR_SignalExpertiseScale>
+  <WR_SignalFromSkill>(từ {0})</WR_SignalFromSkill>
+  <WR_SignalLetterAwful>R</WR_SignalLetterAwful>
+  <WR_SignalLetterExceptional>Đ</WR_SignalLetterExceptional>
+  <WR_SignalLetterGreat>V</WR_SignalLetterGreat>
+  <WR_SignalLetterNeutral>T</WR_SignalLetterNeutral>
+  <WR_SignalLetterPoor>Í</WR_SignalLetterPoor>
+  <WR_SignalLetterStrong>K</WR_SignalLetterStrong>
+  <WR_SignalSkillPromotion>Kỹ năng cao</WR_SignalSkillPromotion>
+  <WR_SignalSkillPromotionCondition>Cấp {0} đạt ngưỡng {1}</WR_SignalSkillPromotionCondition>
+  <WR_SignalSkillPromotionEffect>{0} → {1}</WR_SignalSkillPromotionEffect>
+  <WR_SignalSource>Nguồn</WR_SignalSource>
+  <WR_SignalVerdict>Đánh giá</WR_SignalVerdict>
+  <WR_SkillColumnsCaption>Cột kỹ năng</WR_SkillColumnsCaption>
+  <WR_SkillTipGiverSource>Nguồn giao việc: {0} ({1})</WR_SkillTipGiverSource>
+  <WR_SkillTipTypeSource>Loại việc: {0} ({1})</WR_SkillTipTypeSource>
+  <WR_SkillTipUnknownMod>mod không rõ</WR_SkillTipUnknownMod>
+  <WR_SkillsButton>Kỹ năng</WR_SkillsButton>
+  <WR_SkillsButtonCount>Kỹ năng ({0}/{1})</WR_SkillsButtonCount>
+  <WR_SkillsUsedLabel>Kỹ năng dùng:</WR_SkillsUsedLabel>
+  <WR_StepModifiersTip>Nhấp: 1 bước.\nShift: 5 bước.\nCtrl: 10 bước.\nCtrl+Shift: tới giới hạn.</WR_StepModifiersTip>
+  <WR_SuppressedHours>Tắt: ngoài giờ hoạt động</WR_SuppressedHours>
+  <WR_SuppressedLocation>Tắt: không ở vị trí của vai trò</WR_SuppressedLocation>
+  <WR_SurgeryWorkerRoleTip>Ai được thực hiện ca mổ này. Bất kỳ người làm nào nghĩa là không giới hạn vai trò. Chọn vai trò giới hạn ca mổ cho cư dân đang giữ vai trò đó hoạt động; vai trò có điều kiện áp dụng quy tắc của nó (như giờ hoạt động).</WR_SurgeryWorkerRoleTip>
+  <WR_TipActivityLabel>Hoạt động hiện tại</WR_TipActivityLabel>
+  <WR_TipActivityValue>{0}: {1}</WR_TipActivityValue>
+  <WR_TipBestFitsLabel>Phù hợp nhất</WR_TipBestFitsLabel>
+  <WR_TipJobsLabel>Công việc</WR_TipJobsLabel>
+  <WR_TipLevelN>Cấp {0}</WR_TipLevelN>
+  <WR_TipMore>+{0} mục nữa</WR_TipMore>
+  <WR_TipOff>Tắt</WR_TipOff>
+  <WR_TipOn>Bật</WR_TipOn>
+  <WR_TipReqBills>{0} {1} ({2} trên {3} lệnh có ngưỡng kỹ năng)</WR_TipReqBills>
+  <WR_TipReqItems>{0} {1} ({2} vật phẩm có ngưỡng kỹ năng)</WR_TipReqItems>
+  <WR_TipReqJobs>{0} {1} ({2} việc có ngưỡng kỹ năng)</WR_TipReqJobs>
+  <WR_TipRequiresLabel>Yêu cầu</WR_TipRequiresLabel>
+  <WR_TipSkillsLabel>Kỹ năng</WR_TipSkillsLabel>
+  <WR_TipTrainingHeader>Rèn luyện</WR_TipTrainingHeader>
+  <WR_TipTrainingPath>trên lộ trình tới {0}</WR_TipTrainingPath>
+  <WR_TipTrainingRecommend>Đề xuất cho cư dân có kỹ năng {0}</WR_TipTrainingRecommend>
+  <WR_TipTrainsLabel>Rèn luyện</WR_TipTrainsLabel>
+  <WR_TipTrainsNothing>Không gì (không có kinh nghiệm kỹ năng)</WR_TipTrainsNothing>
+  <WR_TipUnlockAgeLabel>Tuổi tối thiểu</WR_TipUnlockAgeLabel>
+  <WR_TipUnlockAgeValue>{0} (cư dân nhỏ hơn không làm được việc này)</WR_TipUnlockAgeValue>
+  <WR_TipWholeType>{0} (mọi việc)</WR_TipWholeType>
+  <WR_TipXpLabel>Cho kinh nghiệm</WR_TipXpLabel>
+  <WR_TipXpValue>{0} trên {1} việc</WR_TipXpValue>
+  <WR_TrainedSkillsLabel>Được rèn</WR_TrainedSkillsLabel>
+  <WR_TrainedSkillsTip>Hiện kỹ năng nhận kinh nghiệm từ việc trong vai trò.\n\nSuy ra từ việc đã chọn, chỉ để tham khảo.</WR_TrainedSkillsTip>
+  <WR_TrainingHelp>Ở đây bạn xác định cách cư dân học kỹ năng mới và tiến tới vai trò này. Lộ trình có thể có nhiều khoảng để vai trò chồng lấp. Nếu lộ trình được đề xuất, cư dân nhận đề xuất mọi vai trò ứng với cấp kỹ năng hiện tại.</WR_TrainingHelp>
+  <WR_TrainingSection>Lộ trình rèn luyện</WR_TrainingSection>
+  <WR_TrainingTipBands>Khoảng chồng lấp cùng tồn tại; khi không chồng lấp, vai trò sau thay vai trò trước.</WR_TrainingTipBands>
+  <WR_TrainingTipOrder>Phân công ưu tiên khoảng có mức tối thiểu cao hơn. Khoảng bằng nhau ưu tiên kỹ năng vai trò yếu nhất của người làm, rồi đến thứ tự lộ trình đã lưu.</WR_TrainingTipOrder>
+  <WR_TrainingTipWhat>Tiến trình riêng của vai trò: mỗi thành viên có khoảng kỹ năng được đề xuất. Bản thân vai trò luôn ở trong lộ trình của nó.</WR_TrainingTipWhat>
+  <WR_TreeFlat>Phẳng</WR_TreeFlat>
+  <WR_TreeNested>Lồng nhau</WR_TreeNested>
+  <WR_TreeToggleTip>Bật/tắt lồng vai trò được bao phủ dưới vai trò kết hợp.</WR_TreeToggleTip>
+  <WR_TypeColumn>Loại</WR_TypeColumn>
+  <WR_UnpinAssignment>Bỏ ghim</WR_UnpinAssignment>
+  <WR_UnusedJobsWarning>Có việc không thuộc vai trò nào.</WR_UnusedJobsWarning>
+  <WR_UsedSkillsLabel>Được dùng</WR_UsedSkillsLabel>
+  <WR_UsedSkillsTip>Hiện kỹ năng tác động đến việc trong vai trò. Trỏ vào kỹ năng để xem tác động.\n\nSuy ra từ việc đã chọn, chỉ để tham khảo.</WR_UsedSkillsTip>
+  <WR_VerdictAwful>Rất không phù hợp</WR_VerdictAwful>
+  <WR_VerdictExceptional>Đặc biệt phù hợp</WR_VerdictExceptional>
+  <WR_VerdictGreat>Rất phù hợp</WR_VerdictGreat>
+  <WR_VerdictNeutral>Trung tính</WR_VerdictNeutral>
+  <WR_VerdictPoor>Ít phù hợp</WR_VerdictPoor>
+  <WR_VerdictStrong>Khá phù hợp</WR_VerdictStrong>
+  <WR_VirtualRoleTip>Hiện ở đây vì việc của vai trò này được vai trò cha bao phủ. Nó thuộc nhóm "{0}".</WR_VirtualRoleTip>
+  <WR_WarningPrefix>Cảnh báo:</WR_WarningPrefix>
+  <WR_WelcomeBody>WorkRoles đặt ưu tiên công việc từ các vai trò có tên như Bác sĩ, Thợ rèn hay Nông dân mà bạn giao cho cư dân.</WR_WelcomeBody>
+  <WR_WelcomeFind>Mở WorkRoles bằng nút Công việc ở cuối màn hình. Thẻ Trợ giúp bắt đầu bằng hướng dẫn từng bước.</WR_WelcomeFind>
+  <WR_WelcomeSmallScreen>Màn hình trò chơi của bạn là {0}x{1} (độ phân giải chia tỷ lệ giao diện). WorkRoles được thiết kế cho {2}x{3} trở lên, ví dụ 1920x1080 ở tỷ lệ 1.25. Vẫn chạy trên màn hình nhỏ hơn nhưng một số nhãn rút gọn và cần cuộn nhiều hơn. Giảm tỷ lệ giao diện trong tùy chọn trò chơi giúp cửa sổ có thêm chỗ.</WR_WelcomeSmallScreen>
+  <WR_WelcomeTakeMeThere>Mở ngay</WR_WelcomeTakeMeThere>
+  <WR_WelcomeTitle>WorkRoles</WR_WelcomeTitle>
+  <WR_WhenPanelCaption>Tiến trình vai trò: đặt cấp kỹ năng để đề xuất các vai trò hiển thị. Vai trò chồng lấp bổ sung cho nhau.</WR_WhenPanelCaption>
+  <WR_WillBeRemoved>Không có trong đề xuất. Ghim vai trò muốn giữ trước khi áp dụng.</WR_WillBeRemoved>
+  <WR_WorkBlockedCapacity>thiếu chức năng cơ thể cần thiết</WR_WorkBlockedCapacity>
+  <WR_WorkBlockedPrecept>từ chối vì {0}</WR_WorkBlockedPrecept>
+  <WR_WorkBlockedRace>không được hạn chế công việc của chủng loài cho phép</WR_WorkBlockedRace>
+  <WR_WorkBlockedRecipe>không được hạn chế công thức của chủng loài cho phép</WR_WorkBlockedRecipe>
+  <WR_WorkBlockedTags>nhóm việc bị vô hiệu hóa</WR_WorkBlockedTags>
+  <WR_WorkBlockedViviGathering>cần tốc độ và sản lượng thu thập Vivi dương; dụng cụ phù hợp có thể cho phép việc này</WR_WorkBlockedViviGathering>
+  <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
+  <WR_WorkTypesLabel>Loại việc</WR_WorkTypesLabel>
+  <WR_WorkTypesTip>Chỉ cư dân làm được các loại việc đã chỉ định mới đủ điều kiện cho vai trò này.\n\nSuy ra từ việc đã chọn, chỉ để tham khảo.</WR_WorkTypesTip>
+</LanguageData>

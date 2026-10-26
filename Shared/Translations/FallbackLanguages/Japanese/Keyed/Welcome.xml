@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <RS_CompatibilityHeading>競合する可能性のあるModを検出</RS_CompatibilityHeading>
+  <RS_CompatibilityRemove>競合を避けるには、上記のModを外してください。</RS_CompatibilityRemove>
+  <RS_CompatibilityRestoreAutomation>自動化を有効にするには、上記のModを外してください。</RS_CompatibilityRestoreAutomation>
+</LanguageData>

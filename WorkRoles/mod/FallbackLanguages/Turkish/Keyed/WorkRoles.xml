@@ -1,0 +1,636 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_ActAltClick>Alt+tık</WR_ActAltClick>
+  <WR_ActChipClick>Bu kolonici için açık, kapalı veya zorla açık arasında geçiş yap</WR_ActChipClick>
+  <WR_ActChipDrag>Yeniden sırala veya başka bir koloniciye taşı</WR_ActChipDrag>
+  <WR_ActChipRightClick>Sabitleme seçenekleri</WR_ActChipRightClick>
+  <WR_ActChipX>Kaldır</WR_ActChipX>
+  <WR_ActClick>Tık</WR_ActClick>
+  <WR_ActCtrlShiftClick>Ctrl+Shift+tık</WR_ActCtrlShiftClick>
+  <WR_ActDrag>Sürükle</WR_ActDrag>
+  <WR_ActPaletteAltClick>Seçili kolonicilere öneri motorunun uygun gördüğü sırada ata</WR_ActPaletteAltClick>
+  <WR_ActPaletteClick>Rolü herkes için aç/kapat</WR_ActPaletteClick>
+  <WR_ActPaletteCtrlShiftClick>Seçili kolonicilere Temel işlerin hemen arkasında ata</WR_ActPaletteCtrlShiftClick>
+  <WR_ActPaletteDrag>Bir koloniciye ata</WR_ActPaletteDrag>
+  <WR_ActPaletteShiftClick>Seçili kolonicilere satırın sonunda ata</WR_ActPaletteShiftClick>
+  <WR_ActRightClick>Sağ tık</WR_ActRightClick>
+  <WR_ActShiftClick>Shift+tık</WR_ActShiftClick>
+  <WR_ActTreeClick>Düzenlemek için seç</WR_ActTreeClick>
+  <WR_ActTreeDrag>Yeniden sırala veya gruplar arasında taşı</WR_ActTreeDrag>
+  <WR_ActTreeRightClick>Rolü oluştur (dâhil et/çıkar)</WR_ActTreeRightClick>
+  <WR_ActX>X</WR_ActX>
+  <WR_ActiveHours>Etkin saatler</WR_ActiveHours>
+  <WR_AddAllJobs>Tüm işleri ekle (tek tek, sıralanabilir)</WR_AddAllJobs>
+  <WR_AddNew>Yeni ekle</WR_AddNew>
+  <WR_AddRole>Rol ekle</WR_AddRole>
+  <WR_AddRoleTip>Bir rol ata.</WR_AddRoleTip>
+  <WR_AddSkill>Beceri ekle</WR_AddSkill>
+  <WR_AddSkillTip>Kesin bir beceri koşulu ekle. Bu, rolün türetilen Kullanılan veya Geliştirilen becerilerini değiştirmez.</WR_AddSkillTip>
+  <WR_AllJobs>Tüm işler</WR_AllJobs>
+  <WR_AllRolesAssigned>Tüm roller atanmış</WR_AllRolesAssigned>
+  <WR_AllWork>tüm işler</WR_AllWork>
+  <WR_AlreadyAssigned>Zaten atanmış</WR_AlreadyAssigned>
+  <WR_Apply>Uygula</WR_Apply>
+  <WR_AssignedRoleCaption>Atanmış rol</WR_AssignedRoleCaption>
+  <WR_AssignedTo>Atananlar</WR_AssignedTo>
+  <WR_AutoAssign>Otomatik ata</WR_AutoAssign>
+  <WR_AutoAssignTip>Yeni gelenler (katılanlar, gezginler), rolün yaş gruplarındaysa bu rolü otomatik alır.</WR_AutoAssignTip>
+  <WR_AutoManaged>Otomatik yönetim</WR_AutoManaged>
+  <WR_AutoManagedTip>WorkRoles her oyun saatinin başında tüm kolonilerin rol atamalarını otomatik günceller.
+
+Hariç tutulan roller dâhil sabitlenmiş atamalar korunur.
+
+Kolonimi düzenle düğmesini geri getirmek için Seçenekler sekmesinde "Kolonileri her oyun saatinde otomatik iyileştir" seçeneğini kapatın.</WR_AutoManagedTip>
+  <WR_AutoOptimizeConfirmApply>Uygula, aşağıdaki değişiklikleri şimdi yapar ve saatlik otomatik iyileştirmeyi açar. Açıkken Kolonimi düzenle ve Uygula gitsin düğmeleri gizlenir; yine her zamanki gibi rol atayabilir, sıralayabilir ve sabitleyebilirsiniz.</WR_AutoOptimizeConfirmApply>
+  <WR_AutoOptimizeGlobalWarning>Birden fazla koloniniz var: otomatik iyileştirme GENELDİR ve her saat TÜM kolonilerdeki rol atamalarını değiştirir. Aşağıdaki önizleme yalnızca mevcut koloninin değişikliklerini gösterir.</WR_AutoOptimizeGlobalWarning>
+  <WR_AutomationSection>Otomasyon ayarları</WR_AutomationSection>
+  <WR_AvailableJobs>Kullanılabilir işler</WR_AvailableJobs>
+  <WR_AvailableRoles>Kullanılabilir roller</WR_AvailableRoles>
+  <WR_BadDirectory>Geçerli bir dizin yolu girin.</WR_BadDirectory>
+  <WR_BadFileName>Geçerli bir dosya adı girin.</WR_BadFileName>
+  <WR_BadgeBlocker>Engelleyici</WR_BadgeBlocker>
+  <WR_BadgeHours>Sınırlı saatler</WR_BadgeHours>
+  <WR_BadgeLocation>Sınırlı konumlar</WR_BadgeLocation>
+  <WR_BandChipTip>Beceri aralığını yeniden boyutlandırmak için ucunu, taşımak için ortasını sürükleyin.</WR_BandChipTip>
+  <WR_BillRoleOption>Rol: {0}</WR_BillRoleOption>
+  <WR_BillWorkerRoleTip>Bu siparişi yalnızca bu rolü etkin olarak taşıyan koloniciler yapar; koşullu rol kendi kurallarını uygular (ör. etkin saatler). Bir çalışan seçmek rol kısıtlamasını kaldırır, tersi de geçerlidir.</WR_BillWorkerRoleTip>
+  <WR_BlockerRole>Engelleyici rol</WR_BlockerRole>
+  <WR_BlockerRoleTipWhat>Engelleyici rolün işleri asla yapılmaz: sonraki bir rol içerse bile engellenir ("yapmayacak").</WR_BlockerRoleTipWhat>
+  <WR_BlockerRoleTipWhy>Engelleyicinin üstündeki roller yine önceliklidir; bu yüzden bir rolü daha üste koyarak istisna tanıyabilirsiniz.</WR_BlockerRoleTipWhy>
+  <WR_ChampionPenalty>Tekrarlayan lider cezası</WR_ChampionPenalty>
+  <WR_ChampionPenaltyTip>Açıkken başka rollerde zaten lider olan kolonici, bu rolün liderliği için yarışırken ceza alır. Ara sıra yapılan işler gibi aynı kişinin birden fazla liderliğinin uygun olduğu roller için kapatın.</WR_ChampionPenaltyTip>
+  <WR_ChipLayoutGridTip>Etiketler eşit genişlikte ızgara sütunlarına hizalanır. Uzun tam adlar kenarda soluklaşır; yalnızca benzer rol adlarını ayırmak gerektiğinde ek alan alır. İpucu tam adı gösterir. Doğal genişlikleriyle dizmek için tıklayın. Sütunların adların ne kadarını sığdıracağını seçmek için sağ tıklayın.</WR_ChipLayoutGridTip>
+  <WR_ChipLayoutStackTip>Etiketler doğal genişlikleriyle dizilir. Eşit genişlikte ızgara sütunlarına hizalamak için tıklayın. Sütunların adların ne kadarını sığdıracağını seçmek için sağ tıklayın.</WR_ChipLayoutStackTip>
+  <WR_ChipsCompact>Etiketler: Baş harfler</WR_ChipsCompact>
+  <WR_ChipsIcons>Etiketler: Simgeler</WR_ChipsIcons>
+  <WR_ChipsNormal>Etiketler: Tam adlar</WR_ChipsNormal>
+  <WR_ClearRulesConfirm>'{0}' rolünün tüm kuralları kaldırılsın mı? Yeniden manuel rol olur.</WR_ClearRulesConfirm>
+  <WR_ClusterEveryone>Herkes</WR_ClusterEveryone>
+  <WR_ClusterUnskilled>Beceri gerektirmeyen</WR_ClusterUnskilled>
+  <WR_ColColonist>Kolonici</WR_ColColonist>
+  <WR_ColonistClearFiltersTip>Kolonici adı aramasını, atanmış rol ve kapsanan iş filtrelerini temizler. Konum kapsamı, gruplama, beceri sütunları ve rol görünümü değişmez.</WR_ColonistClearFiltersTip>
+  <WR_ColonistGroupTip>Görünen kolonicileri seçilen özelliğe göre bölümlere ayırır. Gruplama, filtrelere uyan kolonicileri değiştirmez; bölüm başlıkları daraltılabilir.</WR_ColonistGroupTip>
+  <WR_ColonistJobFilterTip>Seçili: {0}
+
+Atanmış engelleyici olmayan rolleri bu işi içeren kolonicileri listeler. Kolonicinin mevcut faaliyetini veya temel oyun iş önceliğini değil, rol kapsamını denetler.</WR_ColonistJobFilterTip>
+  <WR_ColonistNameCaption>Kolonici adı</WR_ColonistNameCaption>
+  <WR_ColonistRoleDisplayTip>Kolonici tablosundaki rol etiketlerinin görünümünü seçer: tam adlar, baş harfler veya simgeler. Yanındaki düğme serbest dizilimle ızgara sütunları arasında geçiş yapar. Oyuncuya özel bir görünüm ayarıdır.</WR_ColonistRoleDisplayTip>
+  <WR_ColonistRoleFilterTip>Seçili role atanmış kolonicileri listeler. Atanmış engelleyici olmayan bir rol, işleri seçili rolü tamamen kapsıyorsa da eşleşir. Arama, iş ve konum filtreleriyle birlikte uygulanır.</WR_ColonistRoleFilterTip>
+  <WR_ColonistScopeTip>Tabloda hangi koloni konumlarından kolonicilerin gösterileceğini seçer. Mevcut konum etkin haritayı izler; Her yer yerleşimleri, kervanları ve yolculuktaki gravgemiyi içerir.</WR_ColonistScopeTip>
+  <WR_ColonistSearchTip>Kolonici adlarını arar. Terimleri boşlukla ayırın; hepsi eşleşmelidir. Atanmış rol adlarında aramak için r: veya role:, bu rollerin sağladığı işlerde aramak için j: veya job: öneki kullanın. Örnek: br r:dok.</WR_ColonistSearchTip>
+  <WR_ColonistSkillColumnsTip>Tablo için en fazla üç beceri sütunu seçer. Sıralamak için beceri başlığına, sütunu kaldırmak için X düğmesine tıklayın.</WR_ColonistSkillColumnsTip>
+  <WR_ColonistsTab>Koloniciler</WR_ColonistsTab>
+  <WR_CompatSection>Uyumluluk ayarları</WR_CompatSection>
+  <WR_CompatibilityFreeWill>Free Will kolonicilerin iş önceliklerini belirler; ancak yönetilen kolonicilerin öncelikleri WorkRoles'a aittir ve bu değişiklikler engellenir.</WR_CompatibilityFreeWill>
+  <WR_CompatibilityPriorityMaster>PriorityMaster manuel öncelik sayılarını ve aralığını değiştirir. WorkRoles bu kontrollerin yerini alır ve yönetilen kolonicilerin önceliklerini rollerden türetir.</WR_CompatibilityPriorityMaster>
+  <WR_CompatibilityWorkTab>{0}, İş sekmesinin yerini alıp öncelikleri yöneterek WorkRoles'ın rol tabanlı iş yönetimiyle çakışır.</WR_CompatibilityWorkTab>
+  <WR_CompositeConfirm>'{0}' bileşik role dönüştürülsün mü? Seçili işleri kaldırılacak.</WR_CompositeConfirm>
+  <WR_CompositeRevertConfirm>'{0}' normal role döndürülsün mü? Üye rolleri kaldırılacak.</WR_CompositeRevertConfirm>
+  <WR_CompositeRole>Bileşik rol</WR_CompositeRole>
+  <WR_CompositeRoleTip>Bileşik roller diğer rolleri birleştirir: sahipleri üye rollerin işlerini üye sırasıyla yapar. Bileşik rolün kendine ait iş listesi yoktur.</WR_CompositeRoleTip>
+  <WR_ConditionalRole>Koşullu rol</WR_ConditionalRole>
+  <WR_ConditionalRoleTip>Koşullu roller, etkin saat ve konum kurallarına göre kendiliğinden açılıp kapanır. Herhangi bir kural tanımlıysa rol koşulludur.</WR_ConditionalRoleTip>
+  <WR_ContributesTip>Şu rol için beceri geliştirir: {0}.</WR_ContributesTip>
+  <WR_CopiedRoles>{0} adlı kolonicinin rolleri kopyalandı.</WR_CopiedRoles>
+  <WR_CopiedToClipboard>Panoya kopyalandı.</WR_CopiedToClipboard>
+  <WR_Copy>Kopyala</WR_Copy>
+  <WR_CopyClipboard>Panoya kopyala</WR_CopyClipboard>
+  <WR_CopyPath>Yolu kopyala</WR_CopyPath>
+  <WR_CopyRoleTitle>Rolü kopyala</WR_CopyRoleTitle>
+  <WR_CopyRolesTip>Bu kolonicinin rollerini kopyala.</WR_CopyRolesTip>
+  <WR_CopySource>Kopyalanan: {0}</WR_CopySource>
+  <WR_CoveredByTypeTip>İş türü tarafından kapsanıyor. Bu işe kendi sıralanabilir girdisini vermek için tıklayın.</WR_CoveredByTypeTip>
+  <WR_CoveredJobCaption>Kapsanan iş</WR_CoveredJobCaption>
+  <WR_CustomSwatchEmpty>Boş yuva: özel renk seçmek için tıklayın. Özel renkler tüm roller arasında paylaşılır.</WR_CustomSwatchEmpty>
+  <WR_CustomSwatchTip>Bu rengi kullanmak için tıklayın. Yuvayı yeniden tanımlamak için sağ tıklayın.</WR_CustomSwatchTip>
+  <WR_DeadEntryTip>Etkisiz: Bu girdinin kapsadığı her şey üstündeki girdilerce zaten kapsanıyor. Öncelik vermek için yukarı taşıyın veya kaldırın.</WR_DeadEntryTip>
+  <WR_Delete>Sil</WR_Delete>
+  <WR_DeleteConfirm>'{0}' rolü silinsin mi? Tüm kolonicilerden kaldırılacak.</WR_DeleteConfirm>
+  <WR_DisplayButton>Görünüm</WR_DisplayButton>
+  <WR_DisplayModeLabel>Görünüm modu</WR_DisplayModeLabel>
+  <WR_DisplayOptions>Görünüm seçenekleri</WR_DisplayOptions>
+  <WR_DisplaySection>Görünüm ayarları</WR_DisplaySection>
+  <WR_EffectQuality>Kaliteyi artırır</WR_EffectQuality>
+  <WR_EffectSpeed>İşi hızlandırır</WR_EffectSpeed>
+  <WR_EffectSuccess>Başarı olasılığını artırır</WR_EffectSuccess>
+  <WR_EffectYield>Verimi artırır</WR_EffectYield>
+  <WR_EmergencySuffix> (acil)</WR_EmergencySuffix>
+  <WR_EnterPath>Yol gir</WR_EnterPath>
+  <WR_Export>Dışa aktar</WR_Export>
+  <WR_ExportFailed>Kaydedilemedi: {0}</WR_ExportFailed>
+  <WR_ExportLocationLabel>Dışa aktarım konumu</WR_ExportLocationLabel>
+  <WR_ExportOverwriteConfirm>{0} zaten var. Üzerine yazılsın mı?</WR_ExportOverwriteConfirm>
+  <WR_ExportSaved>{0} konumuna kaydedildi</WR_ExportSaved>
+  <WR_ExportTip>Tüm rol tanımlarını (atamaları değil) şuraya yaz:\n{0}</WR_ExportTip>
+  <WR_ExportTitle>Rolleri dışa aktar</WR_ExportTitle>
+  <WR_FilterAllRoles>Tüm roller</WR_FilterAllRoles>
+  <WR_FilterAnyJob>Herhangi bir iş</WR_FilterAnyJob>
+  <WR_FixMyColony>Kolonimi düzenle</WR_FixMyColony>
+  <WR_FixMyColonyTip>Her kolonicinin rollerini önerilen rollerle değiştir.</WR_FixMyColonyTip>
+  <WR_FixNeedsSingleLocation>Öneriler konum başına hesaplanır. Kolonimi düzenle için kapsam filtresini tek bir yerleşime veya gemiye daraltın.</WR_FixNeedsSingleLocation>
+  <WR_GatedSkillsLabel>Koşullu</WR_GatedSkillsLabel>
+  <WR_GatedSkillsTip>Bu roldeki belirli işleri yapmak için gereken becerileri gösterir. Asgari beceri düzeyi tarife, bitkiye veya binaya bağlıdır. Ayrıntılar için becerilerin üzerine gelin.\n\nSeçili işlerden türetilir ve bilgi amaçlı gösterilir.</WR_GatedSkillsTip>
+  <WR_GiverBypassBody>{0}, "{1}" işine başladı ancak atanmış rollerinin hiçbiri bu işi içermiyor.
+
+WorkRoles, yönetilen her koloniciye standart oyun yöntemleriyle iş listesi verir. Başka bir mod kendi listesinden iş seçerek rol kısıtlamalarını atlıyor gibi görünüyor. O mod etkinken koloniciler zaman zaman rollerinin dışındaki işleri yapabilir.
+
+İş kesilmedi. Bu bildirim kayıt başına bir kez gösterilir.</WR_GiverBypassBody>
+  <WR_GiverBypassTitle>Bir iş rol listelerini atladı</WR_GiverBypassTitle>
+  <WR_GridModeRaw>WorkRoles öncelikleri</WR_GridModeRaw>
+  <WR_GridModeVanilla>Temel oyun öncelikleri</WR_GridModeVanilla>
+  <WR_GridNamesAutomatic>Otomatik</WR_GridNamesAutomatic>
+  <WR_GridNamesFull>Tam</WR_GridNamesFull>
+  <WR_GridNamesLong>Uzun</WR_GridNamesLong>
+  <WR_GridNamesMedium>Orta</WR_GridNamesMedium>
+  <WR_GridNamesShort>Kısa</WR_GridNamesShort>
+  <WR_GroupAge>Yaş</WR_GroupAge>
+  <WR_GroupButton>Grup: {0}</WR_GroupButton>
+  <WR_GroupByCaption>Gruplama ölçütü</WR_GroupByCaption>
+  <WR_GroupColonyGroups>Colony Groups</WR_GroupColonyGroups>
+  <WR_GroupCompositeTip>Bileşik roller, Bileşik roller altında gösterilir.</WR_GroupCompositeTip>
+  <WR_GroupComposites>Bileşik roller</WR_GroupComposites>
+  <WR_GroupConditionalRoles>Koşullu roller</WR_GroupConditionalRoles>
+  <WR_GroupDefault>Varsayılan</WR_GroupDefault>
+  <WR_GroupFaction>Fraksiyon</WR_GroupFaction>
+  <WR_GroupGender>Cinsiyet</WR_GroupGender>
+  <WR_GroupIdeo>İdeodin</WR_GroupIdeo>
+  <WR_GroupLabel>Grup</WR_GroupLabel>
+  <WR_GroupNewOption>Yeni...</WR_GroupNewOption>
+  <WR_GroupNone>Gruplama yok</WR_GroupNone>
+  <WR_GroupOverlayTip>Kurallı roller Koşullu roller altında görünür. Kurallar temizlenince kayıtlı gruplarına dönerler.</WR_GroupOverlayTip>
+  <WR_GroupRace>Irk</WR_GroupRace>
+  <WR_GroupSlaves>Kölelik</WR_GroupSlaves>
+  <WR_GroupTitleColonists>Koloniciler</WR_GroupTitleColonists>
+  <WR_GroupTitleSlaves>Köleler</WR_GroupTitleSlaves>
+  <WR_GroupTitleUngrouped>Gruplanmamış</WR_GroupTitleUngrouped>
+  <WR_GroupXenotype>Zenotip</WR_GroupXenotype>
+  <WR_HelpChapterAdvanced>İleri düzey</WR_HelpChapterAdvanced>
+  <WR_HelpChapterBasics>Temel bilgiler</WR_HelpChapterBasics>
+  <WR_HelpChapterEditing>Rol düzenleme</WR_HelpChapterEditing>
+  <WR_HelpChapterOrganizing>Düzenleme</WR_HelpChapterOrganizing>
+  <WR_HelpChapterRecommendations>Öneriler</WR_HelpChapterRecommendations>
+  <WR_HelpChapterStart>Başlangıç</WR_HelpChapterStart>
+  <WR_HelpDemoChipA>Doktor</WR_HelpDemoChipA>
+  <WR_HelpDemoChipB>Çiftçi</WR_HelpDemoChipB>
+  <WR_HelpDemoChipC>Taşıyıcı</WR_HelpDemoChipC>
+  <WR_HelpReload>Yeniden yükle</WR_HelpReload>
+  <WR_HelpTab>Yardım</WR_HelpTab>
+  <WR_HelpTourComplete>Hazırsınız!</WR_HelpTourComplete>
+  <WR_HelpTourCompleteHint>Temel bilgileri öğrendiniz. Yukarıdaki bölümler diğer konuları anlatır.</WR_HelpTourCompleteHint>
+  <WR_HelpTourHeader>Rehberli tur</WR_HelpTourHeader>
+  <WR_HelpTourProgress>{0} / {1} konu okundu</WR_HelpTourProgress>
+  <WR_HoursActive>Etkin</WR_HoursActive>
+  <WR_HoursInactive>Etkin değil</WR_HoursInactive>
+  <WR_Import>İçe aktar</WR_Import>
+  <WR_ImportClipboardInvalid>Pano bir WorkRoles dışa aktarımı içermiyor.</WR_ImportClipboardInvalid>
+  <WR_ImportFileMissing>{0} konumunda dosya bulunamadı</WR_ImportFileMissing>
+  <WR_ImportFromClipboard>Panodan</WR_ImportFromClipboard>
+  <WR_ImportLocationLabel>İçe aktarım konumu</WR_ImportLocationLabel>
+  <WR_ImportParseFailed>Roller okunamadı: {0}</WR_ImportParseFailed>
+  <WR_ImportSummary>İçe aktarım tamamlandı: {0} eklendi, {1} güncellendi, {2} silindi, {3} palet değişikliği, {4} eğitim yolu.</WR_ImportSummary>
+  <WR_ImportTip>Şuradaki rol tanımlarını ekle:\n{0}</WR_ImportTip>
+  <WR_ImportTitle>Rolleri içe aktar</WR_ImportTitle>
+  <WR_InvalidRoleTip>Bu rol hiçbir zaman uygulanamaz: işi yok veya belirttiği tüm konumlar artık yok.</WR_InvalidRoleTip>
+  <WR_JobColumn>İş</WR_JobColumn>
+  <WR_JobFilterLabel>İş filtresi</WR_JobFilterLabel>
+  <WR_LocCustom>Özel...</WR_LocCustom>
+  <WR_LocDesktop>Masaüstü</WR_LocDesktop>
+  <WR_LocGameData>Oyun verisi klasörü</WR_LocGameData>
+  <WR_LocUserHome>Kullanıcı klasörü</WR_LocUserHome>
+  <WR_LocationAny>Her yerde</WR_LocationAny>
+  <WR_LocationCaption>Konum</WR_LocationCaption>
+  <WR_LocationCaravans>Kervanlar</WR_LocationCaravans>
+  <WR_LocationCount>{0} konum</WR_LocationCount>
+  <WR_LocationGone>(artık yok)</WR_LocationGone>
+  <WR_LocationNowhere>Hiçbir yerde</WR_LocationNowhere>
+  <WR_LocationNowhereTip>Bu rol artık var olmayan konumlarla sınırlandırılmıştı. Başka konum seçene kadar devre dışı kalır.</WR_LocationNowhereTip>
+  <WR_LocationSettlementItem>Yerleşim: {0}</WR_LocationSettlementItem>
+  <WR_LocationSettlements>Yerleşimler</WR_LocationSettlements>
+  <WR_LocationShipItem>Gemi: {0}</WR_LocationShipItem>
+  <WR_MakeItSo>Uygula gitsin</WR_MakeItSo>
+  <WR_MemberLockTip>Kilitli: Bu rol bir bileşik rolün üyesi. Bu ayarı değiştirmek için tüm bileşik rollerden çıkarın.</WR_MemberLockTip>
+  <WR_MemberRoles>Üye roller (sıralı)</WR_MemberRoles>
+  <WR_MissingDef>{0} mevcut mod listesinde yok (modu geri gelene kadar etkin değil).</WR_MissingDef>
+  <WR_ModeMerge>Birleştir</WR_ModeMerge>
+  <WR_ModeOverwrite>Üzerine yaz</WR_ModeOverwrite>
+  <WR_MoveSelectedDownTip>Seçili satırları bir adım aşağı taşı.</WR_MoveSelectedDownTip>
+  <WR_MoveSelectedUpTip>Seçili satırları bir adım yukarı taşı. Satır seçmek için tıklayın, aralık seçmek için Shift+tık, tek satır eklemek veya çıkarmak için Ctrl+tık kullanın.</WR_MoveSelectedUpTip>
+  <WR_MtcHatedWorkSignalDescription>More Than Capable bu işe izin verir, ancak iş ağır ve giderek artan cezalara neden olur.</WR_MtcHatedWorkSignalDescription>
+  <WR_MtcHatedWorkSignalLabel>Nefret edilen: {0}</WR_MtcHatedWorkSignalLabel>
+  <WR_NameTaken>Bu adda bir rol zaten var.</WR_NameTaken>
+  <WR_New>Yeni</WR_New>
+  <WR_NewGroupTitle>Yeni grup</WR_NewGroupTitle>
+  <WR_NewRoleTitle>Yeni rol</WR_NewRoleTitle>
+  <WR_NewWorkDetected>Yeni iş türleri saptandı. Oluşturulan veya genişletilen roller: {0}</WR_NewWorkDetected>
+  <WR_NoCandidatesHint>Eklenebilecek rol yok. Üyeler saat veya konum kuralı olmayan normal roller olmalı; bir bileşik rol başka bir bileşik rol içeremez.</WR_NoCandidatesHint>
+  <WR_NoContributionRoleTip>Bu rolün gerektirdiği becerilerden hiçbirini geliştirmez, bu yüzden yol onu eğitim adımı olarak kullanamaz. Modlar deneyim veren işleri değiştirebilir; yine de ekleyebilirsiniz.</WR_NoContributionRoleTip>
+  <WR_NoFilterMatches>Filtreye uyan kolonici yok.</WR_NoFilterMatches>
+  <WR_NoMembersHint>Soldaki listeden roller ekleyin. Bu rolü taşıyanlar, üye rollerin işlerini burada gösterilen sırada yapar.</WR_NoMembersHint>
+  <WR_Nobody>Hiç kimse</WR_Nobody>
+  <WR_NothingToMerge>Her şey eşleşiyor: birleştirilecek bir şey yok.</WR_NothingToMerge>
+  <WR_NothingToRestore>Geri yüklenecek bir şey yok: tüm hazır roller ve eğitim yolları varsayılan grup, renk ve rol sahibi ayarlarıyla mevcut; taşınmış iş yok.</WR_NothingToRestore>
+  <WR_NowBusy>Meşgul</WR_NowBusy>
+  <WR_NowDrafted>Askere alındı</WR_NowDrafted>
+  <WR_NowForced>Oyuncu emri</WR_NowForced>
+  <WR_NowIdle>Boşta</WR_NowIdle>
+  <WR_NowMental>Zihinsel kriz</WR_NowMental>
+  <WR_NowNeeds>Kişisel ihtiyaçlar</WR_NowNeeds>
+  <WR_NowRecreation>Eğlence</WR_NowRecreation>
+  <WR_NowSleeping>Uyuyor</WR_NowSleeping>
+  <WR_NowTip>{0}: {1}</WR_NowTip>
+  <WR_OddJobsRole>Ufak işler</WR_OddJobsRole>
+  <WR_OptAutoOptimize>Kolonileri her oyun saatinde otomatik iyileştir</WR_OptAutoOptimize>
+  <WR_OptAutoOptimizeTipOff>Rol atamaları yalnızca siz düzenlediğinizde değişir</WR_OptAutoOptimizeTipOff>
+  <WR_OptAutoOptimizeTipOn>Önerilen atamalar her oyun saatinin başında uygulanır</WR_OptAutoOptimizeTipOn>
+  <WR_OptAutoOptimizeTipWhat>Her koloni için Kolonimi düzenle işlemini otomatik çalıştırıp değişiklikleri uygular; ayar kayda özeldir.</WR_OptAutoOptimizeTipWhat>
+  <WR_OptAutoOptimizeTipWhy>Hariç tutulan roller dâhil sabitlenmiş atamalar korunur. Bir kolonici öneriyle zaten eşleşiyorsa hiçbir değişiklik yapılmaz.</WR_OptAutoOptimizeTipWhy>
+  <WR_OptEmergencyRule>Acil durumlarda yalnızca ilk 5 rol işi bölsün</WR_OptEmergencyRule>
+  <WR_OptEmergencyRuleTipOff>Etkin bir roldeki her acil iş, kolonicinin mevcut işini böler</WR_OptEmergencyRuleTipOff>
+  <WR_OptEmergencyRuleTipOn>Yalnızca kolonicinin ilk 5 etkin rolündeki acil işler mevcut işi böler; sonraki roller bunları normal sıralarında yapar</WR_OptEmergencyRuleTipOn>
+  <WR_OptEmergencyRuleTipWhat>Hangi acil işlerin (yangın söndürme, acil tedavi ve acil tedavi için yatağa gitme) uykuyu, yemekleri ve diğer işleri bölebileceğini belirler; ayar kayda özeldir.</WR_OptEmergencyRuleTipWhat>
+  <WR_OptEmergencyRuleTipWhy>Varsayılan olarak açıktır; satır sonundaki yedek rollerin sıralarını beklemesini sağlar. Altıncı rolü Doktor olan kolonici yemek yapmayı sürdürürken asıl doktor acil hastayı tedavi eder. Her kolonicinin yapabildiği her acil işe koşmasını istiyorsanız kapatın.</WR_OptEmergencyRuleTipWhy>
+  <WR_OptNumeric>Izgaralarda sayısal öncelikleri göster</WR_OptNumeric>
+  <WR_OptNumericTipOff>Öncelik ızgaraları (Numbers gibi modlar dâhil) onay işaretleri çizer</WR_OptNumericTipOff>
+  <WR_OptNumericTipOn>Öncelik ızgaraları sayılar çizer</WR_OptNumericTipOn>
+  <WR_OptNumericTipWhat>Temel oyunun "manuel öncelikler" anahtarı; kayda özeldir.</WR_OptNumericTipWhat>
+  <WR_OptNumericTipWhy>WorkRoles, bu anahtarın bulunduğu temel İş sekmesinin yerini aldığı için buradadır.</WR_OptNumericTipWhy>
+  <WR_OptPaletteGrouping>Rol paleti gruplaması</WR_OptPaletteGrouping>
+  <WR_OptSkillCaptions>Kolonici adlarının altında en iyi becerileri göster</WR_OptSkillCaptions>
+  <WR_OptSkillCaptionsTip>Tabloda her kolonici adının altında en iyi iş becerilerini düzeyleriyle gösteren, uygunluğa göre renkli küçük bir açıklama bulunur. Adı tek başına göstermek için kapatın.</WR_OptSkillCaptionsTip>
+  <WR_OptVanillaRange>Diğer modlara temel oyunun 0-4 önceliklerini bildir</WR_OptVanillaRange>
+  <WR_OptVanillaRangeTipOff>Diğer modlar bu öncelikleri olduğu gibi görür</WR_OptVanillaRangeTipOff>
+  <WR_OptVanillaRangeTipOn>Öncelikler temel oyunun 0-4 aralığına eşlenir</WR_OptVanillaRangeTipOn>
+  <WR_OptVanillaRangeTipWhat>WorkRoles işleri benzersiz önceliklerle sıralar (1'den başlayan ardışık sayılar).</WR_OptVanillaRangeTipWhat>
+  <WR_OptVerdictsColonists>Kolonici rol etiketlerinde değerlendirmeleri göster</WR_OptVerdictsColonists>
+  <WR_OptVerdictsColonistsTip>Kolonici tablosundaki her rol etiketi, öneri motorunun değerlendirmesine uyan bir çift uygunluk yıldızı gösterir: olumlu sonuçlar beyazdır (bir: güçlü, iki: çok uygun, altın: olağanüstü), olumsuzlar kırmızıdır (bir: zayıf, iki: çok uygunsuz), nötr gridir.</WR_OptVerdictsColonistsTip>
+  <WR_OptVerdictsPalette>Rol paletinde seçili kolonici için değerlendirmeleri göster</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>Palet etiketleri, her rolün seçili koloniciye ne kadar uygun olduğunu gösterir.</WR_OptVerdictsPaletteTip>
+  <WR_OptVerdictsRecommendations>Önerilen rol etiketlerinde değerlendirmeleri göster</WR_OptVerdictsRecommendations>
+  <WR_OptVerdictsRecommendationsTip>Önerilen rol etiketleri (istatistik paneli ve değişiklik önizlemeleri), önerildikleri kolonici için uygunluk değerlendirmesini gösterir.</WR_OptVerdictsRecommendationsTip>
+  <WR_OptionsTab>Seçenekler</WR_OptionsTab>
+  <WR_OrderSuffixAZ>(A-Z)</WR_OrderSuffixAZ>
+  <WR_OrderSuffixBar>(Kolonici çubuğu)</WR_OrderSuffixBar>
+  <WR_OverwriteDeletes>Silinenler (dosyada yok): {0} (koloniciler bu atamaları kaybeder).</WR_OverwriteDeletes>
+  <WR_OverwriteReplaces>Dosyadaki {0} rolün tümünü uygular. Eşleşen roller (aynı hazır rol, yoksa aynı ad) kolonici atamalarını korur.</WR_OverwriteReplaces>
+  <WR_PaletteByGroups>Gruplar</WR_PaletteByGroups>
+  <WR_PaletteBySkills>Beceriler</WR_PaletteBySkills>
+  <WR_PaletteModeTip>Rol paletini ilgili beceriye veya rol gruplarınıza göre düzenleyin.</WR_PaletteModeTip>
+  <WR_PaletteOverwriteInfo>Tüm özel renkleri dosyanın {0} palet girdisiyle değiştirir.</WR_PaletteOverwriteInfo>
+  <WR_PartialCapability>Kısmi yeterliliğe izin ver</WR_PartialCapability>
+  <WR_PartialCapabilityLockedTip>Bu rol zaten işlerinin bir kısmını yapabilen kolonicilere önerilir. Beceri gerektiren işi olmayan roller ve avcılık rolleri buna her zaman izin verir.</WR_PartialCapabilityLockedTip>
+  <WR_PartialCapabilityTip>Açıkken bu rol, işlerinin hepsini olmasa da bir kısmını yapabilen kolonicilere önerilir. Hiçbir işini yapamayanlara asla önerilmez. Boş zamanda yapılacak ortak işler gibi herkesin taşıması gereken geniş roller için yararlıdır.</WR_PartialCapabilityTip>
+  <WR_PasteRolesTip>Kopyalanan rolleri bu koloniciye yapıştır.</WR_PasteRolesTip>
+  <WR_PathAddRoleTip>Bu yola rol ekler.</WR_PathAddRoleTip>
+  <WR_PathsOverwriteInfo>Mevcut tüm eğitim yollarını dosyanın {0} yoluyla değiştirir.</WR_PathsOverwriteInfo>
+  <WR_PinAssignment>Sabitle</WR_PinAssignment>
+  <WR_PinnedTip>Sabitlenmiş: Uygula gitsin, Kolonimi düzenle ve Otomatik iyileştir, rol veya bileşik üyesi önerilerden hariç tutulsa bile bu atamayı korur.</WR_PinnedTip>
+  <WR_PlusOthers>+{0} kişi daha</WR_PlusOthers>
+  <WR_PreviewNoChanges>Değişiklik yok.</WR_PreviewNoChanges>
+  <WR_PreviewStale>Önizleme açıkken koloni değişti; hiçbir şey uygulanmadı.</WR_PreviewStale>
+  <WR_PriorityGridTitle>Öncelik ızgarası</WR_PriorityGridTitle>
+  <WR_ReasonCoverage>Koloni kapsamı: bu iş için mevcut en iyi aday.</WR_ReasonCoverage>
+  <WR_ReasonEveryone>Herkese otomatik atanır.</WR_ReasonEveryone>
+  <WR_ReasonFireFear>Genetik olarak ateşten dehşete kapılıyor: yangın söndürmeyi engeller.</WR_ReasonFireFear>
+  <WR_ReasonHunter>Menzilli silah taşıyor; avcılık Nişancılığı da geliştirir.</WR_ReasonHunter>
+  <WR_ReasonRemoved>Öneri listesinde yok. Tutmak istediğiniz rolleri uygulamadan önce sabitleyin.</WR_ReasonRemoved>
+  <WR_ReasonSignal>Öneri işaretleri {0} lehine.</WR_ReasonSignal>
+  <WR_RecClassificationSection>Sınıflandırma</WR_RecClassificationSection>
+  <WR_RecDecisionAptitudeSurplus>Birleşik beceri yatkınlığı bu rolün gerektirdiği düzeyde veya üstünde olduğu için ek aday seçildi.</WR_RecDecisionAptitudeSurplus>
+  <WR_RecDecisionAuto>İşi yapabilen herkese otomatik atanır.</WR_RecDecisionAuto>
+  <WR_RecDecisionAwful>Çok uygunsuz işareti nedeniyle elendi.</WR_RecDecisionAwful>
+  <WR_RecDecisionControlledByTraining>{0} tarafından yönetiliyor: bağımsız değil, onun eğitim yolu üzerinden atanır.</WR_RecDecisionControlledByTraining>
+  <WR_RecDecisionCoverageDraft>Gerekli kapsamı karşılamak için kalan en iyi aday seçildi.</WR_RecDecisionCoverageDraft>
+  <WR_RecDecisionCoverageFilled>Gerekli kapsam daha üst sıradaki adaylarla dolduruldu.</WR_RecDecisionCoverageFilled>
+  <WR_RecDecisionCoverageRepairSlot>{2} için kalan zorunlu {0}/{1} kontenjanını doldurmak üzere doğrudan seçildi.</WR_RecDecisionCoverageRepairSlot>
+  <WR_RecDecisionCovered>Önerilen şu rol tarafından kapsanıyor: {0}.</WR_RecDecisionCovered>
+  <WR_RecDecisionCoveredUnknown>Başka bir önerilen rol tarafından kapsanıyor.</WR_RecDecisionCoveredUnknown>
+  <WR_RecDecisionDirectFallbackSlot>Bu kontenjana uygun eğitim ikamesi olmadığı için {2} rolünün {0}/{1} kontenjanına doğrudan seçildi.</WR_RecDecisionDirectFallbackSlot>
+  <WR_RecDecisionDirectSlot>{2} rolünün {0}/{1} kontenjanına doğrudan seçildi.</WR_RecDecisionDirectSlot>
+  <WR_RecDecisionDisabled>Bu rol devre dışı.</WR_RecDecisionDisabled>
+  <WR_RecDecisionExcluded>Bu rol kurallarla yönetilir ve olağan önerilere katılmaz.</WR_RecDecisionExcluded>
+  <WR_RecDecisionFire>Ateş korkusu, yangın söndürme engelleyicisini gerektirir.</WR_RecDecisionFire>
+  <WR_RecDecisionHunter>Menzilli silah taşıyor ve avlanabiliyor.</WR_RecDecisionHunter>
+  <WR_RecDecisionHunterRequirements>Menzilli silah kuşanmamış.</WR_RecDecisionHunterRequirements>
+  <WR_RecDecisionIncapable>Bu rolün işlerini yapamıyor.</WR_RecDecisionIncapable>
+  <WR_RecDecisionIncapacitated>Bu kolonici yere düşmüş. Hariç tutulmayan rolleri ve sabitlenmiş atamaları korunur; iyileşene kadar koloni ihtiyaçlarına sayılmaz.</WR_RecDecisionIncapacitated>
+  <WR_RecDecisionNever>Bu rol hiç önerilmeyecek şekilde ayarlanmış.</WR_RecDecisionNever>
+  <WR_RecDecisionNotMechanitor>Bu kolonicinin mekabağı yok; mekanitör işi yapamaz.</WR_RecDecisionNotMechanitor>
+  <WR_RecDecisionNotSelected>Hiçbir öneri kuralı tarafından seçilmedi.</WR_RecDecisionNotSelected>
+  <WR_RecDecisionOutOfBand>Beceri düzeyi eğitim yolunun başka bir aralığında.</WR_RecDecisionOutOfBand>
+  <WR_RecDecisionOutqualified>Mevcut kontenjanlara daha nitelikli başka adaylar seçildi.</WR_RecDecisionOutqualified>
+  <WR_RecDecisionProtected>Mevcut korunan atama tutuldu.</WR_RecDecisionProtected>
+  <WR_RecDecisionRecommended>Öneri motoru tarafından seçildi.</WR_RecDecisionRecommended>
+  <WR_RecDecisionRetained>Mevcut beceri gerektirmeyen rol tutuldu.</WR_RecDecisionRetained>
+  <WR_RecDecisionSignalSurplus>İşaret değerlendirmesine göre ek aday seçildi.</WR_RecDecisionSignalSurplus>
+  <WR_RecDecisionSignals>Ayarlanan işaret eşiğini karşılıyor.</WR_RecDecisionSignals>
+  <WR_RecDecisionTraining>{0} rolünün eğitim yolu üzerinden atandı.</WR_RecDecisionTraining>
+  <WR_RecDecisionTrainingSlot>{2} rolünün {0}/{1} kontenjanına seçildi. Eğitim muafiyeti, {2} yerine {3} atadı ({4}; {2} için {5} gerekiyor).</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>{2} rolünün {0}/{1} kontenjanına seçildi. Eğitim muafiyeti, {2} yerine {3} atadı.</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>Eğitim muafiyetiyle {0}/{1} kontenjanına seçilerek {2} atandı.</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecDecisionTrainingUnknown>Bir eğitim yolu üzerinden atandı.</WR_RecDecisionTrainingUnknown>
+  <WR_RecDecisionUnavailable>Araştırması tamamlanana kadar bu rolün işleri kullanılamaz.</WR_RecDecisionUnavailable>
+  <WR_RecDecisionWeakSignal>İşaret değerlendirmesi ayarlanan eşiğin altında; zorunlu kapsam da bu çalışanı seçmedi.</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionWorkAversion>İşten kaçınma, puanı isteğe bağlı iş eşiğinin altına indiriyor.</WR_RecDecisionWorkAversion>
+  <WR_RecExcludedAddTip>Öneri motorunun hiç önermemesi gereken rolü seçin. Eğitim, otomatik, koşullu, engelleyici ve bileşik roller dâhil her rol hariç tutulabilir.</WR_RecExcludedAddTip>
+  <WR_RecExcludedChipTip>Bu rol hiç önerilmez. Yeniden önerilmesine izin vermek ve Rol seçenekleri girdisini geri getirmek için kaldırma simgesine tıklayın. Kayıtlı seçenekleri korunur.</WR_RecExcludedChipTip>
+  <WR_RecExcludedHeader>Hariç tutulan roller</WR_RecExcludedHeader>
+  <WR_RecExcludedHelp>Bu listedeki roller eğitim yolları veya otomatik roller üzerinden bile önerilmez. Mevcut sabitlenmiş atamalar korunur. Hariç tutmak için Rol ekle kullanın; yeniden önerilmesine izin vermek için etiketini kaldırın.</WR_RecExcludedHelp>
+  <WR_RecExcludedReason>Bu rol önerilerden hariç tutulmuş. Yeniden izin vermek için Öneriler sekmesindeki Hariç tutulan roller listesinden çıkarın.</WR_RecExcludedReason>
+  <WR_RecExcludedTip>Hariç tutma, Kolonimi düzenle ve Otomatik iyileştir dâhil bu kayıttaki tüm kolonicilerin önerilerine uygulanır. Bu rolleri yine manuel atayabilirsiniz. Listeyi düzenlemek mevcut atamaları değiştirmez. Önerileri uygulamak sabitlenmemiş hariç rolleri kaldırır ve sabitlenmiş atamaları korur.</WR_RecExcludedTip>
+  <WR_RecGlobalPanel>Genel seçenekler</WR_RecGlobalPanel>
+  <WR_RecGlobalPanelHelp>Bu seçenekler öneri motorunun adayları nasıl puanlayıp sıraladığını ve işlerin son öneri listesinde nereye yerleştiğini değiştirir. Değişiklikleri geri almak isterseniz varsayılanlar için Sıfırla düğmelerini kullanın.</WR_RecGlobalPanelHelp>
+  <WR_RecMoreContentGates>{0} tane daha</WR_RecMoreContentGates>
+  <WR_RecRolePanel>Rol seçenekleri</WR_RecRolePanel>
+  <WR_RecRolePanelHelp>Hariç tutulan roller dışındaki tüm roller burada listelenir. Öneri seçeneklerini ayarlamak için rolü genişletin. Roller her kolonici için otomatik sıralanır; Avcı nişancılık becerisine göre konumunu korur.</WR_RecRolePanelHelp>
+  <WR_RecScalingSection>Atama ölçeklendirmesi</WR_RecScalingSection>
+  <WR_RecSkillsSection>Beceriler</WR_RecSkillsSection>
+  <WR_RecTipAssignmentsMany>{0} atama istendi</WR_RecTipAssignmentsMany>
+  <WR_RecTipAssignmentsOne>1 atama istendi</WR_RecTipAssignmentsOne>
+  <WR_RecTipColonyNeed>Koloni ihtiyaçları</WR_RecTipColonyNeed>
+  <WR_RecTipEveryoneCapable>Yapabilen herkese atanır</WR_RecTipEveryoneCapable>
+  <WR_RecTipSelection>Seçim</WR_RecTipSelection>
+  <WR_RecTipSignalVerdict>İşaret değerlendirmesi</WR_RecTipSignalVerdict>
+  <WR_RecTipSkills>Hesaba katılan beceriler</WR_RecTipSkills>
+  <WR_RecTipWithWaiverOne>{0} (1 eğitim muafiyeti)</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0} ({1} eğitim muafiyeti)</WR_RecTipWithWaiversMany>
+  <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
+  <WR_RecTuneCandidateMinimumSignal>Aday için asgari işaret</WR_RecTuneCandidateMinimumSignal>
+  <WR_RecTuneCandidateMinimumSignalDesc>Olağan rol seçimine kabul edilen en düşük işaret. Artırmak, lider ve asgari rol sahibi seçiminden önce zayıf adayları eler.</WR_RecTuneCandidateMinimumSignalDesc>
+  <WR_RecTuneCategoryPointsRow>Kategori puanları</WR_RecTuneCategoryPointsRow>
+  <WR_RecTuneCategoryPointsRowDesc>Koloni öneminin eklediği sıralama puanları: Önemli, görev rollerini aynı işaretli üretim işlerinin üstüne çıkarır; İsteğe bağlı, rolleri listenin sonuna iter.</WR_RecTuneCategoryPointsRowDesc>
+  <WR_RecTuneCellHint>Değeri artırmak için tıklayın, azaltmak için sağ tıklayın.</WR_RecTuneCellHint>
+  <WR_RecTuneChampionMultiSkillMinimumCount>Birleşik beceri eşiği</WR_RecTuneChampionMultiSkillMinimumCount>
+  <WR_RecTuneChampionMultiSkillMinimumCountDesc>Lider puanlarını toplamak için gereken asgari uygun hedef beceri sayısı. Bunun altında yalnızca rolün en iyi becerisi puanlanır.</WR_RecTuneChampionMultiSkillMinimumCountDesc>
+  <WR_RecTuneChampionMultiplierRow>İşaret çarpanı</WR_RecTuneChampionMultiplierRow>
+  <WR_RecTuneChampionMultiplierRowDesc>Lider seçiminde her işaret gücünün yuvarlanmış beceri katkısını çarpar.</WR_RecTuneChampionMultiplierRowDesc>
+  <WR_RecTuneChampionSection>Lider seçimi seçenekleri</WR_RecTuneChampionSection>
+  <WR_RecTuneChampionSectionIntro>Her role önce bir lider seçilir: rolü üstlenmeye en uygun kolonici. Bu seçenekler kimlerin uygun olduğunu ve beceriyle işaret gücünün nasıl tartılacağını belirler.</WR_RecTuneChampionSectionIntro>
+  <WR_RecTuneChampionSkillDivisor>Lider beceri böleni</WR_RecTuneChampionSkillDivisor>
+  <WR_RecTuneChampionSkillDivisorDesc>Lider beceri katkısı, beceri düzeyi ÷ bu değer sonucunun yukarı yuvarlanmasıdır. Artırmak ham becerinin etkisini azaltır.</WR_RecTuneChampionSkillDivisorDesc>
+  <WR_RecTuneChampionTieBreakRow>Eşitlik bozma puanları</WR_RecTuneChampionTieBreakRow>
+  <WR_RecTuneChampionTieBreakRowDesc>Lider puanları eşitse karşılaştırılan işaret puanları. Çok becerili rollerde uygun işaretlerin puanları toplanır.</WR_RecTuneChampionTieBreakRowDesc>
+  <WR_RecTuneHunterSection>Avcı yerleşimi seçenekleri</WR_RecTuneHunterSection>
+  <WR_RecTuneHunterSectionIntro>Sabitlenmemiş Avcı rolü nişancılığa göre dinamik yerleşir: iyi nişancılar, zamanları başka işlerde daha değerli olduğundan öncelik sırasının daha ilerisinde avlanır.</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneHunterTiersRow>Kademenin azami nişancılık düzeyi</WR_RecTuneHunterTiersRow>
+  <WR_RecTuneHunterTiersRowDesc>Dinamik Avcı konumu için nişancılık eşikleri. Kademe 1, Avcıyı temel işlerin hemen arkasına; 2 ve 3, orta ve son iş rollerinin arkasına koyar. Kademe 4'ün üzerindeki düzeyler Avcıyı en sona koyar.</WR_RecTuneHunterTiersRowDesc>
+  <WR_RecTuneLeadMinimumConnectedTargets>Dağıtım için bağlantılı hedef sayısı</WR_RecTuneLeadMinimumConnectedTargets>
+  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Planlayıcının lider rollerini farklı çalışanlara dağıtmaya başlaması için gereken asgari bağlantılı eğitim hedefi sayısı.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
+  <WR_RecTuneLeadMinimumSignal>Öncü için asgari işaret</WR_RecTuneLeadMinimumSignal>
+  <WR_RecTuneLeadMinimumSignalDesc>Eğitim yolu öncülüğü farklı çalışanlara dağıtılırken seçilen çalışanın rolünde bulunabilecek en düşük işaret.</WR_RecTuneLeadMinimumSignalDesc>
+  <WR_RecTuneLeadSection>Öncüleri dağıtma seçenekleri</WR_RecTuneLeadSection>
+  <WR_RecTuneLeadSectionIntro>Birkaç eğitim yolu bir hedefi paylaşıyorsa bu seçenekler öncü rollerini tek kişide toplamak yerine farklı kolonicilere dağıtır.</WR_RecTuneLeadSectionIntro>
+  <WR_RecTuneMinimumPickRow>Asgari seçim bonusu</WR_RecTuneMinimumPickRow>
+  <WR_RecTuneMinimumPickRowDesc>Rolün asgari sahip sayısını karşılamak için seçilen birinci, ikinci, üçüncü ve sonraki her çalışana verilen sıralama puanları.</WR_RecTuneMinimumPickRowDesc>
+  <WR_RecTuneMultiplierAwfulTip>Çok uygunsuz. Bu sütun yalnızca asgari aday işareti Çok uygunsuz adaylara izin veriyorsa etkilidir.</WR_RecTuneMultiplierAwfulTip>
+  <WR_RecTuneOptionalSection>Eğitim yolu ve isteğe bağlı hedef seçenekleri</WR_RecTuneOptionalSection>
+  <WR_RecTuneOptionalSectionIntro>Bu seçenekler, bir kolonici için eğitim yolunun ne zaman etkinleşeceğini ve çok becerili isteğe bağlı rolün ne zaman önerilmeye değer olduğunu belirler.</WR_RecTuneOptionalSectionIntro>
+  <WR_RecTuneOptionalTargetGreatLevel>Yüksek beceri yükseltme düzeyi</WR_RecTuneOptionalTargetGreatLevel>
+  <WR_RecTuneOptionalTargetGreatLevelDesc>Bu beceri düzeyinde daha zayıf uygun işaret, tek becerili ek aday uygunluğu ve isteğe bağlı hedef puanlaması için ayarlanan yüksek işarete yükseltilir.</WR_RecTuneOptionalTargetGreatLevelDesc>
+  <WR_RecTuneOptionalTargetGreatPromotedSignal>Yükseltilmiş yüksek işaret</WR_RecTuneOptionalTargetGreatPromotedSignal>
+  <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>Yüksek beceri yükseltme düzeyinde veya üstünde, tek becerili ek aday uygunluğu ve isteğe bağlı hedef yatkınlık puanı için kullanılan işaret.</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumPoints>İsteğe bağlı hedef asgari puanı</WR_RecTuneOptionalTargetMinimumPoints>
+  <WR_RecTuneOptionalTargetMinimumPointsDesc>Çok becerili isteğe bağlı hedefi önermek için gereken, ayarlanan işaret tabanının üzerindeki toplam işaret adımı sayısı.</WR_RecTuneOptionalTargetMinimumPointsDesc>
+  <WR_RecTuneOptionalTargetMinimumSignal>İsteğe bağlı hedef asgari işareti</WR_RecTuneOptionalTargetMinimumSignal>
+  <WR_RecTuneOptionalTargetMinimumSignalDesc>Düzey yükseltmesinin tek becerili ek aday uygunluğunu etkilemesi veya isteğe bağlı hedefe yatkınlık puanı katması için beceri bu işareti karşılamalıdır.</WR_RecTuneOptionalTargetMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumSkillCount>İsteğe bağlı hedef beceri eşiği</WR_RecTuneOptionalTargetMinimumSkillCount>
+  <WR_RecTuneOptionalTargetMinimumSkillCountDesc>İsteğe bağlı hedef yatkınlık sınamasının uygulanması için gereken uygun hedef beceri sayısı. Daha az uygun becerisi olan roller bu sınamayı atlar.</WR_RecTuneOptionalTargetMinimumSkillCountDesc>
+  <WR_RecTuneOptionalTargetStrongLevel>Orta beceri yükseltme düzeyi</WR_RecTuneOptionalTargetStrongLevel>
+  <WR_RecTuneOptionalTargetStrongLevelDesc>Bu beceri düzeyinde daha zayıf uygun işaret, tek becerili ek aday uygunluğu ve isteğe bağlı hedef puanlaması için ayarlanan orta işarete yükseltilir.</WR_RecTuneOptionalTargetStrongLevelDesc>
+  <WR_RecTuneOptionalTargetStrongPromotedSignal>Yükseltilmiş orta işaret</WR_RecTuneOptionalTargetStrongPromotedSignal>
+  <WR_RecTuneOptionalTargetStrongPromotedSignalDesc>Orta beceri yükseltme düzeyinde veya üstünde, tek becerili ek aday uygunluğu ve isteğe bağlı hedef yatkınlık puanı için kullanılan işaret.</WR_RecTuneOptionalTargetStrongPromotedSignalDesc>
+  <WR_RecTuneOrderingPointsRow>İşaret puanları</WR_RecTuneOrderingPointsRow>
+  <WR_RecTuneOrderingPointsRowDesc>Son önerilen roller sıralanırken her işaret gücünün katkısı.</WR_RecTuneOrderingPointsRowDesc>
+  <WR_RecTuneOrderingSection>Son rol sıralaması seçenekleri</WR_RecTuneOrderingSection>
+  <WR_RecTuneOrderingSectionIntro>Bir kolonicinin rolleri seçildikten sonra bu seçenekler onların listelenme sırasını, dolayısıyla iş önceliklerini belirler.</WR_RecTuneOrderingSectionIntro>
+  <WR_RecTuneOrderingSkillDivisor>Sıralama beceri böleni</WR_RecTuneOrderingSkillDivisor>
+  <WR_RecTuneOrderingSkillDivisorDesc>Son sıralama beceri puanı, beceri düzeyi ÷ bu değer sonucunun yukarı yuvarlanmasıdır. Artırmak becerinin rol sırasına etkisini azaltır.</WR_RecTuneOrderingSkillDivisorDesc>
+  <WR_RecTunePathMinimumSignal>Eğitim rolü asgari işareti</WR_RecTunePathMinimumSignal>
+  <WR_RecTunePathMinimumSignalDesc>Etkin bir eğitim yoluna katılan rolün sahip olabileceği en düşük işaret.</WR_RecTunePathMinimumSignalDesc>
+  <WR_RecTuneRankedCandidatePrioritySignal>Sıralı aday öncelik işareti</WR_RecTuneRankedCandidatePrioritySignal>
+  <WR_RecTuneRankedCandidatePrioritySignalDesc>Bu işarette veya üstünde olan, lider olmayan adaylar asgari kontenjanlar doldurulmadan önce zayıf adayların önüne sıralanır.</WR_RecTuneRankedCandidatePrioritySignalDesc>
+  <WR_RecTuneReset>Sıfırla</WR_RecTuneReset>
+  <WR_RecTuneResetTip>Bu bölümün seçeneklerini varsayılan değerlere döndürür.</WR_RecTuneResetTip>
+  <WR_RecTuneSurplusMinimumSignal>Ek aday asgari işareti</WR_RecTuneSurplusMinimumSignal>
+  <WR_RecTuneSurplusMinimumSignalDesc>Zorunlu kontenjanlar dolduktan sonra bu işarette veya üstünde olan standart adaylar da rolü alabilir. Düzeye dayalı yükseltme, ayarlanmış eğitim aralığındaki tek becerili rollere uygulanır; çok becerili hedefler isteğe bağlı hedef yatkınlık şartlarını kullanır.</WR_RecTuneSurplusMinimumSignalDesc>
+  <WR_RecTuneTimePointsRow>Zaman gereksinimi puanları</WR_RecTuneTimePointsRow>
+  <WR_RecTuneTimePointsRowDesc>Zaman gereksiniminin eklediği sıralama puanları: Yarı zamanlı, kısa görevleri aynı işaretli tam zamanlı işlerin üstüne çıkarır; Fırsat buldukça, dolgu işlerini sona iter.</WR_RecTuneTimePointsRowDesc>
+  <WR_RecWorkAversion>{0}, {1} işine karşı; öneri puanı düşürülür.</WR_RecWorkAversion>
+  <WR_RecommendationsTab>Öneriler</WR_RecommendationsTab>
+  <WR_RecommendedRoles>Önerilen roller</WR_RecommendedRoles>
+  <WR_RemoveSelectedTip>Seçili satırları kaldır.</WR_RemoveSelectedTip>
+  <WR_RemoveSkillTip>Bu kesin beceri koşulunu kaldır.</WR_RemoveSkillTip>
+  <WR_RenameGroup>Grubu yeniden adlandır</WR_RenameGroup>
+  <WR_RenameGroupTitle>Grubu yeniden adlandır</WR_RenameGroupTitle>
+  <WR_RenameRoleTitle>Rolü yeniden adlandır</WR_RenameRoleTitle>
+  <WR_RequiredSkillsLabel>Gerekli</WR_RequiredSkillsLabel>
+  <WR_RequiredSkillsTip>Bu rol için seçilen isteğe bağlı kesin koşullar. Gerekli becerilerinden biri devre dışı olan koloniciye rol önerilemez. Beceri düzeyi bu koşulu etkilemez; Koşullu altında gösterilen içerik alt sınırlarından ayrıdır.</WR_RequiredSkillsTip>
+  <WR_ResizeGripTip>Pencereyi yeniden boyutlandırmak için sürükleyin (yalnızca içeriğe sığan boyutundan büyüyebilir). Otomatik boyuta dönmek için çift tıklayın.</WR_ResizeGripTip>
+  <WR_RestoreColorItem>{0} (varsayılan rengi geri yükle)</WR_RestoreColorItem>
+  <WR_RestoreDefaultExclusions>Varsayılan hariç tutulan roller</WR_RestoreDefaultExclusions>
+  <WR_RestoreDefaults>Varsayılanları geri yükle</WR_RestoreDefaults>
+  <WR_RestoreDefaultsTip>Eksik hazır rolleri ve eğitim yollarını yeniden oluşturur, varsayılan hariç tutmaları geri getirir, hazır rollerin varsayılan grup, renk ve rol sahibi ayarlarını yükler. Önizlemede nelerin geri yükleneceğini seçebilirsiniz.</WR_RestoreDefaultsTip>
+  <WR_RestoreDefaultsTitle>Varsayılanları geri yükle</WR_RestoreDefaultsTitle>
+  <WR_RestoreDuplicateHint>(bu adda bir rol zaten var)</WR_RestoreDuplicateHint>
+  <WR_RestoreExplainBackfill>Modların taşıdığı {0} işi yeniden ekler.</WR_RestoreExplainBackfill>
+  <WR_RestoreExplainColor>Rengi şablon varsayılanına döndürür.</WR_RestoreExplainColor>
+  <WR_RestoreExplainCoverage>Bu iş türünü kapsayan rol oluşturur.</WR_RestoreExplainCoverage>
+  <WR_RestoreExplainDefaultExclusions>Eksik varsayılan hariç tutmaları Hariç tutulan roller paneline ekler. Hariç tuttuğunuz diğer roller korunur.</WR_RestoreExplainDefaultExclusions>
+  <WR_RestoreExplainGroup>Rolü tekrar '{0}' grubuna taşır.</WR_RestoreExplainGroup>
+  <WR_RestoreExplainHolders>Rol sahibi ölçeğini şablon varsayılanına döndürür.</WR_RestoreExplainHolders>
+  <WR_RestoreExplainJobs>Rolün iş listesini modun mevcut varsayılanına döndürür. Koloniciler toplam işlerini korur: çıkarılan işleri kapsayan roller onlara otomatik atanır.</WR_RestoreExplainJobs>
+  <WR_RestoreExplainPath>Eğitim yolunu oluşturur.</WR_RestoreExplainPath>
+  <WR_RestoreExplainRecOrder>Özel sıralamanızı temizler.</WR_RestoreExplainRecOrder>
+  <WR_RestoreExplainRole>Modun şablonundan rol oluşturur.</WR_RestoreExplainRole>
+  <WR_RestoreExplainSnapColor>Üretilen rengi en yakın palet rengiyle değiştirir; böylece renk seçici onu vurgular.</WR_RestoreExplainSnapColor>
+  <WR_RestoreGroupItem>{0} ('{1}' grubuna taşı)</WR_RestoreGroupItem>
+  <WR_RestoreHoldersItem>{0} (rol sahibi varsayılanlarını yükle)</WR_RestoreHoldersItem>
+  <WR_RestoreJobsItem>{0} (işleri varsayılana döndür)</WR_RestoreJobsItem>
+  <WR_RestoreMovedJobs>{0} (taşınmış {1} işi geri al)</WR_RestoreMovedJobs>
+  <WR_RestoreOverwriteWarning>⚠ Vurgulanan öğeler yaptığınız değişikliklerin üzerine yazacak.</WR_RestoreOverwriteWarning>
+  <WR_RestorePathItem>{0} (eğitim yolu)</WR_RestorePathItem>
+  <WR_RestoreRecOrder>Öneri sırası (varsayılana döndür)</WR_RestoreRecOrder>
+  <WR_RestoreSnapColorItem>{0} (rengi paletle eşleştir)</WR_RestoreSnapColorItem>
+  <WR_RoleAgeBandsLabel>Bu rolün atanabileceği yaş grupları:</WR_RoleAgeBandsLabel>
+  <WR_RoleAgeBandsTip>Seçili yaş aralıkları dışındaki kolonicilere bu rol asla atanmaz veya önerilmez. Seçim dışındaki bir aralığa tıklamak oraya kadar her şeyi ekler; ilk veya son seçili aralığa tıklamak onu çıkarır; ortadakine tıklamak yalnızca onu seçer. Sınırlar, oyunun işleri açtığı yaşları izler. Bu roldeki her iş {0} yaşından itibaren yapılabilir.</WR_RoleAgeBandsTip>
+  <WR_RoleAwfulSignal>{0} için bu rolde Çok uygunsuz işareti var: {1}.</WR_RoleAwfulSignal>
+  <WR_RoleCapAllJobs>bu roldeki işlerin hiçbirini</WR_RoleCapAllJobs>
+  <WR_RoleCapNeverDo>{0}, {1} asla yapmayacak.</WR_RoleCapNeverDo>
+  <WR_RoleCapSomeJobs>bu roldeki {1} işin {0} tanesini</WR_RoleCapSomeJobs>
+  <WR_RoleCategoryImportant>Önemli</WR_RoleCategoryImportant>
+  <WR_RoleCategoryLabel>Koloni önemi:</WR_RoleCategoryLabel>
+  <WR_RoleCategoryNone>Ayarlanmadı</WR_RoleCategoryNone>
+  <WR_RoleCategoryNormal>Normal</WR_RoleCategoryNormal>
+  <WR_RoleCategoryOptional>İsteğe bağlı</WR_RoleCategoryOptional>
+  <WR_RoleCategoryTip>Koloni planlanırken bu role sahip olmanın önemi. "Ayarlanmadı" rolü sınıflandırmaz.</WR_RoleCategoryTip>
+  <WR_RoleColonyMinLabel>Koloni asgarisi:</WR_RoleColonyMinLabel>
+  <WR_RoleColonyMinTip>Bu rolün asgari atama sayısı.</WR_RoleColonyMinTip>
+  <WR_RoleCoverageLabel>Kapsam:</WR_RoleCoverageLabel>
+  <WR_RoleCoverageTip>İdeal olarak kolonicilerin yüzde kaçının bu rolü alması gerektiği.</WR_RoleCoverageTip>
+  <WR_RoleDisplayCaption>Rol görünümü</WR_RoleDisplayCaption>
+  <WR_RoleJobIncapable>bu işi yapamaz</WR_RoleJobIncapable>
+  <WR_RoleJobNoRangedWeapon>menzilli silah yok</WR_RoleJobNoRangedWeapon>
+  <WR_RoleJobTooYoung>çok genç, {0} yaşından itibaren mümkün</WR_RoleJobTooYoung>
+  <WR_RoleLabelOff>{0} (kapalı)</WR_RoleLabelOff>
+  <WR_RoleMissingRequiredSkills>{0} için gerekli beceriler devre dışı: {1}.</WR_RoleMissingRequiredSkills>
+  <WR_RoleTimeFullTime>Tam zamanlı</WR_RoleTimeFullTime>
+  <WR_RoleTimeLabel>Zaman gereksinimi:</WR_RoleTimeLabel>
+  <WR_RoleTimeNone>Ayarlanmadı</WR_RoleTimeNone>
+  <WR_RoleTimeOpportunistic>Fırsat buldukça</WR_RoleTimeOpportunistic>
+  <WR_RoleTimePartTime>Yarı zamanlı</WR_RoleTimePartTime>
+  <WR_RoleTimeTip>Bu rolün işlerinin bir kolonicinin gününün ne kadarını genellikle aldığı.</WR_RoleTimeTip>
+  <WR_RoleTipDisabled>Herkes için KAPALI</WR_RoleTipDisabled>
+  <WR_RoleTipDisabledBoth>Herkes ve bu kolonici için KAPALI</WR_RoleTipDisabledBoth>
+  <WR_RoleTipDisabledHere>Bu kolonici için KAPALI</WR_RoleTipDisabledHere>
+  <WR_RoleTipEnabled>Etkin</WR_RoleTipEnabled>
+  <WR_RoleTipForcedOn>Etkin, bu kolonici için zorla açık</WR_RoleTipForcedOn>
+  <WR_RoleTipForcedOnGlobalOff>Bu kolonici için ZORLA AÇIK (rol genel olarak KAPALI)</WR_RoleTipForcedOnGlobalOff>
+  <WR_RoleTooOld>{0} bu rol için çok yaşlı (azami yaş {1}).</WR_RoleTooOld>
+  <WR_RoleTooYoung>{0} bu rol için çok genç (asgari yaş {1}).</WR_RoleTooYoung>
+  <WR_RoleWorkAversion>{0} adlı kolonicinin {1} öğretisi {2} işine karşı. Öneriler sınırlı bir puan cezası uygular: iki öncelik adımı veya lider seçiminde altı sanal beceri puanı. Zorunlu kapsam yine bu çalışanı seçebilir. Avcı önceliği beşinci kademeyi aşmadan iki kademe geriye gider; mevcut birinci kademe yedek davranışı yine geçerlidir.</WR_RoleWorkAversion>
+  <WR_RolesRestored>Geri yüklendi: {0}</WR_RolesRestored>
+  <WR_RolesTab>Roller</WR_RolesTab>
+  <WR_RowNew>{0} (yeni)</WR_RowNew>
+  <WR_RowNewColor>{0} {1} (yeni renk)</WR_RowNewColor>
+  <WR_RowRecolors>{0} → {1} (yeniden renklendirilenler: {2})</WR_RowRecolors>
+  <WR_RowUpdate>{0} (güncelleme)</WR_RowUpdate>
+  <WR_Save>Kaydet</WR_Save>
+  <WR_ScaleControlledBy>Yöneten: {0}</WR_ScaleControlledBy>
+  <WR_ScaleDeleteConfirm>'{0}' ölçeği silinsin mi?\n\n{1}. Bu roller bunun yerine Asla kullanacak.</WR_ScaleDeleteConfirm>
+  <WR_ScaleDirectTip>Bu aralık için doğrudan asgari; zorunlu toplamın kalanı eğitim muafiyetleriyle doldurulabilir. Zorunlu toplamın üzerine çıkarmak toplamı da artırır. Tık +1 (8'de başa döner), sağ tık -1. Aralıklara kopyalamak için sol sürükleyin (sürüklerken sağ tık, değeri sürükleme yönünde değiştirir). Kademeli artış için sağ sürükleyin: aralık başına bir adım; sağa artar, sola azalır.</WR_ScaleDirectTip>
+  <WR_ScaleMinsCaption>{0} için doğrudan asgari</WR_ScaleMinsCaption>
+  <WR_ScaleNewTitle>Yeni ölçek (mevcut olanı kopyalar)</WR_ScaleNewTitle>
+  <WR_ScaleRenameTip>Bu ölçeği yeniden adlandır (onu kullanan roller izler).</WR_ScaleRenameTip>
+  <WR_ScaleRenameTitle>Ölçeği yeniden adlandır</WR_ScaleRenameTitle>
+  <WR_ScaleReset>Sıfırla</WR_ScaleReset>
+  <WR_ScaleResetTip>Bu rolü veya ölçeği seçtiğinizdeki, düzenlemelerden önceki değerleri geri yükle.</WR_ScaleResetTip>
+  <WR_ScaleSaveAs>Farklı kaydet</WR_ScaleSaveAs>
+  <WR_ScaleSaveAsTitle>Değişiklikleri yeni ölçek olarak kaydet (bu ölçek kayıtlı değerlerine döner)</WR_ScaleSaveAsTitle>
+  <WR_ScaleTotalTip>Eğitim muafiyetleri dâhil bu aralığın zorunlu toplamı. Artırmak eğitim muafiyeti kontenjanları oluşturur; azaltmak doğrudan asgariyi düşürmeden önce bunları tüketir. Tık +1, sağ tık -1. Aralıklara kopyalamak için sol sürükleyin (sürüklerken sağ tık, değeri sürükleme yönünde değiştirir). Kademeli artış için sağ sürükleyin: aralık başına bir adım; sağa artar, sola azalır.</WR_ScaleTotalTip>
+  <WR_ScaleTotalsCaption>Zorunlu toplam (eğitim muafiyetleri dâhil)</WR_ScaleTotalsCaption>
+  <WR_ScaleTrainingHelp>Bu rol, {0} için eğitim rolüdür; bu yüzden atamaları {0} ayarları yönetir (burada Asla seçili olsa bile). Yine de burada {1} için asgari atama sayısı zorlayabilirsiniz.</WR_ScaleTrainingHelp>
+  <WR_ScaleUsedBy>Kullanan: {0}</WR_ScaleUsedBy>
+  <WR_ScopeAll>Her yer</WR_ScopeAll>
+  <WR_ScopeCurrent>Mevcut konum</WR_ScopeCurrent>
+  <WR_ScopeCurrentNamed>{0} (mevcut konum)</WR_ScopeCurrentNamed>
+  <WR_Search>Ara</WR_Search>
+  <WR_SectionPalette>Palet</WR_SectionPalette>
+  <WR_SectionRoles>Roller</WR_SectionRoles>
+  <WR_SeedDropFailure>{0}: {1} kaybedildi (önceliği {2} idi)</WR_SeedDropFailure>
+  <WR_SeedPawnFailure>{0}: geçiş başarısız ({1})</WR_SeedPawnFailure>
+  <WR_SeedReportBody>{0} rol oluşturuldu ve iş önceliklerine göre {1} koloniciye rol kümeleri atandı.</WR_SeedReportBody>
+  <WR_SeedReportFailures>Bazı işler aktarılamadı:</WR_SeedReportFailures>
+  <WR_SeedReportGenerated>Modlu işler için üretildi: {0}.</WR_SeedReportGenerated>
+  <WR_SeedReportTitle>WorkRoles kuruldu</WR_SeedReportTitle>
+  <WR_SelectAll>Tümünü seç</WR_SelectAll>
+  <WR_SelectOrCreateRole>Bir rol seçin veya oluşturun.</WR_SelectOrCreateRole>
+  <WR_SelectRoleIcon>Rol simgesi seç</WR_SelectRoleIcon>
+  <WR_SelectedJobs>Seçili işler (sıralı)</WR_SelectedJobs>
+  <WR_SelectedRows>{0} seçili</WR_SelectedRows>
+  <WR_SetPriorityBlockedBody>{0}, iş önceliklerini değiştirmeye çalıştı ({1}).
+
+WorkRoles, önceki bildirimden veya bu oyun oturumunun başından beri {2} öncelik değişikliğini engelledi.
+
+Rollerle yönetilen kolonicilerin öncelikleri WorkRoles'a ait olduğundan değişiklik yok sayıldı; modun diğer özellikleri etkilenmedi.
+
+Rollerle benzer etki için: Roller sekmesinde bu işi içeren bir rol oluşturun veya düzenleyin, ardından her kolonicinin rol listesinde istediğiniz yere koyun. İşi tamamen yasaklamak için engelleyici rol kullanın.
+
+Bu bildirim kayıt başına her mod için bir kez gösterilir.</WR_SetPriorityBlockedBody>
+  <WR_SetPriorityBlockedTitle>Öncelikleri WorkRoles yönetiyor</WR_SetPriorityBlockedTitle>
+  <WR_ShipFallback>Gravgemi</WR_ShipFallback>
+  <WR_ShipTip>Yerleşimde park hâlinde değöğretin gravgemi (yerleşim karesi önceliklidir).</WR_ShipTip>
+  <WR_ShowPriorityGridTip>Etkin rol ve konum filtrelerine uyarak listelenen tüm kolonicilerin öncelik ızgarasını göster (ham sıralar veya temel oyunun 0-4 aralığı; pencereden değiştirilebilir).</WR_ShowPriorityGridTip>
+  <WR_SignalAlreadyReflected>Gösterilen beceri düzeyine zaten yansıtılmış</WR_SignalAlreadyReflected>
+  <WR_SignalCapabilityAwful>{0} çok uygunsuz sayılıyor</WR_SignalCapabilityAwful>
+  <WR_SignalCapabilityOff>{0} devre dışı</WR_SignalCapabilityOff>
+  <WR_SignalColEffects>Etkiler</WR_SignalColEffects>
+  <WR_SignalColSignal>İşaret</WR_SignalColSignal>
+  <WR_SignalCondition>Koşul</WR_SignalCondition>
+  <WR_SignalDescriptive>Açıklayıcı</WR_SignalDescriptive>
+  <WR_SignalDisabled>Devre dışı</WR_SignalDisabled>
+  <WR_SignalExpertiseScale>taban {0}, uzmanlık düzeyi {1}, mevcut {2}</WR_SignalExpertiseScale>
+  <WR_SignalFromSkill>({0} kaynaklı)</WR_SignalFromSkill>
+  <WR_SignalLetterAwful>U</WR_SignalLetterAwful>
+  <WR_SignalLetterExceptional>O</WR_SignalLetterExceptional>
+  <WR_SignalLetterGreat>Ç</WR_SignalLetterGreat>
+  <WR_SignalLetterNeutral>N</WR_SignalLetterNeutral>
+  <WR_SignalLetterPoor>Z</WR_SignalLetterPoor>
+  <WR_SignalLetterStrong>G</WR_SignalLetterStrong>
+  <WR_SignalSkillPromotion>Yüksek beceri</WR_SignalSkillPromotion>
+  <WR_SignalSkillPromotionCondition>{0} düzeyi, {1} eşiğini karşılıyor</WR_SignalSkillPromotionCondition>
+  <WR_SignalSkillPromotionEffect>{0} → {1}</WR_SignalSkillPromotionEffect>
+  <WR_SignalSource>Kaynak</WR_SignalSource>
+  <WR_SignalVerdict>Değerlendirme</WR_SignalVerdict>
+  <WR_SkillColumnsCaption>Beceri sütunları</WR_SkillColumnsCaption>
+  <WR_SkillTipGiverSource>İş sağlayıcı: {0} ({1})</WR_SkillTipGiverSource>
+  <WR_SkillTipTypeSource>İş türü: {0} ({1})</WR_SkillTipTypeSource>
+  <WR_SkillTipUnknownMod>bilinmeyen mod</WR_SkillTipUnknownMod>
+  <WR_SkillsButton>Beceriler</WR_SkillsButton>
+  <WR_SkillsButtonCount>Beceriler ({0}/{1})</WR_SkillsButtonCount>
+  <WR_SkillsUsedLabel>Kullanılan beceriler:</WR_SkillsUsedLabel>
+  <WR_StepModifiersTip>Tık: 1 adım.\nShift: 5 adım.\nCtrl: 10 adım.\nCtrl+Shift: sınıra git.</WR_StepModifiersTip>
+  <WR_SuppressedHours>Kapalı: etkin saatlerin dışında</WR_SuppressedHours>
+  <WR_SuppressedLocation>Kapalı: rolün konumlarında değil</WR_SuppressedLocation>
+  <WR_SurgeryWorkerRoleTip>Bu ameliyatı kimin yapabileceği. Herhangi bir çalışan, rol kısıtlaması olmadığı anlamına gelir. Rol seçmek, ameliyatı o rolü etkin taşıyan kolonicilerle sınırlar; koşullu rol kendi kurallarını uygular (ör. etkin saatler).</WR_SurgeryWorkerRoleTip>
+  <WR_TipActivityLabel>Mevcut faaliyet</WR_TipActivityLabel>
+  <WR_TipActivityValue>{0}: {1}</WR_TipActivityValue>
+  <WR_TipBestFitsLabel>En uygun roller</WR_TipBestFitsLabel>
+  <WR_TipJobsLabel>İşler</WR_TipJobsLabel>
+  <WR_TipLevelN>Düzey {0}</WR_TipLevelN>
+  <WR_TipMore>+{0} tane daha</WR_TipMore>
+  <WR_TipOff>Kapalı</WR_TipOff>
+  <WR_TipOn>Açık</WR_TipOn>
+  <WR_TipReqBills>{0} {1} ({3} siparişin {2} tanesi beceri koşullu)</WR_TipReqBills>
+  <WR_TipReqItems>{0} {1} ({2} eşya beceri koşullu)</WR_TipReqItems>
+  <WR_TipReqJobs>{0} {1} ({2} iş beceri koşullu)</WR_TipReqJobs>
+  <WR_TipRequiresLabel>Gerektirir</WR_TipRequiresLabel>
+  <WR_TipSkillsLabel>Beceriler</WR_TipSkillsLabel>
+  <WR_TipTrainingHeader>Eğitim</WR_TipTrainingHeader>
+  <WR_TipTrainingPath>{0} yolunda</WR_TipTrainingPath>
+  <WR_TipTrainingRecommend>{0} becerisine sahip kolonicilere önerilir</WR_TipTrainingRecommend>
+  <WR_TipTrainsLabel>Geliştirir</WR_TipTrainsLabel>
+  <WR_TipTrainsNothing>Hiçbiri (beceri deneyimi yok)</WR_TipTrainsNothing>
+  <WR_TipUnlockAgeLabel>Asgari yaş</WR_TipUnlockAgeLabel>
+  <WR_TipUnlockAgeValue>{0} (daha genç koloniciler bu işi yapamaz)</WR_TipUnlockAgeValue>
+  <WR_TipWholeType>{0} (tüm işler)</WR_TipWholeType>
+  <WR_TipXpLabel>Deneyim verir</WR_TipXpLabel>
+  <WR_TipXpValue>{1} işin {0} tanesi</WR_TipXpValue>
+  <WR_TrainedSkillsLabel>Geliştirilen</WR_TrainedSkillsLabel>
+  <WR_TrainedSkillsTip>Bu rolün işlerinden deneyim kazanan becerileri gösterir.\n\nSeçili işlerden türetilir ve bilgi amaçlı gösterilir.</WR_TrainedSkillsTip>
+  <WR_TrainingHelp>Burada kolonicilerin yeni beceriler edinip bu role nasıl ilerleyeceğini belirleyebilirsiniz. Bir eğitim yolunda birden fazla aralık olabilir; böylece roller örtüşebilir. Yol bir koloniciye öneriliyorsa mevcut beceri düzeyindeki tüm roller önerilir.</WR_TrainingHelp>
+  <WR_TrainingSection>Eğitim yolu</WR_TrainingSection>
+  <WR_TrainingTipBands>Örtüşen aralıklar birlikte bulunur; örtüşmeyenlerde sonraki rol öncekinin yerini alır.</WR_TrainingTipBands>
+  <WR_TrainingTipOrder>Atamalar yüksek aralık alt sınırlarına öncelik verir. Aralıklar eşitse çalışanın en zayıf rol becerisi, sonra kayıtlı yol sırası önceliklidir.</WR_TrainingTipOrder>
+  <WR_TrainingTipWhat>Rolün kendi ilerleyişi: her üye rolün önerildiği bir beceri aralığı vardır. Rolün kendisi daima kendi yolunda kalır.</WR_TrainingTipWhat>
+  <WR_TreeFlat>Düz</WR_TreeFlat>
+  <WR_TreeNested>İç içe</WR_TreeNested>
+  <WR_TreeToggleTip>Kapsanan rollerin onları birleştiren rolün altında iç içe gösterimini aç/kapat.</WR_TreeToggleTip>
+  <WR_TypeColumn>Tür</WR_TypeColumn>
+  <WR_UnpinAssignment>Sabitlemeyi kaldır</WR_UnpinAssignment>
+  <WR_UnusedJobsWarning>Hiçbir rolde bulunmayan işleriniz var.</WR_UnusedJobsWarning>
+  <WR_UsedSkillsLabel>Kullanılan</WR_UsedSkillsLabel>
+  <WR_UsedSkillsTip>Bu roldeki işleri etkileyen becerileri gösterir. Etkiyi görmek için becerinin üzerine gelin.\n\nSeçili işlerden türetilir ve bilgi amaçlı gösterilir.</WR_UsedSkillsTip>
+  <WR_VerdictAwful>Çok uygunsuz</WR_VerdictAwful>
+  <WR_VerdictExceptional>Olağanüstü</WR_VerdictExceptional>
+  <WR_VerdictGreat>Çok uygun</WR_VerdictGreat>
+  <WR_VerdictNeutral>Nötr</WR_VerdictNeutral>
+  <WR_VerdictPoor>Zayıf</WR_VerdictPoor>
+  <WR_VerdictStrong>Güçlü</WR_VerdictStrong>
+  <WR_VirtualRoleTip>Bu rolün işleri üst rol tarafından kapsandığı için burada gösterilir. "{0}" grubuna aittir.</WR_VirtualRoleTip>
+  <WR_WarningPrefix>Uyarı:</WR_WarningPrefix>
+  <WR_WelcomeBody>WorkRoles kolonicilerin iş önceliklerini, onlara atadığınız Doktor, Demirci veya Çiftçi gibi adlandırılmış rollerden belirler.</WR_WelcomeBody>
+  <WR_WelcomeFind>WorkRoles'ı ekranın altındaki İş düğmesiyle açın. Yardım sekmesi rehberli bir turla başlar.</WR_WelcomeFind>
+  <WR_WelcomeSmallScreen>Oyun ekranınız {0}x{1} (çözünürlük / arayüz ölçeği). WorkRoles {2}x{3} veya üstü için tasarlanmıştır; örneğin 1.25 arayüz ölçeğinde 1920x1080. Küçük ekranda da çalışır ancak bazı etiketler kısalır ve sekmeler daha fazla kaydırma gerektirir. Oyun seçeneklerinde arayüz ölçeğini düşürmek pencereye daha fazla alan verir.</WR_WelcomeSmallScreen>
+  <WR_WelcomeTakeMeThere>Şimdi aç</WR_WelcomeTakeMeThere>
+  <WR_WelcomeTitle>WorkRoles</WR_WelcomeTitle>
+  <WR_WhenPanelCaption>Rol ilerleyişi: Görünen rollerin hangi beceri düzeyinde önerileceğini burada belirleyebilirsiniz. Örtüşen roller birbirini tamamlar.</WR_WhenPanelCaption>
+  <WR_WillBeRemoved>Öneri listesinde yok. Tutmak istediğiniz rolleri uygulamadan önce sabitleyin.</WR_WillBeRemoved>
+  <WR_WorkBlockedCapacity>gerekli bir sağlık kapasitesi eksik</WR_WorkBlockedCapacity>
+  <WR_WorkBlockedPrecept>{0} nedeniyle reddediyor</WR_WorkBlockedPrecept>
+  <WR_WorkBlockedRace>bu ırkın iş kısıtlamaları izin vermiyor</WR_WorkBlockedRace>
+  <WR_WorkBlockedRecipe>bu ırkın tarif kısıtlamaları izin vermiyor</WR_WorkBlockedRecipe>
+  <WR_WorkBlockedTags>devre dışı iş etiketleri</WR_WorkBlockedTags>
+  <WR_WorkBlockedViviGathering>pozitif Vivi toplama hızı ve verimi gerektirir; uygun toplama aletleri bu işi açabilir</WR_WorkBlockedViviGathering>
+  <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
+  <WR_WorkTypesLabel>İş türleri</WR_WorkTypesLabel>
+  <WR_WorkTypesTip>Bu role yalnızca belirtilen iş türlerini yapabilen koloniciler uygundur.\n\nSeçili işlerden türetilir ve bilgi amaçlı gösterilir.</WR_WorkTypesTip>
+</LanguageData>

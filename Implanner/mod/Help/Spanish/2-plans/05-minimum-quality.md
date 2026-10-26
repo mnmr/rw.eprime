@@ -25,6 +25,6 @@ Cada intercambio implica una cirugía extra. Solo ocurre si no hay otra operaci�
 
 Al fabricar para el plan:
 
-- Con Quality Jobs, la tarea apunta al mínimo y el acabado se asigna a un artesano capaz de alcanzarlo.
-- Los híbridos de Vanilla Genetics Expanded toman la calidad de la estructura genética. La tarea solo usa estructuras de la calidad mínima o superior.
+- Con Quality Jobs, el proyecto apunta al mínimo y el acabado se asigna a un artesano capaz de alcanzarlo.
+- Los híbridos de Vanilla Genetics Expanded toman la calidad de la estructura genética. El proyecto solo usa estructuras de la calidad mínima o superior.
 - Sin ninguno de esos mecanismos, cualquier artesano puede terminarlo y un resultado inferior se fabrica de nuevo. Los mínimos de existencias (consulta [Mantener existencias](topic:keeping-stock)) frenan esto antes de agotar los materiales.

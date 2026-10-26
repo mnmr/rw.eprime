@@ -12,8 +12,10 @@ The Overview tab lists every colonist who could receive implants.
 - **Progress** counts installed implants against the plan.
 - **State** condenses the colonist's plan status into one word.
 
-The S and M columns show Shooting and Melee skill, and the small icons show
-the equipped weapon and belt item. They are informational only; automation
-ignores them.
+The S and M columns show Shooting and Melee skill; the small icons show
+the equipped weapon and belt item. The skill values and belt are informational.
+In ASAP mode, colonist priority comes first. Among colonists at equal priority
+who need the same implant, legs go to the slowest; arms prefer an equipped
+melee weapon, then the highest sum of Crafting and Intellectual skill levels.
 
 Click a colonist's name to open their details on the right.

@@ -1,0 +1,7 @@
+<ModMetaData>
+  <name>Shared welcome conflict regression probe</name>
+  <author>Local test fixture</author>
+  <packageId>rimshared.welcomeconflicts.probe</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <description>Isolated automation only.</description>
+</ModMetaData>

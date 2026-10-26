@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_NoFirefighting.label>Vuurangst</WS_NoFirefighting.label>
+  <WS_NoFirefighting.description>Blokkade: kolonisten met deze rol blussen nooit branden, ook als een latere rol (zoals Basis) brandbestrijding bevat.</WS_NoFirefighting.description>
+  <WS_Core.label>Kern</WS_Core.label>
+  <WS_Core.description>Noodwerk voor elke kolonist: brandbestrijding, behandeld worden en redden.</WS_Core.description>
+  <WS_Basics.label>Basis</WS_Basics.label>
+  <WS_Basics.description>Zelfzorg en eenvoudig werk dat elke kolonist hoort te doen.</WS_Basics.description>
+  <WS_Rescuer.label>Redder</WS_Rescuer.label>
+  <WS_Rescuer.description>Neergehaalde kolonisten redden.</WS_Rescuer.description>
+  <WS_Doctor.label>Dokter</WS_Doctor.label>
+  <WS_Doctor.description>Medische zorg voor kolonisten, gevangenen en dieren.</WS_Doctor.description>
+  <WS_Medic.label>Zorgverlener</WS_Medic.label>
+  <WS_Medic.description>Medisch werk behalve operaties op kolonisten.</WS_Medic.description>
+  <WS_Laborer.label>Arbeider</WS_Laborer.label>
+  <WS_Laborer.description>Diverse eenvoudige taken.</WS_Laborer.description>
+  <WS_Childminder.label>Verzorger</WS_Childminder.label>
+  <WS_Childminder.description>Kinderopvang en onderwijs.</WS_Childminder.description>
+  <WS_Firefighter.label>Brandweerman</WS_Firefighter.label>
+  <WS_Firefighter.description>Branden blussen.</WS_Firefighter.description>
+  <WS_Patient.label>Patiënt</WS_Patient.label>
+  <WS_Patient.description>Medische behandeling ontvangen.</WS_Patient.description>
+  <WS_Bedrest.label>Bedrust</WS_Bedrest.label>
+  <WS_Bedrest.description>In bed rusten bij ziekte of verwonding.</WS_Bedrest.description>
+  <WS_Jailor.label>Gevangenisbewaarder</WS_Jailor.label>
+  <WS_Jailor.description>Gevangenenbeheer behalve ondervraging, tot slaaf maken en bekering: voeden, begeleiden, praten, onderdrukken, vrijlaten en executeren.</WS_Jailor.description>
+  <WS_Warden.label>Bewaker</WS_Warden.label>
+  <WS_Warden.description>Omgang met gevangenen: rekruteren, bekeren, voeden en vrijlaten.</WS_Warden.description>
+  <WS_Grunt.label>Hulpwerker</WS_Grunt.label>
+  <WS_Grunt.description>Dragen en schoonmaken.</WS_Grunt.description>
+  <WS_Hauler.label>Drager</WS_Hauler.label>
+  <WS_Hauler.description>Voorwerpen vervoeren.</WS_Hauler.description>
+  <WS_Cleaner.label>Schoonmaker</WS_Cleaner.label>
+  <WS_Cleaner.description>Schoonmaken.</WS_Cleaner.description>
+  <WS_Handler.label>Dierentrainer</WS_Handler.label>
+  <WS_Handler.description>Dieren temmen, trainen en slachten.</WS_Handler.description>
+  <WS_Cook.label>Kok</WS_Cook.label>
+  <WS_Cook.description>Maaltijden bereiden en karkassen verwerken.</WS_Cook.description>
+  <WS_Butcher.label>Slager</WS_Butcher.label>
+  <WS_Butcher.description>Karkassen verwerken.</WS_Butcher.description>
+  <WS_Brewer.label>Brouwer</WS_Brewer.label>
+  <WS_Brewer.description>Wort brouwen in de brouwerij.</WS_Brewer.description>
+  <WS_Hunter.label>Jager</WS_Hunter.label>
+  <WS_Hunter.description>Op wilde dieren jagen voor voedsel.</WS_Hunter.description>
+  <WS_Fisher.label>Visser</WS_Fisher.label>
+  <WS_Fisher.description>Vissen.</WS_Fisher.description>
+  <WS_Builder.label>Bouwer</WS_Builder.label>
+  <WS_Builder.description>Bouwen, repareren en afbreken.</WS_Builder.description>
+  <WS_Repairer.label>Klusser</WS_Repairer.label>
+  <WS_Repairer.description>Al het bouwwerk behalve nieuwe gebouwen bouwen.</WS_Repairer.description>
+  <WS_Farmer.label>Landbouwer</WS_Farmer.label>
+  <WS_Farmer.description>Zaaien, oogsten en planten kappen.</WS_Farmer.description>
+  <WS_Grower.label>Teler</WS_Grower.label>
+  <WS_Grower.description>Zaaien en oogsten in groeizones.</WS_Grower.description>
+  <WS_PlantCutter.label>Plantenkapper</WS_PlantCutter.label>
+  <WS_PlantCutter.description>Wilde planten en bomen kappen en oogsten.</WS_PlantCutter.description>
+  <WS_Miner.label>Mijnwerker</WS_Miner.label>
+  <WS_Miner.description>Mijnbouw en boren.</WS_Miner.description>
+  <WS_Tailor.label>Kleermaker</WS_Tailor.label>
+  <WS_Tailor.description>Kleding maken.</WS_Tailor.description>
+  <WS_Smith.label>Smid</WS_Smith.label>
+  <WS_Smith.description>Wapens en pantsers smeden.</WS_Smith.description>
+  <WS_Fabricator.label>Fabricator</WS_Fabricator.label>
+  <WS_Fabricator.description>Voorwerpen maken aan de fabricatie tafel.</WS_Fabricator.description>
+  <WS_Mechanitor.label>Mechanitor</WS_Mechanitor.label>
+  <WS_Mechanitor.description>Mechanoïden repareren, nieuwe kweken en subkernen coderen. Alleen aanbevolen voor kolonisten met een mechlink.</WS_Mechanitor.description>
+  <WS_Crafter.label>Ambachtsman</WS_Crafter.label>
+  <WS_Crafter.description>Algemeen ambacht: steenhouwen, smelten, drugs en componenten.</WS_Crafter.description>
+  <WS_Researcher.label>Onderzoeker</WS_Researcher.label>
+  <WS_Researcher.description>Onderzoek aan een onderzoeksbank.</WS_Researcher.description>
+  <WS_DarkStudier.label>Anomalist</WS_DarkStudier.label>
+  <WS_DarkStudier.description>Afwijkende entiteiten bestuderen.</WS_DarkStudier.description>
+  <WS_Artist.label>Kunstenaar</WS_Artist.label>
+  <WS_Artist.description>Beeldhouwen en kunst maken.</WS_Artist.description>
+  <WS_Nurse.label>Verpleger</WS_Nurse.label>
+  <WS_Nurse.description>Patiënten voeden, redden en bezoeken; dringende zelfverzorging.</WS_Nurse.description>
+  <WS_DrugMaker.label>Drugsmaker</WS_DrugMaker.label>
+  <WS_DrugMaker.description>Drugs produceren in het drugslaboratorium en de serumcentrifuge.</WS_DrugMaker.description>
+  <WS_Painter.label>Schilder</WS_Painter.label>
+  <WS_Painter.description>Schilderen en verf verwijderen.</WS_Painter.description>
+  <WS_Herder.label>Herder</WS_Herder.label>
+  <WS_Herder.description>Hokdieren verzorgen: ophokken, voeren, melken, scheren en slachten.</WS_Herder.description>
+</LanguageData>

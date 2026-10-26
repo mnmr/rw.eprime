@@ -24,7 +24,7 @@ Colonist priority on the Overview tab always decides who goes first.
 
 **Concurrent surgeries** caps how many colonists per colony can have
 operations scheduled at the same time. It starts at one per ten
-colonists. With **Count hospitalized pawns** on, colonists and slaves
+colonists. With **Count existing patients** on, colonists and slaves
 lying in medical beds or downed and awaiting treatment take up slots too,
 so new implant surgeries wait until the hospital has room. Prisoners,
 guests and patients visiting from other factions never take up a slot.

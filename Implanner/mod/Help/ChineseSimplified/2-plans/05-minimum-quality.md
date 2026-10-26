@@ -1,7 +1,7 @@
 ---
 title: 最低品质
 ---
-加载 Quality Bionics Remastered 或 Vanilla Genetics Expanded 后，植入体物品具有从极差到传说的品质，影响实际性能。方案的**删除方案**旁会出现**最低品质**按钮。
+加载 Quality Bionics Remastered 或 Vanilla Genetics Expanded 后，植入体物品具有从极差到传奇级的品质，影响实际性能。方案的**删除方案**旁会出现**最低品质**按钮。
 
 ![带最低品质按钮的方案标题栏](plan-min-quality.png)
 

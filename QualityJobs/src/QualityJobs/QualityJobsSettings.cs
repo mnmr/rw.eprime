@@ -26,6 +26,10 @@ namespace QualityJobs
         /// dialog this player has already seen.
         public System.Collections.Generic.List<string> welcomeShownSaves =
             new System.Collections.Generic.List<string>();
+        // Per-player acknowledgement of each active conflict in a particular
+        // save. Adding another conflicting mod shows the welcome again once.
+        public System.Collections.Generic.List<string> compatibilityWarningsSeen =
+            new System.Collections.Generic.List<string>();
 
         // Construction defaults. These seed the per-save store on first load
         // (dual-pattern: store values are authoritative when a game is loaded).
@@ -58,6 +62,8 @@ namespace QualityJobs
             Scribe_Values.Look(ref defaultConstructionAutoBest, "defaultConstructionAutoBest", false);
             Scribe_Collections.Look(ref welcomeShownSaves, "welcomeShownSaves", LookMode.Value);
             welcomeShownSaves ??= new System.Collections.Generic.List<string>();
+            Scribe_Collections.Look(ref compatibilityWarningsSeen, "compatibilityWarningsSeen", LookMode.Value);
+            compatibilityWarningsSeen ??= new System.Collections.Generic.List<string>();
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 defaultMinSkill = ConfigurationLimits.Skill(defaultMinSkill);

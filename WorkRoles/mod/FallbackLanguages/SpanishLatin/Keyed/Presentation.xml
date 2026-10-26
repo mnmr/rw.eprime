@@ -33,16 +33,16 @@
   <WR_SignalCondition_range_medium>A media distancia</WR_SignalCondition_range_medium>
   <WR_SignalCondition_ritual_no_recent_quality_outcome>Sin ritual exitoso reciente</WR_SignalCondition_ritual_no_recent_quality_outcome>
   <WR_SignalCondition_ritual_recent_quality_outcome>Ritual exitoso reciente</WR_SignalCondition_ritual_recent_quality_outcome>
-  <WR_SignalCondition_setting_vse_critical_affects_other_skills>La pasión crítica afecta a otras habilidades en los configuración del mod</WR_SignalCondition_setting_vse_critical_affects_other_skills>
+  <WR_SignalCondition_setting_vse_critical_affects_other_skills>La pasión crítica afecta a otras habilidades en la configuración del mod</WR_SignalCondition_setting_vse_critical_affects_other_skills>
   <WR_SignalCondition_sight_blind>Ciego</WR_SignalCondition_sight_blind>
   <WR_SignalCondition_sight_not_blind>No ciego</WR_SignalCondition_sight_not_blind>
   <WR_SignalCondition_social_same_passion_opinion>Mejora la opinión de quienes comparten la pasión</WR_SignalCondition_social_same_passion_opinion>
   <WR_SignalCondition_state_drunk>Borracho</WR_SignalCondition_state_drunk>
   <WR_SignalCondition_state_no_recent_lovin>Sin intimidad reciente</WR_SignalCondition_state_no_recent_lovin>
   <WR_SignalCondition_state_not_drunk>Sobrio</WR_SignalCondition_state_not_drunk>
-  <WR_SignalCondition_state_not_smokeleaf_high>Sin efecto de humohoja</WR_SignalCondition_state_not_smokeleaf_high>
+  <WR_SignalCondition_state_not_smokeleaf_high>Sin efecto de hojahumeante</WR_SignalCondition_state_not_smokeleaf_high>
   <WR_SignalCondition_state_recent_lovin>Intimidad reciente</WR_SignalCondition_state_recent_lovin>
-  <WR_SignalCondition_state_smokeleaf_high>Bajo los efectos de humohoja</WR_SignalCondition_state_smokeleaf_high>
+  <WR_SignalCondition_state_smokeleaf_high>Bajo los efectos de hojahumeante</WR_SignalCondition_state_smokeleaf_high>
   <WR_SignalCondition_time_20_5>Entre las 20:00 y las 05:00</WR_SignalCondition_time_20_5>
   <WR_SignalCondition_time_day>Durante el día</WR_SignalCondition_time_day>
   <WR_SignalCondition_weather_not_raining>Sin lluvia</WR_SignalCondition_weather_not_raining>

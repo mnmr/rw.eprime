@@ -5,7 +5,7 @@ Les anciens nombres vous manquent ? Les deux petits boutons numérotés ![bouton
 
 ![Grille de priorités](priority-grid.png)
 
-La grille montre les priorités calculées par WorkRoles pour chaque colon listé, en respectant les filtres actifs. Le bouton en haut alterne entre les rangs bruts du mod et la vue familière de 0 à 4 du jeu de base. Faites glisser la poignée du coin pour redimensionner ; double-cliquez pour revenir à la taille automatique.
+La grille montre les priorités calculées par WorkRoles pour chaque colon listé, en respectant les filtres actifs. Le bouton en haut alterne entre les rangs bruts du mod et la vue familière de 0 à 4 du jeu de base.
 
 Deux réglages liés se trouvent dans l'onglet Options :
 

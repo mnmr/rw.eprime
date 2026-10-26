@@ -9,6 +9,6 @@ Ogni gruppo attivato occupa una fascia del pannello. Da sinistra a destra, la fa
 - I triangoli sono uno per livello del gruppo. Un triangolo bianco indica un livello visibile, uno attenuato un livello nascosto.
 - Un'icona e un contatore per ogni risorsa o insieme; vedi [cos'è un insieme di risorse](topic:what-a-resource-pool-is).
 
-Le quantità oltre diecimila sono abbreviate: 12,800 appare come 12.8k. Il suggerimento mostra il numero esatto; vedi [puntatore e clic su una casella](topic:hovering-and-clicking-a-slot).
+Le quantità oltre diecimila sono abbreviate: 12.800 appare come 12.8k. Il suggerimento mostra il numero esatto; vedi [puntatore e clic su una casella](topic:hovering-and-clicking-a-slot).
 
 Un contatore cambia colore quando la quantità scende al limite impostato per quella risorsa; vedi [opzioni delle caselle](topic:slot-options). Diventa arancione anche quando mostra un numero negativo, cioè quando ordini e progetti richiedono più di quanto possiedi; vedi [lavori pianificati](topic:planned-work).

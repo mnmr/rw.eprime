@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace EPrimeReadouts.Core
 {
@@ -20,12 +21,15 @@ namespace EPrimeReadouts.Core
         public readonly string Query;
         public readonly ItemPickerType Type;
         public readonly string SourceId;
+        public readonly CultureInfo? SearchCulture;
 
-        public ItemTreeFilter(string query, ItemPickerType type, string sourceId)
+        public ItemTreeFilter(string query, ItemPickerType type, string sourceId,
+            CultureInfo? searchCulture = null)
         {
             Query = query ?? "";
             Type = type;
             SourceId = sourceId ?? ItemSourceIds.All;
+            SearchCulture = searchCulture;
         }
     }
 

@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <EPR.SeedDrugs>Наркотики</EPR.SeedDrugs>
+  <EPR.SeedEggs>Яйця</EPR.SeedEggs>
+  <EPR.SeedFertilizedeggs>Запліднені яйця</EPR.SeedFertilizedeggs>
+  <EPR.SeedFood>Їжа</EPR.SeedFood>
+  <EPR.SeedHardDrugs>Важкі наркотики</EPR.SeedHardDrugs>
+  <EPR.SeedLeathers>Шкіра</EPR.SeedLeathers>
+  <EPR.SeedMaterials>Матеріали</EPR.SeedMaterials>
+  <EPR.SeedMeals>Страви</EPR.SeedMeals>
+  <EPR.SeedMeats>М'ясо</EPR.SeedMeats>
+  <EPR.SeedMechs>Механоїди</EPR.SeedMechs>
+  <EPR.SeedMedicine>Ліки</EPR.SeedMedicine>
+  <EPR.SeedMortarshells>Мінометні снаряди</EPR.SeedMortarshells>
+  <EPR.SeedPlantfood>Рослинна їжа</EPR.SeedPlantfood>
+  <EPR.SeedRaw>Сирі продукти</EPR.SeedRaw>
+  <EPR.SeedSera>Сироватки</EPR.SeedSera>
+  <EPR.SeedSocialDrugs>Легкі наркотики</EPR.SeedSocialDrugs>
+  <EPR.SeedStoneblocks>Кам'яні блоки</EPR.SeedStoneblocks>
+  <EPR.SeedStonechunks>Кам'яні уламки</EPR.SeedStonechunks>
+  <EPR.SeedTextiles>Текстиль</EPR.SeedTextiles>
+  <EPR.SeedWealth>Багатство</EPR.SeedWealth>
+  <EPR.SeedWools>Вовна</EPR.SeedWools>
+</LanguageData>

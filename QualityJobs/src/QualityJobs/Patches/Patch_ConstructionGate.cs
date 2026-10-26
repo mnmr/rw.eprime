@@ -20,25 +20,38 @@ namespace QualityJobs.Patches
         public struct FrameState
         {
             public ConstructionPlan? plan;
+            public Frame? frame;
             public Map? map;
             public IntVec3 position;
             public ThingDef? buildDef;
         }
 
-        public static bool Prefix(Frame __instance, Pawn worker, out FrameState __state)
+        // Observe before ordinary behavior prefixes (including Priority.First).
+        // Explicit Harmony ordering dependencies still take precedence.
+        [HarmonyPrefix, HarmonyPriority(int.MaxValue)]
+        public static void CaptureBeforeConstruction(Frame __instance, out FrameState __state)
         {
             __state = default;
             QualityJobsStore? store = QualityJobsStore.Active;
-            if (store == null) return true;
+            if (store == null) return;
             ConstructionPlan? plan = store.FindPlan(__instance);
-            if (plan == null) return true;
+            if (plan == null) return;
 
             // Capture for the retry postfix before the frame is destroyed.
             __state.plan = plan;
+            __state.frame = __instance;
             __state.map = __instance.Map;
             __state.position = __instance.Position;
             __state.buildDef = __instance.BuildDef;
+        }
 
+        public static bool Prefix(Frame __instance, Pawn worker, ref FrameState __state)
+        {
+            // This gate may be skipped by a replacement prefix. Its separate
+            // observer must still supply the original target to the postfix.
+            ConstructionPlan? plan = __state.plan;
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (plan == null || store == null) return true;
             if (plan.restoreOnly) return true;
 
             GateOutcome outcome = plan.autoBest
@@ -69,9 +82,12 @@ namespace QualityJobs.Patches
         public static void Postfix(FrameState __state)
         {
             ConstructionPlan? plan = __state.plan;
-            if (plan == null) return;
+            // Postfixes also run when another prefix suppresses completion.
+            // Observe the transition, not __runOriginal: a replacement prefix
+            // may successfully consume the frame without running vanilla.
+            if (plan == null || __state.frame == null || !__state.frame.Destroyed) return;
             QualityJobsStore? store = QualityJobsStore.Active;
-            if (store == null) return;
+            if (store == null || !ReferenceEquals(store.FindPlan(__state.frame), plan)) return;
             if (__state.map == null || __state.buildDef == null)
             {
                 // Terrain frame or lost map: nothing manageable was produced.

@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WR_SignalCondition_after_mental_break>Após uma crise mental</WR_SignalCondition_after_mental_break>
+  <WR_SignalCondition_age_min_18>Idade igual ou superior a 18 anos</WR_SignalCondition_age_min_18>
+  <WR_SignalCondition_apparel_not_nude>Usa roupa</WR_SignalCondition_apparel_not_nude>
+  <WR_SignalCondition_apparel_nude>Sem roupa</WR_SignalCondition_apparel_nude>
+  <WR_SignalCondition_author_is_bad>O mod de origem classifica esta paixão como má</WR_SignalCondition_author_is_bad>
+  <WR_SignalCondition_body_artificial_parts>Tem partes do corpo artificiais</WR_SignalCondition_body_artificial_parts>
+  <WR_SignalCondition_body_no_artificial_parts>Sem partes do corpo artificiais</WR_SignalCondition_body_no_artificial_parts>
+  <WR_SignalCondition_colony_best_at_skill>O melhor da colónia nesta competência</WR_SignalCondition_colony_best_at_skill>
+  <WR_SignalCondition_colony_loss_within_3_days>A colónia perdeu um colono nos últimos 3 dias</WR_SignalCondition_colony_loss_within_3_days>
+  <WR_SignalCondition_colony_no_recent_loss>Sem perdas recentes de colonos</WR_SignalCondition_colony_no_recent_loss>
+  <WR_SignalCondition_colony_not_best_at_skill>Não é o melhor da colónia nesta competência</WR_SignalCondition_colony_not_best_at_skill>
+  <WR_SignalCondition_cycle_daily>Muda diariamente</WR_SignalCondition_cycle_daily>
+  <WR_SignalCondition_environment_near_fire>Perto de fogo</WR_SignalCondition_environment_near_fire>
+  <WR_SignalCondition_equipment_ranged_weapon>Com uma arma de longo alcance equipada</WR_SignalCondition_equipment_ranged_weapon>
+  <WR_SignalCondition_location_away_from_home>Fora de casa</WR_SignalCondition_location_away_from_home>
+  <WR_SignalCondition_location_home>Em casa</WR_SignalCondition_location_home>
+  <WR_SignalCondition_mood_tier_apathetic>Fase apática</WR_SignalCondition_mood_tier_apathetic>
+  <WR_SignalCondition_mood_tier_greater>Fase apaixonada</WR_SignalCondition_mood_tier_greater>
+  <WR_SignalCondition_mood_tier_interested>Fase interessada</WR_SignalCondition_mood_tier_interested>
+  <WR_SignalCondition_mood_tier_major>Fase muito interessada</WR_SignalCondition_mood_tier_major>
+  <WR_SignalCondition_mood_tier_none>Fase sem paixão</WR_SignalCondition_mood_tier_none>
+  <WR_SignalCondition_pain_max_0_3>Dor igual ou inferior a 30%</WR_SignalCondition_pain_max_0_3>
+  <WR_SignalCondition_pain_min_0_3>Dor igual ou superior a 30%</WR_SignalCondition_pain_min_0_3>
+  <WR_SignalCondition_passion_conflicting>Uma paixão por Tiro entra em conflito com este traço</WR_SignalCondition_passion_conflicting>
+  <WR_SignalCondition_psychic_sensitivity_tier_critical>Sensibilidade psíquica crítica</WR_SignalCondition_psychic_sensitivity_tier_critical>
+  <WR_SignalCondition_psychic_sensitivity_tier_major>Sensibilidade psíquica elevada</WR_SignalCondition_psychic_sensitivity_tier_major>
+  <WR_SignalCondition_psychic_sensitivity_tier_minor>Sensibilidade psíquica reduzida</WR_SignalCondition_psychic_sensitivity_tier_minor>
+  <WR_SignalCondition_psychic_sensitivity_tier_normal>Sensibilidade psíquica normal</WR_SignalCondition_psychic_sensitivity_tier_normal>
+  <WR_SignalCondition_psychic_sensitivity_tier_nullified>Sensibilidade psíquica anulada</WR_SignalCondition_psychic_sensitivity_tier_nullified>
+  <WR_SignalCondition_range_long>A longa distância</WR_SignalCondition_range_long>
+  <WR_SignalCondition_range_medium>A média distância</WR_SignalCondition_range_medium>
+  <WR_SignalCondition_ritual_no_recent_quality_outcome>Nenhum ritual bem-sucedido recente</WR_SignalCondition_ritual_no_recent_quality_outcome>
+  <WR_SignalCondition_ritual_recent_quality_outcome>Ritual bem-sucedido recente</WR_SignalCondition_ritual_recent_quality_outcome>
+  <WR_SignalCondition_setting_vse_critical_affects_other_skills>A paixão crítica afeta outras competências nas definições do mod</WR_SignalCondition_setting_vse_critical_affects_other_skills>
+  <WR_SignalCondition_sight_blind>Cego</WR_SignalCondition_sight_blind>
+  <WR_SignalCondition_sight_not_blind>Não é cego</WR_SignalCondition_sight_not_blind>
+  <WR_SignalCondition_social_same_passion_opinion>Melhora a opinião sobre os outros que partilham a paixão</WR_SignalCondition_social_same_passion_opinion>
+  <WR_SignalCondition_state_drunk>Embriagado</WR_SignalCondition_state_drunk>
+  <WR_SignalCondition_state_no_recent_lovin>Sem relações amorosas recentes</WR_SignalCondition_state_no_recent_lovin>
+  <WR_SignalCondition_state_not_drunk>Não está embriagado</WR_SignalCondition_state_not_drunk>
+  <WR_SignalCondition_state_not_smokeleaf_high>Não está sob o efeito de folha de fumo</WR_SignalCondition_state_not_smokeleaf_high>
+  <WR_SignalCondition_state_recent_lovin>Relações amorosas recentes</WR_SignalCondition_state_recent_lovin>
+  <WR_SignalCondition_state_smokeleaf_high>Sob o efeito de folha de fumo</WR_SignalCondition_state_smokeleaf_high>
+  <WR_SignalCondition_time_20_5>Entre as 20:00 e as 05:00</WR_SignalCondition_time_20_5>
+  <WR_SignalCondition_time_day>Durante o dia</WR_SignalCondition_time_day>
+  <WR_SignalCondition_weather_not_raining>Não está a chover</WR_SignalCondition_weather_not_raining>
+  <WR_SignalCondition_weather_raining>Está a chover</WR_SignalCondition_weather_raining>
+  <WR_SignalCondition_work_type_hated>Trabalho detestado</WR_SignalCondition_work_type_hated>
+  <WR_SignalCondition_work_compelled_aversion>Detesta a competência, mas sente-se compelido a aprendê-la</WR_SignalCondition_work_compelled_aversion>
+  <WR_SignalCondition_work_enjoyment>Grande satisfação no trabalho relacionado</WR_SignalCondition_work_enjoyment>
+  <WR_SignalCondition_work_passionate>Humor por trabalhar numa paixão</WR_SignalCondition_work_passionate>
+  <WR_SignalEffect_SkillLevel>Nível de competência</WR_SignalEffect_SkillLevel>
+  <WR_SignalEffect_Passion>Paixão</WR_SignalEffect_Passion>
+  <WR_SignalEffect_LearningRate>Velocidade de aprendizagem</WR_SignalEffect_LearningRate>
+  <WR_SignalEffect_SkillDecay>Perda de competência</WR_SignalEffect_SkillDecay>
+  <WR_SignalEffect_WorkSpeed>Velocidade de trabalho</WR_SignalEffect_WorkSpeed>
+  <WR_SignalEffect_Accuracy>Precisão</WR_SignalEffect_Accuracy>
+  <WR_SignalEffect_AimingDelay>Tempo de pontaria</WR_SignalEffect_AimingDelay>
+  <WR_SignalEffect_Quality>Qualidade</WR_SignalEffect_Quality>
+  <WR_SignalEffect_Yield>Rendimento</WR_SignalEffect_Yield>
+  <WR_SignalEffect_Damage>Dano</WR_SignalEffect_Damage>
+  <WR_SignalEffect_HitChance>Probabilidade de acertar</WR_SignalEffect_HitChance>
+  <WR_SignalEffect_Dodge>Esquiva</WR_SignalEffect_Dodge>
+  <WR_SignalEffect_Mood>Humor</WR_SignalEffect_Mood>
+  <WR_SignalEffect_WorkPreference>Preferência de trabalho</WR_SignalEffect_WorkPreference>
+  <WR_SignalEffect_Capability>Capacidade</WR_SignalEffect_Capability>
+  <WR_SignalEffect_MentalBreak>Crise mental</WR_SignalEffect_MentalBreak>
+  <WR_SignalEffect_StatModifier>Modificador de estatística</WR_SignalEffect_StatModifier>
+  <WR_SignalUnit_Scalar>pontos</WR_SignalUnit_Scalar>
+  <WR_SignalUnit_StatValue>valor de estatística</WR_SignalUnit_StatValue>
+  <WR_SignalUnit_SkillLevels>níveis de competência</WR_SignalUnit_SkillLevels>
+  <WR_SignalUnit_PassionLevels>níveis de paixão</WR_SignalUnit_PassionLevels>
+  <WR_SignalUnit_MoodPoints>pontos de humor</WR_SignalUnit_MoodPoints>
+  <WR_SignalUnit_Days>dias</WR_SignalUnit_Days>
+  <WR_SignalMinorPassion>Paixão moderada</WR_SignalMinorPassion>
+  <WR_SignalMajorPassion>Paixão ardente</WR_SignalMajorPassion>
+  <WR_SignalOtherSkills>Outras competências</WR_SignalOtherSkills>
+  <WR_SignalCurrentSkill>Competência atual</WR_SignalCurrentSkill>
+  <WR_SignalUnknownMod>Mod desconhecido</WR_SignalUnknownMod>
+  <WR_SignalConditionHediff>Condição de saúde: {0}</WR_SignalConditionHediff>
+  <WR_SignalConditionPrecept>Preceito: {0}</WR_SignalConditionPrecept>
+  <WR_SignalConditionTrait>Traço: {0}</WR_SignalConditionTrait>
+  <WR_SignalEffectSubject>{0}: {1}</WR_SignalEffectSubject>
+  <WR_SignalTargetViolentWork>Trabalho violento</WR_SignalTargetViolentWork>
+  <WR_SignalTargetRangedWeapon>Armas de longo alcance</WR_SignalTargetRangedWeapon>
+  <WR_SignalTargetConstantDebuff>Penalização constante de humor</WR_SignalTargetConstantDebuff>
+</LanguageData>

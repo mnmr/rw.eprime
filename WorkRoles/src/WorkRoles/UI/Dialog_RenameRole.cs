@@ -254,8 +254,8 @@ namespace WorkRoles.UI
                 // Limit actual edits without turning an untouched localized
                 // prefill into a rename merely because it exceeds the cap.
                 const int MaxNameLength = 30;
-                if (enteredName != name && enteredName.Length > MaxNameLength)
-                    enteredName = enteredName.Substring(0, MaxNameLength);
+                if (enteredName != name)
+                    enteredName = RimShared.Common.TextElements.Prefix(enteredName, MaxNameLength);
                 name = enteredName;
                 EnsureValidation();
                 y += 32f;

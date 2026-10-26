@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_Artist.description>彫刻と芸術制作。</WS_Artist.description>
+  <WS_Artist.label>芸術家</WS_Artist.label>
+  <WS_Basics.description>全入植者が行う身の回りの世話と簡単な仕事。</WS_Basics.description>
+  <WS_Basics.label>基本作業</WS_Basics.label>
+  <WS_Bedrest.description>病気や負傷時にベッドで休む。</WS_Bedrest.description>
+  <WS_Bedrest.label>療養</WS_Bedrest.label>
+  <WS_Brewer.description>醸造台で麦汁を作る。</WS_Brewer.description>
+  <WS_Brewer.label>醸造担当</WS_Brewer.label>
+  <WS_Builder.description>建築、修理、解体。</WS_Builder.description>
+  <WS_Builder.label>建築担当</WS_Builder.label>
+  <WS_Butcher.description>生物の死体を解体して食肉にする。</WS_Butcher.description>
+  <WS_Butcher.label>食肉加工担当</WS_Butcher.label>
+  <WS_Childminder.description>育児と教育。</WS_Childminder.description>
+  <WS_Childminder.label>養育担当</WS_Childminder.label>
+  <WS_Cleaner.description>掃除。</WS_Cleaner.description>
+  <WS_Cleaner.label>掃除担当</WS_Cleaner.label>
+  <WS_Cook.description>食事の調理と死体の解体。</WS_Cook.description>
+  <WS_Cook.label>料理人</WS_Cook.label>
+  <WS_Core.description>全入植者が行う緊急作業: 消火、治療を受ける、救助。</WS_Core.description>
+  <WS_Core.label>必須作業</WS_Core.label>
+  <WS_Crafter.description>一般的な製作: 石切り、溶解、ドラッグ、コンポーネント。</WS_Crafter.description>
+  <WS_Crafter.label>工芸担当</WS_Crafter.label>
+  <WS_DarkStudier.description>異常存在の研究。</WS_DarkStudier.description>
+  <WS_DarkStudier.label>異常研究者</WS_DarkStudier.label>
+  <WS_Doctor.description>入植者、囚人、動物の医療。</WS_Doctor.description>
+  <WS_Doctor.label>医者</WS_Doctor.label>
+  <WS_DrugMaker.description>ドラッグラボと血清遠心分離機での製薬。</WS_DrugMaker.description>
+  <WS_DrugMaker.label>製薬担当</WS_DrugMaker.label>
+  <WS_Fabricator.description>コンポーネント工作台での製作。</WS_Fabricator.description>
+  <WS_Fabricator.label>精密工作担当</WS_Fabricator.label>
+  <WS_Farmer.description>種まき、収穫、植物の伐採。</WS_Farmer.description>
+  <WS_Farmer.label>農夫</WS_Farmer.label>
+  <WS_Firefighter.description>火災の消火。</WS_Firefighter.description>
+  <WS_Firefighter.label>消火担当</WS_Firefighter.label>
+  <WS_Fisher.description>釣り。</WS_Fisher.description>
+  <WS_Fisher.label>漁師</WS_Fisher.label>
+  <WS_Grower.description>栽培ゾーンでの種まきと収穫。</WS_Grower.description>
+  <WS_Grower.label>栽培担当</WS_Grower.label>
+  <WS_Grunt.description>運搬と掃除。</WS_Grunt.description>
+  <WS_Grunt.label>下働き</WS_Grunt.label>
+  <WS_Handler.description>動物の手なずけ、調教、屠殺。</WS_Handler.description>
+  <WS_Handler.label>調教担当</WS_Handler.label>
+  <WS_Hauler.description>アイテムの運搬。</WS_Hauler.description>
+  <WS_Hauler.label>運搬担当</WS_Hauler.label>
+  <WS_Herder.description>囲いの動物の管理: 誘導、給餌、搾乳、毛刈り、屠殺。</WS_Herder.description>
+  <WS_Herder.label>飼育担当</WS_Herder.label>
+  <WS_Hunter.description>食料用の野生動物を狩る。</WS_Hunter.description>
+  <WS_Hunter.label>狩人</WS_Hunter.label>
+  <WS_Jailor.description>尋問、奴隷化、改宗を除く囚人管理: 食事の提供、護送、会話、抑圧、解放、処刑。</WS_Jailor.description>
+  <WS_Jailor.label>牢番</WS_Jailor.label>
+  <WS_Laborer.description>さまざまな簡単な仕事。</WS_Laborer.description>
+  <WS_Laborer.label>雑役担当</WS_Laborer.label>
+  <WS_Mechanitor.description>メカノイドの修理・培養とサブコアの作成。メカリンクがある入植者だけにおすすめします。</WS_Mechanitor.description>
+  <WS_Mechanitor.label>メカニター</WS_Mechanitor.label>
+  <WS_Medic.description>入植者への手術を除く医療作業。</WS_Medic.description>
+  <WS_Medic.label>医療担当</WS_Medic.label>
+  <WS_Miner.description>採掘と掘削。</WS_Miner.description>
+  <WS_Miner.label>採掘担当</WS_Miner.label>
+  <WS_NoFirefighting.description>ブロッカー: 後のロール（基本作業など）に消火があっても、担当者は消火しません。</WS_NoFirefighting.description>
+  <WS_NoFirefighting.label>火恐怖症</WS_NoFirefighting.label>
+  <WS_Nurse.description>患者への食事の介助、救助、見舞いと緊急時の自己治療。</WS_Nurse.description>
+  <WS_Nurse.label>看護担当</WS_Nurse.label>
+  <WS_Painter.description>塗装と塗装の除去。</WS_Painter.description>
+  <WS_Painter.label>塗装担当</WS_Painter.label>
+  <WS_Patient.description>治療を受ける。</WS_Patient.description>
+  <WS_Patient.label>患者</WS_Patient.label>
+  <WS_PlantCutter.description>野生の植物や木の伐採・収穫。</WS_PlantCutter.description>
+  <WS_PlantCutter.label>伐採担当</WS_PlantCutter.label>
+  <WS_Repairer.description>新しい建物の建築を除く全建築作業。</WS_Repairer.description>
+  <WS_Repairer.label>修繕担当</WS_Repairer.label>
+  <WS_Rescuer.description>ダウンした入植者の救助。</WS_Rescuer.description>
+  <WS_Rescuer.label>救助担当</WS_Rescuer.label>
+  <WS_Researcher.description>研究設備での研究。</WS_Researcher.description>
+  <WS_Researcher.label>研究者</WS_Researcher.label>
+  <WS_Smith.description>武器と防具の製作。</WS_Smith.description>
+  <WS_Smith.label>鍛冶職人</WS_Smith.label>
+  <WS_Tailor.description>衣服の製作。</WS_Tailor.description>
+  <WS_Tailor.label>仕立屋</WS_Tailor.label>
+  <WS_Warden.description>囚人への勧誘、改宗、食事の提供、解放。</WS_Warden.description>
+  <WS_Warden.label>看守</WS_Warden.label>
+</LanguageData>

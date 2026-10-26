@@ -20,8 +20,8 @@ Jeder Tooltip zeigt die geladenen betroffenen Implantate und ihre Ursprungsmods.
 
 ![Der Tooltip zeigt betroffene Implantate](options-purchase-tip.png)
 
-**Nur erwerbbare Implantate anzeigen** ist standardmäßig aus. Aktiviert erscheinen Implantate, die keine Werkbank fertigen kann, etwa Archotech-Teile aus Handel, Quests oder Bergung. Der Tooltip nennt alle geladenen betroffenen Implantate.
+**Nicht herstellbare Implantate anzeigen** ist standardmäßig aus. Aktiviert erscheinen Implantate, die keine Werkbank fertigen kann, etwa Archotech-Teile aus Handel, Quests oder Bergung. Der Tooltip nennt alle geladenen betroffenen Implantate.
 
 ![Die Gliedmaßenauswahl mit Archotech-Beinen und -Armen](picker-purchase-only.png)
 
-Aktiviert erscheinen sie wie alle anderen Implantate. Ein geplantes nur erwerbbares Implantat hält nichts auf: Die restliche Gruppe wird ohne es eingesetzt. Sobald es vorrätig ist, folgt es mit der nächsten Gruppe oder unter Sofort unmittelbar. Ausschalten verbirgt die Zeilen und entfernt diese Implantate aus dem Menü Implantatreserven; bestehende Auswahlen bleiben aber im Plan wirksam. Ein von einer Mod hinzugefügtes Rezept macht das Implantat unabhängig von dieser Option automatisch zu einem gewöhnlichen.
+Aktiviert erscheinen sie wie alle anderen Implantate. Ein geplantes nicht herstellbares Implantat hält nichts auf: Die restliche Gruppe wird ohne es eingesetzt. Sobald es vorrätig ist, folgt es mit der nächsten Gruppe oder unter Sofort unmittelbar. Ausschalten verbirgt die Zeilen und entfernt diese Implantate aus dem Menü Implantatreserven; bestehende Auswahlen bleiben aber im Plan wirksam. Ein von einer Mod hinzugefügtes Rezept macht das Implantat unabhängig von dieser Option automatisch zu einem gewöhnlichen.

@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <RS_CompatibilityHeading>检测到潜在的模组冲突</RS_CompatibilityHeading>
+  <RS_CompatibilityRemove>请移除上方列出的模组，以避免这些冲突。</RS_CompatibilityRemove>
+  <RS_CompatibilityRestoreAutomation>请移除上方列出的模组，以启用自动化功能。</RS_CompatibilityRestoreAutomation>
+</LanguageData>

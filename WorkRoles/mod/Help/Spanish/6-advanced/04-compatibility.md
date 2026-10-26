@@ -13,7 +13,7 @@ Los complementos que modifican proveedores existentes conservan roles y orden. P
 
 Dos familias chocan: otros reemplazos de Trabajo, como derivados de Work Tab o Better Work Tab, compiten por la interfaz. Los mods que establecen prioridades, como Free Will o PriorityMaster, compiten por los datos: WorkRoles controla a sus colonos gestionados y bloquea esas escrituras. Un aviso único identifica el mod y sugiere el equivalente con roles.
 
-Solo controla prioridades de humanoides; mods para otros tipos, como Mech Work Tab para mecanoides, son compatibles.
+Solo controla prioridades de personajes humanoides; los mods que ajustan prioridades de mecanoides, como Mech Work Tab, son compatibles.
 
 Algunos mods exigen valores de 0 a 4. Si hay problemas, activa «Comunicar prioridades originales de 0 a 4 a otros mods».
 

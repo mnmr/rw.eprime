@@ -36,7 +36,8 @@ if ($approved.Count -eq 0) {
     return
 }
 
-Invoke-SteamWorkshopSession -RimWorldDir $RimWorldDir -Action {
+Invoke-SteamWorkshopProcess -RimWorldDir $RimWorldDir -Parameters @{ approved = $approved } -Action {
+    param($approved)
     foreach ($update in $approved) {
         Assert-WorkshopConnected
         $item = [Steamworks.PublishedFileId_t]::new($update.PublishedFileId)

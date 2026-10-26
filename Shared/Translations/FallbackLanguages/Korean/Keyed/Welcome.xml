@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <RS_CompatibilityHeading>모드 충돌 가능성이 감지되었습니다</RS_CompatibilityHeading>
+  <RS_CompatibilityRemove>충돌을 피하려면 위에 나열된 모드를 제거하세요.</RS_CompatibilityRemove>
+  <RS_CompatibilityRestoreAutomation>자동화를 사용하려면 위에 나열된 모드를 제거하세요.</RS_CompatibilityRestoreAutomation>
+</LanguageData>

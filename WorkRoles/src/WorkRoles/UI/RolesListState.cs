@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using RimShared.Common;
 using RimShared.GameLib;
 using RimShared.UiLib;
 using RimWorld;
@@ -267,8 +268,7 @@ namespace WorkRoles.UI
         {
             if (!RoleSearch.NullOrEmpty()
                 && (role.DisplayLabel == null
-                    || role.DisplayLabel.IndexOf(RoleSearch,
-                        System.StringComparison.OrdinalIgnoreCase) < 0))
+                    || !SearchMatcher.Matches(role.DisplayLabel, RoleSearch, UiLanguage.CaseCulture)))
                 return false;
             if (JobFilterDefName == null) return true;
 

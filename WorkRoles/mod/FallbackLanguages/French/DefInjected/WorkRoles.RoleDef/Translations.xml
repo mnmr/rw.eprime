@@ -63,7 +63,7 @@
   <WS_Fabricator.label>Fabricant</WS_Fabricator.label>
   <WS_Fabricator.description>Fabriquer des objets à l'établi de fabrication.</WS_Fabricator.description>
   <WS_Mechanitor.label>Méchanitor</WS_Mechanitor.label>
-  <WS_Mechanitor.description>Réparer les mécanoïdes, en faire gestater de nouveaux et encoder les sous-noyaux. Recommandé uniquement aux colons possédant un mécalien.</WS_Mechanitor.description>
+  <WS_Mechanitor.description>Réparer les mécanoïdes, en produire de nouveaux par gestation et encoder les sous-noyaux. Recommandé uniquement aux colons possédant un mécalien.</WS_Mechanitor.description>
   <WS_Crafter.label>Artisan</WS_Crafter.label>
   <WS_Crafter.description>Artisanat général : taille de pierre, fonte, drogues et composants.</WS_Crafter.description>
   <WS_Researcher.label>Chercheur</WS_Researcher.label>

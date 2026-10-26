@@ -886,7 +886,7 @@ namespace WorkRoles.UI
         // Owner: Colonists window. Key: RoleStore/catalog identity, selected
         // role/job/scope, pawn-scope/location/map revisions,
         // skill-column revision, chip-display/group preferences,
-        // language/definition revisions, and settings availability. Value:
+        // language/definition/UI metric revisions, and settings availability. Value:
         // immutable detached palette/filter/table chrome labels, measurements,
         // and scope-menu command data. Dependencies: exactly the key plus
         // translated fixed labels and detached catalog labels. Refresh:
@@ -907,6 +907,7 @@ namespace WorkRoles.UI
         private ChipDisplay chromeChipDisplay;
         private string? chromeGroupKey;
         private int chromeLanguageRevision = -1;
+        private int chromeMetricRevision = -1;
         private int chromeDefinitionRevision = -1;
         private bool chromeHasSettings;
 
@@ -924,6 +925,7 @@ namespace WorkRoles.UI
             chromeSkillColumnsRevision = -1;
             chromeGroupKey = null;
             chromeLanguageRevision = -1;
+            chromeMetricRevision = -1;
             chromeDefinitionRevision = -1;
             chromeHasSettings = false;
         }
@@ -962,6 +964,7 @@ namespace WorkRoles.UI
                 && string.Equals(chromeGroupKey, groupKey,
                     System.StringComparison.Ordinal)
                 && chromeLanguageRevision == languageRevision
+                && chromeMetricRevision == UiRevision.Current
                 && chromeDefinitionRevision == definitionRevision
                 && chromeHasSettings == hasSettings)
                 return chromeSnapshot;
@@ -980,7 +983,7 @@ namespace WorkRoles.UI
                     : catalog.RoleLabelOrNull(roleFilterId) ?? allRoles;
                 string fullJobLabel = jobFilter == null
                     ? anyJob : catalog.JobLabelOrNull(jobFilter) ?? anyJob;
-                string shownJobLabel = fullJobLabel.Truncate(115f);
+                string shownJobLabel = WrText.Truncate(fullJobLabel, 115f);
 
                 IReadOnlyList<ScopeOption> liveScopeOptions =
                     rosterState.ScopeOptions;
@@ -1058,6 +1061,7 @@ namespace WorkRoles.UI
             chromeChipDisplay = chipDisplay;
             chromeGroupKey = groupKey;
             chromeLanguageRevision = languageRevision;
+            chromeMetricRevision = UiRevision.Current;
             chromeDefinitionRevision = definitionRevision;
             chromeHasSettings = hasSettings;
             return chromeSnapshot;
@@ -4397,8 +4401,7 @@ namespace WorkRoles.UI
                         }
                     string? label = presentation?.Line.Label;
                     if (string.IsNullOrEmpty(label)) continue;
-                    string abbrev = (label!.Length > 3 // IsNullOrEmpty guard above (no NotNullWhen on net472)
-                        ? label.Substring(0, 3) : label).ToLowerInvariant()
+                    string abbrev = TextElements.Prefix(label!, 3).ToLower(UiLanguage.CaseCulture)
                         + " ";
                     string level = choice.SkillLevel.ToString();
                     float abbrevWidth = WrText.FitTinyWidth(abbrev);

@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 
@@ -27,7 +28,8 @@ namespace RimShared.UiLib
         private const float ButtonHeight = 32f;
         private const float RowGap = 4f;
 
-        /// Longest name the field accepts; longer input is cut to this length.
+        /// Longest name in complete text elements; longer input is cut at
+        /// an element boundary so accents and supplementary characters survive.
         protected virtual int MaxNameLength => 40;
 
         public NameDialog(string title, string initial, Action<string>? onConfirm = null)
@@ -52,7 +54,7 @@ namespace RimShared.UiLib
         protected string EnteredName
         {
             get => name;
-            set => name = value ?? "";
+            set => name = TextElements.Prefix(value ?? "", MaxNameLength);
         }
 
         /// Height of the optional row drawn between the title and the input
@@ -102,9 +104,11 @@ namespace RimShared.UiLib
                 }
 
                 GUI.SetNextControlName(FieldControlName);
-                name = Widgets.TextField(new Rect(0f, y, inRect.width, FieldHeight), name);
-                if (name.Length > MaxNameLength)
-                    name = name.Substring(0, MaxNameLength);
+                string entered = Widgets.TextField(new Rect(0f, y, inRect.width, FieldHeight), name);
+                // Validate the initial value once and subsequent input only.
+                // Unchanged GUI passes reuse the accepted string without scanning.
+                if (!focused || entered != name)
+                    name = TextElements.Prefix(entered, MaxNameLength);
                 if (!focused)
                 {
                     Verse.UI.FocusControl(FieldControlName, this);

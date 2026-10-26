@@ -76,14 +76,16 @@ namespace WorkRoles
         public override void LoadedGame() =>
             LongEventHandler.ExecuteWhenFinished(queueWelcome);
 
-        /// The welcome dialog appears once per player per save
-        /// (`WelcomeDialog.ClaimSave`). Presentation only: never touches
-        /// synced state.
+        /// The welcome dialog appears once per player per save, and again
+        /// for a newly encountered conflict (`WelcomeDialog.ClaimSave`).
+        /// Presentation only: never touches synced state.
         private static void QueueWelcome()
         {
             WorkRolesSettings? settings = WorkRolesMod.Settings;
-            if (settings == null
-                || !RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves, queueWelcome))
+            if (settings == null || Find.World == null) return;
+            var notice = CompatibilityWarnings.Current();
+            if (!RimShared.UiLib.WelcomeDialog.ClaimSave(settings.welcomeShownSaves,
+                    queueWelcome, notice, settings.compatibilityWarningsSeen))
                 return;
             settings.Write();
             Find.WindowStack?.Add(new RimShared.UiLib.WelcomeDialog(
@@ -99,6 +101,7 @@ namespace WorkRoles
                 openWorkTab)
             {
                 FindButtonLabel = WorkButton()?.LabelCap,
+                ConflictingMods = notice,
                 Warning = UI.MainTabWindow_WorkRoles.ScreenBelowDesignFloor
                     ? "WR_WelcomeSmallScreen".Translate(
                         UnityEngine.Mathf.RoundToInt(Verse.UI.screenWidth),

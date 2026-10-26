@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <WS_GroupAnimals.label>Hayvanlar</WS_GroupAnimals.label>
+  <WS_GroupEssentials.label>Zorunlu işler</WS_GroupEssentials.label>
+  <WS_GroupFood.label>Yiyecek</WS_GroupFood.label>
+  <WS_GroupIndoors.label>İç mekân</WS_GroupIndoors.label>
+  <WS_GroupMedical.label>Tıbbi</WS_GroupMedical.label>
+  <WS_GroupOutdoors.label>Dış mekân</WS_GroupOutdoors.label>
+  <WS_GroupResearch.label>Araştırma</WS_GroupResearch.label>
+  <WS_GroupSocial.label>Sosyal</WS_GroupSocial.label>
+</LanguageData>

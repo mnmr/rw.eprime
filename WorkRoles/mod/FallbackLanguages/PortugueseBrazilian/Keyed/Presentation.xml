@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <LanguageData>
-  <WR_SignalCondition_after_mental_break>Após uma crise mental</WR_SignalCondition_after_mental_break>
+  <WR_SignalCondition_after_mental_break>Após um colapso mental</WR_SignalCondition_after_mental_break>
   <WR_SignalCondition_age_min_18>Idade igual ou superior a 18 anos</WR_SignalCondition_age_min_18>
   <WR_SignalCondition_apparel_not_nude>Usa roupa</WR_SignalCondition_apparel_not_nude>
   <WR_SignalCondition_apparel_nude>Sem roupa</WR_SignalCondition_apparel_nude>
@@ -28,7 +28,7 @@
   <WR_SignalCondition_psychic_sensitivity_tier_major>Sensibilidade psíquica elevada</WR_SignalCondition_psychic_sensitivity_tier_major>
   <WR_SignalCondition_psychic_sensitivity_tier_minor>Sensibilidade psíquica reduzida</WR_SignalCondition_psychic_sensitivity_tier_minor>
   <WR_SignalCondition_psychic_sensitivity_tier_normal>Sensibilidade psíquica normal</WR_SignalCondition_psychic_sensitivity_tier_normal>
-  <WR_SignalCondition_psychic_sensitivity_tier_nullified>Sensibilidade psíquica desfeita</WR_SignalCondition_psychic_sensitivity_tier_nullified>
+  <WR_SignalCondition_psychic_sensitivity_tier_nullified>Sensibilidade psíquica anulada</WR_SignalCondition_psychic_sensitivity_tier_nullified>
   <WR_SignalCondition_range_long>A longa distância</WR_SignalCondition_range_long>
   <WR_SignalCondition_range_medium>A média distância</WR_SignalCondition_range_medium>
   <WR_SignalCondition_ritual_no_recent_quality_outcome>Nenhum ritual bem-sucedido recente</WR_SignalCondition_ritual_no_recent_quality_outcome>
@@ -36,7 +36,7 @@
   <WR_SignalCondition_setting_vse_critical_affects_other_skills>A paixão crítica afeta outras habilidades nas configurações do mod</WR_SignalCondition_setting_vse_critical_affects_other_skills>
   <WR_SignalCondition_sight_blind>Cego</WR_SignalCondition_sight_blind>
   <WR_SignalCondition_sight_not_blind>Não é cego</WR_SignalCondition_sight_not_blind>
-  <WR_SignalCondition_social_same_passion_opinion>Melhora a opinião sobre personagens com a mesma paixão</WR_SignalCondition_social_same_passion_opinion>
+  <WR_SignalCondition_social_same_passion_opinion>Melhora a opinião sobre outros com a mesma paixão</WR_SignalCondition_social_same_passion_opinion>
   <WR_SignalCondition_state_drunk>Embriagado</WR_SignalCondition_state_drunk>
   <WR_SignalCondition_state_no_recent_lovin>Sem relações amorosas recentes</WR_SignalCondition_state_no_recent_lovin>
   <WR_SignalCondition_state_not_drunk>Não está embriagado</WR_SignalCondition_state_not_drunk>
@@ -66,7 +66,7 @@
   <WR_SignalEffect_Mood>Humor</WR_SignalEffect_Mood>
   <WR_SignalEffect_WorkPreference>Preferência de trabalho</WR_SignalEffect_WorkPreference>
   <WR_SignalEffect_Capability>Capacidade</WR_SignalEffect_Capability>
-  <WR_SignalEffect_MentalBreak>Crise mental</WR_SignalEffect_MentalBreak>
+  <WR_SignalEffect_MentalBreak>Colapso mental</WR_SignalEffect_MentalBreak>
   <WR_SignalEffect_StatModifier>Modificador de estatística</WR_SignalEffect_StatModifier>
   <WR_SignalUnit_Scalar>pontos</WR_SignalUnit_Scalar>
   <WR_SignalUnit_StatValue>valor de estatística</WR_SignalUnit_StatValue>

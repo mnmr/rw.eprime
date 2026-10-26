@@ -64,7 +64,7 @@ Klicke auf ein Feld für dessen Anzeigeoptionen. Rechtsklick entfernt die Zuweis
   <EPR.ShowSearchFilter>Suchfilter anzeigen</EPR.ShowSearchFilter>
   <EPR.SearchHideZero>Ergebnisse mit Anzahl null ausblenden</EPR.SearchHideZero>
   <EPR.SearchStorageOnly>Nur gelagerte Gegenstände zählen</EPR.SearchStorageOnly>
-  <EPR.SearchStorageOnlyTip>Wenn aktiviert, werden nur geeignete, nicht verdorbene Gegenstände in Lagerzonen oder Lagergebäuden wie Regalen gezählt. Lose Gegenstände an anderen Stellen der Karte werden ausgeschlossen. Gegenstände, die von Bauern getragen werden, sich in Inventaren oder Behältern befinden oder in noch nicht aufgedeckten Gebieten verborgen sind, werden nie gezählt. Verbotene Gegenstände werden mitgezählt, sofern nicht auch „Verbotene Gegenstände ignorieren“ aktiviert ist.</EPR.SearchStorageOnlyTip>
+  <EPR.SearchStorageOnlyTip>Wenn aktiviert, werden nur geeignete, nicht verdorbene Gegenstände in Lagerzonen oder Lagergebäuden wie Regalen gezählt. Lose Gegenstände an anderen Stellen der Karte werden ausgeschlossen. Gegenstände, die getragen werden, sich in Inventaren oder Behältern befinden oder in noch nicht aufgedeckten Gebieten verborgen sind, werden nie gezählt. Verbotene Gegenstände werden mitgezählt, sofern nicht auch „Verbotene Gegenstände ignorieren“ aktiviert ist.</EPR.SearchStorageOnlyTip>
   <EPR.SearchHideForbidden>Verbotene Gegenstände ignorieren</EPR.SearchHideForbidden>
   <EPR.SelectJumpCamera>Kamera zur angeklickten Ressource bewegen</EPR.SelectJumpCamera>
   <EPR.DisplayOptions>Anzeigeoptionen</EPR.DisplayOptions>
@@ -150,4 +150,7 @@ Um einen Pool zu einer Gruppe hinzuzufügen, wechsle zum Gruppeneditor und verwe
   <EPR.PreviewPoolRow>{0} ({1} Einträge)</EPR.PreviewPoolRow>
   <EPR.PreviewGroupRow>{0} ({1} Ebenen, {2} Felder)</EPR.PreviewGroupRow>
   <EPR.PreviewNone>(keine)</EPR.PreviewNone>
+  <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout zeichnet im benutzerdefinierten oder voreingestellten Modus eine eigene Ressourcenanzeige. Diese konkurriert mit EPrime's Readouts um denselben Anzeigebereich.</EPR.CompatibilityCustomResourceReadout>
+  <EPR.CompatibilityReadoutsPlus>Readouts+ ergänzt die Ressourcenanzeige des Grundspiels um Klickfunktionen. Diese werden umgangen, solange die Anzeige von EPrime's Readouts aktiviert ist.</EPR.CompatibilityReadoutsPlus>
+  <EPR.CompatibilityToggleableReadouts>Toggleable Readouts (einschließlich Continued) ersetzt die Darstellung der Anzeigen des Grundspiels. Seine Filter- und Anheftfunktionen werden umgangen, solange die Anzeige von EPrime's Readouts aktiviert ist.</EPR.CompatibilityToggleableReadouts>
 </LanguageData>

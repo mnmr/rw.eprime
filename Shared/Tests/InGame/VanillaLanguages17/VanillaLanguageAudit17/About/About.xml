@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>Vanilla language audit 1.7 (test only)</name>
+  <author>Local diagnostics</author>
+  <packageId>rimshared.tests.vanillalanguages17</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <description>One-shot native translation report inside an owned automation run. No localization keys or defs.</description>
+</ModMetaData>

@@ -5,7 +5,7 @@ title: 圖標與顏色
 
 ![圖標選擇器](icon-picker.png)
 
-顏色位于編輯器右上角配色板：
+顏色位於編輯器右上角配色板：
 
 ![編輯器配色板](editor-color-palette.png)
 
