@@ -44,17 +44,26 @@ def pending_entries(root, locale, source, mods):
     require_clean(issues, locale)
     issues = checks.check_locale(root, locale, mods)
     # Content defects can be retranslated. Ambiguous files/manifests need repair.
-    require_clean([i for i in issues if i.code in ('xml', 'duplicate', 'source', 'text', 'manifest')], locale)
+    require_clean([i for i in issues if i.code in ('xml', 'duplicate', 'source', 'text', 'manifest', 'help-block', 'help-untracked')], locale)
     keys = {i.path for i in issues if i.severity == 'error' and i.path in source}
     if not checks.manifest_path(root, locale).exists():
         keys.update(source)
     entries = [{'key': key, 'english': source[key], 'current': target.get(key, '')}
                for key in sorted(keys)]
+    english_pages = checks.help_pages(root, 'English', mods)
+    target_pages = checks.help_pages(root, locale, mods)
+    path = checks.manifest_path(root, locale)
+    previous = json.loads(path.read_text(encoding='utf-8')).get('help_source', {}) if path.exists() else {}
+    for entry in entries:
+        if '/Help/' in entry['key'] and '#' in entry['key']:
+            page = entry['key'].split('#')[0]
+            entry.update(page_english=english_pages[page], page_current=target_pages.get(page, ''),
+                         previous_english=previous.get(entry['key'], ''))
     return entries, sorted(target.keys() - source.keys())
 
 
 def batches(entries):
-    # Keep help pages intact while bounding ordinary UI batches and model output.
+    # A paragraph/list stays intact; full-page context is read-only input.
     batch, size = [], 0
     for entry in entries:
         length = len(json.dumps(entry, ensure_ascii=False))
@@ -111,6 +120,8 @@ class CodexTranslator:
                   + guidance + '\n\nTarget locale: ' + locale
                   + '\nReturn exactly one translation for every supplied key. '
                   'Use current translations as terminology context; revise only as needed to match English. '
+                  'For help blocks, return only the requested block text, without ID comments or surrounding page text. '
+                  'page_english, page_current and previous_english are read-only context. '
                   'Values are plain text, not XML: do not XML-escape them.\n'
                   + json.dumps({'entries': entries}, ensure_ascii=False))
         # A separate working directory keeps repository agent instructions out of
@@ -148,6 +159,18 @@ class CodexTranslator:
 
 
 def apply_translations(root, locale, updated, retired, mods):
+    english_pages = checks.help_pages(root, 'English', mods)
+    current_pages = checks.help_pages(root, locale, mods)
+    for page, source in english_pages.items():
+        if checks.help_units.parse(source) is None:
+            continue
+        selected = {key.split('#', 1)[1]: value for key, value in updated.items() if key.startswith(page + '#')}
+        result = checks.help_units.patch(source, current_pages.get(page, ''), selected)
+        if result != current_pages.get(page):
+            mod, _, rest = page.split('/', 2)
+            path = checks.content_root(root, mod) / 'Help' / locale / rest
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(result.encode('utf-8'))
     trees, locations, english_locations = {}, {}, {}
     for mod in mods:
         base = checks.content_root(root, mod)
@@ -171,6 +194,12 @@ def apply_translations(root, locale, updated, retired, mods):
     for key in sorted(set(updated) | set(retired)):
         mod, kind, rest = key.split('/', 2)
         if kind == 'Help':
+            if '#' in rest:
+                page = key.split('#')[0]
+                if page not in english_pages:
+                    path = checks.content_root(root, mod) / 'Help' / locale / rest.split('#')[0]
+                    path.unlink(missing_ok=True)
+                continue
             path = checks.content_root(root, mod) / 'Help' / locale / rest
             if key in updated:
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -220,6 +249,26 @@ def replace_file(path, data):
         temporary.unlink(missing_ok=True)
 
 
+def commit_files(root, locales, mods, before, after):
+    """Shared transaction boundary for translation and metadata-only migration."""
+    if content_files(root, locales, mods) != before:
+        raise ValueError('Localization files changed during translation; no generated changes applied. Rerun to include those edits.')
+    changed = sorted(path for path in before.keys() | after.keys() if before.get(path) != after.get(path))
+    for relative in changed:
+        if not (root / relative).resolve().is_relative_to(root):
+            raise ValueError(f'Output path points outside the repository: {relative}')
+    written = []
+    try:
+        for relative in changed:
+            written.append(relative)
+            replace_file(root / relative, after.get(relative))
+    except BaseException:
+        for relative in reversed(written):
+            replace_file(root / relative, before.get(relative))
+        raise
+    return len(changed)
+
+
 def update(root, locales, translator, mods=checks.MODS, dry_run=False):
     root = Path(root).resolve()
     locales = tuple(dict.fromkeys(locales))
@@ -233,10 +282,17 @@ def update(root, locales, translator, mods=checks.MODS, dry_run=False):
     for locale in locales:
         entries, retired = pending_entries(root, locale, source, mods)
         # A retired manifest key may already have had its translation removed.
-        has_retired_hashes = any(i.code == 'retired' for i in checks.check_locale(root, locale, mods))
-        print(f'{locale}: {len(entries)} entries to translate, {len(retired)} obsolete entries to remove'
+        locale_issues = checks.check_locale(root, locale, mods)
+        has_retired_hashes = any(i.code == 'retired' for i in locale_issues)
+        has_order_change = any(i.code == 'help-order' for i in locale_issues)
+        help_entries = [e for e in entries if '/Help/' in e['key']]
+        pages = {e['key'].split('#')[0] for e in help_entries}
+        blocks = sum('#' in e['key'] for e in help_entries)
+        legacy = len(help_entries) - blocks
+        print(f'{locale}: {len(entries) - len(help_entries)} UI strings, {blocks} help blocks in {len(pages)} pages to translate; {len(retired)} obsolete entries to remove'
+              + (f'; {legacy} legacy whole pages' if legacy else '')
               + ('; retired source hashes to remove' if has_retired_hashes else ''), flush=True)
-        if entries or retired or has_retired_hashes:
+        if entries or retired or has_retired_hashes or has_order_change:
             pending[locale] = (entries, retired)
         if dry_run:
             for entry in entries:
@@ -264,27 +320,12 @@ def update(root, locales, translator, mods=checks.MODS, dry_run=False):
                     raise ValueError(f'{locale}: response must contain exactly the requested keys and text values')
                 translated.update(result)
             apply_translations(staged, locale, translated, retired, mods)
-            checks.snapshot_locale(staged, locale, mods)
+            retired_hashes = [i.path for i in checks.check_locale(staged, locale, mods) if i.code == 'retired']
+            checks.snapshot_locale(staged, locale, mods, keys=[*translated, *retired, *retired_hashes])
             require_clean(checks.check_locale(staged, locale, mods, True), locale)
         after = content_files(staged, locales, mods)
-        if content_files(root, locales, mods) != before:
-            raise ValueError('Localization files changed during translation; no generated changes applied. Rerun to include those edits.')
-        changed = sorted(path for path in before.keys() | after.keys() if before.get(path) != after.get(path))
-        for relative in changed:
-            if not (root / relative).resolve().is_relative_to(root):
-                raise ValueError(f'Output path points outside the repository: {relative}')
-        written = []
-        try:
-            # Files are replaced atomically; roll back earlier replacements on a
-            # write failure or interruption. Validation completes before any write.
-            for relative in changed:
-                written.append(relative)
-                replace_file(root / relative, after.get(relative))
-        except BaseException:
-            for relative in reversed(written):
-                replace_file(root / relative, before.get(relative))
-            raise
-        print(f'Updated {len(changed)} files. Review the diff and run check-localization.cmd before publishing.')
+        changed = commit_files(root, locales, mods, before, after)
+        print(f'Updated {changed} files. Review the diff and run check-localization.cmd before publishing.')
 
 
 def main():

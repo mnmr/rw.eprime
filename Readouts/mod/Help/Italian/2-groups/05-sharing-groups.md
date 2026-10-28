@@ -1,12 +1,44 @@
 ---
 title: Condividere i gruppi
 ---
-I tre pulsanti in alto a destra della scheda Panoramica condividono o ripristinano la configurazione:
+<!-- l10n:b-a06a00109adf -->
+I quattro pulsanti in alto nell'editor permettono di condividere, salvare o reimpostare la configurazione:
 
-![Importa, Esporta e Ripristina i valori predefiniti](editor-buttons.png)
+<!-- l10n:b-3abef8172f5c -->
+![Importa, Esporta, Imposta valori predefiniti e Ripristina i valori predefiniti](editor-buttons.png)
 
-Esporta scrive insiemi e gruppi in un file o negli appunti, compresa l'impostazione Mostra quando è zero di ogni casella. Soglie ed eccezioni di conteggio non vengono esportate.
+<!-- l10n:b-d2699fb79187 -->
+## Esportare una configurazione
 
-Importa legge un file di questo tipo o gli appunti e sostituisce insiemi e gruppi. Cancella anche soglie ed eccezioni di conteggio; le voci che richiedono mod non presenti vengono ignorate. Ripristina i valori predefiniti sostituisce tutto con la configurazione fornita dalla mod.
+<!-- l10n:b-e4537f800fee -->
+Esporta salva gruppi, insiemi di risorse, soglie, eccezioni di conteggio e impostazioni del giocatore. Scegli un percorso e un nome per il file, poi fai clic su Salva oppure usa Copia negli appunti.
 
-Importa mostra un'anteprima e un avviso prima di cambiare qualcosa; Ripristina i valori predefiniti richiede conferma. Dopo entrambe le operazioni, ogni gruppo riparte con un livello e la propria visibilità predefinita. In multigiocatore, entrambe cambiano i gruppi per tutti.
+<!-- l10n:b-355662a5828e -->
+![Anteprima e comandi di esportazione](export-setup.png)
+
+<!-- l10n:b-fe372ca48bad -->
+Le impostazioni del giocatore includono i gruppi attivi e le opzioni globali di visualizzazione e conteggio. Sono esclusi il numero di livelli mostrati, il testo di ricerca, le posizioni di scorrimento e lo stato temporaneo dell'editor.
+
+<!-- l10n:b-cf6b7284c676 -->
+## Scegliere cosa importare
+
+<!-- l10n:b-5c19c2c6b9e4 -->
+Importa legge un file salvato o il contenuto degli appunti e mostra un'anteprima prima di modificare qualsiasi cosa. Seleziona le categorie da sostituire. La casella Impostazioni del giocatore e gruppi attivi è inizialmente deselezionata, così puoi mantenere le tue preferenze di visualizzazione.
+
+<!-- l10n:b-537b3af44d4d -->
+![Anteprima dell'importazione con selezione delle categorie](import-selection.png)
+
+<!-- l10n:b-1c0ab7a10c14 -->
+Puoi selezionare ogni categoria presente nel file. Puoi cambiare le categorie correlate una alla volta, anche se una scelta intermedia è incompleta. Importa resta disabilitato finché la configurazione scelta non contiene riferimenti validi a insiemi e gruppi; passa il puntatore sul pulsante disabilitato per vedere cosa manca.
+
+<!-- l10n:b-3081ef3ab31d -->
+Le categorie assenti dalle vecchie esportazioni restano invariate. Le voci che richiedono contenuti di mod non disponibili vengono ignorate.
+
+<!-- l10n:b-84361107e203 -->
+In multigiocatore, gruppi, insiemi, soglie ed eccezioni di conteggio importati cambiano la configurazione per tutti. Le impostazioni del giocatore importate valgono solo per te.
+
+<!-- l10n:b-f4e74689b23c -->
+## Salvare o ripristinare i valori predefiniti
+
+<!-- l10n:b-6181f2c14286 -->
+Imposta valori predefiniti salva una configurazione personale per le colonie future (vedi [Valori predefiniti per nuove partite](topic:new-game-defaults)). Ripristina i valori predefiniti chiede conferma, poi sostituisce la configurazione della colonia attuale con quella inclusa in Readouts. In multigiocatore, il ripristino modifica la configurazione condivisa da tutti.

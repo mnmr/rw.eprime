@@ -21,6 +21,7 @@ commands. Where this file is silent, the root contract governs.
 
 | Cached artifact | Required invalidation inputs |
 |---|---|
+| Options/Help window tabs | Window-owned translated captions and delegates; language revision rebuilds the list, selection uses cached predicates, PostClose releases the list. Shared HelpTabView owns topic, image and measurement caches keyed by language, UI metric revision, content generation and width; PostClose flushes personal reading history then releases window data. No new game polling or simulation cache. |
 | Settings enable/disable button bounds | UI metric revision and translated enable/disable captions; Small-font width and line height. Immediate gated refresh, unchanged inputs reuse scalars; SettingsLabels.Reset clears stamps and caption references. |
 | Reserved unfinished-item author display (`UftAuthor`) | Current language revision only; one immutable translated string, equal rebuilds retain identity. The vanilla inspector reads the presentation marker without changing invariant `creatorName` save data. Game disposal resets the cached string. |
 | Store settings presentation (`StoreSettingsSnapshot`) | The fourteen per-save bill, construction, cap, and sharing default fields; command and load/seed invalidation |

@@ -1,22 +1,30 @@
 ---
 title: Elegir implantes
 ---
+<!-- l10n:b-49e229a09e53 -->
 La columna central enumera implantes del juego, expansiones y todos los mods, agrupados por la parte del cuerpo a la que se destinan.
 
+<!-- l10n:b-2a7c06258ef5 -->
 ![Selector con filtros de región y casillas](picker-tree.png)
 
+<!-- l10n:b-a2d1599f3ea5 -->
 - **Extremidades / Torso / Cabeza** limita la región corporal.
 - La búsqueda contigua abarca todas las regiones y presenta una lista plana de implantes y partes coincidentes. Bórrala o pulsa una región para volver a los grupos.
 - Las partes pares tienen una entrada por lado: pierna biónica izquierda y derecha se eligen por separado.
 - Marca una casilla para añadirla al plan. Arrastra entre casillas para marcar una secuencia.
 - Pasa el cursor para ver estadísticas y valor de mercado.
 
+<!-- l10n:b-5fcc0a9d197e -->
 ![Búsqueda con todos los implantes de pierna en una lista](picker-search.png)
 
+<!-- l10n:b-4c96d69447df -->
 No se pueden planificar degradaciones, como patas de palo. También se excluyen implantes con desventajas o usos muy específicos: alegrialambre, corta-dolor, garra hidráulica y asistente de piloto. Nunca se muestran los exclusivos de necrófagos. Los que solo pueden adquirirse, como las partes arqueotecas sin receta de fabricación, permanecen ocultos hasta activar **Mostrar implantes que solo pueden adquirirse** en Opciones. Una parte arqueoteca instalada manualmente siempre cuenta para su casilla, independientemente de esa opción. Un implante de adquisición exclusiva nunca detiene el resto del lote y se instala con el siguiente cuando esté disponible. Si un mod añade una receta, pasa a ser ordinario.
 
+<!-- l10n:b-15296e7dd9bb -->
 Algunos mods mejoran una parte biónica instalada sin quitarla, como las modulares de Integrated Implants. La mejora aparece como implante independiente y sustituye a la versión básica al elegirla. Si falta la básica, se instala primero y luego se mejora. Si ya está instalada, solo se requiere la mejora.
 
+<!-- l10n:b-340275502b36 -->
 ![Diálogo de requisitos de un módulo de pierna](requirement-prompt.png)
 
+<!-- l10n:b-d04dd75793a3 -->
 Algunos implantes, como los módulos de Bionic modularity, requieren una parte artificial. Si marcas uno sin tener una sustitución compatible en el plan, aparece un diálogo con las opciones que lo admiten. **Añadir al plan** incorpora la sustitución elegida y el implante; **Cancelar** no añade nada.

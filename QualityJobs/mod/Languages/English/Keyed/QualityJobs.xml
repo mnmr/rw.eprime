@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <QJ_TabOptions>Options</QJ_TabOptions>
+  <QJ_TabHelp>Help</QJ_TabHelp>
+  <QJ_HelpChapterBasics>Getting started</QJ_HelpChapterBasics>
+  <QJ_HelpChapterCrafting>Crafting</QJ_HelpChapterCrafting>
+  <QJ_HelpChapterConstruction>Construction</QJ_HelpChapterConstruction>
+  <QJ_HelpChapterOptions>Options and troubleshooting</QJ_HelpChapterOptions>
+  <QJ_HelpReload>Reload</QJ_HelpReload>
   <QJ_FinishBillLabel>Finish {0} ({1})</QJ_FinishBillLabel>
   <QJ_AtStockCap>unfinished stock cap reached</QJ_AtStockCap>
   <QJ_UnfinishedWorkWaiting>this bill's unfinished item is waiting to be resumed</QJ_UnfinishedWorkWaiting>
@@ -54,7 +61,7 @@
   <QJ_SettingsUnlimitedHint>0 = unlimited</QJ_SettingsUnlimitedHint>
   <QJ_SettingsShowToolbarButton>Show toolbar button</QJ_SettingsShowToolbarButton>
   <QJ_SettingsShowToolbarButtonTip>Adds a button beside the view toggles in the lower right corner of the screen. The button opens the Quality Jobs settings.</QJ_SettingsShowToolbarButtonTip>
-  <QJ_ToolbarButtonTip>Open the Quality Jobs settings.</QJ_ToolbarButtonTip>
+  <QJ_ToolbarButtonTip>Open Quality Jobs options and help.</QJ_ToolbarButtonTip>
   <QJ_SettingsEnabledNote>The toggle applies to the loaded save. Disabling restores all items to vanilla and discards this save's Quality Jobs configuration.\n\nIf the mod stays installed, it re-activates with default settings the next time the save is loaded. Disable is meant as preparation for removing the mod.</QJ_SettingsEnabledNote>
   <QJ_DisableButton>Disable Quality Jobs</QJ_DisableButton>
   <QJ_EnableButton>Enable Quality Jobs</QJ_EnableButton>

@@ -12,6 +12,8 @@ namespace EPrimeReadouts.UI
     /// black RGB, so the sprite material would render them black) and the
     /// channel publishes with coverage recovered from the red channel; the
     /// previous front keeps presenting until the build promotes.
+    /// The text revision includes the resolved counter font. Counters and
+    /// game-preference captions are separate material batches in one surface.
     internal sealed class PanelGlyphProduct
     {
         private readonly PanelBufferBackend backend;
@@ -57,48 +59,46 @@ namespace EPrimeReadouts.UI
                 return SurfaceEnsureResult.Failed;
 
             using (GuiStateScope.Capture())
-            using (TinyText.UseFont())
             {
-                GUIStyle style = Text.CurFontStyle;
-                Font? font = style.font ?? GUI.skin.font;
-                if (font == null || font.material == null
-                    || font.material.mainTexture == null)
-                    return SurfaceEnsureResult.Failed;
-
-                int fontSize = style.fontSize > 0
-                    ? style.fontSize : font.fontSize;
-                RequestCharacters(
-                    draw, font,
-                    ScaledFontSize(fontSize, sizing.RasterScale),
-                    style.fontStyle);
-                if (!BuildGeometry(
-                        draw, style, font, fontSize, sizing.RasterScale))
-                    return SurfaceEnsureResult.Failed;
-
                 RenderTexture? working = channel.EnsureWorking(
                     sizing.PixelWidth, sizing.PixelHeight);
                 if (working == null) return SurfaceEnsureResult.Failed;
                 RenderTexture? previous = RenderTexture.active;
                 RenderTexture.active = working;
                 GL.PushMatrix();
+                bool visibleGeometry = false;
                 try
                 {
                     GL.LoadPixelMatrix(
                         0f, sizing.PixelWidth,
                         sizing.PixelHeight, 0f);
-                    // DrawFontQuadsToActive clears the reused target itself
-                    // before drawing.
-                    backend.DrawFontQuadsToActive(
-                        vertices, uvs, colors, triangles,
-                        font.material);
+                    // Each font has its own atlas/material. Both batches
+                    // publish as one surface; only the first clears it.
+                    for (int pass = 0; pass < 2; pass++)
+                    using (TinyText.UseFont(pass == 0 ? draw.CounterFont : TinyText.Metrics.Font))
+                    {
+                        GUIStyle style = Text.CurFontStyle;
+                        Font? font = style.font ?? GUI.skin.font;
+                        if (font == null || font.material == null
+                            || font.material.mainTexture == null)
+                            return SurfaceEnsureResult.Failed;
+                        int fontSize = style.fontSize > 0 ? style.fontSize : font.fontSize;
+                        RequestCharacters(draw, font,
+                            ScaledFontSize(fontSize, sizing.RasterScale), style.fontStyle);
+                        if (!BuildGeometry(draw, style, font, fontSize,
+                                sizing.RasterScale, pass == 0 ? CellKind.Counter : CellKind.Label))
+                            return SurfaceEnsureResult.Failed;
+                        visibleGeometry |= HasVisibleGeometry(sizing.PixelWidth, sizing.PixelHeight);
+                        backend.DrawFontQuadsToActive(vertices, uvs, colors, triangles,
+                            font.material, clear: pass == 0);
+                    }
                 }
                 finally
                 {
                     GL.PopMatrix();
                     RenderTexture.active = previous;
                 }
-                channel.RequestPublish(HasVisibleGeometry(
-                    sizing.PixelWidth, sizing.PixelHeight));
+                channel.RequestPublish(visibleGeometry);
                 pendingRevision = next;
                 hasPending = true;
                 return SurfaceEnsureResult.InFlight;
@@ -338,7 +338,8 @@ namespace EPrimeReadouts.UI
             GUIStyle style,
             Font font,
             int fontSize,
-            float rasterScale)
+            float rasterScale,
+            CellKind kind)
         {
             vertices.Clear();
             uvs.Clear();
@@ -349,6 +350,7 @@ namespace EPrimeReadouts.UI
                 RenderCell cell = draw.Model.Cells[i];
                 string? text;
                 TextAnchor anchor;
+                if (cell.Kind != kind) continue;
                 if (cell.Kind == CellKind.Counter)
                 {
                     text = cell.Text;

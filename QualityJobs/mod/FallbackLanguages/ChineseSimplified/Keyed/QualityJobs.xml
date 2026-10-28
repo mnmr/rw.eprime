@@ -54,7 +54,7 @@
   <QJ_SettingsUnlimitedHint>0 = 无限制</QJ_SettingsUnlimitedHint>
   <QJ_SettingsShowToolbarButton>显示工具栏按钮</QJ_SettingsShowToolbarButton>
   <QJ_SettingsShowToolbarButtonTip>在屏幕右下角的显示开关旁添加按钮，用于打开 Quality Jobs 设置。</QJ_SettingsShowToolbarButtonTip>
-  <QJ_ToolbarButtonTip>打开 Quality Jobs 设置。</QJ_ToolbarButtonTip>
+  <QJ_ToolbarButtonTip>打开 Quality Jobs 设置与帮助。</QJ_ToolbarButtonTip>
   <QJ_SettingsEnabledNote>此开关仅作用于当前存档。禁用会使所有物品恢复原版行为，并丢弃此存档的 Quality Jobs 配置。\n\n若模组仍已安装，下次加载此存档时会按默认设置重新启用。禁用功能用于卸载模组前的准备。</QJ_SettingsEnabledNote>
   <QJ_DisableButton>禁用 Quality Jobs</QJ_DisableButton>
   <QJ_EnableButton>启用 Quality Jobs</QJ_EnableButton>
@@ -84,4 +84,11 @@
   <QJ_CompatibilityNoJobAuthors>启用 No Job Authors 的强制完成或 Achtung 兼容选项后，它可能绕过 Quality Jobs，继续处理已为品质要求预留的工作。</QJ_CompatibilityNoJobAuthors>
   <QJ_CompatibilityQualityBuilder>QualityBuilder 也会控制建造者和建造重试，其规则可能与 Quality Jobs 冲突。</QJ_CompatibilityQualityBuilder>
   <QJ_CompatibilitySharingAdvice>关闭未成品共享并不能消除所有这些冲突。</QJ_CompatibilitySharingAdvice>
+  <QJ_HelpChapterBasics>入门指南</QJ_HelpChapterBasics>
+  <QJ_HelpChapterConstruction>建造</QJ_HelpChapterConstruction>
+  <QJ_HelpChapterCrafting>制作</QJ_HelpChapterCrafting>
+  <QJ_HelpChapterOptions>设置与故障排查</QJ_HelpChapterOptions>
+  <QJ_HelpReload>重新加载</QJ_HelpReload>
+  <QJ_TabHelp>帮助</QJ_TabHelp>
+  <QJ_TabOptions>设置</QJ_TabOptions>
 </LanguageData>

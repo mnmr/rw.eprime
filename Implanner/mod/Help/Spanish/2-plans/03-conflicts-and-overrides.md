@@ -1,13 +1,18 @@
 ---
 title: Conflictos y sustituciones
 ---
+<!-- l10n:b-5882501cd711 -->
 ![Filas que avisan de que sustituirán el brazo biónico previsto](picker-overrides.png)
 
+<!-- l10n:b-b00f21c5a68d -->
 Dos implantes no siempre pueden coexistir. Cada parte admite una sustitución; algunos se excluyen y otros retiran a un rival esté donde esté, como las cepas de mecanitos de [FSF] Advanced Bionics Expansion. Los módulos que se montan en extremidades biónicas, como los de Bionic modularity, comparten la parte sin sustituirla. Implanner aplica las reglas del juego y resuelve conflictos al pulsar.
 
+<!-- l10n:b-c15f453c9d3b -->
 - Elegir una casilla incompatible con una selección propia desmarca la anterior. Antes de pulsar, la fila avisa «sustituye a». Si el texto es largo, se conserva el final; al pasar el cursor se ve completo.
 - Si el conflicto es con una selección heredada, se suprime solo en el plan derivado. El base conserva su elección.
 
+<!-- l10n:b-ae241288329a -->
 Las casillas cubiertas por el plan base muestran «heredado». Marcarlas las añade como selección propia de este plan.
 
+<!-- l10n:b-d8d5bb2715fa -->
 Las opciones de **Compatibilidad con mods** añaden dos reglas que los datos del juego no expresan; consulta [Opciones de mods](topic:mod-options).

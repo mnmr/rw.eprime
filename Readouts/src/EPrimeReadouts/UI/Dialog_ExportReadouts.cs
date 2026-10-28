@@ -16,7 +16,8 @@ namespace EPrimeReadouts.UI
         // Owner: one export window.
         // Key: ReadoutStore identity plus GroupsVersion and PoolsVersion.
         // Value: detached immutable ReadoutSnapshot and its serialized XML.
-        // Dependencies: group/pool domains only; thresholds are unrelated.
+        // Dependencies: group/pool domains for the preview; serialized setup additionally
+        // observes ThresholdsVersion, CountRulesVersion and PlayerSetupBridge.Revision.
         // Refresh policy: immediate in WindowUpdate, never in OnGUI.
         // Equality policy: unchanged domain revisions preserve snapshot/XML identity.
         // Teardown: PreClose releases snapshot, XML and preview rows.
@@ -24,6 +25,7 @@ namespace EPrimeReadouts.UI
         private ReadoutStore? snapshotStore;
         private int snapshotGroupsVersion = -1;
         private int snapshotPoolsVersion = -1;
+        private int xmlThresholdsVersion = -1, xmlCountRulesVersion = -1, xmlPlayerVersion = -1;
 
         private string? xml;          // export XML, rebuilt alongside the snapshot
         private Vector2 scroll;
@@ -47,9 +49,16 @@ namespace EPrimeReadouts.UI
             snapshotStore = store;
             snapshotGroupsVersion = store.GroupsVersion;
             snapshotPoolsVersion = store.PoolsVersion;
-            snapshot = ReadoutSnapshot.Capture(
-                store.Model.Pools, store.Model.InDisplayOrder());
-            xml = snapshot.ToXml(ModRequirements.PackageIdOf);
+            snapshot = ReadoutSnapshot.Capture(store.Model.Pools, store.Model.InDisplayOrder());
+            RebuildXml(store);
+        }
+
+        private void RebuildXml(ReadoutStore store)
+        {
+            xmlThresholdsVersion = store.ThresholdsVersion;
+            xmlCountRulesVersion = store.CountRulesVersion;
+            xmlPlayerVersion = PlayerSetupBridge.Revision;
+            xml = SetupDocument.Capture(store.Model, PlayerSetupBridge.Capture(store)).ToXml(ModRequirements.PackageIdOf);
         }
 
         public override void PreClose()
@@ -80,6 +89,8 @@ namespace EPrimeReadouts.UI
                     || store.GroupsVersion != snapshotGroupsVersion
                     || store.PoolsVersion != snapshotPoolsVersion)
                 RebuildSnapshot();
+            else if (xmlThresholdsVersion != store.ThresholdsVersion || xmlCountRulesVersion != store.CountRulesVersion
+                || xmlPlayerVersion != PlayerSetupBridge.Revision) RebuildXml(store);
         }
 
         public override void DoWindowContents(Rect inRect)

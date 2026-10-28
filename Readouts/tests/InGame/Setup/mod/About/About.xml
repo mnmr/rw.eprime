@@ -1,0 +1,1 @@
+<ModMetaData><name>Readouts setup verification</name><author>Local test</author><packageId>eprime.readouts.setupprobe</packageId><supportedVersions><li>1.7</li></supportedVersions><loadAfter><li>mnmr.eprimereadouts</li></loadAfter></ModMetaData>

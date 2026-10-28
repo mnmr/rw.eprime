@@ -4,6 +4,19 @@ namespace EPrimeReadouts.Core.Tests;
 
 public class PanelTextRevisionTests
 {
+    // The glyph cache must observe font changes even when counts and cell
+    // rectangles stay equal (for example a sparse, minimum-sized layout).
+    [Test]
+    public async Task CounterFontInvalidatesGlyphsWithIdenticalContentAndGeometry()
+    {
+        var model = Model("128", Band.Normal);
+        var tiny = PanelTextRevision.Create(model, 7, 140, 400, counterFont: 0);
+        var small = PanelTextRevision.Create(model, 7, 140, 400, counterFont: 1);
+        await Assert.That(tiny).IsNotEqualTo(small);
+        await Assert.That(PanelTextRevision.Create(model, 7, 140, 400, counterFont: 0))
+            .IsEqualTo(tiny);
+    }
+
     [Test]
     public async Task EquivalentDisplayedTextReusesProductAcrossModels()
     {

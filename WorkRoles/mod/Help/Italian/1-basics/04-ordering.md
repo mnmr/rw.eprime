@@ -1,22 +1,31 @@
 ---
 title: Ordine delle assegnazioni
 ---
+<!-- l10n:b-32c8a631526a -->
 Un colono percorre la propria riga da sinistra a destra, considerando soltanto i ruoli attivi:
 
+<!-- l10n:b-75c264ac5015 -->
 ![Tessere ordinate sulla riga di un colono](colonist-row.png)
 
+<!-- l10n:b-617ab83d7eb0 -->
 1. I ruoli precedenti prevalgono sui successivi, attività per attività.
 2. All'interno di un ruolo, le attività precedenti vengono prima.
 3. Un'attività presente in più ruoli conta nella sua prima posizione.
 
+<!-- l10n:b-be52fb18f81e -->
 I coloni svolgono soltanto attività dei ruoli assegnati. Non assegnare un ruolo equivale a lasciare senza numero la casella della griglia originale.
 
+<!-- l10n:b-db1bdd5d561c -->
 Per cambiare priorità basta trascinare:
 
+<!-- l10n:b-90462aacb6d4 -->
 @demo:chip-drag
 
+<!-- l10n:b-be64d575edc7 -->
 Puoi anche trascinare tra righe: rilascia una tessera su un altro colono per spostare l'assegnazione. Fai clic sul cestino nella tessera per rimuoverla dalla riga.
 
+<!-- l10n:b-6bbb9dc33edb -->
 RimWorld mantiene un elenco separato per le emergenze: spegnere incendi, prestare cure urgenti e andare a letto per ricevere cure d'emergenza. Queste attività interrompono sonno, pasti e qualsiasi altro lavoro. Per impostazione predefinita, un'attività urgente entra nell'elenco solo se è coperta da uno dei primi cinque ruoli attivi del colono. Le emergenze dei ruoli successivi vengono svolte nella posizione normale. Un colono con Essenziale al primo posto e Medico al sesto interrompe comunque tutto per un incendio, ma tratta le cure urgenti come normale lavoro medico nella posizione della riga. Spostare Essenziale oltre il quinto posto rende anche lo spegnimento incendi un lavoro ordinario per quel colono.
 
+<!-- l10n:b-a52fa63b5067 -->
 Disattiva “Solo i primi 5 ruoli interrompono il lavoro per le emergenze” nella scheda Opzioni per rimuovere questo limite. Ogni emergenza coperta da un ruolo attivo entra così nell’elenco, indipendentemente dalla posizione.

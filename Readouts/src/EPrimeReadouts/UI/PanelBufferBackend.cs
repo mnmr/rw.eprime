@@ -301,7 +301,8 @@ namespace EPrimeReadouts.UI
             List<Vector2> uvs,
             List<Color32> colors,
             List<int> triangles,
-            Material fontMaterial)
+            Material fontMaterial,
+            bool clear = true)
         {
             RenderTexture? target = RenderTexture.active;
             if (target == null)
@@ -316,7 +317,7 @@ namespace EPrimeReadouts.UI
                 try
                 {
                     GL.LoadIdentity();
-                    GL.Clear(true, true, Color.clear);
+                    if (clear) GL.Clear(true, true, Color.clear);
                     if (vertices.Count != 0)
                     {
                         if (!fontMaterial.SetPass(0))
@@ -351,7 +352,7 @@ namespace EPrimeReadouts.UI
                 commands.SetViewport(new Rect(
                     0f, 0f, target.width, target.height));
                 commands.DisableScissorRect();
-                commands.ClearRenderTarget(
+                if (clear) commands.ClearRenderTarget(
                     clearDepth: true,
                     clearColor: true,
                     backgroundColor: Color.clear);

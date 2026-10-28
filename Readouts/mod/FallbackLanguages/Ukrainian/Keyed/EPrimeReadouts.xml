@@ -153,4 +153,29 @@
   <EPR.WelcomeFind>Відкрийте редактор кнопкою із шестернею вгорі панелі ресурсів. Вкладка «Параметри» містить налаштування відображення, а вкладка «Довідка» пояснює решту.</EPR.WelcomeFind>
   <EPR.WelcomeTakeMeThere>Відкрити зараз</EPR.WelcomeTakeMeThere>
   <EPR.WelcomeTitle>EPrime's Readouts</EPR.WelcomeTitle>
+  <EPR.DefaultAutoUpdate>Автоматично оновлювати після змін конфігурації</EPR.DefaultAutoUpdate>
+  <EPR.DefaultClear>Використовувати вбудовані типові налаштування для нових ігор</EPR.DefaultClear>
+  <EPR.DefaultConflictBody>Конфігурація Readouts цієї колонії відрізняється від ваших типових налаштувань нової гри. Використовувати конфігурацію цієї колонії як типову й оновлювати її після редагування? Поточна колонія не зміниться.</EPR.DefaultConflictBody>
+  <EPR.DefaultEmptyBody>Збережіть повну конфігурацію цієї колонії для майбутніх ігор. Наявні колонії збережуть власні конфігурації. Поточна кількість показаних рівнів, пошукові запити й стан редактора не зберігаються.</EPR.DefaultEmptyBody>
+  <EPR.DefaultKeep>Зберегти мої типові налаштування на цей сеанс</EPR.DefaultKeep>
+  <EPR.DefaultSavedBody>Особисту конфігурацію для нових ігор збережено. Збережіть повну конфігурацію цієї колонії, щоб замінити її. Наявні колонії збережуть власні конфігурації. Поточна кількість показаних рівнів, пошукові запити й стан редактора не зберігаються.</EPR.DefaultSavedBody>
+  <EPR.DefaultStopAuto>Вимкнути автооновлення</EPR.DefaultStopAuto>
+  <EPR.DefaultUseCurrent>Використовувати цю конфігурацію для нових ігор</EPR.DefaultUseCurrent>
+  <EPR.ImportSelectionWarning>Замініть вибрані категорії. Налаштування гравця стосуються лише вас. Імпорт недоступний, доки посилання на набори й групи не стануть коректними; наведіть вказівник на «Імпорт», щоб дізнатися подробиці. Категорії, відсутні у файлі, вибрати неможливо.</EPR.ImportSelectionWarning>
+  <EPR.NewGameDefaults>Зберегти як типові</EPR.NewGameDefaults>
+  <EPR.OverviewNeedsGame>Завантажте гру, щоб налаштувати групи й набори ресурсів.</EPR.OverviewNeedsGame>
+  <EPR.PositionAndSizeOptions>Параметри положення й розміру</EPR.PositionAndSizeOptions>
+  <EPR.RenderCountersWithTinyFont>Розмір шрифту лічильників</EPR.RenderCountersWithTinyFont>
+  <EPR.RenderCountersWithTinyFontTip>Виберіть розмір шрифту для лічильників ресурсів. Обидва розміри мають перевагу над налаштуванням дрібного тексту в грі.</EPR.RenderCountersWithTinyFontTip>
+  <EPR.ResetPositionAndSize>Скинути положення й розмір</EPR.ResetPositionAndSize>
+  <EPR.SetupCountRules>Правила підрахунку ресурсів</EPR.SetupCountRules>
+  <EPR.SetupFailed>Не вдалося зберегти або прочитати типову конфігурацію Readouts: {0}</EPR.SetupFailed>
+  <EPR.SetupGroups>Групи</EPR.SetupGroups>
+  <EPR.SetupPlayerSettings>Налаштування гравця та ввімкнені групи</EPR.SetupPlayerSettings>
+  <EPR.SetupPools>Набори ресурсів</EPR.SetupPools>
+  <EPR.SetupThresholds>Пороги</EPR.SetupThresholds>
+  <EPR.UseVanillaConfirm>Перейти до панелі ресурсів базової гри?\n\nПісля закриття вікна налаштувань Readouts повернути Readouts можна буде лише через Параметри → Налаштування модів → EPrime's Readouts. Вимкніть там «Панель ресурсів базової гри», щоб повернути Readouts.</EPR.UseVanillaConfirm>
+  <EPR.UseVanillaConfirmButton>Використовувати базову панель</EPR.UseVanillaConfirmButton>
+  <EPR.CounterFontSmall>Малий</EPR.CounterFontSmall>
+  <EPR.CounterFontTiny>Дрібний</EPR.CounterFontTiny>
 </LanguageData>

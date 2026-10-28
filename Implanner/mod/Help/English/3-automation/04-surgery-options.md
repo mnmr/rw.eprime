@@ -1,11 +1,14 @@
 ---
 title: Surgery options
 ---
+<!-- l10n:b-b101871e5899 -->
 ![The surgery options](surgery-options.png)
 
+<!-- l10n:b-7102cc37035d -->
 **Iteration strategy** decides the order in which implants are delivered.
 Colonist priority on the Overview tab always decides who goes first.
 
+<!-- l10n:b-cae0082f85d5 -->
 - **Tier batching**: every colonist gets the implants in their best tier
   first, then work moves down the tiers. A colonist goes into surgery
   once their whole tier is reserved. Each colonist needs more surgeries,
@@ -22,6 +25,7 @@ Colonist priority on the Overview tab always decides who goes first.
   bionic leg is scheduled as soon as it is reserved and on site, even if
   that means one surgery per implant.
 
+<!-- l10n:b-be821f0459ef -->
 **Concurrent surgeries** caps how many colonists per colony can have
 operations scheduled at the same time. It starts at one per ten
 colonists. With **Count existing patients** on, colonists and slaves
@@ -29,9 +33,11 @@ lying in medical beds or downed and awaiting treatment take up slots too,
 so new implant surgeries wait until the hospital has room. Prisoners,
 guests and patients visiting from other factions never take up a slot.
 
+<!-- l10n:b-9b653e77ba00 -->
 **Give the best implants to high-priority colonists** appears when a mod
 gives implants a quality. See [minimum quality](topic:minimum-quality).
 
+<!-- l10n:b-ca0c8956721b -->
 **Assign surgery bills to best available doctor** (on by default)
 restricts Implanner surgery bills to the most skilled doctor at each
 colony. The restriction follows the best doctor as colonists arrive and

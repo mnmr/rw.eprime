@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## Unreleased
+
+- Added: Options and Help tabs in the toolbar window, with illustrated guides covering unfinished-work sharing, finishers, crafting, construction, rebuilding and troubleshooting.
+- Added: Help translations for all thirteen supported non-English languages, with stable block IDs for translation maintenance.
+
 ## 1.2.0 — 2026-10-26
 
 - Added: Built-in translations. Available languages: English, French, German, Italian, Japanese, Korean, Brazilian Portuguese, Spanish (European and Latin American), Simplified Chinese, Traditional Chinese, Turkish, Ukrainian, and Vietnamese.

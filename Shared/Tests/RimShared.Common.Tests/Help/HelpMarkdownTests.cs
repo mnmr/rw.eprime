@@ -6,6 +6,28 @@ namespace RimShared.Common.Tests.Help;
 public class HelpMarkdownTests
 {
     [Test]
+    public async Task LocalizationIdsNeverBecomeVisibleContentOrChangeHelpBlocks()
+    {
+        const string original = "---\ntitle: Help\n---\nRead this.\n\n## Choices\n\n- One\n- Two\n\n![Caption](image.png)\n\n@demo:example\n";
+        string marked = original.Replace("Read this.", "<!-- l10n:intro -->\nRead this.")
+            .Replace("## Choices", "<!-- l10n:heading -->\n## Choices")
+            .Replace("- One", "<!-- l10n:list -->\n- One")
+            .Replace("![Caption]", "<!-- l10n:caption -->\n![Caption]")
+            .Replace("@demo:", "<!-- l10n:demo -->\n@demo:");
+        var expected = HelpMarkdown.Parse(original);
+        var actual = HelpMarkdown.Parse(marked);
+        await Assert.That(actual.Title).IsEqualTo(expected.Title);
+        await Assert.That(Dump(actual)).IsEqualTo(Dump(expected));
+    }
+
+    [Test]
+    public async Task LocalizationUnitsRetainParagraphBoundariesAfterMovingTheLastBlock()
+    {
+        var doc = HelpMarkdown.Parse("<!-- l10n:last -->\nLast paragraph.\n<!-- l10n:first -->\nFirst paragraph.\n");
+        await Assert.That(Dump(doc)).IsEqualTo("P Last paragraph.\nP First paragraph.");
+    }
+
+    [Test]
     public async Task FrontMatterSuppliesTheTitleAndBlankLinesSeparateParagraphs()
     {
         var doc = HelpMarkdown.Parse(

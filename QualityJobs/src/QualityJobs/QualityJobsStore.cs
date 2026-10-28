@@ -1548,7 +1548,7 @@ namespace QualityJobs
         }
 
         private static void OpenSettings() =>
-            Find.WindowStack.Add(new Dialog_ModSettings(QualityJobsMod.Instance));
+            Find.WindowStack.Add(new Dialog_QualityJobs());
 
         private void InitializeExistingBillMigration()
         {

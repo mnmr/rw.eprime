@@ -1,4 +1,5 @@
 using System;
+using HarmonyLib;
 using UnityEngine;
 using Verse;
 
@@ -49,8 +50,32 @@ namespace RimShared.UiLib
     /// </summary>
     public static class TinyText
     {
+        // Process-lifetime accessor to Verse's scalar GUI font state; owns no
+        // game objects. Resolved once, never reflected over in a draw pass.
+        private static readonly AccessTools.FieldRef<GameFont> FontState =
+            AccessTools.StaticFieldRefAccess<GameFont>(
+                AccessTools.Field(typeof(Text), "fontInt"));
+
         private static GameFont EffectiveFont => Text.TinyFontSupported
             ? GameFont.Tiny : GameFont.Small;
+
+        public static GameFont ResolveFont(bool forceTiny) =>
+            forceTiny ? GameFont.Tiny : EffectiveFont;
+
+        /// Measures the actual selected style inside a caller's metric gate.
+        /// Verse's startup line-height table can contain the Small fallback
+        /// for Tiny if the preference was disabled during initialization.
+        public static TinyTextMetrics MeasureMetrics(bool forceTiny)
+            => MeasureMetrics(ResolveFont(forceTiny));
+
+        /// Measures an explicit font choice, independent of the Tiny preference.
+        /// Call only inside the consumer's UI metric/font invalidation gate.
+        public static TinyTextMetrics MeasureMetrics(GameFont font)
+        {
+            using (UseFont(font))
+                return new TinyTextMetrics(Text.Font,
+                    Mathf.Ceil(Text.CalcHeight("W", 999f)), Prefs.UIScale);
+        }
 
         public static TinyTextMetrics Metrics
         {
@@ -78,6 +103,16 @@ namespace RimShared.UiLib
         /// current-font measurement cache.
         /// </summary>
         public static FontScope UseFont() => new FontScope(EffectiveFont);
+
+        /// Local opt-in for numeric displays that explicitly require Tiny.
+        /// Bypasses the font setter's fallback without touching preferences.
+        public static FontScope UseFont(bool forceTiny) =>
+            new FontScope(ResolveFont(forceTiny), forceTiny);
+
+        /// An explicit font-size selector owns its Tiny/Small choice. Tiny
+        /// bypasses the game fallback; Small remains Small even if Tiny is allowed.
+        public static FontScope UseFont(GameFont font) =>
+            new FontScope(font, font == GameFont.Tiny);
 
         /// <summary>
         /// Cached-layout measurement only; never call from a steady draw path.
@@ -126,13 +161,15 @@ namespace RimShared.UiLib
         {
             private readonly GameFont previous;
 
-            internal FontScope(GameFont font)
+            internal FontScope(GameFont font, bool forceTiny = false)
             {
                 previous = Text.Font;
-                Text.Font = font;
+                if (forceTiny) FontState() = font;
+                else Text.Font = font;
             }
 
-            public void Dispose() => Text.Font = previous;
+            // Restore the exact value, including an outer forced-Tiny scope.
+            public void Dispose() => FontState() = previous;
         }
     }
 }

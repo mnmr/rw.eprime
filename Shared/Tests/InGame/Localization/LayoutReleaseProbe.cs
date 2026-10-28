@@ -145,7 +145,7 @@ public sealed class LayoutReleaseProbe : GameComponent
         ((IList)Get(model, "Cells")!).Add(cell);
         object draw = TypeOf("EPrimeReadouts", "EPrimeReadouts.UI.DrawModel").GetMethod("Resolve", All)!.Invoke(null, new object?[] { model, null })!;
         string fitted = ((string[])Get(draw, "Labels")!)[0];
-        using ((IDisposable)TypeOf("EPrimeReadouts", "RimShared.UiLib.TinyText").GetMethod("UseFont", All)!.Invoke(null, null)!)
+        using ((IDisposable)TypeOf("EPrimeReadouts", "RimShared.UiLib.TinyText").GetMethod("UseFont", All, null, Type.EmptyTypes, null)!.Invoke(null, null)!)
             results.Add(new { check = "readouts-80px-panel-label", text = fitted, width = Text.CalcSize(fitted).x, available = 68f, passed = Text.CalcSize(fitted).x <= 68f });
 
         phase = "implanner toggle layout";

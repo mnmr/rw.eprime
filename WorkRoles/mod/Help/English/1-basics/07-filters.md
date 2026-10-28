@@ -1,10 +1,13 @@
 ---
 title: Filters and search
 ---
+<!-- l10n:b-8ee3a2432435 -->
 The filter row narrows the table without touching any assignments:
 
+<!-- l10n:b-b14b79473e63 -->
 ![The filter row](filter-row.png)
 
+<!-- l10n:b-caba13fb3db5 -->
 - **Search** matches colonist names. Every space-separated term must
 match, and prefixes widen the hunt: r: or role: searches assigned role
 names, j: or job: searches the jobs those roles supply. "br r:doc" finds
@@ -17,9 +20,11 @@ chosen job.
 everywhere, a settlement, or the ship. Colonists out with a caravan
 count under the place they left from.
 
+<!-- l10n:b-a15064d8cb5e -->
 Filters combine, and the clear button that appears once anything is
 active resets the search and the role and job filters while leaving
 location, grouping, and display choices alone.
 
+<!-- l10n:b-d769e4eceb15 -->
 A filter never hides a selected colonist. When one would, the selection
 is cleared and the first colonist still listed is selected instead.

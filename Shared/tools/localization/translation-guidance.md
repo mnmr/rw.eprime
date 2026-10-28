@@ -86,7 +86,14 @@ rich-text tags, including their attributes. Preserve balanced markup.
 For Markdown help, translate frontmatter titles, prose and visible link/image
 labels. Keep all link/image destinations, code spans, filenames and `@demo`
 directives exactly as supplied, in the same order. Retain the frontmatter structure.
-Return complete help pages, including frontmatter, rather than excerpts.
+For a help block key ending in `#<id>`, return only that block's text. A `#title`
+entry is the title alone, without frontmatter. Preserve a heading's `#` prefix,
+list structure and image Markdown. Do not return localization ID comments.
+`page_english`, `page_current` and `previous_english` provide read-only context;
+never return or rewrite their other blocks. A list or section may be requested
+because its introductory context changed even though its own English is equal.
+Retain its current translation when that context does not require a wording change.
+Legacy page keys without a block ID still require the complete page/frontmatter.
 
 Identical English text is legitimate for brands, identifiers and some cognates.
 Do not invent a different translation merely to avoid exact equality.

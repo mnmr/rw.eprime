@@ -22,7 +22,7 @@ namespace EPrimeReadouts.UI
         // Cache contract:
         // Owner: one configuration-dialog EditorView and one ReadoutStore.
         // Key: selected group, exact group/threshold revisions, width,
-        // UiRevision, shared pool/count snapshot identities and the
+        // UiRevision, resolved counter font, shared pool/count snapshot identities and the
         // storage-only/hide-forbidden count-basis options.
         // Value: detached group snapshot and immutable resolved band DrawModels.
         // Dependencies: only the keys above plus selected-token presentation.
@@ -34,6 +34,7 @@ namespace EPrimeReadouts.UI
         private int builtCountRulesVersion = -1;
         private int builtGroupId = -1;
         private int builtUiRevision = -1;
+        private GameFont builtCounterFont;
         private float builtWidth = -1f;
         private RenderCountSnapshot? builtCounts;
         private PoolSnapshot? builtPools;
@@ -286,6 +287,7 @@ namespace EPrimeReadouts.UI
             if (store.CountRulesVersion != builtCountRulesVersion) return true;
             if (groupId != builtGroupId) return true;
             if (UiRevision.Current != builtUiRevision) return true;
+            if (builtCounterFont != PanelCellMetrics.CounterFont) return true;
             if (width != builtWidth) return true;
             if (!ReferenceEquals(builtPools, pools)) return true;
             if (!ReferenceEquals(builtCounts, counts)) return true;
@@ -307,6 +309,7 @@ namespace EPrimeReadouts.UI
             builtCountRulesVersion = store.CountRulesVersion;
             builtGroupId = group.Id;
             builtUiRevision = UiRevision.Current;
+            builtCounterFont = PanelCellMetrics.CounterFont;
             builtWidth = width;
             builtPools = owner.PoolsSnapshot;
             builtCounts = owner.RenderData?.Counts;

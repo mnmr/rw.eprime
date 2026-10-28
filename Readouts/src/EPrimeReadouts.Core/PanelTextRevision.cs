@@ -31,9 +31,10 @@ namespace EPrimeReadouts.Core
             RenderModel model,
             int uiRevision,
             int width,
-            int height)
+            int height,
+            int counterFont = 0)
         {
-            int hash = 17;
+            int hash = Mix(17, counterFont);
             int count = 0;
             for (int i = 0; i < model.Cells.Count; i++)
             {

@@ -153,4 +153,29 @@ Para añadir un conjunto a un grupo, cambia al Editor de grupos y utiliza la ram
   <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout muestra su propio panel de recursos en modo personalizado o predefinido. Ese panel compite con EPrime's Readouts por el mismo espacio en pantalla.</EPR.CompatibilityCustomResourceReadout>
   <EPR.CompatibilityReadoutsPlus>Readouts+ añade controles de clic al panel de recursos del juego base. Estos controles no se utilizan mientras el panel de EPrime está activado.</EPR.CompatibilityReadoutsPlus>
   <EPR.CompatibilityToggleableReadouts>Toggleable Readouts (incluido Continued) sustituye la visualización del panel del juego base. Sus funciones de filtrado y fijación no se utilizan mientras el panel de EPrime está activado.</EPR.CompatibilityToggleableReadouts>
+  <EPR.DefaultAutoUpdate>Actualizar automáticamente tras editar la configuración</EPR.DefaultAutoUpdate>
+  <EPR.DefaultClear>Usar los valores predeterminados del mod para nuevas partidas</EPR.DefaultClear>
+  <EPR.DefaultConflictBody>Esta colonia tiene una configuración de Readouts distinta de tu configuración predeterminada para nuevas partidas. ¿Quieres usar la configuración de esta colonia como predeterminada y mantenerla actualizada cuando la edites? La colonia actual no cambiará.</EPR.DefaultConflictBody>
+  <EPR.DefaultEmptyBody>Guarda la configuración completa de esta colonia para futuras partidas. Las colonias existentes conservan su propia configuración. Se excluyen el número actual de niveles visibles, las búsquedas y el estado del editor.</EPR.DefaultEmptyBody>
+  <EPR.DefaultKeep>Conservar mi configuración predeterminada durante esta sesión</EPR.DefaultKeep>
+  <EPR.DefaultSavedBody>Hay una configuración personal guardada para nuevas partidas. Guarda la configuración completa de esta colonia para sustituirla. Las colonias existentes conservan su propia configuración. Se excluyen el número actual de niveles visibles, las búsquedas y el estado del editor.</EPR.DefaultSavedBody>
+  <EPR.DefaultStopAuto>Desactivar actualizaciones automáticas</EPR.DefaultStopAuto>
+  <EPR.DefaultUseCurrent>Usar esta configuración para nuevas partidas</EPR.DefaultUseCurrent>
+  <EPR.ImportSelectionWarning>Sustituye las categorías seleccionadas. Los ajustes del jugador solo te afectan a ti. Importar permanece desactivado hasta que las referencias a conjuntos y grupos sean válidas; pasa el cursor sobre Importar para ver los detalles. Las categorías ausentes del fichero no se pueden seleccionar.</EPR.ImportSelectionWarning>
+  <EPR.NewGameDefaults>Establecer valores predeterminados</EPR.NewGameDefaults>
+  <EPR.OverviewNeedsGame>Carga una partida para configurar grupos y conjuntos de recursos.</EPR.OverviewNeedsGame>
+  <EPR.PositionAndSizeOptions>Opciones de posición y tamaño</EPR.PositionAndSizeOptions>
+  <EPR.RenderCountersWithTinyFont>Tamaño de fuente de los contadores</EPR.RenderCountersWithTinyFont>
+  <EPR.RenderCountersWithTinyFontTip>Elige el tamaño de fuente de los contadores de recursos. Ambos tamaños prevalecen sobre el ajuste de texto diminuto del juego.</EPR.RenderCountersWithTinyFontTip>
+  <EPR.ResetPositionAndSize>Restablecer la posición y el tamaño</EPR.ResetPositionAndSize>
+  <EPR.SetupCountRules>Reglas de recuento de recursos</EPR.SetupCountRules>
+  <EPR.SetupFailed>No se ha podido guardar o leer la configuración predeterminada de Readouts: {0}</EPR.SetupFailed>
+  <EPR.SetupGroups>Grupos</EPR.SetupGroups>
+  <EPR.SetupPlayerSettings>Ajustes del jugador y grupos activados</EPR.SetupPlayerSettings>
+  <EPR.SetupPools>Conjuntos de recursos</EPR.SetupPools>
+  <EPR.SetupThresholds>Umbrales</EPR.SetupThresholds>
+  <EPR.UseVanillaConfirm>¿Cambiar al panel de recursos del juego base?\n\nTras cerrar la ventana de ajustes de Readouts, solo podrás restaurar Readouts desde Opciones → Opciones de mods → EPrime's Readouts. Desactiva allí "Usar el panel del juego base" para recuperarlo.</EPR.UseVanillaConfirm>
+  <EPR.UseVanillaConfirmButton>Usar el del juego base</EPR.UseVanillaConfirmButton>
+  <EPR.CounterFontSmall>Pequeña</EPR.CounterFontSmall>
+  <EPR.CounterFontTiny>Diminuta</EPR.CounterFontTiny>
 </LanguageData>

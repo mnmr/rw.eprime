@@ -54,7 +54,7 @@
   <QJ_SettingsUnlimitedHint>0 = unbegrenzt</QJ_SettingsUnlimitedHint>
   <QJ_SettingsShowToolbarButton>Werkzeugleistenschaltfläche anzeigen</QJ_SettingsShowToolbarButton>
   <QJ_SettingsShowToolbarButtonTip>Fügt neben den Ansichtsoptionen unten rechts eine Schaltfläche hinzu. Sie öffnet die Einstellungen von Quality Jobs.</QJ_SettingsShowToolbarButtonTip>
-  <QJ_ToolbarButtonTip>Einstellungen von Quality Jobs öffnen.</QJ_ToolbarButtonTip>
+  <QJ_ToolbarButtonTip>Einstellungen und Hilfe von Quality Jobs öffnen.</QJ_ToolbarButtonTip>
   <QJ_SettingsEnabledNote>Der Schalter gilt für den geladenen Spielstand. Deaktivieren gibt alle Gegenstände an das Grundspiel zurück und verwirft die Konfiguration von Quality Jobs für diesen Spielstand.\n\nBleibt die Mod installiert, wird sie beim nächsten Laden mit Standardeinstellungen wieder aktiviert. Das Deaktivieren dient der Vorbereitung auf das Entfernen der Mod.</QJ_SettingsEnabledNote>
   <QJ_DisableButton>Quality Jobs deaktivieren</QJ_DisableButton>
   <QJ_EnableButton>Quality Jobs aktivieren</QJ_EnableButton>
@@ -84,4 +84,11 @@
   <QJ_CompatibilityNoJobAuthors>No Job Authors kann qualitätsbedingt reservierte Arbeiten außerhalb von Quality Jobs fortsetzen, wenn seine Optionen zum erzwungenen Fertigstellen oder zur Achtung-Kompatibilität aktiviert sind.</QJ_CompatibilityNoJobAuthors>
   <QJ_CompatibilityQualityBuilder>QualityBuilder steuert ebenfalls Bauarbeiter und erneute Bauversuche. Seine Regeln können mit Quality Jobs in Konflikt geraten.</QJ_CompatibilityQualityBuilder>
   <QJ_CompatibilitySharingAdvice>Das Deaktivieren der gemeinsamen Bearbeitung unfertiger Arbeiten beseitigt nicht alle diese Konflikte.</QJ_CompatibilitySharingAdvice>
+  <QJ_HelpChapterBasics>Erste Schritte</QJ_HelpChapterBasics>
+  <QJ_HelpChapterConstruction>Bauen</QJ_HelpChapterConstruction>
+  <QJ_HelpChapterCrafting>Herstellen</QJ_HelpChapterCrafting>
+  <QJ_HelpChapterOptions>Einstellungen und Fehlerbehebung</QJ_HelpChapterOptions>
+  <QJ_HelpReload>Neu laden</QJ_HelpReload>
+  <QJ_TabHelp>Hilfe</QJ_TabHelp>
+  <QJ_TabOptions>Einstellungen</QJ_TabOptions>
 </LanguageData>

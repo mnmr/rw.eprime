@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 from typing import NamedTuple
 import xml.etree.ElementTree as ET
+import help_blocks as help_units
 
 MODS = ('WorkRoles', 'Readouts', 'QualityJobs', 'Implanner', 'Shared')
 # Only active bundled locales are CLI inputs. Retired catalogs and their frozen
@@ -114,7 +115,14 @@ def catalog(root, locale, mods):
         for path in sorted(help_root.rglob('*.md')):
             key = f'{mod}/Help/{path.relative_to(help_root).as_posix()}'
             try:
-                entries[key] = path.read_text(encoding='utf-8-sig')
+                text = path.read_bytes().decode('utf-8')
+                blocks = help_units.parse(text)
+                if blocks is None:
+                    entries[key] = text.lstrip('\ufeff').replace('\r\n', '\n')
+                else:
+                    entries.update((key + '#' + b.id, b.text) for b in blocks)
+            except ValueError as error:
+                issues.append(Issue('help-block', key, str(error)))
             except (OSError, UnicodeError) as error:
                 issues.append(Issue('text', key, str(error)))
     return entries, issues
@@ -126,6 +134,24 @@ def manifest_path(root, locale):
 
 def _digest(text):
     return hashlib.sha256(text.encode('utf-8')).hexdigest()
+
+
+def help_pages(root, locale, mods):
+    return {f'{mod}/Help/{path.relative_to(content_root(root, mod) / "Help" / locale).as_posix()}':
+            path.read_bytes().decode('utf-8') for mod in mods
+            for path in sorted((content_root(root, mod) / 'Help' / locale).rglob('*.md'))}
+
+
+def source_snapshot(root, mods, source):
+    hashes = {key: _digest(text) for key, text in source.items()}
+    order, previous = {}, {}
+    for page, text in help_pages(root, 'English', mods).items():
+        blocks = help_units.parse(text)
+        if blocks is not None:
+            order[page] = [b.id for b in blocks]
+            hashes.update((page + '#' + identifier, digest) for identifier, digest in help_units.digests(blocks).items())
+            previous.update((page + '#' + b.id, help_units.canonical(b.text)) for b in blocks)
+    return hashes, order, previous
 
 
 def _balanced_rich_tags(text):
@@ -168,9 +194,14 @@ def check_locale(root, locale, mods=MODS, require_manifest=False):
                 or not _balanced_rich_tags(translated)):
             issues.append(Issue('markup', key, 'Rich-text tags differ or are unbalanced'))
         if '/Help/' in key:
-            header = FRONTMATTER.match(translated)
-            if not header or not re.search(r'^title:[ \t]*\S[^\r\n]*$', header[1], re.MULTILINE):
-                issues.append(Issue('frontmatter', key, 'Missing help title/frontmatter'))
+            if '#' not in key:
+                header = FRONTMATTER.match(translated)
+                if not header or not re.search(r'^title:[ \t]*\S[^\r\n]*$', header[1], re.MULTILINE):
+                    issues.append(Issue('frontmatter', key, 'Missing help title/frontmatter'))
+            elif translated.strip() and not key.endswith('#title') and help_units.signature(
+                    help_units.Block('', help_units.kind(original), original, 0, 0)) != help_units.signature(
+                    help_units.Block('', help_units.kind(translated), translated, 0, 0)):
+                issues.append(Issue('help-shape', key, 'Block structure or literal anchors differ'))
             if CODE.findall(original) != CODE.findall(translated):
                 issues.append(Issue('code', key, 'Literal code spans differ'))
             if LINK.findall(original) != LINK.findall(translated):
@@ -184,17 +215,38 @@ def check_locale(root, locale, mods=MODS, require_manifest=False):
                 and BRAND_TITLES.get(key) != original.strip()
                 and UNCHANGED_TRANSLATIONS.get((locale, key)) != original.strip()):
             issues.append(Issue('unchanged', key, 'Text matches English; check whether intentional', 'warning'))
+    if any(i.code in ('help-block', 'text') for i in issues):
+        return issues
+    hashes, order, _ = source_snapshot(root, mods, source)
+    target_pages = help_pages(root, locale, mods)
+    for page, identifiers in order.items():
+        if page in target_pages:
+            blocks = help_units.parse(target_pages[page])
+            if blocks is None:
+                issues.append(Issue('help-block', page, 'Legacy translation needs help migration'))
+            elif [b.id for b in blocks] != identifiers:
+                issues.append(Issue('help-order', page, 'Help blocks were added, removed or reordered'))
     path = manifest_path(root, locale)
     if path.exists():
         try:
-            recorded = json.loads(path.read_text(encoding='utf-8'))['source_sha256']
+            manifest = json.loads(path.read_text(encoding='utf-8'))
+            recorded = manifest['source_sha256']
             if (not isinstance(recorded, dict)
                     or any(not isinstance(value, str) or not re.fullmatch(r'[0-9a-f]{64}', value)
                            for value in recorded.values())):
                 raise ValueError('source_sha256 must map entry keys to SHA-256 hex strings')
-            for key, original in source.items():
-                if recorded.get(key) != _digest(original):
-                    issues.append(Issue('stale', key, 'English changed or was added since the translation snapshot'))
+            previous = manifest.get('help_source', {})
+            if not isinstance(previous, dict) or any(not isinstance(v, str) for v in previous.values()):
+                raise ValueError('help_source must map help block keys to previous English text')
+            if manifest.get('schema_version', 1) not in (1, 2):
+                raise ValueError('Unsupported localization manifest schema')
+            if manifest.get('schema_version') == 2:
+                for key in source:
+                    if '/Help/' in key and '#' not in key:
+                        issues.append(Issue('help-untracked', key, 'Help needs stable block IDs; run prepare_help.py'))
+            for key, digest in hashes.items():
+                if recorded.get(key) != digest:
+                    issues.append(Issue('stale', key, 'English text or dependent context changed since the translation snapshot'))
             for key in recorded.keys() - source.keys():
                 issues.append(Issue('retired', key, 'English source was removed since the snapshot'))
         except (OSError, ValueError, KeyError, TypeError) as error:
@@ -204,7 +256,7 @@ def check_locale(root, locale, mods=MODS, require_manifest=False):
     return issues
 
 
-def snapshot_locale(root, locale, mods=MODS):
+def snapshot_locale(root, locale, mods=MODS, keys=None):
     # The explicit snapshot operation acknowledges source revisions only after
     # structural coverage is complete. It does not claim human review or fluency.
     issues = [i for i in check_locale(root, locale, mods)
@@ -214,9 +266,31 @@ def snapshot_locale(root, locale, mods=MODS):
     source, _ = catalog(root, 'English', mods)
     path = manifest_path(root, locale)
     path.parent.mkdir(parents=True, exist_ok=True)
-    value = {'schema_version': 1, 'locale': locale,
+    hashes, order, previous = source_snapshot(root, mods, source)
+    value = {'schema_version': 2 if order else 1, 'locale': locale,
              'translation_method': 'automated; Danish/German translations include owner corrections',
-             'source_sha256': {key: _digest(text) for key, text in sorted(source.items())}}
+             'source_sha256': {}}
+    if keys is not None and path.exists():
+        value = json.loads(path.read_text(encoding='utf-8'))
+    selected = set(hashes) if keys is None else set(keys)
+    unknown = selected - hashes.keys() - value['source_sha256'].keys()
+    if unknown:
+        raise ValueError('Unknown snapshot keys: ' + ', '.join(sorted(unknown)))
+    for key in selected:
+        if key in hashes:
+            value['source_sha256'][key] = hashes[key]
+        else:
+            value['source_sha256'].pop(key, None)
+    value['source_sha256'] = dict(sorted(value['source_sha256'].items()))
+    if order or 'help_source' in value:
+        value['schema_version'] = 2
+        old_text = value.setdefault('help_source', {})
+        for key in selected:
+            if key in previous:
+                old_text[key] = previous[key]
+            else:
+                old_text.pop(key, None)
+        value['help_source'] = dict(sorted(old_text.items()))
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 
 
@@ -227,6 +301,8 @@ def main():
     parser.add_argument('--locale', action='append', choices=LOCALES)
     parser.add_argument('--no-manifest', action='store_true', help='Draft checks before a source snapshot exists')
     parser.add_argument('--json', type=Path, help='Write the complete machine-readable result')
+    parser.add_argument('--key', action='append', help='Acknowledge only this exact entry/block key (repeatable)')
+    parser.add_argument('--all', action='store_true', help='Explicitly acknowledge every source revision')
     args = parser.parse_args()
     results = {}
     failures = 0
@@ -240,7 +316,12 @@ def main():
             continue
         if args.command == 'snapshot':
             try:
-                snapshot_locale(args.root, locale)
+                if not args.key and not args.all:
+                    pending = [i for i in check_locale(args.root, locale, require_manifest=True)
+                               if i.severity == 'error']
+                    if pending:
+                        raise ValueError('Snapshot requires --key for reviewed entries, or --all to acknowledge every revision')
+                snapshot_locale(args.root, locale, keys=None if args.all else args.key or [])
             except ValueError as error:
                 print(error)
                 failures += 1

@@ -1,11 +1,14 @@
 ---
 title: Role types
 ---
+<!-- l10n:b-4db5153b0541 -->
 Most roles you touch will be Regular: a plain list of jobs like Doctor or
 Cook. The editor's switches turn a role into something else:
 
+<!-- l10n:b-13759893bc37 -->
 ![Role type switches in the editor](role-type-toggles.png)
 
+<!-- l10n:b-fdc590815928 -->
 - **Auto-assign**: newcomers receive the role automatically. See
 [Auto-assign](topic:auto-assign).
 - **Blocker**: the role forbids its jobs instead of allowing them. See
@@ -15,6 +18,7 @@ Cook. The editor's switches turn a role into something else:
 - **Composite**: the role bundles other roles instead of jobs. See
 [Composite roles](topic:composite-roles).
 
+<!-- l10n:b-a57d054ddfd3 -->
 There is also a soft kind with no switch: a regular role whose jobs fully
 cover other roles shows those roles nested underneath it in the
 [role tree](topic:tree-views). Basics and Grunt work like that.

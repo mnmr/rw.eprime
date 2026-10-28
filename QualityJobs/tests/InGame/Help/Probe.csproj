@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RimWorldVersion Condition="'$(RimWorldVersion)' == ''">1.6</RimWorldVersion>
+    <TargetFramework Condition="'$(RimWorldVersion)' == '1.6'">net472</TargetFramework>
+    <TargetFramework Condition="'$(RimWorldVersion)' == '1.7'">net10.0</TargetFramework>
+    <LangVersion>10</LangVersion>
+    <AssemblyName>QualityJobs.HelpProbe</AssemblyName>
+    <OutputPath>Probe/$(RimWorldVersion)/Assemblies/</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Probe.cs" />
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" Condition="'$(RimWorldVersion)' == '1.6'" />
+    <PackageReference Include="Lib.Harmony" Version="2.*" ExcludeAssets="runtime" Condition="'$(RimWorldVersion)' == '1.6'" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" Condition="'$(RimWorldVersion)' == '1.6'" />
+    <Reference Include="QualityJobs" HintPath="../../../mod/$(RimWorldVersion)/Assemblies/QualityJobs.dll" Private="false" />
+    <Reference Include="QualityJobs.Core" HintPath="../../../mod/$(RimWorldVersion)/Assemblies/QualityJobs.Core.dll" Private="false" />
+  </ItemGroup>
+  <Import Project="../../../../Shared/Build/RimWorld17.props" Condition="'$(RimWorldVersion)' == '1.7'" />
+</Project>

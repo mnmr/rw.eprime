@@ -153,4 +153,29 @@
   <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout 在自定义或预设模式下会绘制自己的资源面板，与 EPrime's Readouts 争用同一显示区域。</EPR.CompatibilityCustomResourceReadout>
   <EPR.CompatibilityReadoutsPlus>Readouts+ 为原版资源显示添加了点击操作。启用 EPrime 的资源显示时，这些操作将不生效。</EPR.CompatibilityReadoutsPlus>
   <EPR.CompatibilityToggleableReadouts>Toggleable Readouts（包括 Continued 版）会替换原版资源显示的绘制方式。启用 EPrime 的资源显示时，其筛选和置顶功能将不生效。</EPR.CompatibilityToggleableReadouts>
+  <EPR.DefaultAutoUpdate>编辑配置后自动更新</EPR.DefaultAutoUpdate>
+  <EPR.DefaultClear>新游戏使用内置默认配置</EPR.DefaultClear>
+  <EPR.DefaultConflictBody>当前殖民地的 Readouts 配置与新游戏默认配置不同。是否将当前殖民地的配置设为默认，并在编辑配置时持续更新？当前殖民地的配置不会改变。</EPR.DefaultConflictBody>
+  <EPR.DefaultEmptyBody>保存当前殖民地的完整配置，供未来游戏使用。现有殖民地保留各自的配置。不包括当前显示的层数、搜索内容和编辑器状态。</EPR.DefaultEmptyBody>
+  <EPR.DefaultKeep>本次游戏保留我的默认配置</EPR.DefaultKeep>
+  <EPR.DefaultSavedBody>已保存供新游戏使用的个人配置。保存当前殖民地的完整配置可将其替换。现有殖民地保留各自的配置。不包括当前显示的层数、搜索内容和编辑器状态。</EPR.DefaultSavedBody>
+  <EPR.DefaultStopAuto>关闭自动更新</EPR.DefaultStopAuto>
+  <EPR.DefaultUseCurrent>新游戏使用此配置</EPR.DefaultUseCurrent>
+  <EPR.ImportSelectionWarning>替换所选类别。玩家设置只影响你自己。集合和分组引用均有效后才能导入；将鼠标悬停在“导入”上可查看详情。无法选择文件中不包含的类别。</EPR.ImportSelectionWarning>
+  <EPR.NewGameDefaults>设置默认配置</EPR.NewGameDefaults>
+  <EPR.OverviewNeedsGame>请载入游戏以配置分组和资源集合。</EPR.OverviewNeedsGame>
+  <EPR.PositionAndSizeOptions>位置和大小选项</EPR.PositionAndSizeOptions>
+  <EPR.RenderCountersWithTinyFont>计数器字号</EPR.RenderCountersWithTinyFont>
+  <EPR.RenderCountersWithTinyFontTip>选择资源计数器的字号。两种字号均不受游戏的微小文字设置影响。</EPR.RenderCountersWithTinyFontTip>
+  <EPR.ResetPositionAndSize>重置位置和大小</EPR.ResetPositionAndSize>
+  <EPR.SetupCountRules>资源计数规则</EPR.SetupCountRules>
+  <EPR.SetupFailed>无法保存或读取 Readouts 默认配置：{0}</EPR.SetupFailed>
+  <EPR.SetupGroups>分组</EPR.SetupGroups>
+  <EPR.SetupPlayerSettings>玩家设置与启用的分组</EPR.SetupPlayerSettings>
+  <EPR.SetupPools>资源集合</EPR.SetupPools>
+  <EPR.SetupThresholds>阈值</EPR.SetupThresholds>
+  <EPR.UseVanillaConfirm>切换为原版资源面板？\n\n关闭 Readouts 设置窗口后，只能通过“选项”→“模组设置”→ EPrime's Readouts 恢复 Readouts。在其中关闭“使用原版资源面板”即可恢复。</EPR.UseVanillaConfirm>
+  <EPR.UseVanillaConfirmButton>使用原版</EPR.UseVanillaConfirmButton>
+  <EPR.CounterFontSmall>小</EPR.CounterFontSmall>
+  <EPR.CounterFontTiny>微小</EPR.CounterFontTiny>
 </LanguageData>

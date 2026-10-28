@@ -1,0 +1,21 @@
+---
+title: Thiết lập lệnh sản xuất
+---
+<!-- l10n:open -->
+Mở **Chi tiết** trên lệnh sản xuất vật phẩm có cấp chất lượng. Bảng **{k:QJ_QualityPanelTitle}** xuất hiện cạnh các tùy chọn thông thường của lệnh đối với công thức được hỗ trợ có tạo ra vật phẩm dở dang. Các công thức không có cấp chất lượng hoặc công đoạn dở dang vẫn hoạt động như bình thường.
+
+<!-- l10n:bill-image -->
+![Lệnh sản xuất tại bàn chế tạo cùng bảng Quality Jobs](crafting-bill.png)
+
+<!-- l10n:setup -->
+Bật **{k:QJ_ManageBill}**, rồi chọn [yêu cầu đối với người hoàn thiện](topic:finishers). Người lao động thông thường có thể làm phần lớn công việc chế tạo. Nếu người đang làm đáp ứng yêu cầu, họ sẽ hoàn thành ngay; nếu không, vật phẩm gần hoàn thành sẽ được để riêng, và lệnh có thể chuẩn bị thêm sản phẩm trong giới hạn tồn kho.
+
+<!-- l10n:dispatch -->
+Khi có người hoàn thiện đáp ứng yêu cầu, Quality Jobs tạo một lệnh **Hoàn thiện …** tạm thời và giao cho họ. Họ lấy vật phẩm dở dang rồi hoàn thành nó. Lệnh tạm thời sẽ tự xóa sau đó. Vật phẩm đang chờ có thể được vận chuyển và cất giữ như các vật phẩm dở dang khác.
+
+<!-- l10n:status -->
+Mục **{k:QJ_StatusHeader}** hiển thị công việc **Chưa hoàn thành** được chia sẻ, vật phẩm **Đang chờ** người hoàn thiện và vật phẩm đã được giao để **Hoàn thiện**. Di chuột lên trạng thái và danh sách người hoàn thiện để xem chi tiết. Xem [khi công việc phải chờ](topic:waiting) nếu không có tiến triển.
+
+<!-- l10n:disable -->
+Bỏ chọn **{k:QJ_ManageBill}** để lệnh được hoàn thành bình thường trở lại. Khi bật chia sẻ, những người lao động khác vẫn có thể tiếp tục phần việc được chia sẻ của lệnh.
+

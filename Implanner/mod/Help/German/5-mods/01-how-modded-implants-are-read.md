@@ -1,8 +1,10 @@
 ---
 title: So werden Modimplantate eingelesen
 ---
+<!-- l10n:b-935816ca622e -->
 Implanner benötigt keine Liste unterstützter Mods. Es liest alle geladenen Operationen aus Grundspiel, Erweiterungen und Mods. Jede Operation, die ein Implantat an einem Körperteil einsetzt, wird zur Auswahl. Dieselben Daten zeigen, welche Implantate gemeinsam bestehen können:
 
+<!-- l10n:b-d02011c283d2 -->
 - **Ein Ersatz pro Körperteil**: Ein bionischer Arm ersetzt die Schulter. Zwei Ersatzteile teilen daher nie denselben Platz; ein Ersatz entfernt auch alle Implantate darauf und an untergeordneten Körperteilen.
 - **Implantate an einem Körperteil**: Sie bestehen nebeneinander, sofern die Operation sie nicht als unvereinbar markiert. So schließen sich Hautdrüsen im Grundspiel aus und kennzeichnen Mods Modulplätze.
 - **Entfernung beim Einbau**: Manche Implantate entfernen beim Einsetzen einen Rivalen irgendwo am Körper. Zwei sich gegenseitig entfernende Implantate können nie gemeinsam bestehen.
@@ -11,4 +13,5 @@ Implanner benötigt keine Liste unterstützter Mods. Es liest alle geladenen Ope
 - **Direkte Verbesserungen**: Eine Operation, die ein Implantat entfernt und ein anderes hinzufügt, verbessert das eingebaute Teil. Die verbesserte Version erscheint als eigenes Implantat.
 - **Nicht herstellbare Gegenstände**: Implantate, die keine Werkbank fertigen kann, bleiben bis zur entsprechenden Option verborgen.
 
+<!-- l10n:b-ea92c69a5624 -->
 Zwei Dinge sind nicht lesbar: Module, die Kolonisten ohne Operation aus dem Inventar einsetzen, werden nie aufgelistet. Regeln, die nur im Modcode und nicht in Daten stehen, sind ebenfalls unsichtbar. Alles, was eine Mod durch Operationsdaten ausdrückt, funktioniert ohne Änderung an Implanner.

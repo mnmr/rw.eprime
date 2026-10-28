@@ -60,7 +60,7 @@ namespace EPrimeReadouts.UI
         // Cache contract:
         // Owner: process/current world and selected map.
         // Key: map identity, exact domain revisions, view stamp, width,
-        // UiRevision, and shared pool/count snapshot identities.
+        // UiRevision, resolved counter font, and shared pool/count snapshot identities.
         // Value: immutable resolved DrawModel plus presentation measurements.
         // Dependencies: those keys and per-player depth/search/settings state.
         // Refresh policy: immediate on dependency changes; counts arrive via
@@ -950,6 +950,7 @@ namespace EPrimeReadouts.UI
                 && builtCountRulesVersion == store.CountRulesVersion
                 && builtStamp == viewStamp
                 && builtUiRevision == UiRevision.Current
+                && draw.CounterFont == PanelCellMetrics.CounterFont
                 && builtMap == map && builtWidth == width
                 && ReferenceEquals(builtPools, renderData.Structure);
 
@@ -1036,7 +1037,8 @@ namespace EPrimeReadouts.UI
             RenderModel nextModel = ReadoutLayoutEngine.Build(input);
             bool changed = draw == null
                 || !RenderModelEquality.ContentEquals(draw.Model, nextModel);
-            bool presentationChanged = builtUiRevision != UiRevision.Current;
+            bool presentationChanged = builtUiRevision != UiRevision.Current
+                || draw == null || draw.CounterFont != PanelCellMetrics.CounterFont;
             if (changed || presentationChanged)
                 // Labels are translated and fitted in Resolve. Equal core
                 // cells do not imply equal language/font presentation.

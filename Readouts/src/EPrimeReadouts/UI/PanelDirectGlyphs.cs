@@ -17,7 +17,7 @@ namespace EPrimeReadouts.UI
     // Cache contract:
     // Owner: process/current main readout panel (via ReadoutPanel).
     // Key: draw-model identity, PanelTextRevision (text content, UI metric
-    //      revision, content dimensions), raster scale, and Waylith's font
+    //      revision, resolved counter font, content dimensions), raster scale, and Waylith's font
     //      atlas revision (Unity retains its existing generation contract).
     // Value: glyph quads in content-local physical pixels (vertices, uvs,
     //        vertex colors), immutable between rebuilds.
@@ -50,6 +50,14 @@ namespace EPrimeReadouts.UI
         private float builtScale = -1f;
         private int builtAtlasRevision = -1;
         private Material? builtMaterial;
+        private readonly bool countersOnly;
+        private readonly PanelDirectGlyphs? counters;
+
+        internal PanelDirectGlyphs(bool countersOnly = false)
+        {
+            this.countersOnly = countersOnly;
+            if (!countersOnly) counters = new PanelDirectGlyphs(true);
+        }
 
         /// Rebuilds the geometry when its key moved. Returns false when the
         /// font has no usable material, in which case the caller draws IMGUI
@@ -64,7 +72,7 @@ namespace EPrimeReadouts.UI
             PanelTextRevision revision = PanelTextRevision.Create(
                 model, uiRevision,
                 Mathf.Max(1, Mathf.CeilToInt(model.TotalWidth)),
-                Mathf.Max(1, Mathf.CeilToInt(model.TotalHeight)));
+                Mathf.Max(1, Mathf.CeilToInt(model.TotalHeight)), (int)draw.CounterFont);
             if (ReferenceEquals(builtDraw, draw)
                 && builtRevision.Equals(revision)
                 && builtScale == rasterScale
@@ -72,8 +80,15 @@ namespace EPrimeReadouts.UI
                 && builtMaterial != null)
                 return true;
 
+            if (counters != null)
+            {
+                // Warm both fonts before either batch retains atlas UVs.
+                // Waylith can repack the shared atlas when a font is first used.
+                WarmFonts(draw, rasterScale);
+                if (!counters.Ensure(draw, uiRevision, rasterScale)) return false;
+            }
             using (GuiStateScope.Capture())
-            using (TinyText.UseFont())
+            using (TinyText.UseFont(countersOnly ? draw.CounterFont : TinyText.Metrics.Font))
             {
                 GUIStyle style = Text.CurFontStyle;
                 Font? font = style.font ?? GUI.skin.font;
@@ -94,7 +109,7 @@ namespace EPrimeReadouts.UI
                 builtDraw = draw;
                 builtRevision = revision;
                 builtScale = rasterScale;
-                builtAtlasRevision = atlasRevision;
+                builtAtlasRevision = UsesGuiClip ? ReadAtlasRevision?.Invoke() ?? -1 : 0;
                 builtMaterial = font.material;
                 return true;
             }
@@ -106,6 +121,7 @@ namespace EPrimeReadouts.UI
         /// material pass and one vertex loop over the cached lists.
         internal void Draw(Vector2 originUi, Rect clipUi, float rasterScale)
         {
+            counters?.Draw(originUi, clipUi, rasterScale);
             if (builtMaterial == null || vertices.Count == 0) return;
             if (clipUi.width <= 0f || clipUi.height <= 0f) return;
 
@@ -164,6 +180,7 @@ namespace EPrimeReadouts.UI
 
         internal void Release()
         {
+            counters?.Release();
             vertices.Clear();
             uvs.Clear();
             colors.Clear();
@@ -198,6 +215,7 @@ namespace EPrimeReadouts.UI
                 RenderCell cell = cells[i];
                 string? text;
                 TextAnchor anchor;
+                if (cell.Kind != (countersOnly ? CellKind.Counter : CellKind.Label)) continue;
                 if (cell.Kind == CellKind.Counter)
                 {
                     text = cell.Text;
@@ -263,6 +281,38 @@ namespace EPrimeReadouts.UI
 
         private static float Snap(float value) =>
             (float)System.Math.Round(value, System.MidpointRounding.AwayFromZero);
+
+        private void WarmFonts(DrawModel draw, float scale)
+        {
+            if (!UsesGuiClip) return;
+            var characters = new System.Text.StringBuilder("0123456789-.kM");
+            for (int i = 0; i < draw.Model.Cells.Count; i++)
+            {
+                RenderCell cell = draw.Model.Cells[i];
+                if (cell.Kind == CellKind.Counter) characters.Append(cell.Text);
+                else if (cell.Kind == CellKind.Label) characters.Append(draw.Labels[i]);
+            }
+            string requested = characters.ToString();
+            using (GuiStateScope.Capture())
+            for (int pass = 0; pass < 2; pass++)
+            using (TinyText.UseFont(pass == 0 ? draw.CounterFont : TinyText.Metrics.Font))
+            {
+                GUIStyle style = Text.CurFontStyle;
+                Font? font = style.font ?? GUI.skin.font;
+                if (font == null) continue;
+                int size = Mathf.Max(1, Mathf.RoundToInt(
+                    (style.fontSize > 0 ? style.fontSize : font.fontSize) * scale));
+                generator.Populate(requested, new TextGenerationSettings
+                {
+                    font = font, fontSize = size, color = Color.white,
+                    fontStyle = style.fontStyle, scaleFactor = 1f, lineSpacing = 1f,
+                    generationExtents = new Vector2(32768f, size * 2f),
+                    pivot = new Vector2(0f, 1f),
+                    horizontalOverflow = HorizontalWrapMode.Overflow,
+                    verticalOverflow = VerticalWrapMode.Overflow,
+                });
+            }
+        }
 
         private static Func<int>? CreateAtlasReader()
         {

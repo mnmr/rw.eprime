@@ -1,12 +1,14 @@
 ---
 title: How modded implants are read
 ---
+<!-- l10n:b-935816ca622e -->
 Implanner does not need a list of supported mods to read implants. It
 reads every surgery the game has loaded, from vanilla, the expansions and
 every mod, and any surgery that installs an implant on a body part
 becomes an entry in the picker. The same data tells Implanner which
 implants can share a body:
 
+<!-- l10n:b-d02011c283d2 -->
 - **One replacement per part**: a bionic arm swaps the shoulder out, so
   two replacements never share a part, and a replacement clears every
   implant mounted on it or on the parts below it.
@@ -29,6 +31,7 @@ implants can share a body:
 - **Purchase-only items**: an implant whose item no workbench can craft
   is hidden until the matching option on the Options tab is switched on.
 
+<!-- l10n:b-ea92c69a5624 -->
 Two things cannot be read. Modules that a colonist inserts from the
 inventory without any surgery are never listed, and rules that exist only
 in a mod's code, with nothing in its data, cannot be seen. Everything a

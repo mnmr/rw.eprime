@@ -12,7 +12,7 @@ namespace QualityJobs.Patches
     /// method compose with ours instead of hiding it. The row does the actual
     /// painting; we contribute one button.
     ///
-    /// The button opens the vanilla mod-settings window for this mod. A global
+    /// The button opens the Options and Help window for this mod. A global
     /// settings toggle hides it for players who do not want the shortcut.
     [HarmonyPatch(typeof(PlaySettings), nameof(PlaySettings.DoPlaySettingsGlobalControls))]
     public static class Patch_PlaySettings
@@ -73,7 +73,7 @@ namespace QualityJobs.Patches
             Rect iconRect = row.Icon(tex, tip);
             lastIconRect = iconRect;
             if (Widgets.ButtonInvisible(iconRect))
-                Find.WindowStack.Add(new Dialog_ModSettings(QualityJobsMod.Instance));
+                Find.WindowStack.Add(new Dialog_QualityJobs());
         }
     }
 }

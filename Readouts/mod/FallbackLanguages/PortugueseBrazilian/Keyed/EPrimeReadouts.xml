@@ -153,4 +153,29 @@ Para adicionar um conjunto a um grupo, mude para o Editor de grupos e use o ramo
   <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout exibe seu próprio painel de recursos no modo personalizado ou predefinido. Esse painel disputa o mesmo espaço de exibição com EPrime's Readouts.</EPR.CompatibilityCustomResourceReadout>
   <EPR.CompatibilityReadoutsPlus>Readouts+ adiciona controles de clique ao painel de recursos do jogo base. Esses controles são ignorados enquanto o painel do EPrime está ativado.</EPR.CompatibilityReadoutsPlus>
   <EPR.CompatibilityToggleableReadouts>Toggleable Readouts (incluindo Continued) substitui a renderização dos painéis do jogo base. Seus filtros e opções de fixação são ignorados enquanto o painel do EPrime está ativado.</EPR.CompatibilityToggleableReadouts>
+  <EPR.DefaultAutoUpdate>Atualizar automaticamente após editar a configuração</EPR.DefaultAutoUpdate>
+  <EPR.DefaultClear>Usar padrões originais em novos jogos</EPR.DefaultClear>
+  <EPR.DefaultConflictBody>Esta colônia tem uma configuração do Readouts diferente do seu padrão para novos jogos. Usar a configuração desta colônia como padrão e mantê-la atualizada quando você editar a configuração? Sua colônia atual não será alterada.</EPR.DefaultConflictBody>
+  <EPR.DefaultEmptyBody>Salve a configuração completa desta colônia para jogos futuros. As colônias existentes mantêm suas próprias configurações. O número atual de níveis exibidos, as buscas e o estado do editor ficam de fora.</EPR.DefaultEmptyBody>
+  <EPR.DefaultKeep>Manter meu padrão nesta sessão</EPR.DefaultKeep>
+  <EPR.DefaultSavedBody>Há uma configuração pessoal salva para novos jogos. Salve a configuração completa desta colônia para substituí-la. As colônias existentes mantêm suas próprias configurações. O número atual de níveis exibidos, as buscas e o estado do editor ficam de fora.</EPR.DefaultSavedBody>
+  <EPR.DefaultStopAuto>Desativar atualização automática</EPR.DefaultStopAuto>
+  <EPR.DefaultUseCurrent>Usar esta configuração em novos jogos</EPR.DefaultUseCurrent>
+  <EPR.ImportSelectionWarning>Substitui as categorias selecionadas. As configurações do jogador afetam apenas você. Importar fica desativado até que as referências a conjuntos e grupos sejam válidas; passe o mouse sobre Importar para ver os detalhes. Categorias ausentes do arquivo não podem ser selecionadas.</EPR.ImportSelectionWarning>
+  <EPR.NewGameDefaults>Definir padrões</EPR.NewGameDefaults>
+  <EPR.OverviewNeedsGame>Carregue uma partida para configurar grupos e conjuntos de recursos.</EPR.OverviewNeedsGame>
+  <EPR.PositionAndSizeOptions>Opções de posição e tamanho</EPR.PositionAndSizeOptions>
+  <EPR.RenderCountersWithTinyFont>Tamanho da fonte dos contadores</EPR.RenderCountersWithTinyFont>
+  <EPR.RenderCountersWithTinyFontTip>Escolha o tamanho da fonte dos contadores de recursos. Ambos os tamanhos substituem a configuração de texto minúsculo do jogo.</EPR.RenderCountersWithTinyFontTip>
+  <EPR.ResetPositionAndSize>Restaurar posição e tamanho</EPR.ResetPositionAndSize>
+  <EPR.SetupCountRules>Regras de contagem de recursos</EPR.SetupCountRules>
+  <EPR.SetupFailed>Não foi possível salvar ou ler o padrão do Readouts: {0}</EPR.SetupFailed>
+  <EPR.SetupGroups>Grupos</EPR.SetupGroups>
+  <EPR.SetupPlayerSettings>Configurações do jogador e grupos ativados</EPR.SetupPlayerSettings>
+  <EPR.SetupPools>Conjuntos de recursos</EPR.SetupPools>
+  <EPR.SetupThresholds>Limites</EPR.SetupThresholds>
+  <EPR.UseVanillaConfirm>Mudar para o painel do jogo original?\n\nApós fechar a janela de configurações do Readouts, a única forma de restaurar o Readouts será por Opções → Configurações de mods → EPrime's Readouts. Desative "Usar o painel do jogo original" nessa tela para trazê-lo de volta.</EPR.UseVanillaConfirm>
+  <EPR.UseVanillaConfirmButton>Usar painel original</EPR.UseVanillaConfirmButton>
+  <EPR.CounterFontSmall>Pequena</EPR.CounterFontSmall>
+  <EPR.CounterFontTiny>Minúscula</EPR.CounterFontTiny>
 </LanguageData>

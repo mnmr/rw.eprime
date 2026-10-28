@@ -15,6 +15,7 @@ namespace EPrimeReadouts
         private int nextGroupId = 1;
         private int nextPoolId = 1;
         private bool seeded;
+        private bool isNewWorld;
         private List<GroupRecord>? groupRecords;
         private List<PoolRecord>? poolRecords;
         private Dictionary<string, string>? thresholdRecords;
@@ -76,7 +77,11 @@ namespace EPrimeReadouts
 
         public int TakePoolId() => nextPoolId++;
 
-        public void Bump(ReadoutChange change) => revisions.Bump(change);
+        public void Bump(ReadoutChange change)
+        {
+            revisions.Bump(change);
+            if (change != ReadoutChange.None) SetupDefaults.ModelChanged(this);
+        }
 
         public string DepthKey(int groupId) =>
             world.info.persistentRandomValue + ":" + groupId;
@@ -138,15 +143,16 @@ namespace EPrimeReadouts
         public override void FinalizeInit(bool fromLoad)
         {
             base.FinalizeInit(fromLoad);
+            isNewWorld = !fromLoad;
             // Vanilla runs World.FinalizeInit BEFORE Scribe.loader
             // .FinalizeLoading, so on a load the PostLoadInit pass that
             // rebuilds Model has not happened yet: cleanup, migration, and
             // the depth-key prune would all see an empty model, and the
             // prune would drop every depth and enabled-group key of the
             // save being loaded. Defer the whole pass until the load event
-            // has finished; a new game has its model ready and runs it now.
-            if (fromLoad) LongEventHandler.ExecuteWhenFinished(FinishInit);
-            else FinishInit();
+            // has finished. New-game setup uses the same main-thread boundary
+            // so personal defaults never access defs/settings on the generation worker.
+            LongEventHandler.ExecuteWhenFinished(FinishInit);
         }
 
         private void FinishInit()
@@ -157,7 +163,7 @@ namespace EPrimeReadouts
             Model.MigrateCategoryTokens(TakePoolId, CategoryLabelName);
             if (!seeded)
             {
-                DefaultGroups.Seed(this);
+                if (!isNewWorld || !SetupDefaults.TrySeed(this)) DefaultGroups.Seed(this);
                 seeded = true;
             }
             PruneDepthKeys();

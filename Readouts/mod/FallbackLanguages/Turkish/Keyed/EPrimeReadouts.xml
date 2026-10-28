@@ -153,4 +153,29 @@ Grubun sonuna eklemek için bir girdiye tıklayın veya belirli bir kademe yuvas
   <EPR.WelcomeFind>Düzenleyiciyi kaynak panelinin üstündeki dişli düğmesiyle açın. Seçenekler sekmesinde görünüm ayarları, Yardım sekmesinde diğer açıklamalar bulunur.</EPR.WelcomeFind>
   <EPR.WelcomeTakeMeThere>Şimdi aç</EPR.WelcomeTakeMeThere>
   <EPR.WelcomeTitle>EPrime's Readouts</EPR.WelcomeTitle>
+  <EPR.DefaultAutoUpdate>Yapılandırma değişikliklerinden sonra otomatik güncelle</EPR.DefaultAutoUpdate>
+  <EPR.DefaultClear>Yeni oyunlarda yerleşik varsayılanları kullan</EPR.DefaultClear>
+  <EPR.DefaultConflictBody>Bu koloninin Readouts yapılandırması, yeni oyun varsayılanınızdan farklı. Bu koloninin yapılandırması varsayılan olarak kullanılsın ve yapılandırmayı düzenlediğinizde güncel tutulsun mu? Mevcut koloniniz değiştirilmeyecek.</EPR.DefaultConflictBody>
+  <EPR.DefaultEmptyBody>Bu koloninin tüm yapılandırmasını gelecekteki oyunlar için kaydedin. Mevcut koloniler kendi yapılandırmalarını korur. Görüntülenen kademe sayısı, aramalar ve düzenleyici durumu kaydedilmez.</EPR.DefaultEmptyBody>
+  <EPR.DefaultKeep>Bu oturumda varsayılanımı koru</EPR.DefaultKeep>
+  <EPR.DefaultSavedBody>Yeni oyunlar için kişisel bir yapılandırma kayıtlı. Değiştirmek için bu koloninin tüm yapılandırmasını kaydedin. Mevcut koloniler kendi yapılandırmalarını korur. Görüntülenen kademe sayısı, aramalar ve düzenleyici durumu kaydedilmez.</EPR.DefaultSavedBody>
+  <EPR.DefaultStopAuto>Otomatik güncellemeyi kapat</EPR.DefaultStopAuto>
+  <EPR.DefaultUseCurrent>Yeni oyunlarda bu yapılandırmayı kullan</EPR.DefaultUseCurrent>
+  <EPR.ImportSelectionWarning>Seçili kategorileri değiştirir. Oyuncu ayarları yalnızca sizi etkiler. Havuz ve grup başvuruları geçerli olana kadar İçe aktar devre dışı kalır; ayrıntılar için İçe aktar'ın üzerine gelin. Dosyada bulunmayan kategoriler seçilemez.</EPR.ImportSelectionWarning>
+  <EPR.NewGameDefaults>Varsayılanları belirle</EPR.NewGameDefaults>
+  <EPR.OverviewNeedsGame>Grupları ve kaynak havuzlarını yapılandırmak için bir oyun yükleyin.</EPR.OverviewNeedsGame>
+  <EPR.PositionAndSizeOptions>Konum ve boyut seçenekleri</EPR.PositionAndSizeOptions>
+  <EPR.RenderCountersWithTinyFont>Sayaç yazı tipi boyutu</EPR.RenderCountersWithTinyFont>
+  <EPR.RenderCountersWithTinyFontTip>Kaynak sayaçları için yazı tipi boyutunu seçin. Her iki boyut da oyunun çok küçük metin ayarını geçersiz kılar.</EPR.RenderCountersWithTinyFontTip>
+  <EPR.ResetPositionAndSize>Konumu ve boyutu sıfırla</EPR.ResetPositionAndSize>
+  <EPR.SetupCountRules>Kaynak sayım kuralları</EPR.SetupCountRules>
+  <EPR.SetupFailed>Readouts varsayılanı kaydedilemedi veya okunamadı: {0}</EPR.SetupFailed>
+  <EPR.SetupGroups>Gruplar</EPR.SetupGroups>
+  <EPR.SetupPlayerSettings>Oyuncu ayarları ve etkin gruplar</EPR.SetupPlayerSettings>
+  <EPR.SetupPools>Kaynak havuzları</EPR.SetupPools>
+  <EPR.SetupThresholds>Eşikler</EPR.SetupThresholds>
+  <EPR.UseVanillaConfirm>Temel oyunun göstergesine geçilsin mi?\n\nReadouts ayar penceresini kapattıktan sonra Readouts'a dönmenin tek yolu Seçenekler → Mod ayarları → EPrime's Readouts yolunu izlemektir. Geri dönmek için oradaki "Temel oyunun göstergesini kullan" seçeneğini kapatın.</EPR.UseVanillaConfirm>
+  <EPR.UseVanillaConfirmButton>Temel oyunun göstergesini kullan</EPR.UseVanillaConfirmButton>
+  <EPR.CounterFontSmall>Küçük</EPR.CounterFontSmall>
+  <EPR.CounterFontTiny>Çok küçük</EPR.CounterFontTiny>
 </LanguageData>

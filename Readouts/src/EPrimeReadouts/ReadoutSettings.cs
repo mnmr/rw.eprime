@@ -8,6 +8,8 @@ namespace EPrimeReadouts
     /// ever synced or written to saves.
     public class ReadoutSettings : ModSettings
     {
+        public string setupProfileId = "";
+        public bool autoUpdateDefault;
         public bool useVanillaReadout;
         public float offsetX = 7f;
         public float offsetY = 7f;
@@ -47,6 +49,10 @@ namespace EPrimeReadouts
         /// false puts every visible tier on the band's single row, true
         /// gives each tier its own row and grows the band downward.
         public bool verticalTiers;
+        /// Explicit counter size: true = Tiny (default), false = Small.
+        /// Keep the existing serialized key for settings and setup compatibility.
+        /// Other text still follows the game's Tiny preference.
+        public bool renderCountersWithTinyFont = true;
         /// Planned-work reservations. All default off: a fresh install shows
         /// the same numbers it always did until the player opts in.
         /// Subtract ingredients outstanding bill iterations will consume.
@@ -71,6 +77,8 @@ namespace EPrimeReadouts
         public override void ExposeData()
         {
             base.ExposeData();
+            Scribe_Values.Look(ref setupProfileId, "setupProfileId", "");
+            Scribe_Values.Look(ref autoUpdateDefault, "autoUpdateDefault", false);
             Scribe_Collections.Look(ref helpTopicsRead, "helpTopicsRead", LookMode.Value);
             if (helpTopicsRead == null) helpTopicsRead = new List<string>();
             Scribe_Collections.Look(ref welcomeShownSaves, "welcomeShownSaves", LookMode.Value);
@@ -97,6 +105,7 @@ namespace EPrimeReadouts
             Scribe_Values.Look(ref expandOnHover, "expandOnHover", false);
             Scribe_Values.Look(ref collapseWhenIdle, "collapseWhenIdle", false);
             Scribe_Values.Look(ref verticalTiers, "verticalTiers", false);
+            Scribe_Values.Look(ref renderCountersWithTinyFont, "renderCountersWithTinyFont", true);
             // Ignore the retired bufferedRendering preference in older files;
             // rendering now chooses buffering or fault fallback automatically.
             Scribe_Values.Look(ref keepReadoutToggle, "keepReadoutToggle", false);

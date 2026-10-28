@@ -95,7 +95,7 @@ namespace EPrimeReadouts.UI
             if (baseResult == SurfaceEnsureResult.Failed) return false;
 
             PanelTextRevision textRevision = PanelTextRevision.Create(
-                draw.Model, uiRevision, contentWidth, contentHeight);
+                draw.Model, uiRevision, contentWidth, contentHeight, (int)draw.CounterFont);
             SurfaceEnsureResult glyphResult = glyphProduct.Ensure(
                 draw, textRevision, contentWidth, contentHeight,
                 geometry.RasterScale);

@@ -62,6 +62,7 @@ namespace EPrimeReadouts.UI
         private int builtPresentationVersion = -1;
         private int builtLanguageVersion = -1;
         private static int presentationVersion;
+        internal static void InvalidateEnabledGroups() { presentationVersion++; }
         private GroupRow[]? rows;
 
         public void Draw(Rect rect, Dialog_ReadoutConfig owner)
@@ -105,7 +106,7 @@ namespace EPrimeReadouts.UI
                     {
                         owner.SelectGroup(rows[i].Id);
                         string newKey = rows[i].DepthKey;
-                        EPrimeReadoutsMod.Persist(s => s.enabledGroups[newKey] = true);
+                        EPrimeReadoutsMod.PersistSetup(s => s.enabledGroups[newKey] = true);
                         rows[i].Enabled = true;
                         builtPresentationVersion = ++presentationVersion;
                         ReadoutPanel.BumpView();
@@ -144,7 +145,7 @@ namespace EPrimeReadouts.UI
                 if (enabled != prev)
                 {
                     bool localEnabled = enabled;
-                    EPrimeReadoutsMod.Persist(s => s.enabledGroups[key] = localEnabled);
+                    EPrimeReadoutsMod.PersistSetup(s => s.enabledGroups[key] = localEnabled);
                     rows[i].Enabled = enabled;
                     builtPresentationVersion = ++presentationVersion;
                     ReadoutPanel.BumpView();

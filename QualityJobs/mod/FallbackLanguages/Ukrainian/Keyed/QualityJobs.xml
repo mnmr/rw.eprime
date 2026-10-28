@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <LanguageData>
   <QJ_FinishBillLabel>Завершити {0} ({1})</QJ_FinishBillLabel>
   <QJ_AtStockCap>досягнуто ліміту незавершених виробів</QJ_AtStockCap>
@@ -54,7 +54,7 @@
   <QJ_SettingsUnlimitedHint>0 = без обмежень</QJ_SettingsUnlimitedHint>
   <QJ_SettingsShowToolbarButton>Показувати кнопку на панелі</QJ_SettingsShowToolbarButton>
   <QJ_SettingsShowToolbarButtonTip>Додає кнопку поряд із перемикачами відображення в правому нижньому куті екрана. Кнопка відкриває налаштування Quality Jobs.</QJ_SettingsShowToolbarButtonTip>
-  <QJ_ToolbarButtonTip>Відкрити налаштування Quality Jobs.</QJ_ToolbarButtonTip>
+  <QJ_ToolbarButtonTip>Відкрити налаштування та довідку Quality Jobs.</QJ_ToolbarButtonTip>
   <QJ_SettingsEnabledNote>Перемикач діє на завантажене збереження. Вимкнення повертає всі предмети до правил базової гри та видаляє налаштування Quality Jobs із цього збереження.\n\nЯкщо мод залишається встановленим, він знову ввімкнеться з типовими налаштуваннями під час наступного завантаження. Вимкнення призначене для підготовки до видалення мода.</QJ_SettingsEnabledNote>
   <QJ_DisableButton>Вимкнути Quality Jobs</QJ_DisableButton>
   <QJ_EnableButton>Увімкнути Quality Jobs</QJ_EnableButton>
@@ -84,4 +84,11 @@
   <QJ_WelcomeBody>Quality Jobs дозволяє будь-якому колоністу працювати над незавершеним виробом чи спорудою, але завершити роботу може лише колоніст, що відповідає вашим вимогам: саме він визначає якість. Це діє для виробничих замовлень і будівництва.</QJ_WelcomeBody>
   <QJ_WelcomeFind>Відкривайте налаштування Quality Jobs цією кнопкою поряд із перемикачами відображення в правому нижньому куті екрана. Вікно замовлення виробу з якістю має розділ Quality Jobs, а вибране креслення чи каркас споруди з якістю — кнопку «Якісна робота».</QJ_WelcomeFind>
   <QJ_WelcomeTakeMeThere>Відкрити зараз</QJ_WelcomeTakeMeThere>
+  <QJ_HelpChapterBasics>Початок роботи</QJ_HelpChapterBasics>
+  <QJ_HelpChapterConstruction>Будівництво</QJ_HelpChapterConstruction>
+  <QJ_HelpChapterCrafting>Ремесло</QJ_HelpChapterCrafting>
+  <QJ_HelpChapterOptions>Налаштування та усунення несправностей</QJ_HelpChapterOptions>
+  <QJ_HelpReload>Перезавантажити</QJ_HelpReload>
+  <QJ_TabHelp>Довідка</QJ_TabHelp>
+  <QJ_TabOptions>Налаштування</QJ_TabOptions>
 </LanguageData>

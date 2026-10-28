@@ -8,6 +8,17 @@ namespace EPrimeReadouts.Core.Tests;
 /// The icon must keep its fixed size and stay centered above the counter.
 public class LayoutEngineMetricsTests
 {
+    [Test]
+    public async Task TinyCountersKeepSmallSearchCaptionsFullyVisible()
+    {
+        var model = ReadoutLayoutEngine.Build(
+            SearchInput(new CellMetrics(32f, 15f, labelLineHeight: 22f), 4, 140f));
+        await Assert.That(CellsOf(model, CellKind.Counter).All(c => c.Rect.H == 16f)).IsTrue();
+        await Assert.That(CellsOf(model, CellKind.Label).All(c => c.Rect.H == 26f)).IsTrue();
+        var icons = CellsOf(model, CellKind.Icon);
+        await Assert.That(icons[3].Rect.Y - icons[0].Rect.Y).IsEqualTo(41f);
+    }
+
     private static ReadoutGroup Group(int id, params string[][] tiers)
     {
         var group = new ReadoutGroup { Id = id, Name = "G" + id };

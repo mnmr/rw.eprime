@@ -1,6 +1,7 @@
 ---
 title: Auto-assign
 ---
+<!-- l10n:b-b90dcb149204 -->
 Auto-assign is the welcome committee: recruits, wanderers, and anyone
 else who joins receives the role automatically. A newcomer outside the
 role's age groups is skipped, so separate child and adult roles can both
@@ -10,6 +11,7 @@ they hold loses it. Where such a role lands
 in a recommended row is governed by its
 [role options](topic:role-options), like any other role.
 
+<!-- l10n:b-54823d547c5e -->
 Core, Basics, and Grunt ship with it on, which is why fresh colonists
 arrive with a working row instead of an empty one. Flip the switch in the
 editor to change which roles greet newcomers.

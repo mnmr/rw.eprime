@@ -78,10 +78,17 @@
   <QJ_StatusStalledTip>Có đồ dở dang đang chờ nhưng chưa cư dân nào đủ điều kiện hoàn thiện, nên không tạo việc hoàn thiện.\n\nKiểm tra yêu cầu kỹ năng, cảm hứng, chuyên gia, và xem người dự kiến đã bật loại việc cần thiết và đang ở bản đồ này chưa. Khi đình trệ, giới hạn kho cũng có thể ngăn bắt đầu vật phẩm mới.</QJ_StatusStalledTip>
   <QJ_StockCapLabel>Giới hạn kho: {0}</QJ_StockCapLabel>
   <QJ_StockCapTooltip>Số đồ dở dang tối đa của sản phẩm này. Giới hạn dùng chung theo sản phẩm, nên mọi lệnh sản xuất nó đều được tính.\n\n0 là không giới hạn.</QJ_StockCapTooltip>
-  <QJ_ToolbarButtonTip>Mở thiết lập Quality Jobs.</QJ_ToolbarButtonTip>
+  <QJ_ToolbarButtonTip>Mở tùy chọn và trợ giúp của Quality Jobs.</QJ_ToolbarButtonTip>
   <QJ_UnfinishedWorkWaiting>đồ dở dang của lệnh này đang chờ tiếp tục</QJ_UnfinishedWorkWaiting>
   <QJ_WelcomeBody>Quality Jobs cho phép mọi cư dân làm đồ dở dang hoặc công trình, nhưng chỉ người đạt yêu cầu bạn đặt mới được hoàn thành, vì người làm bước cuối quyết định chất lượng. Áp dụng cho cả lệnh chế tạo lẫn xây dựng.</QJ_WelcomeBody>
   <QJ_WelcomeFind>Mở thiết lập Quality Jobs bằng nút này cạnh các nút hiển thị ở góc dưới bên phải màn hình. Cửa sổ lệnh cho đồ có chất lượng có mục Quality Jobs; chọn bản thiết kế hoặc khung công trình có chất lượng sẽ có nút Việc chất lượng.</QJ_WelcomeFind>
   <QJ_WelcomeTakeMeThere>Mở ngay</QJ_WelcomeTakeMeThere>
   <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
+  <QJ_HelpChapterBasics>Bắt đầu</QJ_HelpChapterBasics>
+  <QJ_HelpChapterConstruction>Xây dựng</QJ_HelpChapterConstruction>
+  <QJ_HelpChapterCrafting>Chế tạo</QJ_HelpChapterCrafting>
+  <QJ_HelpChapterOptions>Tùy chọn và khắc phục sự cố</QJ_HelpChapterOptions>
+  <QJ_HelpReload>Tải lại</QJ_HelpReload>
+  <QJ_TabHelp>Trợ giúp</QJ_TabHelp>
+  <QJ_TabOptions>Tùy chọn</QJ_TabOptions>
 </LanguageData>

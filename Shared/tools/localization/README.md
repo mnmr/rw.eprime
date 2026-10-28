@@ -49,6 +49,45 @@ The guidance file is the maintained source for owner terminology and regional
 language rules. Update it when terminology changes; existing valid translations
 still need a deliberate edit when adopting a new terminology decision.
 
+Help uses stable block IDs: `<!-- l10n:b-0123456789ab -->` immediately before
+each paragraph, heading, image caption, directive or related list. The title
+has the reserved ID `title`. Keep the comment attached when moving or editing
+content within a topic; never regenerate existing IDs. New blocks need a new
+unique ID (a descriptive ID such as `import-options` also works). A block must
+contain one paragraph or one related list, not an entire section. Keep related
+list items together for grammatical context. The game ignores these comments
+while loading help; they add no rendering or tick work.
+
+The checker hashes each block independently. English soft wrapping does not
+change a hash. Section headings are context dependencies for their contents;
+the preceding paragraph (allowing an intervening image) is a dependency for a
+list. A changed heading or list introduction therefore requests review of its
+dependent blocks too. Reports use `Mod/Help/chapter/page.md#block-id` and the
+updater separates UI strings, affected help blocks and affected pages.
+
+The translator receives the full English/translated page and previous English
+block text for context, but can return only the requested blocks. The updater
+patches those blocks, retaining every untouched block's exact bytes, including
+owner wording, BOMs and line endings. Reordering within a page reuses existing
+translations without a model call; new/deleted blocks are added/removed. Moving
+content to another topic changes its page-qualified key and needs translation
+review. Images themselves are not translation inputs; captions and paths are.
+
+For a new page, or an older checkout with whole-page tracking, run:
+
+```powershell
+python Shared/tools/localization/prepare_help.py --dry-run
+python Shared/tools/localization/prepare_help.py
+```
+
+This assigns IDs once and aligns all active locales by ordered block kinds and
+literal anchors. Existing translations must match the last whole-page source
+hash before it can carry their current status into block hashes. Missing
+snapshots stay unacknowledged. Stale text, split/merged paragraphs, or ambiguous
+alignment stop the entire migration without writes; review the indicated
+boundaries first. It never retranslates wording. Duplicate IDs, unmarked extra
+paragraphs, and new untracked pages after migration fail the checker.
+
 Codex returns structured text in an ephemeral, read-only session. The helper
 applies the text to a temporary copy, validates all selected locales, and only
 then writes translations and their English-source manifests. Invalid responses,
@@ -122,13 +161,18 @@ After **manually** translating a changed source, explicitly update its snapshot.
 The automatic update helper performs this step itself after validation:
 
 ```powershell
-python Shared/tools/localization/translations.py snapshot --locale German
+python Shared/tools/localization/translations.py snapshot --locale German --key 'Readouts/Help/2-groups/05-sharing-groups.md#<block-id>'
+# Only after deliberately reviewing ALL pending entries:
+python Shared/tools/localization/translations.py snapshot --locale German --all
 ```
 
 Snapshots under `Shared/Translations/Manifests` record the English text hashes
-that each locale was translated against. The command refuses incomplete or
-structurally broken content; it does not imply human review. Do not refresh
-snapshots merely to silence stale-source diagnostics.
+that each locale was translated against, plus previous English block text for
+translation context. Repeat `--key` to acknowledge individual entries/blocks;
+other changed entries retain their old hashes. `--all` explicitly acknowledges
+everything. Omitting both flags cannot clear pending diagnostics. The command
+refuses incomplete or structurally broken content; it does not imply human
+review. Do not refresh snapshots merely to silence stale-source diagnostics.
 
 Active canonical game locale names are German, French, Spanish, Italian,
 PortugueseBrazilian, SpanishLatin, ChineseSimplified, ChineseTraditional,

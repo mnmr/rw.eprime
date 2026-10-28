@@ -391,6 +391,9 @@ namespace EPrimeReadouts.Core
             return changed;
         }
 
+        internal static void NormalizeImportedGroupNames(IReadOnlyList<ReadoutGroup> groups) =>
+            MakeNamesUnique(groups, GroupNameOf, SetGroupName, ReadoutGroupNames.FallbackName);
+
         /// Pools are kept name-sorted (case-insensitive, id tie-break) as a
         /// list invariant — deterministic, so safe inside sync commands.
         private void SortPools() =>

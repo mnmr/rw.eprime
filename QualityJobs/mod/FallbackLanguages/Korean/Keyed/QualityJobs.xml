@@ -78,10 +78,17 @@
   <QJ_StatusStalledTip>미완성품이 대기 중이지만 마무리 조건에 맞는 정착민이 없어 마무리 작업을 생성하지 않습니다.\n\n기술 수준, 영감, 전문가 조건을 확인하세요. 예정된 담당자가 이 지도에 있고 해당 작업이 켜져 있는지도 확인하세요. 중단 중에는 보유 한도로 새 물품을 시작하지 못할 수도 있습니다.</QJ_StatusStalledTip>
   <QJ_StockCapLabel>보유 한도: {0}</QJ_StockCapLabel>
   <QJ_StockCapTooltip>이 제품의 미완성품 최대 수입니다. 같은 물품을 만드는 모든 계획서가 제품별 한도를 공유합니다.\n\n0은 무제한입니다.</QJ_StockCapTooltip>
-  <QJ_ToolbarButtonTip>Quality Jobs 설정을 엽니다.</QJ_ToolbarButtonTip>
+  <QJ_ToolbarButtonTip>Quality Jobs 설정과 도움말을 엽니다.</QJ_ToolbarButtonTip>
   <QJ_UnfinishedWorkWaiting>이 계획서의 미완성품이 작업 재개를 기다리는 중</QJ_UnfinishedWorkWaiting>
   <QJ_WelcomeBody>Quality Jobs에서는 미완성품이나 건물을 여러 정착민이 작업하되, 설정한 조건을 만족하는 정착민만 완성합니다. 품질은 마무리한 사람만 결정하기 때문입니다. 제작 계획서와 건설에 모두 적용됩니다.</QJ_WelcomeBody>
   <QJ_WelcomeFind>화면 오른쪽 아래 표시 전환 버튼 옆의 이 버튼으로 Quality Jobs 설정을 여세요. 품질 물품의 계획서 창에는 Quality Jobs 영역이 있고, 품질 건물의 청사진이나 골조를 선택하면 품질 작업 버튼이 있습니다.</QJ_WelcomeFind>
   <QJ_WelcomeTakeMeThere>지금 열기</QJ_WelcomeTakeMeThere>
   <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
+  <QJ_HelpChapterBasics>시작하기</QJ_HelpChapterBasics>
+  <QJ_HelpChapterConstruction>건설</QJ_HelpChapterConstruction>
+  <QJ_HelpChapterCrafting>제작</QJ_HelpChapterCrafting>
+  <QJ_HelpChapterOptions>설정 및 문제 해결</QJ_HelpChapterOptions>
+  <QJ_HelpReload>다시 불러오기</QJ_HelpReload>
+  <QJ_TabHelp>도움말</QJ_TabHelp>
+  <QJ_TabOptions>설정</QJ_TabOptions>
 </LanguageData>

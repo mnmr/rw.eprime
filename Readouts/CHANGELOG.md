@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 1.4.3 — 2026-10-28
+
+- Added: Tiny/Small counter font-size picker, defaulting to Tiny and independent of RimWorld's tiny-text setting.
+- Added: Ability to save the current setup as the default for new colonies.
+- Changed: Fine-grained import/export controls and better coverage (file format now includes options and player settings as well).
+- Changed: Access all options from the gear or RimWorld's Mod Options, including panel position, size and counter font.
+
 ## 1.4.2 — 2026-10-26
 
 - Added: Built-in translations. Available languages: English, French, German, Italian, Japanese, Korean, Brazilian Portuguese, Spanish (European and Latin American), Simplified Chinese, Traditional Chinese, Turkish, Ukrainian, and Vietnamese.

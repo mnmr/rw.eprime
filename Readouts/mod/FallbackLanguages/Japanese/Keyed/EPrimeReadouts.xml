@@ -153,4 +153,29 @@
   <EPR.WelcomeTakeMeThere>今すぐ開く</EPR.WelcomeTakeMeThere>
   <EPR.WelcomeTitle>EPrime's Readouts</EPR.WelcomeTitle>
   <EPR.Help>ヘルプ</EPR.Help>
+  <EPR.DefaultAutoUpdate>設定の編集後に自動更新</EPR.DefaultAutoUpdate>
+  <EPR.DefaultClear>新しいゲームで同梱の初期設定を使う</EPR.DefaultClear>
+  <EPR.DefaultConflictBody>このコロニーのReadouts設定は、新しいゲーム用の初期設定と異なります。このコロニーの設定を初期設定として使い、設定の編集時に自動更新しますか？現在のコロニーは変更されません。</EPR.DefaultConflictBody>
+  <EPR.DefaultEmptyBody>このコロニーの設定一式を今後のゲーム用に保存します。既存のコロニーはそれぞれの設定を維持します。現在の表示段数、検索、編集画面の状態は含まれません。</EPR.DefaultEmptyBody>
+  <EPR.DefaultKeep>このセッションでは初期設定を維持</EPR.DefaultKeep>
+  <EPR.DefaultSavedBody>新しいゲーム用の個人設定が保存されています。このコロニーの設定一式を保存すると、上書きされます。既存のコロニーはそれぞれの設定を維持します。現在の表示段数、検索、編集画面の状態は含まれません。</EPR.DefaultSavedBody>
+  <EPR.DefaultStopAuto>自動更新をオフ</EPR.DefaultStopAuto>
+  <EPR.DefaultUseCurrent>この設定を新しいゲームで使う</EPR.DefaultUseCurrent>
+  <EPR.ImportSelectionWarning>選択した種類の設定を置き換えます。プレイヤー設定は自分だけに反映されます。プールとグループへの参照が有効になるまでインポートは無効です。詳細はインポートボタンにカーソルを合わせて確認してください。ファイルに含まれない種類は選択できません。</EPR.ImportSelectionWarning>
+  <EPR.NewGameDefaults>初期設定を保存</EPR.NewGameDefaults>
+  <EPR.OverviewNeedsGame>グループと資源プールを設定するには、ゲームを読み込んでください。</EPR.OverviewNeedsGame>
+  <EPR.PositionAndSizeOptions>位置と大きさの設定</EPR.PositionAndSizeOptions>
+  <EPR.RenderCountersWithTinyFont>カウンターの文字サイズ</EPR.RenderCountersWithTinyFont>
+  <EPR.RenderCountersWithTinyFontTip>資源カウンターの文字サイズを選択します。どちらのサイズも、ゲームの極小文字設定より優先されます。</EPR.RenderCountersWithTinyFontTip>
+  <EPR.ResetPositionAndSize>位置と大きさをリセット</EPR.ResetPositionAndSize>
+  <EPR.SetupCountRules>資源の集計ルール</EPR.SetupCountRules>
+  <EPR.SetupFailed>Readoutsの初期設定を保存または読み込みできませんでした: {0}</EPR.SetupFailed>
+  <EPR.SetupGroups>グループ</EPR.SetupGroups>
+  <EPR.SetupPlayerSettings>プレイヤー設定と有効なグループ</EPR.SetupPlayerSettings>
+  <EPR.SetupPools>資源プール</EPR.SetupPools>
+  <EPR.SetupThresholds>しきい値</EPR.SetupThresholds>
+  <EPR.UseVanillaConfirm>バニラの資源表示に切り替えますか？\n\nReadoutsの設定画面を閉じた後は、「オプション」→「Mod設定」→ EPrime's ReadoutsからのみReadoutsに戻せます。そこで「バニラの資源表示を使う」をオフにしてください。</EPR.UseVanillaConfirm>
+  <EPR.UseVanillaConfirmButton>バニラを使う</EPR.UseVanillaConfirmButton>
+  <EPR.CounterFontSmall>小</EPR.CounterFontSmall>
+  <EPR.CounterFontTiny>極小</EPR.CounterFontTiny>
 </LanguageData>

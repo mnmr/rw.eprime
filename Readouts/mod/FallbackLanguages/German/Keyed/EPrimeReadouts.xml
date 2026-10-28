@@ -153,4 +153,29 @@ Um einen Pool zu einer Gruppe hinzuzufügen, wechsle zum Gruppeneditor und verwe
   <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout zeichnet im benutzerdefinierten oder voreingestellten Modus eine eigene Ressourcenanzeige. Diese konkurriert mit EPrime's Readouts um denselben Anzeigebereich.</EPR.CompatibilityCustomResourceReadout>
   <EPR.CompatibilityReadoutsPlus>Readouts+ ergänzt die Ressourcenanzeige des Grundspiels um Klickfunktionen. Diese werden umgangen, solange die Anzeige von EPrime's Readouts aktiviert ist.</EPR.CompatibilityReadoutsPlus>
   <EPR.CompatibilityToggleableReadouts>Toggleable Readouts (einschließlich Continued) ersetzt die Darstellung der Anzeigen des Grundspiels. Seine Filter- und Anheftfunktionen werden umgangen, solange die Anzeige von EPrime's Readouts aktiviert ist.</EPR.CompatibilityToggleableReadouts>
+  <EPR.DefaultAutoUpdate>Nach Konfigurationsänderungen automatisch aktualisieren</EPR.DefaultAutoUpdate>
+  <EPR.DefaultClear>Mitgelieferte Standards für neue Spiele verwenden</EPR.DefaultClear>
+  <EPR.DefaultConflictBody>Die Readouts-Einrichtung dieser Kolonie weicht von deinen Standards für neue Spiele ab. Die Einrichtung dieser Kolonie als Standard verwenden und bei Konfigurationsänderungen aktuell halten? Deine aktuelle Kolonie wird nicht verändert.</EPR.DefaultConflictBody>
+  <EPR.DefaultEmptyBody>Speichere die vollständige Einrichtung dieser Kolonie für künftige Spiele. Bestehende Kolonien behalten ihre eigene Einrichtung. Die angezeigte Ebenenzahl, Suchanfragen und der Editorzustand werden nicht gespeichert.</EPR.DefaultEmptyBody>
+  <EPR.DefaultKeep>Meine Standards für diese Sitzung beibehalten</EPR.DefaultKeep>
+  <EPR.DefaultSavedBody>Eine persönliche Einrichtung für neue Spiele ist gespeichert. Speichere die vollständige Einrichtung dieser Kolonie, um sie zu ersetzen. Bestehende Kolonien behalten ihre eigene Einrichtung. Die angezeigte Ebenenzahl, Suchanfragen und der Editorzustand werden nicht gespeichert.</EPR.DefaultSavedBody>
+  <EPR.DefaultStopAuto>Automatische Aktualisierung deaktivieren</EPR.DefaultStopAuto>
+  <EPR.DefaultUseCurrent>Diese Einrichtung für neue Spiele verwenden</EPR.DefaultUseCurrent>
+  <EPR.ImportSelectionWarning>Ersetzt die ausgewählten Kategorien. Spielereinstellungen gelten nur für dich. Importieren bleibt deaktiviert, bis Pool- und Gruppenverweise gültig sind. Fahre für Details über Importieren. Kategorien, die in der Datei fehlen, können nicht ausgewählt werden.</EPR.ImportSelectionWarning>
+  <EPR.NewGameDefaults>Standards festlegen</EPR.NewGameDefaults>
+  <EPR.OverviewNeedsGame>Lade einen Spielstand, um Gruppen und Ressourcenpools zu konfigurieren.</EPR.OverviewNeedsGame>
+  <EPR.PositionAndSizeOptions>Optionen für Position und Größe</EPR.PositionAndSizeOptions>
+  <EPR.RenderCountersWithTinyFont>Schriftgröße der Zähler</EPR.RenderCountersWithTinyFont>
+  <EPR.RenderCountersWithTinyFontTip>Wähle die Schriftgröße für Ressourcenzähler. Beide Größen haben Vorrang vor der Einstellung für winzigen Text im Spiel.</EPR.RenderCountersWithTinyFontTip>
+  <EPR.ResetPositionAndSize>Position und Größe zurücksetzen</EPR.ResetPositionAndSize>
+  <EPR.SetupCountRules>Regeln zur Ressourcenzählung</EPR.SetupCountRules>
+  <EPR.SetupFailed>Readouts-Standards konnten nicht gespeichert oder gelesen werden: {0}</EPR.SetupFailed>
+  <EPR.SetupGroups>Gruppen</EPR.SetupGroups>
+  <EPR.SetupPlayerSettings>Spielereinstellungen und aktivierte Gruppen</EPR.SetupPlayerSettings>
+  <EPR.SetupPools>Ressourcenpools</EPR.SetupPools>
+  <EPR.SetupThresholds>Schwellen</EPR.SetupThresholds>
+  <EPR.UseVanillaConfirm>Zur Standardanzeige wechseln?\n\nNachdem du das Readouts-Einstellungsfenster geschlossen hast, kannst du Readouts nur noch über Optionen → Mod-Optionen → EPrime's Readouts wiederherstellen. Deaktiviere dort „Standardanzeige verwenden“, um Readouts wieder einzublenden.</EPR.UseVanillaConfirm>
+  <EPR.UseVanillaConfirmButton>Standardanzeige verwenden</EPR.UseVanillaConfirmButton>
+  <EPR.CounterFontSmall>Klein</EPR.CounterFontSmall>
+  <EPR.CounterFontTiny>Winzig</EPR.CounterFontTiny>
 </LanguageData>

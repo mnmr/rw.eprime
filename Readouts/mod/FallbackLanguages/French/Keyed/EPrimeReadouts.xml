@@ -153,4 +153,29 @@ Pour ajouter un ensemble à un groupe, passez à l'éditeur de groupes et utilis
   <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout affiche son propre panneau de ressources en mode personnalisé ou prédéfini. Ce panneau entre en concurrence avec EPrime's Readouts pour le même affichage.</EPR.CompatibilityCustomResourceReadout>
   <EPR.CompatibilityReadoutsPlus>Readouts+ ajoute des commandes cliquables à l'affichage des ressources du jeu de base. Ces commandes sont ignorées lorsque l'affichage d'EPrime est activé.</EPR.CompatibilityReadoutsPlus>
   <EPR.CompatibilityToggleableReadouts>Toggleable Readouts (y compris Continued) remplace le rendu de l'affichage des ressources du jeu de base. Ses fonctions de filtrage et d'épinglage sont ignorées lorsque l'affichage d'EPrime est activé.</EPR.CompatibilityToggleableReadouts>
+  <EPR.DefaultAutoUpdate>Mettre à jour automatiquement après modification de la configuration</EPR.DefaultAutoUpdate>
+  <EPR.DefaultClear>Utiliser les valeurs intégrées pour les nouvelles parties</EPR.DefaultClear>
+  <EPR.DefaultConflictBody>La configuration Readouts de cette colonie diffère de celle définie par défaut pour les nouvelles parties. Utiliser la configuration de cette colonie par défaut et la mettre à jour lorsque vous la modifiez ? Votre colonie actuelle ne sera pas modifiée.</EPR.DefaultConflictBody>
+  <EPR.DefaultEmptyBody>Enregistrez la configuration complète de cette colonie pour les futures parties. Les colonies existantes conservent leur propre configuration. Le nombre de niveaux affichés, les recherches et l'état de l'éditeur sont exclus.</EPR.DefaultEmptyBody>
+  <EPR.DefaultKeep>Conserver ma configuration par défaut pour cette session</EPR.DefaultKeep>
+  <EPR.DefaultSavedBody>Une configuration personnelle est enregistrée pour les nouvelles parties. Enregistrez la configuration complète de cette colonie pour la remplacer. Les colonies existantes conservent leur propre configuration. Le nombre de niveaux affichés, les recherches et l'état de l'éditeur sont exclus.</EPR.DefaultSavedBody>
+  <EPR.DefaultStopAuto>Désactiver la mise à jour automatique</EPR.DefaultStopAuto>
+  <EPR.DefaultUseCurrent>Utiliser cette configuration pour les nouvelles parties</EPR.DefaultUseCurrent>
+  <EPR.ImportSelectionWarning>Remplace les catégories sélectionnées. Les paramètres du joueur ne concernent que vous. Importer reste désactivé tant que les références aux ensembles et aux groupes ne sont pas valides ; survolez Importer pour plus de détails. Les catégories absentes du fichier ne peuvent pas être sélectionnées.</EPR.ImportSelectionWarning>
+  <EPR.NewGameDefaults>Définir les valeurs par défaut</EPR.NewGameDefaults>
+  <EPR.OverviewNeedsGame>Chargez une partie pour configurer les groupes et les ensembles de ressources.</EPR.OverviewNeedsGame>
+  <EPR.PositionAndSizeOptions>Options de position et de taille</EPR.PositionAndSizeOptions>
+  <EPR.RenderCountersWithTinyFont>Taille de police des compteurs</EPR.RenderCountersWithTinyFont>
+  <EPR.RenderCountersWithTinyFontTip>Choisissez la taille de police des compteurs de ressources. Les deux tailles remplacent le réglage de texte très petit du jeu.</EPR.RenderCountersWithTinyFontTip>
+  <EPR.ResetPositionAndSize>Réinitialiser la position et la taille</EPR.ResetPositionAndSize>
+  <EPR.SetupCountRules>Règles de comptage des ressources</EPR.SetupCountRules>
+  <EPR.SetupFailed>Impossible d'enregistrer ou de lire la configuration par défaut de Readouts : {0}</EPR.SetupFailed>
+  <EPR.SetupGroups>Groupes</EPR.SetupGroups>
+  <EPR.SetupPlayerSettings>Paramètres du joueur et groupes activés</EPR.SetupPlayerSettings>
+  <EPR.SetupPools>Groupes de ressources</EPR.SetupPools>
+  <EPR.SetupThresholds>Seuils</EPR.SetupThresholds>
+  <EPR.UseVanillaConfirm>Passer à l'affichage du jeu de base ?\n\nAprès avoir fermé la fenêtre des paramètres de Readouts, le seul moyen de rétablir Readouts sera de passer par Options → Options des mods → EPrime's Readouts. Désactivez « Utiliser l'affichage du jeu de base » pour le rétablir.</EPR.UseVanillaConfirm>
+  <EPR.UseVanillaConfirmButton>Utiliser celui du jeu de base</EPR.UseVanillaConfirmButton>
+  <EPR.CounterFontSmall>Petite</EPR.CounterFontSmall>
+  <EPR.CounterFontTiny>Très petite</EPR.CounterFontTiny>
 </LanguageData>

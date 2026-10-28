@@ -1,8 +1,10 @@
 ---
 title: Điều hướng bàn phím
 ---
+<!-- l10n:b-a01bbbc946cc -->
 Bảng cư dân nhận bàn phím khi không ô văn bản nào đang được nhập:
 
+<!-- l10n:b-d5ce7a4880a9 -->
 - Mũi tên Lên/Xuống chọn người trước/sau. Giữ Shift để mở rộng lựa chọn.
 - Home/End tới người đầu/cuối. Giữ Ctrl để bỏ qua phần nhóm.
 - Page Up/Page Down chuyển một trang hoặc nhóm.
@@ -10,4 +12,5 @@ Bảng cư dân nhận bàn phím khi không ô văn bản nào đang được n
 - Ctrl+C chép hàng vai trò người đang chọn; Ctrl+V dán, giống [nút chép và dán](topic:copy-paste).
 - Ctrl+F đưa con trỏ vào ô tìm kiếm.
 
+<!-- l10n:b-fd96c07b0ec7 -->
 Sáu phím di chuyển nằm dưới WorkRoles trong cấu hình bàn phím của trò chơi, có thể gán lại.

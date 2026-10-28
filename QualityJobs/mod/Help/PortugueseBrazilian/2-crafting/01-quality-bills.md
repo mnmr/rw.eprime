@@ -1,0 +1,21 @@
+---
+title: Configurando uma ordem de produção
+---
+<!-- l10n:open -->
+Abra **Detalhes** em uma ordem de produção de um item com qualidade. O painel **{k:QJ_QualityPanelTitle}** aparece ao lado dos controles normais da ordem para receitas compatíveis que deixam um item inacabado. Receitas sem qualidade ou trabalho inacabado mantêm seu comportamento normal.
+
+<!-- l10n:bill-image -->
+![Uma ordem de produção de uma bancada com seu painel do Quality Jobs](crafting-bill.png)
+
+<!-- l10n:setup -->
+Ative **{k:QJ_ManageBill}** e escolha os [requisitos do finalizador](topic:finishers). Trabalhadores comuns podem fazer a maior parte da fabricação. Se o trabalhador atual atender aos requisitos, ele conclui o item diretamente; caso contrário, o item quase concluído é separado, e a ordem pode preparar mais trabalho dentro do seu limite de estoque.
+
+<!-- l10n:dispatch -->
+Quando um finalizador atende aos requisitos, o Quality Jobs cria uma ordem temporária **Finalizar …** atribuída a ele. Ele recolhe o item inacabado e o conclui. A ordem temporária é removida automaticamente em seguida. Os itens em espera podem ser transportados e armazenados como outros itens inacabados.
+
+<!-- l10n:status -->
+A seção **{k:QJ_StatusHeader}** mostra o trabalho **Inacabado** compartilhado, os itens **Aguardando** um finalizador e os itens já atribuídos para **Finalização**. Passe o cursor sobre o status e a lista de finalizadores para ver mais detalhes. Veja [quando o trabalho fica parado](topic:waiting) se nada estiver avançando.
+
+<!-- l10n:disable -->
+Desmarque **{k:QJ_ManageBill}** para que ela volte a ser concluída normalmente. Seu trabalho compartilhado ainda pode ser continuado por outros trabalhadores quando o compartilhamento estiver habilitado.
+

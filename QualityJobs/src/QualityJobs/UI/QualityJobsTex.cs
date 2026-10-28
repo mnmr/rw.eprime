@@ -19,6 +19,9 @@ namespace QualityJobs.UI
     [StaticConstructorOnStartup]
     public static class QualityJobsTex
     {
+        public static readonly Texture2D TabAtlas =
+            ContentFinder<Texture2D>.Get("UI/Widgets/TabAtlas");
+
         /// Mod icon shown in the settings window header panel (40x40).
         public static readonly Texture2D ModIcon =
             ContentFinder<Texture2D>.Get("QualityJobs/ModIcon");

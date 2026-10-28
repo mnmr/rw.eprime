@@ -62,6 +62,9 @@ master crafter do the final touch — this mod automates the entire loop.
 
 **General**
 
+- Built-in Help: the toolbar window has **Options** and **Help** tabs, with
+  illustrated guides to sharing, crafting, construction, defaults and troubleshooting.
+  Help follows the game's language and remembers your reading progress.
 - Vanilla Skills Expanded support: construction, crafting, and art quality
   bonuses count when choosing the best finisher and predicting their quality
   odds. Speed expertises do not receive a quality preference. The integration

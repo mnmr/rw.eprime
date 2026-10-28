@@ -6,6 +6,11 @@
   <EPR.MoreResults>…and {0} more</EPR.MoreResults>
   <EPR.CycleTip>Cycle visible tiers</EPR.CycleTip>
   <EPR.UseVanilla>Use vanilla readout</EPR.UseVanilla>
+  <EPR.UseVanillaConfirm>Switch to the vanilla readout?\n\nAfter you close the Readouts settings window, the only way to restore Readouts is through Options → Mod Options → EPrime's Readouts. Turn off "Use vanilla readout" there to bring it back.</EPR.UseVanillaConfirm>
+  <EPR.UseVanillaConfirmButton>Use vanilla</EPR.UseVanillaConfirmButton>
+  <EPR.PositionAndSizeOptions>Position and Size Options</EPR.PositionAndSizeOptions>
+  <EPR.ResetPositionAndSize>Reset position and size</EPR.ResetPositionAndSize>
+  <EPR.OverviewNeedsGame>Load a game to configure groups and resource pools.</EPR.OverviewNeedsGame>
   <EPR.OffsetX>Horizontal offset</EPR.OffsetX>
   <EPR.OffsetY>Vertical offset</EPR.OffsetY>
   <EPR.PanelWidth>Panel width</EPR.PanelWidth>
@@ -64,6 +69,10 @@
   <EPR.SearchHideForbidden>Ignore forbidden items</EPR.SearchHideForbidden>
   <EPR.SelectJumpCamera>Jump camera to clicked resource</EPR.SelectJumpCamera>
   <EPR.DisplayOptions>Display Options</EPR.DisplayOptions>
+  <EPR.RenderCountersWithTinyFont>Counter font size</EPR.RenderCountersWithTinyFont>
+  <EPR.RenderCountersWithTinyFontTip>Choose the font size for resource counters. Both sizes override the game's tiny-text setting.</EPR.RenderCountersWithTinyFontTip>
+  <EPR.CounterFontTiny>Tiny</EPR.CounterFontTiny>
+  <EPR.CounterFontSmall>Small</EPR.CounterFontSmall>
   <EPR.KeepReadoutToggle>Keep the readout toggle in the toolbar</EPR.KeepReadoutToggle>
   <EPR.KeepReadoutToggleTip>Keeps the game's own resource readout button in the toolbar at the bottom right. Clicking it then shows or hides the groups; with the groups hidden the panel keeps only the gear and the search field.</EPR.KeepReadoutToggleTip>
   <EPR.TierLayoutOptions>Tier layout</EPR.TierLayoutOptions>
@@ -152,4 +161,20 @@
   <EPR.PreviewPoolRow>{0} ({1} members)</EPR.PreviewPoolRow>
   <EPR.PreviewGroupRow>{0} ({1} tiers, {2} slots)</EPR.PreviewGroupRow>
   <EPR.PreviewNone>(none)</EPR.PreviewNone>
+  <EPR.NewGameDefaults>Set defaults</EPR.NewGameDefaults>
+  <EPR.DefaultConflictBody>This colony has a different Readouts setup from your new-game default. Use this colony's setup as the default and keep it updated when you edit the configuration? Your current colony will not be changed.</EPR.DefaultConflictBody>
+  <EPR.DefaultSavedBody>A personal setup is saved for new games. Save this colony's complete setup to replace it. Existing colonies keep their own setup. Current tier depth, searches and editor state are excluded.</EPR.DefaultSavedBody>
+  <EPR.DefaultEmptyBody>Save this colony's complete setup for future games. Existing colonies keep their own setup. Current tier depth, searches and editor state are excluded.</EPR.DefaultEmptyBody>
+  <EPR.DefaultAutoUpdate>Automatically update after configuration edits</EPR.DefaultAutoUpdate>
+  <EPR.DefaultUseCurrent>Use this setup for new games</EPR.DefaultUseCurrent>
+  <EPR.DefaultKeep>Keep my default for this session</EPR.DefaultKeep>
+  <EPR.DefaultStopAuto>Turn off auto-update</EPR.DefaultStopAuto>
+  <EPR.DefaultClear>Use built-in defaults for new games</EPR.DefaultClear>
+  <EPR.SetupFailed>Could not save or read the Readouts default: {0}</EPR.SetupFailed>
+  <EPR.SetupGroups>Groups</EPR.SetupGroups>
+  <EPR.SetupPools>Resource pools</EPR.SetupPools>
+  <EPR.SetupThresholds>Thresholds</EPR.SetupThresholds>
+  <EPR.SetupCountRules>Resource count rules</EPR.SetupCountRules>
+  <EPR.SetupPlayerSettings>Player settings and enabled groups</EPR.SetupPlayerSettings>
+  <EPR.ImportSelectionWarning>Replace the selected categories. Player settings affect only you. Import stays disabled until pool and group references are valid; hover Import for details. Categories absent from the file cannot be selected.</EPR.ImportSelectionWarning>
 </LanguageData>

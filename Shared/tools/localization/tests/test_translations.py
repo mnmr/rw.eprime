@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 spec = importlib.util.spec_from_file_location('translations', Path(__file__).parents[1] / 'translations.py')
 translations = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(translations)

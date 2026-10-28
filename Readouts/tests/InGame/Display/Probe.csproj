@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RimWorldVersion Condition="'$(RimWorldVersion)' == ''">1.7</RimWorldVersion>
+    <TargetFramework Condition="'$(RimWorldVersion)' == '1.6'">net472</TargetFramework>
+    <TargetFramework Condition="'$(RimWorldVersion)' == '1.7'">net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion><OutputPath>mod/$(RimWorldVersion)/Assemblies/</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile><DebugType>none</DebugType>
+  </PropertyGroup>
+  <Import Project="../../../../Shared/Build/RimWorld17.props" Condition="'$(RimWorldVersion)' == '1.7'" />
+  <ItemGroup Condition="'$(RimWorldVersion)' == '1.6'">
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4871" />
+    <PackageReference Include="Lib.Harmony" Version="2.4.3" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="EPrimeReadouts" HintPath="../../../mod/$(RimWorldVersion)/Assemblies/EPrimeReadouts.dll" Private="false" />
+    <Reference Include="EPrimeReadouts.Core" HintPath="../../../mod/$(RimWorldVersion)/Assemblies/EPrimeReadouts.Core.dll" Private="false" />
+  </ItemGroup>
+</Project>

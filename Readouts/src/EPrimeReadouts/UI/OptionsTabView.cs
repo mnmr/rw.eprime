@@ -5,18 +5,99 @@ using Verse;
 namespace EPrimeReadouts.UI
 {
     /// The Options tab: per-player display options in two columns, one
-    /// section per option domain. Counts and planned work on the left;
-    /// clicks, search, and hover on the right. Changes persist immediately.
+    /// section per option domain. Behavior on the left; display and geometry
+    /// on the right. Geometry previews immediately and persists on window close.
     internal sealed class OptionsTabView
     {
         private const float ColumnGap = 20f;
         private const float Indent = 16f;
 
-        private readonly Listing_Standard left = new Listing_Standard();
-        private readonly Listing_Standard right = new Listing_Standard();
+        private readonly Listing_Standard left = new Listing_Standard { maxOneColumn = true };
+        private readonly Listing_Standard right = new Listing_Standard { maxOneColumn = true };
+        private const float SectionGap = 8f;
+        private const float SliderHeight = 22f;
+
+        // Owner/key: this window / UiRevision.Current. Value: scalar geometry
+        // and translated segment labels, immutable between refreshes.
+        // Dependencies: Small font metrics and all option-label translations.
+        // Refresh: immediately at a metric revision; no preference-dependent
+        // height (reserve both conditional rows). Equality: unchanged key reuses
+        // values. Teardown: Reset on window close; no external resources.
+        private int metricStamp = -1;
+        private float lineHeight, rowHeight, headerHeight, buttonHeight, selectorLabelWidth;
+        private Vector2 minimumContentSize;
+        private readonly string[] tierLayoutLabels = new string[2];
+        private readonly string[] counterFontLabels = new string[2];
+        private static readonly string[] LabelKeys =
+        {
+            "EPR.CountOptions", "EPR.PlannedWorkOptions", "EPR.ClickOptions",
+            "EPR.SearchOptions", "EPR.HoverOptions", "EPR.DisplayOptions",
+            "EPR.PositionAndSizeOptions", "EPR.SearchStorageOnly", "EPR.SearchHideForbidden",
+            "EPR.ReserveForBills", "EPR.ReserveForBuildables", "EPR.ShowNegativeCounts",
+            "EPR.QualityJobsRework", "EPR.SelectJumpCamera", "EPR.ShowSearchFilter",
+            "EPR.ShowModName", "EPR.SearchHideZero", "EPR.ExpandOnHover",
+            "EPR.CollapseWhenIdle", "EPR.RenderCountersWithTinyFont",
+            "EPR.KeepReadoutToggle", "EPR.UseVanilla", "EPR.ResetPositionAndSize",
+            "EPR.OffsetX", "EPR.OffsetY", "EPR.PanelWidth", "EPR.BottomMargin"
+        };
+
+        internal Vector2 MinimumContentSize { get { EnsureMetrics(); return minimumContentSize; } }
+
+        private void EnsureMetrics()
+        {
+            if (metricStamp == UiRevision.Current) return;
+            using (GuiStateScope.Capture())
+            {
+                Text.Font = GameFont.Small;
+                lineHeight = Mathf.Ceil(Text.LineHeight);
+                rowHeight = Mathf.Max(24f, lineHeight);
+                headerHeight = lineHeight + 6f;
+                buttonHeight = Mathf.Max(28f, lineHeight + 6f);
+                float columnWidth = 0f;
+                for (int i = 0; i < LabelKeys.Length; i++)
+                    columnWidth = Mathf.Max(columnWidth,
+                        WrText.FitWidth(UiText.Get(LabelKeys[i])) + Indent + 36f);
+                tierLayoutLabels[0] = UiText.Get("EPR.TierLayoutHorizontal");
+                tierLayoutLabels[1] = UiText.Get("EPR.TierLayoutVertical");
+                counterFontLabels[0] = UiText.Get("EPR.CounterFontTiny");
+                counterFontLabels[1] = UiText.Get("EPR.CounterFontSmall");
+                selectorLabelWidth = Mathf.Max(WrText.FitWidth(UiText.Get("EPR.TierLayoutOptions")),
+                    WrText.FitWidth(UiText.Get("EPR.RenderCountersWithTinyFont"))) + RuleGapX;
+                float segmentWidth = Mathf.Max(
+                    Mathf.Max(WrText.FitWidth(tierLayoutLabels[0]), WrText.FitWidth(tierLayoutLabels[1])),
+                    Mathf.Max(WrText.FitWidth(counterFontLabels[0]), WrText.FitWidth(counterFontLabels[1]))) + 24f;
+                columnWidth = Mathf.Max(columnWidth, selectorLabelWidth + 2f * segmentWidth);
+                float behaviorHeight = 5f * (SectionGap + headerHeight)
+                    + 12f * (rowHeight + left.verticalSpacing);
+                float displayHeight = 2f * (SectionGap + headerHeight)
+                    + 2f * (rowHeight + right.verticalSpacing)
+                    + 3f * (buttonHeight + right.verticalSpacing)
+                    + 4f * (lineHeight + SliderHeight + right.verticalSpacing);
+                minimumContentSize = new Vector2(2f * Mathf.Ceil(columnWidth) + ColumnGap,
+                    Mathf.Max(behaviorHeight, displayHeight));
+            }
+            metricStamp = UiRevision.Current;
+        }
+
+        // Owner/key: this window / language + displayed integer slider values.
+        // Value: immutable formatted labels. Dependencies: those exact inputs.
+        // Refresh: immediate after a change. Equality: unchanged inputs preserve
+        // string references. Teardown: Reset releases all labels on close.
+        private int positionLanguageStamp = -1;
+        private int textOffsetX, textOffsetY, textPanelWidth, textBottomMargin;
+        private string offsetXLabel = "", offsetYLabel = "", panelWidthLabel = "", bottomMarginLabel = "";
+
+        internal void Reset()
+        {
+            metricStamp = positionLanguageStamp = -1;
+            tierLayoutLabels[0] = tierLayoutLabels[1] = "";
+            counterFontLabels[0] = counterFontLabels[1] = "";
+            offsetXLabel = offsetYLabel = panelWidthLabel = bottomMarginLabel = "";
+        }
 
         internal void Draw(Rect rect)
         {
+            EnsureMetrics();
             ReadoutSettings settings = EPrimeReadoutsMod.Settings;
             float columnW = Mathf.Floor((rect.width - ColumnGap) / 2f);
             var leftRect = new Rect(rect.x, rect.y, columnW, rect.height);
@@ -26,11 +107,17 @@ namespace EPrimeReadouts.UI
             using (GuiStateScope.Capture())
             {
                 Text.Font = GameFont.Small;
+                Text.WordWrap = false;
+                Text.Anchor = TextAnchor.UpperLeft;
+                left.ColumnWidth = right.ColumnWidth = columnW;
                 left.Begin(leftRect);
                 try
                 {
                     DrawCountOptions(left, settings);
                     DrawPlannedWorkOptions(left, settings);
+                    DrawClickOptions(left, settings);
+                    DrawSearchOptions(left, settings);
+                    DrawHoverOptions(left, settings);
                 }
                 finally
                 {
@@ -41,9 +128,7 @@ namespace EPrimeReadouts.UI
                 try
                 {
                     DrawDisplayOptions(right, settings);
-                    DrawClickOptions(right, settings);
-                    DrawSearchOptions(right, settings);
-                    DrawHoverOptions(right, settings);
+                    DrawPositionOptions(right, settings);
                 }
                 finally
                 {
@@ -52,7 +137,7 @@ namespace EPrimeReadouts.UI
             }
         }
 
-        private static void DrawCountOptions(
+        private void DrawCountOptions(
             Listing_Standard listing, ReadoutSettings settings)
         {
             SectionHeader(listing, "EPR.CountOptions");
@@ -61,20 +146,19 @@ namespace EPrimeReadouts.UI
             if (CheckboxRow(listing, "EPR.SearchStorageOnly",
                     "EPR.SearchStorageOnlyTip", ref storageOnly))
             {
-                EPrimeReadoutsMod.Persist(s => s.searchStorageOnly = storageOnly);
+                EPrimeReadoutsMod.PersistSetup(static (s, value) => s.searchStorageOnly = value, storageOnly);
                 ReadoutPanel.BumpView();
             }
 
             bool hideForbidden = settings.searchHideForbidden;
-            listing.CheckboxLabeled(UiText.Get("EPR.SearchHideForbidden"), ref hideForbidden);
-            if (hideForbidden != settings.searchHideForbidden)
+            if (CheckboxRow(listing, "EPR.SearchHideForbidden", null, ref hideForbidden))
             {
-                EPrimeReadoutsMod.Persist(s => s.searchHideForbidden = hideForbidden);
+                EPrimeReadoutsMod.PersistSetup(static (s, value) => s.searchHideForbidden = value, hideForbidden);
                 ReadoutPanel.BumpView();
             }
         }
 
-        private static void DrawPlannedWorkOptions(
+        private void DrawPlannedWorkOptions(
             Listing_Standard listing, ReadoutSettings settings)
         {
             SectionHeader(listing, "EPR.PlannedWorkOptions");
@@ -86,7 +170,7 @@ namespace EPrimeReadouts.UI
             if (CheckboxRow(listing, "EPR.ReserveForBills",
                     "EPR.ReserveForBillsTip", ref reserveBills))
             {
-                EPrimeReadoutsMod.Persist(s => s.reserveForBills = reserveBills);
+                EPrimeReadoutsMod.PersistSetup(static (s, value) => s.reserveForBills = value, reserveBills);
                 ReadoutPanel.BumpView();
             }
 
@@ -94,7 +178,7 @@ namespace EPrimeReadouts.UI
             if (CheckboxRow(listing, "EPR.ReserveForBuildables",
                     "EPR.ReserveForBuildablesTip", ref reserveBuildables))
             {
-                EPrimeReadoutsMod.Persist(s => s.reserveForBuildables = reserveBuildables);
+                EPrimeReadoutsMod.PersistSetup(static (s, value) => s.reserveForBuildables = value, reserveBuildables);
                 ReadoutPanel.BumpView();
             }
 
@@ -102,7 +186,7 @@ namespace EPrimeReadouts.UI
             if (CheckboxRow(listing, "EPR.ShowNegativeCounts",
                     "EPR.ShowNegativeCountsTip", ref showNegative))
             {
-                EPrimeReadoutsMod.Persist(s => s.showNegativeCounts = showNegative);
+                EPrimeReadoutsMod.PersistSetup(static (s, value) => s.showNegativeCounts = value, showNegative);
                 ReadoutPanel.BumpView();
             }
 
@@ -120,15 +204,18 @@ namespace EPrimeReadouts.UI
             if (CheckboxRow(listing, "EPR.QualityJobsRework", qualityTip,
                     ref qualityRework, disabled: !qualityReady))
             {
-                EPrimeReadoutsMod.Persist(s => s.qualityJobsRework = qualityRework);
+                EPrimeReadoutsMod.PersistSetup(static (s, value) => s.qualityJobsRework = value, qualityRework);
                 ReadoutPanel.BumpView();
             }
         }
 
-        private static void DrawDisplayOptions(
+        private void DrawDisplayOptions(
             Listing_Standard listing, ReadoutSettings settings)
         {
             SectionHeader(listing, "EPR.DisplayOptions");
+
+            DrawCounterFontRow(listing, settings);
+            DrawTierLayoutRow(listing, settings);
 
             // The panel observes the game's categorized-readout preference
             // every draw, so the kept toggle takes effect at once.
@@ -136,70 +223,97 @@ namespace EPrimeReadouts.UI
             if (CheckboxRow(listing, "EPR.KeepReadoutToggle",
                     "EPR.KeepReadoutToggleTip", ref keepToggle))
             {
-                EPrimeReadoutsMod.Persist(s => s.keepReadoutToggle = keepToggle);
+                EPrimeReadoutsMod.PersistSetup(static (s, value) => s.keepReadoutToggle = value, keepToggle);
                 ReadoutPanel.BumpView();
             }
 
-            DrawTierLayoutRow(listing, settings);
+            bool vanilla = settings.useVanillaReadout;
+            if (CheckboxRow(listing, "EPR.UseVanilla", null, ref vanilla))
+            {
+                if (vanilla)
+                    Find.WindowStack.Add(new CompactConfirmDialog(
+                        UiText.Get("EPR.UseVanillaConfirm"), EnableVanilla,
+                        UiText.Get("EPR.UseVanillaConfirmButton"), UiText.Get("CancelButton"),
+                        UiRevision.Current));
+                else
+                    EPrimeReadoutsMod.PersistSetup(static s => s.useVanillaReadout = false);
+            }
         }
 
-        /// Reused label slots for the tier layout segmented row, so the
-        /// render pass hands SegmentedControl a stable array of cached
-        /// translated strings.
-        private static readonly string[] tierLayoutLabels = new string[2];
-        private const float SegmentRowH = 28f;
-        /// Gap between the tier layout label and its selector.
+        // Only accepting the confirmation changes the preference; dismissing
+        // it leaves both the checkbox and the custom readout unchanged.
+        private static readonly System.Action EnableVanilla =
+            static () => EPrimeReadoutsMod.PersistSetup(static s => s.useVanillaReadout = true);
+
+        /// Gap between the font/tier label and its selector.
         private const float RuleGapX = 8f;
+
+        private void DrawCounterFontRow(Listing_Standard listing, ReadoutSettings settings)
+        {
+            int active = settings.renderCountersWithTinyFont ? 0 : 1;
+            int clicked = DrawSelectorRow(listing, "EPR.RenderCountersWithTinyFont",
+                "EPR.RenderCountersWithTinyFontTip", counterFontLabels, active);
+            if (clicked >= 0 && clicked != active)
+            {
+                EPrimeReadoutsMod.PersistSetup(static (s, value) => s.renderCountersWithTinyFont = value,
+                    clicked == 0);
+                ReadoutPanel.BumpView();
+            }
+        }
 
         /// One Display Options row: "Tier layout" label on the left, the
         /// Horizontal / Vertical selector filling the rest of the row.
-        private static void DrawTierLayoutRow(
+        private void DrawTierLayoutRow(
             Listing_Standard listing, ReadoutSettings settings)
         {
-            tierLayoutLabels[0] = UiText.Get("EPR.TierLayoutHorizontal");
-            tierLayoutLabels[1] = UiText.Get("EPR.TierLayoutVertical");
-            string label = UiText.Get("EPR.TierLayoutOptions");
-            Rect rowRect = listing.GetRect(SegmentRowH);
-            WrTips.Key("EPR.TierLayoutTip").Region(rowRect);
-            float labelW = WrText.FitWidth(label) + RuleGapX;
-            TextAnchor anchor = Text.Anchor;
-            Text.Anchor = TextAnchor.MiddleLeft;
-            Widgets.Label(new Rect(rowRect.x, rowRect.y, labelW, rowRect.height), label);
-            Text.Anchor = anchor;
-            var selectorRect = new Rect(rowRect.x + labelW, rowRect.y,
-                Mathf.Max(1f, rowRect.width - labelW), rowRect.height);
             int active = settings.verticalTiers ? 1 : 0;
-            int clicked = SegmentedControl.Row(selectorRect, tierLayoutLabels, active);
+            int clicked = DrawSelectorRow(listing, "EPR.TierLayoutOptions",
+                "EPR.TierLayoutTip", tierLayoutLabels, active);
             if (clicked >= 0 && clicked != active)
             {
                 bool vertical = clicked == 1;
-                EPrimeReadoutsMod.Persist(s => s.verticalTiers = vertical);
+                EPrimeReadoutsMod.PersistSetup(static (s, value) => s.verticalTiers = value, vertical);
                 ReadoutPanel.BumpView();
             }
-            listing.Gap(listing.verticalSpacing);
         }
 
-        private static void DrawClickOptions(
+        private int DrawSelectorRow(Listing_Standard listing, string labelKey,
+            string tooltipKey, string[] labels, int active)
+        {
+            Rect rowRect = listing.GetRect(buttonHeight);
+            WrTips.Key(tooltipKey).Region(rowRect);
+            using (GuiStateScope.Capture())
+            {
+                Text.Anchor = TextAnchor.MiddleLeft;
+                Widgets.Label(new Rect(rowRect.x, rowRect.y, selectorLabelWidth, rowRect.height),
+                    UiText.Get(labelKey));
+            }
+            var selectorRect = new Rect(rowRect.x + selectorLabelWidth, rowRect.y,
+                Mathf.Max(1f, rowRect.width - selectorLabelWidth), rowRect.height);
+            int clicked = SegmentedControl.Row(selectorRect, labels, active);
+            listing.Gap(listing.verticalSpacing);
+            return clicked;
+        }
+
+        private void DrawClickOptions(
             Listing_Standard listing, ReadoutSettings settings)
         {
             SectionHeader(listing, "EPR.ClickOptions");
 
             bool jumpCamera = settings.selectJumpCamera;
-            listing.CheckboxLabeled(UiText.Get("EPR.SelectJumpCamera"), ref jumpCamera);
-            if (jumpCamera != settings.selectJumpCamera)
-                EPrimeReadoutsMod.Persist(s => s.selectJumpCamera = jumpCamera);
+            if (CheckboxRow(listing, "EPR.SelectJumpCamera", null, ref jumpCamera))
+                EPrimeReadoutsMod.PersistSetup(static (s, value) => s.selectJumpCamera = value, jumpCamera);
         }
 
-        private static void DrawSearchOptions(
+        private void DrawSearchOptions(
             Listing_Standard listing, ReadoutSettings settings)
         {
             SectionHeader(listing, "EPR.SearchOptions");
 
             bool showSearch = settings.showSearchFilter;
-            listing.CheckboxLabeled(UiText.Get("EPR.ShowSearchFilter"), ref showSearch);
-            if (showSearch != settings.showSearchFilter)
+            if (CheckboxRow(listing, "EPR.ShowSearchFilter", null, ref showSearch))
             {
-                EPrimeReadoutsMod.Persist(s => s.showSearchFilter = showSearch);
+                EPrimeReadoutsMod.PersistSetup(static (s, value) => s.showSearchFilter = value, showSearch);
                 // A hidden filter must not keep filtering the panel.
                 if (!showSearch) ReadoutPanel.SearchText = "";
                 ReadoutPanel.BumpView();
@@ -211,37 +325,30 @@ namespace EPrimeReadouts.UI
             if (!settings.showSearchFilter)
             {
                 bool showName = settings.showModNameWhenNoSearch;
-                listing.Indent(Indent);
-                listing.ColumnWidth -= Indent;
-                listing.CheckboxLabeled(UiText.Get("EPR.ShowModName"), ref showName);
-                listing.ColumnWidth += Indent;
-                listing.Outdent(Indent);
-                if (showName != settings.showModNameWhenNoSearch)
+                if (CheckboxRow(listing, "EPR.ShowModName", null, ref showName, indented: true))
                 {
-                    EPrimeReadoutsMod.Persist(s => s.showModNameWhenNoSearch = showName);
+                    EPrimeReadoutsMod.PersistSetup(static (s, value) => s.showModNameWhenNoSearch = value, showName);
                     ReadoutPanel.BumpView();
                 }
             }
 
             bool hideZero = settings.searchHideZero;
-            listing.CheckboxLabeled(UiText.Get("EPR.SearchHideZero"), ref hideZero);
-            if (hideZero != settings.searchHideZero)
+            if (CheckboxRow(listing, "EPR.SearchHideZero", null, ref hideZero))
             {
-                EPrimeReadoutsMod.Persist(s => s.searchHideZero = hideZero);
+                EPrimeReadoutsMod.PersistSetup(static (s, value) => s.searchHideZero = value, hideZero);
                 ReadoutPanel.BumpView();
             }
         }
 
-        private static void DrawHoverOptions(
+        private void DrawHoverOptions(
             Listing_Standard listing, ReadoutSettings settings)
         {
             SectionHeader(listing, "EPR.HoverOptions");
 
             bool expandOnHover = settings.expandOnHover;
-            listing.CheckboxLabeled(UiText.Get("EPR.ExpandOnHover"), ref expandOnHover);
-            if (expandOnHover != settings.expandOnHover)
+            if (CheckboxRow(listing, "EPR.ExpandOnHover", null, ref expandOnHover))
             {
-                EPrimeReadoutsMod.Persist(s => s.expandOnHover = expandOnHover);
+                EPrimeReadoutsMod.PersistSetup(static (s, value) => s.expandOnHover = value, expandOnHover);
                 ReadoutPanel.BumpView();
             }
 
@@ -250,42 +357,90 @@ namespace EPrimeReadouts.UI
             if (settings.expandOnHover)
             {
                 bool collapseIdle = settings.collapseWhenIdle;
-                listing.Indent(Indent);
-                listing.ColumnWidth -= Indent;
-                listing.CheckboxLabeled(UiText.Get("EPR.CollapseWhenIdle"), ref collapseIdle);
-                listing.ColumnWidth += Indent;
-                listing.Outdent(Indent);
-                if (collapseIdle != settings.collapseWhenIdle)
+                if (CheckboxRow(listing, "EPR.CollapseWhenIdle", null, ref collapseIdle, indented: true))
                 {
-                    EPrimeReadoutsMod.Persist(s => s.collapseWhenIdle = collapseIdle);
+                    EPrimeReadoutsMod.PersistSetup(static (s, value) => s.collapseWhenIdle = value, collapseIdle);
                     ReadoutPanel.BumpView();
                 }
             }
         }
 
-        private static void SectionHeader(Listing_Standard listing, string key)
+        private void DrawPositionOptions(Listing_Standard listing, ReadoutSettings settings)
         {
-            listing.Gap(8f);
-            var rect = listing.GetRect(EprStyle.SectionHeaderHeight);
-            EprStyle.SectionHeader(rect.x, rect.y, rect.width, UiText.Get(key));
+            float oldX = settings.offsetX, oldY = settings.offsetY, oldWidth = settings.panelWidth, oldBottom = settings.bottomMargin;
+            SectionHeader(listing, "EPR.PositionAndSizeOptions");
+            EnsurePositionLabels(settings);
+            settings.offsetX = SliderRow(listing, offsetXLabel, settings.offsetX, 0f, 200f);
+            settings.offsetY = SliderRow(listing, offsetYLabel, settings.offsetY, 0f, 200f);
+            settings.panelWidth = SliderRow(listing, panelWidthLabel, settings.panelWidth, 80f, 400f);
+            settings.bottomMargin = SliderRow(listing, bottomMarginLabel, settings.bottomMargin, 0f, 500f);
+            if (Widgets.ButtonText(listing.GetRect(buttonHeight), UiText.Get("EPR.ResetPositionAndSize")))
+            {
+                settings.offsetX = settings.offsetY = 7f;
+                settings.panelWidth = 140f;
+                settings.bottomMargin = 200f;
+            }
+            if (settings.offsetX != oldX || settings.offsetY != oldY || settings.panelWidth != oldWidth || settings.bottomMargin != oldBottom)
+                PlayerSetupBridge.Changed();
+            listing.Gap(listing.verticalSpacing);
         }
 
-        /// One always-tooltipped option row. Every row here shares the same
+        private float SliderRow(Listing_Standard listing, string label, float value, float min, float max)
+        {
+            Widgets.Label(listing.GetRect(lineHeight), label);
+            float result = Widgets.HorizontalSlider(listing.GetRect(SliderHeight), value, min, max);
+            listing.Gap(listing.verticalSpacing);
+            return result;
+        }
+
+        private void EnsurePositionLabels(ReadoutSettings settings)
+        {
+            int x = (int)settings.offsetX, y = (int)settings.offsetY;
+            int width = (int)settings.panelWidth, bottom = (int)settings.bottomMargin;
+            if (positionLanguageStamp == UiRevision.LanguageCurrent
+                && textOffsetX == x && textOffsetY == y
+                && textPanelWidth == width && textBottomMargin == bottom) return;
+            offsetXLabel = UiText.Get("EPR.OffsetX") + ": " + x;
+            offsetYLabel = UiText.Get("EPR.OffsetY") + ": " + y;
+            panelWidthLabel = UiText.Get("EPR.PanelWidth") + ": " + width;
+            bottomMarginLabel = UiText.Get("EPR.BottomMargin") + ": " + bottom;
+            textOffsetX = x; textOffsetY = y; textPanelWidth = width; textBottomMargin = bottom;
+            positionLanguageStamp = UiRevision.LanguageCurrent;
+        }
+
+        private void SectionHeader(Listing_Standard listing, string key)
+        {
+            listing.Gap(SectionGap);
+            var rect = listing.GetRect(headerHeight);
+            using (GuiStateScope.Capture())
+            {
+                GUI.color = EprStyle.HeaderText;
+                Widgets.Label(new Rect(rect.x, rect.y, rect.width, lineHeight), UiText.Get(key));
+                GUI.color = EprStyle.HeaderRule;
+                WrText.LineHorizontal(rect.x, rect.y + lineHeight + 2f, rect.width);
+            }
+        }
+
+        /// One option row with an optional tooltip. Every row shares the same
         /// single-line height so the checkboxes align exactly down the section.
         /// A disabled row still draws and still explains itself on hover, but
         /// swallows clicks and greys its label. Returns true when the player
         /// changed the value.
-        private static bool CheckboxRow(
-            Listing_Standard listing, string labelKey, string tooltipKey,
-            ref bool value, bool disabled = false)
+        private bool CheckboxRow(
+            Listing_Standard listing, string labelKey, string? tooltipKey,
+            ref bool value, bool disabled = false, bool indented = false)
         {
-            Rect rect = listing.GetRect(Text.LineHeight);
+            Rect rect = listing.GetRect(rowHeight);
+            if (indented) { rect.xMin += Indent; }
             if (Mouse.IsOver(rect)) Widgets.DrawHighlight(rect);
-            WrTips.Key(tooltipKey).Region(rect);
+            if (tooltipKey != null) WrTips.Key(tooltipKey).Region(rect);
             bool before = value;
-            if (disabled) GUI.color = EprStyle.CaptionText;
-            Widgets.CheckboxLabeled(rect, UiText.Get(labelKey), ref value, disabled);
-            if (disabled) GUI.color = Color.white;
+            using (GuiStateScope.Capture())
+            {
+                Text.Anchor = TextAnchor.MiddleLeft;
+                if (disabled) GUI.color = EprStyle.CaptionText;
+                Widgets.CheckboxLabeled(rect, UiText.Get(labelKey), ref value, disabled);
+            }
             listing.Gap(listing.verticalSpacing);
             return value != before;
         }

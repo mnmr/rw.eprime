@@ -1,11 +1,14 @@
 ---
 title: Colonist details
 ---
+<!-- l10n:b-46b4919bcee3 -->
 Select a colonist in the table and the details panel shows every implant in
 their plan with its current status:
 
+<!-- l10n:b-1cb82bc13e58 -->
 ![The details panel listing each implant with its status](colonist-details.png)
 
+<!-- l10n:b-4d5159744d80 -->
 - **Missing**: still needed, nothing reserved yet.
 - **Reserved**: an item in storage is claimed for this colonist. Surgery
   starts once everything the colonist needs next is reserved and on site
@@ -18,5 +21,6 @@ their plan with its current status:
   Medicine skill (see [surgery options](topic:surgery-options)).
 - **Complete**: installed.
 
+<!-- l10n:b-7d5d4531ac6c -->
 A plan describes an end state: implants the colonist already has count
 as complete.

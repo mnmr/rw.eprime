@@ -1,5 +1,7 @@
 using EPrimeReadouts.Core;
 using Multiplayer.API;
+using RimWorld;
+using Verse;
 
 namespace EPrimeReadouts
 {
@@ -13,13 +15,29 @@ namespace EPrimeReadouts
         /// deterministically.
         [SyncMethod]
         public static void ImportAll(string xml)
+            => ApplySetup(xml, SetupSections.All);
+
+        [SyncMethod]
+        public static void ImportSelected(string xml, int sections)
+            => ApplySetup(xml, (SetupSections)sections & SetupSections.All);
+
+        private static void ApplySetup(string xml, SetupSections sections)
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            if (!ReadoutsXml.TryImport(xml, out var pools, out var groups, out _,
-                ModRequirements.IsModActive)) return;
-            store.Bump(store.Model.ApplyImport(
-                pools, groups, store.TakePoolId, store.TakeGroupId));
+            bool local = !MP.IsInMultiplayer || MP.IsExecutingSyncCommandIssuedBySelf;
+            if (!SetupDocument.TryRead(xml, out var setup, out string? error, ModRequirements.IsModActive, SetupDefaults.MemberExists)
+                || !setup!.TryApply(store.Model, sections, store.TakePoolId, store.TakeGroupId, out var change, out error))
+            {
+                if (local) Messages.Message("EPR.ImportParseFailed".Translate(error), MessageTypeDefOf.RejectInput, false);
+                return;
+            }
+            store.Bump(change);
+            if (local)
+            {
+                if ((sections & SetupSections.PlayerSettings) != 0) PlayerSetupBridge.Apply(setup.Player, store);
+                Messages.Message("EPR.Imported".Translate(), MessageTypeDefOf.TaskCompletion, false);
+            }
         }
 
         [SyncMethod]

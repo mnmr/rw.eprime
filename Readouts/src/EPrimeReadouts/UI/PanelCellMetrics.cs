@@ -1,15 +1,14 @@
 using EPrimeReadouts.Core;
 using RimShared.Common;
 using RimShared.UiLib;
+using Verse;
 
 namespace EPrimeReadouts.UI
 {
     /// <summary>
     /// Publishes the CellMetrics for the current UI presentation. Counters
-    /// render in GameFont.Tiny, but RimWorld substitutes the Small font when
-    /// tiny text is unavailable ("disable tiny text", a language without
-    /// tiny-font support, Steam Deck); the layout must then widen and heighten
-    /// counter boxes to the resolved font or numbers get clipped.
+    /// use the explicit Tiny/Small choice, defaulting to Tiny. Search captions keep
+    /// the game's font independently, including their own measured line box.
     /// Must be read inside OnGUI: measuring uses Verse.Text.
     /// </summary>
     // Cache contract:
@@ -17,9 +16,9 @@ namespace EPrimeReadouts.UI
     // Key: none (single value).
     // Value: immutable CellMetrics struct.
     // Dependencies: UiRevision.Current (UI scale, tiny-text preference,
-    // language) — the same revision the layout rebuild keys on, so a metric
+    // language), resolved counter font — the same inputs the layout keys on, so a metric
     // change and the rebuild that consumes it always travel together.
-    // Refresh policy: immediate on UI revision change.
+    // Refresh policy: immediate on UI revision or resolved counter-font change.
     // Equality policy: value struct; equal rebuilds are naturally identical.
     // Teardown: Reset clears the stamp and cached value.
     public static class PanelCellMetrics
@@ -31,26 +30,33 @@ namespace EPrimeReadouts.UI
 
         private static CellMetrics cached;
         private static int stamp = -1;
+        private static GameFont counterFont;
+
+        internal static GameFont CounterFont => EPrimeReadoutsMod.Settings.renderCountersWithTinyFont
+            ? GameFont.Tiny : GameFont.Small;
 
         public static CellMetrics Current
         {
             get
             {
-                if (stamp == UiRevision.Current) return cached;
+                GameFont font = CounterFont;
+                if (stamp == UiRevision.Current && counterFont == font) return cached;
                 using (GuiStateScope.Capture())
+                using (TinyText.UseFont(font))
                 {
-                    // Resolves to Small when tiny text is unavailable; both
-                    // FitWidth and LineHeight then measure the resolved font;
-                    // the published line box is rounded up to avoid fractional
-                    // glyph-row clipping.
+                    // Widths and height use the same selected counter font;
+                    // the rounded line box protects fractional-scale glyphs.
                     float maxW = 0f;
                     for (int i = 0; i < WideSamples.Length; i++)
                     {
-                        float w = WrText.FitTinyWidth(WideSamples[i]);
+                        float w = WrText.FitWidth(WideSamples[i]);
                         if (w > maxW) maxW = w;
                     }
-                    cached = new CellMetrics(maxW, TinyText.LineHeight);
+                    cached = new CellMetrics(maxW,
+                        TinyText.MeasureMetrics(font).LineHeight,
+                        TinyText.Metrics.LineHeight);
                 }
+                counterFont = font;
                 stamp = UiRevision.Current;
                 return cached;
             }

@@ -153,4 +153,29 @@
   <EPR.CompatibilityCustomResourceReadout>Custom Resource Readout 在自訂或預設模式下會繪製自己的資源面板，與 EPrime's Readouts 爭用同一個顯示區域。</EPR.CompatibilityCustomResourceReadout>
   <EPR.CompatibilityReadoutsPlus>Readouts+ 為原版資源顯示加入點擊操作功能。啟用 EPrime 的資源顯示時，這些操作功能將不會生效。</EPR.CompatibilityReadoutsPlus>
   <EPR.CompatibilityToggleableReadouts>Toggleable Readouts（包括 Continued 版）會取代原版資源顯示的繪製方式。啟用 EPrime 的資源顯示時，其篩選與釘選功能將不會生效。</EPR.CompatibilityToggleableReadouts>
+  <EPR.DefaultAutoUpdate>編輯配置後自動更新</EPR.DefaultAutoUpdate>
+  <EPR.DefaultClear>新遊戲使用內建預設值</EPR.DefaultClear>
+  <EPR.DefaultConflictBody>這個殖民地的 Readouts 配置與你的新遊戲預設配置不同。要將這個殖民地的配置設為預設值，並在編輯配置時同步更新嗎？目前殖民地的配置不會變更。</EPR.DefaultConflictBody>
+  <EPR.DefaultEmptyBody>儲存這個殖民地的完整配置，供未來遊戲使用。現有殖民地會保留各自的配置。不包括目前顯示的層數、搜尋內容及編輯器狀態。</EPR.DefaultEmptyBody>
+  <EPR.DefaultKeep>本次遊玩保留我的預設配置</EPR.DefaultKeep>
+  <EPR.DefaultSavedBody>已儲存供新遊戲使用的個人配置。儲存這個殖民地的完整配置即可取代它。現有殖民地會保留各自的配置。不包括目前顯示的層數、搜尋內容及編輯器狀態。</EPR.DefaultSavedBody>
+  <EPR.DefaultStopAuto>關閉自動更新</EPR.DefaultStopAuto>
+  <EPR.DefaultUseCurrent>新遊戲使用此配置</EPR.DefaultUseCurrent>
+  <EPR.ImportSelectionWarning>取代所選類別。玩家設定只影響你自己。集合與分組的參照有效之前，「導入」會保持停用；將滑鼠停留在「導入」上可查看詳細資訊。無法選取檔案中缺少的類別。</EPR.ImportSelectionWarning>
+  <EPR.NewGameDefaults>設定預設值</EPR.NewGameDefaults>
+  <EPR.OverviewNeedsGame>請載入遊戲以設定分組和資源集合。</EPR.OverviewNeedsGame>
+  <EPR.PositionAndSizeOptions>位置和大小選項</EPR.PositionAndSizeOptions>
+  <EPR.RenderCountersWithTinyFont>計數器字型大小</EPR.RenderCountersWithTinyFont>
+  <EPR.RenderCountersWithTinyFontTip>選擇資源計數器的字型大小。兩種大小都會覆寫遊戲的極小文字設定。</EPR.RenderCountersWithTinyFontTip>
+  <EPR.ResetPositionAndSize>重設位置和大小</EPR.ResetPositionAndSize>
+  <EPR.SetupCountRules>資源計數規則</EPR.SetupCountRules>
+  <EPR.SetupFailed>無法儲存或讀取 Readouts 預設配置：{0}</EPR.SetupFailed>
+  <EPR.SetupGroups>分組</EPR.SetupGroups>
+  <EPR.SetupPlayerSettings>玩家設定與啟用的分組</EPR.SetupPlayerSettings>
+  <EPR.SetupPools>資源集合</EPR.SetupPools>
+  <EPR.SetupThresholds>閾值</EPR.SetupThresholds>
+  <EPR.UseVanillaConfirm>切換為原版資源面板？\n\n關閉 Readouts 設定視窗後，只能透過「選項」→「模組設定」→ EPrime's Readouts 恢復 Readouts。在該處關閉「使用原版資源面板」即可恢復。</EPR.UseVanillaConfirm>
+  <EPR.UseVanillaConfirmButton>使用原版</EPR.UseVanillaConfirmButton>
+  <EPR.CounterFontSmall>小</EPR.CounterFontSmall>
+  <EPR.CounterFontTiny>極小</EPR.CounterFontTiny>
 </LanguageData>

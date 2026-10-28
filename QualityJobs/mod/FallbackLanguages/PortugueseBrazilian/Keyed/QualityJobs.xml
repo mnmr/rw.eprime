@@ -54,7 +54,7 @@
   <QJ_SettingsUnlimitedHint>0 = ilimitado</QJ_SettingsUnlimitedHint>
   <QJ_SettingsShowToolbarButton>Mostrar botão na barra de ferramentas</QJ_SettingsShowToolbarButton>
   <QJ_SettingsShowToolbarButtonTip>Adiciona um botão ao lado dos controles de visualização no canto inferior direito da tela. O botão abre as configurações de Quality Jobs.</QJ_SettingsShowToolbarButtonTip>
-  <QJ_ToolbarButtonTip>Abrir as configurações de Quality Jobs.</QJ_ToolbarButtonTip>
+  <QJ_ToolbarButtonTip>Abrir as opções e a ajuda de Quality Jobs.</QJ_ToolbarButtonTip>
   <QJ_SettingsEnabledNote>Este controle aplica-se à partida carregada. Desativar restaura todos os itens no comportamento do jogo original e exclui a configuração de Quality Jobs desta partida.\n\nSe o mod continuar instalado, será reativado com as configurações padrão na próxima vez que carregar a partida. A desativação destina-se a preparar a remoção do mod.</QJ_SettingsEnabledNote>
   <QJ_DisableButton>Desativar Quality Jobs</QJ_DisableButton>
   <QJ_EnableButton>Ativar Quality Jobs</QJ_EnableButton>
@@ -84,4 +84,11 @@
   <QJ_CompatibilityNoJobAuthors>No Job Authors pode retomar trabalhos reservados por qualidade fora do controle de Quality Jobs quando suas opções de conclusão forçada ou de compatibilidade com Achtung estão ativadas.</QJ_CompatibilityNoJobAuthors>
   <QJ_CompatibilityQualityBuilder>QualityBuilder também controla os construtores e as novas tentativas de construção. Suas regras podem entrar em conflito com Quality Jobs.</QJ_CompatibilityQualityBuilder>
   <QJ_CompatibilitySharingAdvice>Desativar o compartilhamento de trabalhos inacabados não elimina todos esses conflitos.</QJ_CompatibilitySharingAdvice>
+  <QJ_HelpChapterBasics>Primeiros passos</QJ_HelpChapterBasics>
+  <QJ_HelpChapterConstruction>Construção</QJ_HelpChapterConstruction>
+  <QJ_HelpChapterCrafting>Fabricação</QJ_HelpChapterCrafting>
+  <QJ_HelpChapterOptions>Opções e solução de problemas</QJ_HelpChapterOptions>
+  <QJ_HelpReload>Recarregar</QJ_HelpReload>
+  <QJ_TabHelp>Ajuda</QJ_TabHelp>
+  <QJ_TabOptions>Opções</QJ_TabOptions>
 </LanguageData>

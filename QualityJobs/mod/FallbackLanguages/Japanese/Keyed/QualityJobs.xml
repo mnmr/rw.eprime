@@ -78,10 +78,17 @@
   <QJ_StatusStalledTip>未完成品が待機していますが、現在仕上げ条件を満たす入植者がいないため、仕上げ作業を作成していません。\n\n必要スキル、創作意欲、生産のスペシャリストの条件と、予定している担当者がこのマップにいて該当作業を有効にしているかを確認してください。停滞中は未完成品上限により新規製作も止まることがあります。</QJ_StatusStalledTip>
   <QJ_StockCapLabel>未完成品上限: {0}</QJ_StockCapLabel>
   <QJ_StockCapTooltip>この製品の未完成品の上限数です。同じ製品を作る全ての加工指示で上限を共有します。\n\n0は無制限です。</QJ_StockCapTooltip>
-  <QJ_ToolbarButtonTip>Quality Jobsの設定を開きます。</QJ_ToolbarButtonTip>
+  <QJ_ToolbarButtonTip>Quality Jobsの設定とヘルプを開きます。</QJ_ToolbarButtonTip>
   <QJ_UnfinishedWorkWaiting>この加工指示の未完成品は再開待ちです</QJ_UnfinishedWorkWaiting>
   <QJ_WelcomeBody>Quality Jobsでは、どの入植者も未完成品や建物の作業を進められますが、設定した条件を満たす入植者だけが完成できます。品質を決めるのは仕上げ担当者だけだからです。加工指示と建築の両方に対応しています。</QJ_WelcomeBody>
   <QJ_WelcomeFind>画面右下の表示切替ボタンの横にあるこのボタンで、Quality Jobsの設定を開けます。品質付き製品の加工指示画面にはQuality Jobs欄があり、品質付き建物の設計図や建築枠を選ぶと「品質管理」ボタンが表示されます。</QJ_WelcomeFind>
   <QJ_WelcomeTakeMeThere>今すぐ開く</QJ_WelcomeTakeMeThere>
   <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
+  <QJ_HelpChapterBasics>はじめに</QJ_HelpChapterBasics>
+  <QJ_HelpChapterConstruction>建築</QJ_HelpChapterConstruction>
+  <QJ_HelpChapterCrafting>工芸</QJ_HelpChapterCrafting>
+  <QJ_HelpChapterOptions>設定とトラブルシューティング</QJ_HelpChapterOptions>
+  <QJ_HelpReload>再読み込み</QJ_HelpReload>
+  <QJ_TabHelp>ヘルプ</QJ_TabHelp>
+  <QJ_TabOptions>設定</QJ_TabOptions>
 </LanguageData>

@@ -153,4 +153,29 @@ Nhấp mục để thêm vào cuối nhóm, hoặc kéo vào một ô ở bậc 
   <EPR.WelcomeFind>Mở trình chỉnh sửa bằng nút bánh răng ở đầu bảng tài nguyên. Thẻ Tùy chọn chứa thiết lập hiển thị; thẻ Trợ giúp giải thích phần còn lại.</EPR.WelcomeFind>
   <EPR.WelcomeTakeMeThere>Mở ngay</EPR.WelcomeTakeMeThere>
   <EPR.WelcomeTitle>EPrime's Readouts</EPR.WelcomeTitle>
+  <EPR.DefaultAutoUpdate>Tự động cập nhật sau khi sửa cấu hình</EPR.DefaultAutoUpdate>
+  <EPR.DefaultClear>Dùng mặc định có sẵn cho trò chơi mới</EPR.DefaultClear>
+  <EPR.DefaultConflictBody>Thuộc địa này có cấu hình Readouts khác với mặc định cho trò chơi mới của bạn. Dùng cấu hình của thuộc địa này làm mặc định và cập nhật mỗi khi bạn sửa cấu hình? Thuộc địa hiện tại của bạn sẽ không bị thay đổi.</EPR.DefaultConflictBody>
+  <EPR.DefaultEmptyBody>Lưu toàn bộ cấu hình của thuộc địa này cho các trò chơi sau. Các thuộc địa hiện có giữ cấu hình riêng. Số bậc đang hiển thị, nội dung tìm kiếm và trạng thái trình chỉnh sửa không được lưu.</EPR.DefaultEmptyBody>
+  <EPR.DefaultKeep>Giữ mặc định của tôi trong phiên này</EPR.DefaultKeep>
+  <EPR.DefaultSavedBody>Đã có cấu hình cá nhân được lưu cho trò chơi mới. Lưu toàn bộ cấu hình của thuộc địa này để thay thế. Các thuộc địa hiện có giữ cấu hình riêng. Số bậc đang hiển thị, nội dung tìm kiếm và trạng thái trình chỉnh sửa không được lưu.</EPR.DefaultSavedBody>
+  <EPR.DefaultStopAuto>Tắt tự động cập nhật</EPR.DefaultStopAuto>
+  <EPR.DefaultUseCurrent>Dùng cấu hình này cho trò chơi mới</EPR.DefaultUseCurrent>
+  <EPR.ImportSelectionWarning>Thay thế các loại dữ liệu đã chọn. Thiết lập người chơi chỉ ảnh hưởng đến bạn. Nút Nhập bị vô hiệu hóa cho đến khi các tham chiếu đến tập tài nguyên và nhóm hợp lệ; trỏ chuột lên Nhập để xem chi tiết. Không thể chọn loại dữ liệu không có trong tệp.</EPR.ImportSelectionWarning>
+  <EPR.NewGameDefaults>Đặt mặc định</EPR.NewGameDefaults>
+  <EPR.OverviewNeedsGame>Tải trò chơi để thiết lập nhóm và tập tài nguyên.</EPR.OverviewNeedsGame>
+  <EPR.PositionAndSizeOptions>Tùy chọn vị trí và kích thước</EPR.PositionAndSizeOptions>
+  <EPR.RenderCountersWithTinyFont>Cỡ chữ bộ đếm</EPR.RenderCountersWithTinyFont>
+  <EPR.RenderCountersWithTinyFontTip>Chọn cỡ chữ cho bộ đếm tài nguyên. Cả hai cỡ đều ghi đè thiết lập chữ cực nhỏ của trò chơi.</EPR.RenderCountersWithTinyFontTip>
+  <EPR.ResetPositionAndSize>Đặt lại vị trí và kích thước</EPR.ResetPositionAndSize>
+  <EPR.SetupCountRules>Quy tắc đếm tài nguyên</EPR.SetupCountRules>
+  <EPR.SetupFailed>Không thể lưu hoặc đọc cấu hình mặc định của Readouts: {0}</EPR.SetupFailed>
+  <EPR.SetupGroups>Nhóm</EPR.SetupGroups>
+  <EPR.SetupPlayerSettings>Thiết lập người chơi và nhóm được bật</EPR.SetupPlayerSettings>
+  <EPR.SetupPools>Tập tài nguyên</EPR.SetupPools>
+  <EPR.SetupThresholds>Ngưỡng</EPR.SetupThresholds>
+  <EPR.UseVanillaConfirm>Chuyển sang bảng tài nguyên gốc?\n\nSau khi đóng cửa sổ thiết lập Readouts, cách duy nhất để dùng lại Readouts là qua Tùy chọn → Thiết lập mod → EPrime's Readouts. Tắt "Dùng bảng tài nguyên gốc" ở đó để dùng lại.</EPR.UseVanillaConfirm>
+  <EPR.UseVanillaConfirmButton>Dùng bảng gốc</EPR.UseVanillaConfirmButton>
+  <EPR.CounterFontSmall>Nhỏ</EPR.CounterFontSmall>
+  <EPR.CounterFontTiny>Cực nhỏ</EPR.CounterFontTiny>
 </LanguageData>

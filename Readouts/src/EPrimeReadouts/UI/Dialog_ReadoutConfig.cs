@@ -72,11 +72,12 @@ namespace EPrimeReadouts.UI
 
         // Owner: dialog. Key: UiRevision.Current. Value: immutable header button
         // widths and measured Small line bounds. Dependencies: translated
-        // restore/import/export labels and font metrics. Refresh: immediate on
+        // all four header labels, option geometry and font metrics. Refresh: immediate on
         // revision change; equal keys reuse values. Teardown: PreClose resets.
         private int headerMetricStamp = -1;
-        private float restoreWidth, ioWidth, headerButtonHeight;
+        private float restoreWidth, ioWidth, defaultsWidth, headerButtonHeight;
         private float minimumWidth = 960f;
+        private float minimumHeight;
         // Window-owned input handler installed once in PreOpen. It uses the
         // measured header budget; the cached FieldInfo is never read by drawing.
         private static readonly FieldInfo ResizerField = AccessTools.Field(typeof(Window), "resizer");
@@ -89,17 +90,24 @@ namespace EPrimeReadouts.UI
             {
                 Text.Font = GameFont.Small;
                 restoreWidth = Mathf.Max(130f, WrText.FitWidth(UiText.Get("EPR.RestoreDefaults")) + 24f);
+                defaultsWidth = Mathf.Max(130f, WrText.FitWidth(UiText.Get("EPR.NewGameDefaults")) + 24f);
                 ioWidth = Mathf.Max(90f, Mathf.Max(WrText.FitWidth(UiText.Get("EPR.Import")),
                     WrText.FitWidth(UiText.Get("EPR.Export"))) + 24f);
                 headerButtonHeight = Mathf.Max(28f, Mathf.Ceil(Text.LineHeight) + 6f);
                 minimumWidth = Mathf.Max(960f, 2f * Margin + 2f * Pad + 88f
-                    + restoreWidth + 2f * ioWidth + WrText.FitWidth(UiText.Get("EPR.Title")));
+                    + restoreWidth + defaultsWidth + 8f + 2f * ioWidth + WrText.FitWidth(UiText.Get("EPR.Title")));
+                Vector2 optionSize = options.MinimumContentSize;
+                minimumWidth = Mathf.Max(minimumWidth, optionSize.x + 2f * (Margin + Pad));
+                minimumHeight = optionSize.y + TabHeight + 2f * (Margin + Pad);
             }
             headerMetricStamp = UiRevision.Current;
         }
 
-        public Dialog_ReadoutConfig()
+        public Dialog_ReadoutConfig() : this(false) { }
+
+        public Dialog_ReadoutConfig(bool openOptions)
         {
+            if (openOptions || ReadoutStore.Current == null) curTab = Tab.Options;
             doCloseX = true;
             draggable = true;
             resizeable = true;
@@ -110,33 +118,35 @@ namespace EPrimeReadouts.UI
             closeOnAccept = false;
         }
 
-        public override Vector2 InitialSize =>
-            EPrimeReadoutsMod.Settings.dialogW > 0f
-                ? new Vector2(EPrimeReadoutsMod.Settings.dialogW, EPrimeReadoutsMod.Settings.dialogH)
-                : new Vector2(960f, 660f);
+        public override Vector2 InitialSize => new Vector2(
+            Mathf.Max(minimumWidth, EPrimeReadoutsMod.Settings.dialogW > 0f ? EPrimeReadoutsMod.Settings.dialogW : 960f),
+            Mathf.Max(minimumHeight, EPrimeReadoutsMod.Settings.dialogH > 0f ? EPrimeReadoutsMod.Settings.dialogH : 660f));
 
         public override void PreOpen()
         {
             UiRevision.ObserveCurrentMetrics();
             EnsureHeaderMetrics();
-            resizeHandler.minWindowSize = new Vector2(minimumWidth, 400f);
+            resizeHandler.minWindowSize = new Vector2(minimumWidth, minimumHeight);
             ResizerField.SetValue(this, resizeHandler);
             base.PreOpen();
-            ConstrainWidth();
+            ConstrainSize();
             help.Reset();
         }
 
-        private void ConstrainWidth()
+        private void ConstrainSize()
         {
-            float floor = Mathf.Min(minimumWidth, Verse.UI.screenWidth);
-            if (windowRect.width >= floor) return;
-            windowRect.width = floor;
-            windowRect.x = Mathf.Clamp(windowRect.x, 0f, Verse.UI.screenWidth - floor);
+            windowRect.width = Mathf.Clamp(windowRect.width,
+                Mathf.Min(minimumWidth, Verse.UI.screenWidth), Verse.UI.screenWidth);
+            windowRect.height = Mathf.Clamp(windowRect.height,
+                Mathf.Min(minimumHeight, Verse.UI.screenHeight), Verse.UI.screenHeight);
+            windowRect.x = Mathf.Clamp(windowRect.x, 0f, Verse.UI.screenWidth - windowRect.width);
+            windowRect.y = Mathf.Clamp(windowRect.y, 0f, Verse.UI.screenHeight - windowRect.height);
         }
 
         public override void PreClose()
         {
             base.PreClose();
+            SetupDefaults.QueueFlush();
             EPrimeReadoutsMod.Persist(s =>
             {
                 s.dialogW = windowRect.width;
@@ -147,6 +157,7 @@ namespace EPrimeReadouts.UI
             editor.Reset();
             poolList.Reset();
             resources.Reset();
+            options.Reset();
             help.FlushPendingWrites();
             help.ReleaseWindowData();
             PoolsSnapshot = null;
@@ -166,8 +177,8 @@ namespace EPrimeReadouts.UI
             base.WindowUpdate();
             UiRevision.ObserveCurrentMetrics();
             EnsureHeaderMetrics();
-            resizeHandler.minWindowSize = new Vector2(minimumWidth, 400f);
-            ConstrainWidth();
+            resizeHandler.minWindowSize = new Vector2(minimumWidth, minimumHeight);
+            ConstrainSize();
             help.FlushPendingWrites();
         }
 
@@ -175,7 +186,6 @@ namespace EPrimeReadouts.UI
         {
             TextInputCapture.Observe();
             var store = ReadoutStore.Current;
-            if (store == null) return;
 
             using (GuiStateScope.Capture())
             {
@@ -196,7 +206,15 @@ namespace EPrimeReadouts.UI
                 content = content.ContractedBy(Pad);
                 switch (curTab)
                 {
-                    case Tab.Overview: DrawOverview(content, store); break;
+                    case Tab.Overview:
+                        if (store != null) DrawOverview(content, store);
+                        else
+                        {
+                            Text.Font = GameFont.Small;
+                            Text.Anchor = TextAnchor.UpperLeft;
+                            Widgets.Label(content, UiText.Get("EPR.OverviewNeedsGame"));
+                        }
+                        break;
                     case Tab.Options: options.Draw(content); break;
                     default: help.Draw(content); break;
                 }
@@ -254,13 +272,13 @@ namespace EPrimeReadouts.UI
             Text.Anchor = TextAnchor.MiddleLeft;
             GUI.color = EprStyle.HeaderText;
             Widgets.Label(new Rect(iconRect.xMax + 8f, panelRect.y,
-                panelRect.xMax - iconRect.xMax - 40f - restoreWidth - 2f * ioWidth, PanelH),
+                panelRect.xMax - iconRect.xMax - 48f - restoreWidth - defaultsWidth - 2f * ioWidth, PanelH),
                 UiText.Get("EPR.Title"));
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
 
             // Right-cluster buttons, all vertically centred in panel, 28px tall, 8px gaps,
-            // right-to-left: [Restore defaults] [Export] [Import]
+            // right-to-left: [Restore defaults] [Set defaults] [Export] [Import]
             float btnY = panelRect.y + (PanelH - headerButtonHeight) / 2f;
             const float BtnGap = 8f;
 
@@ -276,7 +294,11 @@ namespace EPrimeReadouts.UI
                     UiRevision.Current, destructive: true));
             }
 
-            var exportRect = new Rect(restoreRect.x - BtnGap - ioWidth, btnY, ioWidth, headerButtonHeight);
+            var defaultsRect = new Rect(restoreRect.x - BtnGap - defaultsWidth, btnY, defaultsWidth, headerButtonHeight);
+            if (Widgets.ButtonText(defaultsRect, UiText.Get("EPR.NewGameDefaults")))
+                SetupDefaults.QueueDefaultDialog();
+
+            var exportRect = new Rect(defaultsRect.x - BtnGap - ioWidth, btnY, ioWidth, headerButtonHeight);
             if (Widgets.ButtonText(exportRect, UiText.Get("EPR.Export")))
                 Find.WindowStack.Add(new Dialog_ExportReadouts());
 

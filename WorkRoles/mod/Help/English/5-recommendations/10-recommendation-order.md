@@ -1,12 +1,14 @@
 ---
 title: Ordering and exclusions
 ---
+<!-- l10n:b-a1153e662484 -->
 Recommendations are ordered automatically for each colonist. The engine
 uses its built-in order alongside suitability, colony importance, time
 demand, training paths, and coverage. Custom roles fit into that order
 using the game's work priorities. The former colony-wide ordering panel
 has been removed, and saved custom orders no longer affect recommendations.
 
+<!-- l10n:b-7c60ec8be352 -->
 - A [training role](topic:training-paths) lands directly after its
 path's target, so Nurse and Medic follow Doctor.
 - A role fully covered by another sits right after the role covering it,
@@ -15,20 +17,24 @@ the way Hauler follows Grunt.
 and better shots hunt later, because their time is worth more elsewhere.
 An individually pinned assignment remains protected.
 
+<!-- l10n:b-ae303b9cef12 -->
 The **Excluded roles** panel at the top of the Recommendations tab controls
 which roles must never be recommended. Use Add Role to exclude a role,
 or click its chip's remove icon to allow recommendations again.
 
+<!-- l10n:b-2ff664d1d184 -->
 Rescuer, Firefighter, Patient, Bedrest, and Laborer are excluded by default
 because Core and Basics already cover their work. Existing saves receive
 these defaults once when updated. Removing a role from the panel is respected
 on later loads. To add the defaults back, choose **Default excluded roles**
 in [Restore Defaults](topic:restore-defaults).
 
+<!-- l10n:b-94e6612dee18 -->
 [Role Options](topic:role-options) below lists all non-excluded roles.
 Excluding a role hides its options without erasing them; removing the
 exclusion makes those options available again.
 
+<!-- l10n:b-de81f09092db -->
 Exclusions apply across the save, including [Fix My Colony](topic:fix-my-colony)
 and [Auto-optimize](topic:auto-optimize). They override colony demand,
 training paths, automatic and special roles, composite substitution, and
@@ -36,6 +42,7 @@ unpinned retained assignments, including those on incapacitated workers.
 Excluding a composite leaves its eligible member roles available; excluding
 a member prevents it from returning through a recommended composite.
 
+<!-- l10n:b-66135dc1c4d4 -->
 You can still assign excluded roles manually. Editing the exclusion list
 does not alter current assignments. Applying recommendations removes unpinned
 excluded roles from the affected colonists. **Pinned assignments remain

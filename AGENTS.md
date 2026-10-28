@@ -31,6 +31,31 @@ These rules apply to the entire repository. They are fail-closed.
 - `mod/About/ModIcon.png`: 256x256.
 - `mod/About/Preview.png`: 1280x720.
 
+## Help editing and localization
+
+This workflow applies to every mod and the shared localization tools. See
+[`Shared/tools/localization/README.md`](Shared/tools/localization/README.md)
+for commands, block boundaries and translation maintenance.
+
+- Existing `<!-- l10n:ID -->` block IDs MUST be preserved when editing or
+  moving their content. Keep each marker attached to its block; do not
+  regenerate or renumber IDs because wording or order changed.
+- New paragraphs, headings, captions, directives and related lists MUST have
+  new IDs unique within their topic. Matching translated blocks use the same
+  IDs. The frontmatter title uses the reserved implicit ID `title`.
+- For new or legacy untracked help pages, run
+  `python Shared/tools/localization/prepare_help.py --dry-run`, review the
+  alignment, then run it without `--dry-run`. Resolve ambiguous alignment;
+  never guess or overwrite existing translation wording to make it fit.
+- Update only changed blocks and affected context dependencies, preserving
+  untouched translations. Source hashes MUST advance only for translated or
+  explicitly reviewed entries; never refresh snapshots merely to silence
+  stale-translation diagnostics.
+- After help changes, run `scripts/check-localization.cmd` and
+  `scripts/update-localization.cmd --dry-run` across all active locales and
+  mods. Resolve reported issues through the shared localization workflow and
+  rerun the checker successfully before describing the help update as complete.
+
 ## Project boundaries
 
 The following uses a fictitious mod named RimMod to illustrate boundaries:

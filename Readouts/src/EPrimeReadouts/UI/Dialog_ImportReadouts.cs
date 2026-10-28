@@ -48,6 +48,23 @@ namespace EPrimeReadouts.UI
         private int previewTextLanguageVersion = -1;
         private string? previewSummary;
         private string? previewWarning;
+        private SetupDocument? document;
+        private SetupSections selected;
+        // Owner: import window. Key: selection, store identity, exact model-domain revisions,
+        // parsed document and UI metric revision. Value: labels, measured rows, dependency
+        // results and preview, immutable between refreshes. Refresh: WindowUpdate after an
+        // explicit selection or revision change; no model inspection from drawing. Equality:
+        // same inputs reuse all results. Teardown: window close releases references.
+        private bool validationDirty;
+        private ReadoutStore? validatedStore;
+        private int validatedGroups = -1, validatedPools = -1, validatedThresholds = -1, validatedRules = -1, selectionMetrics = -1;
+        private readonly string[] sectionLabels = new string[5];
+        private readonly bool[] canToggle = new bool[5];
+        private static readonly SetupSections[] Sections = { SetupSections.Groups, SetupSections.Pools, SetupSections.Thresholds, SetupSections.CountRules, SetupSections.PlayerSettings };
+        private static readonly string[] SectionKeys = { "EPR.SetupGroups", "EPR.SetupPools", "EPR.SetupThresholds", "EPR.SetupCountRules", "EPR.SetupPlayerSettings" };
+        private bool canImport;
+        private string? importError;
+        private float selectionRowHeight;
 
         public override Vector2 InitialSize => new Vector2(560f, 560f);
 
@@ -76,6 +93,7 @@ namespace EPrimeReadouts.UI
         {
             base.WindowUpdate();
             if (stage == Stage.Source) EnsureFiles();
+            else RefreshSelection();
         }
 
         private void RefreshClipboard()
@@ -88,8 +106,8 @@ namespace EPrimeReadouts.UI
         /// On failure shows an error message and stays on Source stage.
         private bool TryEnterPreview(string xml)
         {
-            if (!ReadoutsXml.TryImport(xml, out var parsedPools, out var parsedGroups,
-                out string? parseError, ModRequirements.IsModActive))
+            if (!SetupDocument.TryRead(xml, out document, out string? parseError,
+                ModRequirements.IsModActive, SetupDefaults.MemberExists))
             {
                 Messages.Message(
                     "EPR.ImportParseFailed".Translate(parseError),
@@ -97,10 +115,45 @@ namespace EPrimeReadouts.UI
                 return false;
             }
             pendingXml    = xml;
-            previewSnapshot = ReadoutSnapshot.Capture(parsedPools, parsedGroups);
+            selected = document!.Present & SetupSections.Model;
+            previewSnapshot = ReadoutSnapshot.Capture(document.Pools, document.Groups);
+            validationDirty = true;
+            RefreshSelection();
             UnfocusPickerInputs();
             stage = Stage.Preview;
             return true;
+        }
+
+        private void RefreshSelection()
+        {
+            var store = ReadoutStore.Current;
+            UiRevision.ObserveCurrentMetrics();
+            if (selectionMetrics != UiRevision.Current)
+            {
+                using (GuiStateScope.Capture())
+                {
+                    Text.Font = GameFont.Small;
+                    selectionRowHeight = Mathf.Max(26f, Mathf.Ceil(Text.LineHeight));
+                    for (int i = 0; i < SectionKeys.Length; i++) sectionLabels[i] = UiText.Get(SectionKeys[i]);
+                }
+                selectionMetrics = UiRevision.Current;
+            }
+            if (!validationDirty && ReferenceEquals(validatedStore, store) && store != null
+                && validatedGroups == store.GroupsVersion && validatedPools == store.PoolsVersion
+                && validatedThresholds == store.ThresholdsVersion && validatedRules == store.CountRulesVersion) return;
+            validationDirty = false; validatedStore = store;
+            canImport = false; importError = null;
+            if (store == null || document == null) return;
+            validatedGroups = store.GroupsVersion; validatedPools = store.PoolsVersion;
+            validatedThresholds = store.ThresholdsVersion; validatedRules = store.CountRulesVersion;
+            canImport = selected != SetupSections.None && document.CanApply(store.Model, selected, out importError);
+            for (int i = 0; i < Sections.Length; i++)
+            {
+                // Allow incomplete intermediate selections: mutually dependent
+                // categories may need two clicks to reach a valid partial import.
+                // Only the final Import action requires a valid combined model.
+                canToggle[i] = (document.Present & Sections[i]) != 0;
+            }
         }
 
         public override void PreClose()
@@ -110,6 +163,8 @@ namespace EPrimeReadouts.UI
             previewTextSnapshot = null;
             files = null;
             pendingXml = null;
+            document = null;
+            validatedStore = null;
             clip = null;
             base.PreClose();
         }
@@ -291,6 +346,17 @@ namespace EPrimeReadouts.UI
             GUI.color = Color.white;
             bodyTop  += warnH + 4f;
 
+            for (int i = 0; i < Sections.Length; i++)
+            {
+                var row = new Rect(inRect.x, bodyTop, inRect.width, selectionRowHeight);
+                bool chosen = (selected & Sections[i]) != 0;
+                bool before = chosen;
+                Widgets.CheckboxLabeled(row, sectionLabels[i], ref chosen, disabled: !canToggle[i]);
+                if (chosen != before) { selected ^= Sections[i]; validationDirty = true; canImport = false; }
+                bodyTop += selectionRowHeight;
+            }
+            bodyTop += 8f;
+
             // ── Framed preview listing ───────────────────────────────────────
             var frameRect = new Rect(inRect.x, bodyTop, inRect.width,
                 footerY - bodyTop - FooterGap);
@@ -316,12 +382,11 @@ namespace EPrimeReadouts.UI
                 previewSnapshot = null;
             }
 
-            if (Widgets.ButtonText(new Rect(importX, footerY, ButtonW, FooterH),
-                UiText.Get("EPR.Import")))
+            var importRect = new Rect(importX, footerY, ButtonW, FooterH);
+            if (importError != null) WrTips.Text("EPR.SetupDependency", importError).Region(importRect);
+            if (Widgets.ButtonText(importRect, UiText.Get("EPR.Import"), active: canImport))
             {
-                ReadoutCommands.ImportAll(pendingXml!); // set when entering the preview stage
-                Messages.Message(UiText.Get("EPR.Imported"),
-                    MessageTypeDefOf.TaskCompletion, historical: false);
+                ReadoutCommands.ImportSelected(pendingXml!, (int)selected);
                 Close();
             }
         }
@@ -336,7 +401,7 @@ namespace EPrimeReadouts.UI
             int pools = previewSnapshot?.Pools.Count ?? 0;
             int groups = previewSnapshot?.Groups.Count ?? 0;
             previewSummary = "EPR.ContentSummary".Translate(pools, groups);
-            previewWarning = UiText.Get("EPR.ImportWarning");
+            previewWarning = UiText.Get("EPR.ImportSelectionWarning");
             previewTextSnapshot = previewSnapshot;
             previewTextLanguageVersion = UiRevision.LanguageCurrent;
         }

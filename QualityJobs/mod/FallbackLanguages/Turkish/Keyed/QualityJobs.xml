@@ -78,10 +78,17 @@
   <QJ_StatusStalledTip>Yarım eşyalar bekliyor, ancak şu anda onları bitirebilecek uygun kolonici yok; bu yüzden bitirme işleri oluşturulmuyor.\n\nBitirme becerisi, ilham ve uzman şartlarını; amaçlanan tamamlayıcının iş türünün açık olduğunu ve bu haritada bulunduğunu kontrol edin. Beklerken stok sınırı yeni eşyalara başlanmasını da engelleyebilir.</QJ_StatusStalledTip>
   <QJ_StockCapLabel>Stok sınırı: {0}</QJ_StockCapLabel>
   <QJ_StockCapTooltip>Bu ürünün azami yarım eşya sayısı. Sınır ürün başına paylaşılır; bu eşyayı üreten tüm siparişler hesaba katılır.\n\n0, sınırsız demektir.</QJ_StockCapTooltip>
-  <QJ_ToolbarButtonTip>Quality Jobs ayarlarını aç.</QJ_ToolbarButtonTip>
+  <QJ_ToolbarButtonTip>Quality Jobs ayarlarını ve yardımını aç.</QJ_ToolbarButtonTip>
   <QJ_UnfinishedWorkWaiting>bu siparişin yarım eşyası sürdürülmeyi bekliyor</QJ_UnfinishedWorkWaiting>
   <QJ_WelcomeBody>Quality Jobs, yarım bir eşya veya bina üzerinde her kolonicinin çalışmasına izin verir; ancak yalnızca belirlediğiniz şartları karşılayan kolonici bitirebilir, çünkü kaliteyi tek başına bitiren belirler. Üretim siparişlerinde ve inşaatta çalışır.</QJ_WelcomeBody>
   <QJ_WelcomeFind>Quality Jobs ayarlarını ekranın sağ altındaki görünüm düğmelerinin yanındaki bu düğmeyle açın. Kaliteye tabi bir eşyanın sipariş penceresinde Quality Jobs bölümü; kaliteye tabi bir binanın seçili planında veya iskeletinde Kaliteli iş düğmesi bulunur.</QJ_WelcomeFind>
   <QJ_WelcomeTakeMeThere>Şimdi aç</QJ_WelcomeTakeMeThere>
   <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
+  <QJ_HelpChapterBasics>Başlangıç</QJ_HelpChapterBasics>
+  <QJ_HelpChapterConstruction>İnşaat</QJ_HelpChapterConstruction>
+  <QJ_HelpChapterCrafting>Zanaat</QJ_HelpChapterCrafting>
+  <QJ_HelpChapterOptions>Ayarlar ve sorun giderme</QJ_HelpChapterOptions>
+  <QJ_HelpReload>Yeniden yükle</QJ_HelpReload>
+  <QJ_TabHelp>Yardım</QJ_TabHelp>
+  <QJ_TabOptions>Ayarlar</QJ_TabOptions>
 </LanguageData>

@@ -19,11 +19,13 @@ namespace EPrimeReadouts.Core
     {
         private readonly float cellW;
         private readonly float counterRowH;
+        private readonly float labelLineHeight;
 
-        public CellMetrics(float cellW, float counterRowH)
+        public CellMetrics(float cellW, float counterRowH, float? labelLineHeight = null)
         {
             this.cellW = cellW;
             this.counterRowH = counterRowH;
+            this.labelLineHeight = labelLineHeight ?? counterRowH;
         }
 
         /// One resource column: counter box width; the icon centers inside it.
@@ -35,10 +37,11 @@ namespace EPrimeReadouts.Core
             counterRowH > LayoutMetrics.CounterRowH
                 ? counterRowH : LayoutMetrics.CounterRowH;
 
-        /// Label rows share the counter font and keep the baseline's extra
+        /// Label rows follow their own font and keep the baseline's extra
         /// breathing room (LabelRowH - CounterRowH) above and below.
         public float LabelRowH =>
-            CounterRowH + (LayoutMetrics.LabelRowH - LayoutMetrics.CounterRowH);
+            System.Math.Max(LayoutMetrics.CounterRowH, labelLineHeight)
+                + (LayoutMetrics.LabelRowH - LayoutMetrics.CounterRowH);
 
         /// Combined height of one icon+counter row pair.
         public float RowPairH =>

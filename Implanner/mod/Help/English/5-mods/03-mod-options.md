@@ -1,26 +1,32 @@
 ---
 title: Mod options
 ---
+<!-- l10n:b-459ed37f94ab -->
 ![The Options tab with the Mod compatibility and Catalog sections](options-tab.png)
 
+<!-- l10n:b-045738932f34 -->
 The Options tab holds plan compatibility settings and the skill-slider
 display range. Automation settings live on the Automation tab. Plan and
 automation settings are shared by everyone in a multiplayer game.
 
+<!-- l10n:b-d5c494c5ce65 -->
 **Maximum skill slider value** sets the upper end of the Medical and Crafting
 sliders, from 20 to 100 in steps of 10. The default is 20. Increase it to
 choose higher minimum skills when using a mod such as Endless Growth.
 This is a personal display preference: changing it leaves existing minimums,
 automatic doctor selection and bill eligibility unchanged.
 
+<!-- l10n:b-1592948be502 -->
 ![Hovering an option lists the implants it affects and their mods](options-bladder-tip.png)
 
+<!-- l10n:b-3d5a789973c6 -->
 **Allow multiple bladder implants** and **Allow multiple hygiene
 enhancers** are on by default, which matches the game: a colonist can
 carry the version from Dubs Bad Hygiene and the version from [FSF]
 Advanced Bionics Expansion at the same time, and their effects stack. Switch one
 off to treat that pair as one slot:
 
+<!-- l10n:b-343b23dbe5db -->
 - Picking one version in a plan overrides the other, with the usual
   caption in the picker.
 - A colonist who already has either version counts as done for that
@@ -30,18 +36,23 @@ off to treat that pair as one slot:
 - Picks made while the option was on stay stored and return when it is
   switched back on.
 
+<!-- l10n:b-924ed49fe876 -->
 Each tooltip lists the affected implants that are loaded and the mod each
 one comes from.
 
+<!-- l10n:b-119eac06340c -->
 ![Hovering the option shows the affected implants](options-purchase-tip.png)
 
+<!-- l10n:b-48fc20fd313a -->
 **Show purchase-only implants** is off by default. Switched on, it lists
 implants whose item no workbench can craft, such as archotech parts,
 which only arrive through trade, quests or salvage. The tooltip names every affected implant
 that is loaded.
 
+<!-- l10n:b-c5503d1cca1d -->
 ![The Limbs picker listing archotech legs and arms](picker-purchase-only.png)
 
+<!-- l10n:b-f43616fbb2ac -->
 With the option on, the picker shows them like any other implant. A
 planned purchase-only implant never holds anything else back: the rest of
 the batch goes ahead without it, and once its item is in stock it is

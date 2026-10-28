@@ -1,0 +1,2 @@
+# In-game verification probes are built locally, never shipped or committed.
+**/mod/*/Assemblies/

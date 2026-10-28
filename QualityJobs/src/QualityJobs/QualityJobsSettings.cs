@@ -22,6 +22,10 @@ namespace QualityJobs
         // Presentation preference (per player, never synced or scribed per save).
         public bool showToolbarButton = true;
 
+        // Personal reading history, never shared colony state.
+        public System.Collections.Generic.List<string> helpTopicsRead =
+            new System.Collections.Generic.List<string>();
+
         /// Saves (world persistent random values) whose one-time welcome
         /// dialog this player has already seen.
         public System.Collections.Generic.List<string> welcomeShownSaves =
@@ -54,6 +58,8 @@ namespace QualityJobs
             Scribe_Values.Look(ref defaultAutoBest, "defaultAutoBest", false);
             Scribe_Values.Look(ref defaultTargetQuality, "defaultTargetQuality", 0);
             Scribe_Values.Look(ref showToolbarButton, "showToolbarButton", true);
+            Scribe_Collections.Look(ref helpTopicsRead, "helpTopicsRead", LookMode.Value);
+            helpTopicsRead ??= new System.Collections.Generic.List<string>();
             Scribe_Values.Look(ref defaultManageNewConstruction, "defaultManageNewConstruction", false);
             Scribe_Values.Look(ref defaultConstructionMinSkill, "defaultConstructionMinSkill", 15);
             Scribe_Values.Look(ref defaultConstructionRequireInspired, "defaultConstructionRequireInspired", false);

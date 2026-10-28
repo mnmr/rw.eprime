@@ -1,8 +1,10 @@
 ---
 title: Como os implantes de mods são lidos
 ---
+<!-- l10n:b-935816ca622e -->
 Implanner não precisa de uma lista de mods compatíveis. Ele lê todas as cirurgias carregadas do jogo original, expansões e mods. Uma cirurgia que instala um implante em uma parte corporal vira entrada no seletor. Os mesmos dados definem a coexistência:
 
+<!-- l10n:b-d02011c283d2 -->
 - **Uma substituição por parte**: um braço biônico substitui o ombro. Duas substituições não compartilham a parte, e substituir remove implantes nela e nas partes abaixo.
 - **Implantes na mesma parte**: coexistem, exceto quando a cirurgia declara incompatibilidade. Assim as glândulas de pele se excluem no jogo base e mods definem espaços de módulos.
 - **Remoção ao instalar**: alguns implantes retiram um rival de qualquer lugar do corpo. Dois que se removem mutuamente nunca coexistem.
@@ -11,4 +13,5 @@ Implanner não precisa de uma lista de mods compatíveis. Ele lê todas as cirur
 - **Melhorias no local**: uma cirurgia que retira um implante e acrescenta outro melhora a parte instalada. A versão melhorada aparece separadamente.
 - **Itens não fabricáveis**: se nenhuma bancada produz o item, ele fica oculto até ligar a opção correspondente.
 
+<!-- l10n:b-ea92c69a5624 -->
 Há dois limites: módulos inseridos pelo inventário sem cirurgia nunca aparecem, e regras existentes apenas no código de um mod, sem dados correspondentes, não podem ser lidas. Tudo que o mod expressa nas cirurgias funciona sem mudar Implanner.

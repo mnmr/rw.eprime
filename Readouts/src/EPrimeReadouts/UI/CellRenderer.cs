@@ -23,6 +23,7 @@ namespace EPrimeReadouts.UI
         public float[] IconCorrections = null!;
         public float[] IconFittedScales = null!;
         public GUIContent?[] CounterContents = null!;
+        public GameFont CounterFont;
         public RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot>? RenderData;
         private int iconScaleRevision = -1;
         internal int IconDataRevision => iconScaleRevision;
@@ -94,6 +95,7 @@ namespace EPrimeReadouts.UI
                 IconCorrections = iconCorrections,
                 IconFittedScales = iconFittedScales,
                 CounterContents = counterContents,
+                CounterFont = PanelCellMetrics.CounterFont,
                 RenderData = renderData,
             };
             resolved.RefreshIconCacheIfNeeded();
@@ -372,10 +374,13 @@ namespace EPrimeReadouts.UI
                             textAnchor = TextAnchor.UpperCenter;
                         }
                         GUIContent? content = draw.CounterContents[i];
-                        if (content != null)
-                            GUI.Label(rect, content, Text.CurFontStyle);
-                        else
-                            Widgets.Label(rect, cell.Text);
+                        using (TinyText.UseFont(draw.CounterFont))
+                        {
+                            if (content != null)
+                                GUI.Label(rect, content, Text.CurFontStyle);
+                            else
+                                Widgets.Label(rect, cell.Text);
+                        }
                         GUI.color = Color.white;
                         break;
                     }

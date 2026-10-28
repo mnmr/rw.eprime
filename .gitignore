@@ -37,6 +37,7 @@ mod/1.6/Assemblies/
 /.codex/
 /.agents/
 /.worktrees/
+/.local/
 
 # Build results
 [Dd]ebug/
@@ -86,3 +87,6 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+investigations/
+artifacts/releases/

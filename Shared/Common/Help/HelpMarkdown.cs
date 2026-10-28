@@ -134,6 +134,14 @@ namespace RimShared.Common.Help
             for (; index < lines.Length; index++)
             {
                 string line = lines[index].Trim();
+                // Offline localization identities are metadata. Ignore them
+                // during the existing load-time parse, never during rendering.
+                if (line.StartsWith("<!-- l10n:", StringComparison.Ordinal)
+                    && line.EndsWith(" -->", StringComparison.Ordinal))
+                {
+                    Flush();
+                    continue;
+                }
                 if (line.Length == 0)
                 {
                     Flush();
