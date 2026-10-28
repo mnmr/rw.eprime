@@ -1,9 +1,8 @@
 ﻿# Changelog
 
-## Unreleased
+## 1.2.1 — 2026-10-28
 
-- Added: Options and Help tabs in the toolbar window, with illustrated guides covering unfinished-work sharing, finishers, crafting, construction, rebuilding and troubleshooting.
-- Added: Help translations for all thirteen supported non-English languages, with stable block IDs for translation maintenance.
+- Added: Built-in help.
 
 ## 1.2.0 — 2026-10-26
 

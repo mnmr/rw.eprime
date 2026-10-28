@@ -1,6 +1,10 @@
 ﻿# Changelog
 
-## 1.4.3 — 2026-10-28
+## 1.5.1 — 2026-10-28
+
+- Changed: Changed font size option from override to picker, so users can set it explicitly.
+
+## 1.5.0 — 2026-10-28
 
 - Added: Tiny/Small counter font-size picker, defaulting to Tiny and independent of RimWorld's tiny-text setting.
 - Added: Ability to save the current setup as the default for new colonies.
