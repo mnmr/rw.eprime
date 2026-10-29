@@ -74,7 +74,8 @@ namespace WorkRoles.Core.Recs
     /// identity cohort (at most two retained: listed pawns and recommendation map).
     /// Value: immutable-by-ownership detached colony, lazy plan and verdict maps.
     /// Dependencies: catalog identity; assignment membership/order/pin revision;
-    /// external-facts generation; recommendation order revision; normalized tuning.
+    /// external-facts generation; recommendation order revision; normalized tuning;
+    /// optional mechanical-supply snapshot identity (separate from human facts).
     /// Refresh: event-driven on a changed stamp, never polling authoritative data.
     /// Equality: equal consumed inputs preserve snapshot and plan identity; verdicts
     /// ignore assignment/order/activation/tuning and preserve equal result identity.
@@ -126,7 +127,8 @@ namespace WorkRoles.Core.Recs
         public RecommendationSnapshot For(object owner, IReadOnlyList<TPawn> pawns,
             object catalog, int assignments, int external, int order,
             RecommendationsTuningOptions options,
-            Func<IReadOnlyList<TPawn>, IReadOnlyList<PawnView>?, ColonyView> build)
+            Func<IReadOnlyList<TPawn>, IReadOnlyList<PawnView>?, ColonyView> build,
+            object? mechanicalSupply = null)
         {
             EnsureOwner(owner);
             Entry entry;
@@ -148,6 +150,7 @@ namespace WorkRoles.Core.Recs
             RecommendationSnapshot? previous = entry.Snapshot;
             bool inputsCurrent = previous != null
                 && ReferenceEquals(entry.Catalog, catalog)
+                && ReferenceEquals(entry.MechanicalSupply, mechanicalSupply)
                 && entry.Assignments == assignments && entry.External == external
                 && entry.Order == order;
             if (inputsCurrent && ReferenceEquals(entry.Options, options))
@@ -163,6 +166,7 @@ namespace WorkRoles.Core.Recs
                 && ReferenceEquals(colony, previous.Colony) && previous.SameOptions(options)
                     ? previous : new RecommendationSnapshot(colony, options, previous, entry.Verdicts);
             entry.Catalog = catalog;
+            entry.MechanicalSupply = mechanicalSupply;
             entry.Assignments = assignments;
             entry.External = external;
             entry.Order = order;
@@ -266,6 +270,7 @@ namespace WorkRoles.Core.Recs
             internal readonly TPawn[] Pawns;
             internal readonly IRecommendationVerdictSource Verdicts;
             internal object? Catalog;
+            internal object? MechanicalSupply;
             internal int Assignments;
             internal int External;
             internal int Order;
@@ -283,6 +288,7 @@ namespace WorkRoles.Core.Recs
         {
             if (ReferenceEquals(left, right)) return true;
             if (left.HunterRoleId != right.HunterRoleId
+                || !MechanicalSupply(left, right)
                 || left.FireBlockerRoleId != right.FireBlockerRoleId
                 || !Sequence(left.OrderTemplate, right.OrderTemplate)
                 || !Dictionary(left.SkillMaxLevels, right.SkillMaxLevels)
@@ -300,6 +306,25 @@ namespace WorkRoles.Core.Recs
                 if (!Pawn(left.Pawns[index], right.Pawns[index])) return false;
             return true;
         }
+
+        private static bool MechanicalSupply(ColonyView left, ColonyView right)
+        {
+            if (left.IntegrateMechanicalWorkers != right.IntegrateMechanicalWorkers) return false;
+            if (!left.IntegrateMechanicalWorkers) return true;
+            if (left.MechanicalWorkers.Count != right.MechanicalWorkers.Count) return false;
+            for (int i = 0; i < left.MechanicalWorkers.Count; i++)
+            {
+                if (!MechanicalWorker(left.MechanicalWorkers[i], right.MechanicalWorkers[i])) return false;
+            }
+            return true;
+        }
+
+        internal static bool MechanicalWorker(MechanicalWorkerView a, MechanicalWorkerView b) => ReferenceEquals(a, b)
+            || a.Id == b.Id && a.ProvidesService == b.ProvidesService
+                && a.ExecutableGivers.SetEquals(b.ExecutableGivers)
+                && a.CommittedGivers.SetEquals(b.CommittedGivers)
+                && a.PartialServiceGivers.SetEquals(b.PartialServiceGivers)
+                && Sequence(a.ActiveRoleIds, b.ActiveRoleIds) && Pawn(a.Facts, b.Facts);
 
         internal static bool Pawn(PawnView a, PawnView b)
         {

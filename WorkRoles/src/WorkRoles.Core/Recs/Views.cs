@@ -144,6 +144,8 @@ namespace WorkRoles.Core.Recs
 
     public class ColonyView
     {
+        public bool IntegrateMechanicalWorkers;
+        public List<MechanicalWorkerView> MechanicalWorkers = new List<MechanicalWorkerView>();
         public List<PawnView> Pawns = new List<PawnView>();
         public List<RoleView> Roles = new List<RoleView>();
         public List<PathView> Paths = new List<PathView>();

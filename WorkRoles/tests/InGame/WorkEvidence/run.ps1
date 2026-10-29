@@ -9,6 +9,7 @@ if(-not $ModSourceRoot){$ModSourceRoot=$source}
 if(-not $SaveRoot){$SaveRoot=Join-Path $source 'WorkRoles\temp\work-capabilities\baseline'}
 $tools=Join-Path $source 'Shared\tools\automation'
 $params=@{Purpose="WorkRoles $Version work evidence ${Scenario}: exact Fisso input capture and completed mining";ModSourceRoot=$ModSourceRoot;SourceSaveDirectory=$SaveRoot}
+if($Scenario -eq 'capture'){$params.Purpose="WorkRoles $Version frozen Fisso baseline: exact Fix My Colony cohort, tuning, chosen paths and final targets without Misc Robots"}
 if($Scenario -eq 'clean'){$params.ModSet='own-mods-waylith'}
 else{$params.ModSet='work-evidence';$params.AdditionalModSource=@("$PSScriptRoot\Probe")}
 if($Scenario -eq 'baseline'){$params.AdditionalModSource=@("$PSScriptRoot\BaselineProbe")}

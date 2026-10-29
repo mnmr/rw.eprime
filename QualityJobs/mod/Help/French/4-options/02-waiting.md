@@ -7,7 +7,7 @@ Consultez d'abord **{k:QJ_StatusHeader}** dans le panneau de l'ordre ou de la co
 <!-- l10n:checklist -->
 - Le type de travail requis est-il activé pour la personne censée terminer le travail ? Est-elle sur cette carte et en mesure de travailler ?
 - Le niveau de compétence requis est-il trop élevé, ou attendez-vous une inspiration créative ou un spécialiste de la production ?
-- L'ajustement automatique attend-il un colon plus compétent, temporairement absent ou indisponible ?
+- L’ajustement automatique attend-il qu’un travailleur offrant une qualité attendue plus élevée soit disponible, par exemple qu’il revienne d’une caravane ou termine sa recharge ?
 - La personne peut-elle atteindre et réserver l'objet ou l'ossature, et utiliser l'établi ? Vérifiez les objets interdits, les zones autorisées, les restrictions de l'ordre et les réservations concurrentes.
 - La limite de stock est-elle atteinte ? Terminez les objets en attente avant d'en commencer d'autres, ou augmentez volontairement la limite.
 

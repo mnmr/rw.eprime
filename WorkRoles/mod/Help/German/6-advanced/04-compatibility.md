@@ -20,7 +20,21 @@ Erweiterungen, die vorhandene Arbeitsgeber patchen, verwenden weiterhin dieselbe
 Zwei Gruppen von Mods stehen im Konflikt. Andere Ersatzoberflächen für den Arbeitsreiter, etwa Work-Tab-Abspaltungen oder Better Work Tab, beanspruchen dieselbe Oberfläche. Mods, die Prioritäten setzen, etwa Free Will oder PriorityMaster, beanspruchen dieselben Daten: WorkRoles verwaltet die Prioritäten betreuter Kolonisten, deshalb werden solche Schreibzugriffe blockiert. In diesem Fall nennt ein einmaliger Hinweis die Mod und erklärt, wie sich derselbe Effekt mit Rollen erreichen lässt.
 
 <!-- l10n:b-3e9c0a143130 -->
-Die Prioritätsverwaltung gilt nur für menschenähnliche Charaktere. Mods, die Prioritäten für Mechanoiden festlegen, etwa Mech Work Tab, sind daher vollständig kompatibel.
+Mods für Mechanoidenprioritäten wie Mech Work Tab können Arbeitskräfte ohne Rollenzuweisungen in WorkRoles verwalten. Wenn du die Unterstützung für Roboter und Mechanoiden aktivierst, verwaltet WorkRoles auch die Arbeitsreihenfolge mechanischer Arbeitskräfte mit zugewiesenen Rollen. Deaktiviere die Unterstützung in den Optionen, damit für sie alle wieder die ursprüngliche Arbeitsreihenfolge gilt; ihre gespeicherten Rollen bleiben inaktiv.
+
+<!-- l10n:mechanical-workers -->
+**Roboter und Mechanoiden unter Kolonisten anzeigen** ist eine spielstandspezifische Option und standardmäßig ausgeschaltet.
+Sie ergänzt die vorhandene Tabelle um Mechanoiden aus Biotech sowie Roboter aus Misc. Robots und Misc. Robots++.
+Weise dort Rollen zu; verwalte Kontrollgruppen, Gebiete, Aktivierung und Aufladen
+in den jeweiligen ursprünglichen Reitern. Rollen legen nur die Reihenfolge von Arbeiten fest,
+die die Arbeitskraft tatsächlich ausführen kann. Für menschenähnliche Androiden gelten
+weiterhin die üblichen Kolonistenregeln.
+
+<!-- l10n:mechanical-recharge -->
+Das Aufladen bleibt unverändert und benötigt keine eigene Rolle. Biotech bietet
+Ladegrenzen für jede Kontrollgruppe. Misc. Robots verwendet eigene Schwellenwerte
+für die automatische Rückkehr; ein Klick auf den Ladestand im Roboterreiter fordert
+sofortiges Aufladen an. WorkRoles ändert diese Schwellenwerte nicht.
 
 <!-- l10n:b-3df0d9a43535 -->
 Manche Mods benötigen Prioritäten im Bereich von 0 bis 4. Falls Probleme mit anderen Mods auftreten, prüfe deshalb, ob „Anderen Mods Grundspielprioritäten von 0–4 melden“ eingeschaltet ist.

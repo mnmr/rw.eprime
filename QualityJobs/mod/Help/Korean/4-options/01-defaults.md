@@ -16,3 +16,6 @@ title: 옵션 및 기본값
 <!-- l10n:global -->
 **{k:QJ_SettingsShareWork}**와 **{k:QJ_SettingsHighPriorityFinish}**는 정착지 전체에 적용됩니다. 각 기능의 효과는 [공유](topic:sharing-work)와 [마무리 작업자](topic:finishers)를 참고하세요. **{k:QJ_DisableButton}**는 개별 작업을 일시 중지하는 기능이 아니라 [안전한 모드 제거](topic:removing)를 위한 기능입니다.
 
+<!-- l10n:robot-preparation -->
+**{k:QJ_SettingsAllowRobotPreparation}**는 현재 정착지에 저장되며, 기존 저장 게임에서도 기본적으로 켜져 있습니다. 이 옵션을 끄면 관리 중인 제작 작업 지시와 건설 계획의 작업을 정착민만 수행하여 해당 작업의 기술 경험치를 얻도록 할 수 있습니다. 이미 해당 작업을 수행 중인 메카노이드와 로봇도 작업을 중단합니다. 조건에 맞는 메카노이드와 지원되는 로봇은 계속 Quality Jobs가 배정한 마무리 작업을 수행할 수 있습니다. 일반적인 비관리 작업에는 영향을 주지 않으며, [공유 미완성품](topic:sharing-work)에는 원래 관리 대상 작업 지시의 제한이 유지됩니다. 이 옵션은 저장된 게임을 불러온 상태에서 사용할 수 있으며 Multiplayer에서 동기화됩니다.
+

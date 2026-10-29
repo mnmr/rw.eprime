@@ -4,6 +4,9 @@ title: Outros mods e multijogador
 <!-- l10n:requirements -->
 Quality Jobs requer Harmony e é compatível com RimWorld 1.6 e 1.7. Nenhum DLC é necessário. Ideology adiciona o requisito de especialista em produção; o gerenciamento normal de qualidade funciona sem ele.
 
+<!-- l10n:robots -->
+**Mecanoides de Biotech, Misc. Robots e Misc. Robots++:** trabalhadores controlados pela colônia que possam executar o trabalho necessário podem se qualificar como finalizadores. Os robôs mantêm suas próprias capacidades de trabalho; um robô de transporte ou limpeza não pode finalizar fabricação ou construção. **{k:QJ_SettingsAllowRobotPreparation}** controla se mecanoides e robôs compatíveis também podem executar as etapas anteriores dos trabalhos gerenciados. Desativar essa opção os mantém disponíveis para a finalização.
+
 <!-- l10n:expanded -->
 **Vanilla Skills Expanded:** os bônus de qualidade de construção, fabricação e arte são considerados na seleção do finalizador e na prévia das probabilidades. Bônus de velocidade não dão preferência na seleção por qualidade. Alterações nesses bônus podem precisar de um pouco de tempo de simulação para aparecer.
 

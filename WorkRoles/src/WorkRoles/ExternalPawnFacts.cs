@@ -33,10 +33,13 @@ namespace WorkRoles
         {
             WorkEvidenceRevisions.Invalidate(pawn);
             Revisions.Invalidate(pawn);
+            if (RoleStore.Current?.mechanicalWorkersEnabled == true && MechanicalWorkers.IsMechanical(pawn))
+                MechanicalWorkers.NotifyChanged();
         }
 
         internal static bool IsRelevant(Pawn pawn) => pawn != null
             && (pawn.IsColonist || pawn.IsSlaveOfColony
+                || RoleStore.Current?.mechanicalWorkersEnabled == true && MechanicalWorkers.IsColonyWorker(pawn)
                 || RoleStore.Current?.IsManaged(pawn) == true);
 
         internal static void Invalidate(Pawn pawn)
@@ -46,6 +49,8 @@ namespace WorkRoles
             FactRevisions.Invalidate(pawn);
             PawnSignalSnapshotCache.Invalidate(pawn);
             Capabilities.PawnWorkFacts.Refresh(pawn);
+            if (RoleStore.Current?.mechanicalWorkersEnabled == true && MechanicalWorkers.IsMechanical(pawn))
+                MechanicalWorkers.NotifyChanged();
         }
 
         internal static void InvalidateName(Pawn pawn)

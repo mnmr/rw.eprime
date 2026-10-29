@@ -20,7 +20,17 @@ Les extensions modifiant des fournisseurs de tâches existants utilisent toujour
 Deux familles entrent en conflit. Les autres remplacements de l'onglet Travail, comme les variantes de Work Tab et Better Work Tab, se disputent la même interface. Les mods fixant les priorités, comme Free Will et PriorityMaster, se disputent les mêmes données : WorkRoles contrôle les priorités des colons gérés, donc bloque leurs modifications. Un avertissement unique nomme alors le mod et propose une méthode par rôles pour obtenir le même effet.
 
 <!-- l10n:b-3e9c0a143130 -->
-Ce contrôle concerne uniquement les personnages humanoïdes : les mods réglant les priorités des mécanoïdes, comme Mech Work Tab, sont entièrement compatibles.
+Les mods réglant les priorités des mécanoïdes, comme Mech Work Tab, peuvent gérer les travailleurs sans affectation WorkRoles. Si vous activez la prise en charge des robots et des mécanoïdes, WorkRoles contrôle aussi l'ordre des tâches des travailleurs mécaniques ayant des rôles attribués. Désactivez cette prise en charge dans les options pour rétablir leur ordre de travail natif à tous ; leurs rôles enregistrés restent inactifs.
+
+<!-- l10n:mechanical-workers -->
+**Afficher les robots et mécanoïdes dans Colons** est une option propre à chaque sauvegarde, désactivée par défaut.
+Elle ajoute les mécanoïdes de Biotech, Misc. Robots et Misc. Robots++ au tableau existant.
+Attribuez-y des rôles ; utilisez leurs onglets habituels pour les groupes de contrôle, les zones, l'activation
+et la recharge. Les rôles ordonnent uniquement les tâches que le travailleur peut réellement accomplir. Les androïdes
+humanoïdes continuent de suivre les règles ordinaires des colons.
+
+<!-- l10n:mechanical-recharge -->
+La recharge reste gérée par le jeu ou le mod d'origine et ne nécessite aucun rôle Recharge. Biotech propose des limites de charge pour chaque groupe de contrôle. Misc. Robots utilise ses propres seuils de retour automatique ; cliquer sur le pourcentage de charge dans son onglet Robots demande une recharge immédiate. WorkRoles ne modifie pas ces seuils.
 
 <!-- l10n:b-3df0d9a43535 -->
 Certains mods exigent des priorités de 0 à 4. En cas de problème, vérifiez que « Transmettre aux autres mods des priorités de 0 à 4 » est activé.

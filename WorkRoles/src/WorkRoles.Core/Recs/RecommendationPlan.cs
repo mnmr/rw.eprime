@@ -113,6 +113,36 @@ namespace WorkRoles.Core.Recs
 
         internal int RoleCount => roleIds.Count;
         internal int RoleAt(int index) => roleIds[index];
+        private HashSet<int>? retainedLearning;
+        internal bool RetainedLearning(int roleId) => retainedLearning?.Contains(roleId) == true;
+
+        internal void RetainLearning(PawnDraft baseline, EngineContext facts, int pawnIndex)
+        {
+            foreach (PathActivation activation in baseline.activations)
+            {
+                PathView path = facts.PathsById[activation.PathId];
+                int targetIndex = path.RoleIds.IndexOf(activation.TargetRoleId);
+                if (targetIndex < 0) continue;
+                int minimum = path.BandMins[targetIndex];
+                var kept = new List<int>();
+                foreach (int id in activation.ActiveRoleIds)
+                {
+                    if (id == activation.TargetRoleId || !baseline.ContainsRole(id)) continue;
+                    RoleView role = facts.RoleOf(id);
+                    foreach (string skill in facts.PathSkills(path).Qualifying)
+                        if (facts.SkillLevel(pawnIndex, skill) < minimum
+                            && facts.CanTrain(pawnIndex, role, skill))
+                        { kept.Add(id); break; }
+                }
+                if (kept.Count > 0)
+                {
+                    foreach (int id in kept)
+                        if (TrainingTargetFor(id) != activation.TargetRoleId)
+                            (retainedLearning ??= new HashSet<int>()).Add(id);
+                    AddActivation(activation.WithRoles(kept.ToArray()));
+                }
+            }
+        }
 
         internal void AddActivation(
             PathActivation activation,
@@ -682,6 +712,19 @@ namespace WorkRoles.Core.Recs
         {
             var formulas = new RecommendationFormulaEngine(options);
             ColonyView colony = facts.Colony;
+            RecommendationPlan? humanBaseline = null;
+            if (facts.MechanicalCoverageApplied)
+            {
+                // Detached shared immutable inputs; only external supply differs.
+                // Baseline learning is selected before mechanical displacement.
+                var humanOnly = new ColonyView
+                {
+                    Pawns = colony.Pawns, Roles = colony.Roles, Paths = colony.Paths,
+                    OrderTemplate = colony.OrderTemplate, SkillMaxLevels = colony.SkillMaxLevels,
+                    HunterRoleId = colony.HunterRoleId, FireBlockerRoleId = colony.FireBlockerRoleId,
+                };
+                humanBaseline = Build(humanOnly, options, ordering);
+            }
             int pawnCount = colony.Pawns.Count;
             var drafts = new PawnDraft[pawnCount];
             for (int pawnIndex = 0; pawnIndex < pawnCount; pawnIndex++)
@@ -703,6 +746,7 @@ namespace WorkRoles.Core.Recs
             {
                 RoleView role = roles[roleIndex];
                 if (!role.Available
+                    || facts.MechanicallyCovered(role.Id)
                     || !role.Enabled
                     || facts.IsRecommendationExcluded(role)
                     || !role.PlannedByDemand
@@ -771,6 +815,19 @@ namespace WorkRoles.Core.Recs
             // interaction with champion and minimum-pick ordering is evaluated.
             AddLateSpecialRoles(facts, drafts, formulas);
 
+            if (colony.IntegrateMechanicalWorkers)
+                for (int pawnIndex = 0; pawnIndex < pawnCount; pawnIndex++)
+                    for (int roleIndex = drafts[pawnIndex].RoleCount - 1; roleIndex >= 0; roleIndex--)
+                    {
+                        int id = drafts[pawnIndex].RoleAt(roleIndex);
+                        if (facts.MechanicallyCovered(id)
+                            && !facts.HasProtectedDirectAssignment(pawnIndex, id))
+                            drafts[pawnIndex].RemoveRole(id);
+                    }
+            if (humanBaseline != null)
+                for (int pawnIndex = 0; pawnIndex < pawnCount; pawnIndex++)
+                    drafts[pawnIndex].RetainLearning(humanBaseline.drafts[pawnIndex], facts, pawnIndex);
+
             var rolesByPawn = new int[pawnCount][];
             var pathsByPawn = new int[pawnCount][];
             var activatedPathCountsByPawn = new int[pawnCount];
@@ -791,6 +848,15 @@ namespace WorkRoles.Core.Recs
             Dictionary<int, RoleRecommendationExplanation>[] explanations =
                 BuildExplanations(
                     facts, drafts, formulas, targetAssignments, rolePlans);
+            if (humanBaseline != null)
+                for (int pawnIndex = 0; pawnIndex < pawnCount; pawnIndex++)
+                    for (int roleIndex = 0; roleIndex < drafts[pawnIndex].RoleCount; roleIndex++)
+                    {
+                        int id = drafts[pawnIndex].RoleAt(roleIndex);
+                        if (drafts[pawnIndex].RetainedLearning(id)
+                            && humanBaseline.TryGetExplanation(pawnIndex, id, out var learning))
+                            explanations[pawnIndex][id] = learning.PreserveLearning();
+                    }
             SubstituteComposites(facts, rolesByPawn, explanations);
             KeepIncapacitatedAssignments(facts, rolesByPawn, pathsByPawn,
                 activatedPathCountsByPawn, explanations);

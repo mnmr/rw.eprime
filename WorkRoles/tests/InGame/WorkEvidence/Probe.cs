@@ -56,7 +56,15 @@ namespace WorkRolesWorkEvidenceVerification
         private static XElement Rows(RecommendationPlan plan, List<Pawn> pawns, string name) => new XElement(name,
             pawns.Select((pawn, p) => new XElement("pawn", new XAttribute("id", pawn.ThingID), new XAttribute("name", pawn.LabelShort),
                 new XAttribute("roles", string.Join(",", Enumerable.Range(0, plan.RoleCountAt(p)).Select(i => plan.RoleAt(p, i)))),
-                new XAttribute("paths", string.Join(",", Enumerable.Range(0, plan.PathCountAt(p)).Select(i => plan.PathAt(p, i)))))));
+                new XAttribute("paths", string.Join(",", Enumerable.Range(0, plan.PathCountAt(p)).Where(i => plan.PathActivatedAt(p, i)).Select(i => plan.PathAt(p, i)))),
+                new XAttribute("allPaths", string.Join(",", Enumerable.Range(0, plan.PathCountAt(p)).Select(i => plan.PathAt(p, i)))),
+                Enumerable.Range(0, plan.PathCountAt(p)).Select(i => new XElement("path",
+                    new XAttribute("id", plan.PathAt(p, i)), new XAttribute("activated", plan.PathActivatedAt(p, i)))))));
+
+        private static XElement FixTargets(ColonyView colony, RecommendationPlan plan, List<Pawn> pawns, string name) => new XElement(name,
+            ColonyFixPlanner.Build(colony, plan).Select(target => new XElement("pawn",
+                new XAttribute("id", pawns[target.PawnIndex].ThingID), new XAttribute("name", pawns[target.PawnIndex].LabelShort),
+                new XAttribute("roles", string.Join(",", target.RoleIds)), new XAttribute("changed", target.Changed))));
 
         private static XElement Dump(string name, object value)
         {
@@ -81,17 +89,33 @@ namespace WorkRolesWorkEvidenceVerification
 
         private static void CaptureColony()
         {
-            List<Pawn> pawns = Find.CurrentMap.mapPawns.FreeColonistsSpawned.ToList();
+            Assembly gameAssembly = typeof(RecsAdapter).Assembly;
+            List<Pawn> pawns = (List<Pawn>)Call(gameAssembly.GetType("WorkRoles.UI.ColonistRecommendationState"), "MapColonists", Find.CurrentMap);
+            List<Pawn> simulationPawns = (List<Pawn>)Call(gameAssembly.GetType("WorkRoles.AutoOptimizer"), "SimulationColonists", Find.CurrentMap);
+            Assert(pawns.Select(pawn => pawn.ThingID).SequenceEqual(simulationPawns.Select(pawn => pawn.ThingID)),
+                "Fix My Colony and Auto-optimize use the same exact ordered pawn cohort");
             RoleStore store = RoleStore.Current;
             ColonyView colony = RecsAdapter.BuildColonyView(store, pawns);
-            var document = new XElement("capture", new XAttribute("game", VersionControl.CurrentVersionString), Dump("colony", colony), Dump("tuning", store.recommendationTuning), Rows(RecommendationPlan.Build(colony, store.recommendationTuning), pawns, "actual"));
+            RecommendationPlan actual = RecommendationPlan.Build(colony, store.recommendationTuning);
+            var document = new XElement("capture", new XAttribute("game", VersionControl.CurrentVersionString),
+                new XAttribute("cohortSource", "ColonistRecommendationState.MapColonists"), new XAttribute("simulationCohortMatches", true),
+                Dump("colony", colony), Dump("tuning", store.recommendationTuning),
+                new XElement("tuningOptions", RecommendationsTuningOptions.Descriptors.Select(descriptor => new XElement("option",
+                    new XAttribute("name", descriptor.Option), new XAttribute("key", descriptor.StableKey),
+                    new XAttribute("value", store.recommendationTuning.Get(descriptor.Option))))),
+                new XElement("roleLabels", store.roles.Select(role => new XElement("role", new XAttribute("id", role.id),
+                    new XAttribute("label", role.label), new XAttribute("displayLabel",
+                        typeof(Role).GetProperty("DisplayLabel", All)?.GetValue(role, null) ?? role.label)))),
+                Rows(actual, pawns, "actual"), FixTargets(colony, actual, pawns, "actualFixTargets"));
             FieldInfo evidence = typeof(PawnView).GetField("WorkEvidence");
             if (evidence != null)
             {
                 object empty = evidence.FieldType.GetField("Empty").GetValue(null);
                 foreach (PawnView pawn in colony.Pawns) evidence.SetValue(pawn, empty);
             }
-            document.Add(Rows(RecommendationPlan.Build(colony, store.recommendationTuning), pawns, "emptyEvidence"));
+            RecommendationPlan emptyEvidence = RecommendationPlan.Build(colony, store.recommendationTuning);
+            document.Add(Rows(emptyEvidence, pawns, "emptyEvidence"),
+                FixTargets(colony, emptyEvidence, pawns, "emptyEvidenceFixTargets"));
             document.Save(Path.Combine(Root, "work-evidence-colony.xml"));
             Assert(pawns.Count == 27, "captured all 27 Fisso-NAM pawns, saved role/tuning inputs and ordered results");
         }

@@ -6,15 +6,15 @@
   <QJ_QualityPanelTitle>Quality Jobs</QJ_QualityPanelTitle>
   <QJ_ManageBill>管理此生产清单</QJ_ManageBill>
   <QJ_FinisherSkill>收尾等级：{0}</QJ_FinisherSkill>
-  <QJ_FinisherSkillTip>只有技能达到此等级的殖民者才能完成最后工序。此前的制作可由任何人进行。</QJ_FinisherSkillTip>
+  <QJ_FinisherSkillTip>只有技能达到此等级的工作者才能完成最后工序。其他符合条件的工作者可进行此前的制作。</QJ_FinisherSkillTip>
   <QJ_AutoBest>自动调整收尾技能要求</QJ_AutoBest>
-  <QJ_AutoBestTip>勾选：仅允许殖民地中技能最高的合适人选完成最后工序，技能要求会自动跟随该殖民者调整。比较时，暂时离开、倒地或忙碌的殖民者仍视为可用。\n\n不勾选：任何达到手动设置的收尾技能要求的殖民者都可完成最后工序。</QJ_AutoBestTip>
+  <QJ_AutoBestTip>勾选：仅允许殖民地中最佳的可用收尾者完成此工作，技能要求会自动跟随该工作者调整。比较时，暂时离开、倒地或忙碌的工作者仍视为可用。\n\n不勾选：任何符合条件且达到手动设置的收尾技能要求的工作者都可完成此工作。</QJ_AutoBestTip>
   <QJ_AutoBestCurrent>当前：{0}</QJ_AutoBestCurrent>
-  <QJ_AutoBestNone>无符合条件的殖民者</QJ_AutoBestNone>
+  <QJ_AutoBestNone>无符合条件的工作者</QJ_AutoBestNone>
   <QJ_MigrationTitle>现有品质生产清单</QJ_MigrationTitle>
   <QJ_MigrationBody>Quality Jobs 找到了 {0} 项现有的品质生产清单。它们仍未纳入管理，以保持当前行为。无论选择哪种方式，都可共享未完成品。</QJ_MigrationBody>
   <QJ_MigrationEnableExisting>为现有品质物品生产清单启用 Quality Jobs？</QJ_MigrationEnableExisting>
-  <QJ_MigrationEnableExistingTip>勾选：现有清单使用 Quality Jobs，并启用自动调整收尾技能。由殖民地中技能最高的合适人选完成最后工序，暂时无法工作的殖民者也计入比较。不要求创造灵感或生产专家，低品质成品也不会触发重做。\n\n不勾选：现有清单保留原版完成方式。不影响未完成品共享。</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationEnableExistingTip>勾选：现有清单使用 Quality Jobs，并启用自动调整收尾技能。由殖民地中最佳的合适工作者完成最后工序，暂时无法工作的工作者也计入比较。不要求创作灵感或生产专家，低品质成品也不会触发重做。\n\n不勾选：现有清单保留原版完成方式。不影响未完成品共享。</QJ_MigrationEnableExistingTip>
   <QJ_MigrationContinue>继续</QJ_MigrationContinue>
   <QJ_RequireInspired>要求创造灵感</QJ_RequireInspired>
   <QJ_RequireSpecialist>要求生产专家</QJ_RequireSpecialist>
@@ -26,11 +26,11 @@
   <QJ_StatusQueueTip>未完成：共享池中任何获准工匠都能继续制作的物品。等待中：已暂停、需要符合要求的角色收尾的物品。收尾中：已分配给收尾者的物品。</QJ_StatusQueueTip>
   <QJ_StatusFinishers>符合收尾条件的人选：{0}</QJ_StatusFinishers>
   <QJ_StatusFinishersNone>符合收尾条件的人选：无</QJ_StatusFinishersNone>
-  <QJ_StatusFinishersTip>此地图上当前符合收尾条件的殖民者，最佳人选列在最前。必须启用所需工作类型，并满足上方收尾要求。\n\n倒地、精神崩溃或不在此地图的殖民者不计入。</QJ_StatusFinishersTip>
+  <QJ_StatusFinishersTip>此地图上当前符合收尾条件的工作者，最佳人选列在最前。必须能够执行所需工作类型，并满足上方收尾要求。\n\n倒地、精神崩溃或不在此地图的工作者不计入。</QJ_StatusFinishersTip>
   <QJ_StatusStalled>等待中的物品没有合适的收尾者</QJ_StatusStalled>
-  <QJ_StatusStalledTip>有未完成品在等待，但当前没有殖民者满足收尾条件，因此不会生成收尾工作。\n\n请检查技能、灵感和专精要求，以及预期收尾者是否已启用相应工作且位于此地图。停滞期间，库存上限也可能阻止开始制作新物品。</QJ_StatusStalledTip>
+  <QJ_StatusStalledTip>有未完成品在等待，但当前没有工作者满足收尾条件，因此不会生成收尾工作。\n\n请检查收尾技能要求、灵感和专家要求，以及预定的收尾者能否执行相应工作且位于此地图。停滞期间，库存上限也可能阻止开始制作新物品。</QJ_StatusStalledTip>
   <QJ_StatusStalledConstruction>没有合适的收尾者——施工已停滞</QJ_StatusStalledConstruction>
-  <QJ_StatusStalledConstructionTip>建筑已暂停，等待最后工序，但当前没有殖民者符合条件，因此无法完工。\n\n请检查技能、灵感和专精要求，以及预期建筑工是否已启用建造工作且位于此地图。</QJ_StatusStalledConstructionTip>
+  <QJ_StatusStalledConstructionTip>建筑已暂停，等待最后工序，但当前没有工作者符合条件，因此无法完工。\n\n请检查收尾技能要求、灵感和专家要求，以及预定的建筑工能否执行建造工作且位于此地图。</QJ_StatusStalledConstructionTip>
   <QJ_OddsHeader>品质概率</QJ_OddsHeader>
   <QJ_NormalOrWorse>一般及以下</QJ_NormalOrWorse>
   <QJ_OddsColConfig>配置</QJ_OddsColConfig>
@@ -44,11 +44,11 @@
   <QJ_SettingsManageNewConstructionTip>勾选：新增品质建筑自动按本列选项管理。可通过“品质工作”按钮单独配置或取消管理。\n\n不勾选：新建筑使用原版行为，除非单独启用。</QJ_SettingsManageNewConstructionTip>
   <QJ_RequireInspiredTip>勾选：仅有创造灵感的殖民者可以完成最后工序；其他工作者可进行此前工作。完工时会消耗灵感，与原版相同。\n\n不勾选：不要求创造灵感。</QJ_RequireInspiredTip>
   <QJ_RequireSpecialistTip>勾选：只有理念职位提供生产品质加成的殖民者才能完成最后工序；其他工作者可进行此前工作。\n\n不勾选：不要求生产专家职位。</QJ_RequireSpecialistTip>
-  <QJ_SettingsFinisherSkillTip>只有技能达到此等级的殖民者才能完成最后工序；其他工作者可进行此前工作。\n\n启用自动调整收尾技能后，此值保留为手动默认值，但不用于判定。</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsFinisherSkillTip>只有技能达到此等级的工作者才能完成最后工序；其他符合条件的工作者可进行此前工作。\n\n启用自动调整收尾技能后，此值保留为手动默认值，但不用于判定。</QJ_SettingsFinisherSkillTip>
   <QJ_SettingsShareWork>共享未完成品</QJ_SettingsShareWork>
   <QJ_SettingsShareWorkTip>勾选：解除未完成品的制作者限制，任何合格工作者都可接续他人的工作。\n\n不勾选：保持原版行为，未完成品仍绑定最初制作者。</QJ_SettingsShareWorkTip>
   <QJ_SettingsHighPriorityFinish>提高收尾工作优先级</QJ_SettingsHighPriorityFinish>
-  <QJ_SettingsHighPriorityFinishTip>勾选：被选中收尾的殖民者下次寻找工作时，会优先进行收尾，仅灭火、医疗、救援和卧床休息优先于它。不会中断当前工作。\n\n不勾选：收尾是所属工作类型内的首要任务，但该殖民者排序更靠前的其他工作类型仍优先。</QJ_SettingsHighPriorityFinishTip>
+  <QJ_SettingsHighPriorityFinishTip>勾选：被选中收尾的工作者下次寻找工作时，会优先进行收尾，仅灭火、医疗、救援和卧床休息优先于它。不会中断当前工作。\n\n不勾选：收尾是所属工作类型内的首要任务，但该工作者排序更靠前的其他工作类型仍优先。</QJ_SettingsHighPriorityFinishTip>
   <QJ_SettingsDefaultCap>默认未完成品库存上限：{0}</QJ_SettingsDefaultCap>
   <QJ_SettingsDefaultCapTip>设置每种产品未完成品的默认数量上限。生产同一物品的所有清单共用此上限。\n\n达到上限后不再开始制作新物品，已开始的仍可完成。0 表示无限制。</QJ_SettingsDefaultCapTip>
   <QJ_SettingsUnlimitedHint>0 = 无限制</QJ_SettingsUnlimitedHint>
@@ -77,7 +77,7 @@
   <QJ_FinishGiverVerb>完成</QJ_FinishGiverVerb>
   <QJ_FinishGiverGerund>正在完成品质工作</QJ_FinishGiverGerund>
   <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
-  <QJ_WelcomeBody>Quality Jobs 让任何殖民者都能加工未完成物品或建筑，但只有满足你所设要求的人才能完成最后工序，因为品质完全取决于收尾者。它适用于生产清单和建筑施工。</QJ_WelcomeBody>
+  <QJ_WelcomeBody>Quality Jobs 让符合条件的工作者分担物品制作或建筑施工的工作。只有满足你所设要求的工作者才能完成最后工序，因为品质取决于收尾者。它适用于生产清单和建筑施工。</QJ_WelcomeBody>
   <QJ_WelcomeFind>点击屏幕右下角显示开关旁的此按钮，可打开 Quality Jobs 设置。品质物品的生产清单窗口中有 Quality Jobs 区域；选中品质建筑的蓝图或施工框架时，会显示“品质工作”按钮。</QJ_WelcomeFind>
   <QJ_WelcomeTakeMeThere>立即打开</QJ_WelcomeTakeMeThere>
   <QJ_CompatibilityFinishIt>对已被 Quality Jobs 从加工清单中分离的未成品使用 Finish it! 时，可能会失败。</QJ_CompatibilityFinishIt>
@@ -91,4 +91,6 @@
   <QJ_HelpReload>重新加载</QJ_HelpReload>
   <QJ_TabHelp>帮助</QJ_TabHelp>
   <QJ_TabOptions>设置</QJ_TabOptions>
+  <QJ_SettingsAllowRobotPreparation>允许机械族和机器人参与品质工作</QJ_SettingsAllowRobotPreparation>
+  <QJ_SettingsAllowRobotPreparationTip>允许机械族和受支持的机器人参与受管理的制作与建造工作。关闭后，这些工作及其技能经验将留给殖民者，同时也会停止它们正在进行的受管理工作。符合条件的机械族和机器人仍可完成 Quality Jobs 分配的收尾工作。普通的未受管理工作不受影响。</QJ_SettingsAllowRobotPreparationTip>
 </LanguageData>

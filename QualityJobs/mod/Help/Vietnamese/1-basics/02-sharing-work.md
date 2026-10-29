@@ -13,6 +13,9 @@ Vật phẩm dở dang đang không được làm sẽ được tách khỏi ng�
 <!-- l10n:reserved -->
 Chia sẻ các công đoạn đầu khác với dành riêng công đoạn hoàn thiện. Sản phẩm được quản lý và tạm dừng ngay trước khi hoàn tất sẽ hiển thị **Tác giả: dành riêng (Quality Jobs)**. Sản phẩm sẽ chờ [người hoàn thiện đủ điều kiện](topic:finishers); người lao động thông thường không thể hoàn tất sản phẩm qua tính năng chia sẻ.
 
+<!-- l10n:robot-work -->
+Khi **{k:QJ_SettingsAllowRobotPreparation}** bị tắt, công việc trên vật phẩm dở dang được chia sẻ vẫn dành cho cư dân chừng nào lệnh gốc còn tồn tại và được quản lý. Nhận vật phẩm qua một lệnh không được quản lý cũng không cho phép mech hoặc robot tiếp quản công việc đó. Mech và robot đủ điều kiện vẫn có thể thực hiện các nhiệm vụ hoàn thiện do Quality Jobs phân công.
+
 <!-- l10n:off -->
 Tắt chia sẻ để trả công việc đã chia sẻ về chế độ sở hữu thông thường. Các yêu cầu sản xuất được quản lý vẫn có thể dành riêng công đoạn hoàn thiện. Tắt **{k:QJ_ManageBill}** sẽ giải phóng các sản phẩm đang chờ người hoàn thiện đạt yêu cầu chất lượng của yêu cầu đó; thao tác này không tắt chia sẻ cho cả thuộc địa.
 

@@ -18,6 +18,9 @@ namespace WorkRoles
         {
             public List<WorkGiver> Normal = null!;    // set by Build
             public List<WorkGiver> Emergency = null!; // set by Build
+            // Misc. Robots has a single work node. Built with the same entry
+            // and invalidation contract; emergency work precedes normal work.
+            public List<WorkGiver> Combined = null!;
             /// Role ids whose assignment, global toggle and runtime rules all
             /// passed when this pawn snapshot was compiled.
             public int[] ActiveRoleIds = null!;
@@ -52,7 +55,8 @@ namespace WorkRoles
         private static readonly Func<Pawn, bool> PawnIsManaged =
             pawn => RoleStore.Current?.IsManaged(pawn) == true;
         private static readonly Func<Pawn, Map?, bool> PawnBelongsToMap =
-            (pawn, map) => pawn.MapHeld == map;
+            (pawn, map) => ColonyScope.MapOf(pawn) == map;
+        private static readonly Func<Pawn, Pawn, bool> SamePawn = (left, right) => ReferenceEquals(left, right);
         private static readonly Action<Pawn> PublishRuntime = UiVersion.RuntimeChanged;
         private static readonly Action<Pawn> InvalidateTimedOrders = pawn =>
         {
@@ -101,7 +105,7 @@ namespace WorkRoles
                 {
                     var pawn = pair.Key;
                     var assignments = pair.Value?.assignments;
-                    if (pawn?.MapHeld != map || assignments == null) continue;
+                    if (pawn == null || ColonyScope.MapOf(pawn) != map || assignments == null) continue;
 
                     for (int i = 0; i < assignments.Count; i++)
                     {
@@ -341,7 +345,7 @@ namespace WorkRoles
             }
             else
                 foreach (var pair in store.pawnSets)
-                    if (pair.Key != null && pair.Key.MapHeld == map)
+                    if (pair.Key != null && ColonyScope.MapOf(pair.Key) == map)
                         AddTimedAssignments(store, pair.Key, pair.Value, assignments);
             return TimedRoleInvalidationPlanner.Plan(roleSources, assignments);
         }
@@ -428,6 +432,8 @@ namespace WorkRoles
 
         /// Returned lists are owned by the cache — callers must never mutate them.
         public static List<WorkGiver> NormalFor(Pawn pawn) => For(pawn).Normal;
+        public static List<WorkGiver> CombinedFor(Pawn pawn) => For(pawn).Combined;
+        internal static IReadOnlyList<int> ActiveRolesFor(Pawn pawn) => For(pawn).ActiveRoleIds;
         public static List<WorkGiver> EmergencyFor(Pawn pawn) => For(pawn).Emergency;
 
         public static int PriorityFor(Pawn pawn, WorkTypeDef workType)
@@ -512,7 +518,11 @@ namespace WorkRoles
         }
 
         /// Cache-only eviction for lifecycle code that owns its own UI bump.
-        internal static void RemoveCached(Pawn pawn) => cache.Remove(pawn);
+        internal static void RemoveCached(Pawn pawn)
+        {
+            cache.Remove(pawn);
+            if (pendingReconciles.Count != 0) pendingReconciles.Drain(pawn, SamePawn);
+        }
 
         private static AccessTools.FieldRef<Pawn_WorkSettings, DefMap<WorkTypeDef, int>>?
             vanillaPriorities;
@@ -524,6 +534,9 @@ namespace WorkRoles
         /// pawns and its side effects (job interruption on 0) must not fire here.
         private static void SyncVanillaFallback(Pawn pawn, Entry entry)
         {
+            // Mechanical support is optional. Keep the native scheduler's
+            // authored settings intact so disabling support restores them.
+            if (MechanicalWorkers.IsMechanical(pawn)) return;
             // An unmanaged pawn's real vanilla priorities ARE its work settings —
             // mirroring the (empty) projection over them would zero them.
             if (RoleStore.Current?.IsManaged(pawn) != true) return;
@@ -658,6 +671,7 @@ namespace WorkRoles
         {
             var def = GameJobCatalog.Instance.GiverDef(giverDefName);
             return def != null
+                && MechanicalWorkers.CanDo(pawn, def)
                 && !pawn.WorkTypeIsDisabled(def.workType)
                 && !pawn.WorkTagIsDisabled(def.workTags);
         }
@@ -749,6 +763,13 @@ namespace WorkRoles
                 entry.Normal.Add(GameJobCatalog.Instance.GiverDef(giver).Worker);
             foreach (string giver in compiled.Emergency)
                 entry.Emergency.Add(GameJobCatalog.Instance.GiverDef(giver).Worker);
+            if (MiscRobotSupport.IsRobot(pawn))
+            {
+                entry.Combined = new List<WorkGiver>(entry.Emergency.Count + entry.Normal.Count);
+                entry.Combined.AddRange(entry.Emergency);
+                entry.Combined.AddRange(entry.Normal);
+            }
+            else entry.Combined = entry.Normal;
             foreach (var pair in compiled.WorkTypePriorities)
             {
                 int index = DefDatabase<WorkTypeDef>.GetNamed(pair.Key).index;

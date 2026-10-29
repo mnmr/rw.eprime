@@ -23,26 +23,21 @@ namespace QualityJobs
         private static readonly List<Pawn> poolPawnBuffer = new List<Pawn>(64);
 
         /// <summary>Fills poolBuffer/poolPawnBuffer with the colony-wide auto-best
-        /// pool: free colonists on all maps, caravans, and travelling transporters.
+        /// pool: colony workers on all maps, caravans, and travelling transporters,
+        /// including supported robots stored in their recharge stations.
         /// Downed/mental/asleep/off-map pawns are INCLUDED (temporary
         /// unavailability must not lower the bar); dead are excluded (defensively
-        /// — the property is already alive-filtered); mechs are never pool
-        /// members (spec §2.2 — FreeColonists excludes them).
+        /// — the property is already alive-filtered).
         /// Capability (work type, recipe skill requirements) travels as facts
         /// flags and is filtered in Core. recipe == null builds construction
         /// facts.</summary>
         private static void BuildAutoPool(RecipeDef? recipe, WorkTypeDef? workType)
         {
             poolBuffer.Clear();
-            poolPawnBuffer.Clear();
-            List<Pawn> all = PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive_FreeColonists;
-            for (int i = 0; i < all.Count; i++)
-            {
-                Pawn p = all[i];
-                if (p.Dead) continue;
-                poolBuffer.Add(recipe != null ? FactsFor(p, recipe, workType) : ConstructionFactsFor(p));
-                poolPawnBuffer.Add(p);
-            }
+            WorkerCapabilities.CollectColonyWorkers(poolPawnBuffer);
+            for (int i = 0; i < poolPawnBuffer.Count; i++)
+                poolBuffer.Add(recipe != null ? FactsFor(poolPawnBuffer[i], recipe, workType)
+                    : ConstructionFactsFor(poolPawnBuffer[i]));
         }
 
         private static void ClearAutoPool()
@@ -172,12 +167,12 @@ namespace QualityJobs
         {
             candidateBuffer.Clear();
             pawnBuffer.Clear();
-            List<Pawn> colonists = map.mapPawns.FreeColonistsSpawned;
+            var colonists = map.mapPawns.AllPawnsSpawned;
             WorkTypeDef? workType = WorkTypeForRecipe(recipe);
             for (int i = 0; i < colonists.Count; i++)
             {
                 Pawn p = colonists[i];
-                if (p.Dead || p.Downed || p.InMentalState) continue;
+                if (!WorkerCapabilities.Available(p)) continue;
                 pawnBuffer.Add(p);
                 candidateBuffer.Add(FactsFor(p, recipe, workType));
             }
@@ -209,8 +204,7 @@ namespace QualityJobs
         {
             int skill = ConstructionSkillOf(p);
             bool inspired = p.InspirationDef == InspirationDefOf.Inspired_Creativity;
-            bool workEnabled = p.workSettings != null
-                && p.workSettings.WorkIsActive(WorkTypeDefOf.Construction);
+            bool workEnabled = WorkerCapabilities.CanConstruct(p);
             return new CandidateFacts(p.thingIDNumber, skill, inspired, RoleOffsetOf(p),
                 workEnabled, meetsRecipeSkillRequirements: true,
                 XpMilliOf(p, SkillDefOf.Construction),
@@ -224,11 +218,11 @@ namespace QualityJobs
         {
             candidateBuffer.Clear();
             pawnBuffer.Clear();
-            List<Pawn> colonists = map.mapPawns.FreeColonistsSpawned;
+            var colonists = map.mapPawns.AllPawnsSpawned;
             for (int i = 0; i < colonists.Count; i++)
             {
                 Pawn p = colonists[i];
-                if (p.Dead || p.Downed || p.InMentalState) continue;
+                if (!WorkerCapabilities.Available(p)) continue;
                 pawnBuffer.Add(p);
                 candidateBuffer.Add(ConstructionFactsFor(p));
             }
@@ -260,7 +254,7 @@ namespace QualityJobs
         {
             if (!(plan.target is Frame frame) || !frame.Spawned) return true;
             Pawn? f = plan.finisher;
-            if (f == null || f.Dead || f.Destroyed || !f.Spawned || f.Downed) return true;
+            if (f == null || !WorkerCapabilities.Available(f) || f.Map != frame.Map) return true;
             CandidateFacts facts = ConstructionFactsFor(f);
             if (!facts.WorkTypeEnabled) return true;
             if (plan.autoBest)
@@ -281,8 +275,7 @@ namespace QualityJobs
             int skill = SkillOf(p, recipe);
             bool inspired = p.InspirationDef == InspirationDefOf.Inspired_Creativity;
             int roleOffset = RoleOffsetOf(p);
-            bool workEnabled = workType == null
-                || (p.workSettings != null && p.workSettings.WorkIsActive(workType));
+            bool workEnabled = WorkerCapabilities.CanCraft(p, recipe);
             bool meetsSkill = recipe.PawnSatisfiesSkillRequirements(p);
             return new CandidateFacts(p.thingIDNumber, skill, inspired, roleOffset,
                 workEnabled, meetsSkill, XpMilliOf(p, recipe.workSkill),
@@ -322,56 +315,13 @@ namespace QualityJobs
             return (int)(frac * 1000f);
         }
 
-        /// Same resolution as vanilla BoundWorker (Bill_ProductionWithUft.cs:36-53):
-        /// the work type of the first work giver whose fixedBillGiverDefs cover
-        /// benches for this recipe.
-        ///
-        /// Memo cache — Owner: process (def-derived only). Key: RecipeDef identity.
-        /// Value: WorkGiverDef? (nullable; null = no bench giver found). The def is
-        /// externally owned; its current workType is read when requested. Dependencies:
-        /// def database contents (stable after startup; ManagedRecipes.Invalidate()
-        /// calls InvalidateWorkTypeCache() to clear this when a definition reload
-        /// occurs). Refresh: lazy on first call per recipe; cleared by
-        /// InvalidateWorkTypeCache(). Equality: n/a (single value per key).
-        /// Teardown/reset: InvalidateWorkTypeCache clears all def references.
-        /// Cache hits are plain Dictionary lookups — no allocation.
-        private static readonly Dictionary<RecipeDef, WorkGiverDef?> s_workTypeCache =
-            new Dictionary<RecipeDef, WorkGiverDef?>();
-
-        /// Clears the recipe→workType memo cache. Called by ManagedRecipes.Invalidate()
-        /// after a definition reload so both caches stay coherent.
-        public static void InvalidateWorkTypeCache() => s_workTypeCache.Clear();
+        // Retain the existing public helpers while capability resolution is
+        // owned by WorkerCapabilities rather than the dispatcher.
+        public static void InvalidateWorkTypeCache()
+            => WorkerCapabilities.InvalidateWorkTypeCache();
 
         public static WorkTypeDef? WorkTypeForRecipe(RecipeDef recipe)
-            => WorkGiverForRecipe(recipe)?.workType;
-
-        internal static WorkGiverDef? WorkGiverForRecipe(RecipeDef recipe)
-        {
-            // Runtime clones (unresolved defNameHash) would all collide on one
-            // key and miss ThingDef.recipes benches; resolve to the registered def.
-            recipe = ManagedRecipes.Registered(recipe) ?? recipe;
-            if (s_workTypeCache.TryGetValue(recipe, out WorkGiverDef? cached))
-                return cached;
-            WorkGiverDef? result = ResolveWorkGiver(recipe,
-                DefDatabase<WorkGiverDef>.AllDefsListForReading);
-            s_workTypeCache[recipe] = result;
-            return result;
-        }
-
-        /// Unmemoized resolution: the first giver whose fixedBillGiverDefs cover
-        /// a bench for this recipe. Finisher work-giver generation calls it at
-        /// PreResolve, where the memo above must not be filled yet (other mods'
-        /// defs are still loading) and ManagedRecipes must not be touched.
-        internal static WorkGiverDef? ResolveWorkGiver(RecipeDef recipe,
-            List<WorkGiverDef> givers)
-        {
-            foreach (ThingDef benchDef in recipe.AllRecipeUsers)
-                for (int i = 0; i < givers.Count; i++)
-                    if (givers[i].fixedBillGiverDefs != null
-                        && givers[i].fixedBillGiverDefs.Contains(benchDef))
-                        return givers[i];
-            return null;
-        }
+            => WorkerCapabilities.WorkTypeForRecipe(recipe);
 
         // ---- config, revert, completion ---------------------------------------
 
@@ -438,11 +388,11 @@ namespace QualityJobs
             BuildAutoPool(recipe, workType);
             candidateBuffer.Clear();
             pawnBuffer.Clear();
-            List<Pawn> colonists = map.mapPawns.FreeColonistsSpawned;
+            var colonists = map.mapPawns.AllPawnsSpawned;
             for (int i = 0; i < colonists.Count; i++)
             {
                 Pawn p = colonists[i];
-                if (p.Dead || p.Downed || p.InMentalState) continue;
+                if (!WorkerCapabilities.Available(p)) continue;
                 pawnBuffer.Add(p);
                 candidateBuffer.Add(recipe != null
                     ? FactsFor(p, recipe, workType) : ConstructionFactsFor(p));
@@ -475,11 +425,11 @@ namespace QualityJobs
             pawnBuffer.Clear();
             eligibleBuffer.Clear();
             WorkTypeDef? workType = recipe != null ? WorkTypeForRecipe(recipe) : null;
-            List<Pawn> colonists = map.mapPawns.FreeColonistsSpawned;
+            var colonists = map.mapPawns.AllPawnsSpawned;
             for (int i = 0; i < colonists.Count; i++)
             {
                 Pawn p = colonists[i];
-                if (p.Dead || p.Downed || p.InMentalState) continue;
+                if (!WorkerCapabilities.Available(p)) continue;
                 pawnBuffer.Add(p);
                 candidateBuffer.Add(recipe != null
                     ? FactsFor(p, recipe, workType) : ConstructionFactsFor(p));
@@ -573,8 +523,7 @@ namespace QualityJobs
         {
             UnfinishedThing? uft = e.uft;
             Pawn? finisher = e.finisher;
-            bool finisherAvailable = finisher != null && !finisher.Dead
-                && !finisher.Destroyed && finisher.Spawned && !finisher.Downed;
+            bool finisherAvailable = finisher != null && WorkerCapabilities.Available(finisher);
             bool itemOnFinisherMap = uft != null && !uft.Destroyed
                 && finisherAvailable && uft.MapHeld == finisher!.Map;
             bool finishBillAlive = e.finishBill != null
@@ -595,7 +544,7 @@ namespace QualityJobs
             ResumeCondition condition = ConditionFor(store, e);
             WorkTypeDef? workType = WorkTypeForRecipe(recipe);
             CandidateFacts facts = FactsFor(finisher, recipe, workType);
-            if (!facts.WorkTypeEnabled) return false;
+            if (!facts.WorkTypeEnabled || !facts.MeetsRecipeSkillRequirements) return false;
             if (!AutoBestFor(store, e)) return condition.IsSatisfiedBy(facts);
             // Auto spec §2.4: revert when the dispatched finisher is no longer
             // colony-wide top (someone surpassed them mid-walk).

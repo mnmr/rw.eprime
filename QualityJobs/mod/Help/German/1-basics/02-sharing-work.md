@@ -13,6 +13,9 @@ Ein Gegenstand, an dem gerade niemand arbeitet, wird von seinem ursprünglichen 
 <!-- l10n:reserved -->
 Das Teilen früher Arbeitsschritte unterscheidet sich vom Reservieren des letzten Arbeitsschritts. Bei einem verwalteten Gegenstand, dessen Bearbeitung kurz vor Abschluss pausiert, steht **Autor: reserviert (Quality Jobs)**. Er wartet auf einen [geeigneten Fertigsteller](topic:finishers); ein gewöhnlicher Arbeiter kann ihn auch durch Teilen nicht fertigstellen.
 
+<!-- l10n:robot-work -->
+Wenn **{k:QJ_SettingsAllowRobotPreparation}** deaktiviert ist, bleibt ein geteilter unfertiger Gegenstand für die Bearbeitung durch Kolonisten reserviert, solange sein ursprünglicher Auftrag noch besteht und verwaltet wird. Auch über einen nicht verwalteten Auftrag kann kein Mech oder Roboter diese Arbeit übernehmen. Geeignete Mechs und Roboter können weiterhin Fertigstellungsaufträge von Quality Jobs ausführen.
+
 <!-- l10n:off -->
 Deaktiviere das Teilen, um geteilte Arbeiten wieder einzelnen Arbeitern zuzuordnen. Verwaltete Aufträge können den letzten Arbeitsschritt weiterhin reservieren. Wenn du **{k:QJ_ManageBill}** deaktivierst, werden die auf einen geeigneten Fertigsteller wartenden Arbeiten dieses Auftrags freigegeben. Das Teilen bleibt für die Kolonie aktiviert.
 

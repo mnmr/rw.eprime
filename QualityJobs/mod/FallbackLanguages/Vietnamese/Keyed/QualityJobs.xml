@@ -4,8 +4,8 @@
   <QJ_AtStockCap>đã chạm giới hạn đồ dở dang</QJ_AtStockCap>
   <QJ_AutoBest>Tự chỉnh cấp người hoàn thiện</QJ_AutoBest>
   <QJ_AutoBestCurrent>Hiện tại: {0}</QJ_AutoBestCurrent>
-  <QJ_AutoBestNone>Không có cư dân đủ điều kiện</QJ_AutoBestNone>
-  <QJ_AutoBestTip>Bật: Chỉ người hoàn thiện giỏi nhất hiện có trong khu định cư được hoàn thành việc này; yêu cầu kỹ năng tự thay đổi theo người đó. Người vắng mặt, gục ngã hoặc đang bận vẫn được tính là hiện có khi so sánh.\n\nTắt: Bất kỳ cư dân nào đạt cấp hoàn thiện bạn đặt đều có thể hoàn thành.</QJ_AutoBestTip>
+  <QJ_AutoBestNone>Không có người lao động đủ điều kiện</QJ_AutoBestNone>
+  <QJ_AutoBestTip>Bật: Chỉ người hoàn thiện giỏi nhất hiện có trong khu định cư được hoàn thành việc này; yêu cầu kỹ năng tự thay đổi theo người đó. Người vắng mặt, gục ngã hoặc đang bận vẫn được tính là hiện có khi so sánh.\n\nTắt: Bất kỳ người lao động đủ điều kiện nào đạt cấp kỹ năng hoàn thiện bạn đặt đều có thể hoàn thành.</QJ_AutoBestTip>
   <QJ_BillTargetQualityTip>Khi thành phẩm có chất lượng dưới mức này, số lượng lệnh tăng thêm một để sản xuất đồ thay thế. Vật phẩm vẫn được giữ lại.\n\nChỉ áp dụng cho lệnh làm số lượng cố định; các chế độ lặp khác tự quyết định khi nào dừng.</QJ_BillTargetQualityTip>
   <QJ_Clear>Xóa</QJ_Clear>
   <QJ_CompatibilityFinishIt>Finish it! có thể lỗi khi dùng với đồ dở dang đã được Quality Jobs tách khỏi lệnh.</QJ_CompatibilityFinishIt>
@@ -21,7 +21,7 @@
   <QJ_FinishGiverLabel>hoàn thiện đồ chất lượng</QJ_FinishGiverLabel>
   <QJ_FinishGiverVerb>hoàn thiện</QJ_FinishGiverVerb>
   <QJ_FinisherSkill>Cấp hoàn thiện: {0}</QJ_FinisherSkill>
-  <QJ_FinisherSkillTip>Chỉ cư dân đạt cấp kỹ năng này trở lên được hoàn thành. Bất kỳ người lao động nào cũng có thể làm phần chế tạo trước đó.</QJ_FinisherSkillTip>
+  <QJ_FinisherSkillTip>Chỉ người lao động đạt cấp kỹ năng này trở lên được hoàn thiện công việc. Những người lao động đủ điều kiện khác có thể làm phần chế tạo trước đó.</QJ_FinisherSkillTip>
   <QJ_GizmoManageDesc>Quản lý công trình này bằng Quality Jobs: hoãn hoàn thành đến khi có thợ xây đủ điều kiện, và có thể xây lại đến khi đạt chất lượng mục tiêu.\n\nNhấp trái để bật/tắt. Khi bật sẽ áp dụng mặc định xây dựng của bạn. Nhấp phải để cấu hình.</QJ_GizmoManageDesc>
   <QJ_GizmoQualityJobLabel>Việc chất lượng</QJ_GizmoQualityJobLabel>
   <QJ_GizmoRebuildDesc>Chọn chất lượng mục tiêu và yêu cầu thợ xây cho công trình đã hoàn thành này. Bắt đầu xây lại để tháo dỡ và thay thế đến khi đạt mục tiêu.</QJ_GizmoRebuildDesc>
@@ -29,7 +29,7 @@
   <QJ_MigrationBody>Quality Jobs tìm thấy {0} lệnh chất lượng hiện có. Chúng được để ngoài quản lý để tiếp tục hoạt động như trước. Đồ dở dang dùng chung vẫn có sẵn trong cả hai trường hợp.</QJ_MigrationBody>
   <QJ_MigrationContinue>Tiếp tục</QJ_MigrationContinue>
   <QJ_MigrationEnableExisting>Bật Quality Jobs cho lệnh chất lượng hiện có?</QJ_MigrationEnableExisting>
-  <QJ_MigrationEnableExistingTip>Bật: Lệnh hiện có dùng Quality Jobs với Tự chỉnh cấp người hoàn thiện. Cư dân đủ điều kiện giỏi nhất sẽ làm bước cuối; người tạm thời không rảnh vẫn được tính. Không yêu cầu cảm hứng hay chuyên gia sản xuất, và không làm lại kết quả kém chất lượng.\n\nTắt: Lệnh hiện có giữ cách hoàn thành của trò chơi gốc. Chia sẻ đồ dở dang không bị ảnh hưởng.</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationEnableExistingTip>Bật: Lệnh hiện có dùng Quality Jobs với Tự chỉnh cấp người hoàn thiện. Người lao động đủ điều kiện giỏi nhất trong khu định cư sẽ làm bước cuối; người tạm thời không sẵn sàng vẫn được tính. Không yêu cầu cảm hứng hay chuyên gia sản xuất, và không làm lại kết quả kém chất lượng.\n\nTắt: Lệnh hiện có giữ cách hoàn thành của trò chơi gốc. Chia sẻ đồ dở dang không bị ảnh hưởng.</QJ_MigrationEnableExistingTip>
   <QJ_MigrationTitle>Lệnh chất lượng hiện có</QJ_MigrationTitle>
   <QJ_MinQualityLabel>Chất lượng mục tiêu</QJ_MinQualityLabel>
   <QJ_NoGameLoaded>Tải bản lưu để đổi thiết lập riêng của bản lưu.</QJ_NoGameLoaded>
@@ -51,10 +51,10 @@
   <QJ_SettingsDefaultCap>Giới hạn đồ dở dang mặc định: {0}</QJ_SettingsDefaultCap>
   <QJ_SettingsDefaultCapTip>Đặt số đồ dở dang tối đa mặc định cho mỗi sản phẩm. Mọi lệnh làm cùng sản phẩm dùng chung giới hạn.\n\nKhi chạm giới hạn, lệnh ngừng bắt đầu vật phẩm mới; đồ đang làm vẫn có thể hoàn thành. 0 là không giới hạn.</QJ_SettingsDefaultCapTip>
   <QJ_SettingsEnabledNote>Công tắc áp dụng cho bản lưu đang tải. Tắt sẽ trả mọi vật phẩm về cơ chế gốc và xóa cấu hình Quality Jobs của bản lưu.\n\nNếu mod vẫn được cài, nó bật lại với mặc định khi tải bản lưu lần sau. Tắt là bước chuẩn bị gỡ mod.</QJ_SettingsEnabledNote>
-  <QJ_SettingsFinisherSkillTip>Chỉ cư dân đạt cấp này trở lên được làm bước cuối; người khác có thể làm phần trước.\n\nKhi bật Tự chỉnh cấp người hoàn thiện, giá trị này được giữ làm mặc định thủ công nhưng không dùng.</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsFinisherSkillTip>Chỉ người lao động đạt cấp kỹ năng này trở lên được làm bước cuối; những người lao động đủ điều kiện khác có thể làm phần trước.\n\nKhi bật Tự chỉnh cấp người hoàn thiện, giá trị này được giữ làm mặc định thủ công nhưng không dùng.</QJ_SettingsFinisherSkillTip>
   <QJ_SettingsGlobalOptions>Tùy chọn chung</QJ_SettingsGlobalOptions>
   <QJ_SettingsHighPriorityFinish>Cho người hoàn thiện việc ưu tiên cao</QJ_SettingsHighPriorityFinish>
-  <QJ_SettingsHighPriorityFinishTip>Bật: Cư dân được chọn hoàn thiện vật phẩm sẽ nhận việc đó vào lần tìm việc kế tiếp, trước mọi loại việc trừ chữa cháy, chăm sóc y tế, cứu hộ và nghỉ bệnh. Việc đang làm không bị ngắt.\n\nTắt: Việc hoàn thiện đứng đầu trong loại việc của nó, nhưng loại việc cư dân ưu tiên cao hơn vẫn đi trước.</QJ_SettingsHighPriorityFinishTip>
+  <QJ_SettingsHighPriorityFinishTip>Bật: Người lao động được chọn hoàn thiện vật phẩm sẽ nhận việc đó vào lần tìm việc kế tiếp, trước mọi loại việc trừ chữa cháy, chăm sóc y tế, cứu hộ và nghỉ bệnh. Việc đang làm không bị ngắt.\n\nTắt: Việc hoàn thiện đứng đầu trong loại việc của nó, nhưng loại việc được người lao động ưu tiên cao hơn vẫn đi trước.</QJ_SettingsHighPriorityFinishTip>
   <QJ_SettingsManageNewBills>Quản lý lệnh chất lượng mới</QJ_SettingsManageNewBills>
   <QJ_SettingsManageNewBillsTip>Bật: Quality Jobs mặc định quản lý lệnh tạo đồ có chất lượng bằng tùy chọn trong cột này. Mỗi lệnh có thể đặt tùy chọn riêng trong thiết lập lệnh.\n\nTắt: Lệnh dùng cơ chế gốc trừ khi Quality Jobs được bật trong hộp thoại thiết lập lệnh.</QJ_SettingsManageNewBillsTip>
   <QJ_SettingsManageNewConstruction>Quản lý công trình mới</QJ_SettingsManageNewConstruction>
@@ -67,20 +67,20 @@
   <QJ_StartRebuilding>Bắt đầu xây lại</QJ_StartRebuilding>
   <QJ_StatusFinishers>Người hoàn thiện đủ điều kiện: {0}</QJ_StatusFinishers>
   <QJ_StatusFinishersNone>Không có người hoàn thiện đủ điều kiện</QJ_StatusFinishersNone>
-  <QJ_StatusFinishersTip>Cư dân trên bản đồ hiện đủ điều kiện làm bước cuối, người phù hợp nhất đứng đầu. Cư dân đủ điều kiện khi đã bật loại việc cần thiết và đáp ứng các yêu cầu hoàn thiện ở trên.\n\nKhông tính người gục ngã, đang rối loạn tinh thần hoặc vắng mặt trên bản đồ này.</QJ_StatusFinishersTip>
+  <QJ_StatusFinishersTip>Những người lao động trên bản đồ này hiện đủ điều kiện làm bước cuối, người phù hợp nhất đứng đầu. Để đủ điều kiện, họ phải có khả năng làm loại việc cần thiết và đáp ứng các yêu cầu hoàn thiện ở trên.\n\nKhông tính người gục ngã, đang rối loạn tinh thần hoặc vắng mặt trên bản đồ này.</QJ_StatusFinishersTip>
   <QJ_StatusHeader>Trạng thái</QJ_StatusHeader>
   <QJ_StatusQueue>Chờ: {0} · Hoàn thiện: {1}</QJ_StatusQueue>
   <QJ_StatusQueueShared>Dở dang: {0} · Chờ: {1} · Hoàn thiện: {2}</QJ_StatusQueueShared>
   <QJ_StatusQueueTip>Dở dang: đồ trong nhóm dùng chung mà mọi thợ được phép đều có thể tiếp tục. Chờ: đồ tạm dừng cần người hoàn thiện đủ điều kiện. Hoàn thiện: đồ đã giao cho người hoàn thiện.</QJ_StatusQueueTip>
   <QJ_StatusStalled>Đồ đang chờ không có người đủ điều kiện hoàn thiện</QJ_StatusStalled>
   <QJ_StatusStalledConstruction>Không có người đủ điều kiện — công trình đình trệ</QJ_StatusStalledConstruction>
-  <QJ_StatusStalledConstructionTip>Công trình tạm dừng chờ bước cuối, nhưng chưa cư dân nào đủ điều kiện nên sẽ không hoàn thành.\n\nKiểm tra yêu cầu kỹ năng, cảm hứng, chuyên gia, và xem thợ dự kiến đã bật Xây dựng và đang ở bản đồ này chưa.</QJ_StatusStalledConstructionTip>
-  <QJ_StatusStalledTip>Có đồ dở dang đang chờ nhưng chưa cư dân nào đủ điều kiện hoàn thiện, nên không tạo việc hoàn thiện.\n\nKiểm tra yêu cầu kỹ năng, cảm hứng, chuyên gia, và xem người dự kiến đã bật loại việc cần thiết và đang ở bản đồ này chưa. Khi đình trệ, giới hạn kho cũng có thể ngăn bắt đầu vật phẩm mới.</QJ_StatusStalledTip>
+  <QJ_StatusStalledConstructionTip>Công trình tạm dừng chờ bước cuối, nhưng hiện không ai đủ điều kiện nên sẽ không hoàn thành.\n\nKiểm tra yêu cầu kỹ năng hoàn thiện, cảm hứng và chuyên gia, đồng thời xem thợ xây dự kiến có thể làm công việc Xây dựng và đang ở bản đồ này hay không.</QJ_StatusStalledConstructionTip>
+  <QJ_StatusStalledTip>Có đồ dở dang đang chờ nhưng hiện không ai đủ điều kiện hoàn thiện, nên không tạo việc hoàn thiện.\n\nKiểm tra yêu cầu kỹ năng hoàn thiện, cảm hứng và chuyên gia, đồng thời xem người hoàn thiện dự kiến có thể làm loại việc cần thiết và đang ở bản đồ này hay không. Khi đình trệ, giới hạn kho cũng có thể ngăn bắt đầu vật phẩm mới.</QJ_StatusStalledTip>
   <QJ_StockCapLabel>Giới hạn kho: {0}</QJ_StockCapLabel>
   <QJ_StockCapTooltip>Số đồ dở dang tối đa của sản phẩm này. Giới hạn dùng chung theo sản phẩm, nên mọi lệnh sản xuất nó đều được tính.\n\n0 là không giới hạn.</QJ_StockCapTooltip>
   <QJ_ToolbarButtonTip>Mở tùy chọn và trợ giúp của Quality Jobs.</QJ_ToolbarButtonTip>
   <QJ_UnfinishedWorkWaiting>đồ dở dang của lệnh này đang chờ tiếp tục</QJ_UnfinishedWorkWaiting>
-  <QJ_WelcomeBody>Quality Jobs cho phép mọi cư dân làm đồ dở dang hoặc công trình, nhưng chỉ người đạt yêu cầu bạn đặt mới được hoàn thành, vì người làm bước cuối quyết định chất lượng. Áp dụng cho cả lệnh chế tạo lẫn xây dựng.</QJ_WelcomeBody>
+  <QJ_WelcomeBody>Quality Jobs cho phép người lao động đủ điều kiện chia sẻ công việc chế tạo vật phẩm hoặc xây dựng công trình. Chỉ người đạt yêu cầu bạn đặt mới được hoàn thiện, vì người hoàn thiện quyết định chất lượng. Áp dụng cho cả lệnh chế tạo lẫn xây dựng.</QJ_WelcomeBody>
   <QJ_WelcomeFind>Mở thiết lập Quality Jobs bằng nút này cạnh các nút hiển thị ở góc dưới bên phải màn hình. Cửa sổ lệnh cho đồ có chất lượng có mục Quality Jobs; chọn bản thiết kế hoặc khung công trình có chất lượng sẽ có nút Việc chất lượng.</QJ_WelcomeFind>
   <QJ_WelcomeTakeMeThere>Mở ngay</QJ_WelcomeTakeMeThere>
   <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
@@ -91,4 +91,6 @@
   <QJ_HelpReload>Tải lại</QJ_HelpReload>
   <QJ_TabHelp>Trợ giúp</QJ_TabHelp>
   <QJ_TabOptions>Tùy chọn</QJ_TabOptions>
+  <QJ_SettingsAllowRobotPreparation>Cho phép mech và robot làm công việc chất lượng</QJ_SettingsAllowRobotPreparation>
+  <QJ_SettingsAllowRobotPreparationTip>Cho phép mech và robot được hỗ trợ làm các công việc chế tạo và xây dựng được quản lý. Tắt để dành công việc này cùng kinh nghiệm kỹ năng cho cư dân. Thao tác này cũng dừng công việc được quản lý mà chúng đang làm. Mech và robot đủ điều kiện vẫn có thể hoàn thiện công việc do Quality Jobs phân công. Công việc thông thường không được quản lý không bị ảnh hưởng.</QJ_SettingsAllowRobotPreparationTip>
 </LanguageData>

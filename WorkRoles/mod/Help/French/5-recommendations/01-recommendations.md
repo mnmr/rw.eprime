@@ -30,3 +30,13 @@ Deux rôles ont un traitement spécial. Chasseur est recommandé à toute person
 
 <!-- l10n:b-b241ec72dcda -->
 Le moteur suggère ; vous appliquez, [rôle par rôle](topic:cherry-picking) ou [pour toute la colonie](topic:fix-my-colony). L'exception est l'[optimisation automatique](topic:auto-optimize) : activez-la pour lancer Optimiser ma colonie à chaque heure du jeu dans toutes vos colonies.
+
+<!-- l10n:mechanical-suggestions -->
+Lorsque les lignes des robots et des mécanoïdes sont activées, leurs recommandations reposent sur leurs compétences actuelles et les travaux qu'ils peuvent effectuer, sans passions humaines ni parcours d'apprentissage. Leur tâche principale acceptée reste en place, même s'il s'agit d'un rôle exclu explicitement affecté ; modifiez cette tâche manuellement. Les recommandations de travaux supplémentaires respectent les exclusions. Vous choisissez leurs affectations ; l'optimisation automatique continue d'appliquer uniquement les recommandations destinées aux humains.
+
+<!-- l10n:mechanical-coverage -->
+**Tenir compte du travail des robots et des mécanoïdes dans les recommandations humaines** est une option distincte propre à chaque sauvegarde, également désactivée par défaut. Elle comptabilise les affectations mécaniques acceptées dans les effectifs, permettant de remplacer le dernier spécialiste humain d'une tâche entièrement prise en charge. Chaque travailleur assure une seule tâche principale ; les rôles de repli ne comptent pas comme des effectifs supplémentaires. Les zones restreintes, les travaux bloqués, les compétences insuffisantes et les restrictions de Quality Jobs sur le travail des robots empêchent une prise en charge complète. Un robot capable uniquement de nettoyer ne remplace pas un rôle combinant nettoyage et transport.
+
+<!-- l10n:mechanical-learning -->
+Les formations sélectionnées pour les humains dont l'objectif n'est pas encore atteint et les affectations épinglées restent protégées.
+La recharge habituelle maintient la couverture des tâches ; la désactivation, la perte de contrôle ou la sortie du mode Travail la suppriment. Les recommandations actualisées proposent des remplaçants humains, et l'optimisation automatique les applique à son échéance horaire habituelle si elle est activée. Lorsque l'intégration est désactivée, les lignes des robots et des mécanoïdes n'influencent pas les recommandations pour les humains.

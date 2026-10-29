@@ -8,10 +8,13 @@ Kalite derecesi olan bir eşyanın iş emrinde **Ayrıntılar** bölümünü aç
 ![Quality Jobs paneliyle birlikte bir üretim tezgâhı iş emri](crafting-bill.png)
 
 <!-- l10n:setup -->
-**{k:QJ_ManageBill}** seçeneğini etkinleştirin, ardından [tamamlayıcı gereksinimlerini](topic:finishers) seçin. Üretimin çoğunu sıradan çalışanlar yapabilir. Mevcut çalışan gereksinimleri karşılıyorsa işi doğrudan tamamlar; karşılamıyorsa bitmek üzere olan eşya bir kenara bırakılır ve iş emri, stok sınırı içinde daha fazla iş hazırlayabilir.
+**{k:QJ_ManageBill}** seçeneğini etkinleştirin, ardından [tamamlayıcı gereksinimlerini](topic:finishers) seçin. Üretimin çoğunu sıradan çalışanlar yapabilir. Mevcut çalışan gereksinimleri karşılıyorsa işi doğrudan tamamlar; karşılamıyorsa bitmek üzere olan eşya bir kenara bırakılır ve iş emri, stok sınırı içinde başka eşyaların üretimine başlayabilir.
 
 <!-- l10n:dispatch -->
 Bir tamamlayıcı gereksinimleri karşıladığında Quality Jobs, ona atanmış geçici bir **Tamamla …** iş emri oluşturur. Tamamlayıcı, bitmemiş eşyayı alıp tamamlar. Ardından geçici iş emri kendiliğinden silinir. Bekleyen eşyalar, diğer bitmemiş eşyalar gibi taşınıp depolanabilir.
+
+<!-- l10n:finisher-bill-restrictions -->
+Asıl iş emrinin azami beceri seviyesi ve belirli bir çalışana atanmış olması, eşya tamamlanmak üzere bir kenara ayrılana kadar geçerlidir. İşi bir acemiye atayabilir, özel tamamlama emrini ise daha yetenekli bir koloniciye, koloni mekanizmasına veya desteklenen bir robota bırakabilirsiniz. Tamamlayıcıların yine de tarifi uygulayabilmesi ve Quality Jobs gereksinimlerini karşılaması gerekir.
 
 <!-- l10n:status -->
 **{k:QJ_StatusHeader}** bölümü, paylaşılan **Yarım kalmış** işleri, tamamlayıcı **Bekleyen** eşyaları ve **Tamamlanıyor** aşamasına atanmış eşyaları gösterir. Ayrıntılar için durumun ve tamamlayıcı listesinin üzerine gelin. Hiçbir iş ilerlemiyorsa [işlerin ne zaman beklediğine](topic:waiting) bakın.

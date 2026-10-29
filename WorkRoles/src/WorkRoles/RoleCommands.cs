@@ -202,7 +202,33 @@ namespace WorkRoles
             CompiledJobOrders.InvalidateRuntimeAll();
         }
 
-        /// Hourly automatic Fix My Colony on or off (AutoOptimizer).
+        /// Mechanical roster and work-order ownership, independently of coverage.
+        [SyncMethod]
+        public static void SetMechanicalWorkersEnabled(bool value)
+        {
+            if (Store == null || Store.mechanicalWorkersEnabled == value) return;
+            Store.mechanicalWorkersEnabled = value;
+            MechanicalWorkers.NotifyChanged(force: true);
+            using var batch = Store.Revisions.Batch();
+            foreach (var pair in Store.pawnSets)
+            {
+                Pawn pawn = pair.Key;
+                if (!MechanicalWorkers.IsMechanical(pawn)) continue;
+                CompiledJobOrders.Invalidate(pawn);
+                pawn.workSettings?.Notify_UseWorkPrioritiesChanged();
+                CompiledJobOrders.EnqueueReconcile(pawn);
+            }
+            UiVersion.RosterChanged();
+        }
+
+        [SyncMethod]
+        public static void SetMechanicalRecommendationsEnabled(bool value)
+        {
+            if (Store == null || Store.mechanicalRecommendationsEnabled == value) return;
+            Store.mechanicalRecommendationsEnabled = value;
+            MechanicalWorkers.NotifyChanged();
+        }
+
         [SyncMethod]
         public static void SetAutoOptimize(bool value)
         {

@@ -16,3 +16,6 @@ title: オプションと既定値
 <!-- l10n:global -->
 **{k:QJ_SettingsShareWork}**と**{k:QJ_SettingsHighPriorityFinish}**は、コロニー全体に適用されます。効果については[共有](topic:sharing-work)と[仕上げ担当者](topic:finishers)を参照してください。**{k:QJ_DisableButton}**は[安全な削除](topic:removing)のための設定であり、製造指示を1件だけ一時停止するためのものではありません。
 
+<!-- l10n:robot-preparation -->
+**{k:QJ_SettingsAllowRobotPreparation}**は現在のコロニーに保存され、既存のセーブを含め、初期状態で有効です。無効にすると、管理対象の製作指示と建築計画の作業を入植者だけに任せ、その作業のスキル経験値を入植者が得られます。すでにその作業を行っているメカノイドやロボットも作業を中止します。条件を満たすメカノイドや対応ロボットは、引き続きQuality Jobsが割り当てる仕上げ作業を行えます。通常の管理対象外の作業には影響しませんが、[共有された未完成品](topic:sharing-work)には、元の管理対象の製作指示の制限が引き続き適用されます。この設定はセーブをロードした状態で利用でき、Multiplayerで同期されます。
+

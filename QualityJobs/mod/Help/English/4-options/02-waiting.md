@@ -7,7 +7,7 @@ Start with **{k:QJ_StatusHeader}** in the bill or construction panel. **No eligi
 <!-- l10n:checklist -->
 - Is the required work type enabled for the intended finisher, and are they on this map and able to work?
 - Is the skill requirement too high, or are you waiting for Inspired Creativity or a production specialist?
-- Is Auto-adjust waiting for a stronger colonist who is temporarily away or unavailable?
+- Is Auto-adjust waiting for a worker with higher expected quality to become available, for example to return from a caravan or finish recharging?
 - Can the worker reach and reserve the item or frame, and use the bench? Check forbidden items, allowed areas, bill restrictions and competing reservations.
 - Is the stock cap full? Finish waiting items before starting more, or deliberately raise the cap.
 

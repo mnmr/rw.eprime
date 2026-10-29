@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>WorkRoles mechanical worker verification</name>
+  <author>WorkRoles</author>
+  <packageId>eprime.workroles.mechanicalprobe</packageId>
+  <supportedVersions><li>1.6</li><li>1.7</li></supportedVersions>
+  <loadAfter><li>mnmr.workroles</li><li>haplo.miscellaneous.robots</li><li>alaestor.miscrobots.plusplus</li></loadAfter>
+</ModMetaData>

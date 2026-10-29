@@ -2,7 +2,7 @@
 title: Premiers pas
 ---
 <!-- l10n:purpose -->
-Quality Jobs permet à vos colons de se partager le travail tout en confiant la touche finale à un colon qualifié. Dans RimWorld, le **finisseur** détermine la qualité. Le mod choisit qui termine le travail ; la qualité obtenue reste soumise au tirage aléatoire habituel.
+Quality Jobs permet à votre colonie de se partager le travail tout en confiant la touche finale à un travailleur qualifié. Les colons, les mécanoïdes de la colonie et les robots pris en charge peuvent terminer les travaux qu’ils sont capables d’effectuer. Dans RimWorld, le **finisseur** détermine la qualité. Le mod choisit qui termine le travail ; la qualité obtenue reste soumise au tirage aléatoire habituel.
 
 <!-- l10n:toolbar -->
 Cliquez sur l’icône Quality Jobs à côté des commandes d’affichage, en bas à droite. **{k:QJ_TabOptions}** contient vos réglages par défaut ; **{k:QJ_TabHelp}** explique les commandes. Choisissez un chapitre en haut et un sujet à gauche.

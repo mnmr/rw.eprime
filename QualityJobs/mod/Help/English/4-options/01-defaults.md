@@ -15,3 +15,6 @@ With a save loaded, Options changes that colony's settings. From the main menu, 
 
 <!-- l10n:global -->
 **{k:QJ_SettingsShareWork}** and **{k:QJ_SettingsHighPriorityFinish}** apply across the colony. See [sharing](topic:sharing-work) and [finishers](topic:finishers) for their effects. **{k:QJ_DisableButton}** is intended for [safe removal](topic:removing), not for pausing one bill.
+
+<!-- l10n:robot-preparation -->
+**{k:QJ_SettingsAllowRobotPreparation}** is saved for the current colony and starts enabled, including in existing saves. Turn it off to reserve work on managed crafting bills and construction plans for colonists, so they receive the work's skill experience. This also stops mechs and robots already doing that work. Eligible mechs and supported robots can still finish jobs assigned by Quality Jobs. Ordinary unmanaged jobs are unaffected; [shared unfinished items](topic:sharing-work) keep the original managed bill's restriction. This option is available with a save loaded and is synchronized in Multiplayer.

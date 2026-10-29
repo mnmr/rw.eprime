@@ -14,7 +14,10 @@ namespace WorkRoles.UI
         // cohorts. Value: detached immutable-by-ownership pawn inputs, verdicts
         // and plans. Dependencies: shared role catalog identity, per-pawn
         // assignment order/pins and external snapshot identities, stored order
-        // and planning tuning. Catalog ownership belongs to RecsAdapter.
+        // and planning tuning. Human coverage additionally consumes the shared
+        // mechanical snapshot identity only while integration is enabled, plus
+        // transitions into/out of that policy. Workers never join human Pawns.
+        // Catalog ownership belongs to RecsAdapter.
         // Refresh: event-driven on the next read.
         // Equality: Core compares exact consumed contents before publishing a
         // new computation; equal refreshes preserve plan/verdict identity.
@@ -27,7 +30,25 @@ namespace WorkRoles.UI
         private static readonly Func<(Pawn pawn, RoleStore store, PawnExternalSnapshot facts), PawnView>
             BuildPawn = state => RecsAdapter.PawnViewOf(state.pawn, state.store, state.facts);
         private int externalGeneration;
+        private MechanicalRecommendationSnapshot? currentWorkers;
         private Func<Pawn, PawnExternalSnapshot>? currentExternalSnapshot;
+
+        // Owner: window/store. Key: map identity (one retained map). Value:
+        // detached mechanical facts and matching stable pawn identities, shared
+        // by human coverage and robot targets, immutable after publication.
+        // Dependencies: support, catalog/definitions, external-facts generation,
+        // mechanical facts, runtime rules, roster and assignment presentation.
+        // Refresh: event-driven on read; equal contents keep snapshot identity.
+        // Teardown: Reset/store change, disabling support, or selecting another
+        // map releases the old projection; no map scans on unchanged reads.
+        private MechanicalRecommendationSnapshot mechanical = MechanicalRecommendationSnapshot.Empty;
+        private Map? mechanicalMap;
+        private RecommendationCatalogProjection? mechanicalCatalog;
+        private int mechanicalExternal = -1;
+        private int mechanicalRevision = -1;
+        private int mechanicalRuntime = -1;
+        private int mechanicalRoster = -1;
+        private int mechanicalPresentation = -1;
 
         internal ColonistRecommendationProducer()
         {
@@ -35,23 +56,73 @@ namespace WorkRoles.UI
         }
 
         internal RecommendationSnapshot For(RoleStore store,
-            IReadOnlyList<Pawn> pawns, Func<Pawn, PawnExternalSnapshot> externalSnapshot)
+            IReadOnlyList<Pawn> pawns, Func<Pawn, PawnExternalSnapshot> externalSnapshot,
+            MechanicalRecommendationSnapshot? workers = null)
         {
+            EnsureOwner(store);
+            // Listed-pawn suitability has no colony coverage dependency. Only
+            // the map-plan caller supplies mechanical facts, through the same
+            // snapshot it uses for robot targets.
+            if (!store.mechanicalRecommendationsEnabled || !store.mechanicalWorkersEnabled
+                || workers?.Workers.Count == 0) workers = null;
             catalog = RecsAdapter.BuildRoleCatalog(store);
-            owner = store;
 
+            currentWorkers = workers;
             currentExternalSnapshot = externalSnapshot;
             try
             {
                 return cache.For(store, pawns, catalog, UiVersion.Assignments,
                     externalGeneration, UiVersion.RecommendationOrder,
                     store.recommendationTuning ?? RecommendationsTuningOptions.Default,
-                    buildColony);
+                    buildColony, workers);
             }
             finally
             {
                 currentExternalSnapshot = null;
+                currentWorkers = null;
             }
+        }
+
+        private void EnsureOwner(RoleStore store)
+        {
+            if (ReferenceEquals(owner, store)) return;
+            Reset();
+            owner = store;
+        }
+
+        internal MechanicalRecommendationSnapshot MechanicalFor(RoleStore store, Map? map)
+        {
+            EnsureOwner(store);
+            if (!store.mechanicalWorkersEnabled || map == null)
+            {
+                mechanical = MechanicalRecommendationSnapshot.Empty;
+                mechanicalMap = null;
+                mechanicalCatalog = null;
+                return mechanical;
+            }
+            RecommendationCatalogProjection nextCatalog = RecsAdapter.BuildRoleCatalog(store);
+            if (ReferenceEquals(mechanicalMap, map) && ReferenceEquals(mechanicalCatalog, nextCatalog)
+                && mechanicalExternal == externalGeneration && mechanicalRevision == store.MechanicalFactsRevision
+                && mechanicalRuntime == UiVersion.RuntimeRules && mechanicalRoster == UiVersion.Roster
+                && mechanicalPresentation == UiVersion.AssignmentPresentation) return mechanical;
+            List<Pawn> pawns = MechanicalWorkers.OnMap(map);
+            var views = new MechanicalWorkerView[pawns.Count];
+            bool equal = ReferenceEquals(mechanicalMap, map) && mechanical.Pawns.Count == pawns.Count;
+            for (int i = 0; i < pawns.Count; i++)
+            {
+                views[i] = MechanicalWorkers.Capture(pawns[i], store);
+                if (equal && (!ReferenceEquals(mechanical.Pawns[i], pawns[i])
+                    || !views[i].ContentEquals(mechanical.Workers[i]))) equal = false;
+            }
+            if (!equal) mechanical = new MechanicalRecommendationSnapshot(pawns, views);
+            mechanicalMap = map;
+            mechanicalCatalog = nextCatalog;
+            mechanicalExternal = externalGeneration;
+            mechanicalRevision = store.MechanicalFactsRevision;
+            mechanicalRuntime = UiVersion.RuntimeRules;
+            mechanicalRoster = UiVersion.Roster;
+            mechanicalPresentation = UiVersion.AssignmentPresentation;
+            return mechanical;
         }
 
         internal void InvalidateExternalFacts()
@@ -65,7 +136,13 @@ namespace WorkRoles.UI
             catalog = null;
             owner = null;
             currentExternalSnapshot = null;
+            currentWorkers = null;
             externalGeneration = 0;
+            mechanical = MechanicalRecommendationSnapshot.Empty;
+            mechanicalMap = null;
+            mechanicalCatalog = null;
+            mechanicalExternal = -1;
+            mechanicalRevision = mechanicalRuntime = mechanicalRoster = mechanicalPresentation = -1;
         }
 
         private ColonyView BuildColony(IReadOnlyList<Pawn> pawns, IReadOnlyList<PawnView>? previous)
@@ -82,8 +159,25 @@ namespace WorkRoles.UI
                 }
                 previous = projected;
             }
-            return RecsAdapter.BuildColonyView(owner!, pawns,
+            ColonyView colony = RecsAdapter.BuildColonyView(owner!, pawns,
                 currentExternalSnapshot!, catalog!, previous);
+            if (currentWorkers != null)
+            {
+                colony.IntegrateMechanicalWorkers = true;
+                for (int i = 0; i < currentWorkers.Workers.Count; i++)
+                    colony.MechanicalWorkers.Add(currentWorkers.Workers[i]);
+            }
+            return colony;
         }
+    }
+
+    internal sealed class MechanicalRecommendationSnapshot
+    {
+        internal static readonly MechanicalRecommendationSnapshot Empty =
+            new MechanicalRecommendationSnapshot(Array.Empty<Pawn>(), Array.Empty<MechanicalWorkerView>());
+        internal MechanicalRecommendationSnapshot(IReadOnlyList<Pawn> pawns, IReadOnlyList<MechanicalWorkerView> workers)
+        { Pawns = pawns; Workers = workers; }
+        internal IReadOnlyList<Pawn> Pawns { get; }
+        internal IReadOnlyList<MechanicalWorkerView> Workers { get; }
     }
 }

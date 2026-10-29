@@ -46,7 +46,7 @@ namespace QualityJobs
             Build();
             // The recipe→workType memo in Dispatcher shares the same def-database
             // dependency. Clear it so WorkTypeForRecipe re-resolves after a reload.
-            Dispatcher.InvalidateWorkTypeCache();
+            WorkerCapabilities.InvalidateWorkTypeCache();
             FinishWorkGivers.Invalidate();
             QualityBonusStats.Refresh();
             QualityJobsStore.Active?.NotifyDefinitionsChanged();

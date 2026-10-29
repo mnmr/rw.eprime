@@ -4854,7 +4854,8 @@ namespace WorkRoles.UI
             float recX = col1X + skillGrid.RecommendationLeft;
 
             IReadOnlyList<ColonistSkillPresentation> skills = statsSnapshot.Skills;
-            if (skills.Count == 0) return;
+            // Vanilla mechs have no skill tracker; their work recommendations
+            // still need the panel below.
 
             Text.Font = GameFont.Small;
             for (int i = 0; i < skills.Count; i++)
@@ -5050,10 +5051,10 @@ namespace WorkRoles.UI
                     if (preview.Scrollable) Widgets.EndScrollView();
                 }
 
-                // Make It So hides while auto-optimize owns bulk fixes; the
-                // panel's chips stay clickable for per-role cherry-picking.
+                // Auto-optimize owns human fixes only. Mechanical assignments
+                // remain explicit even while the human schedule is enabled.
                 if (preview.HasChanges
-                    && RoleStore.Current?.autoOptimize != true)
+                    && (preview.IsMechanical || RoleStore.Current?.autoOptimize != true))
                 {
                     Rect localApply = preview.ApplyRect;
                     var makeItSoRect = new Rect(recX + localApply.x,
@@ -5075,25 +5076,25 @@ namespace WorkRoles.UI
         }
 
         /// Preview entries from the colony plan (all changed pawns, or just one).
-        private List<Dialog_ChangesPreview.PawnPreview> BuildFixEntries(Pawn? only)
+        private List<Dialog_ChangesPreview.PawnPreview> BuildFixEntries(Pawn? only, bool humansOnly = false)
         {
             RoleStore? store = RoleStore.Current;
             return store == null
                 ? new List<Dialog_ChangesPreview.PawnPreview>()
                 : recommendationState.FixEntries(store, only, selectedPawn,
-                    PawnListStamp, ExternalSnapshotFor);
+                    PawnListStamp, ExternalSnapshotFor, humansOnly);
         }
 
         /// Rebuild for the preview's stale check: recompute the plan from scratch.
-        private List<Dialog_ChangesPreview.PawnPreview> RebuildFixEntries(Pawn? only)
+        private List<Dialog_ChangesPreview.PawnPreview> RebuildFixEntries(Pawn? only, bool humansOnly = false)
         {
             InvalidateRecommendationCache();
-            return BuildFixEntries(only);
+            return BuildFixEntries(only, humansOnly);
         }
 
         /// Applies the colony fix plan (all changed pawns, one pawn, or the preview's
         /// selected subset).
-        private void ApplyFix(Pawn? only, HashSet<Pawn>? included = null)
+        private void ApplyFix(Pawn? only, HashSet<Pawn>? included = null, bool humansOnly = false)
         {
             var store = RoleStore.Current;
             if (store == null) return;
@@ -5101,6 +5102,7 @@ namespace WorkRoles.UI
                 PawnListStamp, ExternalSnapshotFor))
             {
                 if (only != null && plan.Pawn != only) continue;
+                if (humansOnly && MechanicalWorkers.IsMechanical(plan.Pawn)) continue;
                 if (included != null && !included.Contains(plan.Pawn)) continue;
                 if (!plan.HasChanges) continue;
                 RoleCommands.PasteRoleSet(plan.Pawn, plan.Target);
@@ -5122,13 +5124,13 @@ namespace WorkRoles.UI
         /// changes on cancel.
         public void ShowAutoOptimizeEnablePreview()
             => Find.WindowStack.Add(new Dialog_ChangesPreview(
-                () => "WR_OptAutoOptimize".Translate(), BuildFixEntries(null),
+                () => "WR_OptAutoOptimize".Translate(), BuildFixEntries(null, humansOnly: true),
                 _ =>
                 {
-                    ApplyFix(null);
+                    ApplyFix(null, humansOnly: true);
                     RoleCommands.SetAutoOptimize(true);
                 },
-                () => RebuildFixEntries(null),
+                () => RebuildFixEntries(null, humansOnly: true),
                 infoFactory: AutoOptimizeInfoText,
                 warningFactory: AutoOptimizeGlobalWarningText,
                 selectable: false));

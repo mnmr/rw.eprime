@@ -22,10 +22,13 @@ namespace QualityJobs.Patches
             ConstructionPlan? plan = store.FindPlan(t);
             if (plan == null) return;
 
-            if (plan.state == ConstructionPlanState.Paused)
+            if (!RobotPreparation.AllowsFrameWork(store, pawn, t)
+                || plan.state == ConstructionPlanState.Paused
+                || plan.state == ConstructionPlanState.Dispatched && plan.finisher != pawn)
+            {
+                JobMaker.ReturnToPool(__result);
                 __result = null;
-            else if (plan.state == ConstructionPlanState.Dispatched && plan.finisher != pawn)
-                __result = null;
+            }
         }
     }
 }

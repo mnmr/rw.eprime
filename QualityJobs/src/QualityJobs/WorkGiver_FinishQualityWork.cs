@@ -103,9 +103,8 @@ namespace QualityJobs
 
         private bool CanFinishWork(Pawn pawn, WorkTypeDef? itemCategory)
         {
-            if (itemCategory == null || pawn.workSettings == null
-                || pawn.WorkTypeIsDisabled(itemCategory)
-                || !pawn.workSettings.WorkIsActive(itemCategory)) return false;
+            if (!WorkerCapabilities.Available(pawn)
+                || !WorkerCapabilities.WorkEnabled(pawn, itemCategory)) return false;
 
             // High-priority scheduling ignores the giver's category entirely.
             if (QualityJobsStore.Active?.highPriorityFinish == true) return true;
@@ -122,11 +121,13 @@ namespace QualityJobs
         private bool CanFinishEntry(WorkItemEntry entry, Pawn pawn)
             => entry.state == WorkItemState.Dispatched && entry.finisher == pawn
                 && entry.uft?.Recipe is RecipeDef recipe
+                && WorkerCapabilities.CanCraft(pawn, recipe)
                 && CanFinishWork(pawn, Dispatcher.WorkTypeForRecipe(recipe));
 
         private bool CanFinishPlan(ConstructionPlan plan, Pawn pawn)
             => plan.state == ConstructionPlanState.Dispatched && plan.finisher == pawn
                 && plan.target is Frame
+                && WorkerCapabilities.CanConstruct(pawn)
                 && CanFinishWork(pawn, WorkTypeDefOf.Construction);
 
         /// Returns the specific things this pawn should consider as finisher.
@@ -233,7 +234,7 @@ namespace QualityJobs
                 if (!pawn.CanReserveAndReach(uft, PathEndMode.Touch, Danger.Deadly)) continue;
 
                 return WithTargetWorkGiver(FinishUftJobHelper.BuildFinishUftJob(pawn, uft, bill),
-                    Dispatcher.WorkGiverForRecipe(recipe), store.highPriorityFinish);
+                    WorkerCapabilities.WorkGiverForRecipe(recipe), store.highPriorityFinish);
             }
 
             return null;

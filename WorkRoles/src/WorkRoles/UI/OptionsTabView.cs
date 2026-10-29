@@ -18,7 +18,7 @@ namespace WorkRoles.UI
 
         /// Fixed flow height below (headers, rows and gaps); the tab scrolls
         /// when a screen-sized minimum window is shorter than that.
-        private const float ContentHeight = 436f;
+        private const float ContentHeight = 504f;
         private Vector2 scroll;
 
         public void Reset()
@@ -35,11 +35,11 @@ namespace WorkRoles.UI
         {
             var store = RoleStore.Current;
             if (store == null) return;
-            OptionsRenderSnapshot snapshot = state.Snapshot(store);
-
             float viewW = rect.width - 16f;
+            OptionsRenderSnapshot snapshot = state.Snapshot(store, Mathf.Min(viewW - 32f, 640f));
             Widgets.BeginScrollView(rect, ref scroll,
-                new Rect(0f, 0f, viewW, ContentHeight));
+                new Rect(0f, 0f, viewW, ContentHeight + snapshot.MechanicalHeight
+                    + snapshot.MechanicalRecommendationsHeight - 56f));
             try
             {
                 DrawFlow(store, snapshot, viewW);
@@ -64,6 +64,10 @@ namespace WorkRoles.UI
             y += 34f;
             var emergencyRect = new Rect(flowX, y, flowW, 28f);
             y += 34f;
+            var mechanicalRect = new Rect(flowX, y, flowW, snapshot.MechanicalHeight);
+            y += snapshot.MechanicalHeight + 6f;
+            var mechanicalRecommendationsRect = new Rect(flowX, y, flowW, snapshot.MechanicalRecommendationsHeight);
+            y += snapshot.MechanicalRecommendationsHeight + 6f;
             var automationHeader = new Rect(flowX, y + 8f, flowW, 28f);
             y += 8f + 32f;
             var autoOptimizeRect = new Rect(flowX, y, flowW, 28f);
@@ -93,6 +97,18 @@ namespace WorkRoles.UI
                 emergencyRect, snapshot.EmergencyRuleLabel, ref emergencyNew);
             if (emergencyNew != snapshot.RolePriorityEmergencyRule)
                 RoleCommands.SetRolePriorityEmergencyRule(emergencyNew);
+
+            bool mechanicalNew = snapshot.MechanicalEnabled;
+            WrTips.Key("WR_OptMechanicalWorkersTip").Region(mechanicalRect);
+            Widgets.CheckboxLabeled(mechanicalRect, snapshot.MechanicalLabel, ref mechanicalNew);
+            if (mechanicalNew != snapshot.MechanicalEnabled)
+                RoleCommands.SetMechanicalWorkersEnabled(mechanicalNew);
+            bool recommendationsNew = snapshot.MechanicalRecommendationsEnabled;
+            WrTips.Key("WR_OptMechanicalRecommendationsTip").Region(mechanicalRecommendationsRect);
+            Widgets.CheckboxLabeled(mechanicalRecommendationsRect,
+                snapshot.MechanicalRecommendationsLabel, ref recommendationsNew);
+            if (recommendationsNew != snapshot.MechanicalRecommendationsEnabled)
+                RoleCommands.SetMechanicalRecommendationsEnabled(recommendationsNew);
 
             // Per-save automation: the hourly auto-optimize schedule is shared
             // world state (AutoOptimizer runs in the synced simulation), so

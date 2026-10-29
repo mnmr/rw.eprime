@@ -2,7 +2,7 @@
 title: Başlangıç
 ---
 <!-- l10n:purpose -->
-Quality Jobs, yetenekli bir kolonist son dokunuşu yaparken kolonistlerinizin işi paylaşmasını sağlar. RimWorld'de kaliteyi **işi tamamlayan kişi** belirler. Mod, işi kimin tamamlayacağını seçer; sonuç yine oyunun normal rastgele kalite hesaplamasına bağlıdır.
+Quality Jobs, uygun niteliklere sahip bir çalışan son dokunuşu yaparken koloninizin işi paylaşmasını sağlar. Koloniciler, koloni mekanları ve desteklenen robotlar, yapabildikleri işleri tamamlayabilir. RimWorld'de kaliteyi **işi tamamlayan** belirler. Mod, işi kimin tamamlayacağını seçer; sonuç yine oyunun normal rastgele kalite hesaplamasına bağlıdır.
 
 <!-- l10n:toolbar -->
 Sağ alttaki görünüm düğmelerinin yanındaki Quality Jobs simgesine tıklayın. **{k:QJ_TabOptions}** bölümünde varsayılan ayarlar, **{k:QJ_TabHelp}** bölümünde ise kontrollerin açıklamaları bulunur. Yukarıdan bir bölüm, soldan bir konu seçin.

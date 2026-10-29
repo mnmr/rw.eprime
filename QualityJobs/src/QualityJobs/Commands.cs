@@ -24,6 +24,7 @@ namespace QualityJobs
             store.NotifyBillConfigurationChanged(billId, affectsEligibility: true);
             // Unmanaging hands already-paused items back to vanilla.
             if (!value) store.ReleaseUnmanagedBillWork();
+            else RobotPreparation.StopBlockedCurrentJobs(store);
         }
 
         [SyncMethod]
@@ -118,6 +119,15 @@ namespace QualityJobs
             store.NotifyHighPriorityFinishChanged();
         }
 
+        [SyncMethod]
+        public static void SetAllowRobotPreparation(bool value)
+        {
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || store.allowRobotPreparation == value) return;
+            store.allowRobotPreparation = value;
+            store.NotifyRobotPreparationChanged();
+        }
+
         /// Resolves the first-install migration for bills that were explicitly
         /// quarantined before play began. Closing the dialog is the safe decline
         /// path: bills remain unmanaged while unfinished-work sharing continues.
@@ -131,11 +141,13 @@ namespace QualityJobs
             ExistingBillMigrationConfig config =
                 ExistingBillMigrationPolicy.ConfigurationFor(enableQualityJobs);
             List<string> pending = store.pendingExistingBillMigrationIds;
+            bool newlyManaged = false;
             for (int i = 0; i < pending.Count; i++)
             {
                 string id = pending[i];
                 bool effectiveManaged = store.billManaged.TryGetValue(id,
                     out bool managed) ? managed : store.manageNewBillsDefault;
+                newlyManaged |= config.Managed && !effectiveManaged;
                 bool effectiveAutoBest = store.billAutoBest.TryGetValue(id,
                     out bool autoBest) ? autoBest : store.autoBestDefault;
                 bool effectiveInspired = store.billRequireInspired.TryGetValue(id,
@@ -162,6 +174,7 @@ namespace QualityJobs
             pending.Clear();
             store.existingBillMigrationVersion =
                 QualityJobsStore.CurrentExistingBillMigrationVersion;
+            if (newlyManaged) RobotPreparation.StopBlockedCurrentJobs(store);
         }
 
         // ---- Per-save bill default setters (dual-pattern) -----------------------
@@ -177,6 +190,7 @@ namespace QualityJobs
             // Bills following the default are now unmanaged: release their
             // paused items like the per-bill checkbox does.
             if (!value) store.ReleaseUnmanagedBillWork();
+            else RobotPreparation.StopBlockedCurrentJobs(store);
         }
 
         [SyncMethod]
@@ -421,6 +435,8 @@ namespace QualityJobs
             if (change.WritesTarget)
                 store.billTargetQuality[billId] = change.TargetQuality;
             store.NotifyBillConfigurationChanged(billId, change.EligibilityChanged);
+            if (change.WritesManaged && change.Managed)
+                RobotPreparation.StopBlockedCurrentJobs(store);
         }
 
         /// The live API-manageable bill with this load ID: a

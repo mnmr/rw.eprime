@@ -89,7 +89,7 @@ namespace WorkRoles.Core.Recs
             => PreserveProtectedOrder(context.RolesById,
                 context.Colony.Pawns[pawnIndex].Existing, recommended);
 
-        internal static int[] PreserveProtectedOrder(
+        public static int[] PreserveProtectedOrder(
             IReadOnlyDictionary<int, RoleView> rolesById,
             IReadOnlyList<AssignmentView> existing,
             IReadOnlyList<int> recommended)

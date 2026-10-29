@@ -24,10 +24,16 @@ namespace QualityJobs.Patches
         public static bool Prefix(JobGiver_Work __instance, Pawn pawn, ref ThinkResult __result)
         {
             if (__instance.emergency) return true;
+            return TryIssue(__instance, pawn, ref __result);
+        }
+
+        internal static bool TryIssue(ThinkNode source, Pawn pawn, ref ThinkResult result)
+        {
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || !store.highPriorityFinish || !store.HasDispatchedFinishers)
                 return true;
             if (pawn.workSettings == null) return true;
+            if (!WorkerCapabilities.Available(pawn)) return true;
             // Vanilla's own early exit (JobGiver_Work.cs:51); let it answer.
             if (pawn.RaceProps.Humanlike && pawn.health.hediffSet.InLabor()) return true;
 
@@ -40,7 +46,7 @@ namespace QualityJobs.Patches
                 if (!(def.Worker is WorkGiver_FinishQualityWork giver)) continue;
                 // High-priority finishing ignores the giver's category. Keep
                 // pawn/capacity gates; the scanner checks the target's work type.
-                if (!WorkGiverGates.PawnCanUseWorkGiver(pawn, giver,
+                if (!WorkerCapabilities.PawnCanUseWorkGiver(pawn, giver,
                     checkShouldSkip: false, checkWorkType: false))
                     continue;
                 finish = giver.TryIssueDirectly(store, pawn);
@@ -53,11 +59,11 @@ namespace QualityJobs.Patches
             if (CareWork.TryIssue(pawn, out Job careJob, out WorkGiverDef careDef))
             {
                 JobMaker.ReturnToPool(finish);
-                __result = new ThinkResult(careJob, __instance, careDef.tagToGive);
+                result = new ThinkResult(careJob, source, careDef.tagToGive);
                 return false;
             }
 
-            __result = new ThinkResult(finish, __instance, finishDef.tagToGive);
+            result = new ThinkResult(finish, source, finishDef.tagToGive);
             return false;
         }
     }
@@ -75,12 +81,13 @@ namespace QualityJobs.Patches
         {
             job = null!;
             def = null!;
-            List<WorkGiver> list = pawn.workSettings.WorkGiversInOrderNormal;
+            List<WorkGiver>? list = WorkerCapabilities.WorkGiversFor(pawn);
+            if (list == null) return false;
             for (int i = 0; i < list.Count; i++)
             {
                 WorkGiver giver = list[i];
                 if (!FinishWorkGivers.IsCareWorkType(giver.def.workType)) continue;
-                if (!WorkGiverGates.PawnCanUseWorkGiver(pawn, giver, checkShouldSkip: true))
+                if (!WorkerCapabilities.PawnCanUseWorkGiver(pawn, giver, checkShouldSkip: true))
                     continue;
                 Job? found;
                 try

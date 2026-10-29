@@ -2,7 +2,7 @@
 title: Bắt đầu
 ---
 <!-- l10n:purpose -->
-Quality Jobs cho phép các cư dân chia sẻ công việc, còn bước hoàn thiện do một cư dân lành nghề đảm nhiệm. Trong RimWorld, **người hoàn thiện** quyết định chất lượng. Mod chọn người hoàn thiện; chất lượng cuối cùng vẫn được xác định ngẫu nhiên theo cơ chế thông thường.
+Quality Jobs cho phép thuộc địa chia sẻ công việc, còn bước hoàn thiện do một lao động đủ năng lực đảm nhiệm. Cư dân, mech của thuộc địa và robot được hỗ trợ có thể hoàn thiện những công việc mà họ có khả năng thực hiện. Trong RimWorld, **người hoàn thiện** quyết định chất lượng. Mod chọn người hoàn thiện; chất lượng cuối cùng vẫn được xác định ngẫu nhiên theo cơ chế thông thường.
 
 <!-- l10n:toolbar -->
 Nhấn biểu tượng Quality Jobs cạnh các nút bật/tắt hiển thị ở góc dưới bên phải. **{k:QJ_TabOptions}** chứa các thiết lập mặc định; **{k:QJ_TabHelp}** giải thích các nút điều khiển. Chọn một chương ở phía trên và một chủ đề ở bên trái.

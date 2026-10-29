@@ -30,3 +30,12 @@ Hai vai trò có xử lý riêng. Thợ săn được đề xuất cho người 
 
 <!-- l10n:b-b241ec72dcda -->
 Bộ máy chỉ đề xuất; bạn áp dụng [từng vai trò](topic:cherry-picking) hoặc [cả khu định cư](topic:fix-my-colony). Ngoại lệ là [Tự tối ưu](topic:auto-optimize): bật để Tối ưu khu định cư tự chạy mỗi giờ trong trò chơi ở mọi khu định cư.
+
+<!-- l10n:mechanical-suggestions -->
+Khi bật hàng robot và mech, đề xuất cho chúng dựa trên kỹ năng hiện tại và công việc có thể thực hiện, không xét đam mê hay lộ trình rèn luyện của con người. Nhiệm vụ chính đã được chấp nhận vẫn được giữ nguyên, kể cả vai trò bị loại đã được giao rõ ràng; bạn phải tự đổi nhiệm vụ đó. Đề xuất cho công việc bổ sung vẫn tuân theo các loại trừ. Bạn tự chọn phân công cho chúng; Tự tối ưu vẫn chỉ áp dụng đề xuất cho con người.
+
+<!-- l10n:mechanical-coverage -->
+**Tính phần việc robot và mech đảm nhiệm khi đề xuất cho con người** là tùy chọn riêng cho từng bản lưu, cũng mặc định tắt. Tùy chọn này tính các phân công máy móc đã được chấp nhận vào số người đảm nhiệm, cho phép thay thế chuyên viên con người cuối cùng khi nhiệm vụ đã được đảm nhiệm đầy đủ. Mỗi người hoặc máy chỉ được tính cho một nhiệm vụ chính; vai trò dự phòng không được tính thêm riêng vào số người đảm nhiệm. Khu vực hạn chế, công việc bị chặn, kỹ năng không đủ và các hạn chế của Quality Jobs đối với công việc của robot khiến nhiệm vụ không được đảm nhiệm đầy đủ. Robot chỉ biết dọn dẹp không thể thay thế vai trò kết hợp dọn dẹp và vận chuyển.
+
+<!-- l10n:mechanical-learning -->
+Việc rèn luyện đã chọn cho con người chưa đạt mục tiêu và các phân công đã ghim vẫn được bảo vệ. Sạc thường lệ vẫn được tính là đảm nhiệm công việc; ngừng hoạt động, mất kiểm soát hoặc rời chế độ Làm việc sẽ không còn được tính. Đề xuất cập nhật sẽ đưa ra người thay thế, còn Tự tối ưu sẽ áp dụng vào mốc hằng giờ như thường lệ nếu được bật. Khi tắt tích hợp, các hàng robot và mech không ảnh hưởng đến đề xuất cho con người.

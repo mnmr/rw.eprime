@@ -44,7 +44,7 @@ namespace QualityJobs.Patches
             //     the same predicate but is built after the static constructors —
             //     after def generation — so we duplicate the small predicate here.)
             //
-            // Work types resolve through the unmemoized Dispatcher.ResolveWorkGiver:
+            // Work types resolve through the unmemoized WorkerCapabilities.ResolveWorkGiver:
             // memoizing at PreResolve would freeze the cache before other mods
             // finish loading their defs, and touching ManagedRecipes here would
             // run its static constructor too early.
@@ -77,7 +77,7 @@ namespace QualityJobs.Patches
                 if (IngredientQuality.Decides(recipe, ingredientQuality)) continue;
 
                 // Same resolution as runtime dispatch, without its memo.
-                WorkTypeDef? wt = Dispatcher.ResolveWorkGiver(recipe, givers)?.workType;
+                WorkTypeDef? wt = WorkerCapabilities.ResolveWorkGiver(recipe, givers)?.workType;
                 if (wt == null) continue;
 
                 // Dedup without LINQ/HashSet allocation.

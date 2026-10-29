@@ -48,8 +48,23 @@ blocked. When that happens a one-time notice names the mod and suggests
 the role-based way to get the same effect.
 
 <!-- l10n:b-3e9c0a143130 -->
-Priority ownership applies only to humanlike characters, so mods that set
-mechanoid priorities, such as Mech Work Tab, are fully compatible.
+Mech priority mods such as Mech Work Tab can manage workers with no WorkRoles
+assignments. If you enable robot and mech support, WorkRoles owns work ordering
+for mechanical workers with assigned roles too. Turn support off in Options
+to restore native ordering for all of them; their saved roles remain dormant.
+
+<!-- l10n:mechanical-workers -->
+**Show robots and mechs in Colonists** is a per-save option, off by default.
+It adds Biotech mechs, Misc. Robots and Misc. Robots++ to the existing table.
+Assign roles there; use their native tabs for control groups, areas, activation
+and charging. Roles only order work the worker can actually perform. Humanlike
+androids continue to use the ordinary colonist rules.
+
+<!-- l10n:mechanical-recharge -->
+Charging remains native behavior and needs no Recharge role. Biotech provides
+charge limits in each control group. Misc. Robots uses its own automatic return
+thresholds; clicking the charge percentage in its Robots tab requests an
+immediate recharge. WorkRoles does not change those thresholds.
 
 <!-- l10n:b-3df0d9a43535 -->
 Some mods require priorities in the range 0 to 4, so if you have issues

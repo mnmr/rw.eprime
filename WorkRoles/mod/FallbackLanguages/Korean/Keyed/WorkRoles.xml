@@ -633,4 +633,9 @@ WorkRoles는 기본 게임 방식으로 관리 대상의 작업 목록을 제공
   <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
   <WR_WorkTypesLabel>작업 유형</WR_WorkTypesLabel>
   <WR_WorkTypesTip>지정한 유형의 작업을 할 수 있는 정착민만 이 역할의 대상이 됩니다.\n\n선택한 작업에서 도출한 참고 정보입니다.</WR_WorkTypesTip>
+  <WR_OptMechanicalRecommendations>인간 추천에 로봇·메카노이드의 작업 분담 반영</WR_OptMechanicalRecommendations>
+  <WR_OptMechanicalRecommendationsTip>로봇·메카노이드가 맡은 담당 업무를 정착지 인력 충족 계산에 반영합니다. 각 작업자는 주 담당 업무 하나까지만 기여하며, 예비 업무는 별도 인력으로 계산하지 않습니다. 인간 담당자를 완전히 대체하려면 해당 업무 전체를 제한 없이 수행할 수 있어야 합니다. 선택한 인간의 훈련 배정과 고정 역할은 계속 보호됩니다. 기본적으로 꺼져 있습니다.</WR_OptMechanicalRecommendationsTip>
+  <WR_OptMechanicalWorkers>정착민 목록에 로봇과 메카노이드 표시</WR_OptMechanicalWorkers>
+  <WR_OptMechanicalWorkersTip>이 저장에서 기본 게임 메카노이드와 Misc. Robots에 역할을 배정할 수 있게 합니다. 제어 그룹·구역·활성화·충전은 각자의 기존 탭에서 관리합니다. 끄면 해당 행이 숨겨지고 기존 작업 순서로 돌아가며, 저장된 역할은 비활성 상태로 유지됩니다.</WR_OptMechanicalWorkersTip>
+  <WR_RecMechanicalLearningProtected>로봇이나 메카노이드가 해당 업무를 맡는 동안에도 이 학습 배정은 유지됩니다. 훈련 목표에 도달하면 해제할 수 있습니다.</WR_RecMechanicalLearningProtected>
 </LanguageData>

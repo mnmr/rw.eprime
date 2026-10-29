@@ -1,4 +1,8 @@
-# Changelog
+﻿# Changelog
+
+## 1.7.3 — 2026-10-29
+
+- Added: Support for role assignments for mechs and robots (Misc Robots and Misc Robots++).
 
 ## 1.7.2 — 2026-10-26
 

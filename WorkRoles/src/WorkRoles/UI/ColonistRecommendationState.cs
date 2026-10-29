@@ -42,6 +42,10 @@ namespace WorkRoles.UI
         private ScopeCacheStamp planStamp = ScopeCacheStamp.Invalid;
         private int planMapId = -1;
         private int planTuningRevision = -1;
+        private int planMechanicalRevision = -1;
+        private int planMechanicalRuntime = -1;
+        private Map? builtMap;
+        private MechanicalRecommendationSnapshot? builtWorkers;
         private int planDefinitionRevision = -1;
         private RecommendationSnapshot? planSnapshot;
         private int planAssignmentPresentation = -1;
@@ -103,6 +107,9 @@ namespace WorkRoles.UI
             planMapId = -1;
             planTuningRevision = -1;
             planDefinitionRevision = -1;
+            planMechanicalRevision = planMechanicalRuntime = -1;
+            builtMap = null;
+            builtWorkers = null;
             planAssignmentPresentation = cohortRoster = cohortListRevision = cohortMapId = -1;
             cohortOwner = null;
             ClearPreview();
@@ -156,9 +163,10 @@ namespace WorkRoles.UI
             ScopeCacheStamp stamp,
             Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
-            Map? map = anchor?.MapHeld ?? Find.CurrentMap;
+            Map? map = (anchor == null ? null : ColonyScope.MapOf(anchor)) ?? Find.CurrentMap;
             int mapId = map?.uniqueID ?? -1;
             int tuningRevision = store?.RecommendationTuningRevision ?? -1;
+            int mechanicalRevision = store?.MechanicalFactsRevision ?? -1;
             int revision = Math.Max(Math.Max(Math.Max(UiVersion.Catalog, UiVersion.RoleWork), UiVersion.RoleRecommendation),
                 Math.Max(Math.Max(UiVersion.RoleActivation, UiVersion.RoleRules),
                     Math.Max(Math.Max(UiVersion.AssignmentPresentation, UiVersion.RecommendationOrder), UiVersion.Roster)));
@@ -168,13 +176,17 @@ namespace WorkRoles.UI
                 || planStamp != dependencyStamp
                 || planMapId != mapId
                 || planDefinitionRevision != DefinitionReloadCoordinator.Revision
-                || planTuningRevision != tuningRevision)
+                || planTuningRevision != tuningRevision
+                || planMechanicalRevision != mechanicalRevision
+                || store?.mechanicalWorkersEnabled == true && planMechanicalRuntime != UiVersion.RuntimeRules)
             {
                 planOwner = store;
                 planStamp = dependencyStamp;
                 planDefinitionRevision = DefinitionReloadCoordinator.Revision;
                 planMapId = mapId;
                 planTuningRevision = tuningRevision;
+                planMechanicalRevision = mechanicalRevision;
+                planMechanicalRuntime = UiVersion.RuntimeRules;
                 plans = BuildColonyFixPlan(store, map, stamp, externalSnapshot);
             }
             return plans;
@@ -201,7 +213,7 @@ namespace WorkRoles.UI
         {
             bool verdictsShown = VerdictsShown;
             int tuningRevision = store?.RecommendationTuningRevision ?? -1;
-            int mapId = (pawn?.MapHeld ?? Find.CurrentMap)?.uniqueID ?? -1;
+            int mapId = ((pawn == null ? null : ColonyScope.MapOf(pawn)) ?? Find.CurrentMap)?.uniqueID ?? -1;
             int languageRevision = LanguageChangeCoordinator.Revision;
             IReadOnlyList<PawnFixPlan> source = Plans(store,
                 pawn, stamp, externalSnapshot);
@@ -355,7 +367,7 @@ namespace WorkRoles.UI
             }
 
             return new ColonistRecommendationRenderSnapshot(pawn, chips,
-                target, plan?.HasChanges == true, header, applyLabel,
+                target, plan?.HasChanges == true, MechanicalWorkers.IsMechanical(pawn), header, applyLabel,
                 new Rect(0f, 0f, width, 28f),
                 new Rect(width - 110f, height - 26f, 106f, 24f), viewport, layout);
         }
@@ -384,12 +396,13 @@ namespace WorkRoles.UI
 
         internal List<Dialog_ChangesPreview.PawnPreview> FixEntries(RoleStore store,
             Pawn? only, Pawn? anchor, ScopeCacheStamp stamp,
-            Func<Pawn, PawnExternalSnapshot> externalSnapshot)
+            Func<Pawn, PawnExternalSnapshot> externalSnapshot, bool humansOnly = false)
         {
             var entries = new List<Dialog_ChangesPreview.PawnPreview>();
             foreach (PawnFixPlan plan in Plans(anchor, stamp, externalSnapshot))
             {
                 if (only != null && plan.Pawn != only) continue;
+                if (humansOnly && MechanicalWorkers.IsMechanical(plan.Pawn)) continue;
                 if (!plan.HasChanges) continue;
                 entries.Add(BuildPreviewEntry(store, plan, externalSnapshot));
             }
@@ -486,10 +499,14 @@ namespace WorkRoles.UI
                 cohortMapId = mapId;
             }
             List<Pawn> pawns = planPawns!;
-            RecommendationSnapshot snapshot = producer.For(store, pawns, externalSnapshot);
+            MechanicalRecommendationSnapshot workers = producer.MechanicalFor(store, map);
+            RecommendationSnapshot snapshot = producer.For(store, pawns, externalSnapshot, workers);
             if (plans != null && ReferenceEquals(planSnapshot, snapshot)
-                && planAssignmentPresentation == UiVersion.AssignmentPresentation)
+                && planAssignmentPresentation == UiVersion.AssignmentPresentation
+                && ReferenceEquals(builtMap, map) && ReferenceEquals(builtWorkers, workers))
                 return plans;
+            builtMap = map;
+            builtWorkers = workers;
             planSnapshot = snapshot;
             planAssignmentPresentation = UiVersion.AssignmentPresentation;
             RecommendationPlan recommendations = snapshot.Plan;
@@ -506,6 +523,8 @@ namespace WorkRoles.UI
                 result.Add(pawnPlans.Get(pawn,
                     (recommendations, UiVersion.PresentationForPawn(pawn)), (this, i), BuildPawnPlan));
             }
+            for (int i = 0; i < workers.Pawns.Count; i++)
+                result.Add(BuildMechanicalFixPlan(store, workers.Pawns[i], workers.Workers[i], snapshot.Colony));
             if (plans != null && plans.Count == result.Count)
             {
                 bool equal = true;
@@ -514,6 +533,43 @@ namespace WorkRoles.UI
                 if (equal) return plans;
             }
             return result;
+        }
+
+        private PawnFixPlan BuildMechanicalFixPlan(RoleStore store, Pawn pawn, MechanicalWorkerView worker, ColonyView colony)
+        {
+            PawnFixTarget fix = MechanicalDutyPlan.BuildFixTarget(colony, worker);
+            store.pawnSets.TryGetValue(pawn, out PawnRoleSet? set);
+            var existing = set?.assignments ?? new List<RoleAssignment>();
+            IReadOnlyList<int> ordered = fix.RoleIds;
+            var target = new List<RoleAssignment>(ordered.Count);
+            bool changed = fix.Changed;
+            for (int i = 0; i < ordered.Count; i++)
+            {
+                RoleAssignment? held = existing.Find(a => a.roleId == ordered[i]);
+                target.Add(new RoleAssignment { roleId = ordered[i], state = held?.state ?? AssignmentState.Enabled, pinned = held?.pinned ?? false });
+                if (i >= existing.Count || existing[i].roleId != ordered[i]) changed = true;
+            }
+            var addedIds = new HashSet<int>(target.Select(a => a.roleId).Except(existing.Select(a => a.roleId)));
+            var removedIds = new HashSet<int>(existing.Select(a => a.roleId).Except(target.Select(a => a.roleId)));
+            if (plans != null)
+                foreach (PawnFixPlan previous in plans)
+                {
+                    if (previous.Pawn != pawn || previous.Target.Count != target.Count || previous.OrderChanged != changed
+                        || !addedIds.SetEquals(previous.Added.Select(r => r.id))
+                        || !removedIds.SetEquals(previous.Removed.Select(r => r.id))) continue;
+                    bool equal = true;
+                    for (int i = 0; i < target.Count; i++)
+                        if (previous.Target[i].roleId != target[i].roleId || previous.Target[i].state != target[i].state
+                            || previous.Target[i].pinned != target[i].pinned) { equal = false; break; }
+                    if (equal) return previous;
+                }
+            var plan = new PawnFixPlan(pawn, target, changed);
+            foreach (RoleAssignment assignment in target)
+                if (!existing.Any(a => a.roleId == assignment.roleId) && store.RoleById(assignment.roleId) is Role added) plan.Added.Add(added);
+            foreach (RoleAssignment assignment in existing)
+                if (!target.Any(a => a.roleId == assignment.roleId) && store.RoleById(assignment.roleId) is Role role) plan.Removed.Add(role);
+            plan.SealPresentationDependencies();
+            return plan;
         }
 
         private PawnFixPlan BuildPawnFixPlan(int i)
@@ -760,7 +816,7 @@ namespace WorkRoles.UI
 
         internal ColonistRecommendationRenderSnapshot(Pawn pawn,
             List<ColonistRecommendationRenderChip> chips,
-            List<RoleAssignment> target, bool hasChanges, string headerLabel,
+            List<RoleAssignment> target, bool hasChanges, bool isMechanical, string headerLabel,
             string applyLabel, Rect headerRect, Rect applyRect,
             Rect chipViewport, RecommendationChipLayout chipLayout)
         {
@@ -768,6 +824,7 @@ namespace WorkRoles.UI
             this.chips = chips;
             this.target = target;
             HasChanges = hasChanges;
+            IsMechanical = isMechanical;
             HeaderLabel = headerLabel;
             ApplyLabel = applyLabel;
             HeaderRect = headerRect;
@@ -780,6 +837,7 @@ namespace WorkRoles.UI
 
         internal Pawn Pawn { get; }
         internal bool HasChanges { get; }
+        internal bool IsMechanical { get; }
         internal string HeaderLabel { get; }
         internal string ApplyLabel { get; }
         internal Rect HeaderRect { get; }
@@ -798,6 +856,7 @@ namespace WorkRoles.UI
         {
             if (other == null || !ReferenceEquals(Pawn, other.Pawn)
                 || HasChanges != other.HasChanges
+                || IsMechanical != other.IsMechanical
                 || !string.Equals(HeaderLabel, other.HeaderLabel,
                     StringComparison.Ordinal)
                 || !string.Equals(ApplyLabel, other.ApplyLabel,

@@ -4,6 +4,9 @@ title: Other mods and multiplayer
 <!-- l10n:requirements -->
 Quality Jobs requires Harmony and supports RimWorld 1.6 and 1.7. No DLC is required. Ideology adds the production-specialist requirement; ordinary quality management works without it.
 
+<!-- l10n:robots -->
+**Biotech mechs, Misc. Robots and Misc. Robots++:** colony-controlled workers that can perform the required work can qualify as finishers. Robots keep their own work capabilities; a hauling or cleaning robot cannot finish crafting or construction. **{k:QJ_SettingsAllowRobotPreparation}** controls whether mechs and supported robots may also do the earlier work on managed jobs. Turning it off keeps them available for finishing.
+
 <!-- l10n:expanded -->
 **Vanilla Skills Expanded:** construction, crafting and art quality bonuses count in finisher selection and the odds preview. Speed bonuses do not give a quality preference. Changes to these bonuses may need a little simulation time to appear.
 

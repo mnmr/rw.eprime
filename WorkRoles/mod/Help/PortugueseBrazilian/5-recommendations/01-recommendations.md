@@ -30,3 +30,13 @@ Duas funções recebem tratamento especial. Caçador é recomendado a quem carre
 
 <!-- l10n:b-b241ec72dcda -->
 O mecanismo sugere, você aplica: [uma função por vez](topic:cherry-picking) ou [Ajustar minha colônia](topic:fix-my-colony). A exceção é [Otimização automática](topic:auto-optimize), que ajusta todas as colônias a cada hora do jogo.
+
+<!-- l10n:mechanical-suggestions -->
+Quando as linhas de robôs e mecanoides estão ativadas, suas sugestões usam as habilidades atuais e os trabalhos que podem executar, sem paixões humanas ou caminhos de aprendizado. A tarefa principal aceita permanece atribuída, mesmo que seja uma função excluída atribuída explicitamente; altere essa tarefa manualmente. Sugestões de trabalho adicional respeitam as exclusões. Você escolhe suas atribuições; a Otimização automática continua aplicando apenas recomendações para humanos.
+
+<!-- l10n:mechanical-coverage -->
+**Usar cobertura de robôs e mecas nas recomendações para humanos** é uma opção separada por partida, também desativada por padrão. Ela contabiliza as atribuições mecânicas aceitas no dimensionamento da equipe, permitindo dispensar o último especialista humano de uma tarefa totalmente coberta. Cada trabalhador contribui com uma tarefa principal; funções de reserva não contam como trabalhadores adicionais. Áreas restritas, trabalhos bloqueados, habilidades insuficientes e restrições do Quality Jobs ao trabalho de robôs impedem a cobertura total. Um robô que só consegue limpar não substitui uma função que combina limpeza e transporte.
+
+<!-- l10n:mechanical-learning -->
+O treinamento selecionado para humanos que ainda não atingiu a meta e as atribuições fixadas continuam protegidos.
+A recarga de rotina mantém a cobertura; desativação, perda de controle ou saída do modo Trabalho a removem. As recomendações atualizadas propõem substitutos humanos, e a Otimização automática os aplica no próximo ciclo horário normal, quando ativada. Com a integração desativada, as linhas de robôs e mecas não afetam as recomendações para humanos.

@@ -8,10 +8,13 @@ Abra **Detalhes** em uma ordem de produção de um item com qualidade. O painel 
 ![Uma ordem de produção de uma bancada com seu painel do Quality Jobs](crafting-bill.png)
 
 <!-- l10n:setup -->
-Ative **{k:QJ_ManageBill}** e escolha os [requisitos do finalizador](topic:finishers). Trabalhadores comuns podem fazer a maior parte da fabricação. Se o trabalhador atual atender aos requisitos, ele conclui o item diretamente; caso contrário, o item quase concluído é separado, e a ordem pode preparar mais trabalho dentro do seu limite de estoque.
+Ative **{k:QJ_ManageBill}** e escolha os [requisitos do finalizador](topic:finishers). Trabalhadores comuns podem fazer a maior parte da fabricação. Se o trabalhador atual atender aos requisitos, ele conclui o item diretamente; caso contrário, o item quase concluído é separado, e a ordem pode iniciar mais itens dentro do seu limite de estoque.
 
 <!-- l10n:dispatch -->
 Quando um finalizador atende aos requisitos, o Quality Jobs cria uma ordem temporária **Finalizar …** atribuída a ele. Ele recolhe o item inacabado e o conclui. A ordem temporária é removida automaticamente em seguida. Os itens em espera podem ser transportados e armazenados como outros itens inacabados.
+
+<!-- l10n:finisher-bill-restrictions -->
+O nível máximo de habilidade e a atribuição a um trabalhador específico da ordem de produção original se aplicam até que o item seja separado para finalização. Você pode atribuir o trabalho a um aprendiz enquanto um colono mais habilidoso, um mecanoide da colônia ou um robô compatível assume a ordem exclusiva de finalização. Os finalizadores ainda precisam ser capazes de executar a receita e atender aos requisitos do Quality Jobs.
 
 <!-- l10n:status -->
 A seção **{k:QJ_StatusHeader}** mostra o trabalho **Inacabado** compartilhado, os itens **Aguardando** um finalizador e os itens já atribuídos para **Finalização**. Passe o cursor sobre o status e a lista de finalizadores para ver mais detalhes. Veja [quando o trabalho fica parado](topic:waiting) se nada estiver avançando.

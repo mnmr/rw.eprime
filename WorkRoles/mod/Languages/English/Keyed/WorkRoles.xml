@@ -807,4 +807,9 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
   <WR_RecWorkAversion>{0} opposes {1}; the recommendation score is reduced.</WR_RecWorkAversion>
   <WR_RecDecisionWorkAversion>Aversion lowers the score below the optional-work threshold.</WR_RecDecisionWorkAversion>
+  <WR_OptMechanicalWorkers>Show robots and mechs in Colonists</WR_OptMechanicalWorkers>
+  <WR_OptMechanicalWorkersTip>Enable role assignments for vanilla mechs and Misc. Robots in this save. Control groups, areas, activation and charging remain in their native tabs. Turning this off hides their rows and restores native work ordering; saved roles remain dormant.</WR_OptMechanicalWorkersTip>
+  <WR_OptMechanicalRecommendations>Use robot and mech coverage in human recommendations</WR_OptMechanicalRecommendations>
+  <WR_OptMechanicalRecommendationsTip>Count accepted mechanical duties toward colony staffing. A worker supplies at most one primary duty; fallback duties add no independent staffing credit. Full replacement requires complete, unrestricted service. Selected human training and pinned roles remain protected. Disabled by default.</WR_OptMechanicalRecommendationsTip>
+  <WR_RecMechanicalLearningProtected>This learning assignment is retained while robots or mechs cover the service. It can be released when the training target is reached.</WR_RecMechanicalLearningProtected>
 </LanguageData>

@@ -83,6 +83,13 @@ namespace WorkRoles.Core.Recs
     {
         public int RoleId;
         public bool Recommended;
+        public bool LearningProtectedByMechanicalCoverage;
+        internal RoleRecommendationExplanation PreserveLearning()
+        {
+            var result = (RoleRecommendationExplanation)MemberwiseClone();
+            result.LearningProtectedByMechanicalCoverage = true;
+            return result;
+        }
         public SpecialPickReason SpecialPickReason;
         public PickRejectReason RejectReason;
         public int RelatedRoleId = -1;

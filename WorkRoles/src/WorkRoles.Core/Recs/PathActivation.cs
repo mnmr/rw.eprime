@@ -17,6 +17,7 @@ namespace WorkRoles.Core.Recs
         internal int PathId { get; }
         internal int TargetRoleId { get; }
         internal int[] ActiveRoleIds { get; }
+        internal PathActivation WithRoles(int[] roles) => new PathActivation(PathId, TargetRoleId, roles);
 
         internal static PathActivation? Find(
             EngineContext facts,

@@ -96,6 +96,20 @@ namespace QualityJobs
         // list (Patch_FinisherPriority). Synced per save: job choice is
         // simulation, so a client-local toggle would desync multiplayer.
         public bool highPriorityFinish;
+        // Per-save only: existing and new saves preserve ordinary robot work
+        // until the player reserves preparation for other workers.
+        public bool allowRobotPreparation = true;
+
+        // Authoritative provenance, not a render cache. Owner: this save; key:
+        // unfinished-item identity; value: its original live source bill. Sharing
+        // may rebind the item to another bill, but must not erase which managed
+        // preparation the item represents. Lifecycle handover/pooling records it
+        // once; source management is read at admission/command time. Repeated
+        // handovers retain a live original source. Save/load preserves references;
+        // UFT destruction, bill deletion, map removal and store teardown release
+        // them. No periodic polling or presentation revision depends on this map.
+        private Dictionary<UnfinishedThing, Bill_ProductionWithUft> preparationSources =
+            new Dictionary<UnfinishedThing, Bill_ProductionWithUft>();
 
         // Cache contract — Owner: this per-save store. Key: none. Value: count
         // of Dispatched entries plus Dispatched plans. Dependencies: entry and
@@ -182,7 +196,8 @@ namespace QualityJobs
 
         // Cache contract — Owner: this per-save store. Key: singleton defaults
         // snapshot. Value: immutable StoreSettingsSnapshot. Dependencies: the
-        // fourteen per-save default fields. Refresh: immediate after a successful
+        // per-save default fields and robot-preparation permission. Refresh:
+        // immediate after a successful
         // command and during load/seed. Equality: no-op commands do not republish.
         // Teardown: ReleasePresentation clears the published store-owned state.
         private StoreSettingsSnapshot? settingsPresentation;
@@ -341,6 +356,7 @@ namespace QualityJobs
         {
             plans.Add(plan);
             NotifyPlanStructureChanged();
+            RobotPreparation.StopBlockedCurrentJobs(this);
         }
 
         /// Removes a plan by reference and updates AnyOverlays.
@@ -551,6 +567,12 @@ namespace QualityJobs
             PublishSettingsPresentation();
         }
 
+        internal void NotifyRobotPreparationChanged()
+        {
+            PublishSettingsPresentation();
+            RobotPreparation.StopBlockedCurrentJobs(this);
+        }
+
         private void RecountDispatchedFinishers()
         {
             int count = 0;
@@ -721,6 +743,7 @@ namespace QualityJobs
             plan.autoBest = autoBest;
             if (wasRestoreOnly) NotifyPlanStructureChanged();
             else NotifyPlanConfigurationChanged();
+            if (wasRestoreOnly) RobotPreparation.StopBlockedCurrentJobs(this);
         }
 
         /// The one home of the rule that only blueprints and frames can be
@@ -893,6 +916,7 @@ namespace QualityJobs
         {
             entries.Clear();
             entriesByUft.Clear();
+            preparationSources.Clear();
             plans.Clear();
             InvalidateManagedJobs();
             NotifyEntriesChanged();
@@ -948,6 +972,7 @@ namespace QualityJobs
         internal void ReleaseMap(Map map)
         {
             ReleaseCompletedBuildings(map);
+            PrunePreparationSources(map);
             // Do not retain any handle from the map while Game removes it. The
             // next update republishes the remaining maps from authoritative data.
             managedJobsPresentation = ManagedQualityJobsSnapshot.Empty;
@@ -1506,6 +1531,10 @@ namespace QualityJobs
             RecountAndPool();
             InitializeExistingBillMigration();
             PublishAllPresentation();
+            // Loaded job drivers restore their current toil without executing
+            // its init action. Recheck once after references/configuration are
+            // normalized, before the loaded simulation can resume.
+            RobotPreparation.StopBlockedCurrentJobs(this);
             // After the migration prompt, so the welcome opens on top of it.
             LongEventHandler.ExecuteWhenFinished(queueWelcome);
         }
@@ -1687,6 +1716,44 @@ namespace QualityJobs
         {
             entriesByUft.TryGetValue(uft, out WorkItemEntry? entry);
             return entry;
+        }
+
+        internal Bill_ProductionWithUft? PreparationSourceFor(UnfinishedThing uft)
+            => preparationSources.TryGetValue(uft, out Bill_ProductionWithUft? source)
+               && IsLivePreparationSource(source) ? source : null;
+
+        internal static bool IsLivePreparationSource(Bill_ProductionWithUft? source)
+            => source?.billStack != null && !source.DeletedOrDereferenced
+               && source.billStack.Bills.Contains(source);
+
+        internal void RememberPreparationSource(UnfinishedThing uft,
+            Bill_ProductionWithUft? source)
+        {
+            if (!IsLivePreparationSource(source)
+                || PreparationSourceFor(uft) != null) return;
+            preparationSources[uft] = source!;
+        }
+
+        internal void ForgetPreparationSource(UnfinishedThing uft)
+            => preparationSources.Remove(uft);
+
+        internal void PrunePreparationSources(Map? removedMap = null)
+        {
+            List<UnfinishedThing>? obsolete = null;
+            foreach (KeyValuePair<UnfinishedThing, Bill_ProductionWithUft> pair
+                in preparationSources)
+            {
+                Bill_ProductionWithUft? source = pair.Value;
+                if (!pair.Key.Destroyed && IsLivePreparationSource(source)
+                    && (removedMap == null || (pair.Key.MapHeld != removedMap
+                        && (source!.billStack?.billGiver as Thing)?.MapHeld != removedMap)))
+                    continue;
+                obsolete ??= new List<UnfinishedThing>();
+                obsolete.Add(pair.Key);
+            }
+            if (obsolete == null) return;
+            for (int i = 0; i < obsolete.Count; i++)
+                preparationSources.Remove(obsolete[i]);
         }
 
         public ConstructionPlan? FindPlan(Thing target)
@@ -1946,6 +2013,7 @@ namespace QualityJobs
                 return false;
 
             StyleSnapshot? snapshot = uft.BoundBill != null ? StyleSnapshot.From(uft.BoundBill) : null;
+            RememberPreparationSource(uft, uft.BoundBill);
             var entry = new WorkItemEntry
             {
                 uft = uft,
@@ -2216,7 +2284,12 @@ namespace QualityJobs
         public override void ExposeData()
         {
             if (Scribe.mode == LoadSaveMode.Saving)
+            {
                 PruneDeadBillConfigs();
+                PrunePreparationSources();
+            }
+            Scribe_Collections.Look(ref preparationSources, "preparationSources",
+                LookMode.Reference, LookMode.Reference);
             Scribe_Collections.Look(ref entries, "entries", LookMode.Deep);
             Scribe_Collections.Look(ref plans, "plans", LookMode.Deep);
             Scribe_Collections.Look(ref billManaged, "billManaged", LookMode.Value, LookMode.Value);
@@ -2235,6 +2308,7 @@ namespace QualityJobs
             Scribe_Values.Look(ref productCapDefault, "productCapDefault", 10);
             Scribe_Values.Look(ref shareUnfinishedWork, "shareUnfinishedWork", true);
             Scribe_Values.Look(ref highPriorityFinish, "highPriorityFinish", true);
+            Scribe_Values.Look(ref allowRobotPreparation, "allowRobotPreparation", true);
             Scribe_Values.Look(ref manageNewConstructionDefault, "manageNewConstructionDefault", false);
             Scribe_Values.Look(ref constructionMinSkillDefault, "constructionMinSkillDefault", 15);
             Scribe_Values.Look(ref constructionRequireInspiredDefault, "constructionRequireInspiredDefault", false);
@@ -2261,6 +2335,8 @@ namespace QualityJobs
                 billAutoBest ??= new Dictionary<string, bool>();
                 billTargetQuality ??= new Dictionary<string, int>();
                 productCaps ??= new Dictionary<string, int>();
+                preparationSources ??= new Dictionary<UnfinishedThing, Bill_ProductionWithUft>();
+                PrunePreparationSources();
                 pendingExistingBillMigrationIds ??= new List<string>();
                 // Fix C1/I4: clean up any finish bills for entries whose UFTs
                 // failed to resolve (null uft after load). DeleteFinishBill

@@ -16,3 +16,6 @@ Bei geladenem Spielstand änderst du unter „Optionen“ die Einstellungen dies
 <!-- l10n:global -->
 **{k:QJ_SettingsShareWork}** und **{k:QJ_SettingsHighPriorityFinish}** gelten für die gesamte Kolonie. Ihre Auswirkungen werden unter [Teilen unfertiger Arbeiten](topic:sharing-work) und [Fertigstellen](topic:finishers) erklärt. **{k:QJ_DisableButton}** ist für das [sichere Entfernen](topic:removing) gedacht, nicht zum Pausieren eines einzelnen Auftrags.
 
+<!-- l10n:robot-preparation -->
+**{k:QJ_SettingsAllowRobotPreparation}** wird für die aktuelle Kolonie gespeichert und ist anfangs aktiviert, auch in bestehenden Spielständen. Deaktiviere die Option, um Arbeiten an verwalteten Herstellungsaufträgen und Bauplänen Kolonisten vorzubehalten, damit sie die Fertigkeitserfahrung für diese Arbeit erhalten. Dadurch werden auch Mechs und Roboter gestoppt, die diese Arbeiten bereits ausführen. Geeignete Mechs und unterstützte Roboter können weiterhin Arbeiten fertigstellen, die Quality Jobs ihnen zuweist. Gewöhnliche, nicht verwaltete Arbeiten bleiben davon unberührt; für [gemeinsam bearbeitete unfertige Gegenstände](topic:sharing-work) gilt weiterhin die Einschränkung des ursprünglichen verwalteten Auftrags. Diese Option ist bei geladenem Spielstand verfügbar und wird in Multiplayer synchronisiert.
+

@@ -4,6 +4,9 @@ title: 其他模组与多人游戏
 <!-- l10n:requirements -->
 Quality Jobs 需要 Harmony，支持 RimWorld 1.6 和 1.7，无需任何 DLC。安装 Ideology 后可设置生产专家要求；普通品质管理无需该 DLC 即可使用。
 
+<!-- l10n:robots -->
+**Biotech 机械族、Misc. Robots 和 Misc. Robots++：**殖民地控制的工作者只要能执行所需工作，就可成为收尾者。机器人仍受自身工作能力限制；搬运或清洁机器人无法完成制作或建造的收尾工作。**{k:QJ_SettingsAllowRobotPreparation}**控制机械族和受支持的机器人能否参与受管理工作的前期工序。关闭后，它们仍可进行收尾。
+
 <!-- l10n:expanded -->
 **Vanilla Skills Expanded：**建筑、手工和艺术的品质加成会计入收尾者选择及品质概率预览。速度加成不会带来品质方面的优先待遇。这些加成的变化可能需要游戏运行片刻后才会体现。
 

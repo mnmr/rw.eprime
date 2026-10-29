@@ -13,15 +13,15 @@
   <QJ_QualityPanelTitle>Quality Jobs</QJ_QualityPanelTitle>
   <QJ_ManageBill>Manage this bill</QJ_ManageBill>
   <QJ_FinisherSkill>Finisher skill: {0}</QJ_FinisherSkill>
-  <QJ_FinisherSkillTip>Only colonists at or above this skill level are allowed to finish the work. Anyone may do the earlier crafting.</QJ_FinisherSkillTip>
+  <QJ_FinisherSkillTip>Only workers at or above this skill level are allowed to finish the work. Other eligible workers may do the earlier crafting.</QJ_FinisherSkillTip>
   <QJ_AutoBest>Auto-adjust finisher skill</QJ_AutoBest>
-  <QJ_AutoBestTip>Checked: Only the best available finisher in the colony may complete this work, and the skill requirement follows that colonist automatically. Colonists who are away, downed, or busy still count as available for this comparison.\n\nUnchecked: Any colonist that meets the finisher skill you set may complete the work.</QJ_AutoBestTip>
+  <QJ_AutoBestTip>Checked: Only the best available finisher in the colony may complete this work, and the skill requirement follows that worker automatically. Workers who are away, downed, or busy still count as available for this comparison.\n\nUnchecked: Any eligible worker that meets the finisher skill you set may complete the work.</QJ_AutoBestTip>
   <QJ_AutoBestCurrent>Currently: {0}</QJ_AutoBestCurrent>
-  <QJ_AutoBestNone>No eligible colonist</QJ_AutoBestNone>
+  <QJ_AutoBestNone>No eligible worker</QJ_AutoBestNone>
   <QJ_MigrationTitle>Existing quality bills</QJ_MigrationTitle>
   <QJ_MigrationBody>Quality Jobs found {0} existing quality bill(s). They have been left unmanaged so they can continue with their current behavior. Shared unfinished work remains available either way.</QJ_MigrationBody>
   <QJ_MigrationEnableExisting>Enable Quality Jobs on existing bills for quality items?</QJ_MigrationEnableExisting>
-  <QJ_MigrationEnableExistingTip>Checked: Existing bills use Quality Jobs with Auto-adjust finisher skill enabled. The best eligible colonist in the colony performs the finishing touch; temporarily unavailable colonists still count. Inspiration and production-specialist requirements are disabled, and low-quality results are not retried.\n\nUnchecked: Existing bills keep vanilla completion behavior. Sharing unfinished work is unaffected.</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationEnableExistingTip>Checked: Existing bills use Quality Jobs with Auto-adjust finisher skill enabled. The best eligible worker in the colony performs the finishing touch; temporarily unavailable workers still count. Inspiration and production-specialist requirements are disabled, and low-quality results are not retried.\n\nUnchecked: Existing bills keep vanilla completion behavior. Sharing unfinished work is unaffected.</QJ_MigrationEnableExistingTip>
   <QJ_MigrationContinue>Continue</QJ_MigrationContinue>
   <QJ_RequireInspired>Require inspired creativity</QJ_RequireInspired>
   <QJ_RequireSpecialist>Require production specialist</QJ_RequireSpecialist>
@@ -33,11 +33,11 @@
   <QJ_StatusQueueTip>Unfinished: items in the sharing pool that any allowed crafter may continue. Waiting: paused items that need a qualifying finisher. Finishing: items assigned to a finisher.</QJ_StatusQueueTip>
   <QJ_StatusFinishers>Eligible finishers: {0}</QJ_StatusFinishers>
   <QJ_StatusFinishersNone>Eligible finishers: none</QJ_StatusFinishersNone>
-  <QJ_StatusFinishersTip>Colonists on this map who currently qualify to perform the finishing touch, best candidate first. A colonist qualifies when the required work type is enabled and the finisher requirements above are met.\n\nDowned colonists, colonists in a mental state, and colonists away from this map do not count.</QJ_StatusFinishersTip>
+  <QJ_StatusFinishersTip>Workers on this map who currently qualify to perform the finishing touch, best candidate first. A worker qualifies when they can perform the required work type and meet the finisher requirements above.\n\nDowned workers, workers in a mental state, and workers away from this map do not count.</QJ_StatusFinishersTip>
   <QJ_StatusStalled>Waiting items have no eligible finisher</QJ_StatusStalled>
-  <QJ_StatusStalledTip>Unfinished items are waiting, but no colonist currently qualifies to finish them, so no finish jobs are being created.\n\nCheck the finisher skill requirement, the inspiration and specialist requirements, and whether the intended finisher has the work type enabled and is on this map. While stalled, the stock cap may also block new items from being started.</QJ_StatusStalledTip>
+  <QJ_StatusStalledTip>Unfinished items are waiting, but no worker currently qualifies to finish them, so no finish jobs are being created.\n\nCheck the finisher skill requirement, the inspiration and specialist requirements, and whether the intended finisher can perform the work type and is on this map. While stalled, the stock cap may also block new items from being started.</QJ_StatusStalledTip>
   <QJ_StatusStalledConstruction>No eligible finisher — build is stalled</QJ_StatusStalledConstruction>
-  <QJ_StatusStalledConstructionTip>This building is paused waiting for a finishing touch, but no colonist currently qualifies, so it will not complete.\n\nCheck the finisher skill requirement, the inspiration and specialist requirements, and whether the intended builder has Construction enabled and is on this map.</QJ_StatusStalledConstructionTip>
+  <QJ_StatusStalledConstructionTip>This building is paused waiting for a finishing touch, but no worker currently qualifies, so it will not complete.\n\nCheck the finisher skill requirement, the inspiration and specialist requirements, and whether the intended builder can perform Construction and is on this map.</QJ_StatusStalledConstructionTip>
   <QJ_OddsHeader>Quality odds</QJ_OddsHeader>
   <QJ_NormalOrWorse>Normal or worse</QJ_NormalOrWorse>
   <QJ_OddsColConfig>Config</QJ_OddsColConfig>
@@ -51,11 +51,13 @@
   <QJ_SettingsManageNewConstructionTip>Checked: New quality-producing buildings are managed automatically using the options in this column. Individual buildings can be configured or cleared with the Quality Job button.\n\nUnchecked: New buildings use vanilla behavior unless enabled individually.</QJ_SettingsManageNewConstructionTip>
   <QJ_RequireInspiredTip>Checked: Only a colonist with Inspired Creativity may perform the finishing touch; other workers may do the earlier work. The inspiration is consumed on completion, as in vanilla.\n\nUnchecked: Inspired Creativity is not required.</QJ_RequireInspiredTip>
   <QJ_RequireSpecialistTip>Checked: Only a colonist whose Ideology role grants a production quality bonus may perform the finishing touch; other workers may do the earlier work.\n\nUnchecked: A production-specialist role is not required.</QJ_RequireSpecialistTip>
-  <QJ_SettingsFinisherSkillTip>Only colonists at or above this skill level may perform the finishing touch; other workers may do the earlier work.\n\nWhen Auto-adjust finisher skill is checked, this value is kept as the manual default but is not used.</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsFinisherSkillTip>Only workers at or above this skill level may perform the finishing touch; other eligible workers may do the earlier work.\n\nWhen Auto-adjust finisher skill is checked, this value is kept as the manual default but is not used.</QJ_SettingsFinisherSkillTip>
   <QJ_SettingsShareWork>Share unfinished work</QJ_SettingsShareWork>
   <QJ_SettingsShareWorkTip>Checked: Unfinished items are unlocked so any eligible worker can continue work that someone else started.\n\nUnchecked: Vanilla behavior, where an unfinished item stays bound to the worker who started it.</QJ_SettingsShareWorkTip>
   <QJ_SettingsHighPriorityFinish>Use high-priority job for finishers</QJ_SettingsHighPriorityFinish>
-  <QJ_SettingsHighPriorityFinishTip>Checked: A colonist chosen to finish an item takes that job the next time they look for work, before every other kind of work except firefighting, medical care, rescuing and bed rest. Their current job is not interrupted.\n\nUnchecked: The finish job is the first job within its work type, but work types the colonist ranks higher still come first.</QJ_SettingsHighPriorityFinishTip>
+  <QJ_SettingsHighPriorityFinishTip>Checked: A worker chosen to finish an item takes that job the next time they look for work, before every other kind of work except firefighting, medical care, rescuing and bed rest. Their current job is not interrupted.\n\nUnchecked: The finish job is the first job within its work type, but work types the worker ranks higher still come first.</QJ_SettingsHighPriorityFinishTip>
+  <QJ_SettingsAllowRobotPreparation>Allow mechs and robots to work on quality jobs</QJ_SettingsAllowRobotPreparation>
+  <QJ_SettingsAllowRobotPreparationTip>Allow mechs and supported robots to work on managed crafting and construction jobs. Turn this off to reserve that work and its skill experience for colonists. This also stops their current work on managed jobs. Eligible mechs and robots can still finish jobs assigned by Quality Jobs. Ordinary unmanaged jobs are unaffected.</QJ_SettingsAllowRobotPreparationTip>
   <QJ_SettingsDefaultCap>Default unfinished stock cap: {0}</QJ_SettingsDefaultCap>
   <QJ_SettingsDefaultCapTip>Sets the default maximum number of unfinished items for each product. All bills producing the same item share the cap.\n\nBills stop starting new items when the cap is reached; in-progress items may still finish. 0 means unlimited.</QJ_SettingsDefaultCapTip>
   <QJ_SettingsUnlimitedHint>0 = unlimited</QJ_SettingsUnlimitedHint>
@@ -90,7 +92,7 @@
   <QJ_CompatibilityNoJobAuthors>No Job Authors can resume quality-reserved work outside Quality Jobs when its force-finish or Achtung compatibility options are enabled.</QJ_CompatibilityNoJobAuthors>
   <QJ_CompatibilityFinishIt>Finish it! can fail when used on unfinished work that Quality Jobs has detached from its bill.</QJ_CompatibilityFinishIt>
   <QJ_CompatibilitySharingAdvice>Turning off unfinished-work sharing does not eliminate all of these conflicts.</QJ_CompatibilitySharingAdvice>
-  <QJ_WelcomeBody>Quality Jobs lets any colonist work on an unfinished item or building, but only a colonist who meets the requirements you set may finish it, because the finisher alone decides the quality. It works for crafting bills and for construction.</QJ_WelcomeBody>
+  <QJ_WelcomeBody>Quality Jobs lets eligible workers share the work on an item or building. Only a worker who meets the requirements you set may finish it, because the finisher determines quality. It works for crafting bills and construction.</QJ_WelcomeBody>
   <QJ_WelcomeFind>Open the Quality Jobs settings with this button beside the view toggles in the lower right corner of the screen. The bill window for a quality item has a Quality Jobs section, and a selected blueprint or frame of a quality building has a Quality Job button.</QJ_WelcomeFind>
   <QJ_WelcomeTakeMeThere>Take me there now</QJ_WelcomeTakeMeThere>
 </LanguageData>

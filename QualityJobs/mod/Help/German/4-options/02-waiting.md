@@ -7,7 +7,7 @@ Prüfe zuerst den **{k:QJ_StatusHeader}** im Auftrags- oder Baufenster. **Nieman
 <!-- l10n:checklist -->
 - Ist die erforderliche Arbeitsart für die zum Fertigstellen vorgesehene Person aktiviert, und ist sie auf dieser Karte und arbeitsfähig?
 - Ist die Fertigkeitsanforderung zu hoch, oder wartest du auf inspirierte Kreativität oder einen Produktionsspezialisten?
-- Wartet die automatische Anpassung auf einen besser qualifizierten Kolonisten, der vorübergehend abwesend oder nicht verfügbar ist?
+- Wartet die automatische Anpassung darauf, dass ein Arbeiter mit höherer erwarteter Qualität verfügbar wird, etwa von einer Karawane zurückkehrt oder das Aufladen beendet?
 - Kann die Arbeitskraft den Gegenstand oder das Baugerüst erreichen und reservieren sowie die Werkbank benutzen? Prüfe verbotene Gegenstände, erlaubte Gebiete, Auftragsbeschränkungen und konkurrierende Reservierungen.
 - Ist die Bestandsobergrenze erreicht? Stelle wartende Gegenstände fertig, bevor du weitere beginnst, oder erhöhe die Obergrenze gezielt.
 

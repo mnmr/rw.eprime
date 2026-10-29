@@ -39,11 +39,14 @@ namespace QualityJobs.Patches
     public static class Patch_ShareResume_Match
     {
         public static void Postfix(Pawn pawn, Bill_ProductionWithUft bill,
-            ref UnfinishedThing __result)
+            ref UnfinishedThing? __result)
         {
-            if (__result != null) return;
             QualityJobsStore? store = QualityJobsStore.Active;
-            if (store == null || !store.shareUnfinishedWork) return;
+            if (store == null) return;
+            if (__result != null
+                && !RobotPreparation.AllowsBillWork(store, pawn, bill, __result))
+                __result = null;
+            if (__result != null || !store.shareUnfinishedWork) return;
             if (store.entries.Count == 0) return;
 
             // Compute billKey lazily: only once the first entry passes the
@@ -61,6 +64,7 @@ namespace QualityJobs.Patches
                 UnfinishedThing? t = e.uft;
                 if (t == null || !t.Spawned || t.Map != pawn.Map) continue;
                 if (t.Recipe != bill.recipe) continue;
+                if (!RobotPreparation.AllowsBillWork(store, pawn, bill, t)) continue;
                 if (!billKeyComputed)
                 {
                     billKey = StyleSnapshot.KeyOf(bill);
@@ -102,8 +106,13 @@ namespace QualityJobs.Patches
         public static bool Prefix(Pawn pawn, UnfinishedThing uft,
             Bill_ProductionWithUft bill, ref Job __result)
         {
-            if (uft.Creator == pawn) return true;
             QualityJobsStore? store = QualityJobsStore.Active;
+            if (store != null && !RobotPreparation.AllowsBillWork(store, pawn, bill, uft))
+            {
+                __result = null!;
+                return false;
+            }
+            if (uft.Creator == pawn) return true;
             if (store == null || !store.IsShared(uft)) return true;
 
             // Delegate to shared helper (mirrors WorkGiver_DoBill.FinishUftJob

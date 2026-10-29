@@ -7,6 +7,10 @@ EPrime's Implanner), player-authored names, and technical identifiers.
 
 Owner-reviewed terminology takes precedence:
 
+- Quality Jobs crafting and construction are work, not preparation. Use the
+  locale's natural term for work, or work before finishing when the distinction
+  matters. Preserve technical identifiers containing `Preparation` unchanged.
+
 The Danish terminology and Norwegian/European Portuguese regional notes below
 are retained as historical guidance for an owner-approved reactivation. Those
 locales are retired; the active tooling does not update their archived content.

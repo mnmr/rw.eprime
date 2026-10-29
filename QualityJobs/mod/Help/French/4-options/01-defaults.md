@@ -16,3 +16,6 @@ Les **{k:QJ_SettingsConstructionDefaults}** s'appliquent lorsque la gestion d'un
 <!-- l10n:global -->
 **{k:QJ_SettingsShareWork}** et **{k:QJ_SettingsHighPriorityFinish}** s'appliquent à toute la colonie. Consultez les pages sur le [partage](topic:sharing-work) et la [finition](topic:finishers) pour connaître leurs effets. **{k:QJ_DisableButton}** sert à [retirer le mod sans risque](topic:removing), et non à suspendre un seul ordre.
 
+<!-- l10n:robot-preparation -->
+**{k:QJ_SettingsAllowRobotPreparation}** est enregistré pour la colonie actuelle et activé par défaut, y compris dans les sauvegardes existantes. Désactivez cette option pour réserver aux colons le travail sur les ordres de fabrication et les plans de construction gérés, afin qu'ils gagnent l'expérience de compétence liée à ce travail. Cela interrompt aussi les mécas et les robots qui effectuent déjà ce travail. Les mécas admissibles et les robots compatibles peuvent toujours terminer les travaux attribués par Quality Jobs. Les travaux ordinaires non gérés ne sont pas affectés ; les [objets inachevés partagés](topic:sharing-work) conservent la restriction de l'ordre géré d'origine. Cette option est disponible lorsqu'une sauvegarde est chargée et est synchronisée dans Multiplayer.
+

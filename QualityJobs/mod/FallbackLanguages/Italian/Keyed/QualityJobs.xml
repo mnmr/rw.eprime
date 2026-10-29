@@ -6,15 +6,15 @@
   <QJ_QualityPanelTitle>Quality Jobs</QJ_QualityPanelTitle>
   <QJ_ManageBill>Gestisci questo ordine</QJ_ManageBill>
   <QJ_FinisherSkill>Completa dal livello {0}</QJ_FinisherSkill>
-  <QJ_FinisherSkillTip>Solo i coloni con questo livello di abilità o superiore possono completare il lavoro. Chiunque può svolgere le fasi precedenti della lavorazione.</QJ_FinisherSkillTip>
+  <QJ_FinisherSkillTip>Solo i lavoratori con questo livello di abilità o superiore possono completare il lavoro. Gli altri lavoratori idonei possono svolgere le fasi precedenti della lavorazione.</QJ_FinisherSkillTip>
   <QJ_AutoBest>Livello automatico</QJ_AutoBest>
-  <QJ_AutoBestTip>Attivo: solo il miglior colono disponibile nella colonia per la rifinitura può completare questo lavoro; il livello richiesto si adegua automaticamente alla sua abilità. I coloni assenti, a terra o occupati sono comunque considerati disponibili per questo confronto.\n\nDisattivo: qualsiasi colono che soddisfi il livello richiesto impostato può completare il lavoro.</QJ_AutoBestTip>
+  <QJ_AutoBestTip>Attivo: solo il miglior lavoratore disponibile nella colonia per il completamento può completare questo lavoro; il livello richiesto si adegua automaticamente alla sua abilità. I lavoratori assenti, a terra o occupati sono comunque considerati disponibili per questo confronto.\n\nDisattivo: qualsiasi lavoratore idoneo che soddisfi il livello richiesto impostato può completare il lavoro.</QJ_AutoBestTip>
   <QJ_AutoBestCurrent>Attualmente: {0}</QJ_AutoBestCurrent>
-  <QJ_AutoBestNone>Nessun colono idoneo</QJ_AutoBestNone>
+  <QJ_AutoBestNone>Nessun lavoratore idoneo</QJ_AutoBestNone>
   <QJ_MigrationTitle>Ordini di qualità esistenti</QJ_MigrationTitle>
   <QJ_MigrationBody>Quality Jobs ha trovato {0} ordini di qualità esistenti. Sono rimasti senza gestione, così possono conservare il comportamento attuale. La condivisione dei lavori incompiuti rimane disponibile in entrambi i casi.</QJ_MigrationBody>
   <QJ_MigrationEnableExisting>Attivare Quality Jobs per gli ordini di oggetti di qualità già esistenti?</QJ_MigrationEnableExisting>
-  <QJ_MigrationEnableExistingTip>Attivo: gli ordini esistenti usano Quality Jobs con l'adattamento automatico del livello richiesto. Il miglior colono idoneo della colonia dà l'ultimo tocco; i coloni temporaneamente indisponibili contano comunque. Non sono richiesti ispirazione o specializzazione nella produzione e non si ripetono i risultati di bassa qualità.\n\nDisattivo: gli ordini esistenti mantengono il completamento del gioco base. La condivisione dei lavori incompiuti non cambia.</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationEnableExistingTip>Attivo: gli ordini esistenti usano Quality Jobs con l'adattamento automatico del livello richiesto. Il miglior lavoratore idoneo della colonia dà l'ultimo tocco; i lavoratori temporaneamente indisponibili contano comunque. Non sono richiesti ispirazione o specializzazione nella produzione e non si ripetono i risultati di bassa qualità.\n\nDisattivo: gli ordini esistenti mantengono il completamento del gioco base. La condivisione dei lavori incompiuti non cambia.</QJ_MigrationEnableExistingTip>
   <QJ_MigrationContinue>Continua</QJ_MigrationContinue>
   <QJ_RequireInspired>Richiedi ispirazione creativa</QJ_RequireInspired>
   <QJ_RequireSpecialist>Solo specialisti di produzione</QJ_RequireSpecialist>
@@ -26,11 +26,11 @@
   <QJ_StatusQueueTip>Incompiuti: oggetti condivisi la cui lavorazione può essere ripresa da qualsiasi artigiano autorizzato. Attesa: oggetti sospesi che richiedono una pedina idonea a completarli. Finitura: oggetti assegnati a una pedina per la rifinitura.</QJ_StatusQueueTip>
   <QJ_StatusFinishers>Idonei al completamento: {0}</QJ_StatusFinishers>
   <QJ_StatusFinishersNone>Idonei al completamento: nessuno</QJ_StatusFinishersNone>
-  <QJ_StatusFinishersTip>Coloni su questa mappa attualmente idonei a dare l'ultimo tocco, con il candidato migliore per primo. Un colono è idoneo se ha attivo il tipo di lavoro richiesto e soddisfa i requisiti di completamento indicati sopra.\n\nNon contano i coloni a terra, in uno stato mentale o lontani da questa mappa.</QJ_StatusFinishersTip>
+  <QJ_StatusFinishersTip>Lavoratori su questa mappa attualmente idonei a dare l'ultimo tocco, con il candidato migliore per primo. Un lavoratore è idoneo se può svolgere il tipo di lavoro richiesto e soddisfa i requisiti di completamento indicati sopra.\n\nNon contano i lavoratori a terra, in uno stato mentale o lontani da questa mappa.</QJ_StatusFinishersTip>
   <QJ_StatusStalled>Nessuno idoneo a completare</QJ_StatusStalled>
-  <QJ_StatusStalledTip>Ci sono oggetti incompiuti in attesa, ma nessun colono è attualmente idoneo a completarli, quindi non vengono create attività di completamento.\n\nControlla il livello richiesto, i requisiti di ispirazione e specializzazione, e che il colono previsto abbia il tipo di lavoro attivo e sia su questa mappa. Durante lo stallo, il limite di scorta può anche impedire di iniziare nuovi oggetti.</QJ_StatusStalledTip>
+  <QJ_StatusStalledTip>Ci sono oggetti incompiuti in attesa, ma nessun lavoratore è attualmente idoneo a completarli, quindi non vengono create attività di completamento.\n\nControlla il livello richiesto, i requisiti di ispirazione e specializzazione, e che il lavoratore previsto per il completamento possa svolgere il tipo di lavoro e sia su questa mappa. Durante lo stallo, il limite di scorta può anche impedire di iniziare nuovi oggetti.</QJ_StatusStalledTip>
   <QJ_StatusStalledConstruction>Nessuno è idoneo al completamento — costruzione ferma</QJ_StatusStalledConstruction>
-  <QJ_StatusStalledConstructionTip>Questo edificio è sospeso in attesa dell'ultimo tocco, ma nessun colono è attualmente idoneo, quindi non verrà completato.\n\nControlla il livello richiesto, i requisiti di ispirazione e specializzazione, e che il costruttore previsto abbia Costruzione attiva e sia su questa mappa.</QJ_StatusStalledConstructionTip>
+  <QJ_StatusStalledConstructionTip>Questo edificio è sospeso in attesa dell'ultimo tocco, ma nessun lavoratore è attualmente idoneo, quindi non verrà completato.\n\nControlla il livello richiesto, i requisiti di ispirazione e specializzazione, e che il costruttore previsto possa svolgere lavori di Costruzione e sia su questa mappa.</QJ_StatusStalledConstructionTip>
   <QJ_OddsHeader>Probabilità di qualità</QJ_OddsHeader>
   <QJ_NormalOrWorse>Normale o peggio</QJ_NormalOrWorse>
   <QJ_OddsColConfig>Impost.</QJ_OddsColConfig>
@@ -44,11 +44,11 @@
   <QJ_SettingsManageNewConstructionTip>Attivo: i nuovi edifici dotati di qualità vengono gestiti automaticamente con le opzioni di questa colonna. I singoli edifici possono essere configurati o esclusi dalla gestione con il pulsante Quality Job.\n\nDisattivo: i nuovi edifici usano il comportamento del gioco base, a meno che siano attivati singolarmente.</QJ_SettingsManageNewConstructionTip>
   <QJ_RequireInspiredTip>Attivo: solo un colono con Ispirazione creativa può dare l'ultimo tocco; gli altri lavoratori possono svolgere le fasi precedenti. L'ispirazione viene consumata al completamento, come nel gioco base.\n\nDisattivo: Ispirazione creativa non è richiesta.</QJ_RequireInspiredTip>
   <QJ_RequireSpecialistTip>Attivo: solo un colono il cui ruolo ideologico conferisce un bonus alla qualità di produzione può dare l'ultimo tocco; gli altri lavoratori possono svolgere le fasi precedenti.\n\nDisattivo: non è richiesto un ruolo da specialista della produzione.</QJ_RequireSpecialistTip>
-  <QJ_SettingsFinisherSkillTip>Solo i coloni con questo livello di abilità o superiore possono dare l'ultimo tocco; gli altri lavoratori possono svolgere le fasi precedenti.\n\nQuando è attivo l'adattamento automatico del livello richiesto, questo valore resta memorizzato come valore manuale predefinito, ma non viene usato.</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsFinisherSkillTip>Solo i lavoratori con questo livello di abilità o superiore possono dare l'ultimo tocco; gli altri lavoratori idonei possono svolgere le fasi precedenti.\n\nQuando è attivo l'adattamento automatico del livello richiesto, questo valore resta memorizzato come valore manuale predefinito, ma non viene usato.</QJ_SettingsFinisherSkillTip>
   <QJ_SettingsShareWork>Condividi i lavori incompiuti</QJ_SettingsShareWork>
   <QJ_SettingsShareWorkTip>Attivo: gli oggetti incompiuti vengono sbloccati, così qualsiasi lavoratore idoneo può continuare un lavoro iniziato da un altro.\n\nDisattivo: comportamento del gioco base, in cui un oggetto incompiuto rimane vincolato al lavoratore che lo ha iniziato.</QJ_SettingsShareWorkTip>
   <QJ_SettingsHighPriorityFinish>Usa attività ad alta priorità per il completamento</QJ_SettingsHighPriorityFinish>
-  <QJ_SettingsHighPriorityFinishTip>Attivo: un colono scelto per completare un oggetto svolge quell'attività alla prossima ricerca di lavoro, prima di qualsiasi altro tipo di lavoro tranne spegnimento incendi, cure mediche, soccorso e riposo a letto. L'attività corrente non viene interrotta.\n\nDisattivo: il completamento è la prima attività del proprio tipo di lavoro, ma i tipi che il colono considera più prioritari vengono comunque prima.</QJ_SettingsHighPriorityFinishTip>
+  <QJ_SettingsHighPriorityFinishTip>Attivo: un lavoratore scelto per completare un oggetto svolge quell'attività alla prossima ricerca di lavoro, prima di qualsiasi altro tipo di lavoro tranne spegnimento incendi, cure mediche, soccorso e riposo a letto. L'attività corrente non viene interrotta.\n\nDisattivo: il completamento è la prima attività del proprio tipo di lavoro, ma i tipi che il lavoratore considera più prioritari vengono comunque prima.</QJ_SettingsHighPriorityFinishTip>
   <QJ_SettingsDefaultCap>Limite predefinito degli oggetti incompiuti: {0}</QJ_SettingsDefaultCap>
   <QJ_SettingsDefaultCapTip>Imposta il numero massimo predefinito di oggetti incompiuti per prodotto. Tutti gli ordini dello stesso oggetto condividono il limite.\n\nAl raggiungimento del limite gli ordini smettono di iniziare nuovi oggetti; quelli in lavorazione possono essere completati. 0 significa illimitato.</QJ_SettingsDefaultCapTip>
   <QJ_SettingsUnlimitedHint>0 = illimitato</QJ_SettingsUnlimitedHint>
@@ -77,7 +77,7 @@
   <QJ_FinishGiverVerb>completare</QJ_FinishGiverVerb>
   <QJ_FinishGiverGerund>completamento di un lavoro di qualità</QJ_FinishGiverGerund>
   <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
-  <QJ_WelcomeBody>Quality Jobs consente a qualsiasi colono di lavorare a un oggetto o edificio incompiuto, ma solo chi soddisfa i requisiti impostati può completarlo, perché la qualità dipende soltanto da chi dà l'ultimo tocco. Funziona per gli ordini di produzione e per le costruzioni.</QJ_WelcomeBody>
+  <QJ_WelcomeBody>Quality Jobs consente ai lavoratori idonei di condividere il lavoro su un oggetto o un edificio. Solo chi soddisfa i requisiti impostati può completarlo, perché la qualità dipende da chi lo completa. Funziona per gli ordini di produzione e per le costruzioni.</QJ_WelcomeBody>
   <QJ_WelcomeFind>Apri le impostazioni di Quality Jobs con questo pulsante accanto ai comandi di visualizzazione in basso a destra. La finestra degli ordini per un oggetto di qualità contiene una sezione Quality Jobs; selezionando il progetto o la struttura di un edificio con qualità compare un pulsante Quality Job.</QJ_WelcomeFind>
   <QJ_WelcomeTakeMeThere>Apri subito</QJ_WelcomeTakeMeThere>
   <QJ_CompatibilityFinishIt>Finish it! può non funzionare se usato su un lavoro incompiuto che Quality Jobs ha scollegato dal relativo ordine.</QJ_CompatibilityFinishIt>
@@ -91,4 +91,6 @@
   <QJ_HelpReload>Ricarica</QJ_HelpReload>
   <QJ_TabHelp>Aiuto</QJ_TabHelp>
   <QJ_TabOptions>Opzioni</QJ_TabOptions>
+  <QJ_SettingsAllowRobotPreparation>Consenti a mech e robot di lavorare ai lavori di qualità</QJ_SettingsAllowRobotPreparation>
+  <QJ_SettingsAllowRobotPreparationTip>Consente ai mech e ai robot supportati di svolgere i lavori di produzione e costruzione gestiti. Disattiva questa opzione per riservare ai coloni quel lavoro e la relativa esperienza nelle abilità. Questo interrompe anche il lavoro che mech e robot stanno già svolgendo sui lavori gestiti. I mech e i robot idonei possono comunque completare i lavori assegnati da Quality Jobs. I normali lavori non gestiti non sono interessati.</QJ_SettingsAllowRobotPreparationTip>
 </LanguageData>

@@ -16,3 +16,6 @@ Khi đã tải bản lưu, thẻ Tùy chọn thay đổi thiết lập của thu
 <!-- l10n:global -->
 **{k:QJ_SettingsShareWork}** và **{k:QJ_SettingsHighPriorityFinish}** áp dụng cho toàn thuộc địa. Xem [chia sẻ](topic:sharing-work) và [người hoàn thiện](topic:finishers) để biết tác dụng. **{k:QJ_DisableButton}** dùng để [gỡ bỏ an toàn](topic:removing), không phải để tạm dừng một lệnh sản xuất.
 
+<!-- l10n:robot-preparation -->
+**{k:QJ_SettingsAllowRobotPreparation}** được lưu riêng cho thuộc địa hiện tại và mặc định được bật, kể cả trong các bản lưu hiện có. Tắt tùy chọn này để dành công việc của các lệnh chế tạo và kế hoạch xây dựng được quản lý cho cư dân, giúp họ nhận kinh nghiệm kỹ năng từ công việc. Thao tác này cũng dừng các công việc đó nếu mech hoặc robot đang làm. Mech đủ điều kiện và robot được hỗ trợ vẫn có thể hoàn thiện công việc do Quality Jobs giao. Công việc thông thường không được quản lý không bị ảnh hưởng; [vật phẩm dở dang được chia sẻ](topic:sharing-work) vẫn giữ hạn chế của lệnh gốc được quản lý. Tùy chọn này khả dụng khi đã tải bản lưu và được đồng bộ trong Multiplayer.
+

@@ -13,6 +13,9 @@ Un oggetto su cui nessuno sta lavorando viene svincolato dal lavoratore e dall'o
 <!-- l10n:reserved -->
 Condividere il lavoro iniziale è diverso dal riservare il tocco finale. Un oggetto gestito, sospeso poco prima del completamento, mostra **Autore: riservato (Quality Jobs)**. Attende un [lavoratore idoneo al completamento](topic:finishers); un lavoratore comune non può completarlo tramite la condivisione.
 
+<!-- l10n:robot-work -->
+Quando **{k:QJ_SettingsAllowRobotPreparation}** è disattivato, un oggetto incompiuto condiviso resta riservato al lavoro dei coloni finché il suo ordine originale esiste ed è gestito. Riprenderlo tramite un ordine non gestito non consente a un mech o a un robot di subentrare nel lavoro. I mech e i robot idonei possono comunque svolgere gli incarichi di completamento assegnati da Quality Jobs.
+
 <!-- l10n:off -->
 Disattiva la condivisione per ripristinare la normale proprietà dei lavori condivisi. Gli ordini gestiti possono comunque riservare il tocco finale. Disattivare **{k:QJ_ManageBill}** libera i lavori di quell'ordine in attesa di essere completati con la qualità richiesta; non disattiva la condivisione per la colonia.
 

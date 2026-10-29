@@ -16,3 +16,6 @@ title: 選項與預設值
 <!-- l10n:global -->
 **{k:QJ_SettingsShareWork}**與 **{k:QJ_SettingsHighPriorityFinish}**會套用至整個殖民地。相關效果請參閱[共用](topic:sharing-work)與[收尾者](topic:finishers)。**{k:QJ_DisableButton}**是供[安全移除模組](topic:removing)使用，並非用來暫停單張工作單。
 
+<!-- l10n:robot-preparation -->
+**{k:QJ_SettingsAllowRobotPreparation}**會儲存於目前殖民地的設定中，預設為啟用，現有存檔也一樣。關閉後，受管理的製作工作指令與建造計畫的工作會保留給殖民者，讓他們獲得工作的技能經驗。這也會停止機械族與機器人正在進行的這些工作。符合資格的機械族與受支援的機器人仍可完成 Quality Jobs 指派的收尾工作。一般未受管理的工作不受影響；[共用未完成品](topic:sharing-work)仍受原始受管理工作指令的限制。此選項須載入存檔後才能使用，並會在 Multiplayer 中同步。
+

@@ -38,10 +38,11 @@ namespace WorkRoles.UI
             }
             if (explanation == null)
             {
-                model.AddSection().Fact("WR_RecTipSelection".Translate(),
-                    state == Dialog_ChangesPreview.ChipState.Removed
-                        ? "WR_ReasonRemoved".Translate()
-                        : "WR_AlreadyAssigned".Translate());
+                if (state != Dialog_ChangesPreview.ChipState.Added)
+                    model.AddSection().Fact("WR_RecTipSelection".Translate(),
+                        state == Dialog_ChangesPreview.ChipState.Removed
+                            ? "WR_ReasonRemoved".Translate()
+                            : "WR_AlreadyAssigned".Translate());
                 return new StructuredTip(
                     $"recommendation:{pawn.thingIDNumber}:{role.id}", model);
             }
@@ -106,6 +107,8 @@ namespace WorkRoles.UI
             if (!everyoneCapable)
                 facts.Fact("WR_RecTipSelection".Translate(),
                     RecommendationDecisionText(store, role, explanation));
+            if (explanation.LearningProtectedByMechanicalCoverage)
+                facts.Text("WR_RecMechanicalLearningProtected".Translate());
         }
 
         private static string SignalVerdict(

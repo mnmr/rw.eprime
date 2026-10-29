@@ -30,3 +30,15 @@ Motorun görüşünü her yerde görebilirsiniz. Palet ipuçları her role en uy
 
 <!-- l10n:b-b241ec72dcda -->
 Motor önerir; uygulamak size kalır: [tek tek](topic:cherry-picking) veya [Kolonimi düzenle](topic:fix-my-colony) ile topluca. İstisna [Otomatik iyileştirme](topic:auto-optimize): açarsanız Kolonimi düzenle tüm kolonilerde her oyun saatinde otomatik çalışır.
+
+<!-- l10n:mechanical-suggestions -->
+Robot ve mekanoid satırları etkinleştirildiğinde, bunlara yönelik öneriler insan tutkuları veya öğrenme yollarını hesaba katmadan mevcut becerilere ve yapabildikleri işlere dayanır. Kabul edilmiş ana görevleri, açıkça atanmış ve hariç tutulmuş bir rol olsa bile korunur; bu görevi elle değiştirin. Ek iş önerileri hariç tutmaları dikkate alır. Atamalarını siz seçersiniz; Otomatik iyileştirme yalnızca insanlara yönelik önerileri uygulamayı sürdürür.
+
+<!-- l10n:mechanical-coverage -->
+**İnsanlara yönelik önerilerde robotların ve mekaların karşıladığı işleri hesaba kat** seçeneği, kayıt başına ayrı ayarlanır ve varsayılan olarak kapalıdır. Kabul edilen mekanik atamaları çalışan ihtiyacına sayar; böylece tümüyle karşılanan bir görev için son insan uzmana da gerek kalmaz. Her çalışan tek bir ana görevi karşılar; yedek roller ek çalışan sayılmaz. Alan kısıtlamaları, engellenen işler, yetersiz beceriler ve Quality Jobs'ın robotların yapabileceği işlere getirdiği kısıtlamalar işlerin tümüyle karşılanmasını önler. Yalnızca temizlik yapabilen bir robot, temizlik ve taşımayı birleştiren bir rolün yerini alamaz.
+
+<!-- l10n:mechanical-learning -->
+İnsanlar için seçilen ve henüz hedefine ulaşmamış eğitimler ile sabitlenmiş atamalar korunur.
+Normal şarj sırasında işlerin karşılandığı kabul edilir; devre dışı kalma, kontrol kaybı veya Çalışma modundan çıkma durumunda bu kabul kaldırılır.
+Güncellenen öneriler, yerlerine insan çalışanlar önerir; Otomatik iyileştirme etkinse bu önerileri normal saatlik uygulama zamanında uygular.
+Entegrasyon kapalıyken robot ve mekanik satırları insanlara yönelik önerileri etkilemez.

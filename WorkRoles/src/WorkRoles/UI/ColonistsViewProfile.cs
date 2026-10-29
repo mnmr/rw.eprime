@@ -6,8 +6,7 @@ using WorkRoles.Core;
 namespace WorkRoles.UI
 {
     /// Per-instance bindings for a ColonistsTabView: the pawn source, where its
-    /// display settings persist, and which optional panels it shows — so a
-    /// second table (future Mechs tab) can exist beside the colonists one.
+    /// display settings persist, and which optional panels it shows.
     public sealed class ColonistsViewProfile
     {
         // All bindings are set by the factory object initializer (= null!).
@@ -42,7 +41,7 @@ namespace WorkRoles.UI
         /// prefs, all panels on.
         public static ColonistsViewProfile Colonists() => new ColonistsViewProfile
         {
-            PawnsIn = ColonyScope.PawnsIn,
+            PawnsIn = MechanicalWorkers.ListedPawns,
             GetGroupBy = () => WorkRolesMod.Settings?.groupBy ?? "none",
             SetGroupBy = v => Persist(s => s.groupBy = v),
             GetSortColumn = () => WorkRolesMod.Settings?.sortColumn ?? "",

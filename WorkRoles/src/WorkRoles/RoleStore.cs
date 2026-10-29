@@ -43,6 +43,13 @@ namespace WorkRoles
         /// mod setting: the schedule mutates shared assignments from
         /// deterministic tick code, so MP clients must agree it is on.
         public bool autoOptimize;
+        /// Explicit per-save opt-ins. Native management remains authoritative;
+        /// disabling support leaves stored mechanical assignments dormant.
+        public bool mechanicalWorkersEnabled;
+        public bool mechanicalRecommendationsEnabled;
+        // Store-owned notification epoch for native mechanical service facts.
+        // No serialized/cache state; zeroed with this store's lifetime.
+        internal int MechanicalFactsRevision;
         /// Legacy saved order, retained for save compatibility. Recommendations
         /// now use the built-in order and do not consume this override.
         public List<int> recommendationOrder = new List<int>();
@@ -140,6 +147,7 @@ namespace WorkRoles
         /// bill keyed maps) is collectable while the player sits in the menu.
         internal static void ClearCached()
         {
+            MiscRobotSupport.Reset();
             cached?.Revisions.Reset();
             cached = null;
         }
@@ -309,7 +317,8 @@ namespace WorkRoles
             roles.FirstOrDefault(r => r.templateDefName == templateDefName);
 
         public bool IsManaged(Pawn pawn) =>
-            pawn != null && pawnSets.TryGetValue(pawn, out var set) && set.assignments.Count > 0;
+            pawn != null && (!MechanicalWorkers.IsMechanical(pawn) || mechanicalWorkersEnabled)
+            && pawnSets.TryGetValue(pawn, out var set) && set.assignments.Count > 0;
 
         public PawnRoleSet SetFor(Pawn pawn)
         {
@@ -538,10 +547,11 @@ namespace WorkRoles
                     if (pawn == null) continue;
                     if (PawnRolePersistencePolicy.ShouldRetain(
                         isAlive: !pawn.Dead && !pawn.Destroyed,
-                        isColonyMember: pawn.IsColonist || pawn.IsSlaveOfColony,
+                        isColonyMember: pawn.IsColonist || pawn.IsSlaveOfColony || MechanicalWorkers.IsColonyWorker(pawn),
                         hasPersistenceAnchor: pawn.MapHeld != null
                             || pawn.IsWorldPawn()
-                            || pawn.ParentHolder != null))
+                            || pawn.ParentHolder != null
+                            || MiscRobotSupport.HasPersistenceAnchor(pawn)))
                         pawnSetsToExpose[pawn] = kv.Value;
                 }
                 locationIdsToExpose = new Dictionary<Pawn, string>(
@@ -566,6 +576,8 @@ namespace WorkRoles
             Scribe_Values.Look(ref reportVanillaPriorities, "reportVanillaPriorities", true);
             Scribe_Values.Look(ref rolePriorityEmergencyRule, "rolePriorityEmergencyRule", true);
             Scribe_Values.Look(ref autoOptimize, "autoOptimize");
+            Scribe_Values.Look(ref mechanicalWorkersEnabled, "mechanicalWorkersEnabled");
+            Scribe_Values.Look(ref mechanicalRecommendationsEnabled, "mechanicalRecommendationsEnabled");
             Scribe_Collections.Look(ref recommendationOrder, "recommendationOrder", LookMode.Value);
             if (Scribe.mode == LoadSaveMode.LoadingVars && recommendationOrder == null)
                 recommendationOrder = new List<int>();
@@ -710,7 +722,7 @@ namespace WorkRoles
                 foreach (var set in pawnSets.Values)
                     set.assignments?.RemoveAll(a => RoleById(a.roleId) == null);
                 pawnSets.RemoveAll(kv => kv.Value.assignments == null || kv.Value.assignments.Count == 0);
-                lastLocationIds.RemoveAll(kv => !IsManaged(kv.Key));
+                lastLocationIds.RemoveAll(kv => !pawnSets.ContainsKey(kv.Key));
                 MigrateRoleTuning();
                 MigrateRecommendationExclusions();
                 // A stored order identical to the retired priority-derived

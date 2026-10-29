@@ -633,4 +633,9 @@ WorkRoles 通過遊戲標準方法為受管理殖民者提供工作列表。另�
   <WR_CompatibilityFreeWill>Free Will 會設定殖民者的工作優先順序，但 WorkRoles 會掌控受管理殖民者的優先順序，並阻止這些變更。</WR_CompatibilityFreeWill>
   <WR_CompatibilityPriorityMaster>PriorityMaster 會變更手動優先順序的數值及其範圍。WorkRoles 會取代這些控制項，並依職責決定受管理殖民者的優先順序。</WR_CompatibilityPriorityMaster>
   <WR_CompatibilityWorkTab>{0} 會取代工作分頁並控制優先順序，與 WorkRoles 以職責為基礎的工作管理功能衝突。</WR_CompatibilityWorkTab>
+  <WR_OptMechanicalRecommendations>推薦人類職責時納入機器人與機械族的工作支援</WR_OptMechanicalRecommendations>
+  <WR_OptMechanicalRecommendationsTip>將已承擔的機械工作職責計入殖民地人力配置。每名工作者最多只計入一項主要職責；備用職責不另計人力。只有完整且不受限制的服務才能完全取代人力。已選定的人類訓練及釘選職責仍受保護。預設關閉。</WR_OptMechanicalRecommendationsTip>
+  <WR_OptMechanicalWorkers>在殖民者中顯示機器人與機械族</WR_OptMechanicalWorkers>
+  <WR_OptMechanicalWorkersTip>在此存檔中啟用原版機械族與 Misc. Robots 機器人的職責指派。控制群組、區域、啟用及充電仍在各自原有的分頁中管理。關閉後會隱藏其資料列並恢復原有工作順序；已儲存的職責會保留但暫不生效。</WR_OptMechanicalWorkersTip>
+  <WR_RecMechanicalLearningProtected>即使機器人或機械族已提供這項服務，仍會保留此學習指派。達到訓練目標後即可解除。</WR_RecMechanicalLearningProtected>
 </LanguageData>

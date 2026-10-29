@@ -2,7 +2,7 @@
 title: Getting started
 ---
 <!-- l10n:purpose -->
-Quality Jobs lets your colonists share the work while a skilled colonist does the finishing touch. In RimWorld, the **finisher** determines quality. The mod chooses who finishes; the result is still a normal quality roll.
+Quality Jobs lets your colony share the work while a qualified worker does the finishing touch. Colonists, colony mechs and supported robots can finish work they are capable of doing. In RimWorld, the **finisher** determines quality. The mod chooses who finishes; the result is still a normal quality roll.
 
 <!-- l10n:toolbar -->
 Click the Quality Jobs icon beside the view toggles in the lower right. **{k:QJ_TabOptions}** holds your defaults; **{k:QJ_TabHelp}** explains the controls. Choose a chapter above and a topic on the left.

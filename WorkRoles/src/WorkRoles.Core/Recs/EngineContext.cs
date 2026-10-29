@@ -13,7 +13,12 @@ namespace WorkRoles.Core.Recs
         public readonly Dictionary<int, RoleView> RolesById;
         public readonly Dictionary<int, PathView> PathsById;
 
-        private readonly Dictionary<int, HashSet<int>> redundantBy;
+        // Owner/key: this context and its detached immutable Colony identity.
+        // Value: private role-redundancy graph, immutable after construction.
+        // Dependencies: role ids and coverage sets for this run. Refresh: first
+        // Redundant read only; capability-only consumers never build it.
+        // Equality: all later reads reuse the graph. Teardown: context release.
+        private Dictionary<int, HashSet<int>>? redundantBy;
         /// Per-role holder requirement, precomputed once for this colony size.
         private readonly Dictionary<int, HolderRequirement> requirementByRoleId;
         private readonly Dictionary<int, IReadOnlyList<RoleSkillFact>>
@@ -40,22 +45,24 @@ namespace WorkRoles.Core.Recs
             PathsById = colony.Paths.ToDictionary(path => path.Id);
             requirementByRoleId = new Dictionary<int, HolderRequirement>(
                 colony.Roles.Count);
+            Dictionary<int, int>? mechanicalSupply = colony.IntegrateMechanicalWorkers
+                && colony.MechanicalWorkers.Count > 0 ? MechanicalDutyPlan.BuildCoverage(colony) : null;
             foreach (RoleView role in colony.Roles)
+            {
                 requirementByRoleId[role.Id] = RoleDemand.RequirementFor(
                     role.ColonyMin, role.CoveragePercent, colony.Pawns.Count);
-            redundantBy = new Dictionary<int, HashSet<int>>(
-                colony.Roles.Count);
-            foreach (RoleView role in colony.Roles)
-                redundantBy[role.Id] = new HashSet<int>();
-            foreach (RoleView covering in colony.Roles)
-                foreach (RoleView covered in colony.Roles)
-                    if (covering.Id != covered.Id
-                        && CoverageMath.MakesRedundant(
-                            covering.Coverage,
-                            covering.Id,
-                            covered.Coverage,
-                            covered.Id))
-                        redundantBy[covered.Id].Add(covering.Id);
+                int supplied = 0;
+                mechanicalSupply?.TryGetValue(role.Id, out supplied);
+                HolderRequirement original = requirementByRoleId[role.Id];
+                if (supplied > 0)
+                {
+                    MechanicalCoverageApplied = true;
+                    int remaining = System.Math.Max(0, original.RequiredTotal - supplied);
+                    requirementByRoleId[role.Id] = new HolderRequirement(remaining,
+                        System.Math.Min(original.TrainingWaivers, remaining));
+                    if (remaining == 0) (mechanicallyCovered ??= new HashSet<int>()).Add(role.Id);
+                }
+            }
         }
 
         // Returns null for unknown ids; kept declared non-nullable because the
@@ -82,10 +89,42 @@ namespace WorkRoles.Core.Recs
                 ? requirement
                 : default;
 
-        public bool Redundant(int coveringRoleId, int coveredRoleId) =>
-            redundantBy.TryGetValue(
+        private readonly HashSet<int>? mechanicallyCovered;
+        internal bool MechanicalCoverageApplied { get; }
+        internal bool MechanicallyCovered(int roleId)
+        {
+            if (mechanicallyCovered == null) return false;
+            if (mechanicallyCovered.Contains(roleId)) return true;
+            RoleView? role = RoleOf(roleId);
+            if (role == null || role.HasDemand || role.AutoAssign || role.HasRules) return false;
+            foreach (PathView path in Colony.Paths)
+                if (path.RoleIds.Contains(roleId)
+                    && mechanicallyCovered.Contains(PathActivation.UniqueTargetRoleId(path))) return true;
+            return false;
+        }
+
+        public bool Redundant(int coveringRoleId, int coveredRoleId)
+        {
+            if (redundantBy == null)
+            {
+                var graph = new Dictionary<int, HashSet<int>>(Colony.Roles.Count);
+                foreach (RoleView role in Colony.Roles)
+                    graph[role.Id] = new HashSet<int>();
+                foreach (RoleView coveringRole in Colony.Roles)
+                    foreach (RoleView coveredRole in Colony.Roles)
+                        if (coveringRole.Id != coveredRole.Id
+                            && CoverageMath.MakesRedundant(
+                                coveringRole.Coverage,
+                                coveringRole.Id,
+                                coveredRole.Coverage,
+                                coveredRole.Id))
+                            graph[coveredRole.Id].Add(coveringRole.Id);
+                redundantBy = graph;
+            }
+            return redundantBy.TryGetValue(
                 coveredRoleId, out HashSet<int> covering)
-            && covering.Contains(coveringRoleId);
+                && covering.Contains(coveringRoleId);
+        }
 
         public IReadOnlyDictionary<int, long> BasePositions()
         {

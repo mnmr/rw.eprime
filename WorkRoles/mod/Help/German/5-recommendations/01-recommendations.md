@@ -30,3 +30,13 @@ Zwei Rollen werden besonders behandelt. Jäger wird jedem empfohlen, der eine Fe
 
 <!-- l10n:b-b241ec72dcda -->
 Die Logik schlägt vor; du entscheidest über die Anwendung – einzeln durch [gezielte Übernahme](topic:cherry-picking) oder insgesamt mit [Meine Kolonie verbessern](topic:fix-my-colony). Die Ausnahme ist [Automatisch optimieren](topic:auto-optimize): Ist es eingeschaltet, wird „Meine Kolonie verbessern“ zu jeder vollen Spielstunde in allen deinen Kolonien ausgeführt.
+
+<!-- l10n:mechanical-suggestions -->
+Wenn Roboter- und Mech-Reihen aktiviert sind, berücksichtigen ihre Empfehlungen die aktuellen Fertigkeiten und ausführbaren Arbeiten, ohne menschliche Leidenschaften oder Lernpfade. Ihre übernommene Hauptaufgabe bleibt bestehen, auch wenn sie eine ausdrücklich zugewiesene ausgeschlossene Rolle ist; ändere diese Aufgabe manuell. Empfehlungen für zusätzliche Arbeiten berücksichtigen Ausschlüsse. Du wählst ihre Zuweisungen; „Automatisch optimieren“ wendet weiterhin nur Empfehlungen für Menschen an.
+
+<!-- l10n:mechanical-coverage -->
+**Abdeckung durch Roboter und Mechs bei Empfehlungen für Menschen berücksichtigen** ist eine separate, pro Spielstand gespeicherte Option, die ebenfalls standardmäßig ausgeschaltet ist. Sie rechnet übernommene Zuweisungen an Roboter und Mechs auf die Personalbesetzung an, sodass bei vollständig abgedeckten Aufgaben der letzte menschliche Spezialist ersetzt werden kann. Jeder Arbeiter deckt eine Hauptaufgabe ab; Ausweichrollen zählen nicht als zusätzliche Besetzung. Gebietsbeschränkungen, blockierte Arbeiten, unzureichende Fertigkeiten und Einschränkungen für Roboterarbeit durch Quality Jobs verhindern eine vollständige Abdeckung. Ein Roboter, der nur reinigen kann, ersetzt keine kombinierte Reinigungs- und Transportrolle.
+
+<!-- l10n:mechanical-learning -->
+Ausgewähltes Training für Menschen unterhalb des Trainingsziels und angeheftete Zuweisungen bleiben geschützt.
+Reguläres Aufladen erhält die Arbeitsabdeckung; Deaktivierung, Kontrollverlust oder das Verlassen des Arbeitsmodus heben sie auf. Aktualisierte Empfehlungen schlagen menschlichen Ersatz vor. „Automatisch optimieren“ übernimmt diese Vorschläge zur nächsten vollen Spielstunde, sofern es aktiviert ist. Bei ausgeschalteter Integration beeinflussen Roboter- und Mech-Reihen die Empfehlungen für Menschen nicht.

@@ -13,6 +13,9 @@ Un objet inactif est dissocié de son travailleur et de son ordre de fabrication
 <!-- l10n:reserved -->
 Partager les premières étapes du travail est différent de réserver la touche finale. Un objet géré mis en attente juste avant son achèvement affiche **Auteur : réservé (Quality Jobs)**. Il attend un [finisseur qualifié](topic:finishers) ; un travailleur ordinaire ne peut pas l’achever par le partage.
 
+<!-- l10n:robot-work -->
+Lorsque **{k:QJ_SettingsAllowRobotPreparation}** est désactivé, le travail sur un objet inachevé partagé reste réservé aux colons tant que son ordre de fabrication d'origine existe et est géré. Reprendre cet objet via un ordre non géré ne permet pas à un méca ou à un robot de prendre le relais. Les mécas et robots admissibles peuvent toujours effectuer les tâches de finition attribuées par Quality Jobs.
+
 <!-- l10n:off -->
 Désactivez le partage pour rétablir l’attribution habituelle des travaux partagés. Les ordres gérés peuvent toujours réserver la touche finale. Désactiver **{k:QJ_ManageBill}** libère les travaux de cet ordre en attente de finition pour leur qualité ; cela ne désactive pas le partage pour la colonie.
 

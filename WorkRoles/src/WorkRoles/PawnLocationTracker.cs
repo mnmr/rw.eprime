@@ -98,7 +98,7 @@ namespace WorkRoles
         }
 
         private static bool IsStillOffMap(Pawn pawn) =>
-            !pawn.Destroyed && pawn.MapHeld == null && ExternalPawnFacts.IsRelevant(pawn);
+            !pawn.Destroyed && ColonyScope.MapOf(pawn) == null && ExternalPawnFacts.IsRelevant(pawn);
 
         private static void PublishLocationChange(Pawn pawn)
         {
@@ -127,7 +127,7 @@ namespace WorkRoles
         internal static string? EffectiveLocationId(Pawn pawn)
         {
             if (pawn == null) return null;
-            var held = pawn.MapHeld;
+            var held = ColonyScope.MapOf(pawn);
             if (held != null) return ColonyScope.PlaceOf(pawn).LocationId;
             var store = CurrentStore();
             return store != null
@@ -142,7 +142,7 @@ namespace WorkRoles
             var store = CurrentStore();
             if (store == null) return;
             foreach (var pawn in store.pawnSets.Keys)
-                if (pawn?.MapHeld != null)
+                if (pawn != null && ColonyScope.MapOf(pawn) != null)
                     RecordCurrentLocation(store, pawn);
         }
     }

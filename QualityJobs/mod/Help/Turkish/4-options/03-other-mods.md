@@ -4,6 +4,9 @@ title: Diğer modlar ve çok oyunculu
 <!-- l10n:requirements -->
 Quality Jobs, Harmony gerektirir ve RimWorld 1.6 ile 1.7'yi destekler. DLC gerekmez. Ideology, üretim uzmanı şartını ekler; normal kalite yönetimi bu DLC olmadan da çalışır.
 
+<!-- l10n:robots -->
+**Biotech mekanizmaları, Misc. Robots ve Misc. Robots++:** koloninin kontrolündeki çalışanlar, gereken işi yapabiliyorlarsa tamamlayıcı olabilir. Robotların kendi iş yetenekleri geçerliliğini korur; taşıma veya temizlik robotları üretim ya da inşaat işlerini tamamlayamaz. **{k:QJ_SettingsAllowRobotPreparation}**, mekanizmaların ve desteklenen robotların yönetilen işlerin önceki aşamalarını da yapıp yapamayacağını belirler. Bu ayarı kapatmak, onları tamamlama işleri için hazır tutar.
+
 <!-- l10n:expanded -->
 **Vanilla Skills Expanded:** İnşaat, zanaat ve sanat kalite bonusları, tamamlayıcı seçiminde ve olasılık önizlemesinde hesaba katılır. Hız bonusları kalite açısından tercih sebebi değildir. Bu bonuslardaki değişikliklerin görünmesi için simülasyonun kısa bir süre ilerlemesi gerekebilir.
 

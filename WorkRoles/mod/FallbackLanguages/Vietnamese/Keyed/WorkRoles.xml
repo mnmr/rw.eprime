@@ -633,4 +633,9 @@ Thông báo hiện một lần mỗi mod trong mỗi bản lưu.</WR_SetPriority
   <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
   <WR_WorkTypesLabel>Loại việc</WR_WorkTypesLabel>
   <WR_WorkTypesTip>Chỉ cư dân làm được các loại việc đã chỉ định mới đủ điều kiện cho vai trò này.\n\nSuy ra từ việc đã chọn, chỉ để tham khảo.</WR_WorkTypesTip>
+  <WR_OptMechanicalRecommendations>Tính việc robot và mech đảm nhiệm khi đề xuất cho người</WR_OptMechanicalRecommendations>
+  <WR_OptMechanicalRecommendationsTip>Tính nhiệm vụ robot và mech đã nhận vào nhu cầu nhân lực của thuộc địa. Mỗi đơn vị chỉ được tính tối đa một nhiệm vụ chính; nhiệm vụ dự phòng không được tính thêm nhân lực riêng. Chỉ có thể thay thế hoàn toàn khi đảm nhiệm đầy đủ công việc mà không bị hạn chế. Việc rèn luyện đã chọn cho người và các vai trò đã ghim vẫn được giữ. Mặc định tắt.</WR_OptMechanicalRecommendationsTip>
+  <WR_OptMechanicalWorkers>Hiện robot và mech trong Cư dân</WR_OptMechanicalWorkers>
+  <WR_OptMechanicalWorkersTip>Cho phép gán vai trò cho mech của game gốc và Misc. Robots trong bản lưu này. Nhóm điều khiển, khu vực, kích hoạt và sạc vẫn được quản lý trong các thẻ gốc. Tắt tùy chọn này sẽ ẩn các hàng tương ứng và khôi phục thứ tự công việc gốc; vai trò đã lưu vẫn được giữ nhưng không hoạt động.</WR_OptMechanicalWorkersTip>
+  <WR_RecMechanicalLearningProtected>Phân công rèn luyện này vẫn được giữ khi robot hoặc mech đảm nhiệm công việc. Có thể bỏ phân công khi đạt mục tiêu rèn luyện.</WR_RecMechanicalLearningProtected>
 </LanguageData>

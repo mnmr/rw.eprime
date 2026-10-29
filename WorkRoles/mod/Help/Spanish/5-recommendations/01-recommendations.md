@@ -30,3 +30,13 @@ Dos roles tienen trato especial. Cazador se recomienda a quien lleve un arma a d
 
 <!-- l10n:b-b241ec72dcda -->
 El motor propone y tú aplicas, [rol por rol](topic:cherry-picking) o con [Arreglar mi colonia](topic:fix-my-colony). La excepción es [Optimización automática](topic:auto-optimize): al activarla se ajustan todas tus colonias cada hora del juego.
+
+<!-- l10n:mechanical-suggestions -->
+Al activar las filas de robots y mecanoides, sus recomendaciones se basan en sus habilidades actuales y en los trabajos que pueden realizar, sin pasiones ni vías de aprendizaje humanas. Su tarea principal aceptada se mantiene, incluso si corresponde a un rol excluido asignado explícitamente; debes cambiarla manualmente. Las recomendaciones de trabajo adicional respetan las exclusiones. Tú eliges sus asignaciones; Optimización automática sigue aplicando solo recomendaciones para humanos.
+
+<!-- l10n:mechanical-coverage -->
+**Usar la cobertura de robots y mecas en las recomendaciones para humanos** es una opción independiente para cada partida, también desactivada por defecto. Cuenta las asignaciones mecánicas aceptadas al calcular las necesidades de personal, de modo que una tarea totalmente cubierta puede prescindir de su último especialista humano. Cada trabajador aporta una tarea principal; los roles de respaldo no cuentan como personal adicional. Las áreas restringidas, los trabajos bloqueados, las habilidades insuficientes y las restricciones de Quality Jobs sobre el trabajo de los robots impiden la cobertura total. Un robot que solo puede limpiar no sustituye a un rol que combine limpieza y transporte.
+
+<!-- l10n:mechanical-learning -->
+La formación seleccionada para humanos que aún no haya alcanzado su objetivo y las asignaciones fijadas siguen protegidas.
+La recarga habitual mantiene la cobertura; la desactivación, la pérdida de control o salir del modo Trabajo la eliminan. Las recomendaciones actualizadas proponen sustitutos humanos, y la Optimización automática los asigna en su siguiente ajuste horario si está activada. Con la integración desactivada, las filas de robots y mecas no afectan a las recomendaciones para humanos.

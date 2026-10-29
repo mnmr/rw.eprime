@@ -4,6 +4,7 @@ using System.Linq;
 using RimShared.Common;
 using RimShared.GameLib;
 using RimWorld;
+using RimWorld.Planet;
 using Verse;
 using WorkRoles.Core;
 
@@ -16,6 +17,14 @@ namespace WorkRoles
     /// shared (RimShared.GameLib).
     internal static class ColonyScope
     {
+        // Native holders remain authoritative. The optional adapter supplies
+        // only actual containment missing from the game's IThingHolder chain.
+        internal static Map? MapOf(Pawn pawn) => pawn.MapHeld
+            ?? MiscRobotSupport.ContainingStation(pawn)?.MapHeld;
+
+        internal static Caravan? CaravanOf(Pawn pawn) => pawn.GetCaravan()
+            ?? MiscRobotSupport.ContainingStation(pawn)?.GetCaravan();
+
         private sealed class LocationSnapshot : IReadOnlyList<LocationInfo>
         {
             private readonly List<LocationInfo> locations;
@@ -231,7 +240,7 @@ namespace WorkRoles
         internal static PawnPlace PlaceOf(Pawn pawn) =>
             pawn == null
                 ? new PawnPlace()
-                : MapClassifications.PlaceOf(pawn.MapHeld, pawn.Faction);
+                : MapClassifications.PlaceOf(MapOf(pawn), pawn.Faction);
 
         internal static string? LocationId(Map map) =>
             MapClassifications.PlaceOf(map, PlayerFactions.ViewFaction).LocationId;

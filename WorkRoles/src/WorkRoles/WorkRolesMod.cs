@@ -41,6 +41,7 @@ namespace WorkRoles
             var slow = new System.Text.StringBuilder();
             foreach (var type in AccessTools.GetTypesFromAssembly(GetType().Assembly))
             {
+                if (type.IsDefined(typeof(MainThreadPatchAttribute), false)) continue;
                 long before = sw.ElapsedMilliseconds;
                 harmony.CreateClassProcessor(type).Patch();
                 long ms = sw.ElapsedMilliseconds - before;

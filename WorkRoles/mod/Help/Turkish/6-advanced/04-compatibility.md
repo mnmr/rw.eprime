@@ -20,7 +20,17 @@ Mevcut iş sağlayıcılarını yamalayan eklentiler aynı rolleri ve iş sıras
 İki aile çakışır. Diğer İş sekmesi değiştiricileri (Work Tab türevleri, Better Work Tab ve benzerleri) aynı arayüzü yönetmeye çalışır. Öncelik ayarlayan modlar (Free Will, PriorityMaster ve benzerleri) aynı veri üzerinde çakışır: yönetilen kolonicilerin öncelikleri WorkRoles'a ait olduğundan yazmaları engellenir. Bu olduğunda tek seferlik bildirim modu adlandırır ve aynı etkiye rollerle ulaşma yolunu önerir.
 
 <!-- l10n:b-3e9c0a143130 -->
-Öncelik sahipliği yalnızca insansı karakterlere uygulanır; Mech Work Tab gibi mekanoit öncelikleri ayarlayan modlar tamamen uyumludur.
+Mech Work Tab gibi mekanoit öncelik modları, WorkRoles rolü atanmamış çalışanları yönetebilir. Robot ve mekanoit desteğini etkinleştirirseniz rol atanmış mekanik çalışanların iş sırasını da WorkRoles yönetir. Hepsinin kendi iş sıralamasını geri yüklemek için Seçenekler'den bu desteği kapatın; kayıtlı rolleri korunur ancak devre dışı kalır.
+
+<!-- l10n:mechanical-workers -->
+**Kolonicilerde robotları ve mekanoitleri göster**, her kayıt için ayrı tutulan ve varsayılan olarak kapalı bir seçenektir.
+Biotech mekanoitlerini, Misc. Robots ve Misc. Robots++ robotlarını mevcut tabloya ekler.
+Rolleri buradan atayın; kontrol grupları, bölgeler, etkinleştirme ve şarj için
+kendi sekmelerini kullanın. Roller yalnızca çalışanın gerçekten yapabildiği işleri
+sıralar. İnsansı androidler normal kolonici kurallarını kullanmayı sürdürür.
+
+<!-- l10n:mechanical-recharge -->
+Şarj işlemi kendi kurallarıyla devam eder ve Şarj rolü gerektirmez. Biotech, her kontrol grubunda şarj sınırları sunar. Misc. Robots kendi otomatik dönüş eşiklerini kullanır; Robotlar sekmesindeki şarj yüzdesine tıklamak hemen şarj olma isteği gönderir. WorkRoles bu eşikleri değiştirmez.
 
 <!-- l10n:b-3df0d9a43535 -->
 Bazı modlar 0–4 arası öncelik gerektirir. Diğer modlarla sorun yaşarsanız "Diğer modlara temel oyunun 0-4 önceliklerini bildir" seçeneğinin açık olduğundan emin olun.

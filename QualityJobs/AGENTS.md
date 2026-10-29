@@ -23,8 +23,9 @@ commands. Where this file is silent, the root contract governs.
 |---|---|
 | Options/Help window tabs | Window-owned translated captions and delegates; language revision rebuilds the list, selection uses cached predicates, PostClose releases the list. Shared HelpTabView owns topic, image and measurement caches keyed by language, UI metric revision, content generation and width; PostClose flushes personal reading history then releases window data. No new game polling or simulation cache. |
 | Settings enable/disable button bounds | UI metric revision and translated enable/disable captions; Small-font width and line height. Immediate gated refresh, unchanged inputs reuse scalars; SettingsLabels.Reset clears stamps and caption references. |
+| Robot-preparation option geometry | Translated caption identity, Small font, available checkbox width and UI metric revision; wrapped height and measured line height built only after the key changes. Unchanged keys reuse the row height; SettingsLabels.Reset clears stamps and caption references. No model/cache revisions depend on these metrics. |
 | Reserved unfinished-item author display (`UftAuthor`) | Current language revision only; one immutable translated string, equal rebuilds retain identity. The vanilla inspector reads the presentation marker without changing invariant `creatorName` save data. Game disposal resets the cached string. |
-| Store settings presentation (`StoreSettingsSnapshot`) | The fourteen per-save bill, construction, cap, and sharing default fields; command and load/seed invalidation |
+| Store settings presentation (`StoreSettingsSnapshot`) | Per-save bill, construction, cap, sharing and priority default fields, plus `allowRobotPreparation`; command and load/seed invalidation. A no-op setting command retains snapshot identity and unrelated bill/plan revisions. |
 | Construction plan presentation (`PlanPresentationSnapshot`) | Plan target identity/map, configuration, and state; immediate command/lifecycle invalidation |
 | Completed-building facts (`completedBuildings`) | Store identity, spawned target identity/map, player faction, CompQuality value, and construction blueprint/frame defs; immediate spawn/despawn, faction and quality events, load and definition reload; equal facts retain identity; map removal/game disposal release entries |
 | Construction dialog geometry | Window's fixed content width, translated note text, Small/Medium fonts, and shared UI metric revision; measured only behind the revision gate; metric-only changes preserve pawn eligibility data, language changes refresh labels; window-owned |
@@ -36,9 +37,10 @@ commands. Where this file is silent, the root contract governs.
 | Welcome conflict notice (shared `WelcomeConflictNotice`) | Caller-supplied translated conflict catalog and active package IDs, resolved once by `WelcomeDialog.FindConflicts` at welcome admission. Immutable selection shared with the window; empty selection adds no geometry. Shared default heading/advice and optional host guidance resolve once per `PreOpen`, measured with the welcome's existing width/UI-metric gate. Window lifetime; no process cache. Per-player `compatibilityWarningsSeen` acknowledges each persistent save/package pair, allowing a newly detected conflict to reopen an already-seen welcome. |
 | Construction dialog status | `QualityJobsStore.PlanStatusRevision`; plan configuration/state/map changes and external pawn facts |
 | Expected-attempt API memos | Complete configuration in `AttemptsKey`; external pawn-facts revision only for auto-best keys; store identity teardown |
-| External pawn facts | Immediate work-priority, skill-level, inspiration, ideology, and role events; 250-tick `ResponsivenessInterval` fallback for XP progress, final VSE quality stat values (expertise levels/settings/modifiers), and other unpatched facts; no additional polling while paused |
+| External pawn facts | Immediate work-priority, skill-level, inspiration, ideology, role, colony-worker spawn/despawn/death, and player-faction changes; 250-tick `ResponsivenessInterval` fallback for XP progress, health/overseer availability, final VSE quality stat values (expertise levels/settings/modifiers), and other unpatched facts; no additional polling while paused |
 | Managed recipe set (`ManagedRecipes`) | Definition database: recipe `unfinishedThingDef` and product, product `CompQuality`, and the ingredient filters' declared things/categories (a `GeneticRim.DefExtension_Quality` ingredient excludes the recipe: the ingredient, not the crafter, decides quality; `IngredientQuality`, shared with finisher work-giver generation); startup build queued to run after every mod's static constructor (Quality Bionics Remastered adds `CompQuality` in its own, and the game runs them in no guaranteed order; finisher work-giver generation precedes it, so it also counts `isTechHediff` products), `Invalidate` on definition reload; every load releases unmanaged recipes' gate-locked items and drops per-bill configuration only for bills unmanaged for another reason (e.g. Quality Bionics Remastered removed), keeping it for ingredient-quality bills |
 | Optional VSE stat definitions (`QualityBonusStats`) | The three quality StatDef identities; startup and `ManagedRecipes.Invalidate` definition reload; no pawn/map/world references retained |
+| Optional Misc. Robots bindings and station index (`MiscRobotSupport`) | AIRobot types/method/field identities bound once per process to immutable delegates. A private game-owned station identity index registers spawn and PostLoadInit events, retaining identity through minification/inventory transfers; duplicate registration is a no-op, destruction/map removal release entries and report whether membership changed, game disposal/owner change releases all references. `WorkerCapabilities` owns pawn-fact invalidation, colony-population filtering and scheduler admission; existing auto-best pool builds read the native index and current containers/holders. Freshly loaded unspawned robots use declared work-type priorities/givers until AIRobot initializes its native definition at SpawnSetup. No inventory polling, new interval, derived pawn cache or render access. |
 | Pawn-specific odds (`OddsRows`) | Skill, inspiration, role offset, and normalized post-roll quality bonus; bonus values observed through the external pawn-facts revision; equal keys preserve row identity |
 | Text fit widths (shared `RimShared.UiLib.WrText.FitWidth`, per-assembly static) | `(font, text)` key; cleared when `UiRevision.Current` (shared `RimShared.UiLib.UiRevision`: UI scale, tiny-font preference, language) moves; `WrText.Reset` on game dispose (`Patch_GameDispose`) |
 | Stock-cap counts | UFT spawn/despawn events keyed by map identity; `FixedTickBoundaryGate(2500)` audit fallback |
@@ -57,6 +59,16 @@ Changes to these dependencies require updated behavioral tests in the same chang
 
 - `QualityJobsStore` is authoritative per-save state.
 - Only `Commands` and deterministic `QualityJobsStore` lifecycle code may mutate the shared model.
+- `allowRobotPreparation` is a synced per-save setting, enabled by default on
+  both new and legacy saves. Its no-op command preserves settings-snapshot
+  identity and does not interrupt jobs or advance unrelated revisions.
+- Shared-item preparation provenance (`preparationSources`) retains the original
+  live source bill across handover, repeated sharing and save/load. Ordinary
+  robot preparation observes both destination and source management; explicitly
+  assigned finishing remains allowed. Setting/management changes and load
+  enforce active-job admission once, with no per-tick polling. UFT destruction,
+  bill removal, giver destruction, map removal and store teardown release the
+  provenance references.
 
 ## Verification
 

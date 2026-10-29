@@ -8,10 +8,13 @@ Open **Details** on a bill for a quality item. The **{k:QJ_QualityPanelTitle}** 
 ![A workbench bill with its Quality Jobs panel](crafting-bill.png)
 
 <!-- l10n:setup -->
-Enable **{k:QJ_ManageBill}**, then choose the [finisher requirements](topic:finishers). Ordinary workers can do most of the crafting. If the current worker qualifies, they finish directly; otherwise the nearly finished item is set aside, and the bill can prepare more work within its stock cap.
+Enable **{k:QJ_ManageBill}**, then choose the [finisher requirements](topic:finishers). Ordinary workers can do most of the crafting. If the current worker qualifies, they finish directly; otherwise the nearly finished item is set aside, and the bill can start more items within its stock cap.
 
 <!-- l10n:dispatch -->
 When a finisher qualifies, Quality Jobs creates a temporary **Finish …** bill assigned to them. They collect the unfinished item and complete it. The temporary bill removes itself afterward. Waiting items can be hauled and stored like other unfinished items.
+
+<!-- l10n:finisher-bill-restrictions -->
+The original bill's maximum skill level and specific worker assignment apply until the item is set aside for finishing. You can assign the work to a trainee while a more skilled colonist, colony mech or supported robot takes the dedicated finishing bill. Finishers must still be capable of the recipe and meet the Quality Jobs requirements.
 
 <!-- l10n:status -->
 The **{k:QJ_StatusHeader}** section shows shared **Unfinished** work, items **Waiting** for a finisher, and items already assigned for **Finishing**. Hover the status and finisher list for more detail. See [when work waits](topic:waiting) if nothing is progressing.

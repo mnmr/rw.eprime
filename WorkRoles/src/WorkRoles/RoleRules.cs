@@ -1,5 +1,4 @@
 using RimWorld;
-using RimWorld.Planet;
 using Verse;
 using WorkRoles.Core;
 
@@ -39,9 +38,9 @@ namespace WorkRoles
 
         public static int LocalHour(Pawn pawn)
         {
-            var map = pawn.MapHeld;
+            var map = ColonyScope.MapOf(pawn);
             if (map != null) return GenLocalDate.HourInteger(map);
-            var caravan = pawn.GetCaravan();
+            var caravan = ColonyScope.CaravanOf(pawn);
             if (caravan != null) return GenLocalDate.HourInteger(caravan.Tile);
             return -1; // unknown context: time rule does not suppress
         }

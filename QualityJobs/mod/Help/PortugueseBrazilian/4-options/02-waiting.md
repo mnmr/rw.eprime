@@ -7,7 +7,7 @@ Comece pelo **{k:QJ_StatusHeader}** no painel da ordem de produção ou da const
 <!-- l10n:checklist -->
 - O tipo de trabalho necessário está habilitado para o finalizador desejado? Ele está neste mapa e consegue trabalhar?
 - O requisito de habilidade está alto demais, ou você está aguardando Criatividade inspirada ou um especialista em produção?
-- O ajuste automático está aguardando um colono mais habilidoso que está temporariamente ausente ou indisponível?
+- O ajuste automático está esperando um trabalhador com maior qualidade esperada ficar disponível, por exemplo, voltar de uma caravana ou terminar de recarregar?
 - O trabalhador consegue alcançar e reservar o item ou a estrutura em construção e usar a bancada? Verifique itens proibidos, áreas permitidas, restrições da ordem de produção e reservas concorrentes.
 - O limite de estoque foi atingido? Conclua os itens em espera antes de iniciar outros, ou aumente o limite intencionalmente.
 

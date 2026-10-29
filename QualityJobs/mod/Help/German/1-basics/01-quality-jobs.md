@@ -2,7 +2,7 @@
 title: Erste Schritte
 ---
 <!-- l10n:purpose -->
-Mit Quality Jobs können deine Kolonisten die Arbeit teilen, während ein fähiger Kolonist den letzten Schliff übernimmt. In RimWorld bestimmt der **Fertigsteller** die Qualität. Die Mod wählt aus, wer die Arbeit fertigstellt; die Qualität wird weiterhin wie üblich ausgewürfelt.
+Mit Quality Jobs kann deine Kolonie die Arbeit teilen, während ein geeigneter Arbeiter den letzten Schliff übernimmt. Kolonisten, Mechs der Kolonie und unterstützte Roboter können Arbeiten fertigstellen, zu denen sie fähig sind. In RimWorld bestimmt der **Fertigsteller** die Qualität. Die Mod wählt aus, wer die Arbeit fertigstellt; die Qualität wird weiterhin wie üblich ausgewürfelt.
 
 <!-- l10n:toolbar -->
 Klicke unten rechts neben den Anzeigeschaltern auf das Symbol von Quality Jobs. Unter **{k:QJ_TabOptions}** findest du deine Standardeinstellungen; die **{k:QJ_TabHelp}** erklärt die Bedienelemente. Wähle oben ein Kapitel und links ein Thema.

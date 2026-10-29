@@ -4,6 +4,9 @@ title: 其他模組與多人遊戲
 <!-- l10n:requirements -->
 Quality Jobs 需要 Harmony，支援 RimWorld 1.6 與 1.7，無須任何 DLC。Ideology 會加入生產專家需求設定；一般品質管理功能無須此 DLC 即可使用。
 
+<!-- l10n:robots -->
+**Biotech 機械族、Misc. Robots 與 Misc. Robots++：**受殖民地控制且能執行所需工作的工作者，都可成為完工者。機器人仍受各自的工作能力限制；搬運或清潔機器人無法完成製作或建造工作。**{k:QJ_SettingsAllowRobotPreparation}**控制機械族與受支援的機器人能否也執行受管理工作的前期工序。關閉後，它們仍可執行完工工作。
+
 <!-- l10n:expanded -->
 **Vanilla Skills Expanded：**建造、手工和藝術的品質加成會納入完工者選擇與機率預覽。速度加成不會影響品質方面的優先選擇。這些加成變更後，可能需要讓遊戲時間稍微推進才會顯示。
 

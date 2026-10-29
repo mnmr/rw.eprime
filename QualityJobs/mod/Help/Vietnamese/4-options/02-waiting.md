@@ -7,7 +7,7 @@ Trước tiên, xem **{k:QJ_StatusHeader}** trong bảng lệnh sản xuất ho�
 <!-- l10n:checklist -->
 - Loại công việc cần thiết đã được bật cho người dự định hoàn thiện chưa, và người đó có đang ở trên bản đồ này và có thể làm việc không?
 - Yêu cầu kỹ năng có quá cao không, hay bạn đang chờ Cảm hứng sáng tạo hoặc một chuyên gia sản xuất?
-- Tự điều chỉnh có đang chờ một cư dân giỏi hơn nhưng tạm thời vắng mặt hoặc không thể làm việc không?
+- Tự điều chỉnh có đang chờ lao động có chất lượng kỳ vọng cao hơn sẵn sàng làm việc, chẳng hạn trở về từ đoàn lữ hành hoặc sạc xong không?
 - Người làm có thể tiếp cận và giữ chỗ vật phẩm hoặc khung công trình, cũng như sử dụng bàn làm việc không? Hãy kiểm tra vật phẩm bị cấm, khu vực được phép, giới hạn của lệnh sản xuất và việc giữ chỗ của người khác.
 - Đã đạt giới hạn số vật phẩm dở dang chưa? Hãy hoàn thiện các vật phẩm đang chờ trước khi bắt đầu thêm, hoặc chủ động tăng giới hạn.
 

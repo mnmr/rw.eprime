@@ -20,7 +20,13 @@ Los complementos que modifican proveedores existentes conservan roles y orden. P
 Dos familias chocan: otros reemplazos de Trabajo, como derivados de Work Tab o Better Work Tab, compiten por la interfaz. Los mods que establecen prioridades, como Free Will o PriorityMaster, compiten por los datos: WorkRoles controla a sus colonos gestionados y bloquea esas escrituras. Un aviso único identifica el mod y sugiere el equivalente con roles.
 
 <!-- l10n:b-3e9c0a143130 -->
-Solo controla prioridades de personajes humanoides; los mods que ajustan prioridades de mecanoides, como Mech Work Tab, son compatibles.
+Los mods de prioridades de mecanoides, como Mech Work Tab, pueden gestionar trabajadores sin asignaciones de WorkRoles. Si activas la compatibilidad con robots y mecanoides, WorkRoles también controla el orden de trabajo de los trabajadores mecánicos con roles asignados. Desactiva esta compatibilidad en Opciones para restablecer el orden nativo de todos ellos; sus roles guardados quedan inactivos.
+
+<!-- l10n:mechanical-workers -->
+**Mostrar robots y mecanoides en Colonos** es una opción por partida, desactivada por defecto. Añade los mecanoides de Biotech y los robots de Misc. Robots y Misc. Robots++ a la tabla existente. Asigna roles ahí; usa sus pestañas originales para los grupos de control, las áreas, la activación y la recarga. Los roles solo ordenan trabajos que el trabajador pueda realizar. Los androides humanoides siguen las reglas habituales de los colonos.
+
+<!-- l10n:mechanical-recharge -->
+La recarga conserva su funcionamiento original y no necesita un rol de Recarga. Biotech ofrece límites de carga en cada grupo de control. Misc. Robots usa sus propios umbrales de regreso automático; al hacer clic en el porcentaje de carga de su pestaña Robots se solicita una recarga inmediata. WorkRoles no modifica esos umbrales.
 
 <!-- l10n:b-3df0d9a43535 -->
 Algunos mods exigen valores de 0 a 4. Si hay problemas, activa «Comunicar prioridades originales de 0 a 4 a otros mods».

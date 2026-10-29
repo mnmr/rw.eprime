@@ -6,15 +6,15 @@
   <QJ_QualityPanelTitle>Quality Jobs</QJ_QualityPanelTitle>
   <QJ_ManageBill>Gestionar proyecto</QJ_ManageBill>
   <QJ_FinisherSkill>Habilidad mín.: {0}</QJ_FinisherSkill>
-  <QJ_FinisherSkillTip>Solo los colonos con este nivel de habilidad o superior pueden terminar el trabajo. Cualquiera puede realizar la fabricación previa.</QJ_FinisherSkillTip>
+  <QJ_FinisherSkillTip>Solo los trabajadores con este nivel de habilidad o superior pueden terminar el trabajo. Otros trabajadores aptos pueden realizar la fabricación previa.</QJ_FinisherSkillTip>
   <QJ_AutoBest>Ajuste automático</QJ_AutoBest>
-  <QJ_AutoBestTip>Activado: Solo el mejor colono disponible de la colonia puede terminar el trabajo, y el requisito de habilidad se ajusta automáticamente a ese colono. Los colonos ausentes, incapacitados u ocupados siguen contando como disponibles en esta comparación.\n\nDesactivado: Cualquier colono que alcance la habilidad mínima indicada puede terminar el trabajo.</QJ_AutoBestTip>
+  <QJ_AutoBestTip>Activado: Solo el mejor trabajador disponible de la colonia puede terminar este trabajo, y el requisito de habilidad se ajusta automáticamente a él. Los trabajadores ausentes, derribados u ocupados siguen contando como disponibles en esta comparación.\n\nDesactivado: Cualquier trabajador apto que alcance el nivel de habilidad que establezcas para el toque final puede terminar el trabajo.</QJ_AutoBestTip>
   <QJ_AutoBestCurrent>Actualmente: {0}</QJ_AutoBestCurrent>
-  <QJ_AutoBestNone>Ningún colono apto</QJ_AutoBestNone>
+  <QJ_AutoBestNone>Ningún trabajador apto</QJ_AutoBestNone>
   <QJ_MigrationTitle>Proyectos de calidad existentes</QJ_MigrationTitle>
   <QJ_MigrationBody>Quality Jobs ha encontrado {0} proyecto(s) existente(s) de objetos con calidad. Se han dejado sin gestionar para que mantengan su comportamiento actual. Compartir el trabajo sin terminar sigue disponible en ambos casos.</QJ_MigrationBody>
   <QJ_MigrationEnableExisting>¿Activar Quality Jobs en proyectos de calidad existentes?</QJ_MigrationEnableExisting>
-  <QJ_MigrationEnableExistingTip>Activado: Los proyectos existentes usan Quality Jobs con Ajuste automático activado. El mejor colono apto de la colonia da el toque final; los temporalmente indisponibles también cuentan. No se exige inspiración ni ser especialista en producción, y no se repiten los resultados de baja calidad.\n\nDesactivado: Los proyectos existentes conservan el acabado del juego original. No afecta al trabajo sin terminar compartido.</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationEnableExistingTip>Activado: Las órdenes existentes usan Quality Jobs con Ajuste automático activado para la habilidad del toque final. El mejor trabajador apto de la colonia da el toque final; los que no están disponibles temporalmente también cuentan. No se exige inspiración ni ser especialista en producción, y no se repiten los resultados de baja calidad.\n\nDesactivado: Las órdenes existentes conservan el comportamiento de finalización del juego original. No afecta al trabajo sin terminar compartido.</QJ_MigrationEnableExistingTip>
   <QJ_MigrationContinue>Continuar</QJ_MigrationContinue>
   <QJ_RequireInspired>Exigir inspiración artística</QJ_RequireInspired>
   <QJ_RequireSpecialist>Exigir especialista en producción</QJ_RequireSpecialist>
@@ -26,11 +26,11 @@
   <QJ_StatusQueueTip>Sin terminar: objetos del conjunto compartido que cualquier artesano autorizado puede continuar. En espera: objetos pausados que necesitan a alguien apto para terminarlos. En acabado: objetos asignados a quien los terminará.</QJ_StatusQueueTip>
   <QJ_StatusFinishers>Aptos para terminar: {0}</QJ_StatusFinishers>
   <QJ_StatusFinishersNone>Aptos para terminar: ninguno</QJ_StatusFinishersNone>
-  <QJ_StatusFinishersTip>Colonos de este mapa que pueden dar el toque final ahora, con el mejor candidato primero. Deben tener activado el tipo de trabajo necesario y cumplir los requisitos de acabado de arriba.\n\nNo cuentan los colonos incapacitados, en crisis mental o fuera de este mapa.</QJ_StatusFinishersTip>
+  <QJ_StatusFinishersTip>Trabajadores de este mapa que actualmente cumplen los requisitos para dar el toque final, con el mejor candidato primero. Deben poder realizar el tipo de trabajo necesario y cumplir los requisitos de acabado indicados arriba.\n\nNo cuentan los trabajadores derribados, en un estado mental alterado o fuera de este mapa.</QJ_StatusFinishersTip>
   <QJ_StatusStalled>Nadie apto para terminar</QJ_StatusStalled>
-  <QJ_StatusStalledTip>Hay objetos sin terminar esperando, pero ningún colono cumple los requisitos para acabarlos, así que no se crean trabajos de acabado.\n\nComprueba la habilidad, la inspiración y la especialización exigidas, y que el colono previsto tenga activado el trabajo y esté en este mapa. Mientras dure el bloqueo, el límite de existencias también puede impedir empezar objetos nuevos.</QJ_StatusStalledTip>
+  <QJ_StatusStalledTip>Hay objetos sin terminar esperando, pero ningún trabajador cumple actualmente los requisitos para terminarlos, así que no se crean trabajos de acabado.\n\nRevisa el requisito de habilidad para el toque final, los requisitos de inspiración y especialización, y que el trabajador previsto pueda realizar ese tipo de trabajo y esté en este mapa. Mientras dure el bloqueo, el límite de existencias también puede impedir empezar objetos nuevos.</QJ_StatusStalledTip>
   <QJ_StatusStalledConstruction>Obra detenida: nadie apto</QJ_StatusStalledConstruction>
-  <QJ_StatusStalledConstructionTip>El edificio está pausado a la espera del toque final, pero ningún colono cumple los requisitos, por lo que no se terminará.\n\nComprueba la habilidad, la inspiración y la especialización exigidas, y que el constructor previsto tenga activada Construcción y esté en este mapa.</QJ_StatusStalledConstructionTip>
+  <QJ_StatusStalledConstructionTip>Este edificio está pausado a la espera del toque final, pero ningún trabajador cumple actualmente los requisitos, por lo que no se terminará.\n\nRevisa el requisito de habilidad para el toque final, los requisitos de inspiración y especialización, y que el constructor previsto pueda realizar Construcción y esté en este mapa.</QJ_StatusStalledConstructionTip>
   <QJ_OddsHeader>Probabilidades de calidad</QJ_OddsHeader>
   <QJ_NormalOrWorse>Normal o inferior</QJ_NormalOrWorse>
   <QJ_OddsColConfig>Config.</QJ_OddsColConfig>
@@ -44,11 +44,11 @@
   <QJ_SettingsManageNewConstructionTip>Activado: Los edificios nuevos con calidad se gestionan automáticamente con las opciones de esta columna. El botón Quality Job permite configurar cada edificio o quitar su gestión.\n\nDesactivado: Los edificios nuevos usan el comportamiento original salvo que se activen individualmente.</QJ_SettingsManageNewConstructionTip>
   <QJ_RequireInspiredTip>Activado: Solo un colono con inspiración artística puede dar el toque final; otros trabajadores pueden hacer el trabajo previo. La inspiración se consume al terminar, como en el juego original.\n\nDesactivado: No se exige inspiración artística.</QJ_RequireInspiredTip>
   <QJ_RequireSpecialistTip>Activado: Solo un colono cuyo rol ideológico otorgue una bonificación de calidad de producción puede dar el toque final; otros trabajadores pueden hacer el trabajo previo.\n\nDesactivado: No se exige un rol de especialista en producción.</QJ_RequireSpecialistTip>
-  <QJ_SettingsFinisherSkillTip>Solo los colonos con este nivel de habilidad o superior pueden dar el toque final; otros trabajadores pueden realizar el trabajo previo.\n\nCon Ajuste automático activado, este valor se conserva como predeterminado manual, pero no se utiliza.</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsFinisherSkillTip>Solo los trabajadores con este nivel de habilidad o superior pueden dar el toque final; otros trabajadores aptos pueden realizar el trabajo previo.\n\nCon Ajuste automático activado para la habilidad del toque final, este valor se conserva como predeterminado manual, pero no se utiliza.</QJ_SettingsFinisherSkillTip>
   <QJ_SettingsShareWork>Compartir trabajo sin terminar</QJ_SettingsShareWork>
   <QJ_SettingsShareWorkTip>Activado: Los objetos sin terminar se desbloquean para que cualquier trabajador apto continúe lo que empezó otro.\n\nDesactivado: Comportamiento original: cada objeto sin terminar sigue vinculado a quien lo empezó.</QJ_SettingsShareWorkTip>
   <QJ_SettingsHighPriorityFinish>Dar alta prioridad al trabajo de acabado</QJ_SettingsHighPriorityFinish>
-  <QJ_SettingsHighPriorityFinishTip>Activado: El colono elegido para terminar un objeto toma ese trabajo la próxima vez que busque una tarea, antes de todo salvo apagar incendios, atención médica, rescate y reposo en cama. No interrumpe su trabajo actual.\n\nDesactivado: El acabado es la primera tarea de su tipo de trabajo, pero siguen teniendo preferencia los tipos que el colono tenga por delante.</QJ_SettingsHighPriorityFinishTip>
+  <QJ_SettingsHighPriorityFinishTip>Activado: El trabajador elegido para terminar un objeto toma ese trabajo la próxima vez que busque una tarea, antes de todo salvo apagar incendios, atención médica, rescate y reposo en cama. No se interrumpe su trabajo actual.\n\nDesactivado: El acabado es la primera tarea de su tipo de trabajo, pero siguen teniendo preferencia los tipos a los que el trabajador asigne mayor prioridad.</QJ_SettingsHighPriorityFinishTip>
   <QJ_SettingsDefaultCap>Máx. sin terminar por producto: {0}</QJ_SettingsDefaultCap>
   <QJ_SettingsDefaultCapTip>Establece el máximo predeterminado de objetos sin terminar por producto. Todos los proyectos que producen el mismo objeto comparten el límite.\n\nAl alcanzarlo no se empiezan objetos nuevos; los ya iniciados pueden terminarse. 0 significa sin límite.</QJ_SettingsDefaultCapTip>
   <QJ_SettingsUnlimitedHint>0 = sin límite</QJ_SettingsUnlimitedHint>
@@ -77,7 +77,7 @@
   <QJ_FinishGiverVerb>terminar</QJ_FinishGiverVerb>
   <QJ_FinishGiverGerund>terminando trabajo de calidad</QJ_FinishGiverGerund>
   <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
-  <QJ_WelcomeBody>Quality Jobs permite que cualquier colono trabaje en un objeto o edificio sin terminar, pero solo alguien que cumpla tus requisitos puede finalizarlo, porque quien lo termina es quien determina la calidad. Funciona tanto con proyectos de fabricación como con construcciones.</QJ_WelcomeBody>
+  <QJ_WelcomeBody>Quality Jobs permite que los trabajadores aptos compartan el trabajo en un objeto o edificio. Solo quien cumpla los requisitos que establezcas puede finalizarlo, porque quien lo termina determina la calidad. Funciona con órdenes de fabricación y construcciones.</QJ_WelcomeBody>
   <QJ_WelcomeFind>Abre la configuración de Quality Jobs con este botón, junto a los controles de visualización de la esquina inferior derecha. La ventana de proyectos de un objeto con calidad incluye una sección Quality Jobs, y los planos o estructuras en construcción de edificios con calidad muestran un botón Trabajo de calidad al seleccionarlos.</QJ_WelcomeFind>
   <QJ_WelcomeTakeMeThere>Abrir ahora</QJ_WelcomeTakeMeThere>
   <QJ_CompatibilityFinishIt>Finish it! puede fallar al usarse en trabajos sin terminar que Quality Jobs ha desvinculado de su proyecto.</QJ_CompatibilityFinishIt>
@@ -91,4 +91,6 @@
   <QJ_HelpReload>Recargar</QJ_HelpReload>
   <QJ_TabHelp>Ayuda</QJ_TabHelp>
   <QJ_TabOptions>Opciones</QJ_TabOptions>
+  <QJ_SettingsAllowRobotPreparation>Permitir que mecanoides y robots trabajen en trabajos de calidad</QJ_SettingsAllowRobotPreparation>
+  <QJ_SettingsAllowRobotPreparationTip>Permite que los mecanoides y robots compatibles realicen trabajos de fabricación y construcción gestionados. Desactiva esta opción para reservar ese trabajo y su experiencia de habilidad a los colonos. Esto también detiene el trabajo que estén realizando en trabajos gestionados. Los mecanoides y robots aptos pueden seguir finalizando trabajos asignados por Quality Jobs. No afecta a los trabajos normales sin gestionar.</QJ_SettingsAllowRobotPreparationTip>
 </LanguageData>

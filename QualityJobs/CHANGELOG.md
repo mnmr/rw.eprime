@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.2.2 — 2026-10-29
+
+- Added: Option to allow mechs and robots (Misc Robots mods) to work on Quality Jobs, despite them not earning XP.
+- Changed: Automatic finisher selection now includes capable colony mechs and robot workers, ranked by expected quality alongside colonists.
+
 ## 1.2.1 — 2026-10-28
 
 - Added: Built-in help.

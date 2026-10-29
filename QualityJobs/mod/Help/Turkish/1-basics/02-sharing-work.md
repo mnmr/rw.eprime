@@ -13,6 +13,9 @@ Seçeneklerde **{k:QJ_SettingsShareWork}** etkinleştirildiğinde, üzerinde ça
 <!-- l10n:reserved -->
 İşin ilk aşamalarını paylaşmak, son dokunuşu ayırmaktan farklıdır. Tamamlanmadan hemen önce duraklatılan, yönetilen bir eşyada **Üreten: ayrıldı (Quality Jobs)** yazısı görünür. Eşya, [koşulları karşılayan bir tamamlayıcıyı](topic:finishers) bekler; sıradan bir çalışan paylaşım yoluyla onu tamamlayamaz.
 
+<!-- l10n:robot-work -->
+**{k:QJ_SettingsAllowRobotPreparation}** kapalıyken, paylaşılan bitmemiş bir eşyanın asıl iş emri var olduğu ve yönetildiği sürece eşya kolonicilerin çalışması için ayrılmış kalır. Eşyanın yönetilmeyen bir iş emriyle devralınması, bir mekanizmanın veya robotun bu işi üstlenmesine izin vermez. Uygun mekanizmalar ve robotlar, Quality Jobs tarafından verilen tamamlama görevlerini yine de yapabilir.
+
 <!-- l10n:off -->
 Paylaşılan işlerin normal sahipliğine dönmesi için paylaşımı kapatın. Yönetilen üretim emirleri son dokunuşu yine de ayırabilir. **{k:QJ_ManageBill}** seçeneğini kapatmak, o emrin kalite için bekletilen işlerini serbest bırakır; kolonideki paylaşımı kapatmaz.
 

@@ -633,4 +633,9 @@ WorkRolesはゲーム標準の仕組みで管理中の入植者に作業一覧�
   <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
   <WR_WorkTypesLabel>作業種別</WR_WorkTypesLabel>
   <WR_WorkTypesTip>指定した種別の仕事ができる入植者が対象です。\n\n選択した作業から求めた参考情報です。</WR_WorkTypesTip>
+  <WR_OptMechanicalRecommendations>人へのおすすめにロボットとメカノイドの担当分を反映</WR_OptMechanicalRecommendations>
+  <WR_OptMechanicalRecommendationsTip>ロボットやメカノイドが引き受けた仕事を、コロニーの人員充足に算入します。1体につき主担当の仕事1つまでを数え、予備の仕事は別の人員として数えません。人を完全に代替するには、制限なく業務全体を担当できる必要があります。選択した人の育成と固定したロールは維持されます。初期状態では無効です。</WR_OptMechanicalRecommendationsTip>
+  <WR_OptMechanicalWorkers>入植者一覧にロボットとメカノイドを表示</WR_OptMechanicalWorkers>
+  <WR_OptMechanicalWorkersTip>このセーブで、バニラのメカノイドとMisc. Robotsのロボットにロールを割り当てられるようにします。制御グループ、エリア、起動、充電はそれぞれ本来のタブで設定します。無効にすると対象の行を非表示にし、本来の仕事順に戻します。保存済みのロールは適用されずに保持されます。</WR_OptMechanicalWorkersTip>
+  <WR_RecMechanicalLearningProtected>ロボットやメカノイドが業務を担当していても、この育成用の割り当ては維持されます。育成目標に達すると解除できます。</WR_RecMechanicalLearningProtected>
 </LanguageData>

@@ -13,6 +13,9 @@ Um item inativo é desvinculado do trabalhador e da ordem de produção originai
 <!-- l10n:reserved -->
 Compartilhar as etapas iniciais do trabalho é diferente de reservar o toque final. Um item gerenciado pausado pouco antes da conclusão exibe **Autor: reservado (Quality Jobs)**. Ele aguarda um [finalizador qualificado](topic:finishers); um trabalhador comum não pode concluí-lo por meio do compartilhamento.
 
+<!-- l10n:robot-work -->
+Quando **{k:QJ_SettingsAllowRobotPreparation}** está desativado, um item inacabado compartilhado permanece reservado para o trabalho de colonos enquanto sua ordem de produção original existir e for gerenciada. Retomar o item por meio de uma ordem não gerenciada não permite que um mecanoide ou robô assuma esse trabalho. Mecanoides e robôs aptos ainda podem executar tarefas de finalização atribuídas pelo Quality Jobs.
+
 <!-- l10n:off -->
 Desative o compartilhamento para que os trabalhos compartilhados voltem a pertencer a um único trabalhador. As ordens gerenciadas ainda podem reservar o toque final. Desativar **{k:QJ_ManageBill}** libera os trabalhos dessa ordem que aguardam os requisitos de qualidade; isso não desativa o compartilhamento na colônia.
 

@@ -22,7 +22,10 @@ namespace QualityJobs
             RimShared.GameLib.Localization.BundledTranslationFallback.Install();
             Instance = this;
             Settings = GetSettings<QualityJobsSettings>();
-            new Harmony("EPrime.QualityJobs").PatchAll();
+            var harmony = new Harmony("EPrime.QualityJobs");
+            foreach (Type type in AccessTools.GetTypesFromAssembly(GetType().Assembly))
+                if (!type.IsDefined(typeof(MainThreadPatchAttribute), false))
+                    harmony.CreateClassProcessor(type).Patch();
         }
 
         public override string SettingsCategory() => "EPrime's Quality Jobs";
@@ -157,6 +160,7 @@ namespace QualityJobs
             float colW   = (bodyW - ColGap) / 2f;
             float leftX  = bodyX;
             float rightX = bodyX + colW + ColGap;
+            SettingsLabels.EnsurePreparationMetrics(colW);
 
             // Row 0: MiniHeaders.
             QjUi.MiniHeader(leftX,  y, colW, SettingsLabels.BillDefaults!);
@@ -414,6 +418,22 @@ namespace QualityJobs
                 y += CheckboxH + RowGap;
             }
 
+            // This simulation option is per-save only. Without an active save,
+            // show its fixed default disabled instead of creating another seed.
+            {
+                Rect preparationRow = new Rect(bodyX, y, colW,
+                    SettingsLabels.PreparationRowHeight);
+                bool allowPreparation = activeSettings?.AllowRobotPreparation ?? true;
+                Widgets.CheckboxLabeled(preparationRow,
+                    SettingsLabels.AllowRobotPreparation!, ref allowPreparation,
+                    disabled: activeStore == null);
+                WrTips.Key("QJ_SettingsAllowRobotPreparationTip").Region(preparationRow);
+                if (activeStore != null
+                    && allowPreparation != activeSettings!.AllowRobotPreparation)
+                    Commands.SetAllowRobotPreparation(allowPreparation);
+                y += SettingsLabels.PreparationRowHeight + RowGap;
+            }
+
             // Toolbar button toggle: a per-player presentation preference, so
             // it binds the global Settings field directly in every state.
             {
@@ -498,6 +518,35 @@ namespace QualityJobs
             private static string? buttonEnable, buttonDisable;
             public static float ButtonWidth, ButtonHeight;
 
+            // Owner: process/assembly. Key: Small font, translated preparation
+            // caption, available checkbox width and UI metric revision. Value:
+            // immutable row height, including wrapped text and checkbox bounds.
+            // Dependencies: language, width, UI scale/font metrics. Refresh:
+            // immediate at an explicit key change. Equality: unchanged keys
+            // reuse the scalar. Teardown: Reset clears stamps and caption.
+            private static int preparationMetricRevision = -1;
+            private static float preparationWidth = -1f;
+            private static string? preparationCaption;
+            public static float PreparationRowHeight;
+
+            public static void EnsurePreparationMetrics(float width)
+            {
+                if (preparationMetricRevision == UiRevision.Current
+                    && preparationWidth == width
+                    && ReferenceEquals(preparationCaption, AllowRobotPreparation)) return;
+                using (GuiStateScope.Capture())
+                {
+                    Text.Font = GameFont.Small;
+                    Text.WordWrap = true;
+                    PreparationRowHeight = Mathf.Max(24f, Mathf.Max(
+                        Mathf.Ceil(Text.LineHeight), Mathf.Ceil(Text.CalcHeight(
+                            AllowRobotPreparation!, Mathf.Max(1f, width - 24f)))));
+                }
+                preparationMetricRevision = UiRevision.Current;
+                preparationWidth = width;
+                preparationCaption = AllowRobotPreparation;
+            }
+
             public static void EnsureButtonMetrics()
             {
                 UiRevision.ObserveCurrentMetrics();
@@ -528,6 +577,7 @@ namespace QualityJobs
             public static string? UnlimitedHint;
             public static string? ShareWork;
             public static string? HighPriorityFinish;
+            public static string? AllowRobotPreparation;
             public static string? ShowToolbarButton;
             public static string? NoGameLoaded;
             public static string? EnabledNote;
@@ -569,6 +619,7 @@ namespace QualityJobs
                 UnlimitedHint        = "QJ_SettingsUnlimitedHint".Translate();
                 ShareWork            = "QJ_SettingsShareWork".Translate();
                 HighPriorityFinish   = "QJ_SettingsHighPriorityFinish".Translate();
+                AllowRobotPreparation = "QJ_SettingsAllowRobotPreparation".Translate();
                 ShowToolbarButton    = "QJ_SettingsShowToolbarButton".Translate();
                 NoGameLoaded         = "QJ_NoGameLoaded".Translate();
                 EnabledNote          = "QJ_SettingsEnabledNote".Translate();
@@ -592,6 +643,9 @@ namespace QualityJobs
             {
                 buttonMetricRevision = -1;
                 buttonEnable = buttonDisable = null;
+                preparationMetricRevision = -1;
+                preparationWidth = -1f;
+                preparationCaption = AllowRobotPreparation = null;
                 _builtForLanguage = null;
                 QualityLabels = null;
                 MinSkillValue = -1;

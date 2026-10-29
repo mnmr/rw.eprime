@@ -34,7 +34,10 @@ namespace WorkRoles.UI
             bool skillCaptions,
             bool colonistVerdicts,
             bool paletteVerdicts,
-            bool recommendationVerdicts)
+            bool recommendationVerdicts,
+            string mechanicalLabel, bool mechanicalEnabled,
+            string mechanicalRecommendationsLabel, bool mechanicalRecommendationsEnabled,
+            float mechanicalHeight, float mechanicalRecommendationsHeight)
         {
             CompatibilityHeader = compatibilityHeader;
             NumericLabel = numericLabel;
@@ -63,7 +66,20 @@ namespace WorkRoles.UI
             ColonistVerdicts = colonistVerdicts;
             PaletteVerdicts = paletteVerdicts;
             RecommendationVerdicts = recommendationVerdicts;
+            MechanicalLabel = mechanicalLabel;
+            MechanicalEnabled = mechanicalEnabled;
+            MechanicalRecommendationsLabel = mechanicalRecommendationsLabel;
+            MechanicalRecommendationsEnabled = mechanicalRecommendationsEnabled;
+            MechanicalHeight = mechanicalHeight;
+            MechanicalRecommendationsHeight = mechanicalRecommendationsHeight;
         }
+
+        internal string MechanicalLabel { get; }
+        internal bool MechanicalEnabled { get; }
+        internal string MechanicalRecommendationsLabel { get; }
+        internal bool MechanicalRecommendationsEnabled { get; }
+        internal float MechanicalHeight { get; }
+        internal float MechanicalRecommendationsHeight { get; }
 
         internal string CompatibilityHeader { get; }
         internal string NumericLabel { get; }
@@ -97,6 +113,12 @@ namespace WorkRoles.UI
 
         internal bool ContentEquals(OptionsRenderSnapshot other) =>
             other != null
+            && MechanicalLabel == other.MechanicalLabel
+            && MechanicalEnabled == other.MechanicalEnabled
+            && MechanicalRecommendationsLabel == other.MechanicalRecommendationsLabel
+            && MechanicalRecommendationsEnabled == other.MechanicalRecommendationsEnabled
+            && MechanicalHeight == other.MechanicalHeight
+            && MechanicalRecommendationsHeight == other.MechanicalRecommendationsHeight
             && string.Equals(CompatibilityHeader, other.CompatibilityHeader,
                 System.StringComparison.Ordinal)
             && string.Equals(NumericLabel, other.NumericLabel,
@@ -157,13 +179,13 @@ namespace WorkRoles.UI
         // Owner: Options tab window instance.
         // Key: RoleStore identity, WorkRolesSettings identity,
         // LanguageChangeCoordinator.Revision, UiRevision.Current (the palette
-        // grouping control width is a text measurement), the palette grouping
-        // value, and the exact eight boolean values displayed by the tab.
+        // grouping control width is a text measurement), available flow width,
+        // the palette grouping value, and the exact boolean values displayed.
         // Value: immutable OptionsRenderSnapshot containing translated chrome,
         // structured tips, measured control geometry, and detached values.
         // Dependencies: language, UI metrics, manual-priority mode, reported
         // priority range, the emergency rule, the auto-optimize schedule toggle, the palette
-        // grouping preference, and the four client-local display preferences.
+        // grouping preference, both mechanical options, and the four client-local display preferences.
         // Refresh: immediate when an exact key input changes, including paused
         // synced execution and local preference edits.
         // Equality: exact equal rebuilt contents preserve snapshot identity.
@@ -174,10 +196,13 @@ namespace WorkRoles.UI
         private WorkRolesSettings? settingsOwner;
         private int languageRevision = -1;
         private int uiRevision = -1;
+        private float builtFlowWidth = -1f;
         private bool builtNumeric;
         private bool builtVanillaRange;
         private bool builtEmergencyRule;
         private bool builtAutoOptimize;
+        private bool builtMechanicalEnabled;
+        private bool builtMechanicalRecommendationsEnabled;
         private int builtPaletteGrouping = -1;
         private bool builtSkillCaptions;
         private bool builtColonistVerdicts;
@@ -200,7 +225,7 @@ namespace WorkRoles.UI
             languageRevision = -1;
         }
 
-        internal OptionsRenderSnapshot Snapshot(RoleStore? store)
+        internal OptionsRenderSnapshot Snapshot(RoleStore? store, float flowWidth)
         {
             WorkRolesSettings? settings = WorkRolesMod.Settings;
             int language = LanguageChangeCoordinator.Revision;
@@ -209,6 +234,8 @@ namespace WorkRoles.UI
             bool vanillaRange = store?.reportVanillaPriorities ?? true;
             bool emergencyRule = store?.rolePriorityEmergencyRule ?? true;
             bool autoOptimize = store?.autoOptimize ?? false;
+            bool mechanicalEnabled = store?.mechanicalWorkersEnabled ?? false;
+            bool mechanicalRecommendationsEnabled = store?.mechanicalRecommendationsEnabled ?? false;
             PaletteMode paletteGrouping =
                 settings?.paletteMode == PaletteMode.Groups
                     ? PaletteMode.Groups : PaletteMode.Skills;
@@ -223,10 +250,13 @@ namespace WorkRoles.UI
                 && !ownerChanged
                 && languageRevision == language
                 && uiRevision == ui
+                && builtFlowWidth == flowWidth
                 && builtNumeric == numeric
                 && builtVanillaRange == vanillaRange
                 && builtEmergencyRule == emergencyRule
                 && builtAutoOptimize == autoOptimize
+                && builtMechanicalEnabled == mechanicalEnabled
+                && builtMechanicalRecommendationsEnabled == mechanicalRecommendationsEnabled
                 && builtPaletteGrouping == (int)paletteGrouping
                 && builtSkillCaptions == skillCaptions
                 && builtColonistVerdicts == colonistVerdicts
@@ -281,10 +311,17 @@ namespace WorkRoles.UI
                 "WR_PaletteByGroups".Translate().ToString(),
             };
             float paletteControlWidth;
+            string mechanicalLabel = "WR_OptMechanicalWorkers".Translate();
+            string mechanicalRecommendationsLabel = "WR_OptMechanicalRecommendations".Translate();
+            float mechanicalHeight, mechanicalRecommendationsHeight;
             GameFont previousFont = Text.Font;
             try
             {
                 Text.Font = GameFont.Small;
+                float textWidth = Mathf.Max(1f, flowWidth - 30f);
+                float lineHeight = Mathf.Ceil(Text.LineHeight);
+                mechanicalHeight = Mathf.Max(28f, lineHeight, Mathf.Ceil(Text.CalcHeight(mechanicalLabel, textWidth)));
+                mechanicalRecommendationsHeight = Mathf.Max(28f, lineHeight, Mathf.Ceil(Text.CalcHeight(mechanicalRecommendationsLabel, textWidth)));
                 float widestSegment = 0f;
                 foreach (string option in paletteGroupingOptions)
                 {
@@ -325,7 +362,10 @@ namespace WorkRoles.UI
                 skillCaptions,
                 colonistVerdicts,
                 paletteVerdicts,
-                recommendationVerdicts);
+                recommendationVerdicts,
+                mechanicalLabel, mechanicalEnabled,
+                mechanicalRecommendationsLabel, mechanicalRecommendationsEnabled,
+                mechanicalHeight, mechanicalRecommendationsHeight);
             if (ownerChanged || snapshot == null
                 || !snapshot.ContentEquals(rebuilt))
                 snapshot = rebuilt;
@@ -333,10 +373,13 @@ namespace WorkRoles.UI
             settingsOwner = settings;
             languageRevision = language;
             uiRevision = ui;
+            builtFlowWidth = flowWidth;
             builtNumeric = numeric;
             builtVanillaRange = vanillaRange;
             builtEmergencyRule = emergencyRule;
             builtAutoOptimize = autoOptimize;
+            builtMechanicalEnabled = mechanicalEnabled;
+            builtMechanicalRecommendationsEnabled = mechanicalRecommendationsEnabled;
             builtPaletteGrouping = (int)paletteGrouping;
             builtSkillCaptions = skillCaptions;
             builtColonistVerdicts = colonistVerdicts;

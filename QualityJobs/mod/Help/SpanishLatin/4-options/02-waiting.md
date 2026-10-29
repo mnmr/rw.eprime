@@ -7,7 +7,7 @@ Empieza por **{k:QJ_StatusHeader}** en el panel de la orden o de construcción. 
 <!-- l10n:checklist -->
 - ¿El tipo de trabajo necesario está habilitado para quien debe finalizarlo? ¿Está en este mapa y puede trabajar?
 - ¿El requisito de habilidad es demasiado alto, o estás esperando Creatividad inspirada o a un especialista en producción?
-- ¿El ajuste automático está esperando a un colono más capacitado que está temporalmente ausente o no disponible?
+- ¿El ajuste automático está esperando a que esté disponible un trabajador con mayor calidad esperada, por ejemplo, a que regrese de una caravana o termine de recargarse?
 - ¿Puede el trabajador llegar al objeto o a la estructura, reservarlos y usar la mesa de trabajo? Revisa los objetos prohibidos, las zonas permitidas, las restricciones de la orden y las reservas de otros trabajadores.
 - ¿Se alcanzó el límite de existencias? Termina los objetos pendientes antes de empezar más, o aumenta el límite de forma deliberada.
 

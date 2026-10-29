@@ -10,7 +10,8 @@ namespace WorkRoles.Patches
     public static class Patch_Pawn_SetFaction
     {
         private static bool IsColonyMember(Pawn pawn) =>
-            pawn?.IsColonist == true || pawn?.IsSlaveOfColony == true;
+            pawn?.IsColonist == true || pawn?.IsSlaveOfColony == true
+            || pawn != null && MechanicalWorkers.IsColonyWorker(pawn);
 
         private static void Prefix(Pawn __instance, out bool __state) =>
             __state = IsColonyMember(__instance);

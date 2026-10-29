@@ -62,3 +62,27 @@ The engine suggests; applying is yours, one role at a time
 ([Fix My Colony](topic:fix-my-colony)). The exception is
 [Auto-optimize](topic:auto-optimize): switch it on and Fix My Colony
 runs automatically every in-game hour, across all your colonies.
+
+<!-- l10n:mechanical-suggestions -->
+When robot and mech rows are enabled, their suggestions use current skills and
+executable work, without human passions or learning paths. Their accepted
+primary duty stays in place, including an explicitly assigned excluded role;
+change that duty manually. Suggestions for additional work respect exclusions.
+You choose their assignments; Auto-optimize continues to apply human
+recommendations only.
+
+<!-- l10n:mechanical-coverage -->
+**Use robot and mech coverage in human recommendations** is a separate per-save
+option, also off by default. It counts accepted mechanical assignments toward
+staffing, allowing a fully covered duty to replace its last human specialist.
+Each worker supplies one primary duty; fallback roles add no independent
+staffing credit. Restricted areas, blocked work, insufficient skills and
+Quality Jobs restrictions on robot work prevent full coverage. A robot that can
+only clean does not replace a combined cleaning-and-hauling role.
+
+<!-- l10n:mechanical-learning -->
+Selected human training below its target and pinned assignments stay protected.
+Routine charging retains coverage; deactivation, lost control or leaving Work
+mode removes it. Updated recommendations propose human replacements, while
+Auto-optimize applies them at its normal hourly boundary when enabled. With
+integration off, robot and mech rows do not affect human recommendations.

@@ -4,6 +4,9 @@ title: Các mod khác và chế độ nhiều người chơi
 <!-- l10n:requirements -->
 Quality Jobs yêu cầu Harmony và hỗ trợ RimWorld 1.6 và 1.7. Không yêu cầu DLC. Ideology bổ sung yêu cầu về chuyên gia sản xuất; tính năng quản lý chất lượng thông thường vẫn hoạt động khi không có DLC này.
 
+<!-- l10n:robots -->
+**Mech Biotech, Misc. Robots và Misc. Robots++:** những đơn vị lao động do thuộc địa điều khiển có khả năng làm công việc cần thiết có thể đủ điều kiện hoàn thiện. Robot vẫn giữ khả năng làm việc riêng; robot vận chuyển hoặc dọn dẹp không thể hoàn thiện việc chế tạo hay xây dựng. **{k:QJ_SettingsAllowRobotPreparation}** quy định liệu mech và robot được hỗ trợ có được làm cả phần việc trước bước hoàn thiện trong các công việc được quản lý hay không. Tắt tùy chọn này vẫn cho phép chúng hoàn thiện.
+
 <!-- l10n:expanded -->
 **Vanilla Skills Expanded:** phần thưởng chất lượng xây dựng, chế tạo và nghệ thuật được tính khi chọn người hoàn thiện và xem trước xác suất. Phần thưởng tốc độ không tạo ưu thế khi xét chất lượng. Thay đổi các phần thưởng này có thể cần một chút thời gian trong trò chơi để được phản ánh.
 

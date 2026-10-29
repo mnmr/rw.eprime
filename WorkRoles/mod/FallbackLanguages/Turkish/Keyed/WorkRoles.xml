@@ -633,4 +633,9 @@ Bu bildirim kayıt başına her mod için bir kez gösterilir.</WR_SetPriorityBl
   <WR_WorkRecipeWarning>{0}: {1}</WR_WorkRecipeWarning>
   <WR_WorkTypesLabel>İş türleri</WR_WorkTypesLabel>
   <WR_WorkTypesTip>Bu role yalnızca belirtilen iş türlerini yapabilen koloniciler uygundur.\n\nSeçili işlerden türetilir ve bilgi amaçlı gösterilir.</WR_WorkTypesTip>
+  <WR_OptMechanicalRecommendations>İnsanlara yönelik önerilerde robot ve mekanoitlerin karşıladığı işleri hesaba kat</WR_OptMechanicalRecommendations>
+  <WR_OptMechanicalRecommendationsTip>Kabul edilen mekanik çalışan görevlerini koloninin iş gücü ihtiyacına sayar. Her çalışan en fazla bir birincil görevi karşılar; yedek görevler ayrıca iş gücü katkısı sayılmaz. İnsanların yerini tamamen alabilmeleri için hizmeti eksiksiz ve kısıtlamasız sunmaları gerekir. İnsanlar için seçilen eğitim görevleri ve sabitlenmiş roller korunur. Varsayılan olarak kapalıdır.</WR_OptMechanicalRecommendationsTip>
+  <WR_OptMechanicalWorkers>Kolonicilerde robotları ve mekanoitleri göster</WR_OptMechanicalWorkers>
+  <WR_OptMechanicalWorkersTip>Bu kayıtta temel oyun mekanoitlerine ve Misc. Robots robotlarına rol atanmasını sağlar. Kontrol grupları, bölgeler, etkinleştirme ve şarj kendi sekmelerinde kalır. Bu seçeneği kapatmak satırlarını gizler ve kendi iş sıralamalarını geri getirir; kayıtlı rolleri devre dışı kalır.</WR_OptMechanicalWorkersTip>
+  <WR_RecMechanicalLearningProtected>Robotlar veya mekanoitler hizmeti karşılarken bu öğrenme ataması korunur. Eğitim hedefine ulaşıldığında kaldırılabilir.</WR_RecMechanicalLearningProtected>
 </LanguageData>

@@ -20,7 +20,13 @@ Tiện ích vá nguồn giao việc sẵn có vẫn dùng cùng vai trò và th�
 Hai nhóm mod xung đột. Mod thay thẻ Công việc (các bản Work Tab, Better Work Tab và tương tự) tranh cùng giao diện. Mod đặt ưu tiên (Free Will, PriorityMaster và tương tự) tranh cùng dữ liệu: WorkRoles quản lý ưu tiên cư dân dùng vai trò nên chặn ghi của chúng. Khi xảy ra, thông báo một lần nêu tên mod và gợi ý cách dùng vai trò đạt hiệu quả tương tự.
 
 <!-- l10n:b-3e9c0a143130 -->
-Quyền quản lý ưu tiên chỉ áp dụng nhân vật dạng người, nên mod đặt ưu tiên mechanoid như Mech Work Tab hoàn toàn tương thích.
+Mod đặt ưu tiên mech như Mech Work Tab có thể quản lý đơn vị chưa được phân công trong WorkRoles. Nếu bật hỗ trợ robot và mech, WorkRoles cũng quản lý thứ tự công việc cho đơn vị máy móc đã được giao vai trò. Tắt hỗ trợ trong Tùy chọn để khôi phục thứ tự gốc cho tất cả đơn vị máy móc; vai trò đã lưu của chúng vẫn được giữ nhưng không hoạt động.
+
+<!-- l10n:mechanical-workers -->
+**Hiện robot và mech trong Cư dân** là tùy chọn riêng cho từng bản lưu, mặc định tắt. Tùy chọn này thêm mech của Biotech, Misc. Robots và Misc. Robots++ vào bảng hiện có. Gán vai trò tại đó; dùng các thẻ gốc để quản lý nhóm điều khiển, khu vực, kích hoạt và sạc. Vai trò chỉ sắp thứ tự những việc robot hoặc mech thực sự làm được. Android dạng người vẫn theo quy tắc cư dân thông thường.
+
+<!-- l10n:mechanical-recharge -->
+Việc sạc vẫn theo cơ chế gốc và không cần vai trò Sạc lại. Biotech cho phép đặt giới hạn sạc trong từng nhóm điều khiển. Misc. Robots dùng ngưỡng tự quay về riêng; nhấp vào phần trăm pin trong thẻ Robot của mod để yêu cầu sạc ngay. WorkRoles không thay đổi các ngưỡng này.
 
 <!-- l10n:b-3df0d9a43535 -->
 Một số mod cần ưu tiên 0–4; nếu gặp vấn đề, hãy đảm bảo bật "Báo ưu tiên 0–4 kiểu gốc cho mod khác".

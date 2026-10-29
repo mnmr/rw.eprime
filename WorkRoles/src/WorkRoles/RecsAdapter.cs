@@ -70,7 +70,11 @@ namespace WorkRoles
             RoleStore store,
             IReadOnlyList<Pawn> pawns,
             Func<Pawn, PawnExternalSnapshot> snapshotFor)
-            => BuildColonyView(store, pawns, snapshotFor, BuildRoleCatalog(store));
+        {
+            ColonyView colony = BuildColonyView(store, pawns, snapshotFor, BuildRoleCatalog(store));
+            MechanicalWorkers.AddSupply(store, colony, pawns);
+            return colony;
+        }
 
         internal static ColonyView BuildColonyView(
             RoleStore store,
@@ -90,7 +94,8 @@ namespace WorkRoles
                 pawnViews = projected;
             }
             IReadOnlyList<int> orderTemplate = RecommendationOrdering(store, training: true).Template;
-            return catalog.CreateColony(orderTemplate, pawnViews);
+            ColonyView colony = catalog.CreateColony(orderTemplate, pawnViews);
+            return colony;
         }
 
         internal static RecommendationCatalogProjection BuildRoleCatalog(RoleStore store)
@@ -253,6 +258,11 @@ namespace WorkRoles
                     if (skill.TotallyDisabled) continue;
                     facts.SkillLevels[skill.def.defName] = skill.Level;
                 }
+            else if (MechanicalWorkers.IsMechanical(pawn))
+                foreach (WorkTypeDef type in pawn.RaceProps.mechEnabledWorkTypes)
+                    if (type.relevantSkills != null)
+                        foreach (SkillDef skill in type.relevantSkills)
+                            facts.SkillLevels[skill.defName] = pawn.RaceProps.mechFixedSkillLevel;
             Dictionary<string, int>? ageBlocked = null;
             foreach (WorkTypeDef workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
             {

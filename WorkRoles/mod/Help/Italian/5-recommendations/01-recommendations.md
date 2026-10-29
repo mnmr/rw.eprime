@@ -30,3 +30,12 @@ Due ruoli hanno regole speciali. Cacciatore è consigliato a chiunque porti un'a
 
 <!-- l10n:b-b241ec72dcda -->
 Il sistema propone, ma decidi tu cosa applicare, [un ruolo alla volta](topic:cherry-picking) oppure tutti insieme con [Ottimizza la colonia](topic:fix-my-colony). Fa eccezione l'[Ottimizzazione automatica](topic:auto-optimize): attivandola, Ottimizza la colonia viene eseguito ogni ora di gioco in tutte le colonie.
+
+<!-- l10n:mechanical-suggestions -->
+Quando le righe di robot e mech sono abilitate, i consigli si basano sulle loro abilità attuali e sui lavori che possono svolgere, senza passioni umane o percorsi di apprendimento. La loro mansione principale accettata resta invariata, anche se si tratta di un ruolo escluso assegnato esplicitamente; per cambiarla, intervieni manualmente. I consigli per lavori aggiuntivi rispettano le esclusioni. Decidi tu le loro assegnazioni; l'Ottimizzazione automatica continua ad applicare solo i consigli per gli umani.
+
+<!-- l10n:mechanical-coverage -->
+**Considera la copertura di robot e mech nei consigli per gli umani** è un'opzione separata per ogni salvataggio, anch'essa disattivata per impostazione predefinita. Conteggia le assegnazioni meccaniche accettate nel fabbisogno di personale: una mansione interamente coperta può così fare a meno dell'ultimo specialista umano. Ogni lavoratore copre una sola mansione principale; i ruoli di riserva non contano come personale aggiuntivo. Aree ristrette, lavori bloccati, abilità insufficienti e restrizioni di Quality Jobs sul lavoro dei robot impediscono la copertura completa. Un robot capace solo di pulire non sostituisce un ruolo che combina pulizia e trasporto.
+
+<!-- l10n:mechanical-learning -->
+L'addestramento selezionato per gli umani resta protetto finché non raggiunge l'obiettivo, così come le assegnazioni fissate. La normale ricarica mantiene la copertura; la disattivazione, la perdita di controllo o l'uscita dalla modalità Lavoro la rimuovono. I consigli aggiornati propongono sostituti umani, mentre l'Ottimizzazione automatica, se attiva, applica le sostituzioni alla consueta scadenza oraria. Con l'integrazione disattivata, le righe di robot e mech non influiscono sui consigli per gli umani.

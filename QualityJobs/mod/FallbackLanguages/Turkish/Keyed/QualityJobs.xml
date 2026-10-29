@@ -4,8 +4,8 @@
   <QJ_AtStockCap>yarım iş stok sınırına ulaşıldı</QJ_AtStockCap>
   <QJ_AutoBest>Bitirme becerisini otomatik ayarla</QJ_AutoBest>
   <QJ_AutoBestCurrent>Şu anda: {0}</QJ_AutoBestCurrent>
-  <QJ_AutoBestNone>Uygun kolonici yok</QJ_AutoBestNone>
-  <QJ_AutoBestTip>İşaretli: İşi yalnızca kolonideki uygun en iyi tamamlayıcı bitirebilir; beceri şartı o koloniciyi otomatik izler. Bu karşılaştırmada uzakta, yere düşmüş veya meşgul koloniciler de mevcut sayılır.\n\nİşaretsiz: Belirlediğiniz bitirme becerisini karşılayan her kolonici işi bitirebilir.</QJ_AutoBestTip>
+  <QJ_AutoBestNone>Uygun çalışan yok</QJ_AutoBestNone>
+  <QJ_AutoBestTip>İşaretli: İşi yalnızca kolonideki uygun en iyi tamamlayıcı bitirebilir; beceri şartı o çalışanı otomatik izler. Bu karşılaştırmada uzakta, yere düşmüş veya meşgul çalışanlar da mevcut sayılır.\n\nİşaretsiz: Belirlediğiniz bitirme becerisini karşılayan her uygun çalışan işi bitirebilir.</QJ_AutoBestTip>
   <QJ_BillTargetQualityTip>Bitirilen eşyanın kalitesi bunun altında çıkarsa yerine yenisi üretilsin diye sipariş sayısı bir artırılır. Eşyanın kendisi tutulur.\n\nBu, sabit sayıda eşya üreten siparişler için geçerlidir; diğer tekrar modları ne zaman duracaklarını kendileri belirler.</QJ_BillTargetQualityTip>
   <QJ_Clear>Temizle</QJ_Clear>
   <QJ_CompatibilityFinishIt>Finish it!, Quality Jobs'ın siparişinden ayırdığı yarım işlerde kullanıldığında hata verebilir.</QJ_CompatibilityFinishIt>
@@ -21,7 +21,7 @@
   <QJ_FinishGiverLabel>kaliteli işi bitir</QJ_FinishGiverLabel>
   <QJ_FinishGiverVerb>bitir</QJ_FinishGiverVerb>
   <QJ_FinisherSkill>Bitirme becerisi: {0}</QJ_FinisherSkill>
-  <QJ_FinisherSkillTip>İşi yalnızca bu beceri düzeyinde veya üstündeki koloniciler bitirebilir. Önceki üretim aşamalarını herkes yapabilir.</QJ_FinisherSkillTip>
+  <QJ_FinisherSkillTip>İşi yalnızca bu beceri düzeyinde veya üstündeki çalışanlar bitirebilir. Önceki üretim aşamalarını diğer uygun çalışanlar yapabilir.</QJ_FinisherSkillTip>
   <QJ_GizmoManageDesc>Bu inşaatı Quality Jobs ile yönet: uygun bir inşaatçı bulunana kadar tamamlamayı beklet ve istersen hedef kaliteye ulaşana kadar yeniden inşa et.\n\nSol tık açar veya kapatır. Açmak varsayılan inşaat ayarlarınızı uygular. Sağ tık ayarları açar.</QJ_GizmoManageDesc>
   <QJ_GizmoQualityJobLabel>Kaliteli iş</QJ_GizmoQualityJobLabel>
   <QJ_GizmoRebuildDesc>Tamamlanmış bu bina için hedef kalite ve inşaatçı şartlarını seçin. Hedefe ulaşılana kadar söküp yerine yenisini yapmak için yeniden inşayı başlatın.</QJ_GizmoRebuildDesc>
@@ -29,7 +29,7 @@
   <QJ_MigrationBody>Quality Jobs, kaliteye tabi {0} mevcut sipariş buldu. Mevcut davranışlarıyla devam edebilmeleri için yönetim dışı bırakıldılar. Paylaşılan yarım işler her iki durumda da kullanılabilir.</QJ_MigrationBody>
   <QJ_MigrationContinue>Devam</QJ_MigrationContinue>
   <QJ_MigrationEnableExisting>Kaliteli eşyalara yönelik mevcut siparişlerde Quality Jobs etkinleştirilsin mi?</QJ_MigrationEnableExisting>
-  <QJ_MigrationEnableExistingTip>İşaretli: Mevcut siparişler, Bitirme becerisini otomatik ayarla açık olarak Quality Jobs'ı kullanır. Son dokunuşu kolonideki uygun en iyi kolonici yapar; geçici olarak müsait olmayanlar da sayılır. İlham ve üretim uzmanı şartları kapalıdır; düşük kaliteli sonuçlar yeniden denenmez.\n\nİşaretsiz: Mevcut siparişler temel oyunun bitirme davranışını korur. Yarım iş paylaşımı etkilenmez.</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationEnableExistingTip>İşaretli: Mevcut siparişler, Bitirme becerisini otomatik ayarla açık olarak Quality Jobs'ı kullanır. Son dokunuşu kolonideki uygun en iyi çalışan yapar; geçici olarak müsait olmayanlar da sayılır. İlham ve üretim uzmanı şartları kapalıdır; düşük kaliteli sonuçlar yeniden denenmez.\n\nİşaretsiz: Mevcut siparişler temel oyunun bitirme davranışını korur. Yarım iş paylaşımı etkilenmez.</QJ_MigrationEnableExistingTip>
   <QJ_MigrationTitle>Mevcut kalite siparişleri</QJ_MigrationTitle>
   <QJ_MinQualityLabel>Hedef kalite</QJ_MinQualityLabel>
   <QJ_NoGameLoaded>Kayda özel davranışı değiştirmek için bir kayıt yükleyin.</QJ_NoGameLoaded>
@@ -51,10 +51,10 @@
   <QJ_SettingsDefaultCap>Varsayılan yarım iş stok sınırı: {0}</QJ_SettingsDefaultCap>
   <QJ_SettingsDefaultCapTip>Her ürün için varsayılan azami yarım eşya sayısını belirler. Aynı eşyayı üreten tüm siparişler bu sınırı paylaşır.\n\nSınıra ulaşıldığında yeni eşyalara başlanmaz; devam edenler yine bitirilebilir. 0, sınırsız demektir.</QJ_SettingsDefaultCapTip>
   <QJ_SettingsEnabledNote>Anahtar, yüklü kayıt için geçerlidir. Devre dışı bırakmak tüm eşyaları temel oyundaki hâline döndürür ve bu kaydın Quality Jobs ayarlarını siler.\n\nMod kurulu kalırsa kayıt sonraki yüklenişinde varsayılan ayarlarla yeniden etkinleşir. Devre dışı bırakma, modu kaldırmaya hazırlık içindir.</QJ_SettingsEnabledNote>
-  <QJ_SettingsFinisherSkillTip>Son dokunuşu yalnızca bu beceri düzeyinde veya üstündeki koloniciler yapabilir; önceki aşamaları diğer çalışanlar yapabilir.\n\nBitirme becerisini otomatik ayarla işaretliyken bu değer manuel varsayılan olarak saklanır ama kullanılmaz.</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsFinisherSkillTip>Son dokunuşu yalnızca bu beceri düzeyinde veya üstündeki çalışanlar yapabilir; önceki aşamaları diğer uygun çalışanlar yapabilir.\n\nBitirme becerisini otomatik ayarla işaretliyken bu değer manuel varsayılan olarak saklanır ama kullanılmaz.</QJ_SettingsFinisherSkillTip>
   <QJ_SettingsGlobalOptions>Genel seçenekler</QJ_SettingsGlobalOptions>
   <QJ_SettingsHighPriorityFinish>Tamamlayıcılar için yüksek öncelikli iş kullan</QJ_SettingsHighPriorityFinish>
-  <QJ_SettingsHighPriorityFinishTip>İşaretli: Bir eşyayı bitirmek için seçilen kolonici, bir sonraki iş arayışında yangın söndürme, tıbbi bakım, kurtarma ve yatak istirahati dışındaki tüm işlerden önce bu işi alır. Mevcut işi bölünmez.\n\nİşaretsiz: Bitirme işi kendi iş türünde ilk sıradadır, ancak kolonicinin daha yüksek öncelik verdiği iş türleri yine önce gelir.</QJ_SettingsHighPriorityFinishTip>
+  <QJ_SettingsHighPriorityFinishTip>İşaretli: Bir eşyayı bitirmek için seçilen çalışan, bir sonraki iş arayışında yangın söndürme, tıbbi bakım, kurtarma ve yatak istirahati dışındaki tüm işlerden önce bu işi alır. Mevcut işi bölünmez.\n\nİşaretsiz: Bitirme işi kendi iş türünde ilk sıradadır, ancak çalışanın daha yüksek öncelik verdiği iş türleri yine önce gelir.</QJ_SettingsHighPriorityFinishTip>
   <QJ_SettingsManageNewBills>Yeni kalite siparişlerini yönet</QJ_SettingsManageNewBills>
   <QJ_SettingsManageNewBillsTip>İşaretli: Quality Jobs, kaliteli ürün veren siparişleri varsayılan olarak bu sütundaki seçeneklerle yönetir. Her siparişin ayarları ayrı değiştirilebilir.\n\nİşaretsiz: Quality Jobs sipariş ayarlarında açılmadıkça temel oyun davranışı kullanılır.</QJ_SettingsManageNewBillsTip>
   <QJ_SettingsManageNewConstruction>Yeni inşaat işlerini yönet</QJ_SettingsManageNewConstruction>
@@ -67,20 +67,20 @@
   <QJ_StartRebuilding>Yeniden inşayı başlat</QJ_StartRebuilding>
   <QJ_StatusFinishers>Uygun tamamlayıcılar: {0}</QJ_StatusFinishers>
   <QJ_StatusFinishersNone>Uygun tamamlayıcılar: yok</QJ_StatusFinishersNone>
-  <QJ_StatusFinishersTip>Bu haritada son dokunuşu yapmaya şu anda uygun koloniciler; en iyi aday önce gelir. Gerekli iş türü etkin olan ve yukarıdaki bitirme şartlarını karşılayan kolonici uygundur.\n\nYere düşmüş, zihinsel kriz geçiren veya bu haritadan uzakta olan koloniciler sayılmaz.</QJ_StatusFinishersTip>
+  <QJ_StatusFinishersTip>Bu haritada son dokunuşu yapmaya şu anda uygun çalışanlar; en iyi aday önce gelir. Gereken iş türünü yapabilen ve yukarıdaki bitirme şartlarını karşılayan çalışanlar uygundur.\n\nYere düşmüş, zihinsel kriz geçiren veya bu haritadan uzakta olan çalışanlar sayılmaz.</QJ_StatusFinishersTip>
   <QJ_StatusHeader>Durum</QJ_StatusHeader>
   <QJ_StatusQueue>Bekleyen: {0} · Bitirilen: {1}</QJ_StatusQueue>
   <QJ_StatusQueueShared>Yarım: {0} · Bekleyen: {1} · Bitirilen: {2}</QJ_StatusQueueShared>
   <QJ_StatusQueueTip>Yarım: paylaşım havuzunda bulunan ve izinli herhangi bir zanaatkârın sürdürebileceği eşyalar. Bekleyen: uygun tamamlayıcı bekleyen duraklatılmış eşyalar. Bitirilen: bir tamamlayıcıya atanmış eşyalar.</QJ_StatusQueueTip>
   <QJ_StatusStalled>Bekleyen eşyalar için uygun tamamlayıcı yok</QJ_StatusStalled>
   <QJ_StatusStalledConstruction>Uygun tamamlayıcı yok — inşaat bekliyor</QJ_StatusStalledConstruction>
-  <QJ_StatusStalledConstructionTip>Bu bina son dokunuşu beklemek için duraklatıldı; şu anda uygun kolonici olmadığı için tamamlanmayacak.\n\nBitirme becerisi, ilham ve uzman şartlarını; amaçlanan inşaatçının İnşa işinin açık olduğunu ve bu haritada bulunduğunu kontrol edin.</QJ_StatusStalledConstructionTip>
-  <QJ_StatusStalledTip>Yarım eşyalar bekliyor, ancak şu anda onları bitirebilecek uygun kolonici yok; bu yüzden bitirme işleri oluşturulmuyor.\n\nBitirme becerisi, ilham ve uzman şartlarını; amaçlanan tamamlayıcının iş türünün açık olduğunu ve bu haritada bulunduğunu kontrol edin. Beklerken stok sınırı yeni eşyalara başlanmasını da engelleyebilir.</QJ_StatusStalledTip>
+  <QJ_StatusStalledConstructionTip>Bu bina son dokunuşu beklemek için duraklatıldı; şu anda uygun çalışan olmadığı için tamamlanmayacak.\n\nBitirme becerisi, ilham ve uzman şartlarını; amaçlanan inşaatçının İnşa işini yapabildiğini ve bu haritada bulunduğunu kontrol edin.</QJ_StatusStalledConstructionTip>
+  <QJ_StatusStalledTip>Yarım eşyalar bekliyor, ancak şu anda onları bitirebilecek uygun çalışan yok; bu yüzden bitirme işleri oluşturulmuyor.\n\nBitirme becerisi, ilham ve uzman şartlarını; amaçlanan tamamlayıcının gereken iş türünü yapabildiğini ve bu haritada bulunduğunu kontrol edin. Beklerken stok sınırı yeni eşyalara başlanmasını da engelleyebilir.</QJ_StatusStalledTip>
   <QJ_StockCapLabel>Stok sınırı: {0}</QJ_StockCapLabel>
   <QJ_StockCapTooltip>Bu ürünün azami yarım eşya sayısı. Sınır ürün başına paylaşılır; bu eşyayı üreten tüm siparişler hesaba katılır.\n\n0, sınırsız demektir.</QJ_StockCapTooltip>
   <QJ_ToolbarButtonTip>Quality Jobs ayarlarını ve yardımını aç.</QJ_ToolbarButtonTip>
   <QJ_UnfinishedWorkWaiting>bu siparişin yarım eşyası sürdürülmeyi bekliyor</QJ_UnfinishedWorkWaiting>
-  <QJ_WelcomeBody>Quality Jobs, yarım bir eşya veya bina üzerinde her kolonicinin çalışmasına izin verir; ancak yalnızca belirlediğiniz şartları karşılayan kolonici bitirebilir, çünkü kaliteyi tek başına bitiren belirler. Üretim siparişlerinde ve inşaatta çalışır.</QJ_WelcomeBody>
+  <QJ_WelcomeBody>Quality Jobs, uygun çalışanların bir eşya veya bina üzerindeki işi paylaşmasını sağlar. Kaliteyi işi tamamlayan belirlediği için yalnızca belirlediğiniz şartları karşılayan bir çalışan işi tamamlayabilir. Üretim emirlerinde ve inşaatta çalışır.</QJ_WelcomeBody>
   <QJ_WelcomeFind>Quality Jobs ayarlarını ekranın sağ altındaki görünüm düğmelerinin yanındaki bu düğmeyle açın. Kaliteye tabi bir eşyanın sipariş penceresinde Quality Jobs bölümü; kaliteye tabi bir binanın seçili planında veya iskeletinde Kaliteli iş düğmesi bulunur.</QJ_WelcomeFind>
   <QJ_WelcomeTakeMeThere>Şimdi aç</QJ_WelcomeTakeMeThere>
   <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
@@ -91,4 +91,6 @@
   <QJ_HelpReload>Yeniden yükle</QJ_HelpReload>
   <QJ_TabHelp>Yardım</QJ_TabHelp>
   <QJ_TabOptions>Ayarlar</QJ_TabOptions>
+  <QJ_SettingsAllowRobotPreparation>Mekanizmalar ve robotlar kalite işlerinde çalışabilsin</QJ_SettingsAllowRobotPreparation>
+  <QJ_SettingsAllowRobotPreparationTip>Mekanizmaların ve desteklenen robotların yönetilen üretim ve inşaat işlerinde çalışmasına izin verir. Bu işleri ve bunlardan kazanılan beceri deneyimini kolonicilere ayırmak için bu ayarı kapatın. Bu, yönetilen işlerde sürdürdükleri çalışmayı da durdurur. Uygun mekanizmalar ve robotlar, Quality Jobs tarafından atanan işleri yine de tamamlayabilir. Yönetilmeyen sıradan işler etkilenmez.</QJ_SettingsAllowRobotPreparationTip>
 </LanguageData>

@@ -29,6 +29,7 @@ namespace QualityJobs.Patches
             if (entry == null || entry.state != WorkItemState.Shared) return;
 
             Pawn pawn = __instance.pawn;
+            store.RememberPreparationSource(uft, entry.sourceBill);
             if (UftAuthor.Get(uft) != pawn) UftAuthor.Assign(uft, pawn);
             store.RemoveEntry(entry); // active again; re-pooled at next idle sweep
         }

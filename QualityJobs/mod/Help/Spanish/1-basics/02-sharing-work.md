@@ -13,6 +13,9 @@ Un objeto en el que nadie está trabajando se desvincula de su trabajador y orde
 <!-- l10n:reserved -->
 Compartir el trabajo inicial es distinto de reservar el toque final. Un objeto gestionado que se pausa justo antes de completarse muestra **Autor: reservado (Quality Jobs)**. Espera a un [trabajador que cumpla los requisitos de acabado](topic:finishers); un trabajador corriente no puede terminarlo mediante el uso compartido.
 
+<!-- l10n:robot-work -->
+Cuando **{k:QJ_SettingsAllowRobotPreparation}** está desactivado, el trabajo de un objeto compartido sin terminar sigue reservado a los colonos mientras su orden original siga existiendo y esté gestionada. Retomarlo mediante una orden no gestionada no permite que un mecanoide o robot se haga cargo de ese trabajo. Los mecanoides y robots aptos pueden seguir realizando las tareas de acabado asignadas por Quality Jobs.
+
 <!-- l10n:off -->
 Desactiva el uso compartido para que el trabajo compartido vuelva a tener un responsable exclusivo. Las tareas gestionadas pueden seguir reservando el toque final. Desactivar **{k:QJ_ManageBill}** libera el trabajo de esa tarea que espera un acabado de calidad; no desactiva el uso compartido para la colonia.
 

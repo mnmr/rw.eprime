@@ -13,5 +13,8 @@ An idle item is released from its original worker and bill so a compatible bill 
 <!-- l10n:reserved -->
 Sharing early work is different from reserving the final touch. A managed item paused just before completion shows **Author: reserved (Quality Jobs)**. It waits for a [qualifying finisher](topic:finishers); an ordinary worker cannot finish it through sharing.
 
+<!-- l10n:robot-work -->
+When **{k:QJ_SettingsAllowRobotPreparation}** is off, a shared unfinished item remains reserved for colonist work while its original bill still exists and is managed. Picking it up through an unmanaged bill does not let a mech or robot take over that work. Eligible mechs and robots can still perform finishing assignments from Quality Jobs.
+
 <!-- l10n:off -->
 Turn sharing off to return shared work to ordinary ownership. Managed bills can still reserve their final touch. Turning off **{k:QJ_ManageBill}** releases that bill's quality-waiting work; it does not turn off sharing for the colony.
