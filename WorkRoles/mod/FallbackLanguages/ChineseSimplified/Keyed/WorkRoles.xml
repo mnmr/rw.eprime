@@ -634,8 +634,8 @@ WorkRoles 通过游戏标准方法为受管理殖民者提供工作列表。另�
   <WR_CompatibilityPriorityMaster>PriorityMaster 会更改手动优先级数值及其范围。WorkRoles 会替换这些控件，并根据职责确定受管理殖民者的优先级。</WR_CompatibilityPriorityMaster>
   <WR_CompatibilityWorkTab>{0} 会替换工作面板并控制优先级，与 WorkRoles 基于职责的工作管理功能冲突。</WR_CompatibilityWorkTab>
   <WR_OptMechanicalRecommendations>推荐人类职责时计入机器人和机械族承担的工作</WR_OptMechanicalRecommendations>
-  <WR_OptMechanicalRecommendationsTip>将机械工作者已承接的职责计入殖民地人员配置。每名工作者最多计入一项主要职责；后备职责不额外计入人手。只有能完整且不受限制地承担相应工作时，才可完全替代人类。已选定的人类训练安排和固定职责仍受保护。默认关闭。</WR_OptMechanicalRecommendationsTip>
+  <WR_OptMechanicalRecommendationsTip>对于已分配给机器人和机械族的工作，减少推荐的殖民者人数。每个机器人或机械族只按其主要职责计算，而且必须能完成该职责中的全部工作，不受区域或工作限制。已固定的职责和殖民者尚未完成的训练会保留。</WR_OptMechanicalRecommendationsTip>
   <WR_OptMechanicalWorkers>在殖民者列表中显示机器人和机械族</WR_OptMechanicalWorkers>
-  <WR_OptMechanicalWorkersTip>允许在此存档中为原版机械族和 Misc. Robots 的机器人分配职责。控制组、区域、启用和充电仍在各自原有页面中设置。关闭后会隐藏其所在行，并恢复原有工作顺序；已保存的职责会保留，但不生效。</WR_OptMechanicalWorkersTip>
+  <WR_OptMechanicalWorkersTip>在“殖民者”页面中，为 Biotech 机械族和 Misc. Robots 的机器人分配职责。控制组、允许区域、启用和充电仍在它们各自原有的页面中设置。关闭此选项会隐藏它们，并恢复原有的工作优先级，但会保留已保存的职责。</WR_OptMechanicalWorkersTip>
   <WR_RecMechanicalLearningProtected>即使机器人或机械族已承担相应工作，此训练安排仍会保留。达到训练目标后即可解除。</WR_RecMechanicalLearningProtected>
 </LanguageData>
