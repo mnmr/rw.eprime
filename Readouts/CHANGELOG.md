@@ -1,8 +1,7 @@
 ﻿# Changelog
 
-## 1.5.2 — 2026-10-30
+## 1.5.3 — 2026-10-30
 
-- Changed: Clarified some help texts and tooltips.
 - Fixed: Materials already used in unfinished items are no longer deducted twice from available resources.
 - Fixed: "Make any stone blocks" target bills now reserve the correct number of chunks when restricted to one stone type.
 - Fixed: Strata's combined resource counts remain correct when the same resource is stored on multiple floors.
@@ -10,6 +9,10 @@
 - Fixed: Searching for a default pool's translated name now highlights the matching pool.
 - Fixed: Editing personal defaults with DLC disabled no longer unexpectedly merges existing tiers or loses resources when the DLC returns.
 - Fixed: Reusing pool or group names hidden by disabled DLC no longer overwrites their saved contents or applies their warning thresholds to unrelated resources.
+
+## 1.5.2 — 2026-10-30
+
+- Changed: Clarified some help texts and tooltips.
 
 ## 1.5.1 — 2026-10-28
 

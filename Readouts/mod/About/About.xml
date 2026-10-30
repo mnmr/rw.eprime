@@ -3,7 +3,7 @@
   <name>EPrime's Readouts</name>
   <author>Morten Mertner</author>
   <packageId>mnmr.eprimereadouts</packageId>
-  <modVersion>1.5.2</modVersion>
+  <modVersion>1.5.3</modVersion>
   <supportedVersions>
     <li>1.6</li>
     <li>1.7</li>
