@@ -68,7 +68,7 @@ namespace WorkRoles.Core.Recs
                     (withPins ??= new List<int>(roleIds)).Add(assignment.RoleId);
                 }
                 if (withPins != null)
-                    roleIds = Ordering.PreserveProtectedOrder(rolesById!, existing, withPins);
+                    roleIds = plan.OrderFixTarget(pawnIndex, rolesById!, existing, withPins);
                 targets[pawnIndex] = new PawnFixTarget(pawnIndex, roleIds,
                     !SameSequence(existing, roleIds));
             }

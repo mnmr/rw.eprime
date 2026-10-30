@@ -23,6 +23,29 @@ namespace WorkRoles.Core.Recs
 
     public static class MechanicalDutyPlan
     {
+        private readonly struct Candidate
+        {
+            internal Candidate(RoleView role, int executable, long position, int catalogIndex, int preference)
+            { Role = role; Executable = executable; Position = position; CatalogIndex = catalogIndex; Preference = preference; }
+            internal readonly RoleView Role;
+            internal readonly int Executable;
+            internal readonly long Position;
+            internal readonly int CatalogIndex;
+            internal readonly int Preference;
+            internal int Unsupported => Role.Coverage.Count - Executable;
+        }
+
+        private static readonly Comparison<Candidate> DefaultOrder = (a, b) =>
+        {
+            int position = a.Position.CompareTo(b.Position);
+            return position != 0 ? position : a.CatalogIndex.CompareTo(b.CatalogIndex);
+        };
+        private static readonly Comparison<Candidate> SelectionOrder = (a, b) =>
+        {
+            int preference = a.Preference.CompareTo(b.Preference);
+            return preference != 0 ? preference : DefaultOrder(a, b);
+        };
+
         public static PawnFixTarget BuildFixTarget(ColonyView colony, MechanicalWorkerView worker,
             Dictionary<int, RoleRecommendationExplanation>? explanations = null,
             Dictionary<int, SignalBucket>? suitability = null)
@@ -43,7 +66,8 @@ namespace WorkRoles.Core.Recs
             foreach (RoleView role in colony.Roles) roles[role.Id] = role;
             foreach (AssignmentView assignment in worker.Facts.Existing)
                 if (roles.TryGetValue(assignment.RoleId, out RoleView role)
-                    && (assignment.Pinned || role.HasRules || role.Blocker)
+                    && (assignment.Pinned
+                        || !facts.IsRecommendationExcluded(role) && (role.HasRules || role.Blocker))
                     && !ids.Contains(assignment.RoleId)) ids.Add(assignment.RoleId);
             int[] target = Ordering.PreserveProtectedOrder(roles, worker.Facts.Existing, ids);
             bool changed = target.Length != worker.Facts.Existing.Count;
@@ -78,39 +102,114 @@ namespace WorkRoles.Core.Recs
         {
             var result = new List<int>();
             var seenWork = new HashSet<string>();
+            List<Candidate> candidates = Candidates(colony, worker, facts);
             // Applying a combined human/robot preview must retain the accepted
-            // duty that supplied its human coverage. Exclusions veto new
-            // suggestions; changing this explicit primary remains a user edit.
+            // primary work that supplied human coverage. An equivalent native
+            // duty may replace its label, but never its executable work or pin.
             RoleView? accepted = preservePrimary ? PrimaryDuty(colony, worker) : null;
+            if (accepted != null && !MeetsEquipmentRequirement(worker, accepted)
+                && !IsProtected(worker, accepted)) accepted = null;
             if (accepted != null)
             {
+                for (int i = 0; i < candidates.Count; i++)
+                    if (candidates[i].Role.Id == accepted.Id)
+                    { accepted = BestFit(candidates[i], candidates, worker); break; }
                 result.Add(accepted.Id);
                 foreach (string giver in accepted.Coverage)
                     if (worker.CommittedGivers.Contains(giver)) seenWork.Add(giver);
             }
-            var order = new List<int>(worker.ActiveRoleIds);
-            foreach (int id in colony.OrderTemplate) if (!order.Contains(id)) order.Add(id);
-            foreach (int id in order)
+            foreach (Candidate candidate in candidates)
             {
-                if (accepted?.Id == id) continue;
-                RoleView? role = facts.RoleOf(id);
-                if (role == null || !Eligible(role) || facts.IsRecommendationExcluded(role)
-                    || !facts.MeetsCapabilityRequirement(0, role)
-                    || !PathActivation.TargetBandContains(facts, 0, role)) continue;
+                RoleView role = BestFit(candidate, candidates, worker);
                 bool useful = false;
-                bool complete = true;
                 foreach (string giver in role.Coverage)
                 {
-                    if (!worker.ExecutableGivers.Contains(giver)) { complete = false; continue; }
+                    if (!worker.ExecutableGivers.Contains(giver)) continue;
                     if (!seenWork.Contains(giver)) useful = true;
                 }
-                if (!useful || !complete && role.UsesSkills && !role.PartialCapability) continue;
-                result.Add(role.Id);
+                if (!useful) continue;
+                if (!result.Contains(role.Id)) result.Add(role.Id);
                 foreach (string giver in role.Coverage)
                     if (worker.ExecutableGivers.Contains(giver)) seenWork.Add(giver);
             }
+            // The template prefers broad duties during selection; newly found
+            // fallbacks still belong at their normal priority when first assigned.
+            // Existing workers keep their accepted execution order.
+            if (worker.ActiveRoleIds.Count == 0)
+            {
+                var ordered = new List<Candidate>();
+                foreach (Candidate candidate in candidates)
+                    if (result.Contains(candidate.Role.Id)) ordered.Add(candidate);
+                ordered.Sort(DefaultOrder);
+                result.Clear();
+                foreach (Candidate candidate in ordered) result.Add(candidate.Role.Id);
+            }
             return result.ToArray();
         }
+
+        private static List<Candidate> Candidates(ColonyView colony,
+            MechanicalWorkerView worker, EngineContext facts)
+        {
+            var all = new List<Candidate>(colony.Roles.Count);
+            IReadOnlyDictionary<int, long> positions = Ordering.BasePositions(colony.Roles, colony.OrderTemplate);
+            for (int i = 0; i < colony.Roles.Count; i++)
+            {
+                RoleView role = colony.Roles[i];
+                // Training bands gate human trainees. A mechanical worker's
+                // skills are fixed and it never trains, so the band would only
+                // demote it below work it performs natively; CanCover still
+                // applies the band before it may replace human staffing.
+                if (!Eligible(role) || facts.IsRecommendationExcluded(role)
+                    || !facts.MeetsCapabilityRequirement(0, role)
+                    || !MeetsEquipmentRequirement(worker, role)) continue;
+                int executable = 0;
+                foreach (string giver in role.Coverage)
+                    if (worker.ExecutableGivers.Contains(giver)) executable++;
+                // Capability policy governs required work types/skills. A native
+                // miner need not support drilling too; only its actual givers run.
+                // Full replacement of human staffing remains stricter in CanCover.
+                if (executable > 0) all.Add(new Candidate(role, executable, positions[role.Id], i,
+                    Preference(role.Id, worker.ActiveRoleIds, colony.OrderTemplate)));
+            }
+            all.Sort(SelectionOrder);
+            return all;
+        }
+
+        private static int Preference(int roleId, IReadOnlyList<int> active, IReadOnlyList<int> template)
+        {
+            for (int i = 0; i < active.Count; i++) if (active[i] == roleId) return i;
+            for (int i = 0; i < template.Count; i++) if (template[i] == roleId) return active.Count + i;
+            return int.MaxValue;
+        }
+
+        private static RoleView BestFit(Candidate original, List<Candidate> candidates,
+            MechanicalWorkerView worker)
+        {
+            if (original.Unsupported == 0 || IsProtected(worker, original.Role)) return original.Role;
+            Candidate best = original;
+            foreach (Candidate candidate in candidates)
+            {
+                if (candidate.Unsupported >= best.Unsupported
+                    || candidate.Executable != original.Executable) continue;
+                bool equal = true;
+                foreach (string giver in original.Role.Coverage)
+                    if (worker.ExecutableGivers.Contains(giver) && !candidate.Role.Coverage.Contains(giver))
+                    { equal = false; break; }
+                if (equal) best = candidate;
+            }
+            return best.Role;
+        }
+
+        private static bool IsProtected(MechanicalWorkerView worker, RoleView role)
+        {
+            if (role.HasRules || role.Blocker) return true;
+            foreach (AssignmentView assignment in worker.Facts.Existing)
+                if (assignment.RoleId == role.Id && assignment.Pinned) return true;
+            return false;
+        }
+
+        private static bool MeetsEquipmentRequirement(MechanicalWorkerView worker, RoleView role)
+            => !role.Hunting || worker.Facts.HasRangedWeapon;
 
         private static void ExplainTarget(ColonyView colony, MechanicalWorkerView worker,
             EngineContext facts, int[] target, Dictionary<int, SignalBucket> suitability,
@@ -151,19 +250,16 @@ namespace WorkRoles.Core.Recs
                 }
                 else if (!facts.MeetsCapabilityRequirement(0, role))
                     explanation.RejectReason = PickRejectReason.Incapable;
-                else if (!PathActivation.TargetBandContains(facts, 0, role))
-                    explanation.RejectReason = PickRejectReason.OutOfBand;
+                else if (!MeetsEquipmentRequirement(worker, role))
+                    explanation.RejectReason = PickRejectReason.HunterRequirementsNotMet;
                 else if (Eligible(role) && !facts.IsRecommendationExcluded(role))
                 {
                     bool any = false;
-                    bool complete = true;
                     foreach (string giver in role.Coverage)
                     {
                         if (worker.ExecutableGivers.Contains(giver)) any = true;
-                        else complete = false;
                     }
-                    explanation.RejectReason = !any || !complete && role.UsesSkills && !role.PartialCapability
-                        ? PickRejectReason.Incapable : PickRejectReason.Covered;
+                    explanation.RejectReason = !any ? PickRejectReason.Incapable : PickRejectReason.Covered;
                 }
                 explanations.Add(id, explanation);
             }
@@ -207,7 +303,8 @@ namespace WorkRoles.Core.Recs
 
         private static bool CanCover(MechanicalWorkerView worker, RoleView primary, RoleView role, EngineContext facts)
         {
-            if (role.Coverage.Count == 0 || role.HasRules || role.Blocker) return false;
+            if (role.Coverage.Count == 0 || role.HasRules || role.Blocker
+                || !MeetsEquipmentRequirement(worker, role)) return false;
             bool full = true;
             foreach (string giver in role.Coverage)
                 if (!primary.Coverage.Contains(giver) || !worker.ExecutableGivers.Contains(giver)

@@ -14,6 +14,7 @@ namespace WorkRoles.UI
         // cohorts. Value: detached immutable-by-ownership pawn inputs, verdicts
         // and plans. Dependencies: shared role catalog identity, per-pawn
         // assignment order/pins and external snapshot identities, stored order
+        // and assignment activation when ordinary composites may substitute,
         // and planning tuning. Human coverage additionally consumes the shared
         // mechanical snapshot identity only while integration is enabled, plus
         // transitions into/out of that policy. Workers never join human Pawns.
@@ -74,7 +75,8 @@ namespace WorkRoles.UI
                 return cache.For(store, pawns, catalog, UiVersion.Assignments,
                     externalGeneration, UiVersion.RecommendationOrder,
                     store.recommendationTuning ?? RecommendationsTuningOptions.Default,
-                    buildColony, workers);
+                    buildColony, workers, assignmentActivation: catalog.HasCompositeSubstitutions
+                        ? UiVersion.AssignmentPresentation : 0);
             }
             finally
             {
@@ -155,7 +157,8 @@ namespace WorkRoles.UI
                     Pawn pawn = pawns[i];
                     PawnExternalSnapshot facts = currentExternalSnapshot!(pawn);
                     projected[i] = cache.PawnFor(owner!, pawn, UiVersion.AssignmentsForPawn(pawn),
-                        facts, (pawn, owner!, facts), BuildPawn);
+                        facts, (pawn, owner!, facts), BuildPawn, assignmentActivation: catalog!.HasCompositeSubstitutions
+                            ? UiVersion.PresentationForPawn(pawn) : 0);
                 }
                 previous = projected;
             }

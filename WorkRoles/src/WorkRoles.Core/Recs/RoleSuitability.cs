@@ -30,16 +30,9 @@ namespace WorkRoles.Core.Recs
         private static SignalBucket Verdict(
             EngineContext context, int pawnIndex, RoleView role)
         {
-            // Specialist robots can carry generic skills. Their unskilled and
-            // composite roles are unsuitable when none of the jobs can be done.
-            // Humans keep their pre-mechanical aptitude ratings and warnings.
-            // Partial capability still uses the ordinary aptitude verdict;
-            // assigned chips explain the missing jobs with their warning flag.
-            if (context.Colony.Pawns[pawnIndex].IsMechanical
-                && !role.Blocker && role.WorkTypes.Count > 0
-                && !EngineContext.MeetsWorkCapability(context.Colony.Pawns[pawnIndex],
-                    role.WorkSpec, partial: true))
-                return SignalBucket.Awful;
+            // Verdicts rate skill fit for humans and mechanical workers alike.
+            // Work a pawn cannot execute is reported by the assigned chip's
+            // capability marker and is never recommended by the planner.
             if (!context.MeetsExplicitRequiredSkills(pawnIndex, role))
                 return SignalBucket.Awful;
             if (role.MemberRoleIds == null || role.MemberRoleIds.Count == 0)

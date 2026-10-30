@@ -1,4 +1,4 @@
-"""Translate changed content with Codex, validate it, then update source snapshots."""
+"""Translate changed content with Claude Code (Sonnet), validate it, then update source snapshots."""
 import argparse
 import json
 import os
@@ -76,36 +76,57 @@ def batches(entries):
         yield batch
 
 
-def find_codex():
-    """Prefer PATH; also support the Windows desktop app's versioned CLI."""
-    executable = shutil.which('codex.exe') or shutil.which('codex')
+DEFAULT_MODEL = 'sonnet'
+
+
+def find_claude():
+    """The Claude Code CLI as installed on PATH (claude, claude.cmd or claude.exe)."""
+    executable = shutil.which('claude') or shutil.which('claude.cmd') or shutil.which('claude.exe')
     if executable:
         return executable
-    if sys.platform == 'win32':
-        roots = [Path.home() / 'AppData/Local']
-        if os.environ.get('LOCALAPPDATA'):
-            roots.insert(0, Path(os.environ['LOCALAPPDATA']))
-        candidates = [path for root in dict.fromkeys(roots)
-                      for path in (root / 'OpenAI/Codex/bin').glob('*/codex.exe')
-                      if path.is_file()]
-        if candidates:
-            # App updates leave older/incomplete hash directories behind. Never
-            # hard-code a hash; use the most recently installed complete binary.
-            return str(max(candidates, key=lambda path: (path.stat().st_mtime_ns, str(path))))
-    raise ValueError('Codex CLI was not found on PATH or in the desktop app installation. '
-                     'Install Codex CLI or pass --codex PATH; then run codex login if needed.')
+    raise ValueError('Claude Code CLI (claude) was not found on PATH. '
+                     'Install Claude Code or pass --claude PATH; then run claude auth login if needed.')
 
 
-class CodexTranslator:
-    def __init__(self, command=None, model=None, timeout=600):
+def parse_result_envelope(stdout, locale):
+    """`claude -p --output-format json` prints one result object. Structured output
+    arrives in structured_output when a schema was given; otherwise the text result
+    must itself be the JSON document (fences tolerated)."""
+    try:
+        envelope = json.loads(stdout)
+    except ValueError as error:
+        raise ValueError(f'Claude returned no JSON result for {locale}') from error
+    if not isinstance(envelope, dict):
+        raise ValueError(f'Invalid Claude response for {locale}')
+    if envelope.get('is_error'):
+        raise RuntimeError(f'Claude failed for {locale}: {envelope.get("result", "")}'[:3000]
+                           + '\nCheck claude auth status.')
+    result = envelope.get('structured_output')
+    if result is None:
+        text = envelope.get('result')
+        if not isinstance(text, str):
+            raise ValueError(f'Claude returned no translation result for {locale}')
+        text = text.strip()
+        if text.startswith('```'):
+            text = text.split('\n', 1)[1] if '\n' in text else ''
+            text = text.rsplit('```', 1)[0]
+        try:
+            result = json.loads(text)
+        except ValueError as error:
+            raise ValueError(f'Invalid Claude response for {locale}') from error
+    return result
+
+
+class ClaudeTranslator:
+    def __init__(self, command=None, model=DEFAULT_MODEL, timeout=600):
         self.command = command
-        self.model = model
+        self.model = model or DEFAULT_MODEL
         self.timeout = timeout
 
     def __call__(self, locale, entries):
         command = self.command
         if command is None:
-            command = [find_codex()]
+            command = [find_claude()]
         schema = {'type': 'object', 'additionalProperties': False,
                   'required': ['translations'], 'properties': {'translations': {
                       'type': 'array', 'items': {
@@ -124,36 +145,31 @@ class CodexTranslator:
                   'page_english, page_current and previous_english are read-only context. '
                   'Values are plain text, not XML: do not XML-escape them.\n'
                   + json.dumps({'entries': entries}, ensure_ascii=False))
-        # A separate working directory keeps repository agent instructions out of
-        # a text-only translation request. Codex never gets repository write access.
+        # A separate, empty working directory keeps repository instructions out of
+        # a text-only translation request; all tools, settings sources, skills and
+        # session persistence are disabled, so Claude never touches the repository.
         with tempfile.TemporaryDirectory(prefix='rimworld-translate-') as directory:
             workspace = Path(directory)
-            schema_path, result_path = workspace / 'schema.json', workspace / 'result.json'
-            schema_path.write_text(json.dumps(schema), encoding='utf-8')
-            args = [*command, 'exec', '--sandbox', 'read-only', '--ephemeral',
-                    '--ignore-user-config', '--skip-git-repo-check', '--color', 'never',
-                    '--cd', str(workspace), '--output-schema', str(schema_path),
-                    '--output-last-message', str(result_path)]
-            if self.model:
-                args += ['--model', self.model]
+            args = [*command, '-p', '--model', self.model, '--output-format', 'json',
+                    '--json-schema', json.dumps(schema), '--tools', '',
+                    '--setting-sources', '', '--disable-slash-commands',
+                    '--no-session-persistence', '--permission-prompts', 'none']
             try:
-                process = subprocess.run([*args, '-'], input=prompt, encoding='utf-8',
+                process = subprocess.run(args, input=prompt, encoding='utf-8',
                                          capture_output=True, cwd=workspace, timeout=self.timeout)
             except subprocess.TimeoutExpired as error:
-                raise RuntimeError(f'Codex timed out after {self.timeout}s for {locale}; no changes applied') from error
-            if process.returncode:
-                raise RuntimeError(f'Codex failed for {locale} (exit {process.returncode}). '
-                                   f'Check codex login status.\n{process.stderr[-3000:]}')
-            if not result_path.exists():
-                raise ValueError(f'Codex returned no translation result for {locale}')
-            result = json.loads(result_path.read_text(encoding='utf-8'))
+                raise RuntimeError(f'Claude timed out after {self.timeout}s for {locale}; no changes applied') from error
+            if process.returncode and not process.stdout.strip():
+                raise RuntimeError(f'Claude failed for {locale} (exit {process.returncode}). '
+                                   f'Check claude auth status.\n{process.stderr[-3000:]}')
+            result = parse_result_envelope(process.stdout, locale)
         if not isinstance(result, dict) or not isinstance(result.get('translations'), list):
-            raise ValueError(f'Invalid Codex response for {locale}')
+            raise ValueError(f'Invalid Claude response for {locale}')
         translated = {}
         for entry in result['translations']:
             if (not isinstance(entry, dict) or not isinstance(entry.get('key'), str)
                     or not isinstance(entry.get('text'), str) or entry['key'] in translated):
-                raise ValueError(f'Invalid or duplicate Codex translation for {locale}')
+                raise ValueError(f'Invalid or duplicate Claude translation for {locale}')
             translated[entry['key']] = entry['text']
         return translated
 
@@ -300,7 +316,7 @@ def update(root, locales, translator, mods=checks.MODS, dry_run=False):
             for key in retired:
                 print(f'  remove {key}')
     if dry_run or not pending:
-        print('Preview only; no Codex calls or content changes.' if dry_run else 'All selected translations are current.')
+        print('Preview only; no Claude calls or content changes.' if dry_run else 'All selected translations are current.')
         return
     temp_root = root / 'temp'
     temp_root.mkdir(exist_ok=True)
@@ -332,14 +348,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[3])
     parser.add_argument('--locale', action='append', choices=checks.LOCALES)
-    parser.add_argument('--dry-run', action='store_true', help='List affected entries without calling Codex or modifying content')
-    parser.add_argument('--model', help='Optional Codex model; otherwise uses the CLI default')
-    parser.add_argument('--codex', type=Path, help='Explicit Codex executable path; otherwise auto-detected')
+    parser.add_argument('--dry-run', action='store_true', help='List affected entries without calling Claude or modifying content')
+    parser.add_argument('--model', default=DEFAULT_MODEL, help=f'Claude model alias or id (default: {DEFAULT_MODEL})')
+    parser.add_argument('--claude', type=Path, help='Explicit Claude Code executable path; otherwise taken from PATH')
     args = parser.parse_args()
     try:
-        command = [str(args.codex.expanduser().resolve())] if args.codex else None
+        command = [str(args.claude.expanduser().resolve())] if args.claude else None
         update(args.root, args.locale or checks.LOCALES,
-               CodexTranslator(command=command, model=args.model), dry_run=args.dry_run)
+               ClaudeTranslator(command=command, model=args.model), dry_run=args.dry_run)
     except (ValueError, OSError, RuntimeError) as error:
         print(f'ERROR: {error}')
         return 1

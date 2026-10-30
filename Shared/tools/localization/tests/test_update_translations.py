@@ -76,7 +76,7 @@ class TranslationUpdates(unittest.TestCase):
         self.assertEqual(owner_before, owner.read_bytes())
         self.assertFalse((self.root / 'Example/mod/Help/Danish/start/01-welcome.md').exists())
         before = self.files()
-        self.update(lambda *_: self.fail('Current translations must not call Codex'))
+        self.update(lambda *_: self.fail('Current translations must not call Claude'))
         self.assertEqual(before, self.files())
 
     def test_failed_later_locale_does_not_publish_earlier_locale_or_advance_hashes(self):
@@ -108,9 +108,9 @@ class TranslationUpdates(unittest.TestCase):
                     self.update(lambda *_: response)
                 self.assertEqual(before, self.files())
 
-    def test_dry_run_previews_without_calling_codex_or_acknowledging_sources(self):
+    def test_dry_run_previews_without_calling_claude_or_acknowledging_sources(self):
         before = self.files()
-        self.update(lambda *_: self.fail('Dry run must not call Codex'), dry_run=True)
+        self.update(lambda *_: self.fail('Dry run must not call Claude'), dry_run=True)
         self.assertEqual(before, self.files())
         self.assertFalse(translations.manifest_path(self.root, 'Danish').exists())
 
@@ -158,56 +158,57 @@ class TranslationUpdates(unittest.TestCase):
                 self.update(lambda *_: {'Example/Keyed/Count': '{0} af {1} genstande'})
         self.assertEqual(before, self.files())
 
-    def test_codex_process_receives_unicode_and_schema_and_returns_validated_text(self):
-        # A real subprocess exercises the CLI transport without paid/network calls.
-        fake = self.root / 'fake_codex.py'
-        fake.write_text('''import json, pathlib, sys
+    def test_claude_process_receives_unicode_and_schema_and_returns_validated_text(self):
+        # A real subprocess exercises the CLI transport without paid/network calls:
+        # the fake stands in for `claude -p --output-format json --json-schema ...`.
+        fake = self.root / 'fake_claude.py'
+        fake.write_text('''import json, sys
 args = sys.argv[1:]
-schema = json.loads(pathlib.Path(args[args.index('--output-schema') + 1]).read_text())
+assert args[:3] == ['-p', '--model', 'sonnet'] and '--tools' in args and args[args.index('--tools') + 1] == ''
+schema = json.loads(args[args.index('--json-schema') + 1])
 assert schema['properties']['translations']['type'] == 'array'
 prompt = sys.stdin.buffer.read().decode('utf-8')
 assert 'Bønder' in prompt and 'Danish' in prompt
-pathlib.Path(args[args.index('--output-last-message') + 1]).write_text(
-    json.dumps({'translations': [{'key': 'Example/Keyed/Title', 'text': 'Bøndernes roller'}]},
-               ensure_ascii=False), encoding='utf-8')
+sys.stdout.buffer.write(json.dumps({'type': 'result', 'is_error': False, 'result': '{}',
+    'structured_output': {'translations': [{'key': 'Example/Keyed/Title', 'text': 'Bøndernes roller'}]}},
+    ensure_ascii=False).encode('utf-8'))
 ''', encoding='utf-8')
-        translate = updater.CodexTranslator(command=[sys.executable, str(fake)])
+        translate = updater.ClaudeTranslator(command=[sys.executable, str(fake)])
         result = translate('Danish', [{'key': 'Example/Keyed/Title',
                                      'english': 'Pawn roles', 'current': 'Bønder'}])
         self.assertEqual({'Example/Keyed/Title': 'Bøndernes roller'}, result)
 
-    def test_desktop_cli_is_used_without_path_and_path_install_takes_precedence(self):
-        profile = self.root / 'profile'
-        local = profile / 'AppData/Local'
-        bundled = local / 'OpenAI/Codex/bin'
-        old, current = bundled / 'old/codex.exe', bundled / 'current/codex.exe'
-        on_path = self.root / 'command bin/codex.exe'
-        for timestamp, path in enumerate((old, current, on_path), 1):
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(b'fixture')
-            path.chmod(0o755)
-            os.utime(path, (timestamp, timestamp))
-        (bundled / 'incomplete-update').mkdir()
+    def test_result_envelope_accepts_text_json_and_reports_cli_errors(self):
+        text_only = json.dumps({'type': 'result', 'is_error': False,
+                                'result': '```json\n{"translations": [{"key": "Example/Keyed/Title", "text": "Eksempel"}]}\n```'})
+        self.assertEqual({'translations': [{'key': 'Example/Keyed/Title', 'text': 'Eksempel'}]},
+                         updater.parse_result_envelope(text_only, 'Danish'))
+        failed = json.dumps({'type': 'result', 'is_error': True, 'result': 'Failed to authenticate. API Error: 401'})
+        with self.assertRaisesRegex(RuntimeError, 'Failed to authenticate'):
+            updater.parse_result_envelope(failed, 'Danish')
+        with self.assertRaisesRegex(ValueError, 'no JSON result'):
+            updater.parse_result_envelope('not json', 'Danish')
+
+    def test_claude_cli_is_taken_from_path(self):
+        on_path = self.root / 'command bin/claude.cmd'
+        on_path.parent.mkdir(parents=True, exist_ok=True)
+        on_path.write_bytes(b'fixture')
+        on_path.chmod(0o755)
         launched = []
 
         def run(command, **kwargs):
             launched.append(command[0])
-            output = Path(command[command.index('--output-last-message') + 1])
-            output.write_text(json.dumps({'translations': [
-                {'key': 'Example/Keyed/Title', 'text': 'Eksempel'}]}), encoding='utf-8')
-            return subprocess.CompletedProcess(command, 0, '', '')
+            return subprocess.CompletedProcess(command, 0, json.dumps({'type': 'result', 'is_error': False,
+                'structured_output': {'translations': [{'key': 'Example/Keyed/Title', 'text': 'Eksempel'}]}}), '')
 
         entries = [{'key': 'Example/Keyed/Title', 'english': 'Example', 'current': ''}]
-        with patch.object(sys, 'platform', 'win32'), patch.object(Path, 'home', return_value=profile), \
-                patch.dict(os.environ, {'PATH': '', 'LOCALAPPDATA': str(local), 'PATHEXT': '.exe'}), \
+        with patch.dict(os.environ, {'PATH': str(on_path.parent), 'PATHEXT': '.cmd;.exe'}), \
                 patch.object(updater.subprocess, 'run', side_effect=run):
-            self.assertEqual({'Example/Keyed/Title': 'Eksempel'}, updater.CodexTranslator()('Danish', entries))
-            # Sandboxed processes can redirect LOCALAPPDATA away from the install.
-            os.environ['LOCALAPPDATA'] = str(self.root / 'redirected')
-            updater.CodexTranslator()('Danish', entries)
-            os.environ['PATH'] = str(on_path.parent)
-            updater.CodexTranslator()('Danish', entries)
-        self.assertEqual([str(current), str(current), str(on_path)], launched)
+            self.assertEqual({'Example/Keyed/Title': 'Eksempel'}, updater.ClaudeTranslator()('Danish', entries))
+        with patch.dict(os.environ, {'PATH': '', 'PATHEXT': '.cmd;.exe'}):
+            with self.assertRaisesRegex(ValueError, 'claude'):
+                updater.find_claude()
+        self.assertEqual([str(on_path)], launched)
 
 
 if __name__ == '__main__':

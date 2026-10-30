@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>WorkRoles isolated bug audit</name>
+  <author>Local verification</author>
+  <packageId>tests.workroles.bugaudit</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <description>Single-use audit fixture, never shipped or enabled in player saves.</description>
+</ModMetaData>

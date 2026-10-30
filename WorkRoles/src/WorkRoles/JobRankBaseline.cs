@@ -8,7 +8,8 @@ namespace WorkRoles
 {
     /// Rank of each managed pawn's current work job at the moment it was
     /// issued. Reconciliation compares against this to interrupt jobs whose
-    /// work type lost standing after a role-state change. Entries are keyed
+    /// work type lost standing after a role-state change. Exact giver authority
+    /// comes from the job's native/preserved issue provenance. Entries are keyed
     /// to the job instance, so a stale entry is inert rather than wrong;
     /// jobs resumed from a save have no baseline (revoked-only handling).
     internal static class JobRankBaseline
@@ -19,6 +20,13 @@ namespace WorkRoles
             public int Rank;
         }
 
+        // Owner: current world. Key: pawn identity, with exact job identity in
+        // the value. Value: issue-time rank, never updated while that job runs.
+        // Dependencies: StartJob and current compiled work-type rank only.
+        // Refresh: synchronous StartJob notification, no ticking or polling.
+        // Equality: an unchanged job/rank is equivalent; values have no identity.
+        // Teardown: pawn release/destruction removes its entry; world clear
+        // invokes ReleaseForTeardown. Resumed saves capture ranks after setup.
         private static readonly Dictionary<Pawn, Baseline> baselines =
             new Dictionary<Pawn, Baseline>(ReferenceIdentityComparer<Pawn>.Instance);
 

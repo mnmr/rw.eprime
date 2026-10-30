@@ -173,7 +173,7 @@ RepeatChampionOccasionalPenalty=repeatChampionOccasionalPenalty=20
         // the expectation is checkout-independent (production joins with \n).
         await Assert.That(actualMetadata).IsEqualTo(expectedMetadata.ReplaceLineEndings("\n"));
         await Assert.That(descriptors.All(item => RecommendationsTuningOptions.Default.Get(item.Option) == item.DefaultValue)).IsTrue();
-        await Assert.That(descriptors.All(item => !string.IsNullOrEmpty(item.SectionLabelKey) && !string.IsNullOrEmpty(item.LabelKey) && !string.IsNullOrEmpty(item.DescriptionKey))).IsTrue();
+        await Assert.That(descriptors.Where(item => !item.Hidden).All(item => !string.IsNullOrEmpty(item.SectionLabelKey) && !string.IsNullOrEmpty(item.LabelKey) && !string.IsNullOrEmpty(item.DescriptionKey))).IsTrue();
     }
 
     [Test]

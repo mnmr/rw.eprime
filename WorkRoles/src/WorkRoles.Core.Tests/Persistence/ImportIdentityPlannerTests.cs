@@ -40,6 +40,27 @@ public class ImportIdentityPlannerTests
     }
 
     [Test]
+    public async Task EarlierCustomDoctorCannotTakeTheLaterMedicTemplateIdentity()
+    {
+        ImportIdentitySource[] imports = [new("Doctor", null), new("Medic", "WS_Doctor")];
+        ImportIdentityExisting[] existing = [new("Doctor", "WS_Doctor"), new("Unselected", null)];
+
+        foreach (bool overwrite in new[] { false, true })
+        {
+            IReadOnlyList<ImportIdentityDecision> plan = ImportIdentityPlanner.Plan(
+                imports, existing, discardUnmatchedExistingLabels: overwrite);
+
+            // The assigned Doctor must follow its template to Medic. Even a
+            // partial merge selecting only the earlier row must create a new
+            // custom role instead of rewriting the unselected template owner.
+            await Assert.That(plan[0].ExistingIndex).IsEqualTo(-1);
+            await Assert.That(plan[1].ExistingIndex).IsEqualTo(0);
+            await Assert.That(plan[1].DisplayLabel).IsEqualTo("Medic");
+            await Assert.That(plan[0].DisplayLabel).IsEqualTo(overwrite ? "Doctor" : "Doctor (2)");
+        }
+    }
+
+    [Test]
     public async Task MatchedRenameReservesItsPlannedLabelBeforeNewRowsAreNamed()
     {
         ImportIdentitySource[] imports = [new ImportIdentitySource("Worker", "template"), new ImportIdentitySource("Worker", null!)];

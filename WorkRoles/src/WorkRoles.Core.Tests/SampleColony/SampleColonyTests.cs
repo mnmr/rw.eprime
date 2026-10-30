@@ -90,39 +90,38 @@ public class SampleColonyTests
         await Assert.That(actualOrder).IsEqualTo("43,3,1,6,7,8,9,14,16,19,21,36,20,22,23,24,13,25,28,50");
     }
 
+    // Nothing is excluded by default any more (owner, 2026-10-30): Core and
+    // Basics already give every colonist the work these roles repeat, so the
+    // planner never recommends them to a healthy colonist without an exclusion.
     [Test]
-    public async Task DefaultExclusionsKeepEssentialWorkInCoreAndBasics()
+    public async Task RedundantEssentialRolesAreNeverRecommendedWithoutDefaultExclusions()
     {
         ColonyView colony = SampleColony.BuildColonyView();
-        string[] excluded = ["Rescuer", "Firefighter", "Patient", "Bedrest", "Laborer"];
-        HashSet<int> excludedIds = [.. excluded.Select(SampleColony.RoleId)];
+        string[] redundant = ["Rescuer", "Firefighter", "Patient", "Bedrest", "Laborer"];
+        HashSet<int> redundantIds = [.. redundant.Select(SampleColony.RoleId)];
+        foreach (RoleView role in colony.Roles)
+            if (redundantIds.Contains(role.Id))
+                await Assert.That(role.ExcludedFromRecommendations).IsFalse().Because(SampleColony.RoleLabel(role.Id));
         RecommendationPlan plan = RecommendationPlan.Build(colony);
         for (int pawn = 0; pawn < plan.PawnCount; pawn++)
         {
             int[] recommended = [.. Enumerable.Range(0, plan.RoleCountAt(pawn)).Select(i => plan.RoleAt(pawn, i))];
             await Assert.That(recommended.Contains(SampleColony.RoleId("Core"))).IsTrue();
             await Assert.That(recommended.Contains(SampleColony.RoleId("Basics"))).IsTrue();
-            await Assert.That(recommended.Any(excludedIds.Contains)).IsFalse();
+            await Assert.That(recommended.Any(redundantIds.Contains)).IsFalse();
         }
 
-        // Incapacitated pawns normally retain existing roles, even with no
-        // demand. Defaults must also exclude these redundant recommendations;
-        // otherwise a healthy-pawn test passes just because their demand is zero.
+        // An incapacitated pawn keeps every eligible standing duty it already
+        // holds, including these redundant ones, exactly like any other role.
         PawnView resting = colony.Pawns[0];
         resting.Incapacitated = true;
-        string[] assigned = ["Core", "Basics", .. excluded];
+        string[] assigned = ["Core", "Basics", .. redundant];
         resting.Existing = [.. assigned.Select(label => new AssignmentView
         {
             RoleId = SampleColony.RoleId(label), Enabled = true,
         })];
         var target = ColonyFixPlanner.Build(colony)[0];
-        await Assert.That(string.Join(",", target.RoleIds.Select(SampleColony.RoleLabel))).IsEqualTo("Core,Basics");
-
-        // Removing the default exclusions is a supported player choice.
-        foreach (RoleView role in colony.Roles)
-            if (excludedIds.Contains(role.Id)) role.ExcludedFromRecommendations = false;
-        var optedIn = ColonyFixPlanner.Build(colony)[0];
-        await Assert.That(string.Join(",", optedIn.RoleIds.Select(SampleColony.RoleLabel))).IsEqualTo(string.Join(",", assigned));
+        await Assert.That(string.Join(",", target.RoleIds.Select(SampleColony.RoleLabel))).IsEqualTo(string.Join(",", assigned));
     }
 
     [Test]

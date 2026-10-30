@@ -1,0 +1,8 @@
+<ModMetaData>
+  <name>WorkRoles Runtime Authority Regression Probe</name>
+  <author>Codex automation</author>
+  <packageId>tests.workroles.runtimeauthority</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <modDependencies><li><packageId>mnmr.workroles</packageId><displayName>Work Roles</displayName></li></modDependencies>
+  <loadAfter><li>mnmr.workroles</li></loadAfter>
+</ModMetaData>

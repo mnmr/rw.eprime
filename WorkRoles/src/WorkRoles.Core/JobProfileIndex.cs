@@ -196,6 +196,20 @@ namespace WorkRoles.Core
         /// Adapter-curated effect kinds per used skill; display-only facts
         /// merged into the spec's used-skill entries.
         public IReadOnlyList<JobProfileSkillEffect> CuratedSkillEffects { get; }
+
+        /// Every skill a worker exercises by running this giver: the parent
+        /// work type's relevant skills, the skills its recipes or curated facts
+        /// use, and recipe skill gates. A drug lab is Crafting work whose
+        /// recipes run on Intellectual; a worker limited to this giver still
+        /// needs that skill published.
+        public void CollectExercisedSkills(ISet<string> skillDefNames)
+        {
+            if (skillDefNames == null) throw new ArgumentNullException(nameof(skillDefNames));
+            for (int i = 0; i < RelevantSkillDefNames.Count; i++) Add(RelevantSkillDefNames[i]);
+            for (int i = 0; i < UsedSkillDefNames.Count; i++) Add(UsedSkillDefNames[i]);
+            for (int i = 0; i < Requirements.Count; i++) Add(Requirements[i].SkillDefName);
+            void Add(string? name) { if (!string.IsNullOrEmpty(name)) skillDefNames.Add(name!); }
+        }
     }
 
     public sealed class JobProfileWorkTypeFacts

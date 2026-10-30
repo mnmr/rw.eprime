@@ -64,8 +64,6 @@
   <WR_RecTuneOrderingSectionIntro>Una volta scelti i ruoli di un colono, queste opzioni ne stabiliscono l'ordine nell'elenco, che coincide con le priorità di lavoro.</WR_RecTuneOrderingSectionIntro>
   <WR_RecTuneOptionalSection>Opzioni dei percorsi formativi e degli obiettivi facoltativi</WR_RecTuneOptionalSection>
   <WR_RecTuneOptionalSectionIntro>Queste opzioni decidono quando si attiva un percorso formativo per un colono e quando vale la pena consigliare un ruolo facoltativo con più abilità.</WR_RecTuneOptionalSectionIntro>
-  <WR_RecTuneLeadSection>Opzioni di distribuzione dei ruoli guida</WR_RecTuneLeadSection>
-  <WR_RecTuneLeadSectionIntro>Quando più percorsi formativi condividono un obiettivo, queste opzioni distribuiscono i ruoli guida tra coloni diversi anziché concentrarli su uno solo.</WR_RecTuneLeadSectionIntro>
   <WR_RecTuneHunterSection>Opzioni di posizione del Cacciatore</WR_RecTuneHunterSection>
   <WR_RecTuneHunterSectionIntro>Il ruolo Cacciatore non fissato viene collocato dinamicamente secondo Tiro: i tiratori migliori cacciano più tardi nell'ordine, perché il loro tempo è più prezioso altrove.</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneCandidateMinimumSignal>Segnale minimo dei candidati</WR_RecTuneCandidateMinimumSignal>
@@ -109,10 +107,6 @@
   <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>Segnale usato per l'idoneità alle assegnazioni aggiuntive con una sola abilità e i punti attitudinali degli obiettivi facoltativi a partire dal livello di promozione alto.</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
   <WR_RecTuneOptionalTargetMinimumPoints>Punti minimi degli obiettivi facoltativi</WR_RecTuneOptionalTargetMinimumPoints>
   <WR_RecTuneOptionalTargetMinimumPointsDesc>Somma minima dei passi dei segnali sopra la soglia configurata necessaria per consigliare un obiettivo facoltativo con più abilità.</WR_RecTuneOptionalTargetMinimumPointsDesc>
-  <WR_RecTuneLeadMinimumConnectedTargets>Obiettivi collegati per la distribuzione</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Numero minimo di obiettivi formativi collegati prima che il sistema cerchi di assegnarne i ruoli guida a lavoratori diversi.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
-  <WR_RecTuneLeadMinimumSignal>Segnale minimo del ruolo guida</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>Il segnale più basso consentito a un lavoratore scelto come titolare di un ruolo guida distribuito tra i percorsi formativi.</WR_RecTuneLeadMinimumSignalDesc>
   <WR_RecTuneHunterTiersRow>Livello massimo di Tiro per fascia</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Soglie di Tiro per la posizione dinamica del Cacciatore. La fascia 1 lo colloca subito dopo i lavori di base, le fasce 2 e 3 dopo i ruoli lavorativi intermedi e finali; i livelli sopra la fascia 4 lo collocano per ultimo.</WR_RecTuneHunterTiersRowDesc>
   <WR_TrainingSection>Percorso formativo</WR_TrainingSection>
@@ -657,4 +651,8 @@ L'attività non è stata interrotta. Questo avviso appare una volta per salvatag
   <WR_RecMechanicalSelected>Può svolgere lavori non coperti dagli altri ruoli consigliati.</WR_RecMechanicalSelected>
   <WR_RecMechanicalRetained>Mantiene il suo ruolo principale attuale.</WR_RecMechanicalRetained>
   <WR_RecMechanicalIncapacitated>Questa unità è a terra. I suoi ruoli vengono mantenuti finché non si riprende.</WR_RecMechanicalIncapacitated>
+  <WR_BlockerTrainingConfirm>«{0}» è usato in un percorso di formazione. Trasformarlo in un ruolo di blocco? Le raccomandazioni smetteranno di usarlo per la formazione e i percorsi che ne hanno bisogno potrebbero diventare indisponibili. I percorsi salvati saranno conservati. Le assegnazioni esistenti bloccheranno quei lavori nei ruoli più in basso nell'elenco.</WR_BlockerTrainingConfirm>
+  <WR_RoleCapCannotTakeJobs>{0} non può svolgere i lavori assegnati per {1}</WR_RoleCapCannotTakeJobs>
+  <WR_WorkNativeFireNearby>può spegnere gli incendi vicini nei momenti di inattività, ma non svolge i lavori antincendio assegnati</WR_WorkNativeFireNearby>
+  <WR_WorkNotNative>non supportato dalle assegnazioni di lavoro di questo modello</WR_WorkNotNative>
 </LanguageData>

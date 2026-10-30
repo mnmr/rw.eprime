@@ -211,7 +211,7 @@ class TranslationCliLocales(unittest.TestCase):
         before = self.tree()
         commands = [('translations.py', command) for command in ('check', 'inventory', 'snapshot')]
         commands += [('update_translations.py', '--dry-run'),
-                     ('update_translations.py', '--codex', str(self.root / 'must-not-run-codex.exe'))]
+                     ('update_translations.py', '--claude', str(self.root / 'must-not-run-claude.cmd'))]
         for tool, *args in commands:
             with self.subTest(tool=tool, args=args):
                 result = self.run_cli(tool, *args)
@@ -226,7 +226,7 @@ class TranslationCliLocales(unittest.TestCase):
         for locale in self.retired:
             commands = [('translations.py', command, '--json', str(self.root / 'must-not-write.json'))
                         for command in ('check', 'inventory', 'snapshot')]
-            commands += [('update_translations.py', '--codex', str(self.root / 'must-not-run-codex.exe'))]
+            commands += [('update_translations.py', '--claude', str(self.root / 'must-not-run-claude.cmd'))]
             for tool, *args in commands:
                 with self.subTest(locale=locale, tool=tool, args=args):
                     result = self.run_cli(tool, *args, '--locale', locale)

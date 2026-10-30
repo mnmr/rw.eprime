@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
 using Verse;
+using Verse.AI;
 using WorkRoles.Core;
 
 namespace WorkRoles
@@ -43,6 +44,8 @@ namespace WorkRoles
             }
             store.seeded = true;
             store.defaultRecommendationExclusionsSeeded = true;
+            // Fresh defs and an adopted personal setup are both current.
+            store.recommendationExclusionsVersion = DefaultExclusions.CurrentVersion;
 
             // Role ranks read as numbers; default vanilla's per-save "manual
             // priorities" switch on at adoption. Applied once — turning it off
@@ -729,6 +732,9 @@ namespace WorkRoles
         /// derived default.
         private static bool EntriesDrifted(Role role, RoleDef def)
         {
+            // RoleDefs declare ordinary job lists. A composite's hidden entries
+            // do not determine its work, even when they match those defaults.
+            if (role.composite || role.memberRoleIds.Count != 0) return true;
             var expected = DefaultEntriesFor(def);
             if (role.entries.Count != expected.Count) return true;
             for (int i = 0; i < expected.Count; i++)
@@ -891,11 +897,11 @@ namespace WorkRoles
             {
                 if (!(def.tuning?.training?.Count > 0)) continue;
                 var owner = ResolvePathRole(store, def.defName);
-                if (owner != null && owner.trainingRoleIds.Count == 0
+                if ((owner == null || owner.trainingRoleIds.Count == 0)
                     && RestorablePathEntryCount(store, def) >= 2)
                     result.Add(new RestoreItem
                     {
-                        label = "WR_RestorePathItem".Translate(owner.label),
+                        label = "WR_RestorePathItem".Translate(owner?.label ?? def.LabelCap.ToString()),
                         explanation = "WR_RestoreExplainPath".Translate(),
                         pathDef = def.defName,
                     });
@@ -934,8 +940,9 @@ namespace WorkRoles
             WorkTypeCoverage.MovedGivers(role.entries, role.workTypeSnapshots,
                 VanillaGiverBaseline.GiverWorkType, GameJobCatalog.Instance);
 
-        /// Each pawn's enabled assignments in order with copied coverage sets,
-        /// captured before restore mutates any role.
+        /// Each pawn's executable claims, grouped in assignment order before
+        /// restore mutates any role. The shared compiler supplies activation,
+        /// runtime rules, capabilities, composite slices and first-claim vetoes.
         private static Dictionary<Pawn, List<(int roleId, HashSet<string> coverage)>>
             CapturePawnCoverage(RoleStore store)
         {
@@ -950,77 +957,131 @@ namespace WorkRoles
                 {
                     if (assignment == null) continue;
                     var role = store.RoleById(assignment.roleId);
-                    if (role == null
-                        || !RoleActivation.IsActive(role.enabled, assignment.state)) continue;
-                    (roles ??= new List<(int, HashSet<string>)>())
-                        .Add((role.id, new HashSet<string>(role.Coverage())));
+                    if (role == null) continue;
+                    var coverage = new HashSet<string>();
+                    CaptureExecutableCoverage(pawn, coverage, role.id);
+                    if (coverage.Count > 0)
+                        (roles ??= new List<(int, HashSet<string>)>())
+                            .Add((role.id, coverage));
                 }
                 if (roles != null) result[pawn] = roles;
             }
             return result;
         }
 
+        private static void CaptureExecutableCoverage(Pawn pawn, HashSet<string> coverage,
+            int roleId = -1)
+        {
+            AddExecutableCoverage(pawn, CompiledJobOrders.NormalFor(pawn), coverage, roleId);
+            AddExecutableCoverage(pawn, CompiledJobOrders.EmergencyFor(pawn), coverage, roleId);
+        }
+
+        private static void AddExecutableCoverage(Pawn pawn,
+            List<WorkGiver> givers, HashSet<string> coverage, int roleId)
+        {
+            for (int i = 0; i < givers.Count; i++)
+            {
+                string giver = givers[i].def.defName;
+                if (roleId < 0 || (CompiledJobOrders.TryGetClaimingRole(pawn, giver,
+                        out int claimingRole) && claimingRole == roleId))
+                    coverage.Add(giver);
+            }
+        }
+
         /// Assigns template roles that recover coverage a pawn lost to this
         /// restore, inserted at the position of the role that previously carried
-        /// those jobs so compiled priorities stay stable. Coverage math only;
-        /// custom user roles are never auto-assigned.
+        /// those jobs so compiled priorities stay stable. Candidate coverage is
+        /// compiled at that insertion point for this pawn; custom user roles
+        /// and already-held assignments are never changed by recovery.
         private static void PreservePawnCoverage(RoleStore store,
             Dictionary<Pawn, List<(int roleId, HashSet<string> coverage)>> prior)
         {
-            var candidates = new List<(int roleId, IReadOnlyCollection<string> coverage)>();
+            var candidates = new List<Role>();
             foreach (var role in store.roles)
                 if (role != null && role.templateDefName != null && role.enabled && !role.blocker)
-                    candidates.Add((role.id, role.Coverage()));
+                    candidates.Add(role);
 
-            List<Pawn>? touched = null;
             foreach (var pair in prior)
             {
                 var pawn = pair.Key;
                 if (!store.pawnSets.TryGetValue(pawn, out var set)
                     || set?.assignments == null) continue;
                 var current = new HashSet<string>();
-                foreach (var assignment in set.assignments)
-                {
-                    if (assignment == null) continue;
-                    var role = store.RoleById(assignment.roleId);
-                    if (role != null
-                        && RoleActivation.IsActive(role.enabled, assignment.state))
-                        current.UnionWith(role.Coverage());
-                }
+                CaptureExecutableCoverage(pawn, current);
                 var lost = new HashSet<string>();
                 foreach (var (_, coverage) in pair.Value) lost.UnionWith(coverage);
                 lost.ExceptWith(current);
                 if (lost.Count == 0) continue;
 
-                foreach (int roleId in WorkRoles.Core.RestoreCoveragePlanner
-                             .RecoveryRoles(lost, candidates))
+                // Command-local potential coverage includes moved work-type
+                // history, live composite slices, rules and pawn capability.
+                // Raw Role.Coverage is a nesting identity and omits history;
+                // it cannot filter recovery or choose its insertion position.
+                var recoveryCandidates = new List<(Role role, HashSet<string> coverage)>();
+                var singleAssignment = new RoleAssignment[1];
+                foreach (var candidate in candidates)
                 {
-                    if (set.assignments.Any(a => a?.roleId == roleId)) continue;
-                    set.assignments.Insert(RecoveryInsertIndex(store, set, pair.Value, roleId),
-                        new RoleAssignment { roleId = roleId });
-                    (touched ??= new List<Pawn>()).Add(pawn);
+                    // Held disabled/pinned roles are player intent: never
+                    // enable or reposition them as a side effect of restore.
+                    if (set.assignments.Any(a => a?.roleId == candidate.id)) continue;
+                    singleAssignment[0] = new RoleAssignment { roleId = candidate.id };
+                    var coverage = new HashSet<string>();
+                    CompiledJobOrders.CaptureExecutableCoverage(pawn, singleAssignment, coverage);
+                    if (lost.Overlaps(coverage)) recoveryCandidates.Add((candidate, coverage));
                 }
+                bool changed = false;
+                var proposed = new List<RoleAssignment>(set.assignments);
+                var candidateCoverage = new HashSet<string>();
+                while (lost.Count > 0)
+                {
+                    Role? best = null;
+                    int bestGain = 0, bestInsert = -1;
+                    foreach (var (candidate, coverage) in recoveryCandidates)
+                    {
+                        if (set.assignments.Any(a => a?.roleId == candidate.id)
+                            || !lost.Overlaps(coverage)) continue;
+                        int insert = RecoveryInsertIndex(set, pair.Value, coverage);
+                        proposed.Insert(insert, new RoleAssignment { roleId = candidate.id });
+                        candidateCoverage.Clear();
+                        CompiledJobOrders.CaptureExecutableCoverage(pawn, proposed, candidateCoverage);
+                        proposed.RemoveAt(insert);
+                        // A composite with veto members must not trade away
+                        // other executable work to recover these jobs.
+                        if (!current.IsSubsetOf(candidateCoverage)) continue;
+                        int gain = 0;
+                        foreach (string giver in lost)
+                            if (candidateCoverage.Contains(giver)) gain++;
+                        if (gain <= bestGain) continue;
+                        best = candidate;
+                        bestGain = gain;
+                        bestInsert = insert;
+                    }
+                    if (best == null) break;
+                    var assignment = new RoleAssignment { roleId = best.id };
+                    set.assignments.Insert(bestInsert, assignment);
+                    proposed.Insert(bestInsert, assignment);
+                    changed = true;
+                    current.Clear();
+                    CompiledJobOrders.CaptureExecutableCoverage(pawn, proposed, current);
+                    lost.ExceptWith(current);
+                }
+                if (changed) CompiledJobOrders.InvalidateAssignments(pawn, planChanged: true);
             }
-            if (touched != null)
-                foreach (var pawn in touched)
-                    CompiledJobOrders.InvalidateAssignments(pawn, planChanged: true);
         }
 
         /// Position of the first still-assigned prior role whose old coverage
         /// overlaps the recovery role's; the recovered jobs then rank where
         /// their old carrier ranked. No overlap or carrier gone: append.
-        private static int RecoveryInsertIndex(RoleStore store, PawnRoleSet set,
-            List<(int roleId, HashSet<string> coverage)> prior, int recoveryRoleId)
+        private static int RecoveryInsertIndex(PawnRoleSet set,
+            List<(int roleId, HashSet<string> coverage)> prior, HashSet<string> recoveryCoverage)
         {
-            var recovery = store.RoleById(recoveryRoleId);
-            if (recovery != null)
-                foreach (var (roleId, coverage) in prior)
-                {
-                    if (!coverage.Overlaps(recovery.Coverage())) continue;
-                    for (int i = 0; i < set.assignments.Count; i++)
-                        if (set.assignments[i]?.roleId == roleId) return i;
-                    break;
-                }
+            foreach (var (roleId, coverage) in prior)
+            {
+                if (!coverage.Overlaps(recoveryCoverage)) continue;
+                for (int i = 0; i < set.assignments.Count; i++)
+                    if (set.assignments[i]?.roleId == roleId) return i;
+                break;
+            }
             return set.assignments.Count;
         }
 
@@ -1086,6 +1147,8 @@ namespace WorkRoles
                     var def = role?.templateDefName == null ? null
                         : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
                     if (role == null || def == null || !EntriesDrifted(role, def)) continue;
+                    role.composite = false;
+                    role.memberRoleIds.Clear();
                     role.entries = DefaultEntriesFor(def);
                     // Stale union-only snapshots could resurrect removed givers.
                     role.workTypeSnapshots.Clear();

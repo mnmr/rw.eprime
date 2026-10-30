@@ -44,6 +44,36 @@ public class JobProfileIndexTests
         await Assert.That(index.RecipesByUser.ContainsKey(90)).IsTrue().Because("recipe users outside ThingDef's database still participate for fixed benches");
     }
 
+    // A Crafter robot runs the drug lab natively, so its published skills must
+    // include the Intellectual skill those recipes use, not only Crafting.
+    [Test]
+    public async Task ExercisedSkillsIncludeRecipeSkillsAndGatesBeyondTheWorkType()
+    {
+        var builder = new JobProfileIndexBuilder();
+        builder.AddWorkType(1, "Crafting", Skills((10, "Crafting")), ["DoBillsProduceDrugs", "DoBillsStonecut"]);
+        builder.AddWorkType(2, "Hauling", [], ["HaulGeneral"]);
+        builder.AddRecipeUser(90, JobProfileRecipeUserKind.None, [900, 901]);
+        builder.AddRecipeUser(91, JobProfileRecipeUserKind.None, [910]);
+        builder.AddRecipe(Recipe(900, 12, "Intellectual", 1f));
+        builder.AddRecipe(Recipe(901, 12, "Intellectual", 1f, requirements: [new JobProfileSkillRequirementSource(13, "Medicine", 4)]));
+        builder.AddRecipe(Recipe(910, 10, "Crafting", 1f));
+        builder.AddGiver("DoBillsProduceDrugs", 1, Skills((10, "Crafting")), fixedRecipeUserIds: [90]);
+        builder.AddGiver("DoBillsStonecut", 1, Skills((10, "Crafting")), fixedRecipeUserIds: [91]);
+        builder.AddGiver("HaulGeneral", 2, []);
+        JobProfileIndex index = builder.Build();
+
+        var drugs = new SortedSet<string>(StringComparer.Ordinal);
+        index.Givers["DoBillsProduceDrugs"].CollectExercisedSkills(drugs);
+        var stonecut = new SortedSet<string>(StringComparer.Ordinal);
+        index.Givers["DoBillsStonecut"].CollectExercisedSkills(stonecut);
+        var haul = new SortedSet<string>(StringComparer.Ordinal);
+        index.Givers["HaulGeneral"].CollectExercisedSkills(haul);
+
+        await Assert.That(string.Join(",", drugs)).IsEqualTo("Crafting,Intellectual,Medicine");
+        await Assert.That(string.Join(",", stonecut)).IsEqualTo("Crafting");
+        await Assert.That(haul.Count).IsEqualTo(0);
+    }
+
     [Test]
     public async Task CuratedEmptyWinsAndUnknownCuratedNamesRemainXpFacts()
     {

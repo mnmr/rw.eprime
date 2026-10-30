@@ -168,6 +168,9 @@ namespace WorkRoles.Core
         public List<string> recommendationOrder = new List<string>();
         public List<FileRoleReference> recommendationOrderWithIds =
             new List<FileRoleReference>();
+        /// Which shipped exclusion defaults this document was written under
+        /// (DefaultExclusions); files without the attribute are version 1.
+        public int exclusionDefaultsVersion = DefaultExclusions.CurrentVersion;
         public string? error; // set when nothing usable could be parsed
     }
 
@@ -242,7 +245,11 @@ namespace WorkRoles.Core
         public static string Build(RoleFileDocument doc)
         {
             doc ??= new RoleFileDocument();
-            var root = new XElement("WorkRoles", new XAttribute("version", FormatVersion));
+            // The document's own exclusion-defaults version is preserved, never
+            // bumped by serialization: only DefaultExclusions.ClearRetired may
+            // advance it, after applying what the newer version means.
+            var root = new XElement("WorkRoles", new XAttribute("version", FormatVersion),
+                new XAttribute("exclusionDefaults", doc.exclusionDefaultsVersion));
             root.Add(new XComment(FormatNotes));
 
             var palette = new XElement("Palette");
@@ -466,6 +473,9 @@ namespace WorkRoles.Core
                 out int formatVersion);
             if (formatVersion >= 14 && ValidateSetupShape(root) is string shapeError)
             { doc.error = shapeError; return doc; }
+            doc.exclusionDefaultsVersion = int.TryParse(root.Attribute("exclusionDefaults")?.Value,
+                NumberStyles.Integer, CultureInfo.InvariantCulture, out int exclusionDefaults)
+                ? exclusionDefaults : 1;
             bool hasExplicitSkillGates = formatVersion >= 13;
             doc.hasRoles = root.Element("Roles") != null;
             doc.hasPalette = root.Element("Palette") != null;

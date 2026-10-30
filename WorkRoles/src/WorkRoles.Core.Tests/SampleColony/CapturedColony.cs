@@ -108,6 +108,10 @@ internal sealed class CapturedColony
         else result = Activator.CreateInstance(type)!;
         foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
         {
+            // Older captures recorded normal/disabled assignments only; the
+            // new force-on distinction defaults to false for those fixtures.
+            if (type == typeof(AssignmentView) && field.Name == nameof(AssignmentView.ForceOn)
+                && element.Element(field.Name) == null) continue;
             // These post-capture inputs describe optional external supply. The
             // accepted saves predate it and explicitly have no such supply.
             if (type == typeof(ColonyView) && element.Element(field.Name) == null

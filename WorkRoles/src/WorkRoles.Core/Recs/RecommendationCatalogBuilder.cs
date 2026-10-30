@@ -124,12 +124,20 @@ namespace WorkRoles.Core.Recs
             this.trainingExclusions = trainingExclusions;
             HunterRoleId = RecommendationCatalogBuilder.ResolveHunterRoleId(roles, specialRoles, entryCounts);
             FireBlockerRoleId = RecommendationCatalogBuilder.ResolveFireBlockerRoleId(roles, specialRoles);
+            for (int index = 0; index < roles.Count; index++)
+            {
+                RoleView role = roles[index];
+                if (CompositeSubstitutionPolicy.IsCandidate(role, roles)) { HasCompositeSubstitutions = true; break; }
+            }
         }
 
         public IReadOnlyList<RoleView> Roles { get; }
         public IReadOnlyList<PathView> Paths { get; }
         public int HunterRoleId { get; }
         public int FireBlockerRoleId { get; }
+        /// Catalog-gated scalar for observing assignment activation only when
+        /// a composite may consume it. No live role traversal on cache hits.
+        public bool HasCompositeSubstitutions { get; }
 
         internal RecommendationCatalogProjection WithTrainingViews(IReadOnlyList<RoleView> roles, IReadOnlyList<PathView> paths,
             JobProfileIndex profiles, IReadOnlyDictionary<int, HashSet<string>> exclusions)

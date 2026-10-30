@@ -13,7 +13,7 @@ Las recomendaciones se ordenan por colono usando el orden interno, aptitud, impo
 **Roles excluidos**, arriba en Recomendaciones, decide cuáles nunca se recomendarán. Usa Añadir rol para excluir uno o quita su ficha para volver a permitirlo.
 
 <!-- l10n:b-2ff664d1d184 -->
-Rescatador, Bombero, Paciente, Reposo y Peón están excluidos por defecto porque Esencial y Básicos ya cubren su trabajo. Las partidas existentes reciben esos valores una vez al actualizar. Si quitas una exclusión, se respeta al cargar de nuevo. Para recuperarlas elige **Roles excluidos predeterminados** en [Restaurar valores predeterminados](topic:restore-defaults).
+Ningún rol está excluido por defecto. Rescatador, Bombero, Paciente, Reposo y Peón repiten trabajo que Esencial y Básicos ya dan a cada colono, así que solo se recomiendan cuando ese trabajo falta en esos roles o a robots cuyo trabajo nativo coincide. Los cambios en el panel se respetan al cargar de nuevo.
 
 <!-- l10n:b-94e6612dee18 -->
 [Opciones de roles](topic:role-options) enumera los no excluidos. Excluir oculta las opciones sin borrarlas; al permitir de nuevo reaparecen.

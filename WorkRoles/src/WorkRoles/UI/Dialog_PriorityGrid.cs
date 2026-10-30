@@ -453,7 +453,7 @@ namespace WorkRoles.UI
         private static PriorityGridCellSnapshot BuildCell(Pawn pawn,
             WorkTypeDef workType, RoleStore? store)
         {
-            if (pawn.WorkTypeIsDisabled(workType)) return default;
+            if (MechanicalWorkers.WorkTypeDisabled(pawn, workType)) return default;
             bool mechanical = MechanicalWorkers.IsMechanical(pawn);
             if (mechanical)
             {

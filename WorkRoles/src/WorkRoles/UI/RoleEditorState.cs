@@ -133,7 +133,8 @@ namespace WorkRoles.UI
         // Owner: window. Key: selected role identity. Value: immutable editor
         // render projection with producer-owned buffers hidden behind indexed
         // accessors. Dependencies: store identity; Catalog/RoleWork/Assignments/
-        // Preferences/RoleCapability (coverage excludes blockers); selected-role
+        // Preferences/RoleCapability (coverage excludes blockers; authored training
+        // path membership publishes RoleCapability); selected-role
         // Presentation/Rules/Capability; composite
         // candidate lists additionally consume all Presentation/Rules/Activation.
         // Also UI metrics, external pawn facts, location and pawn-scope revisions,
@@ -316,6 +317,10 @@ namespace WorkRoles.UI
                 customSwatches, customRows,
                 checksWidth, autoAssignLabel, blockerLabel, conditionalRoleLabel,
                 compositeLabel, BlockerTip,
+                UsesAuthoredTrainingPath(store, role.id)
+                    ? "WR_BlockerTrainingConfirm".Translate(role.DisplayLabel).ToString()
+                    : null,
+                "OK".Translate().ToString(), "CancelButton".Translate().ToString(),
                 "WR_ClearRulesConfirm".Translate(role.DisplayLabel).ToString(),
                 "WR_CompositeConfirm".Translate(role.DisplayLabel).ToString(),
                 "WR_CompositeRevertConfirm".Translate(role.DisplayLabel).ToString(),
@@ -626,6 +631,19 @@ namespace WorkRoles.UI
             measuredCoverageWarningWidth = -1f;
             treeNodes = null;
             treeNodesStamp = -1;
+        }
+
+        // Called only behind the editor snapshot gate. Empty implicit self paths
+        // are not authored training; nonempty paths include both target and steps.
+        private static bool UsesAuthoredTrainingPath(RoleStore store, int roleId)
+        {
+            for (int index = 0; index < store.roles.Count; index++)
+            {
+                List<int> ids = store.roles[index].trainingRoleIds;
+                for (int entry = 0; entry < ids.Count; entry++)
+                    if (ids[entry] == roleId) return true;
+            }
+            return false;
         }
 
         private static int EditorRevision(RoleStore store, int roleId, bool composite)
@@ -1180,6 +1198,7 @@ namespace WorkRoles.UI
             List<Color> customSwatches, int customRows, float checksWidth,
             string autoAssignLabel, string blockerLabel, string conditionalRoleLabel,
             string compositeLabel, StructuredTip blockerTip,
+            string? blockerTrainingConfirmation, string confirmLabel, string cancelLabel,
             string clearRulesConfirmation, string compositeConfirmation,
             string compositeRevertConfirmation,
             string assignedLabel, float assignedLabelWidth,
@@ -1218,6 +1237,9 @@ namespace WorkRoles.UI
             ConditionalRoleLabel = conditionalRoleLabel;
             CompositeLabel = compositeLabel;
             BlockerTip = blockerTip;
+            BlockerTrainingConfirmation = blockerTrainingConfirmation;
+            ConfirmLabel = confirmLabel;
+            CancelLabel = cancelLabel;
             ClearRulesConfirmation = clearRulesConfirmation;
             CompositeConfirmation = compositeConfirmation;
             CompositeRevertConfirmation = compositeRevertConfirmation;
@@ -1267,6 +1289,9 @@ namespace WorkRoles.UI
         internal string ConditionalRoleLabel { get; }
         internal string CompositeLabel { get; }
         internal StructuredTip BlockerTip { get; }
+        internal string? BlockerTrainingConfirmation { get; }
+        internal string ConfirmLabel { get; }
+        internal string CancelLabel { get; }
         internal string ClearRulesConfirmation { get; }
         internal string CompositeConfirmation { get; }
         internal string CompositeRevertConfirmation { get; }

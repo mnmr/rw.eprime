@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using RimShared.Common;
+using RimShared.GameLib;
 using RimWorld;
 using Verse;
 using Verse.AI;
@@ -24,6 +25,9 @@ namespace WorkRoles
             /// Role ids whose assignment, global toggle and runtime rules all
             /// passed when this pawn snapshot was compiled.
             public int[] ActiveRoleIds = null!;
+            /// Active assigned roles plus non-blocking live composite members.
+            /// Bill membership is independent of slice priority ownership.
+            public int[] EffectiveRoleIds = null!;
             /// giver defName -> role id whose claim ranked it (first-claim-wins).
             public Dictionary<string, int> GiverRoleIds = null!;
             /// Flat def-index priorities: the GetPriority prefix
@@ -58,6 +62,10 @@ namespace WorkRoles
             (pawn, map) => ColonyScope.MapOf(pawn) == map;
         private static readonly Func<Pawn, Pawn, bool> SamePawn = (left, right) => ReferenceEquals(left, right);
         private static readonly Action<Pawn> PublishRuntime = UiVersion.RuntimeChanged;
+        // Native queue storage is shared by 1.6 and 1.7. Resolve once; indexed
+        // removal avoids JobQueue.Extract's per-call capturing predicate.
+        private static readonly AccessTools.FieldRef<JobQueue, List<QueuedJob>> QueuedJobs =
+            AccessTools.FieldRefAccess<JobQueue, List<QueuedJob>>("jobs");
         private static readonly Action<Pawn> InvalidateTimedOrders = pawn =>
         {
             cache.Remove(pawn);
@@ -97,6 +105,7 @@ namespace WorkRoles
         internal static void InvalidateLocationRules(Map map)
         {
             if (map == null) return;
+            var canonicalMap = FloorMaps.Canonical(map);
 
             var store = RoleStore.Current;
             using var batch = store?.Revisions.Batch();
@@ -105,7 +114,8 @@ namespace WorkRoles
                 {
                     var pawn = pair.Key;
                     var assignments = pair.Value?.assignments;
-                    if (pawn == null || ColonyScope.MapOf(pawn) != map || assignments == null) continue;
+                    if (pawn == null || assignments == null
+                        || FloorMaps.Canonical(ColonyScope.MapOf(pawn)) != canonicalMap) continue;
 
                     for (int i = 0; i < assignments.Count; i++)
                     {
@@ -387,8 +397,8 @@ namespace WorkRoles
                 ReconcileInFlightWork(ordered[i]);
         }
 
-        /// Ends in-flight jobs whose work type lost authority (rank 0) or
-        /// standing (worse rank than when the job was issued) after a role-state
+        /// Ends in-flight jobs whose exact giver lost authority or whose type
+        /// lost standing (worse rank than when the job was issued) after a role-state
         /// change. Synced contexts only (commands, ticks): the rebuild this
         /// forces, and the interruptions, must not originate from one client's UI.
         internal static void ReconcileInFlightWork(Pawn pawn)
@@ -397,27 +407,38 @@ namespace WorkRoles
             var jobs = pawn.jobs;
             if (jobs == null) return;
 
+            // Build once before cleanup: ending the current job can immediately
+            // search again, and must see the new giver authority. Clean queued
+            // work first in native queue order, releasing its reservations via
+            // the same Cleanup call that vanilla uses. Valid siblings and
+            // player-forced jobs keep their order and exact instances.
+            var entry = For(pawn);
+            if (jobs.jobQueue != null)
+            {
+                var queued = QueuedJobs(jobs.jobQueue);
+                int retained = 0;
+                int count = queued.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    var item = queued[i];
+                    if (item?.job != null && IsRevoked(item.job, entry))
+                    {
+                        item.Cleanup(pawn, canReturnToPool: true);
+                        continue;
+                    }
+                    if (retained != i) queued[retained] = item!;
+                    retained++;
+                }
+                if (retained != count) queued.RemoveRange(retained, count - retained);
+            }
+
             var current = jobs.curJob;
             var currentType = current?.workGiverDef?.workType;
-
-            // Revoked types across the current and queued jobs: vanilla's
-            // notify scrubs the queue and ends the current job unless
-            // player-forced. PriorityFor forces the rebuild first, so the job
-            // search triggered by an interruption sees the new giver lists.
-            List<WorkTypeDef>? revoked = null;
-            void CollectRevoked(WorkTypeDef? workType)
+            if (current != null && IsRevoked(current, entry))
             {
-                if (workType == null || PriorityFor(pawn, workType) != 0) return;
-                revoked = revoked ?? new List<WorkTypeDef>();
-                if (!revoked.Contains(workType)) revoked.Add(workType);
+                jobs.EndCurrentJob(JobCondition.InterruptForced);
+                return;
             }
-            CollectRevoked(currentType);
-            if (jobs.jobQueue != null)
-                foreach (var queued in jobs.jobQueue)
-                    CollectRevoked(queued?.job?.workGiverDef?.workType);
-            if (revoked != null)
-                for (int i = 0; i < revoked.Count; i++)
-                    jobs.Notify_WorkTypeDisabled(revoked[i]);
 
             // Demoted current job: the type stayed active but ranks worse than
             // at issue (its claimant deactivated, or new work entered above).
@@ -428,6 +449,19 @@ namespace WorkRoles
             if (JobRankBaseline.TryGetRank(pawn, current, out int issueRank)
                 && rank > issueRank)
                 jobs.EndCurrentJob(JobCondition.InterruptForced);
+        }
+
+        private static bool IsRevoked(Job job, Entry entry)
+        {
+            if (job.playerForced) return false;
+            var giver = job.workGiverDef;
+            var type = giver?.workType;
+            if (giver == null || type == null) return false; // No invented provenance.
+            int index = type.index;
+            if ((uint)index >= (uint)entry.PriorityByIndex.Length
+                || entry.PriorityByIndex[index] == 0) return true;
+            return !entry.GiverRoleIds.ContainsKey(giver.defName)
+                && !GiverBypassPolicy.IsExemptGiver(giver.defName);
         }
 
         /// Returned lists are owned by the cache — callers must never mutate them.
@@ -498,7 +532,7 @@ namespace WorkRoles
 
         internal static bool IsRoleActive(Pawn pawn, int roleId)
         {
-            var activeRoleIds = For(pawn).ActiveRoleIds;
+            var activeRoleIds = For(pawn).EffectiveRoleIds;
             for (int i = 0; i < activeRoleIds.Length; i++)
                 if (activeRoleIds[i] == roleId)
                     return true;
@@ -672,8 +706,8 @@ namespace WorkRoles
             var def = GameJobCatalog.Instance.GiverDef(giverDefName);
             return def != null
                 && MechanicalWorkers.CanDo(pawn, def)
-                && !pawn.WorkTypeIsDisabled(def.workType)
-                && !pawn.WorkTagIsDisabled(def.workTags);
+                && !MechanicalWorkers.WorkTypeDisabled(pawn, def.workType)
+                && !MechanicalWorkers.WorkTagsDisabled(pawn, def.workTags);
         }
 
         private static readonly List<JobEntry> EmptyEntries = new List<JobEntry>();
@@ -681,23 +715,46 @@ namespace WorkRoles
         private static Entry Build(Pawn pawn)
         {
             var store = RoleStore.Current;
+            return Build(pawn, store != null && store.pawnSets.TryGetValue(pawn, out var set)
+                ? set.assignments : Array.Empty<RoleAssignment>());
+        }
+
+        /// Detached command-time projection for restore recovery candidates.
+        /// Does not publish compiled orders, vanilla fallback, revisions, or assignments.
+        internal static void CaptureExecutableCoverage(Pawn pawn,
+            IReadOnlyList<RoleAssignment> assignments, HashSet<string> coverage)
+        {
+            var projected = Build(pawn, assignments);
+            for (int i = 0; i < projected.Normal.Count; i++)
+                coverage.Add(projected.Normal[i].def.defName);
+            for (int i = 0; i < projected.Emergency.Count; i++)
+                coverage.Add(projected.Emergency[i].def.defName);
+        }
+
+        private static Entry Build(Pawn pawn, IReadOnlyList<RoleAssignment> assignments)
+        {
+            var store = RoleStore.Current;
             int ruleHour = RoleRules.LocalHour(pawn);
             var roleEntries = new List<(IReadOnlyList<JobEntry> entries, bool blocker)>();
             List<int>? activeRoleIds = null;
+            var effectiveRoleIds = new List<int>();
             // Slices contributed by the first EmergencyRoleLimit active roles
             // in row order (a composite counts once, whatever its member
             // count), for the per-save role-priority emergency rule.
             int emergencySliceCount = 0;
             int activeAssignments = 0;
-            if (store != null && store.pawnSets.TryGetValue(pawn, out var set))
+            if (store != null)
             {
-                foreach (var assignment in set.assignments)
+                for (int a = 0; a < assignments.Count; a++)
                 {
+                    var assignment = assignments[a];
                     var role = store.RoleById(assignment.roleId);
                     if (role == null
                         || !RoleActivation.IsActive(role.enabled, assignment.state)
                         || RoleRules.FailReason(role, pawn, ruleHour) != RuleFailReason.None) continue;
                     activeRoleIds ??= new List<int>();
+                    if (!effectiveRoleIds.Contains(role.id))
+                        effectiveRoleIds.Add(role.id);
                     bool leadingRole = ++activeAssignments <= JobOrderCompiler.EmergencyRoleLimit;
                     if (!role.composite)
                     {
@@ -720,6 +777,8 @@ namespace WorkRoles
                         if (!CompositeRoles.TryGetMemberSlice(role.blocker,
                                 member.enabled, member.blocker, out bool sliceBlocker))
                             continue;
+                        if (!sliceBlocker && !effectiveRoleIds.Contains(member.id))
+                            effectiveRoleIds.Add(member.id);
                         activeRoleIds.Add(role.id);
                         roleEntries.Add((JobOrderCompiler.WithMovedSnapshotGivers(
                             member.entries, member.workTypeSnapshots, GameJobCatalog.Instance), sliceBlocker));
@@ -750,6 +809,7 @@ namespace WorkRoles
                 Normal = new List<WorkGiver>(compiled.Normal.Count),
                 Emergency = new List<WorkGiver>(compiled.Emergency.Count),
                 ActiveRoleIds = activeRoleIds?.ToArray() ?? Array.Empty<int>(),
+                EffectiveRoleIds = effectiveRoleIds.ToArray(),
                 GiverRoleIds = new Dictionary<string, int>(compiled.ClaimedBySlice.Count),
                 PriorityByIndex = new int[defCount],
                 VanillaByIndex = new int[defCount],

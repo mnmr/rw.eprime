@@ -1,0 +1,1 @@
+<ModMetaData><name>WorkRoles changes preview regression</name><author>Local verification</author><packageId>tests.workroles.changespreview</packageId><supportedVersions><li>1.7</li></supportedVersions><modDependencies><li><packageId>mnmr.workroles</packageId><displayName>Work Roles</displayName></li></modDependencies><loadAfter><li>mnmr.workroles</li></loadAfter></ModMetaData>

@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using Verse;
-using WorkRoles.Core;
 
 namespace WorkRoles.UI
 {
@@ -167,23 +165,10 @@ namespace WorkRoles.UI
                                 RoleCommands.MoveRoleOnPawn(HoverPawn, from, to);
                             }
                         }
+                        else if (SourcePawn != null)
+                            RoleCommands.MoveRoleBetweenPawns(SourcePawn, HoverPawn, RoleId, HoverInsertIndex);
                         else
-                        {
-                            bool targetHasRole = store.pawnSets.TryGetValue(HoverPawn, out var targetSet)
-                                && targetSet.assignments.Any(a => a.roleId == RoleId);
-                            if (!targetHasRole)
-                            {
-                                var sourceState = AssignmentState.Enabled;
-                                if (SourcePawn != null && store.pawnSets.TryGetValue(SourcePawn, out var sourceSet))
-                                    sourceState = sourceSet.assignments.FirstOrDefault(a => a.roleId == RoleId)?.state
-                                        ?? AssignmentState.Enabled;
-                                RoleCommands.AssignRole(HoverPawn, RoleId, HoverInsertIndex);
-                                if (SourcePawn != null && SourcePawn != HoverPawn)
-                                    RoleCommands.RemoveRoleFromPawn(SourcePawn, RoleId);
-                                if (sourceState != AssignmentState.Enabled)
-                                    RoleCommands.SetAssignmentState(HoverPawn, RoleId, (int)sourceState);
-                            }
-                        }
+                            RoleCommands.AssignRole(HoverPawn, RoleId, HoverInsertIndex);
                     }
                 }
             }

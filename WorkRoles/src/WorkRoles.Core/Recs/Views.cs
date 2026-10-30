@@ -42,6 +42,9 @@ namespace WorkRoles.Core.Recs
     {
         public int RoleId;
         public bool Enabled;
+        /// True only for a forced-on assignment. Folding into another role
+        /// would discard this authored activation override.
+        public bool ForceOn;
         public bool Pinned;
     }
 

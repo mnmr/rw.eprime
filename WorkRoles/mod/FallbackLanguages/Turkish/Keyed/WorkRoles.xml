@@ -373,12 +373,6 @@ WorkRoles, yönetilen her koloniciye standart oyun yöntemleriyle iş listesi ve
   <WR_RecTuneHunterSectionIntro>Sabitlenmemiş Avcı rolü nişancılığa göre dinamik yerleşir: iyi nişancılar, zamanları başka işlerde daha değerli olduğundan öncelik sırasının daha ilerisinde avlanır.</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneHunterTiersRow>Kademenin azami nişancılık düzeyi</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Dinamik Avcı konumu için nişancılık eşikleri. Kademe 1, Avcıyı temel işlerin hemen arkasına; 2 ve 3, orta ve son iş rollerinin arkasına koyar. Kademe 4'ün üzerindeki düzeyler Avcıyı en sona koyar.</WR_RecTuneHunterTiersRowDesc>
-  <WR_RecTuneLeadMinimumConnectedTargets>Dağıtım için bağlantılı hedef sayısı</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Planlayıcının lider rollerini farklı çalışanlara dağıtmaya başlaması için gereken asgari bağlantılı eğitim hedefi sayısı.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
-  <WR_RecTuneLeadMinimumSignal>Öncü için asgari işaret</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>Eğitim yolu öncülüğü farklı çalışanlara dağıtılırken seçilen çalışanın rolünde bulunabilecek en düşük işaret.</WR_RecTuneLeadMinimumSignalDesc>
-  <WR_RecTuneLeadSection>Öncüleri dağıtma seçenekleri</WR_RecTuneLeadSection>
-  <WR_RecTuneLeadSectionIntro>Birkaç eğitim yolu bir hedefi paylaşıyorsa bu seçenekler öncü rollerini tek kişide toplamak yerine farklı kolonicilere dağıtır.</WR_RecTuneLeadSectionIntro>
   <WR_RecTuneMinimumPickRow>Asgari seçim bonusu</WR_RecTuneMinimumPickRow>
   <WR_RecTuneMinimumPickRowDesc>Rolün asgari sahip sayısını karşılamak için seçilen birinci, ikinci, üçüncü ve sonraki her çalışana verilen sıralama puanları.</WR_RecTuneMinimumPickRowDesc>
   <WR_RecTuneMultiplierAwfulTip>Çok uygunsuz. Bu sütun yalnızca asgari aday işareti Çok uygunsuz adaylara izin veriyorsa etkilidir.</WR_RecTuneMultiplierAwfulTip>
@@ -657,4 +651,8 @@ Bu bildirim kayıt başına her mod için bir kez gösterilir.</WR_SetPriorityBl
   <WR_RecMechanicalSelected>Önerilen diğer rollerinin kapsamadığı işleri yapabilir.</WR_RecMechanicalSelected>
   <WR_RecMechanicalRetained>Mevcut ana rolünü korur.</WR_RecMechanicalRetained>
   <WR_RecMechanicalIncapacitated>Bu çalışan yere düşmüş durumda. İyileştiğinde devam edebilmesi için rolleri korunur.</WR_RecMechanicalIncapacitated>
+  <WR_BlockerTrainingConfirm>'{0}' bir eğitim yolunda kullanılıyor. Engelleyici role dönüştürülsün mü? Öneriler artık bu rolü eğitim için kullanmayacak ve bu role ihtiyaç duyan yollar kullanılamaz hale gelebilir. Kayıtlı yollar korunacak. Mevcut atamalar, bu rolün altındaki rollerde bu işleri engelleyecek.</WR_BlockerTrainingConfirm>
+  <WR_RoleCapCannotTakeJobs>{0}, {1} için atanan işleri üstlenemez</WR_RoleCapCannotTakeJobs>
+  <WR_WorkNativeFireNearby>boştayken yakındaki yangınları söndürebilir, ancak atanan yangın söndürme işlerini üstlenmez</WR_WorkNativeFireNearby>
+  <WR_WorkNotNative>bu modelin iş atamaları tarafından desteklenmiyor</WR_WorkNotNative>
 </LanguageData>

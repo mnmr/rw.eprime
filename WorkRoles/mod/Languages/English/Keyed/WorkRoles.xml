@@ -71,8 +71,6 @@
   <WR_RecTuneOrderingSectionIntro>Once a colonist's roles are chosen, these options decide the order they are listed in, which is also their work priority order.</WR_RecTuneOrderingSectionIntro>
   <WR_RecTuneOptionalSection>Training path and optional target options</WR_RecTuneOptionalSection>
   <WR_RecTuneOptionalSectionIntro>These options decide when a training path activates for a colonist and when an optional multi-skill role is worth recommending at all.</WR_RecTuneOptionalSectionIntro>
-  <WR_RecTuneLeadSection>Lead diversification options</WR_RecTuneLeadSection>
-  <WR_RecTuneLeadSectionIntro>When several training paths share a target, these options spread the lead roles across different colonists instead of stacking them on one.</WR_RecTuneLeadSectionIntro>
   <WR_RecTuneHunterSection>Hunter placement options</WR_RecTuneHunterSection>
   <WR_RecTuneHunterSectionIntro>An unpinned Hunter role slots in dynamically based on shooting skill: better shooters hunt later in the priority order because their time is worth more elsewhere.</WR_RecTuneHunterSectionIntro>
 
@@ -120,10 +118,6 @@
   <WR_RecTuneOptionalTargetMinimumPoints>Optional-target minimum points</WR_RecTuneOptionalTargetMinimumPoints>
   <WR_RecTuneOptionalTargetMinimumPointsDesc>Minimum summed signal steps above the configured signal floor needed to recommend an optional multi-skill target.</WR_RecTuneOptionalTargetMinimumPointsDesc>
 
-  <WR_RecTuneLeadMinimumConnectedTargets>Connected targets for diversification</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Minimum number of connected training targets before the planner tries to assign their lead roles to different workers.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
-  <WR_RecTuneLeadMinimumSignal>Lead minimum signal</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>Lowest role signal allowed for a worker chosen as a diversified training-path lead.</WR_RecTuneLeadMinimumSignalDesc>
 
   <WR_RecTuneHunterTiersRow>Tier maximum shooting level</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Shooting-level cutoffs for the dynamic Hunter slot. Tier 1 places Hunter right after basic work, tiers 2 and 3 after the middle and last work roles, and levels above tier 4 place Hunter last.</WR_RecTuneHunterTiersRowDesc>
@@ -255,6 +249,9 @@
   <WR_TipMore>+{0} more</WR_TipMore>
   <!-- Capability sentence snippets, chained as "{never-do}[: reason(s)]"; {1} is a job list, "{0} of {1} jobs" or "any jobs". -->
   <WR_RoleCapNeverDo>{0} cannot currently do {1}</WR_RoleCapNeverDo>
+  <WR_RoleCapCannotTakeJobs>{0} cannot take assigned jobs for {1}</WR_RoleCapCannotTakeJobs>
+  <WR_WorkNotNative>not supported by this model's work assignments</WR_WorkNotNative>
+  <WR_WorkNativeFireNearby>can extinguish nearby fires while idle, but does not take assigned firefighting jobs</WR_WorkNativeFireNearby>
   <WR_RoleCapAllJobs>any of the jobs in this role</WR_RoleCapAllJobs>
   <WR_RoleCapSomeJobs>{0} of the {1} jobs in this role</WR_RoleCapSomeJobs>
   <WR_RoleJobIncapable>incapable of this work</WR_RoleJobIncapable>
@@ -716,6 +713,7 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
 
   <!-- {0} = role label -->
   <WR_ClearRulesConfirm>Remove all rules from '{0}'? It becomes a manual role again.</WR_ClearRulesConfirm>
+  <WR_BlockerTrainingConfirm>'{0}' is used in a training path. Turn it into a blocker? Recommendations will stop using it for training, and paths that need it may become unavailable. The saved paths will be kept. Existing assignments will block those jobs in roles below it.</WR_BlockerTrainingConfirm>
   <WR_ActiveHours>Active hours</WR_ActiveHours>
   <WR_HoursActive>Active</WR_HoursActive>
   <WR_HoursInactive>Inactive</WR_HoursInactive>

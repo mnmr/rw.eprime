@@ -64,8 +64,6 @@
   <WR_RecTuneOrderingSectionIntro>選定殖民者的職責後，這些選項決定列表順序，也就是工作優先順序。</WR_RecTuneOrderingSectionIntro>
   <WR_RecTuneOptionalSection>訓練路徑與可選目標選項</WR_RecTuneOptionalSection>
   <WR_RecTuneOptionalSectionIntro>決定何時為殖民者啟用訓練路徑，以及何時值得推薦涉及多項技能的可選職責。</WR_RecTuneOptionalSectionIntro>
-  <WR_RecTuneLeadSection>負責人分散選項</WR_RecTuneLeadSection>
-  <WR_RecTuneLeadSectionIntro>多條訓練路徑共享目標時，這些選項將負責職責分配給不同殖民者，避免集中於一人。</WR_RecTuneLeadSectionIntro>
   <WR_RecTuneHunterSection>獵人排序選項</WR_RecTuneHunterSection>
   <WR_RecTuneHunterSectionIntro>未固定的“獵人”按射擊技能動態插入：射手越好，狩獵優先級越靠後，因為其時間在其他工作上更有價值。</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneCandidateMinimumSignal>候選人最低信號</WR_RecTuneCandidateMinimumSignal>
@@ -109,10 +107,6 @@
   <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>達到高段技能提升等級後，用於單技能額外分配資格和可選目標適性評分的信號。</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
   <WR_RecTuneOptionalTargetMinimumPoints>可選目標最低分值</WR_RecTuneOptionalTargetMinimumPoints>
   <WR_RecTuneOptionalTargetMinimumPointsDesc>推薦多技能可選目標時，各信號高於配置底線的級差總和至少須達到此值。</WR_RecTuneOptionalTargetMinimumPointsDesc>
-  <WR_RecTuneLeadMinimumConnectedTargets>觸發分散的關聯目標數</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>關聯訓練目標達到此最少數量後，規劃器才嘗試把負責職責分配給不同工作者。</WR_RecTuneLeadMinimumConnectedTargetsDesc>
-  <WR_RecTuneLeadMinimumSignal>負責人最低信號</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>選擇工作者作為分散訓練路徑負責人時，職責信號必須達到的最低值。</WR_RecTuneLeadMinimumSignalDesc>
   <WR_RecTuneHunterTiersRow>各檔最高射擊等級</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>“獵人”動態位置的射擊等級分界。第 1 檔將獵人放在基礎工作之後，第 2、3 檔分別放在中間和最後的工作職責之後，超過第 4 檔則排在末尾。</WR_RecTuneHunterTiersRowDesc>
   <WR_TrainingSection>訓練路徑</WR_TrainingSection>
@@ -657,4 +651,8 @@ WorkRoles 通過遊戲標準方法為受管理殖民者提供工作列表。另�
   <WR_RecMechanicalSelected>可以承擔其他推薦角色未涵蓋的工作。</WR_RecMechanicalSelected>
   <WR_RecMechanicalRetained>保留目前的主要角色。</WR_RecMechanicalRetained>
   <WR_RecMechanicalIncapacitated>該工作單位已倒地。角色會保留，待其恢復後繼續工作。</WR_RecMechanicalIncapacitated>
+  <WR_BlockerTrainingConfirm>「{0}」正用於訓練路徑。要將其改為封鎖角色嗎？推薦將不再用它進行訓練，依賴它的路徑可能無法使用。已儲存的路徑會保留。現有指派會阻止排在此角色之後的角色執行這些工作。</WR_BlockerTrainingConfirm>
+  <WR_RoleCapCannotTakeJobs>{0}無法承接{1}的指派工作</WR_RoleCapCannotTakeJobs>
+  <WR_WorkNativeFireNearby>閒置時可撲滅附近的火，但不會承接指派的滅火工作</WR_WorkNativeFireNearby>
+  <WR_WorkNotNative>此型號的工作分配不支援此工作</WR_WorkNotNative>
 </LanguageData>

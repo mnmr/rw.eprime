@@ -2,15 +2,14 @@
 title: Opciones globales
 ---
 <!-- l10n:b-b9da5ce88ae0 -->
-La derecha de Recomendaciones contiene los controles del motor en cinco secciones. La mayoría no necesita ajustarlos, pero permiten afinar sus propuestas.
+La derecha de Recomendaciones contiene los controles del motor en cuatro secciones. La mayoría no necesita ajustarlos, pero permiten afinar sus propuestas.
 
 <!-- l10n:b-5db21765004b -->
-![Cinco secciones de opciones globales](global-sections.png)
+![Cuatro secciones de opciones globales](global-sections.png)
 
 <!-- l10n:b-300ff4c12092 -->
 - **Selección de principales** decide quién sostiene cada rol.
 - **Rutas de formación y objetivos opcionales** decide cuándo se activan y cuándo conviene un rol opcional de varias habilidades.
-- **Diversificación de responsables** reparte los responsables de formación.
 - **Orden final de roles** determina la secuencia recomendada de cada colono.
 - **Posición del Cazador** establece los límites de Tiro de su lugar dinámico.
 

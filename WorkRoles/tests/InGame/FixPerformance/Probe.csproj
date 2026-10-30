@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>WorkRoles.FixPerformanceProbe</AssemblyName>
+    <OutputPath>Probe/1.7/Assemblies/</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Probe.cs" />
+    <Reference Include="WorkRoles" HintPath="../../../mod/1.7/Assemblies/WorkRoles.dll" Private="false" />
+    <Reference Include="WorkRoles.Core" HintPath="../../../mod/1.7/Assemblies/WorkRoles.Core.dll" Private="false" />
+  </ItemGroup>
+  <Import Project="../../../../Shared/Build/RimWorld17.props" />
+</Project>

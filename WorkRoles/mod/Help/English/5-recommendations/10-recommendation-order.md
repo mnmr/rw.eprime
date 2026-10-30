@@ -23,11 +23,11 @@ which roles must never be recommended. Use Add Role to exclude a role,
 or click its chip's remove icon to allow recommendations again.
 
 <!-- l10n:b-2ff664d1d184 -->
-Rescuer, Firefighter, Patient, Bedrest, and Laborer are excluded by default
-because Core and Basics already cover their work. Existing saves receive
-these defaults once when updated. Removing a role from the panel is respected
-on later loads. To add the defaults back, choose **Default excluded roles**
-in [Restore Defaults](topic:restore-defaults).
+No roles are excluded by default. Rescuer, Firefighter, Patient, Bedrest,
+and Laborer repeat work that Core and Basics already give every colonist,
+so they are only recommended when that work is missing from those roles,
+or to robots whose native work they match. Changes to the panel are
+respected on later loads.
 
 <!-- l10n:b-94e6612dee18 -->
 [Role Options](topic:role-options) below lists all non-excluded roles.

@@ -76,6 +76,8 @@ namespace WorkRoles.Core.Recs
                 // contribution fails InsideBand and cannot substitute.
                 if (role == null
                     || facts.IsRecommendationExcluded(role)
+                    || role.Blocker
+                    || role.HasRules
                     || !role.Available
                     || !role.Enabled
                     || !facts.MeetsCapabilityRequirement(pawnIndex, role)
@@ -162,22 +164,6 @@ namespace WorkRoles.Core.Recs
                 if (role != 0) return role;
             }
             return left.RoleIds.Count.CompareTo(right.RoleIds.Count);
-        }
-
-        internal static int TargetMinimum(
-            IReadOnlyList<PathView> paths,
-            int roleId)
-        {
-            int result = -1;
-            for (int index = 0; index < paths.Count; index++)
-            {
-                PathView path = paths[index];
-                if (UniqueTargetRoleId(path) != roleId) continue;
-                int roleAt = path.RoleIds.IndexOf(roleId);
-                if (path.BandMins[roleAt] > result)
-                    result = path.BandMins[roleAt];
-            }
-            return result;
         }
 
         internal static PathView? PreferredTargetPath(
@@ -325,35 +311,5 @@ namespace WorkRoles.Core.Recs
             return false;
         }
 
-
-        internal static bool Connected(
-            IReadOnlyList<PathView> paths,
-            int leftRoleId,
-            int rightRoleId)
-        {
-            if (leftRoleId == rightRoleId) return true;
-            var reached = new HashSet<int> { leftRoleId };
-            var frontier = new List<int> { leftRoleId };
-            for (int frontierIndex = 0;
-                 frontierIndex < frontier.Count;
-                 frontierIndex++)
-            {
-                int current = frontier[frontierIndex];
-                for (int pathIndex = 0; pathIndex < paths.Count; pathIndex++)
-                {
-                    PathView path = paths[pathIndex];
-                    if (!path.RoleIds.Contains(current)) continue;
-                    for (int roleIndex = 0;
-                         roleIndex < path.RoleIds.Count;
-                         roleIndex++)
-                    {
-                        int roleId = path.RoleIds[roleIndex];
-                        if (roleId == rightRoleId) return true;
-                        if (reached.Add(roleId)) frontier.Add(roleId);
-                    }
-                }
-            }
-            return false;
-        }
     }
 }

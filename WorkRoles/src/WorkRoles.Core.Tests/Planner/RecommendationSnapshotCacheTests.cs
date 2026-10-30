@@ -8,10 +8,11 @@ namespace WorkRoles.Core.Tests.Planner;
 public class RecommendationSnapshotCacheTests
 {
     [Test]
-    public async Task PausedBlockerEditsRefreshRobotBadgesWithoutRebuildingHumanBadges()
+    public async Task PausedBlockerEditsKeepBadgesStableWithoutRebuildingHumanBadges()
     {
-        // The badge is the published outcome. Identity and lazy-context checks
-        // additionally protect the independent human cache contract.
+        // Badges rate skill fit only, so a blocker toggle leaves the robot's
+        // and the human's Neutral hauling badge alone. Identity and
+        // lazy-context checks protect the independent human cache contract.
         RoleView haul = RecsTestBed.Unskilled(1, "Hauling", "HaulGeneral");
         ColonyView Inputs(bool blocker, bool includeRobot)
         {
@@ -31,13 +32,13 @@ public class RecommendationSnapshotCacheTests
             new object(), 0, 0, 0, RecommendationsTuningOptions.Default,
             (_, _) => Inputs(blocker, includeRobot: true));
         var original = Read(false).Suitability;
-        await Assert.That(original[0][1]).IsEqualTo(SignalBucket.Awful);
+        await Assert.That(original[0][1]).IsEqualTo(SignalBucket.Neutral);
         // Catalog edits are immediate: no external refresh or clock advance.
         var blocked = Read(true).Suitability;
         await Assert.That(blocked[0][1]).IsEqualTo(SignalBucket.Neutral);
         await Assert.That(ReferenceEquals(original[1], blocked[1])).IsTrue();
         var restored = Read(false).Suitability;
-        await Assert.That(restored[0][1]).IsEqualTo(SignalBucket.Awful);
+        await Assert.That(restored[0][1]).IsEqualTo(SignalBucket.Neutral);
         await Assert.That(ReferenceEquals(original[1], restored[1])).IsTrue();
 
         var humanCache = new RecommendationSnapshotCache<object>();
@@ -53,38 +54,44 @@ public class RecommendationSnapshotCacheTests
     }
 
     [Test]
-    public async Task MechanicalCapabilityRefreshesBadgesWithoutChangingHumanRatings()
+    public async Task MechanicalSkillRefreshesBadgesWithoutChangingHumanRatings()
     {
-        // Badge identity is an independent cache contract: identical role
-        // assignments cannot reveal a stale or unnecessarily rebuilt verdict.
+        // A robot's published native skills (e.g. a Plants skill appearing
+        // once its model gains growing work) refresh its badge under the
+        // external gate. Badge identity is an independent cache contract:
+        // identical role assignments cannot reveal a stale or unnecessarily
+        // rebuilt verdict.
         var cache = new RecommendationSnapshotCache<object>();
         object owner = new(), catalog = new();
         object[] pawns = [new(), new()];
-        ColonyView Inputs(bool blocked)
+        ColonyView Inputs(bool skilled)
         {
-            RoleView haul = RecsTestBed.Unskilled(1, "Hauling", "HaulGeneral");
-            var robot = new PawnView { IsMechanical = true, CapableWorkTypes = { "Hauling" } };
-            var human = new PawnView(); // Human aptitude stays Neutral even when incapable.
-            if (blocked)
-                robot.WorkEvidence = PawnWorkEvidence.Create([
-                    new WorkCapabilityFact("HaulGeneral", null, "robot", "WR_WorkBlockedCapacity")], []);
-            return RecsTestBed.Colony([haul], robot, human);
+            RoleView sow = RecsTestBed.Skilled(1, "Growing", "Plants", "GrowerSow");
+            var robot = new PawnView { IsMechanical = true, CapableWorkTypes = { "Growing" } };
+            if (skilled)
+            {
+                robot.SkillLevels["Plants"] = 20;
+                robot.SignalBuckets["Plants"] = SignalBucket.Great;
+            }
+            var human = new PawnView { CapableWorkTypes = { "Growing" } };
+            human.SkillLevels["Plants"] = 6; // Human rating stays Neutral throughout.
+            return RecsTestBed.Colony([sow], robot, human);
         }
-        var available = cache.For(owner, pawns, catalog, 0, 0, 0,
+        var unskilled = cache.For(owner, pawns, catalog, 0, 0, 0,
             RecommendationsTuningOptions.Default, (_, _) => Inputs(false));
-        var original = available.Suitability;
-        var blocked = cache.For(owner, pawns, catalog, 0, 1, 0,
+        var original = unskilled.Suitability;
+        var skilled = cache.For(owner, pawns, catalog, 0, 1, 0,
             RecommendationsTuningOptions.Default, (_, _) => Inputs(true));
-        await Assert.That(original[0][1]).IsEqualTo(SignalBucket.Neutral);
-        await Assert.That(blocked.Suitability[0][1]).IsEqualTo(SignalBucket.Awful);
-        await Assert.That(blocked.Suitability[1][1]).IsEqualTo(SignalBucket.Neutral);
-        await Assert.That(ReferenceEquals(original[1], blocked.Suitability[1])).IsTrue();
+        await Assert.That(original[0][1]).IsEqualTo(SignalBucket.Awful);
+        await Assert.That(skilled.Suitability[0][1]).IsEqualTo(SignalBucket.Great);
+        await Assert.That(skilled.Suitability[1][1]).IsEqualTo(SignalBucket.Neutral);
+        await Assert.That(ReferenceEquals(original[1], skilled.Suitability[1])).IsTrue();
         var unchanged = cache.For(owner, pawns, catalog, 0, 2, 0,
             RecommendationsTuningOptions.Default, (_, _) => Inputs(true));
-        await Assert.That(ReferenceEquals(blocked, unchanged)).IsTrue();
+        await Assert.That(ReferenceEquals(skilled, unchanged)).IsTrue();
         var restored = cache.For(owner, pawns, catalog, 0, 3, 0,
             RecommendationsTuningOptions.Default, (_, _) => Inputs(false));
-        await Assert.That(restored.Suitability[0][1]).IsEqualTo(SignalBucket.Neutral);
+        await Assert.That(restored.Suitability[0][1]).IsEqualTo(SignalBucket.Awful);
         await Assert.That(ReferenceEquals(original[1], restored.Suitability[1])).IsTrue();
     }
 

@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData><name>WorkRoles Persistence Review Probe</name><author>Local review</author><packageId>eprime.workroles.persistencereviewprobe</packageId><supportedVersions><li>1.7</li></supportedVersions><modDependencies><li><packageId>mnmr.workroles</packageId><displayName>WorkRoles</displayName></li></modDependencies><loadAfter><li>mnmr.workroles</li></loadAfter></ModMetaData>

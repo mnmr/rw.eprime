@@ -133,8 +133,8 @@ namespace WorkRoles
                 // colony-wide replacement without spatial demand evidence.
                 && HasUnrestrictedServiceArea(pawn);
             foreach (WorkGiverDef giver in DefDatabase<WorkGiverDef>.AllDefsListForReading)
-                if (giver.workType != null && CanDo(pawn, giver) && !pawn.WorkTypeIsDisabled(giver.workType)
-                    && !pawn.WorkTagIsDisabled(giver.workTags) && !facts.WorkEvidence.Blocks(giver.defName))
+                if (giver.workType != null && CanDo(pawn, giver) && !WorkTypeDisabled(pawn, giver.workType)
+                    && !WorkTagsDisabled(pawn, giver.workTags) && !facts.WorkEvidence.Blocks(giver.defName))
                 {
                     worker.ExecutableGivers.Add(giver.defName);
                     if (!preparationAllowed && (giver.workType == WorkTypeDefOf.Construction
@@ -174,6 +174,20 @@ namespace WorkRoles
         internal static bool IsColonyWorker(Pawn pawn) => IsMechanical(pawn)
             && pawn.Faction == Faction.OfPlayer && !pawn.Dead && !pawn.Destroyed;
 
+        // Misc. Robots selects work from its def's robotWorkTypes and the
+        // giver's required capacities only (X2_AIRobot.GetWorkGivers,
+        // X2_JobGiver_Work.PawnCanUseWorkGiver); vanilla disabled work types
+        // and work tags never gate it, and mechEnabledWorkTypes is maintained
+        // by hand in those defs. Vanilla mechs keep the JobGiver_Work rules.
+        internal static bool WorkTypeDisabled(Pawn pawn, WorkTypeDef workType)
+            => !MiscRobotSupport.IsRobot(pawn) && pawn.WorkTypeIsDisabled(workType);
+
+        internal static bool WorkTagsDisabled(Pawn pawn, WorkTags tags)
+            => !MiscRobotSupport.IsRobot(pawn) && pawn.WorkTagIsDisabled(tags);
+
+        internal static WorkTags DisabledWorkTags(Pawn pawn)
+            => MiscRobotSupport.IsRobot(pawn) ? WorkTags.None : pawn.CombinedDisabledWorkTags;
+
         internal static bool CanDo(Pawn pawn, WorkGiverDef giver)
         {
             if (!IsMechanical(pawn)) return true;
@@ -185,20 +199,33 @@ namespace WorkRoles
 
         // Called only by the external-facts producer. Native work definitions
         // decide which skills are useful; a generic robot skill tracker alone
-        // does not. Temporary job availability and role assignments are not
-        // skill dependencies. The producer publishes these levels for all UI
-        // and recommendation consumers, under its factual/definition gates.
+        // does not. A native giver exercises its work type's relevant skills
+        // and the skills its recipes use or gate (the drug lab is Crafting work
+        // run on Intellectual). Temporary job availability and role assignments
+        // are not skill dependencies. The producer publishes these levels for
+        // all UI and recommendation consumers, under its factual/definition gates.
         internal static void CaptureWorkSkills(Pawn pawn, IDictionary<string, int> levels)
         {
+            IReadOnlyDictionary<string, JobProfileGiverFacts> facts = JobSkillProfiles.GiverFacts();
+            var names = new HashSet<string>();
             foreach (WorkGiverDef giver in DefDatabase<WorkGiverDef>.AllDefsListForReading)
             {
-                if (giver.workType?.relevantSkills == null || !CanDo(pawn, giver)) continue;
-                foreach (SkillDef def in giver.workType.relevantSkills)
-                {
-                    SkillRecord? skill = pawn.skills?.GetSkill(def);
-                    if (skill != null && skill.TotallyDisabled) continue;
-                    levels[def.defName] = skill?.Level ?? pawn.RaceProps.mechFixedSkillLevel;
-                }
+                if (!CanDo(pawn, giver) || WorkTagsDisabled(pawn, giver.workTags)) continue;
+                if (giver.workType?.relevantSkills != null)
+                    foreach (SkillDef relevant in giver.workType.relevantSkills) names.Add(relevant.defName);
+                if (facts.TryGetValue(giver.defName, out JobProfileGiverFacts? giverFacts))
+                    giverFacts.CollectExercisedSkills(names);
+            }
+            // SkillRecord.TotallyDisabled is derived from the work types that
+            // list the skill as relevant, which a Crafting-only robot fails for
+            // Intellectual even though its drug lab recipes run on that skill.
+            // Executable work decides here; the record only supplies the level.
+            foreach (string name in names)
+            {
+                SkillDef? def = DefDatabase<SkillDef>.GetNamedSilentFail(name);
+                if (def == null) continue;
+                SkillRecord? skill = pawn.skills?.GetSkill(def);
+                levels[def.defName] = skill?.Level ?? pawn.RaceProps.mechFixedSkillLevel;
             }
         }
 

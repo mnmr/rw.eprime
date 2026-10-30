@@ -160,11 +160,16 @@ namespace WorkRoles
             finally { processing = false; }
         }
 
+        // Drift detection compares setups as the current version would apply
+        // them: an older default file is read with its retired exclusions
+        // cleared, so a migrated store does not look like a player edit.
         private static string Comparable(string xml)
         {
-            var root = XElement.Parse(xml);
-            root.Element("PlayerSettings")?.Remove();
-            return root.ToString(SaveOptions.DisableFormatting);
+            var document = RoleFile.Parse(xml);
+            if (document.error != null) return xml;
+            DefaultExclusions.ClearRetired(document);
+            document.playerSettings = null;
+            return XElement.Parse(RoleFile.Build(document)).ToString(SaveOptions.DisableFormatting);
         }
 
         internal static void Decide(bool useCurrent, bool disableAuto)
@@ -188,6 +193,9 @@ namespace WorkRoles
         private static bool SaveCurrent()
         {
             if (owner == null || !ReferenceEquals(owner, RoleStore.Current)) return false;
+            // Never persist a default from a store whose exclusion defaults
+            // have not been adopted yet; it would stamp old data as current.
+            if (!owner.seeded || owner.recommendationExclusionsVersion < DefaultExclusions.CurrentVersion) return false;
             string xml = RoleIO.BuildXml(owner);
             if (xml == savedXml) { session.Written(); return true; }
             string path = FilePath, temporary = path + ".tmp";

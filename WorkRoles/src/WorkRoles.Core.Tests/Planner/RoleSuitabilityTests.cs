@@ -26,8 +26,11 @@ public class RoleSuitabilityTests
         await Assert.That(verdicts[sow.Id]).IsEqualTo(SignalBucket.Great);
     }
 
+    // A robot whose native work excludes a role's jobs keeps the same skill
+    // verdict a human would get; the assigned chip's capability marker, not
+    // the stars, reports the unavailable work (owner decision 2026-10-30).
     [Test]
-    public async Task NoExecutableJobsShowsAwfulEvenWithSkillsAndForUnskilledOrCompositeRoles()
+    public async Task MechanicalBadgesRateSkillFitEvenWhenNativeWorkExcludesTheJobs()
     {
         RoleView farm = RecsTestBed.Skilled(1, "Growing", "Plants", "Sow");
         RoleView haul = RecsTestBed.Unskilled(2, "Hauling", "Haul");
@@ -48,9 +51,9 @@ public class RoleSuitabilityTests
 
         Dictionary<int, SignalBucket> verdicts = RoleSuitability.Verdicts(colony)[0];
 
-        await Assert.That(verdicts[farm.Id]).IsEqualTo(SignalBucket.Awful);
-        await Assert.That(verdicts[haul.Id]).IsEqualTo(SignalBucket.Awful);
-        await Assert.That(verdicts[composite.Id]).IsEqualTo(SignalBucket.Awful);
+        await Assert.That(verdicts[farm.Id]).IsEqualTo(SignalBucket.Exceptional);
+        await Assert.That(verdicts[haul.Id]).IsEqualTo(SignalBucket.Neutral);
+        await Assert.That(verdicts[composite.Id]).IsEqualTo(SignalBucket.Strong);
         await Assert.That(verdicts[clean.Id]).IsEqualTo(SignalBucket.Neutral);
         await Assert.That(verdicts[mixed.Id]).IsEqualTo(SignalBucket.Neutral);
     }

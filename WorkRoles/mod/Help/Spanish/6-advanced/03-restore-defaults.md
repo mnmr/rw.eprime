@@ -10,8 +10,5 @@ title: Restaurar valores predeterminados
 <!-- l10n:b-82471df98b1a -->
 Enumera todo lo recuperable: roles predefinidos ausentes, trabajos editados, trabajos movidos por otros mods, grupos, colores, titulares y exclusiones predeterminados. Marca solo lo deseado. Los elementos que sobrescribirían tus cambios aparecen con colores de aviso.
 
-<!-- l10n:b-70d2472bee92 -->
-**Roles excluidos predeterminados** vuelve a añadir Rescatador, Bombero, Paciente, Reposo y Peón si los quitaste. Las demás exclusiones se conservan. Puedes volver a quitarlos después.
-
 <!-- l10n:b-ef2b639e1c19 -->
 Los colonos mantienen su conjunto de trabajos durante la restauración: nadie deja de trabajar mientras corriges tus decisiones.

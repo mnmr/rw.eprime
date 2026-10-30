@@ -83,7 +83,9 @@ public class SampleColonyRecommendationTests
         string actualRecommendedOrder = string.Join(", ", scenario.RecommendedAssignments);
 
         await Assert.That(actualCurrentOrder).IsEqualTo("Core, Medic, Basics, Builder, Farmer Away, Herder, Hunter, Miner Away, Farmer, Joint Maker, Fisher, Grunt, Researcher, Childcare, Gene Maker");
-        await Assert.That(actualRecommendedOrder).IsEqualTo("Core, Medic, Basics, Farmer Away, Builder, Herder, Miner Away, Farmer, Hunter, Joint Maker, Miner, Fisher, Grunt, Researcher, Childcare");
+        // WR4: existing Miner Away is protected after Hunter; tier placement
+        // cannot move Hunter across that authored conditional assignment.
+        await Assert.That(actualRecommendedOrder).IsEqualTo("Core, Medic, Basics, Farmer Away, Builder, Herder, Hunter, Miner Away, Farmer, Joint Maker, Miner, Fisher, Grunt, Researcher, Childcare");
     }
 
     /// Pheanox (Fey "Pheanox" Nickel): crafting/intellectual specialist via
@@ -97,7 +99,7 @@ public class SampleColonyRecommendationTests
             ["Core", "Basics", "Farmer Away", "Drug Maker", "Fabricator", "Tailor", "Smith", "Hunter", "Herder", "Plant Cutter", "Painter", "Crafter", "Fisher", "Grunt", "Researcher", "Gene Maker"],
             "Pheanox's current assignments");
         await AssertSameRoles(scenario.RecommendedAssignments,
-            ["Core", "Basics", "Farmer Away", "Drug Maker", "Fabricator", "Hunter", "Herder", "Smith", "Tailor", "Crafter", "Plant Cutter", "Fisher", "Grunt", "Researcher"],
+            ["Core", "Basics", "Farmer Away", "Drug Maker", "Fabricator", "Hunter", "Herder", "Smith", "Tailor", "Crafter", "Grower", "Plant Cutter", "Fisher", "Grunt", "Researcher"],
             "Pheanox's recommended assignments");
     }
 
@@ -109,7 +111,8 @@ public class SampleColonyRecommendationTests
         string actualRecommendedOrder = string.Join(", ", scenario.RecommendedAssignments);
 
         await Assert.That(actualCurrentOrder).IsEqualTo("Core, Basics, Farmer Away, Drug Maker, Fabricator, Tailor, Smith, Hunter, Herder, Plant Cutter, Painter, Crafter, Fisher, Grunt, Researcher, Gene Maker");
-        await Assert.That(actualRecommendedOrder).IsEqualTo("Core, Basics, Farmer Away, Drug Maker, Hunter, Fabricator, Smith, Tailor, Crafter, Herder, Plant Cutter, Fisher, Grunt, Researcher");
+        // WR5: conditional Farmer Away cannot replace ordinary growing work.
+        await Assert.That(actualRecommendedOrder).IsEqualTo("Core, Basics, Farmer Away, Drug Maker, Hunter, Fabricator, Smith, Tailor, Crafter, Herder, Grower, Plant Cutter, Fisher, Grunt, Researcher");
     }
 
     [Test]
@@ -215,7 +218,8 @@ public class SampleColonyRecommendationTests
     [Arguments("Macey", "Core, Basics, Fabricator, Tailor, Smith, Drug Maker, Crafter, Brewer, Hunter, Hauler, Cleaner, Researcher, Gene Maker", "Core, Basics, Drug Maker, Fabricator, Smith, Hunter, Tailor, Crafter, Butcher, Brewer, Grunt, Researcher")]
     [Arguments("Madcat", "Core, Doctor, Basics, Haul Now, Handler, Cook, Childcare, Warden, Grower, Plant Cutter, Miner, Fisher, Grunt, Hunter, Gene Maker", "Core, Medic, Basics, Haul Now, Childcare, Warden, Cook, Handler, Grower, Plant Cutter, Hunter, Fisher, Grunt, Researcher")]
     [Arguments("Niklas", "Core, Basics, Cook, Smelter, Farmer Away, Fabricator, Tailor, Smith, Handler, Crafter, Fisher, Hauler, Cleaner, Hunter, Gene Maker", "Core, Basics, Farmer Away, Handler, Cook, Fabricator, Smith, Tailor, Crafter, Fisher, Grunt, Hunter")]
-    [Arguments("Noah", "Core, Basics, Grower, Plant Cutter, Haul Now, Hunter, Cleaner, Hauler, Gene Maker", "Core, Basics, Cleaner, Hauler, Farmer, Grunt, Hunter")]
+    // WR4: pinned Cleaner/Hauler remain after the existing Hunter assignment.
+    [Arguments("Noah", "Core, Basics, Grower, Plant Cutter, Haul Now, Hunter, Cleaner, Hauler, Gene Maker", "Core, Basics, Hunter, Cleaner, Hauler, Farmer, Grunt")]
     [Arguments("Pun", "Core, Doctor, Basics, Childcare, Warden, Farmer Away, Herder, Hunter, Fisher, Grunt", "Core, Doctor, Basics, Warden, Childcare, Farmer Away, Handler, Farmer, Fisher, Grunt, Hunter")]
     [Arguments("Selma", "Core, Medic, Basics, Farmer Away, Butcher, Brewer, Tailor, Smith, Hunter, Grower, Plant Cutter, Crafter, Grunt, Researcher, Gene Maker", "Core, Medic, Basics, Farmer Away, Hunter, Grower, Plant Cutter, Smith, Tailor, Crafter, Butcher, Brewer, Grunt, Researcher")]
     [Arguments("Severin", "Core, Doctor, Basics, Handler, Hunter, Farmer, Miner, Fisher, Grunt, Gene Maker", "Core, Doctor, Basics, Farmer, Handler, Miner, Fisher, Hunter, Grunt")]

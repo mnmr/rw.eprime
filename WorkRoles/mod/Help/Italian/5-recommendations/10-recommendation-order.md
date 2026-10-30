@@ -13,7 +13,7 @@ I consigli sono ordinati automaticamente per ciascun colono. Il sistema usa l'or
 Il pannello **Ruoli esclusi** in cima alla scheda Consigli controlla quali ruoli non devono mai essere consigliati. Usa Aggiungi ruolo per escluderne uno o l'icona di rimozione sulla tessera per consentirlo di nuovo.
 
 <!-- l10n:b-2ff664d1d184 -->
-Soccorritore, Pompiere, Paziente, Riposo a letto e Manovale sono esclusi per impostazione predefinita perché Essenziale e Base coprono già il loro lavoro. I salvataggi esistenti ricevono queste impostazioni una sola volta all'aggiornamento. La rimozione di un ruolo dal pannello viene rispettata nei caricamenti successivi. Per reinserire le esclusioni originali, scegli **Ruoli esclusi predefiniti** in [Ripristina i valori predefiniti](topic:restore-defaults).
+Nessun ruolo è escluso per impostazione predefinita. Soccorritore, Pompiere, Paziente, Riposo a letto e Manovale ripetono lavoro che Essenziale e Base danno già a ogni colono, quindi vengono consigliati solo quando quel lavoro manca in quei ruoli o ai robot il cui lavoro nativo corrisponde. Le modifiche al pannello vengono rispettate nei caricamenti successivi.
 
 <!-- l10n:b-94e6612dee18 -->
 Le [Opzioni dei ruoli](topic:role-options) sottostanti elencano tutti quelli non esclusi. L'esclusione ne nasconde le opzioni senza cancellarle; rimuovendola, tornano disponibili.

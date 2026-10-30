@@ -30,21 +30,21 @@ Reviewed phrases that are identical in one language, such as French
 “Classification”, use `UNCHANGED_TRANSLATIONS` with an additional exact locale
 match. The exemption never applies to that phrase in other languages.
 
-`update-localization.cmd` uses the **Codex CLI**. It checks `PATH` first, then
-the Windows Codex desktop app's bundled CLI. A versioned app installation does
-not need to be added to `PATH`; use `--codex "C:\path\to\codex.exe"` to select
-another executable explicitly. To make Codex available to other scripts too,
-install the official CLI globally with `npm install -g @openai/codex` and ensure
-the npm global command directory is on your user `PATH`.
-Sign in with `codex login` if needed; `codex login status` checks the login. Translation
-uses that account's normal Codex usage. `--dry-run` lists affected entries without
-calling Codex or changing content. An already-current repository also makes no
-Codex calls and writes no files.
+`update-localization.cmd` uses the **Claude Code CLI** (`claude`) from `PATH`,
+in print mode with the Sonnet model by default (`--model` selects another alias
+or id); use `--claude "C:\path\to\claude.cmd"` to select another executable
+explicitly. Each request runs in an empty temporary directory with all tools,
+settings sources, skills and session persistence disabled, and asks for
+schema-validated JSON, so Claude never reads or writes the repository.
+Sign in with `claude auth login` if needed; `claude auth status` checks the
+login. Translation uses that account's normal usage. `--dry-run` lists affected
+entries without calling Claude or changing content. An already-current
+repository also makes no Claude calls and writes no files.
 
 The updater translates missing entries, changed English text and structurally
 broken translations in small batches. It removes retired XML entries and help
 topics, preserves unaffected translations, and passes the existing translation
-plus [translation guidance](translation-guidance.md) to Codex for terminology.
+plus [translation guidance](translation-guidance.md) to Claude for terminology.
 The guidance file is the maintained source for owner terminology and regional
 language rules. Update it when terminology changes; existing valid translations
 still need a deliberate edit when adopting a new terminology decision.
@@ -88,7 +88,7 @@ alignment stop the entire migration without writes; review the indicated
 boundaries first. It never retranslates wording. Duplicate IDs, unmarked extra
 paragraphs, and new untracked pages after migration fail the checker.
 
-Codex returns structured text in an ephemeral, read-only session. The helper
+Claude returns schema-validated JSON from a tool-less print-mode call. The helper
 applies the text to a temporary copy, validates all selected locales, and only
 then writes translations and their English-source manifests. Invalid responses,
 authentication failures, timeouts or validation failures leave the original
@@ -112,10 +112,10 @@ scripts\update-localization.cmd --model <model-id>
 ```
 
 `--locale` is repeatable and defaults to all supported locales. `--model` selects
-the Codex model; otherwise the CLI's built-in default is used. The updater skips
-the user's Codex configuration for repeatable translation-only runs, while
-retaining CLI authentication. Each batch has a ten-minute timeout; a failed run
-can be retried after fixing the reported problem.
+the Claude model (default `sonnet`). The updater disables the user's settings,
+tools and skills for repeatable translation-only runs, while retaining CLI
+authentication. Each batch has a ten-minute timeout; a failed run can be
+retried after fixing the reported problem.
 
 ## Direct tools and manual maintenance
 

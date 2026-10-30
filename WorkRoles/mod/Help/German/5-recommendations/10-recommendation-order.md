@@ -13,7 +13,7 @@ Empfehlungen werden für jeden Kolonisten automatisch geordnet. Die Logik verbin
 Der Bereich **Ausgeschlossene Rollen** oben auf dem Reiter „Empfehlungen“ legt fest, welche Rollen niemals empfohlen werden dürfen. Mit „Rolle hinzufügen“ schließt du eine Rolle aus; mit dem Entfernen-Symbol auf ihrer Marke erlaubst du Empfehlungen wieder.
 
 <!-- l10n:b-2ff664d1d184 -->
-Retter, Feuerwehrmann, Patient, Bettruhe und Hilfsarbeiter sind standardmäßig ausgeschlossen, weil Kern und Grundlagen ihre Arbeit bereits abdecken. Bestehende Spielstände erhalten diese Vorgaben bei der Aktualisierung einmalig. Entfernst du eine Rolle aus dem Bereich, wird das bei späteren Ladevorgängen respektiert. Um die Vorgaben wieder hinzuzufügen, wähle **Standardmäßig ausgeschlossene Rollen** unter [Standards wiederherstellen](topic:restore-defaults).
+Standardmäßig ist keine Rolle ausgeschlossen. Retter, Feuerwehrmann, Patient, Bettruhe und Hilfsarbeiter wiederholen Arbeit, die Kern und Grundlagen bereits jedem Kolonisten geben. Sie werden daher nur empfohlen, wenn diese Arbeit in jenen Rollen fehlt, oder für Roboter, deren native Arbeit dazu passt. Änderungen im Bereich werden bei späteren Ladevorgängen respektiert.
 
 <!-- l10n:b-94e6612dee18 -->
 Darunter zeigen die [Rollenoptionen](topic:role-options) alle nicht ausgeschlossenen Rollen. Ein Ausschluss blendet die Optionen der Rolle aus, löscht sie aber nicht. Sobald du den Ausschluss aufhebst, sind die Optionen wieder verfügbar.

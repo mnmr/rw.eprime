@@ -11,7 +11,15 @@ namespace WorkRoles.Patches
         private static void Prefix(Pawn ___pawn, out Ideo? __state) => __state = ___pawn.Ideo;
         private static void Postfix(Pawn ___pawn, Ideo? __state)
         {
-            if (!ReferenceEquals(__state, ___pawn.Ideo)) PawnWorkFacts.Refresh(___pawn);
+            if (ReferenceEquals(__state, ___pawn.Ideo)) return;
+            int revision = ExternalPawnFacts.Revisions.RevisionOf(___pawn);
+            PawnWorkFacts.Refresh(___pawn);
+            // Grouping consumes ideology even when both ideologies permit the
+            // same work. Reuse the existing presentation refresh without
+            // rebuilding skill facts or adding a polling dependency.
+            if (ExternalPawnFacts.IsRelevant(___pawn)
+                && ExternalPawnFacts.Revisions.RevisionOf(___pawn) == revision)
+                ExternalPawnFacts.InvalidatePresentation(___pawn);
         }
     }
 

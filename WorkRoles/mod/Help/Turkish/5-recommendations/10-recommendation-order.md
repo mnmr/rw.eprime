@@ -13,7 +13,7 @@ title: Sıralama ve hariç tutma
 Öneriler sekmesinin üstündeki **Hariç tutulan roller**, hiç önerilmemesi gereken rolleri belirler. Hariç tutmak için Rol ekle'yi; yeniden izin vermek için etiketin kaldırma simgesini kullanın.
 
 <!-- l10n:b-2ff664d1d184 -->
-Kurtarıcı, İtfaiyeci, Hasta, Yatak istirahati ve İşçi varsayılan hariçtir; Çekirdek işler ve Temel işler bunları zaten kapsar. Mevcut kayıtlar güncellendiğinde bu varsayılanları bir kez alır. Panelden çıkardığınız rol, sonraki yüklemelerde geri eklenmez. Varsayılanları geri eklemek için [Varsayılanları geri yükle](topic:restore-defaults) içinde **Varsayılan hariç tutulan roller** seçin.
+Varsayılan olarak hiçbir rol hariç tutulmaz. Kurtarıcı, İtfaiyeci, Hasta, Yatak istirahati ve İşçi, Çekirdek işler ile Temel işlerin her koloniste zaten verdiği işi yineler; bu yüzden yalnızca o iş bu rollerde eksikse veya yerel işi eşleşen robotlar için önerilir. Paneldeki değişiklikler sonraki yüklemelerde korunur.
 
 <!-- l10n:b-94e6612dee18 -->
 Alttaki [Rol seçenekleri](topic:role-options), hariç olmayan tüm rolleri listeler. Hariç tutmak ayarları silmeden gizler; hariç tutmayı kaldırmak onları yeniden kullanılabilir kılar.

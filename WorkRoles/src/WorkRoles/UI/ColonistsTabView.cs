@@ -63,7 +63,10 @@ namespace WorkRoles.UI
         // every selected colonist.
         private readonly ListSelection<Pawn> selection = new ListSelection<Pawn>();
         private readonly List<Pawn> selectionScratch = new List<Pawn>();
-        private int selectionFilterRevision;
+        // Window-owned validation gate keyed by the published filtered sections.
+        // Assignment edits can change membership without changing filter controls.
+        // Equal sections retain identity; Reset/ReleaseSnapshots release the key.
+        private ColonistSectionsSnapshot? selectionSections;
         private Pawn? selectedPawn => selection.Single;
 
         // Our own table renderer: a fixed header row above a scroll view of
@@ -212,6 +215,7 @@ namespace WorkRoles.UI
             ResetRecommendationScroll();
             tableScroll = Vector2.zero;
             selection.Clear();
+            selectionSections = null;
             // Opening adopts the player's in-game pawn selection (when listed)
             // and scrolls the selection into view centered.
             pendingSelectFromGame = true;
@@ -405,6 +409,7 @@ namespace WorkRoles.UI
             selectedPanelState.Release();
 
             selection.Clear();
+            selectionSections = null;
             recommendationState.ReleaseSnapshots();
             ResetRecommendationScroll();
             InvalidateRoleVerdicts();
@@ -650,19 +655,29 @@ namespace WorkRoles.UI
                         break;
                     }
             }
-            // A filter change (search, role, job, location) that hides any
-            // selected colonist clears the whole selection; a selection that
-            // stays fully visible is kept. Collapsed groups are not a filter.
-            if (selectionFilterRevision != rosterState.FilterRevision)
+            // Departed pawns drop out without resetting the remaining selection.
+            selection.Retain(pawns);
+            ColonistSectionsSnapshot visibleSections = rosterState.Sections(store);
+            // Published membership can change after a role/name edit as well as
+            // a filter edit. Validate once per snapshot, ignoring group collapse.
+            if (!ReferenceEquals(selectionSections, visibleSections))
             {
-                selectionFilterRevision = rosterState.FilterRevision;
+                selectionSections = visibleSections;
                 selectionScratch.Clear();
-                selection.CopyOrdered(FlattenSections(AllSections()), selectionScratch);
-                if (selectionScratch.Count != selection.Count) selection.Clear();
+                selection.CopyOrdered(pawns, selectionScratch);
+                for (int selectedIndex = 0; selectedIndex < selectionScratch.Count; selectedIndex++)
+                {
+                    bool visible = false;
+                    for (int sectionIndex = 0; sectionIndex < visibleSections.Count; sectionIndex++)
+                        if (visibleSections.SectionAt(sectionIndex).Contains(selectionScratch[selectedIndex]))
+                        {
+                            visible = true;
+                            break;
+                        }
+                    if (!visible) { selection.Clear(); break; }
+                }
                 selectionScratch.Clear();
             }
-            // Departed pawns drop out; the rest of a multi-selection survives.
-            selection.Retain(pawns);
             if (selection.Count == 0)
             {
                 // The first row that passes the filters, not the first

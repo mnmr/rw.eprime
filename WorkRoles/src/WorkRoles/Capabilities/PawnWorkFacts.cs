@@ -20,8 +20,9 @@ namespace WorkRoles.Capabilities
         }
 
         // Owner: world. Key: pawn identity. Value: detached immutable evidence
-        // plus its private capacity observations. Dependencies: pawn race, disabled work,
-        // required-capacity booleans, current precepts, faction, nullifying
+        // plus its private capacity observations. Dependencies: pawn race/kind (tool use
+        // and melee permission), disabled work,
+        // required-capacity booleans, current precepts, faction, mutant state, nullifying
         // traits/hediffs, native mech/Misc. Robots work definitions,
         // audited Vivi gathering-stat positivity (including
         // equipped straw/brush offsets), and definitions. Refresh: capture and matching events,
@@ -43,7 +44,13 @@ namespace WorkRoles.Capabilities
             var blocks = new List<WorkCapabilityFact>();
             var aversions = new List<WorkAversionFact>();
             PreceptDef? refusal = IdeologyWorkFacts.Collect(pawn, aversions);
-            WorkTags disabled = pawn.CombinedDisabledWorkTags;
+            // JobDriver_Wait's adjacent-fire action is independent of work-giver
+            // eligibility. Describe that native ability without granting a job.
+            bool nearbyFire = pawn.RaceProps.ToolUser && pawn.kindDef.canMeleeAttack
+                && pawn.Faction == Faction.OfPlayer && !pawn.IsShambler
+                && (pawn.CombinedDisabledWorkTags & WorkTags.Firefighting) == WorkTags.None;
+            // Job gating follows the pawn's actual work selector: robots ignore tags.
+            WorkTags disabled = MechanicalWorkers.DisabledWorkTags(pawn);
             foreach (WorkGiverDef giver in DefDatabase<WorkGiverDef>.AllDefsListForReading)
             {
                 // Use the same native execution contract as CompiledJobOrders.
@@ -51,7 +58,9 @@ namespace WorkRoles.Capabilities
                 // which jobs a specialist model actually supports.
                 if (!MechanicalWorkers.CanDo(pawn, giver))
                     blocks.Add(new WorkCapabilityFact(giver.defName, null,
-                        pawn.def.modContentPack?.PackageId ?? "ludeon.rimworld", "WR_RoleJobIncapable"));
+                        pawn.def.modContentPack?.PackageId ?? "ludeon.rimworld",
+                        giver == WorkGiverDefOf.FightFires && nearbyFire
+                            ? "WR_WorkNativeFireNearby" : "WR_WorkNotNative"));
                 if ((giver.workTags & disabled) != WorkTags.None)
                     blocks.Add(new WorkCapabilityFact(giver.defName, null, "ludeon.rimworld", "WR_WorkBlockedTags"));
                 if (giver.requiredCapacities != null)

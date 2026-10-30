@@ -44,8 +44,9 @@ namespace WorkRoles.Core.Recs
         }
 
         /// Detached producer-owned inputs: never mutate after publication.
-        /// Assignment Enabled is deliberately excluded from plan inputs;
-        /// apply/preview projections overlay current assignment state separately.
+        /// Assignment activation is consumed only for identities that can
+        /// participate in composite substitution or overlapping work ownership,
+        /// never ordinary scoring.
         public ColonyView Colony { get; }
         internal EngineContext? CachedContext => plan?.Context ?? context;
         internal EngineContext Context => CachedContext ?? (context = new EngineContext(Colony));
@@ -73,12 +74,17 @@ namespace WorkRoles.Core.Recs
     /// Owner: one window, partitioned by store identity. Key: exact ordered pawn
     /// identity cohort (at most two retained: listed pawns and recommendation map).
     /// Value: immutable-by-ownership detached colony, lazy plan and verdict maps.
-    /// Dependencies: catalog identity; assignment membership/order/pin revision;
+    /// Dependencies: catalog identity; assignment membership/order/pin revision
+    /// and activation overrides for composite/member identities, plus effective
+    /// activation of ordinary existing sources overlapping a held eligible override;
     /// external-facts generation; recommendation order revision; normalized tuning;
     /// optional mechanical-supply snapshot identity (separate from human facts).
     /// Refresh: event-driven on a changed stamp, never polling authoritative data.
     /// Equality: equal consumed inputs preserve snapshot and plan identity; verdicts
     /// ignore assignment/order/activation/tuning and preserve equal result identity.
+    /// Each cohort retains its latest immutable pawn projections separately from
+    /// the semantically equal published plan, so a later catalog edit can start
+    /// consuming an assignment state previously irrelevant to substitution.
     /// Teardown: Reset/store change drops both cohorts and every prior owner reference.
     /// Deferred reads of retired snapshots calculate detached results without
     /// publishing pawn entries into the current owner/cohort cache.
@@ -98,16 +104,18 @@ namespace WorkRoles.Core.Recs
             new Dictionary<TPawn, PawnEntry>(ReferenceIdentityComparer<TPawn>.Instance);
         private readonly List<TPawn> removedPawns = new List<TPawn>();
         public PawnView PawnFor<TState>(object owner, TPawn pawn, int assignments,
-            object external, TState state, Func<TState, PawnView> build)
+            object external, TState state, Func<TState, PawnView> build, int assignmentActivation = 0)
         {
             EnsureOwner(owner);
             PawnEntry entry = PawnEntryFor(pawn);
             if (entry.Projection != null && entry.Assignments == assignments
+                && entry.AssignmentActivation == assignmentActivation
                 && ReferenceEquals(entry.External, external)) return entry.Projection;
             PawnView rebuilt = build(state);
             if (entry.Projection == null || !RecommendationInputEquality.Pawn(rebuilt, entry.Projection))
                 entry.Projection = rebuilt;
             entry.Assignments = assignments;
+            entry.AssignmentActivation = assignmentActivation;
             entry.External = external;
             return entry.Projection;
         }
@@ -130,7 +138,7 @@ namespace WorkRoles.Core.Recs
             object catalog, int assignments, int external, int order,
             RecommendationsTuningOptions options,
             Func<IReadOnlyList<TPawn>, IReadOnlyList<PawnView>?, ColonyView> build,
-            object? mechanicalSupply = null)
+            object? mechanicalSupply = null, int assignmentActivation = 0)
         {
             EnsureOwner(owner);
             Entry entry;
@@ -153,14 +161,17 @@ namespace WorkRoles.Core.Recs
             bool inputsCurrent = previous != null
                 && ReferenceEquals(entry.Catalog, catalog)
                 && ReferenceEquals(entry.MechanicalSupply, mechanicalSupply)
-                && entry.Assignments == assignments && entry.External == external
+                && entry.Assignments == assignments && entry.AssignmentActivation == assignmentActivation
+                && entry.External == external
                 && entry.Order == order;
             if (inputsCurrent && ReferenceEquals(entry.Options, options))
                 return previous!;
             IReadOnlyList<PawnView>? reusablePawns = previous != null
-                && entry.Assignments == assignments && entry.External == external
-                    ? previous.Colony.Pawns : null;
+                && entry.Assignments == assignments && entry.AssignmentActivation == assignmentActivation
+                && entry.External == external
+                    ? entry.LatestPawns : null;
             ColonyView colony = inputsCurrent ? previous!.Colony : build(pawns, reusablePawns);
+            if (!inputsCurrent) entry.LatestPawns = colony.Pawns;
             if (previous != null && !ReferenceEquals(colony, previous.Colony)
                 && RecommendationInputEquality.Plan(colony, previous.Colony))
                 colony = previous.Colony;
@@ -170,6 +181,7 @@ namespace WorkRoles.Core.Recs
             entry.Catalog = catalog;
             entry.MechanicalSupply = mechanicalSupply;
             entry.Assignments = assignments;
+            entry.AssignmentActivation = assignmentActivation;
             entry.External = external;
             entry.Order = order;
             entry.Options = options;
@@ -230,6 +242,7 @@ namespace WorkRoles.Core.Recs
         private sealed class PawnEntry
         {
             internal int Assignments;
+            internal int AssignmentActivation;
             internal object? External;
             internal PawnView? Projection;
             internal PawnView? VerdictPawn;
@@ -273,8 +286,10 @@ namespace WorkRoles.Core.Recs
             internal readonly TPawn[] Pawns;
             internal readonly IRecommendationVerdictSource Verdicts;
             internal object? Catalog;
+            internal IReadOnlyList<PawnView>? LatestPawns;
             internal object? MechanicalSupply;
             internal int Assignments;
+            internal int AssignmentActivation;
             internal int External;
             internal int Order;
             internal RecommendationsTuningOptions? Options;
@@ -306,7 +321,7 @@ namespace WorkRoles.Core.Recs
                     || !Sequence(a.BandMins, b.BandMins) || !Sequence(a.BandMaxes, b.BandMaxes)) return false;
             }
             for (int index = 0; index < left.Pawns.Count; index++)
-                if (!Pawn(left.Pawns[index], right.Pawns[index])) return false;
+                if (!Pawn(left.Pawns[index], right.Pawns[index], left.Roles)) return false;
             return true;
         }
 
@@ -329,7 +344,7 @@ namespace WorkRoles.Core.Recs
                 && a.PartialServiceGivers.SetEquals(b.PartialServiceGivers)
                 && Sequence(a.ActiveRoleIds, b.ActiveRoleIds) && Pawn(a.Facts, b.Facts);
 
-        internal static bool Pawn(PawnView a, PawnView b)
+        internal static bool Pawn(PawnView a, PawnView b, IReadOnlyList<RoleView>? stateRoles = null)
         {
             if (ReferenceEquals(a, b)) return true;
             if (a.BiologicalAgeTicks != b.BiologicalAgeTicks || a.AgeLimitsApply != b.AgeLimitsApply
@@ -342,8 +357,92 @@ namespace WorkRoles.Core.Recs
                 || a.Existing.Count != b.Existing.Count) return false;
             for (int index = 0; index < a.Existing.Count; index++)
                 if (a.Existing[index].RoleId != b.Existing[index].RoleId
-                    || a.Existing[index].Pinned != b.Existing[index].Pinned) return false;
+                    || a.Existing[index].Pinned != b.Existing[index].Pinned
+                    || (a.Existing[index].Enabled != b.Existing[index].Enabled
+                        || a.Existing[index].ForceOn != b.Existing[index].ForceOn)
+                        && (stateRoles == null || CompositeConsumesState(stateRoles, a.Existing[index].RoleId)
+                            || PartialOwnerActivationChanged(stateRoles, a, b, index))) return false;
             return true;
+        }
+
+        private static bool CompositeConsumesState(IReadOnlyList<RoleView> roles, int roleId)
+        {
+            for (int index = 0; index < roles.Count; index++)
+            {
+                RoleView role = roles[index];
+                if ((role.Id == roleId || role.MemberRoleIds?.Contains(roleId) == true)
+                    && CompositeSubstitutionPolicy.IsCandidate(role, roles)) return true;
+            }
+            return false;
+        }
+
+        private static bool PartialOwnerActivationChanged(IReadOnlyList<RoleView> roles, PawnView before, PawnView after, int at)
+        {
+            AssignmentView oldAssignment = before.Existing[at], newAssignment = after.Existing[at];
+            if (oldAssignment.Pinned) return false; // apply retains that owner itself
+            RoleView? source = null;
+            for (int index = 0; index < roles.Count; index++)
+                if (roles[index].Id == oldAssignment.RoleId) { source = roles[index]; break; }
+            if (source?.MemberRoleIds == null || source.HasRules || source.Blocker) return false;
+            bool oldActive = oldAssignment.Enabled && (source.Enabled || oldAssignment.ForceOn);
+            bool newActive = newAssignment.Enabled && (source.Enabled || newAssignment.ForceOn);
+            return oldActive != newActive
+                && (HasConnectedCompositeOverride(roles, before.Existing, source.MemberRoleIds)
+                    || HasConnectedCompositeOverride(roles, after.Existing, source.MemberRoleIds));
+        }
+
+        private static bool HasConnectedCompositeOverride(IReadOnlyList<RoleView> roles,
+            List<AssignmentView> existing, List<int> sourceMembers)
+        {
+            List<RoleView>? connected = null;
+            for (int index = 0; index < existing.Count; index++)
+            {
+                AssignmentView assignment = existing[index];
+                if (assignment.Enabled && !assignment.ForceOn) continue;
+                for (int roleIndex = 0; roleIndex < roles.Count; roleIndex++)
+                {
+                    RoleView role = roles[roleIndex];
+                    if (role.Id != assignment.RoleId || !CompositeSubstitutionPolicy.IsCandidate(role, roles)) continue;
+                    (connected ??= new List<RoleView>()).Add(role);
+                    break;
+                }
+            }
+            if (connected == null) return false;
+            // Same bounded held-composite member-overlap closure used by the
+            // ownership projection. A removed ineligible source can consume
+            // activation through an enabled bridge, not just a direct overlap.
+            bool added;
+            do
+            {
+                added = false;
+                for (int index = 0; index < existing.Count; index++)
+                {
+                    int id = existing[index].RoleId;
+                    bool included = false;
+                    for (int prior = 0; prior < connected.Count; prior++)
+                        if (connected[prior].Id == id) { included = true; break; }
+                    if (included) continue;
+                    for (int roleIndex = 0; roleIndex < roles.Count; roleIndex++)
+                    {
+                        RoleView role = roles[roleIndex];
+                        if (role.Id != id || !CompositeSubstitutionPolicy.IsCandidate(role, roles)) continue;
+                        for (int prior = 0; prior < connected.Count; prior++)
+                            if (SharesCompositeMember(role.MemberRoleIds!, connected[prior].MemberRoleIds!))
+                            { connected.Add(role); added = true; break; }
+                        break;
+                    }
+                }
+            } while (added);
+            for (int index = 0; index < connected.Count; index++)
+                if (SharesCompositeMember(sourceMembers, connected[index].MemberRoleIds!)) return true;
+            return false;
+        }
+
+        private static bool SharesCompositeMember(List<int> first, List<int> second)
+        {
+            for (int index = 0; index < first.Count; index++)
+                if (second.Contains(first[index])) return true;
+            return false;
         }
 
         internal static bool Suitability(ColonyView left, ColonyView right)

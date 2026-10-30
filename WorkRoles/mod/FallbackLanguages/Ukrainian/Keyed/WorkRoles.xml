@@ -373,12 +373,6 @@ WorkRoles надає керованим колоністам списки зав
   <WR_RecTuneHunterSectionIntro>Незакріплений мисливець розміщується за навичкою стрільби: вправніші стрільці полюють пізніше, бо їхній час цінніший для іншої роботи.</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneHunterTiersRow>Максимальна стрільба рівня</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Межі стрільби для місця мисливця. Рівень 1 ставить мисливця одразу після основних робіт, 2 і 3 — після середніх та останніх робочих ролей, а понад рівень 4 — останнім.</WR_RecTuneHunterTiersRowDesc>
-  <WR_RecTuneLeadMinimumConnectedTargets>Пов'язані цілі для розподілу</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Мінімум пов'язаних навчальних цілей, за якого планувальник розподіляє їхні провідні ролі між різними працівниками.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
-  <WR_RecTuneLeadMinimumSignal>Мінімальна ознака провідної ролі</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>Найнижча ознака ролі для працівника, обраного окремим провідним виконавцем шляху навчання.</WR_RecTuneLeadMinimumSignalDesc>
-  <WR_RecTuneLeadSection>Розподіл провідних ролей</WR_RecTuneLeadSection>
-  <WR_RecTuneLeadSectionIntro>Коли кілька шляхів навчання мають спільну ціль, ці параметри розподіляють провідні ролі між різними колоністами.</WR_RecTuneLeadSectionIntro>
   <WR_RecTuneMinimumPickRow>Бонус мінімального добору</WR_RecTuneMinimumPickRow>
   <WR_RecTuneMinimumPickRowDesc>Бали порядку для першого, другого, третього й кожного наступного працівника, вибраного для мінімального забезпечення ролі.</WR_RecTuneMinimumPickRowDesc>
   <WR_RecTuneMultiplierAwfulTip>Непридатність. Стовпець діє лише тоді, коли мінімальна ознака допускає таких кандидатів.</WR_RecTuneMultiplierAwfulTip>
@@ -657,4 +651,8 @@ WorkRoles керує пріоритетами колоністів із роля
   <WR_RecMechanicalSelected>Може виконувати роботу, не охоплену іншими рекомендованими ролями.</WR_RecMechanicalSelected>
   <WR_RecMechanicalRetained>Зберігає свою поточну основну роль.</WR_RecMechanicalRetained>
   <WR_RecMechanicalIncapacitated>Цей працівник знерухомлений. Його ролі збережено до одужання.</WR_RecMechanicalIncapacitated>
+  <WR_BlockerTrainingConfirm>«{0}» використовується в навчальному шляху. Перетворити цю роль на блокувальну? Рекомендації більше не використовуватимуть її для навчання, а шляхи, що залежать від неї, можуть стати недоступними. Збережені шляхи залишаться. Наявні призначення блокуватимуть ці роботи в ролях, розташованих нижче.</WR_BlockerTrainingConfirm>
+  <WR_RoleCapCannotTakeJobs>{0} не може виконувати призначені завдання для {1}</WR_RoleCapCannotTakeJobs>
+  <WR_WorkNativeFireNearby>може гасити пожежі поблизу під час простою, але не бере призначених завдань із пожежогасіння</WR_WorkNativeFireNearby>
+  <WR_WorkNotNative>не підтримується призначеннями робіт для цієї моделі</WR_WorkNotNative>
 </LanguageData>

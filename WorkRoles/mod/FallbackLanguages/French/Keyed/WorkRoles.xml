@@ -64,8 +64,6 @@
   <WR_RecTuneOrderingSectionIntro>Une fois les rôles d'un colon choisis, ces options déterminent leur ordre dans la liste, qui est aussi leur ordre de priorité de travail.</WR_RecTuneOrderingSectionIntro>
   <WR_RecTuneOptionalSection>Parcours de formation et objectifs facultatifs</WR_RecTuneOptionalSection>
   <WR_RecTuneOptionalSectionIntro>Ces options déterminent quand un parcours de formation s'active pour un colon et quand un rôle facultatif à plusieurs compétences mérite d'être recommandé.</WR_RecTuneOptionalSectionIntro>
-  <WR_RecTuneLeadSection>Diversification des responsables</WR_RecTuneLeadSection>
-  <WR_RecTuneLeadSectionIntro>Lorsque plusieurs parcours de formation partagent un objectif, ces options répartissent leurs rôles de responsable entre plusieurs colons au lieu de les concentrer sur un seul.</WR_RecTuneLeadSectionIntro>
   <WR_RecTuneHunterSection>Placement du Chasseur</WR_RecTuneHunterSection>
   <WR_RecTuneHunterSectionIntro>Un rôle Chasseur non épinglé se place dynamiquement selon le niveau de tir : les meilleurs tireurs chassent plus tard dans l'ordre de priorité, car leur temps est plus utile ailleurs.</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneCandidateMinimumSignal>Signal minimal des candidats</WR_RecTuneCandidateMinimumSignal>
@@ -109,10 +107,6 @@
   <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>Signal utilisé à partir du niveau de promotion supérieur pour les affectations supplémentaires à une compétence et l'aptitude des objectifs facultatifs.</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
   <WR_RecTuneOptionalTargetMinimumPoints>Points minimaux des objectifs facultatifs</WR_RecTuneOptionalTargetMinimumPoints>
   <WR_RecTuneOptionalTargetMinimumPointsDesc>Somme minimale des crans de signal dépassant le plancher configuré pour recommander un objectif facultatif à plusieurs compétences.</WR_RecTuneOptionalTargetMinimumPointsDesc>
-  <WR_RecTuneLeadMinimumConnectedTargets>Objectifs liés pour la diversification</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Nombre minimal d'objectifs de formation liés avant que le planificateur tente de confier leurs rôles de responsable à différents travailleurs.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
-  <WR_RecTuneLeadMinimumSignal>Signal minimal du responsable</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>Signal de rôle minimal autorisé pour un travailleur choisi comme responsable diversifié d'un parcours de formation.</WR_RecTuneLeadMinimumSignalDesc>
   <WR_RecTuneHunterTiersRow>Niveau de tir maximal par palier</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Seuils de tir pour la place dynamique du Chasseur. Le palier 1 le place juste après les travaux de base, les paliers 2 et 3 après les rôles de travail intermédiaires et derniers ; au-delà du palier 4, il passe en dernier.</WR_RecTuneHunterTiersRowDesc>
   <WR_TrainingSection>Parcours de formation</WR_TrainingSection>
@@ -657,4 +651,8 @@ La tâche n'a pas été interrompue. Cet avertissement apparaît une fois par sa
   <WR_RecMechanicalSelected>Peut effectuer des tâches que ses autres rôles recommandés ne couvrent pas.</WR_RecMechanicalSelected>
   <WR_RecMechanicalRetained>Conserve son rôle principal actuel.</WR_RecMechanicalRetained>
   <WR_RecMechanicalIncapacitated>Cette unité est à terre. Ses rôles sont conservés pour son rétablissement.</WR_RecMechanicalIncapacitated>
+  <WR_BlockerTrainingConfirm>« {0} » est utilisé dans un parcours de formation. Le transformer en rôle de blocage ? Les recommandations ne l'utiliseront plus pour la formation, et les parcours qui en dépendent pourraient devenir indisponibles. Les parcours enregistrés seront conservés. Les affectations existantes bloqueront ces tâches dans les rôles placés en dessous.</WR_BlockerTrainingConfirm>
+  <WR_RoleCapCannotTakeJobs>{0} ne peut pas effectuer les tâches assignées pour {1}</WR_RoleCapCannotTakeJobs>
+  <WR_WorkNativeFireNearby>peut éteindre les incendies à proximité en période d’inactivité, mais n’effectue pas les tâches de lutte contre les incendies assignées</WR_WorkNativeFireNearby>
+  <WR_WorkNotNative>non pris en charge par les affectations de travail de ce modèle</WR_WorkNotNative>
 </LanguageData>

@@ -1343,7 +1343,7 @@ namespace WorkRoles.UI
                 StructuredTipPresenter.TipRegion(blockRect, header.BlockerTip);
                 Widgets.CheckboxLabeled(blockRect, header.BlockerLabel, ref blocker);
                 if (blocker != header.Blocker)
-                    RoleCommands.SetRoleBlocker(model.RoleId, blocker);
+                    RequestBlockerChange(header, blocker);
             }
             y += rowH;
 
@@ -1418,6 +1418,22 @@ namespace WorkRoles.UI
                 else
                     RoleCommands.SetRoleComposite(roleId, compositeWanted);
             }
+        }
+
+        // Input-event boundary only: the render snapshot already contains exact
+        // training usage and translated text; no live role traversal occurs here.
+        private static void RequestBlockerChange(RoleEditorHeaderSnapshot header, bool blocker)
+        {
+            if (blocker && header.BlockerTrainingConfirmation != null)
+            {
+                int roleId = header.RoleId;
+                Find.WindowStack.Add(new CompactConfirmDialog(
+                    header.BlockerTrainingConfirmation,
+                    () => RoleCommands.SetRoleBlocker(roleId, true),
+                    header.ConfirmLabel, header.CancelLabel,
+                    UiRevision.Current, destructive: true));
+            }
+            else RoleCommands.SetRoleBlocker(header.RoleId, blocker);
         }
 
         /// "Skills used:" with the primary (most frequent) skill white and the

@@ -64,8 +64,6 @@
   <WR_RecTuneOrderingSectionIntro>Tras elegir los roles de un colono, estas opciones deciden su orden, que también será su prioridad de trabajo.</WR_RecTuneOrderingSectionIntro>
   <WR_RecTuneOptionalSection>Opciones de rutas de formación y objetivos opcionales</WR_RecTuneOptionalSection>
   <WR_RecTuneOptionalSectionIntro>Deciden cuándo se activa una ruta de formación para un colono y cuándo merece la pena recomendar un rol opcional de varias habilidades.</WR_RecTuneOptionalSectionIntro>
-  <WR_RecTuneLeadSection>Opciones de diversificación de responsables</WR_RecTuneLeadSection>
-  <WR_RecTuneLeadSectionIntro>Cuando varias rutas comparten un objetivo, estas opciones reparten los roles principales entre distintos colonos en vez de acumularlos en uno.</WR_RecTuneLeadSectionIntro>
   <WR_RecTuneHunterSection>Opciones de posición del Cazador</WR_RecTuneHunterSection>
   <WR_RecTuneHunterSectionIntro>Un rol Cazador no fijado se coloca según Tiro: los mejores tiradores cazan más tarde en el orden de prioridades porque su tiempo resulta más valioso en otros trabajos.</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneCandidateMinimumSignal>Señal mínima de candidatos</WR_RecTuneCandidateMinimumSignal>
@@ -109,10 +107,6 @@
   <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>Señal usada para asignaciones extra de una habilidad y aptitud de objetivos opcionales al alcanzar el nivel de promoción alta.</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
   <WR_RecTuneOptionalTargetMinimumPoints>Puntos mínimos del objetivo opcional</WR_RecTuneOptionalTargetMinimumPoints>
   <WR_RecTuneOptionalTargetMinimumPointsDesc>Suma mínima de escalones de señal por encima del mínimo configurado para recomendar un objetivo opcional de varias habilidades.</WR_RecTuneOptionalTargetMinimumPointsDesc>
-  <WR_RecTuneLeadMinimumConnectedTargets>Objetivos conectados para diversificar</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Mínimo de objetivos de formación conectados antes de intentar repartir sus roles responsables entre distintos trabajadores.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
-  <WR_RecTuneLeadMinimumSignal>Señal mínima del responsable</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>Señal mínima del rol para elegir a un trabajador como responsable diversificado de una ruta.</WR_RecTuneLeadMinimumSignalDesc>
   <WR_RecTuneHunterTiersRow>Tiro máximo de cada nivel</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Límites de Tiro para la posición dinámica del Cazador. El nivel 1 lo coloca justo tras el trabajo básico; los niveles 2 y 3, tras los roles laborales intermedios y finales; por encima del nivel 4 queda el último.</WR_RecTuneHunterTiersRowDesc>
   <WR_TrainingSection>Ruta de formación</WR_TrainingSection>
@@ -657,4 +651,8 @@ No se interrumpió el trabajo. Este aviso aparece una vez por partida.</WR_Giver
   <WR_RecMechanicalSelected>Puede realizar tareas que sus otros roles recomendados no cubren.</WR_RecMechanicalSelected>
   <WR_RecMechanicalRetained>Conserva su rol principal actual.</WR_RecMechanicalRetained>
   <WR_RecMechanicalIncapacitated>Esta unidad está incapacitada. Conserva sus roles para cuando se recupere.</WR_RecMechanicalIncapacitated>
+  <WR_BlockerTrainingConfirm>«{0}» se usa en una ruta de entrenamiento. ¿Convertirlo en un rol de bloqueo? Las recomendaciones dejarán de usarlo para entrenar, y las rutas que lo necesiten podrían dejar de estar disponibles. Se conservarán las rutas guardadas. Las asignaciones existentes bloquearán esas tareas en los roles situados por debajo.</WR_BlockerTrainingConfirm>
+  <WR_RoleCapCannotTakeJobs>{0} no puede aceptar tareas asignadas de {1}</WR_RoleCapCannotTakeJobs>
+  <WR_WorkNativeFireNearby>puede apagar incendios cercanos cuando está inactivo, pero no acepta tareas asignadas de extinción de incendios</WR_WorkNativeFireNearby>
+  <WR_WorkNotNative>no es compatible con las asignaciones de trabajo de este modelo</WR_WorkNotNative>
 </LanguageData>

@@ -74,6 +74,27 @@ namespace WorkRoles.Core.Recs
             EngineContext facts, int pawnIndex, int[] ordered)
         {
             int at = HunterInsertionIndex(facts, pawnIndex, ordered);
+            var existing = facts.Colony.Pawns[pawnIndex].Existing;
+            int priorHunter = -1;
+            for (int index = 0; index < existing.Count; index++)
+                if (existing[index].RoleId == facts.Colony.HunterRoleId) { priorHunter = index; break; }
+            if (priorHunter >= 0)
+            {
+                // Hunter's tier chooses a preferred slot within the window
+                // left by the player's surviving protected assignments.
+                int lower = 0, upper = ordered.Length;
+                for (int index = 0; index < existing.Count; index++)
+                {
+                    int id = existing[index].RoleId;
+                    RoleView role = facts.RoleOf(id);
+                    if (!existing[index].Pinned && (role == null || !role.HasRules && !role.Blocker)) continue;
+                    int protectedAt = System.Array.IndexOf(ordered, id);
+                    if (protectedAt < 0) continue;
+                    if (index < priorHunter) lower = System.Math.Max(lower, protectedAt + 1);
+                    if (index > priorHunter) upper = System.Math.Min(upper, protectedAt);
+                }
+                at = System.Math.Min(upper, System.Math.Max(lower, at));
+            }
             var placed = new int[ordered.Length + 1];
             for (int index = 0; index < at; index++)
                 placed[index] = ordered[index];
@@ -185,8 +206,12 @@ namespace WorkRoles.Core.Recs
                 {
                     AssignmentView assignment = pawn.Existing[assignmentIndex];
                     RoleView role = facts.RoleOf(assignment.RoleId);
-                    if (role == null || facts.IsRecommendationExcluded(role) || role.MemberRoleIds != null)
+                    if (role == null || facts.IsRecommendationExcluded(role))
                         continue;
+                    // Ordinary composite pins already merge at the apply
+                    // boundary. Retain only authored rule/veto composites here
+                    // so their protection participates in the recommendation.
+                    if (role.MemberRoleIds != null && !role.HasRules && !role.Blocker) continue;
                     // Unskilled roles with demand are planned like any other and
                     // demand-less ones drop out; only an explicit pin, rule, or
                     // blocker carries an existing assignment over.

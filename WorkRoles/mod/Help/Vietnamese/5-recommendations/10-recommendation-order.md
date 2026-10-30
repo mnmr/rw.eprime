@@ -13,7 +13,7 @@ title: Thứ tự và loại trừ
 Bảng **Vai trò bị loại** đầu thẻ Đề xuất kiểm soát vai trò không bao giờ được đề xuất. Dùng Thêm vai trò để loại; nhấp biểu tượng bỏ trên thẻ để cho phép lại.
 
 <!-- l10n:b-2ff664d1d184 -->
-Người cứu hộ, Lính cứu hỏa, Bệnh nhân, Nghỉ bệnh và Lao công bị loại mặc định vì Cốt lõi và Cơ bản đã bao phủ. Bản lưu cũ nhận mặc định một lần khi cập nhật. Bỏ vai trò khỏi bảng sẽ được tôn trọng ở lần tải sau. Để thêm lại, chọn **Vai trò bị loại mặc định** trong [Khôi phục mặc định](topic:restore-defaults).
+Không vai trò nào bị loại mặc định. Người cứu hộ, Lính cứu hỏa, Bệnh nhân, Nghỉ bệnh và Lao công lặp lại công việc mà Cốt lõi và Cơ bản đã giao cho mọi cư dân, nên chỉ được đề xuất khi các vai trò đó thiếu công việc ấy, hoặc cho robot có công việc gốc phù hợp. Thay đổi trên bảng được tôn trọng ở lần tải sau.
 
 <!-- l10n:b-94e6612dee18 -->
 [Tùy chọn vai trò](topic:role-options) phía dưới liệt kê mọi vai trò chưa bị loại. Loại vai trò ẩn tùy chọn nhưng không xóa; bỏ loại trừ hiện lại chúng.

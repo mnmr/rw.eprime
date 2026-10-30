@@ -373,12 +373,6 @@ Việc không bị ngắt. Thông báo chỉ hiện một lần mỗi bản lưu
   <WR_RecTuneHunterSectionIntro>Vai trò Thợ săn chưa ghim đổi vị trí theo kỹ năng bắn súng: người bắn giỏi săn muộn hơn vì thời gian của họ có ích hơn ở việc khác.</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneHunterTiersRow>Cấp bắn súng tối đa mỗi bậc</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Ngưỡng Bắn súng cho vị trí động của Thợ săn. Bậc 1 đặt ngay sau việc cơ bản; bậc 2 và 3 đặt sau vai trò công việc giữa và cuối; trên bậc 4 đặt cuối cùng.</WR_RecTuneHunterTiersRowDesc>
-  <WR_RecTuneLeadMinimumConnectedTargets>Số mục tiêu nối để chia người dẫn</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Số mục tiêu rèn luyện liên kết tối thiểu trước khi bộ lập kế hoạch thử giao vai trò dẫn đầu cho những người khác nhau.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
-  <WR_RecTuneLeadMinimumSignal>Dấu hiệu tối thiểu người dẫn</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>Dấu hiệu vai trò thấp nhất cho người được chọn dẫn đầu lộ trình khi chia người dẫn.</WR_RecTuneLeadMinimumSignalDesc>
-  <WR_RecTuneLeadSection>Tùy chọn chia người dẫn</WR_RecTuneLeadSection>
-  <WR_RecTuneLeadSectionIntro>Khi nhiều lộ trình cùng mục tiêu, các tùy chọn này chia vai trò dẫn đầu cho nhiều cư dân thay vì dồn một người.</WR_RecTuneLeadSectionIntro>
   <WR_RecTuneMinimumPickRow>Điểm cộng chọn tối thiểu</WR_RecTuneMinimumPickRow>
   <WR_RecTuneMinimumPickRowDesc>Điểm thứ tự cho người đầu, thứ hai, thứ ba và mọi người tiếp theo được chọn để đủ số người giữ tối thiểu.</WR_RecTuneMinimumPickRowDesc>
   <WR_RecTuneMultiplierAwfulTip>Rất không phù hợp. Cột này chỉ có tác dụng khi ngưỡng dấu hiệu tối thiểu cho phép ứng viên Rất không phù hợp.</WR_RecTuneMultiplierAwfulTip>
@@ -657,4 +651,8 @@ Thông báo hiện một lần mỗi mod trong mỗi bản lưu.</WR_SetPriority
   <WR_RecMechanicalSelected>Có thể làm những công việc chưa được các vai trò đề xuất khác đảm nhiệm.</WR_RecMechanicalSelected>
   <WR_RecMechanicalRetained>Giữ vai trò chính hiện tại.</WR_RecMechanicalRetained>
   <WR_RecMechanicalIncapacitated>Đơn vị này đã gục ngã. Các vai trò được giữ lại để tiếp tục khi hồi phục.</WR_RecMechanicalIncapacitated>
+  <WR_BlockerTrainingConfirm>'{0}' đang được dùng trong một lộ trình đào tạo. Chuyển thành vai trò chặn? Các đề xuất sẽ không còn dùng vai trò này để đào tạo, và những lộ trình cần nó có thể không còn khả dụng. Các lộ trình đã lưu sẽ được giữ lại. Các phân công hiện có sẽ chặn những công việc đó trong các vai trò nằm bên dưới.</WR_BlockerTrainingConfirm>
+  <WR_RoleCapCannotTakeJobs>{0} không thể nhận công việc được giao thuộc {1}</WR_RoleCapCannotTakeJobs>
+  <WR_WorkNativeFireNearby>có thể dập lửa gần đó khi rảnh, nhưng không nhận công việc chữa cháy được giao</WR_WorkNativeFireNearby>
+  <WR_WorkNotNative>không được hỗ trợ trong phân công công việc của mẫu này</WR_WorkNotNative>
 </LanguageData>

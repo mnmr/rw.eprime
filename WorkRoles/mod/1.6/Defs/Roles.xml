@@ -90,7 +90,6 @@
     <colorRef>slate-800</colorRef>
     <group>Medical</group>
     <tuning>
-      <excludedFromRecommendations>true</excludedFromRecommendations>
       <category>Important</category>
       <time>PartTime</time>
       <colonyMin>0</colonyMin>
@@ -166,7 +165,6 @@
     <colorRef>slate-800</colorRef>
     <group>Essentials</group>
     <tuning>
-      <excludedFromRecommendations>true</excludedFromRecommendations>
       <category>Important</category>
       <time>PartTime</time>
       <colonyMin>0</colonyMin>
@@ -212,7 +210,6 @@
     <colorRef>slate-800</colorRef>
     <group>Essentials</group>
     <tuning>
-      <excludedFromRecommendations>true</excludedFromRecommendations>
       <category>Important</category>
       <time>PartTime</time>
       <colonyMin>0</colonyMin>
@@ -232,7 +229,6 @@
     <colorRef>slate-800</colorRef>
     <group>Essentials</group>
     <tuning>
-      <excludedFromRecommendations>true</excludedFromRecommendations>
       <category>Important</category>
       <time>PartTime</time>
       <colonyMin>0</colonyMin>
@@ -252,7 +248,6 @@
     <colorRef>slate-800</colorRef>
     <group>Essentials</group>
     <tuning>
-      <excludedFromRecommendations>true</excludedFromRecommendations>
       <category>Important</category>
       <time>PartTime</time>
       <colonyMin>0</colonyMin>

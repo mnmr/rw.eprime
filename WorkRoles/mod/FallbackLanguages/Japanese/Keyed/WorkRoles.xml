@@ -373,12 +373,6 @@ WorkRolesはゲーム標準の仕組みで管理中の入植者に作業一覧�
   <WR_RecTuneHunterSectionIntro>未固定の狩人ロールは射撃スキルで配置を変えます。射撃が得意な人ほど他の仕事も有益なため、狩りを後回しにします。</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneHunterTiersRow>段階ごとの射撃上限</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>狩人の配置を決める射撃レベル境界です。第1段階は基本作業の直後、第2・第3段階は作業ロールの中間・最後の後、第4段階を超えると最後に置きます。</WR_RecTuneHunterTiersRowDesc>
-  <WR_RecTuneLeadMinimumConnectedTargets>分散を始める関連目標数</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>育成の主担当を別々の作業者に分散し始める、関連する育成目標数の下限です。</WR_RecTuneLeadMinimumConnectedTargetsDesc>
-  <WR_RecTuneLeadMinimumSignal>主担当の最低適性</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>分散した育成パスの主担当に選べる作業者のロール適性下限です。</WR_RecTuneLeadMinimumSignalDesc>
-  <WR_RecTuneLeadSection>育成の主担当を分散</WR_RecTuneLeadSection>
-  <WR_RecTuneLeadSectionIntro>複数の育成パスが目標を共有する際、主担当を一人に集中させず複数人に分散します。</WR_RecTuneLeadSectionIntro>
   <WR_RecTuneMinimumPickRow>最低人数枠の加点</WR_RecTuneMinimumPickRow>
   <WR_RecTuneMinimumPickRowDesc>最低人数を満たすために選んだ1人目、2人目、3人目、それ以降の作業者への並び順の加点です。</WR_RecTuneMinimumPickRowDesc>
   <WR_RecTuneMultiplierAwfulTip>極めて不向き。候補の最低適性がこの判定を許す場合だけ使います。</WR_RecTuneMultiplierAwfulTip>
@@ -657,4 +651,8 @@ WorkRolesはゲーム標準の仕組みで管理中の入植者に作業一覧�
   <WR_RecMechanicalSelected>他の推奨役割ではカバーされない仕事を担当できます。</WR_RecMechanicalSelected>
   <WR_RecMechanicalRetained>現在の主な役割を維持します。</WR_RecMechanicalRetained>
   <WR_RecMechanicalIncapacitated>この作業者は行動不能です。回復後に備えて役割を維持します。</WR_RecMechanicalIncapacitated>
+  <WR_BlockerTrainingConfirm>「{0}」は訓練経路で使用されています。ブロック役割に変更しますか？推奨では訓練に使用されなくなり、この役割が必要な経路は利用できなくなる場合があります。保存済みの経路は保持されます。既存の割り当てでは、この役割より下にある役割の該当する仕事がブロックされます。</WR_BlockerTrainingConfirm>
+  <WR_RoleCapCannotTakeJobs>{0}は{1}の仕事の割り当てに対応していません</WR_RoleCapCannotTakeJobs>
+  <WR_WorkNativeFireNearby>待機中に近くの火を消すことはできますが、消火の仕事の割り当てには対応していません</WR_WorkNativeFireNearby>
+  <WR_WorkNotNative>このモデルでは割り当てられない仕事です</WR_WorkNotNative>
 </LanguageData>

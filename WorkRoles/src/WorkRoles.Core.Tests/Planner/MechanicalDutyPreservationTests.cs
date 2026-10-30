@@ -127,13 +127,15 @@ public class MechanicalDutyPreservationTests
 
         await Assert.That(string.Join(",", target.RoleIds)).IsEqualTo("1,2");
         await Assert.That(verdicts[1]).IsEqualTo(SignalBucket.Great);
-        await Assert.That(verdicts[3]).IsEqualTo(SignalBucket.Awful);
+        // Research is rejected as incapable, but its badge still rates the
+        // robot's Intellectual skill like a human's would.
+        await Assert.That(verdicts[3]).IsEqualTo(SignalBucket.Great);
         await Assert.That(reasons[1].SpecialPickReason).IsEqualTo(SpecialPickReason.MechanicalPrimary);
         await Assert.That(reasons[2].Recommended).IsTrue();
         await Assert.That(reasons[2].SpecialPickReason).IsEqualTo(SpecialPickReason.MechanicalWork);
         await Assert.That(reasons[3].Recommended).IsFalse();
         await Assert.That(reasons[3].RejectReason).IsEqualTo(PickRejectReason.Incapable);
-        await Assert.That(reasons[3].SignalBucket).IsEqualTo(SignalBucket.Awful);
+        await Assert.That(reasons[3].SignalBucket).IsEqualTo(SignalBucket.Great);
         await Assert.That(reasons[1].RequiredSkills).Contains("Construction");
         foreach (RoleRecommendationExplanation reason in reasons.Values)
         {

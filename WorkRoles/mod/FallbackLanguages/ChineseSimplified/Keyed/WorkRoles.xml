@@ -64,8 +64,6 @@
   <WR_RecTuneOrderingSectionIntro>选定殖民者的职责后，这些选项决定列表顺序，也就是工作优先顺序。</WR_RecTuneOrderingSectionIntro>
   <WR_RecTuneOptionalSection>训练路径与可选目标选项</WR_RecTuneOptionalSection>
   <WR_RecTuneOptionalSectionIntro>决定何时为殖民者启用训练路径，以及何时值得推荐涉及多项技能的可选职责。</WR_RecTuneOptionalSectionIntro>
-  <WR_RecTuneLeadSection>负责人分散选项</WR_RecTuneLeadSection>
-  <WR_RecTuneLeadSectionIntro>多条训练路径共享目标时，这些选项将负责职责分配给不同殖民者，避免集中于一人。</WR_RecTuneLeadSectionIntro>
   <WR_RecTuneHunterSection>猎人排序选项</WR_RecTuneHunterSection>
   <WR_RecTuneHunterSectionIntro>未固定的“猎人”按射击技能动态插入：射手越好，狩猎优先级越靠后，因为其时间在其他工作上更有价值。</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneCandidateMinimumSignal>候选人最低信号</WR_RecTuneCandidateMinimumSignal>
@@ -109,10 +107,6 @@
   <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>达到高段技能提升等级后，用于单技能额外分配资格和可选目标适性评分的信号。</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
   <WR_RecTuneOptionalTargetMinimumPoints>可选目标最低分值</WR_RecTuneOptionalTargetMinimumPoints>
   <WR_RecTuneOptionalTargetMinimumPointsDesc>推荐多技能可选目标时，各信号高于配置底线的级差总和至少须达到此值。</WR_RecTuneOptionalTargetMinimumPointsDesc>
-  <WR_RecTuneLeadMinimumConnectedTargets>触发分散的关联目标数</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>关联训练目标达到此最少数量后，规划器才尝试把负责职责分配给不同工作者。</WR_RecTuneLeadMinimumConnectedTargetsDesc>
-  <WR_RecTuneLeadMinimumSignal>负责人最低信号</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>选择工作者作为分散训练路径负责人时，职责信号必须达到的最低值。</WR_RecTuneLeadMinimumSignalDesc>
   <WR_RecTuneHunterTiersRow>各档最高射击等级</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>“猎人”动态位置的射击等级分界。第 1 档将猎人放在基础工作之后，第 2、3 档分别放在中间和最后的工作职责之后，超过第 4 档则排在末尾。</WR_RecTuneHunterTiersRowDesc>
   <WR_TrainingSection>训练路径</WR_TrainingSection>
@@ -657,4 +651,8 @@ WorkRoles 通过游戏标准方法为受管理殖民者提供工作列表。另�
   <WR_RecMechanicalSelected>可以承担其他推荐角色未涵盖的工作。</WR_RecMechanicalSelected>
   <WR_RecMechanicalRetained>保留当前的主要角色。</WR_RecMechanicalRetained>
   <WR_RecMechanicalIncapacitated>该工作单位已倒地。角色会保留，待其恢复后继续工作。</WR_RecMechanicalIncapacitated>
+  <WR_BlockerTrainingConfirm>“{0}”正用于训练路径。要将其改为阻止角色吗？推荐将不再用它进行训练，依赖它的路径可能无法使用。已保存的路径会保留。现有分配会阻止排在此角色之后的角色执行这些工作。</WR_BlockerTrainingConfirm>
+  <WR_RoleCapCannotTakeJobs>{0}无法将{1}作为分配的工作来执行</WR_RoleCapCannotTakeJobs>
+  <WR_WorkNativeFireNearby>闲暇时可扑灭附近的火焰，但不会执行分配的灭火工作</WR_WorkNativeFireNearby>
+  <WR_WorkNotNative>此型号的工作分配不支持此类工作</WR_WorkNotNative>
 </LanguageData>

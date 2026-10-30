@@ -59,7 +59,16 @@ namespace WorkRoles.Core
             {
                 ImportIdentitySource source = imports![importIndex]; // importCount > 0 implies non-null
                 int match = FindPreferred(source, existing, claimed);
-                if (match < 0) match = FindLabel(source, existing, claimed);
+                matches[importIndex] = match;
+                if (match >= 0) claimed[match] = true;
+            }
+            // Reserve every template match before legacy names can claim any
+            // target. File order must not let an earlier custom role steal a
+            // later renamed template's identity (including unselected rows).
+            for (int importIndex = 0; importIndex < importCount; importIndex++)
+            {
+                if (matches[importIndex] >= 0) continue;
+                int match = FindLabel(imports![importIndex], existing, claimed);
                 matches[importIndex] = match;
                 if (match >= 0) claimed[match] = true;
             }

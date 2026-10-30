@@ -205,6 +205,7 @@ public static class SampleColony
                 {
                     RoleId = roleId,
                     Enabled = state != "Disabled",
+                    ForceOn = state == "ForceOn",
                     Pinned = pinned,
                 }
             );

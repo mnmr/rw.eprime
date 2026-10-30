@@ -30,7 +30,7 @@ Code shared across the mods lives in [Shared](Shared/) and is compiled directly 
 - **[Shared/GameLib](Shared/GameLib/)** (`RimShared.GameLib`) — game-side mechanics shared by some mods, opted into one subfolder at a time because a subfolder may carry Harmony patches. [Locations](Shared/GameLib/Locations/) (floor-map canonicalization, map classification, the player-faction binding and the location-transition patches) is compiled into Implanner and WorkRoles only; each mod supplies its side of the partial hooks.
 - **[Shared/Tests](Shared/Tests/)** — behavioral tests for `RimShared.Common` (`RimShared.Common.Tests`), test-only helpers in `Shared/Tests/Support`, and isolated in-game regression probes. These are separate from the shipped mods.
 - **[Shared/tools/automation](Shared/tools/automation/)** — shared commands for automated in-game verification (run creation, launch, input, capture and cleanup). Each run owns an independent disposable profile and copied mod assemblies. The curated profile baseline is committed under [AutomationProfiles/Shared/Config](AutomationProfiles/Shared/Config/).
-- **[Shared/tools/localization](Shared/tools/localization/)** — translation checks and incremental updates through Codex CLI, with English-source hashes retained in [Shared/Translations/Manifests](Shared/Translations/Manifests/).
+- **[Shared/tools/localization](Shared/tools/localization/)** — translation checks and incremental updates through the Claude Code CLI (Sonnet), with English-source hashes retained in [Shared/Translations/Manifests](Shared/Translations/Manifests/).
 
 ## Localization and welcome dialogs
 
@@ -61,11 +61,11 @@ scripts\check-localization.cmd
 ```
 
 The checker runs offline and returns a failing exit code for missing, broken or
-stale translations. The updater requires a signed-in Codex CLI, translates only
-affected entries, removes retired content, and advances source hashes after all
-selected locales validate. Review its Git diff before publishing. Add repeatable
-`--locale Danish` / `--locale German` arguments to limit either helper to those
-languages; `--dry-run` previews updates without using Codex.
+stale translations. The updater requires a signed-in Claude Code CLI (`claude`),
+translates only affected entries, removes retired content, and advances source
+hashes after all selected locales validate. Review its Git diff before publishing.
+Add repeatable `--locale Danish` / `--locale German` arguments to limit either
+helper to those languages; `--dry-run` previews updates without using Claude.
 
 Verification on 2026-10-25 covered all fourteen locales in RimWorld 1.7,
 community overrides in both load orders, custom-name save/reload across a

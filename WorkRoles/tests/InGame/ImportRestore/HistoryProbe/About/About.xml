@@ -1,0 +1,8 @@
+<ModMetaData>
+  <name>WorkRoles Historical Restore Regression Probe</name>
+  <author>Codex automation</author>
+  <packageId>eprime.workroles.billreviewprobe</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <modDependencies><li><packageId>mnmr.workroles</packageId><displayName>Work Roles</displayName></li></modDependencies>
+  <loadAfter><li>mnmr.workroles</li><li>frozensnowfox.complexjobs</li></loadAfter>
+</ModMetaData>

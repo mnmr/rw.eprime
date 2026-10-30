@@ -14,11 +14,6 @@ own job edits, jobs that other mods moved away, default groups, colors,
 holder settings, and default exclusions. Check only what you want; items that would
 overwrite your own edits are highlighted in warning colors.
 
-<!-- l10n:b-70d2472bee92 -->
-**Default excluded roles** adds Rescuer, Firefighter, Patient, Bedrest, and
-Laborer back to the Excluded roles panel if you removed them. Other exclusions
-stay as you set them. You can remove restored exclusions again afterward.
-
 <!-- l10n:b-ef2b639e1c19 -->
 Colonists keep their overall jobs through a restore, so nobody stops
 working while you repent.

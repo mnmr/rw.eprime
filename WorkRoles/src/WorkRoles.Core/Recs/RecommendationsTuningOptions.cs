@@ -34,6 +34,7 @@ namespace WorkRoles.Core.Recs
         OptionalTargetGreatPromotedSignal,
         OptionalTargetMinimumPoints,
 
+        // Retired controls: retain their slots and stable keys for save/import compatibility.
         LeadMinimumConnectedTargets,
         LeadMinimumSignal,
 
@@ -123,7 +124,6 @@ namespace WorkRoles.Core.Recs
         private const string ChampionSection = "WR_RecTuneChampionSection";
         private const string OrderingSection = "WR_RecTuneOrderingSection";
         private const string OptionalSection = "WR_RecTuneOptionalSection";
-        private const string LeadSection = "WR_RecTuneLeadSection";
         private const string HunterSection = "WR_RecTuneHunterSection";
 
         private static readonly RecommendationTuningDescriptor[] descriptorArray =
@@ -192,11 +192,15 @@ namespace WorkRoles.Core.Recs
                 "optionalTargetMinimumPoints", OptionalSection,
                 "OptionalTargetMinimumPoints", 2, 0, 100),
 
-            Integer(RecommendationTuningOption.LeadMinimumConnectedTargets,
-                "leadMinimumConnectedTargets", LeadSection,
-                "LeadMinimumConnectedTargets", 3, 1, 20),
-            Signal(RecommendationTuningOption.LeadMinimumSignal,
-                "leadMinimumSignal", LeadSection, "LeadMinimumSignal", 3),
+            // Compatibility data only; these settings never affected recommendations.
+            new RecommendationTuningDescriptor(
+                RecommendationTuningOption.LeadMinimumConnectedTargets,
+                "leadMinimumConnectedTargets", string.Empty, string.Empty, string.Empty,
+                3, 1, 20, 1, RecommendationTuningValueKind.Integer, hidden: true),
+            new RecommendationTuningDescriptor(
+                RecommendationTuningOption.LeadMinimumSignal,
+                "leadMinimumSignal", string.Empty, string.Empty, string.Empty,
+                3, 0, 5, 1, RecommendationTuningValueKind.SignalBucket, hidden: true),
 
             Integer(RecommendationTuningOption.OrderingSkillDivisor,
                 "orderingSkillDivisor", OrderingSection, "OrderingSkillDivisor", 5, 1, 20),
@@ -326,6 +330,27 @@ namespace WorkRoles.Core.Recs
             if (values[index] == normalized) return this;
             var changed = (int[])values.Clone();
             changed[index] = normalized;
+            return SameValues(changed, Default.values)
+                ? Default
+                : new RecommendationsTuningOptions(changed);
+        }
+
+        /// Replace the whole section before normalizing coupled thresholds;
+        /// individual With calls would clamp defaults against stale siblings.
+        public RecommendationsTuningOptions ResetSection(string sectionKey)
+        {
+            int[]? changed = null;
+            for (int index = 0; index < descriptorArray.Length; index++)
+            {
+                RecommendationTuningDescriptor descriptor = descriptorArray[index];
+                if (descriptor.SectionLabelKey != sectionKey
+                    || values[index] == descriptor.DefaultValue) continue;
+                if (changed == null) changed = (int[])values.Clone();
+                changed[index] = descriptor.DefaultValue;
+            }
+            if (changed == null) return this;
+            NormalizeRelatedValues(changed);
+            if (SameValues(changed, values)) return this;
             return SameValues(changed, Default.values)
                 ? Default
                 : new RecommendationsTuningOptions(changed);
@@ -598,10 +623,6 @@ namespace WorkRoles.Core.Recs
             int skillLevel,
             SignalBucket signal) =>
             options.PromoteSkillSignal(skillLevel, signal);
-        internal int LeadMinimumConnectedTargets => Value(
-            RecommendationTuningOption.LeadMinimumConnectedTargets);
-        internal SignalBucket LeadMinimumSignal => Signal(
-            RecommendationTuningOption.LeadMinimumSignal);
         internal byte MinimumBonus(int pickIndex)
         {
             RecommendationTuningOption option = pickIndex == 0

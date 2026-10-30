@@ -46,6 +46,8 @@ namespace WorkRoles.UI
             internal SkillCapture Skills = null!;
             internal int FactRevision;
             internal int FactGeneration;
+            internal int ContextRevision;
+            internal int ContextGeneration;
             internal int WorkRevision;
             internal int WorkGeneration;
         }
@@ -80,8 +82,8 @@ namespace WorkRoles.UI
         // game-derived pawn/signal snapshots plus producer-owned skill indexes;
         // only stable external Def references are retained. Dependencies:
         // ExternalPawnFacts broad revisions publish display/grammar notifications;
-        // narrower factual and work-evidence revisions gate actual game reads;
-        // work-only changes preserve the skill capture. Live skill
+        // narrower factual, non-skill context and work-evidence revisions gate
+        // actual game reads; context/work-only changes preserve the skill capture. Live skill
         // XP is deliberately excluded. Refresh: explicit at Repaint. Equality:
         // name-only notifications reuse the exact factual and skill snapshots;
         // equal skill inputs preserve both per-skill and complete identities.
@@ -214,11 +216,15 @@ namespace WorkRoles.UI
             externalSnapshots.TryGet(pawn, out ExternalCapture? previous);
             int factRevision = ExternalPawnFacts.FactRevisions.RevisionOf(pawn);
             int factGeneration = ExternalPawnFacts.FactRevisions.FullGeneration;
+            int contextRevision = ExternalPawnFacts.ContextRevisions.RevisionOf(pawn);
+            int contextGeneration = ExternalPawnFacts.ContextRevisions.FullGeneration;
             int workRevision = ExternalPawnFacts.WorkEvidenceRevisions.RevisionOf(pawn);
             int workGeneration = ExternalPawnFacts.WorkEvidenceRevisions.FullGeneration;
             PawnExternalSnapshot snapshot = previous != null
                 && previous.FactRevision == factRevision
                 && previous.FactGeneration == factGeneration
+                && previous.ContextRevision == contextRevision
+                && previous.ContextGeneration == contextGeneration
                 && previous.WorkRevision == workRevision
                 && previous.WorkGeneration == workGeneration
                 ? previous.Snapshot
@@ -227,6 +233,7 @@ namespace WorkRoles.UI
             return new ExternalCapture {
                 Snapshot = snapshot, Skills = skills,
                 FactRevision = factRevision, FactGeneration = factGeneration,
+                ContextRevision = contextRevision, ContextGeneration = contextGeneration,
                 WorkRevision = workRevision, WorkGeneration = workGeneration };
         }
 

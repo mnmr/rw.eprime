@@ -161,6 +161,7 @@ namespace WorkRoles.UI
             SortedSet<string>? awfulDescriptions = null;
             SortedSet<string>? missingRequiredSkills = null;
             string? incapableReason = null;
+            bool hasNativeWorkRestriction = false;
             string? noRangedWeaponReason = null;
             SortedDictionary<int, string>? tooYoungReasons = null;
             bool ageLimitsApply =
@@ -244,6 +245,9 @@ namespace WorkRoles.UI
                 {
                     WorkCapabilityFact fact = evidence.CapabilityAt(i);
                     if (fact.GiverDefName != giverName) continue;
+                    if (fact.ReasonKey == "WR_WorkNotNative"
+                        || fact.ReasonKey == "WR_WorkNativeFireNearby")
+                        hasNativeWorkRestriction = true;
                     PreceptDef precept = DefDatabase<PreceptDef>.GetNamedSilentFail(fact.ReasonKey);
                     string reasonText = precept != null
                         ? "WR_WorkBlockedPrecept".Translate(precept.LabelCap).ToString()
@@ -335,7 +339,8 @@ namespace WorkRoles.UI
                             blocked.Count, totalJobs).ToString();
                     reasonTail = ": " + reasons.ToCommaList();
                 }
-                warnings.Add("WR_RoleCapNeverDo".Translate(
+                warnings.Add((hasNativeWorkRestriction
+                    ? "WR_RoleCapCannotTakeJobs" : "WR_RoleCapNeverDo").Translate(
                     pawn.LabelShortCap, jobsPart).ToString() + reasonTail);
             }
 

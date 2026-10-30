@@ -373,12 +373,6 @@ WorkRoles는 기본 게임 방식으로 관리 대상의 작업 목록을 제공
   <WR_RecTuneHunterSectionIntro>고정되지 않은 사냥꾼 역할은 사격 수준에 따라 이동합니다. 사격이 뛰어날수록 다른 일에 쓸 시간이 가치 있으므로 더 뒤에 사냥합니다.</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneHunterTiersRow>구간별 최대 사격 수준</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>사냥꾼 위치를 정하는 사격 기준입니다. 1구간은 기본 작업 뒤, 2·3구간은 중간·마지막 작업 역할 뒤, 4구간 초과는 맨 끝입니다.</WR_RecTuneHunterTiersRowDesc>
-  <WR_RecTuneLeadMinimumConnectedTargets>분산에 필요한 연결 목표 수</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>연결된 훈련 목표가 이 수 이상이면 선도 역할을 여러 작업자에게 분산하려 합니다.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
-  <WR_RecTuneLeadMinimumSignal>선도 담당 최소 요인 평가</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>훈련 경로를 분산할 선도 담당자에게 허용할 최저 역할 평가입니다.</WR_RecTuneLeadMinimumSignalDesc>
-  <WR_RecTuneLeadSection>선도 담당 분산 옵션</WR_RecTuneLeadSection>
-  <WR_RecTuneLeadSectionIntro>여러 훈련 경로가 목표를 공유할 때 선도 역할을 한 명에게 몰지 않고 여러 정착민에게 나눕니다.</WR_RecTuneLeadSectionIntro>
   <WR_RecTuneMinimumPickRow>최소 인원 선발 보너스</WR_RecTuneMinimumPickRow>
   <WR_RecTuneMinimumPickRowDesc>역할의 최소 필요 인원을 채우기 위해 뽑은 첫째·둘째·셋째·그 이후 작업자에게 주는 순서 점수입니다.</WR_RecTuneMinimumPickRowDesc>
   <WR_RecTuneMultiplierAwfulTip>매우 부적합. 후보 최소 요인 평가가 매우 부적합을 허용할 때만 이 열이 적용됩니다.</WR_RecTuneMultiplierAwfulTip>
@@ -657,4 +651,8 @@ WorkRoles는 기본 게임 방식으로 관리 대상의 작업 목록을 제공
   <WR_RecMechanicalSelected>다른 추천 역할에 포함되지 않은 작업을 할 수 있습니다.</WR_RecMechanicalSelected>
   <WR_RecMechanicalRetained>현재 주 역할을 유지합니다.</WR_RecMechanicalRetained>
   <WR_RecMechanicalIncapacitated>이 작업자는 쓰러진 상태입니다. 회복 후를 위해 역할을 유지합니다.</WR_RecMechanicalIncapacitated>
+  <WR_BlockerTrainingConfirm>'{0}'은(는) 훈련 경로에 사용됩니다. 차단 역할로 변경하시겠습니까? 추천에서 더 이상 훈련에 사용되지 않으며, 이 역할이 필요한 경로는 이용할 수 없게 될 수 있습니다. 저장된 경로는 유지됩니다. 기존 배정에서는 이 역할보다 아래에 있는 역할의 해당 작업이 차단됩니다.</WR_BlockerTrainingConfirm>
+  <WR_RoleCapCannotTakeJobs>{0}: {1} 작업을 배정받을 수 없음</WR_RoleCapCannotTakeJobs>
+  <WR_WorkNativeFireNearby>대기 중 근처의 불을 끌 수 있지만 소방 작업을 배정받지는 않음</WR_WorkNativeFireNearby>
+  <WR_WorkNotNative>이 모델의 작업 배정에서는 지원되지 않음</WR_WorkNotNative>
 </LanguageData>

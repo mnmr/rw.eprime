@@ -299,12 +299,7 @@ namespace WorkRoles
             if (Store == null || sectionKey.NullOrEmpty()) return;
             RecommendationsTuningOptions current = Store.recommendationTuning
                 ?? RecommendationsTuningOptions.Default;
-            RecommendationsTuningOptions changed = current;
-            foreach (RecommendationTuningDescriptor descriptor in
-                     RecommendationsTuningOptions.Descriptors)
-                if (descriptor.SectionLabelKey == sectionKey)
-                    changed = changed.With(descriptor.Option,
-                        RecommendationsTuningOptions.Default.Get(descriptor.Option));
+            RecommendationsTuningOptions changed = current.ResetSection(sectionKey);
             if (ReferenceEquals(current, changed)) return;
             Store.recommendationTuning = changed;
             Store.RecommendationTuningRevision++;
@@ -889,6 +884,10 @@ namespace WorkRoles
                 workTypeSnapshots = values.WorkTypeSnapshots,
                 composite = source.composite,
                 memberRoleIds = new List<int>(source.memberRoleIds),
+                trainingRoleIds = source.trainingRoleIds
+                    .Select(memberId => memberId == source.id ? id : memberId).ToList(),
+                trainingMins = new List<int>(source.trainingMins),
+                trainingMaxes = new List<int>(source.trainingMaxes),
             };
         }
 
@@ -1272,6 +1271,34 @@ namespace WorkRoles
             set.assignments.Insert(to, assignment);
             CompiledJobOrders.InvalidateAssignments(pawn, planChanged: true);
             CompiledJobOrders.EnqueueReconcile(pawn);
+        }
+
+        /// Transfers the authoritative assignment as one synchronized operation.
+        /// A stale source or duplicate target is a no-op; no state is recreated
+        /// from the dragging client's presentation snapshot.
+        [SyncMethod]
+        public static void MoveRoleBetweenPawns(Pawn source, Pawn target, int roleId, int index)
+        {
+            if (Store == null || source == null || target == null || source == target
+                || Store.RoleById(roleId) == null
+                || !Store.pawnSets.TryGetValue(source, out var sourceSet)) return;
+            int from = sourceSet.assignments.FindIndex(assignment => assignment.roleId == roleId);
+            if (from < 0) return;
+            if (Store.pawnSets.TryGetValue(target, out var existingTarget)
+                && existingTarget.assignments.Any(assignment => assignment.roleId == roleId)) return;
+
+            using var batch = Store.Revisions.Batch();
+            var assignment = sourceSet.assignments[from];
+            bool targetWasManaged = Store.IsManaged(target);
+            var targetSet = Store.SetFor(target);
+            if (index < 0 || index > targetSet.assignments.Count) index = targetSet.assignments.Count;
+            targetSet.assignments.Insert(index, assignment);
+            if (!targetWasManaged) PawnLocationTracker.NotifyManaged(target);
+            // Removing the last source assignment uses the ordinary unmanage
+            // transition so its vanilla fallback retains the former authority.
+            RemoveRoleDirect(source, roleId);
+            CompiledJobOrders.InvalidateAssignments(target, planChanged: true);
+            CompiledJobOrders.EnqueueReconcile(target);
         }
 
         [SyncMethod]

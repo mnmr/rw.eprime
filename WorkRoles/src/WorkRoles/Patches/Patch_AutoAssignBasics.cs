@@ -70,16 +70,43 @@ namespace WorkRoles.Patches
     [HarmonyPatch(typeof(Pawn_MutantTracker), nameof(Pawn_MutantTracker.Turn))]
     public static class Patch_PawnMutantTracker_Turn
     {
-        public static void Postfix(Pawn ___pawn) =>
+        public static void Prefix(Pawn_MutantTracker __instance, out bool __state) =>
+            __state = __instance.HasTurned;
+
+        public static void Postfix(Pawn_MutantTracker __instance, Pawn ___pawn, bool __state)
+        {
+            if (__state || !__instance.HasTurned) return;
             RoleStore.Current?.UnmanagePawn(___pawn);
+            // The tracker is installed before Turn, so IsColonist is already
+            // false in the prefix. Observe the successful native transition,
+            // independently of whether this pawn had any assignments to remove.
+            if (__instance.Def.consideredSubhuman
+                && (___pawn.Faction?.IsPlayer == true || ___pawn.IsSlaveOfColony))
+            {
+                ExternalPawnFacts.Invalidate(___pawn);
+                UiVersion.RosterChanged();
+            }
+        }
     }
 
     /// Ticked ageing and growth-vat ageing both land here once per year gained.
     [HarmonyPatch(typeof(Pawn_AgeTracker), "BirthdayBiological")]
     public static class Patch_PawnAgeTracker_BirthdayBiological
     {
-        public static void Postfix(Pawn ___pawn, int birthdayAge) =>
+        public static void Prefix(Pawn ___pawn, out int __state) =>
+            __state = ExternalPawnFacts.FactRevisions.RevisionOf(___pawn);
+
+        public static void Postfix(Pawn ___pawn, int birthdayAge, int __state)
+        {
             Seeding.ApplyBirthdayRoles(___pawn, birthdayAge);
+            // Native work unlocks already refresh full facts. Eighteen (and
+            // leaving the last inclusive gate at nineteen) need an age refresh
+            // even when the standing assignments and native work stay equal.
+            if (WorkRoles.Core.BirthdayRoles.CanChangeRoles(birthdayAge)
+                && ExternalPawnFacts.IsRelevant(___pawn)
+                && ExternalPawnFacts.FactRevisions.RevisionOf(___pawn) == __state)
+                ExternalPawnFacts.InvalidateContext(___pawn);
+        }
     }
 
     /// A reverted mutant rejoins the colony like any other joiner. Reverts that
@@ -87,10 +114,20 @@ namespace WorkRoles.Patches
     [HarmonyPatch(typeof(Pawn_MutantTracker), nameof(Pawn_MutantTracker.Revert))]
     public static class Patch_PawnMutantTracker_Revert
     {
-        public static void Postfix(Pawn ___pawn, bool beingKilled)
+        public static void Prefix(Pawn_MutantTracker __instance, out bool __state) =>
+            __state = __instance.HasTurned;
+
+        public static void Postfix(Pawn_MutantTracker __instance, Pawn ___pawn,
+            bool beingKilled, bool __state)
         {
+            if (!__state || __instance.HasTurned) return;
             if (!beingKilled)
                 Seeding.TryAutoAssignBasics(___pawn);
+            if (__instance.Def.consideredSubhuman && (___pawn.IsColonist || ___pawn.IsSlaveOfColony))
+            {
+                ExternalPawnFacts.Invalidate(___pawn);
+                UiVersion.RosterChanged();
+            }
         }
     }
 }

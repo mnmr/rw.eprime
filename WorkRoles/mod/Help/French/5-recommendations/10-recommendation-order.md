@@ -13,7 +13,7 @@ Les recommandations sont ordonnées automatiquement pour chaque colon. Le moteur
 Le panneau **Rôles exclus**, en haut de l'onglet Recommandations, indique les rôles qui ne doivent jamais être recommandés. Utilisez Ajouter un rôle pour en exclure un, ou l'icône de retrait de sa pastille pour l'autoriser à nouveau.
 
 <!-- l10n:b-2ff664d1d184 -->
-Secouriste, Pompier, Patient, Repos au lit et Manœuvre sont exclus par défaut, car Urgences et Tâches de base couvrent déjà leur travail. Les sauvegardes existantes reçoivent ces valeurs une seule fois lors de la mise à jour. Retirer un rôle de ce panneau est respecté aux chargements suivants. Pour rétablir les exclusions, choisissez **Rôles exclus par défaut** dans [Rétablir les valeurs par défaut](topic:restore-defaults).
+Aucun rôle n'est exclu par défaut. Secouriste, Pompier, Patient, Repos au lit et Manœuvre reprennent un travail qu'Urgences et Tâches de base donnent déjà à chaque colon ; ils ne sont donc recommandés que lorsque ce travail manque dans ces rôles, ou aux robots dont le travail natif y correspond. Les modifications du panneau sont respectées aux chargements suivants.
 
 <!-- l10n:b-94e6612dee18 -->
 Les [Options des rôles](topic:role-options) en dessous listent tous les rôles non exclus. Exclure un rôle masque ses options sans les effacer ; lever l'exclusion les rend à nouveau disponibles.

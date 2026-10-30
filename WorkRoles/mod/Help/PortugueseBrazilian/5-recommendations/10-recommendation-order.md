@@ -13,7 +13,7 @@ Recomendações são ordenadas por colono, combinando ordem interna, adequação
 **Funções excluídas**, no topo de Recomendações, define o que nunca recomendar. Use Adicionar função para excluir, ou remova a ficha para permitir novamente.
 
 <!-- l10n:b-2ff664d1d184 -->
-Resgatador, Bombeiro, Paciente, Repouso e Trabalhador são excluídos por padrão, pois Essencial e Básicos já os cobrem. Partidas existentes recebem esses padrões uma vez ao atualizar. Remover uma exclusão é respeitado nos carregamentos seguintes. Para recuperá-las, escolha **Funções excluídas padrão** em [Restaurar padrões](topic:restore-defaults).
+Nenhuma função é excluída por padrão. Resgatador, Bombeiro, Paciente, Repouso e Trabalhador repetem trabalho que Essencial e Básicos já dão a cada colono, por isso só são recomendadas quando esse trabalho falta nessas funções ou a robôs cujo trabalho nativo corresponde. Alterações no painel são respeitadas nos carregamentos seguintes.
 
 <!-- l10n:b-94e6612dee18 -->
 [Opções de funções](topic:role-options) lista todas as não excluídas. Excluir oculta as opções sem apagá-las; permitir novamente as restaura.

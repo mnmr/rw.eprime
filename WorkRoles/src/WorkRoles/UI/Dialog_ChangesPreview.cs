@@ -94,7 +94,7 @@ namespace WorkRoles.UI
         {
             public ChipLayout(RoleChipRenderData renderData, ChipState state,
                 string? tip, StructuredTip? structuredTip, Rect rect,
-                RoleChipVerdict verdict)
+                RoleChipVerdict verdict, float fadeLabelWidth)
             {
                 RenderData = renderData;
                 State = state;
@@ -102,6 +102,7 @@ namespace WorkRoles.UI
                 StructuredTip = structuredTip;
                 Rect = rect;
                 Verdict = verdict;
+                FadeLabelWidth = fadeLabelWidth;
             }
 
             internal RoleChipRenderData RenderData { get; }
@@ -110,6 +111,7 @@ namespace WorkRoles.UI
             internal StructuredTip? StructuredTip { get; }
             internal Rect Rect { get; }
             internal RoleChipVerdict Verdict { get; }
+            internal float FadeLabelWidth { get; }
 
             public bool ContentEquals(ChipLayout other) =>
                 RenderData.ContentEquals(other.RenderData)
@@ -121,6 +123,7 @@ namespace WorkRoles.UI
                 && Rect.x == other.Rect.x && Rect.y == other.Rect.y
                 && Rect.width == other.Rect.width
                 && Rect.height == other.Rect.height
+                && FadeLabelWidth == other.FadeLabelWidth
                 && VerdictEquals(Verdict, other.Verdict);
 
             private static bool VerdictEquals(RoleChipVerdict left,
@@ -338,11 +341,11 @@ namespace WorkRoles.UI
 
         private static void DrawStateChip(Rect rect, RoleChipRenderData role,
             ChipState state, string? tip, StructuredTip? structuredTip,
-            RoleChipVerdict verdict)
+            RoleChipVerdict verdict, float fadeLabelWidth)
         {
             var style = state == ChipState.Kept ? ChipStyle.Subtle : ChipStyle.Normal;
             RoleChipUI.Draw(rect, role, style, showRemove: false, dragSource: null!, onClick: null!,
-                interactive: false, verdict: verdict);
+                interactive: false, verdict: verdict, fadeLabelWidth: fadeLabelWidth);
             if (state == ChipState.Removed)
                 RoleChipUI.DrawRemovedOutline(rect);
             if (tip != null && Mouse.IsOver(rect))
@@ -461,6 +464,13 @@ namespace WorkRoles.UI
                         RoleChipVerdict verdict = line.VerdictAt(chipIndex);
                         float chipWidth = RoleChipUI.WidthFor(renderData, showRemove: false,
                             verdictSlot: verdict.Shown);
+                        // A legal localized name plus rule markers can exceed an
+                        // entire row. Keep the border and hit region inside the
+                        // viewport; the shared renderer fades the cached full label.
+                        float availableWidth = Mathf.Max(0f, xMax - 26f);
+                        float fadeLabelWidth = chipWidth > availableWidth
+                            ? RoleChipUI.SmallFitWidth(renderData.Label) : 0f;
+                        chipWidth = Mathf.Min(chipWidth, availableWidth);
                         // Preserve the old trailing-gap wrap math exactly: x is
                         // advanced by ChipGap after every chip, including the last.
                         if (x + chipWidth > xMax && x > 26f)
@@ -469,10 +479,10 @@ namespace WorkRoles.UI
                             curY += RoleChipUI.Height + LineGap;
                         }
                         chips[nextChip++] = new ChipLayout(renderData,
-                            chip.State, chip.Tip,
+                            chip.State, chip.Tip ?? (fadeLabelWidth > 0f ? renderData.Label : null),
                             line.StructuredTipAt(chipIndex),
                             new Rect(x, curY, chipWidth, RoleChipUI.Height),
-                            verdict);
+                            verdict, fadeLabelWidth);
                         x += chipWidth + ChipGap;
                     }
                     localY = curY + RoleChipUI.Height + LineGap;
@@ -664,7 +674,7 @@ namespace WorkRoles.UI
                     Rect rect = chip.Rect;
                     rect.y += top;
                     DrawStateChip(rect, chip.RenderData, chip.State, chip.Tip,
-                        chip.StructuredTip, chip.Verdict);
+                        chip.StructuredTip, chip.Verdict, chip.FadeLabelWidth);
                 }
                 if (!entry.included)
                     Widgets.DrawBoxSolid(new Rect(24f, top, width - 24f,

@@ -38,6 +38,38 @@ public class RoleFileTests
         await Assert.That(legacy.roles[0].excludedFromRecommendations).IsFalse();
     }
 
+    // Setups written before 1.7.5 carry exclusions we seeded, not ones the
+    // player chose. Adopting the current defaults clears exactly those, once;
+    // a file already at the current version keeps every exclusion it holds.
+    [Test]
+    public async Task RetiredDefaultExclusionsClearOnceWhenAnOlderSetupIsAdopted()
+    {
+        var legacy = RoleFile.Parse("<WorkRoles version=\"14\"><Roles>"
+            + "<Role name=\"Laborer\" id=\"WS_Laborer\"><Options><Tuning excludedFromRecommendations=\"true\" /></Options><Jobs /></Role>"
+            + "<Role name=\"Firefighter\" id=\"WS_Firefighter\"><Options><Tuning excludedFromRecommendations=\"true\" /></Options><Jobs /></Role>"
+            + "<Role name=\"Hunter\" id=\"WS_Hunter\"><Options><Tuning excludedFromRecommendations=\"true\" /></Options><Jobs /></Role>"
+            + "</Roles></WorkRoles>");
+        await Assert.That(legacy.exclusionDefaultsVersion).IsEqualTo(1);
+        await Assert.That(RoleFile.Parse(RoleFile.Build(legacy)).exclusionDefaultsVersion).IsEqualTo(1)
+            .Because("serializing must not advance a document's version by itself");
+
+        await Assert.That(DefaultExclusions.ClearRetired(legacy)).IsTrue();
+        await Assert.That(legacy.exclusionDefaultsVersion).IsEqualTo(DefaultExclusions.CurrentVersion);
+        await Assert.That(legacy.roles.Single(r => r.label == "Laborer").excludedFromRecommendations).IsFalse();
+        await Assert.That(legacy.roles.Single(r => r.label == "Firefighter").excludedFromRecommendations).IsFalse();
+        await Assert.That(legacy.roles.Single(r => r.label == "Hunter").excludedFromRecommendations).IsTrue();
+        await Assert.That(DefaultExclusions.ClearRetired(legacy)).IsFalse();
+
+        var current = RoleFile.Parse(RoleFile.Build(new RoleFileDocument
+        {
+            roles = { new FileRole { label = "Laborer", templateDef = "WS_Laborer", hasTuning = true, excludedFromRecommendations = true } },
+        }));
+        await Assert.That(current.exclusionDefaultsVersion).IsEqualTo(DefaultExclusions.CurrentVersion);
+        await Assert.That(DefaultExclusions.ClearRetired(current)).IsFalse();
+        await Assert.That(current.roles[0].excludedFromRecommendations).IsTrue()
+            .Because("a Laborer exclusion chosen under the current defaults is the player's");
+    }
+
     [Test]
     public async Task NowhereLocationRoundTripsWithoutBecomingAnywhere()
     {

@@ -64,8 +64,6 @@
   <WR_RecTuneOrderingSectionIntro>Depois de escolher as funções de um colono, estas opções decidem a ordem na lista, que também é a ordem de prioridade do trabalho.</WR_RecTuneOrderingSectionIntro>
   <WR_RecTuneOptionalSection>Formação e metas opcionais</WR_RecTuneOptionalSection>
   <WR_RecTuneOptionalSectionIntro>Estas opções decidem quando se ativa um percurso de formação para um colono e quando vale a pena recomendar uma função opcional com várias habilidades.</WR_RecTuneOptionalSectionIntro>
-  <WR_RecTuneLeadSection>Diversificação de responsáveis</WR_RecTuneLeadSection>
-  <WR_RecTuneLeadSectionIntro>Quando vários percursos de formação compartilham um objetivo, estas opções distribuem as funções de responsável por diferentes colonos em vez de as acumular em um só.</WR_RecTuneLeadSectionIntro>
   <WR_RecTuneHunterSection>Posição do Caçador</WR_RecTuneHunterSection>
   <WR_RecTuneHunterSectionIntro>Uma função Caçador não fixada é posicionada dinamicamente conforme o nível de tiro: os melhores atiradores caçam mais tarde na ordem de prioridades, porque o seu tempo vale mais em outras tarefas.</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneCandidateMinimumSignal>Sinal mínimo dos candidatos</WR_RecTuneCandidateMinimumSignal>
@@ -109,10 +107,6 @@
   <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>Sinal usado a partir do nível de promoção superior para a elegibilidade adicional de funções com uma habilidade e a pontuação de aptidão dos objetivos opcionais.</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
   <WR_RecTuneOptionalTargetMinimumPoints>Pontos mínimos dos objetivos opcionais</WR_RecTuneOptionalTargetMinimumPoints>
   <WR_RecTuneOptionalTargetMinimumPointsDesc>Soma mínima dos passos de sinal acima do limite configurado necessária para recomendar um objetivo opcional com várias habilidades.</WR_RecTuneOptionalTargetMinimumPointsDesc>
-  <WR_RecTuneLeadMinimumConnectedTargets>Objetivos ligados para diversificação</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Número mínimo de objetivos de formação ligados antes de o planejador tentar atribuir as funções de responsável a trabalhadores diferentes.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
-  <WR_RecTuneLeadMinimumSignal>Sinal mínimo do responsável</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>Sinal mínimo de função permitido a um trabalhador escolhido como responsável diversificado de um percurso de formação.</WR_RecTuneLeadMinimumSignalDesc>
   <WR_RecTuneHunterTiersRow>Nível máximo de tiro por patamar</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Limites de tiro para a posição dinâmica do Caçador. O patamar 1 coloca-o logo após o trabalho básico, os patamares 2 e 3 após as funções de trabalho intermediárias e finais, e os níveis acima do patamar 4 colocam-no em último.</WR_RecTuneHunterTiersRowDesc>
   <WR_TrainingSection>Rota de formação</WR_TrainingSection>
@@ -657,4 +651,8 @@ A tarefa não foi interrompida. Este aviso aparece uma vez por partida salva.</W
   <WR_RecMechanicalSelected>Pode realizar trabalhos não cobertos pelos outros papéis recomendados.</WR_RecMechanicalSelected>
   <WR_RecMechanicalRetained>Mantém seu papel principal atual.</WR_RecMechanicalRetained>
   <WR_RecMechanicalIncapacitated>Esta unidade está incapacitada. Seus papéis são mantidos para quando ela se recuperar.</WR_RecMechanicalIncapacitated>
+  <WR_BlockerTrainingConfirm>“{0}” é usado em um caminho de treinamento. Transformá-lo em um papel de bloqueio? As recomendações deixarão de usá-lo para treinamento, e os caminhos que dependem dele poderão ficar indisponíveis. Os caminhos salvos serão mantidos. As atribuições existentes bloquearão essas tarefas nos papéis abaixo dele.</WR_BlockerTrainingConfirm>
+  <WR_RoleCapCannotTakeJobs>{0} não pode aceitar tarefas atribuídas de {1}</WR_RoleCapCannotTakeJobs>
+  <WR_WorkNativeFireNearby>pode apagar incêndios próximos quando ocioso, mas não aceita tarefas atribuídas de combate a incêndios</WR_WorkNativeFireNearby>
+  <WR_WorkNotNative>não é compatível com as atribuições de trabalho deste modelo</WR_WorkNotNative>
 </LanguageData>

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup>
+  <RimWorldVersion Condition="'$(RimWorldVersion)'==''">1.7</RimWorldVersion>
+  <TargetFramework Condition="'$(RimWorldVersion)'=='1.7'">net10.0</TargetFramework><TargetFramework Condition="'$(RimWorldVersion)'=='1.6'">net472</TargetFramework><LangVersion>10</LangVersion>
+  <AssemblyName>WorkRoles.RobotReportAudit</AssemblyName>
+  <OutputPath>Probe/$(RimWorldVersion)/Assemblies/</OutputPath><AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  <GenerateDependencyFile>false</GenerateDependencyFile><ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+  <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+ </PropertyGroup>
+ <ItemGroup><Compile Include="Probe.cs"/><Compile Include="Trades.cs"/>
+  <Reference Include="WorkRoles" HintPath="../../../mod/$(RimWorldVersion)/Assemblies/WorkRoles.dll" Private="false"/>
+  <Reference Include="WorkRoles.Core" HintPath="../../../mod/$(RimWorldVersion)/Assemblies/WorkRoles.Core.dll" Private="false"/>
+ </ItemGroup>
+ <ItemGroup Condition="'$(RimWorldVersion)'=='1.6'"><PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*"/><PackageReference Include="Lib.Harmony" Version="2.*" ExcludeAssets="runtime"/><PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all"/></ItemGroup>
+ <Import Project="../../../../Shared/Build/RimWorld17.props" Condition="'$(RimWorldVersion)'=='1.7'"/>
+</Project>

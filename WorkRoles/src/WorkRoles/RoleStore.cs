@@ -29,6 +29,8 @@ namespace WorkRoles
         /// Initial default exclusions adopted once per save. Persist separately
         /// from the role flags so removing an exclusion survives later loads.
         public bool defaultRecommendationExclusionsSeeded;
+        /// DefaultExclusions version this save has adopted; 0 = never migrated.
+        public int recommendationExclusionsVersion;
         /// GetPriority reports the vanilla 0-4 projection instead of raw ranks.
         /// World state, not a mod setting: other mods consume the values in
         /// sim-relevant code, so MP clients must agree.
@@ -580,6 +582,7 @@ namespace WorkRoles
             Scribe_Values.Look(ref pathsSeeded, "pathsSeeded");
             Scribe_Values.Look(ref defaultRecommendationExclusionsSeeded,
                 "defaultRecommendationExclusionsSeeded");
+            Scribe_Values.Look(ref recommendationExclusionsVersion, "recommendationExclusionsVersion", 0);
             Scribe_Values.Look(ref reportVanillaPriorities, "reportVanillaPriorities", true);
             Scribe_Values.Look(ref rolePriorityEmergencyRule, "rolePriorityEmergencyRule", true);
             Scribe_Values.Look(ref autoOptimize, "autoOptimize");
@@ -732,6 +735,7 @@ namespace WorkRoles
                 lastLocationIds.RemoveAll(kv => !pawnSets.ContainsKey(kv.Key));
                 MigrateRoleTuning();
                 MigrateRecommendationExclusions();
+                MigrateRetiredExclusions();
                 // A stored order identical to the retired priority-derived
                 // seed was never really edited: clear it so those saves adopt
                 // the shipped default template. Deterministic load code; any
@@ -761,6 +765,25 @@ namespace WorkRoles
                 Revisions.RoleChanged(role.id, ModelDomain.RoleRecommendation);
             }
             defaultRecommendationExclusionsSeeded = true;
+        }
+
+        /// Deterministic load-time adoption of retired shipped exclusions
+        /// (DefaultExclusions), once per save: a save below the current
+        /// version loses exactly the exclusions version 1 seeded; everything a
+        /// player excluded afterwards stays. Runs before any snapshot publishes
+        /// and before any new-game default can be written from this store.
+        private void MigrateRetiredExclusions()
+        {
+            if (recommendationExclusionsVersion >= DefaultExclusions.CurrentVersion) return;
+            using var batch = Revisions.Batch();
+            foreach (Role role in roles)
+            {
+                if (!role.excludedFromRecommendations
+                    || !DefaultExclusions.IsRetired(role.templateDefName)) continue;
+                role.excludedFromRecommendations = false;
+                Revisions.RoleChanged(role.id, ModelDomain.RoleRecommendation);
+            }
+            recommendationExclusionsVersion = DefaultExclusions.CurrentVersion;
         }
 
         /// Fills tuning on roles that predate it. Legacy Required/Optional

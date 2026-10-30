@@ -222,10 +222,10 @@ namespace WorkRoles
             if (store.pawnSets.TryGetValue(pawn, out var set))
                 foreach (var a in set.assignments)
                     view.Existing.Add(new AssignmentView
-                    // ForceOn counts as enabled: the engine judges the role's
-                    // global toggle separately.
+                    // Preserve authored state when deciding whether a composite
+                    // can replace this assignment; scoring remains state-free.
                     { RoleId = a.roleId, Enabled = a.state != AssignmentState.Disabled,
-                        Pinned = a.pinned });
+                        ForceOn = a.state == AssignmentState.ForceOn, Pinned = a.pinned });
             return view;
         }
 
@@ -271,7 +271,7 @@ namespace WorkRoles
             Dictionary<string, int>? ageBlocked = null;
             foreach (WorkTypeDef workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
             {
-                if (!pawn.WorkTypeIsDisabled(workType))
+                if (!MechanicalWorkers.WorkTypeDisabled(pawn, workType))
                     facts.CapableWorkTypes.Add(workType.defName);
                 else if (pawn.IsWorkTypeDisabledByAge(workType, out int minAgeRequired))
                     (ageBlocked ??= new Dictionary<string, int>())
@@ -280,7 +280,7 @@ namespace WorkRoles
 
             facts.WorkEvidence = Capabilities.PawnWorkFacts.Capture(pawn);
             return new PawnExternalSnapshot(
-                signalSnapshot, facts, pawn.CombinedDisabledWorkTags, ageBlocked);
+                signalSnapshot, facts, MechanicalWorkers.DisabledWorkTags(pawn), ageBlocked);
         }
 
         internal static bool AgeLimitsApplyTo(Pawn pawn)

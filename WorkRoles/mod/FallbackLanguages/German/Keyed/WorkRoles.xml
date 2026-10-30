@@ -64,8 +64,6 @@
   <WR_RecTuneOrderingSectionIntro>Nachdem die Rollen eines Kolonisten gewählt wurden, bestimmen diese Optionen ihre Reihenfolge und damit auch die Arbeitspriorität.</WR_RecTuneOrderingSectionIntro>
   <WR_RecTuneOptionalSection>Optionen für Trainingspfade und optionale Ziele</WR_RecTuneOptionalSection>
   <WR_RecTuneOptionalSectionIntro>Diese Optionen bestimmen, wann ein Trainingspfad für einen Kolonisten aktiviert wird und wann sich eine optionale Rolle mit mehreren Fertigkeiten überhaupt zur Empfehlung lohnt.</WR_RecTuneOptionalSectionIntro>
-  <WR_RecTuneLeadSection>Optionen zur Verteilung führender Rollen</WR_RecTuneLeadSection>
-  <WR_RecTuneLeadSectionIntro>Wenn mehrere Trainingspfade ein gemeinsames Ziel haben, verteilen diese Optionen die führenden Rollen auf verschiedene Kolonisten, statt sie auf einen zu konzentrieren.</WR_RecTuneLeadSectionIntro>
   <WR_RecTuneHunterSection>Optionen zur Platzierung von Jäger</WR_RecTuneHunterSection>
   <WR_RecTuneHunterSectionIntro>Eine nicht angeheftete Jägerrolle wird dynamisch nach Schießfertigkeit eingeordnet: Bessere Schützen jagen später in der Prioritätsfolge, weil ihre Zeit anderswo wertvoller ist.</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneCandidateMinimumSignal>Mindestsignal für Kandidaten</WR_RecTuneCandidateMinimumSignal>
@@ -109,10 +107,6 @@
   <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>Signal für zusätzliche Einzelfertigkeitszuweisungen und Eignungspunkte optionaler Ziele ab der hohen Aufwertungsstufe.</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
   <WR_RecTuneOptionalTargetMinimumPoints>Mindestpunkte für optionale Ziele</WR_RecTuneOptionalTargetMinimumPoints>
   <WR_RecTuneOptionalTargetMinimumPointsDesc>Mindestsumme der Signalschritte über der eingestellten Signaluntergrenze, um ein optionales Ziel mit mehreren Fertigkeiten zu empfehlen.</WR_RecTuneOptionalTargetMinimumPointsDesc>
-  <WR_RecTuneLeadMinimumConnectedTargets>Verbundene Ziele für Verteilung</WR_RecTuneLeadMinimumConnectedTargets>
-  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Mindestzahl verbundener Trainingsziele, bevor der Planer ihre führenden Rollen auf verschiedene Arbeiter zu verteilen versucht.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
-  <WR_RecTuneLeadMinimumSignal>Mindestsignal für führende Rollen</WR_RecTuneLeadMinimumSignal>
-  <WR_RecTuneLeadMinimumSignalDesc>Niedrigstes zulässiges Rollensignal für einen Arbeiter, der als führender Träger eines verteilten Trainingspfads gewählt wird.</WR_RecTuneLeadMinimumSignalDesc>
   <WR_RecTuneHunterTiersRow>Höchste Schießstufe je Bereich</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Schießstufengrenzen für die dynamische Jägerposition. Bereich 1 platziert Jäger direkt hinter Grundarbeiten, Bereiche 2 und 3 hinter mittleren und letzten Arbeitsrollen. Stufen oberhalb von Bereich 4 setzen Jäger zuletzt.</WR_RecTuneHunterTiersRowDesc>
   <WR_TrainingSection>Trainingspfad</WR_TrainingSection>
@@ -657,4 +651,8 @@ Die Aufgabe wurde nicht unterbrochen. Dieser Hinweis erscheint einmal pro Spiels
   <WR_RecMechanicalSelected>Kann Arbeiten erledigen, die seine anderen empfohlenen Rollen nicht abdecken.</WR_RecMechanicalSelected>
   <WR_RecMechanicalRetained>Behält seine bisherige Hauptrolle.</WR_RecMechanicalRetained>
   <WR_RecMechanicalIncapacitated>Dieser Arbeiter ist kampfunfähig. Seine Rollen bleiben erhalten, bis er sich erholt.</WR_RecMechanicalIncapacitated>
+  <WR_BlockerTrainingConfirm>„{0}“ wird in einem Ausbildungspfad verwendet. In eine Sperrrolle umwandeln? Empfehlungen werden diese Rolle nicht mehr zur Ausbildung verwenden. Pfade, die sie benötigen, können dadurch unbrauchbar werden. Die gespeicherten Pfade bleiben erhalten. Bestehende Zuweisungen sperren diese Arbeiten in den darunter stehenden Rollen.</WR_BlockerTrainingConfirm>
+  <WR_RoleCapCannotTakeJobs>{0} kann keine zugewiesenen Arbeiten für {1} übernehmen</WR_RoleCapCannotTakeJobs>
+  <WR_WorkNativeFireNearby>kann im Leerlauf Brände in der Nähe löschen, übernimmt aber keine zugewiesenen Feuerlöscharbeiten</WR_WorkNativeFireNearby>
+  <WR_WorkNotNative>von den Arbeitszuweisungen dieses Modells nicht unterstützt</WR_WorkNotNative>
 </LanguageData>

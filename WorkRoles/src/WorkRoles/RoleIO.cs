@@ -161,6 +161,9 @@ namespace WorkRoles
             }
             doc.gameSettings = RoleSetupBridge.CaptureGame(store);
             doc.playerSettings = RoleSetupBridge.CapturePlayer();
+            // The export carries the store's adopted defaults version, so a
+            // file written from an unmigrated store can never pass as current.
+            doc.exclusionDefaultsVersion = store.recommendationExclusionsVersion;
             return RoleFile.Build(doc);
         }
 
@@ -490,9 +493,12 @@ namespace WorkRoles
                     bool compilationChanged = !before.CompilationEquals(role);
                     if (changed == ModelDomain.None && !compilationChanged) continue;
                     if (compilationChanged)
+                    {
                         CompiledJobOrders.InvalidateRole(role.Id, changed,
                             memberBlockerChanged: before.BlockerChanged(role),
                             memberBlockerOnlyCompilationChange: before.CompilationEquals(role, ignoreBlocker: true));
+                        ReconcileHolders(role.Id);
+                    }
                     else
                     {
                         if ((changed & ModelDomain.RoleWork) != 0)
@@ -710,6 +716,10 @@ namespace WorkRoles
             int paletteChanges = 0, updated = 0, added = 0, deleted = 0, pathsAdded = 0;
             Dictionary<FileRole, Role>? runtimeRoles = null;
             store.SyncSwatchNames();
+            // Resolve every named-slot replacement against the original role
+            // colors: applying A -> B must not make that role match B -> A.
+            Color[]? originalRoleColors = paletteInclude
+                ? store.roles.Select(role => role.color).ToArray() : null;
 
             if (paletteInclude && paletteOverwrite)
             {
@@ -731,7 +741,7 @@ namespace WorkRoles
                     if (oldColors[i].a < 0.5f || i >= oldNames.Count) continue;
                     var replacement = NamedColor(doc, oldNames[i]);
                     if (replacement != null && !replacement.Value.IndistinguishableFrom(oldColors[i]))
-                        RecolorRoles(store, oldColors[i], replacement);
+                        RecolorRoles(store, originalRoleColors!, oldColors[i], replacement);
                 }
             }
             else if (paletteInclude)
@@ -748,7 +758,7 @@ namespace WorkRoles
                             continue;
                         var old = store.customSwatches[slot];
                         store.customSwatches[slot] = color;
-                        RecolorRoles(store, old, color);
+                        RecolorRoles(store, originalRoleColors!, old, color);
                     }
                     else
                     {
@@ -1113,12 +1123,13 @@ namespace WorkRoles
             return group?.id ?? RoleGroup.DefaultId;
         }
 
-        private static void RecolorRoles(RoleStore store, Color from, Color? to)
+        private static void RecolorRoles(RoleStore store, IReadOnlyList<Color> originalColors,
+            Color from, Color? to)
         {
             if (to == null) return;
-            foreach (var role in store.roles)
-                if (role.hasCustomColor && role.color.IndistinguishableFrom(from))
-                    role.color = to.Value;
+            for (int i = 0; i < store.roles.Count; i++)
+                if (store.roles[i].hasCustomColor && originalColors[i].IndistinguishableFrom(from))
+                    store.roles[i].color = to.Value;
         }
 
         private static Color? NamedColor(RoleFileDocument doc, string name)

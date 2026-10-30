@@ -86,6 +86,11 @@ namespace WorkRoles
         {
             if (Store == null) return false;
             var document = RoleFile.Parse(xml);
+            if (document.error != null) return false;
+            // Adopt retired shipped exclusions before anything reads the
+            // document: a default saved under an older version carries seeded
+            // exclusions, never the player's. A current file is left alone.
+            if (DefaultExclusions.ClearRetired(document)) xml = RoleFile.Build(document);
             var selection = new ImportSelection { xml = xml, roles = true, rolesOverwrite = true };
             if (!document.hasRoles || RoleIO.ValidateSelection(Store, document, selection) != null) return false;
             RoleIO.ResolveImportLocations(selection, document, ColonyScope.Locations());

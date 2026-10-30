@@ -218,43 +218,26 @@ namespace WorkRoles.Core.Recs
                 }
             }
 
-            var edges = new bool[count, count];
-            var incoming = new int[count];
-            AddLeadEdges(facts.Colony.Paths, edges, incoming);
-
             var result = new int[count];
             var emitted = new bool[count];
             for (int outputIndex = 0; outputIndex < count; outputIndex++)
             {
-                int next = BestAvailableRole(
-                    emitted,
-                    incoming,
-                    keys,
-                    positions,
-                    requireNoIncoming: true);
-                if (next < 0)
-                    next = BestAvailableRole(
-                        emitted,
-                        incoming,
-                        keys,
-                        positions,
-                        requireNoIncoming: false);
+                int next = BestAvailableRole(emitted, keys, positions);
                 emitted[next] = true;
                 result[outputIndex] = roleIds[next];
-                for (int roleAt = 0; roleAt < count; roleAt++)
-                    if (edges[next, roleAt]) incoming[roleAt]--;
             }
+            var scores = new int[count];
             for (int roleAt = 0; roleAt < count; roleAt++)
-                incoming[roleAt] = OrderingScore(
+                scores[roleAt] = OrderingScore(
                     facts, pawnIndex, roleIds[roleAt], formulas);
             int[] trimmed = WithoutPlacedHunter(facts, pawnIndex, result);
             int[] ordered = Ordering.PreserveProtectedOrder(
                 facts, pawnIndex, trimmed);
             OrderByScore(
-                facts, pawnIndex, positions, edges, incoming, ordered);
+                facts, pawnIndex, positions, scores, ordered);
             if (!ReferenceEquals(trimmed, result))
                 ordered = PlaceHunter(facts, pawnIndex, ordered);
-            SlideHunterPastConditionalRoles(facts, ordered);
+            SlideHunterPastConditionalRoles(facts, pawnIndex, ordered);
             return ordered;
         }
 
@@ -279,16 +262,22 @@ namespace WorkRoles.Core.Recs
             return ordered;
         }
 
-        // Hunter must never sit immediately left of a conditional (rule-based) or blocker role; slide it right past any contiguous run of them.
-        private static void SlideHunterPastConditionalRoles(EngineContext facts, int[] ordered)
+        // Prefer newly suggested conditional/blocker roles before Hunter,
+        // within the boundaries of the player's protected assignment order.
+        private static void SlideHunterPastConditionalRoles(EngineContext facts, int pawnIndex, int[] ordered)
         {
             int hunterRoleId = facts.Colony.HunterRoleId;
             if (hunterRoleId < 0) return;
+            // Placement conveniences cannot undo an authored pin or the
+            // relative order protected by an existing rule/blocker assignment.
+            if (facts.Colony.OrderTemplate.Contains(hunterRoleId)
+                || facts.HasProtectedDirectAssignment(pawnIndex, hunterRoleId)) return;
             int at = -1;
             for (int index = 0; index < ordered.Length; index++)
                 if (ordered[index] == hunterRoleId) { at = index; break; }
             if (at < 0) return;
-            while (at + 1 < ordered.Length && PreferRoleBeforeHunter(facts, ordered[at + 1]))
+            while (at + 1 < ordered.Length && PreferRoleBeforeHunter(facts, ordered[at + 1])
+                && !facts.HasProtectedDirectAssignment(pawnIndex, ordered[at + 1]))
             {
                 int moved = ordered[at];
                 ordered[at] = ordered[at + 1];
@@ -307,7 +296,6 @@ namespace WorkRoles.Core.Recs
             EngineContext facts,
             int pawnIndex,
             IReadOnlyDictionary<int, long> positions,
-            bool[,] edges,
             int[] scores,
             int[] ordered)
         {
@@ -323,8 +311,6 @@ namespace WorkRoles.Core.Recs
                     int rightAt = roleIds.IndexOf(rightRoleId);
                     if (IsOrderingBarrier(facts, pawnIndex, leftRoleId)
                         || IsOrderingBarrier(facts, pawnIndex, rightRoleId)
-                        || edges[leftAt, rightAt]
-                        || edges[rightAt, leftAt]
                         || CompareOrderingRoles(
                             facts,
                             pawnIndex,
@@ -380,7 +366,6 @@ namespace WorkRoles.Core.Recs
             return role == null
                 || role.PreserveRecommendationOrder
                 || IsSpecialRole(roleId)
-                || leadRoleIds.Contains(roleId)
                 || facts.HasProtectedDirectAssignment(pawnIndex, roleId);
         }
 
@@ -540,17 +525,13 @@ namespace WorkRoles.Core.Recs
 
         private int BestAvailableRole(
             bool[] emitted,
-            int[] incoming,
             long[] keys,
-            IReadOnlyDictionary<int, long> positions,
-            bool requireNoIncoming)
+            IReadOnlyDictionary<int, long> positions)
         {
             int best = -1;
             for (int index = 0; index < roleIds.Count; index++)
             {
-                if (emitted[index]
-                    || requireNoIncoming && incoming[index] != 0)
-                    continue;
+                if (emitted[index]) continue;
                 if (best < 0
                     || keys[index] < keys[best]
                     || keys[index] == keys[best]
@@ -642,6 +623,14 @@ namespace WorkRoles.Core.Recs
         private readonly RecommendationFormulaEngine formulas;
         private readonly IReadOnlyDictionary<int, long> positions;
         private readonly PawnDraft[] drafts;
+        // Owner/key: this immutable plan and pawn index. Value: optional detached
+        // source-order provenance plus affected role IDs, never mutated after
+        // publication. Dependencies: the plan's assignments/pins, composite work,
+        // activation and rule/blocker policies. Refresh: plan build only; equal
+        // plan inputs retain it with the plan. Teardown: plan/window/store release.
+        // Final pin composition consumes this same producer artifact so excluded
+        // pinned barriers cannot discard a removed source's ordering provenance.
+        private readonly CompositePlacement?[]? compositePlacements;
 
         private RecommendationPlan(
             int[][] rolesByPawn,
@@ -653,7 +642,8 @@ namespace WorkRoles.Core.Recs
             EngineContext facts,
             RecommendationFormulaEngine formulas,
             IReadOnlyDictionary<int, long> positions,
-            PawnDraft[] drafts)
+            PawnDraft[] drafts,
+            CompositePlacement?[]? compositePlacements)
         {
             this.rolesByPawn = rolesByPawn;
             this.pathsByPawn = pathsByPawn;
@@ -664,6 +654,15 @@ namespace WorkRoles.Core.Recs
             this.formulas = formulas;
             this.positions = positions;
             this.drafts = drafts;
+            this.compositePlacements = compositePlacements;
+        }
+
+        internal int[] OrderFixTarget(int pawnIndex, IReadOnlyDictionary<int, RoleView> roles,
+            IReadOnlyList<AssignmentView> existing, IReadOnlyList<int> recommended)
+        {
+            CompositePlacement? placement = compositePlacements?[pawnIndex];
+            return placement == null ? Ordering.PreserveProtectedOrder(roles, existing, recommended)
+                : RestoreCompositePlacement(facts, roles, placement, recommended);
         }
 
         /// Where a role the player adds by hand lands in the pawn's current
@@ -811,8 +810,6 @@ namespace WorkRoles.Core.Recs
             // plus champion selection) and general redundancy is a surplus
             // eligibility check; ResolveCoverage is retained but inactive.
             // ResolveCoverage(facts, rolePlans, drafts);
-            // Lead diversification is intentionally disabled while its
-            // interaction with champion and minimum-pick ordering is evaluated.
             AddLateSpecialRoles(facts, drafts, formulas);
 
             if (colony.IntegrateMechanicalWorkers)
@@ -857,7 +854,7 @@ namespace WorkRoles.Core.Recs
                             && humanBaseline.TryGetExplanation(pawnIndex, id, out var learning))
                             explanations[pawnIndex][id] = learning.PreserveLearning();
                     }
-            SubstituteComposites(facts, rolesByPawn, explanations);
+            CompositePlacement?[]? compositePlacements = SubstituteComposites(facts, rolesByPawn, explanations);
             KeepIncapacitatedAssignments(facts, rolesByPawn, pathsByPawn,
                 activatedPathCountsByPawn, explanations);
             return new RecommendationPlan(
@@ -869,7 +866,8 @@ namespace WorkRoles.Core.Recs
                 facts,
                 formulas,
                 positions,
-                drafts);
+                drafts,
+                compositePlacements);
         }
 
         /// An incapacitated pawn was no candidate and no holder during the
@@ -986,14 +984,38 @@ namespace WorkRoles.Core.Recs
             internal int[] MemberIds = null!;  // always set at creation
         }
 
+        private readonly struct CompositeReservation
+        {
+            internal CompositeReservation(CompositeSpec composite, int start)
+            { Composite = composite; Start = start; }
+            internal readonly CompositeSpec Composite;
+            internal readonly int Start;
+        }
+
+        private readonly struct ProjectedMemberPlacement
+        {
+            internal ProjectedMemberPlacement(int roleId, int sourceIndex)
+            { RoleId = roleId; SourceIndex = sourceIndex; }
+            internal readonly int RoleId, SourceIndex;
+        }
+
+        private sealed class CompositePlacement
+        {
+            internal CompositePlacement(List<AssignmentView> sources, int[] ownedRoles)
+            { Sources = sources; OwnedRoles = ownedRoles; }
+            internal readonly List<AssignmentView> Sources;
+            internal readonly int[] OwnedRoles;
+        }
+
         /// Post-planning pass: collapse a consecutive, in-member-order run of a
         /// composite's members into the composite. This is job-priority-neutral —
         /// a composite emits exactly its members' givers in member order and the
         /// surrounding roles are unchanged, so the compiled order is identical —
-        /// which is why the match is a plain role-id window compare, never a
-        /// giver recompute. The composite's explanation carries the folded
-        /// members' explanations so nothing is lost.
-        private static void SubstituteComposites(
+        /// provided the composite and its members have ordinary activation
+        /// semantics and no assignment state or pin is discarded. The match
+        /// then needs only a role-id window compare, never a giver recompute.
+        /// The explanation carries the folded members' explanations.
+        private static CompositePlacement?[]? SubstituteComposites(
             EngineContext facts,
             int[][] rolesByPawn,
             Dictionary<int, RoleRecommendationExplanation>[] explanationsByPawn)
@@ -1003,10 +1025,9 @@ namespace WorkRoles.Core.Recs
             for (int index = 0; index < roles.Count; index++)
             {
                 RoleView role = roles[index];
-                if (facts.IsRecommendationExcluded(role)
-                    || role.MemberRoleIds == null || role.MemberRoleIds.Count == 0)
+                if (!CompositeSubstitutionPolicy.IsCandidate(role, roles))
                     continue;
-                var members = new int[role.MemberRoleIds.Count];
+                var members = new int[role.MemberRoleIds!.Count];
                 for (int m = 0; m < members.Length; m++)
                     members[m] = role.MemberRoleIds[m];
                 var spec = new CompositeSpec
@@ -1018,18 +1039,50 @@ namespace WorkRoles.Core.Recs
                     byFirstMember[members[0]] = list = new List<CompositeSpec>();
                 list.Add(spec);
             }
-            if (byFirstMember.Count == 0) return;
+            if (byFirstMember.Count == 0) return null;
 
             var scratch = new List<int>();
+            List<CompositeReservation>? reservations = null;
+            List<ProjectedMemberPlacement>? projectedMembers = null;
+            CompositePlacement?[]? placementsByPawn = null;
             for (int pawnIndex = 0; pawnIndex < rolesByPawn.Length; pawnIndex++)
             {
                 int[] published = rolesByPawn[pawnIndex];
                 scratch.Clear();
+                reservations?.Clear();
+                projectedMembers?.Clear();
+                ReserveCompositeOverrides(facts, pawnIndex, byFirstMember, published, ref reservations);
                 bool changed = false;
                 for (int i = 0; i < published.Length;)
                 {
+                    bool reservedMember = false;
+                    if (reservations != null)
+                        for (int index = 0; index < reservations.Count; index++)
+                        {
+                            CompositeReservation reservation = reservations[index];
+                            if (reservation.Start == i)
+                            {
+                                scratch.Add(reservation.Composite.Role.Id);
+                                AddBundledExplanation(explanationsByPawn[pawnIndex], reservation.Composite);
+                            }
+                            reservedMember |= System.Array.IndexOf(reservation.Composite.MemberIds, published[i]) >= 0;
+                        }
+                    if (reservedMember)
+                    {
+                        // The composite controls only generated members. An
+                        // explicit member remains a separate authored assignment
+                        // with its own activation and pin, even inside a group.
+                        if (HasIndependentMemberAssignment(facts, pawnIndex, published[i], reservations!, out int sourceIndex))
+                        {
+                            scratch.Add(published[i]);
+                            if (sourceIndex >= 0)
+                                (projectedMembers ??= new List<ProjectedMemberPlacement>()).Add(
+                                    new ProjectedMemberPlacement(published[i], sourceIndex));
+                        }
+                        i++; changed = true; continue;
+                    }
                     CompositeSpec? match = LongestCompositeMatch(
-                        facts, pawnIndex, byFirstMember, published, i);
+                        facts, pawnIndex, byFirstMember, published, i, reservations);
                     if (match == null)
                     {
                         scratch.Add(published[i]);
@@ -1041,8 +1094,222 @@ namespace WorkRoles.Core.Recs
                     i += match.MemberIds.Length;
                     changed = true;
                 }
-                if (changed) rolesByPawn[pawnIndex] = scratch.ToArray();
+                if (changed)
+                {
+                    int[] replacement = scratch.ToArray();
+                    if (reservations != null && reservations.Count != 0
+                        && HasProtectedPlacementSource(facts, pawnIndex, replacement))
+                    {
+                        List<AssignmentView> sources = CompositeOrderingSources(facts, pawnIndex, projectedMembers);
+                        int count = 0;
+                        for (int index = 0; index < replacement.Length; index++)
+                            if (IsCompositePlacementRole(reservations, replacement[index])) count++;
+                        var ownedRoles = new int[count];
+                        for (int index = 0, target = 0; index < replacement.Length; index++)
+                            if (IsCompositePlacementRole(reservations, replacement[index])) ownedRoles[target++] = replacement[index];
+                        var placement = new CompositePlacement(sources, ownedRoles);
+                        (placementsByPawn ??= new CompositePlacement?[rolesByPawn.Length])[pawnIndex] = placement;
+                        replacement = RestoreCompositePlacement(facts, facts.RolesById, placement, replacement);
+                    }
+                    rolesByPawn[pawnIndex] = replacement;
+                }
             }
+            return placementsByPawn;
+        }
+
+        private static bool IsCompositePlacementRole(List<CompositeReservation> reservations, int roleId)
+        {
+            for (int owner = 0; owner < reservations.Count; owner++)
+                if (reservations[owner].Composite.Role.Id == roleId
+                    || System.Array.IndexOf(reservations[owner].Composite.MemberIds, roleId) >= 0) return true;
+            return false;
+        }
+
+        private static int[] RestoreCompositePlacement(EngineContext facts, IReadOnlyDictionary<int, RoleView> roles,
+            CompositePlacement placement, IReadOnlyList<int> recommended)
+        {
+            int[] ordered = Ordering.PreserveProtectedOrder(roles, placement.Sources, recommended);
+            PlaceOwnersWithinProtectedBounds(facts, placement.Sources, placement.OwnedRoles, ordered);
+            return ordered;
+        }
+
+        // Detached provenance only; actual assignment pins and states remain
+        // unchanged. A projected member inherits the removed source's position
+        // relative to real surviving vetoes, conditions and pins.
+        private static List<AssignmentView> CompositeOrderingSources(EngineContext facts, int pawnIndex,
+            List<ProjectedMemberPlacement>? projected)
+        {
+            List<AssignmentView> existing = facts.Colony.Pawns[pawnIndex].Existing;
+            var sources = new List<AssignmentView>(existing.Count + (projected?.Count ?? 0));
+            for (int index = 0; index < existing.Count; index++)
+            {
+                AssignmentView assignment = existing[index];
+                sources.Add(assignment);
+                if (projected == null || projected.Count == 0) continue;
+                RoleView source = facts.RoleOf(assignment.RoleId);
+                if (source?.MemberRoleIds == null) continue;
+                for (int member = 0; member < source.MemberRoleIds.Count; member++)
+                    for (int projectedIndex = 0; projectedIndex < projected.Count; projectedIndex++)
+                        if (projected[projectedIndex].SourceIndex == index
+                            && projected[projectedIndex].RoleId == source.MemberRoleIds[member])
+                            sources.Add(new AssignmentView { RoleId = source.MemberRoleIds[member], Enabled = true });
+            }
+            return sources;
+        }
+
+        private static bool IsProtectedSource(EngineContext facts, AssignmentView assignment)
+        {
+            RoleView role = facts.RoleOf(assignment.RoleId);
+            return assignment.Pinned || role != null && (role.HasRules || role.Blocker);
+        }
+
+        private static bool HasProtectedPlacementSource(EngineContext facts, int pawnIndex, int[] ordered)
+        {
+            List<AssignmentView> existing = facts.Colony.Pawns[pawnIndex].Existing;
+            for (int index = 0; index < existing.Count; index++)
+                if (IsProtectedSource(facts, existing[index])
+                    && (existing[index].Pinned || System.Array.IndexOf(ordered, existing[index].RoleId) >= 0)) return true;
+            return false;
+        }
+
+        // Restore/project only within the window set by real protected roles.
+        // An unpinned owner keeps the engine's preferred position when that
+        // position already satisfies the barriers; it never becomes a new pin.
+        private static void PlaceOwnersWithinProtectedBounds(EngineContext facts, List<AssignmentView> sources,
+            int[] ownedRoles, int[] ordered)
+        {
+            for (int sourceIndex = 0; sourceIndex < sources.Count; sourceIndex++)
+            {
+                AssignmentView source = sources[sourceIndex];
+                if (IsProtectedSource(facts, source)) continue;
+                if (System.Array.IndexOf(ownedRoles, source.RoleId) < 0) continue;
+                int at = System.Array.IndexOf(ordered, source.RoleId);
+                if (at < 0) continue;
+                int lower = 0, upper = ordered.Length - 1;
+                for (int barrier = 0; barrier < sources.Count; barrier++)
+                {
+                    if (!IsProtectedSource(facts, sources[barrier])) continue;
+                    int barrierAt = System.Array.IndexOf(ordered, sources[barrier].RoleId);
+                    if (barrierAt < 0) continue;
+                    if (barrierAt > at) barrierAt--; // position after removing this owner
+                    if (barrier < sourceIndex) lower = System.Math.Max(lower, barrierAt + 1);
+                    if (barrier > sourceIndex) upper = System.Math.Min(upper, barrierAt);
+                }
+                int target = System.Math.Min(upper, System.Math.Max(lower, at));
+                if (target > at)
+                    for (int index = at; index < target; index++) ordered[index] = ordered[index + 1];
+                else
+                    for (int index = at; index > target; index--) ordered[index] = ordered[index - 1];
+                ordered[target] = source.RoleId;
+            }
+        }
+
+        // A held override owns its still-recommended generated member identities.
+        // Reserve those identities and every overlapping held composite transitively, so
+        // equal, longer or partly overlapping alternatives cannot erase any
+        // existing assignment's identity/state. Explicit members remain separate;
+        // only generated member entries are replaced by their existing owners.
+        private static void ReserveCompositeOverrides(EngineContext facts, int pawnIndex,
+            Dictionary<int, List<CompositeSpec>> byFirstMember, int[] published,
+            ref List<CompositeReservation>? reservations)
+        {
+            List<AssignmentView> existing = facts.Colony.Pawns[pawnIndex].Existing;
+            for (int index = 0; index < existing.Count; index++)
+            {
+                AssignmentView assignment = existing[index];
+                if (assignment.Enabled && !assignment.ForceOn) continue;
+                if (TryMatchHeldComposite(facts, pawnIndex, assignment, byFirstMember, published,
+                        out CompositeReservation reservation))
+                    (reservations ??= new List<CompositeReservation>()).Add(reservation);
+            }
+            if (reservations == null || reservations.Count == 0) return;
+            bool added;
+            do
+            {
+                added = false;
+                for (int index = 0; index < existing.Count; index++)
+                {
+                    AssignmentView assignment = existing[index];
+                    if (!assignment.Enabled || assignment.ForceOn) continue; // already seeded
+                    bool included = false;
+                    for (int prior = 0; prior < reservations.Count; prior++)
+                        if (reservations[prior].Composite.Role.Id == assignment.RoleId) { included = true; break; }
+                    if (included || !TryMatchHeldComposite(facts, pawnIndex, assignment, byFirstMember, published,
+                            out CompositeReservation reservation)) continue;
+                    for (int prior = 0; prior < reservations.Count; prior++)
+                        if (SharesCompositeMember(reservation.Composite.MemberIds, reservations[prior].Composite.MemberIds))
+                        { reservations.Add(reservation); added = true; break; }
+                }
+            } while (added);
+        }
+
+        private static bool TryMatchHeldComposite(EngineContext facts, int pawnIndex, AssignmentView assignment,
+            Dictionary<int, List<CompositeSpec>> byFirstMember, int[] published, out CompositeReservation reservation)
+        {
+            reservation = default;
+            RoleView role = facts.RoleOf(assignment.RoleId);
+            if (role?.MemberRoleIds == null || role.MemberRoleIds.Count == 0
+                || !facts.MeetsExplicitRequiredSkills(pawnIndex, role)
+                || System.Array.IndexOf(published, role.Id) >= 0
+                || !byFirstMember.TryGetValue(role.MemberRoleIds[0], out List<CompositeSpec> candidates)) return false;
+            for (int candidateIndex = 0; candidateIndex < candidates.Count; candidateIndex++)
+            {
+                CompositeSpec composite = candidates[candidateIndex];
+                if (composite.Role.Id != role.Id) continue;
+                int start = published.Length;
+                // Existing assignments keep their authored member order. The
+                // planner may separate/reorder generated members around a pin;
+                // adjacency is required only for new, ordinary substitutions.
+                for (int member = 0; member < composite.MemberIds.Length; member++)
+                {
+                    int at = System.Array.IndexOf(published, composite.MemberIds[member]);
+                    if (at < 0) return false;
+                    if (at < start) start = at;
+                }
+                reservation = new CompositeReservation(composite, start);
+                return true;
+            }
+            return false;
+        }
+
+        private static bool HasIndependentMemberAssignment(EngineContext facts, int pawnIndex, int roleId,
+            List<CompositeReservation> reservations, out int sourceIndex)
+        {
+            sourceIndex = -1;
+            List<AssignmentView> existing = facts.Colony.Pawns[pawnIndex].Existing;
+            for (int index = 0; index < existing.Count; index++)
+                if (existing[index].RoleId == roleId) return true;
+            // A removed ordinary composite may have supplied this still-wanted
+            // member while another of its members is no longer recommended.
+            // Project only that active member; do not retain the unwanted role
+            // or work. A pin already retains its source at the apply boundary.
+            for (int index = 0; index < existing.Count; index++)
+            {
+                AssignmentView assignment = existing[index];
+                if (!assignment.Enabled || assignment.Pinned) continue;
+                RoleView role = facts.RoleOf(assignment.RoleId);
+                if (role?.MemberRoleIds == null || !role.MemberRoleIds.Contains(roleId)
+                    || role.HasRules || role.Blocker || !role.Enabled && !assignment.ForceOn) continue;
+                bool retained = false;
+                for (int prior = 0; prior < reservations.Count; prior++)
+                    if (reservations[prior].Composite.Role.Id == role.Id) { retained = true; break; }
+                if (!retained) { sourceIndex = index; return true; }
+            }
+            return false;
+        }
+
+        private static bool SharesCompositeMember(int[] first, int[] second)
+        {
+            for (int index = 0; index < first.Length; index++)
+                if (System.Array.IndexOf(second, first[index]) >= 0) return true;
+            return false;
+        }
+
+        private static bool HasDirectMemberAssignment(List<AssignmentView> existing, int[] members)
+        {
+            for (int index = 0; index < existing.Count; index++)
+                if (System.Array.IndexOf(members, existing[index].RoleId) >= 0) return true;
+            return false;
         }
 
         /// The longest composite whose member ids equal published[start..] in
@@ -1053,7 +1320,8 @@ namespace WorkRoles.Core.Recs
             int pawnIndex,
             Dictionary<int, List<CompositeSpec>> byFirstMember,
             int[] published,
-            int start)
+            int start,
+            List<CompositeReservation>? reservations)
         {
             if (!byFirstMember.TryGetValue(
                     published[start], out List<CompositeSpec> candidates))
@@ -1066,9 +1334,21 @@ namespace WorkRoles.Core.Recs
                     continue;
                 int[] members = candidates[c].MemberIds;
                 if (start + members.Length > published.Length) continue;
+                bool overlaps = false;
+                if (reservations != null)
+                    for (int index = 0; index < reservations.Count; index++)
+                        if (SharesCompositeMember(members, reservations[index].Composite.MemberIds))
+                        { overlaps = true; break; }
+                if (overlaps) continue;
+                if (System.Array.IndexOf(published, candidates[c].Role.Id) >= 0
+                    || HasConflictingCompositeAssignmentState(facts, pawnIndex, candidates[c])) continue;
                 bool match = true;
-                for (int m = 1; m < members.Length; m++)
-                    if (published[start + m] != members[m]) { match = false; break; }
+                for (int m = 0; m < members.Length; m++)
+                {
+                    if (published[start + m] != members[m]
+                        || HasPreservedAssignmentState(facts, pawnIndex, members[m]))
+                    { match = false; break; }
+                }
                 if (!match) continue;
                 if (best == null
                     || members.Length > best.MemberIds.Length
@@ -1077,6 +1357,32 @@ namespace WorkRoles.Core.Recs
                     best = candidates[c];
             }
             return best;
+        }
+
+        private static bool HasConflictingCompositeAssignmentState(EngineContext facts, int pawnIndex, CompositeSpec composite)
+        {
+            List<AssignmentView> existing = facts.Colony.Pawns[pawnIndex].Existing;
+            for (int index = 0; index < existing.Count; index++)
+            {
+                AssignmentView assignment = existing[index];
+                if (assignment.RoleId != composite.Role.Id) continue;
+                if (assignment.Pinned) return true;
+                if (assignment.Enabled && !assignment.ForceOn) return false;
+                // Reusing this same composite identity preserves its override
+                // at apply time. It must not absorb directly-held members,
+                // whose own activation would then inherit that override.
+                return HasDirectMemberAssignment(existing, composite.MemberIds);
+            }
+            return false;
+        }
+
+        private static bool HasPreservedAssignmentState(EngineContext facts, int pawnIndex, int roleId)
+        {
+            List<AssignmentView> existing = facts.Colony.Pawns[pawnIndex].Existing;
+            for (int index = 0; index < existing.Count; index++)
+                if (existing[index].RoleId == roleId)
+                    return !existing[index].Enabled || existing[index].ForceOn || existing[index].Pinned;
+            return false;
         }
 
         private static void AddBundledExplanation(
@@ -1208,7 +1514,7 @@ namespace WorkRoles.Core.Recs
                 RoleView other = facts.RoleOf(otherRoleId);
                 if (otherRoleId != role.Id
                     && other != null
-                    && !other.Blocker
+                    && !other.Blocker && !other.HasRules
                     && facts.Redundant(otherRoleId, role.Id)
                     && !HigherInSharedPath(
                         facts.Colony.Paths, role.Id, otherRoleId))
@@ -1230,7 +1536,7 @@ namespace WorkRoles.Core.Recs
                 if (otherRoleId == role.Id) return false;
                 RoleView other = facts.RoleOf(otherRoleId);
                 if (other != null
-                    && !other.Blocker
+                    && !other.Blocker && !other.HasRules
                     && facts.Redundant(otherRoleId, role.Id)
                     && !HigherInSharedPath(
                         facts.Colony.Paths, role.Id, otherRoleId))

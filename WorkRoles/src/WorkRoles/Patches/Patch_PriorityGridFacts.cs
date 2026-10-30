@@ -25,11 +25,13 @@ namespace WorkRoles.Patches
                 || PriorityGridFacts.Revisions.RevisionOf(Pawn) != Revision)
                 return;
             PriorityGridFacts.Invalidate(Pawn);
+            ExternalPawnFacts.InvalidateSkillLevel(Pawn);
         }
     }
 
     /// Skill XP changes are intentionally irrelevant until the displayed whole
-    /// level changes. Capture both mutation paths used by vanilla and mods.
+    /// level changes. Share the existing mutation notifications with the
+    /// recommendation/skill snapshots; unchanged XP keeps the same early exit.
     [HarmonyPatch(typeof(SkillRecord), nameof(SkillRecord.Learn))]
     public static class Patch_SkillRecord_Learn_PriorityGrid
     {

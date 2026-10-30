@@ -1,5 +1,45 @@
 ﻿# Changelog
 
+## 1.7.5 — 2026-10-30
+
+- Changed: Mech and robot recommendations now prefer the closest fit, so single-duty bots get Hauler or Cleaner instead of Grunt.
+- Changed: Low-tier bots keep their native work such as construction, cooking and surgery instead of getting training roles.
+- Changed: No roles are excluded from recommendations by default any more (this does not affect recommendations).
+- Fixed: Suitability stars for mechs and robots are now skill-based like for colonists.
+- Fixed: Robot work tooltips distinguish assigned firefighting jobs from automatically extinguishing nearby fires.
+- Fixed: Minor mech edge-case bug and two performance regressions.
+- Fixed: Robot skills used only by bench recipes, such as Intellectual at the drug lab, were missing from skill displays and recommendations.
+- Fixed: Adding Complex Jobs mod to an existing save could leave the Cook role unselectable as bill filter.
+- Fixed: Recommendations could combine roles in ways that disabled wanted jobs or re-enabled jobs you had turned off.
+- Fixed: Recommendations could remove combined roles with shift rules or blocked jobs.
+- Fixed: Pinned Hunter roles could move behind roles with rules when applying recommendations.
+- Fixed: Time-limited roles could leave colonies without enough workers for the rest of the day.
+- Fixed: Importing swapped palette colors could give different roles the same color.
+- Fixed: Copied roles could lose their training paths.
+- Fixed: Restoring a deleted role could require a second restore to recover its training path.
+- Fixed: Restoring default jobs could leave a role doing the jobs of its former combined roles instead.
+- Fixed: Restoring default jobs on a role that blocks work could unexpectedly assign extra work.
+- Fixed: Fix My Colony could keep excluded, unpinned shift and blocker roles on mechs and robots.
+- Fixed: Colonists could finish a job after its role was turned off if another role still allowed related work.
+- Fixed: Colonists could continue fishing after fishing was turned off.
+- Fixed: Colonists hidden by an updated filter could still receive assignments from the current selection.
+- Fixed: Ideology groups could stay out of date after a colonist converted.
+- Fixed: Skill displays and recommendations could stay out of date after inhumanization or mechlink changes.
+- Fixed: Skill displays and recommendations now update when colonists gain or lose a skill level.
+- Fixed: Hunting recommendations could stay out of date after equipping or losing a ranged weapon.
+- Fixed: Role age warnings and recommendations could stay out of date after birthdays.
+- Fixed: Importing renamed default roles could replace the wrong role and change assigned colonists' work.
+- Fixed: Colonists could continue revoked tasks after importing changed roles.
+- Fixed: Restoring default jobs could lose work that another available role could still provide.
+- Fixed: Moving a role between colonists could lose its pin.
+- Fixed: Combined roles could prevent colonists from using bills restricted to their member roles.
+- Fixed: Location rules could stay out of date for colonists in attached caves after settling the parent map.
+- Fixed: Resetting recommendation settings could leave some values below their defaults.
+- Fixed: Training paths could assign roles that had become blockers or gained rules. Turning a training role into a blocker now asks for confirmation.
+- Fixed: Ghoul conversion and reversal could leave the colonist list out of date until reopening it.
+- Fixed: Long role names could overflow the Fix My Colony preview; their full names remain available on hover.
+- Removed: Lead-distribution settings that had no effect on recommendations.
+
 ## 1.7.4 — 2026-10-30 
 
 - Added: Button to set defaults for new games, carrying over your current settings.

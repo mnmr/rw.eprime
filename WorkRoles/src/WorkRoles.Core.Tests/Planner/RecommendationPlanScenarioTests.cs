@@ -971,7 +971,7 @@ public class RecommendationPlanScenarioTests
     }
 
     [Test]
-    public async Task OrdersConnectedTargetsWithoutLeadDiversification()
+    public async Task OrdersConnectedTrainingTargetsByExistingPriority()
     {
         /*
          * Default role recommendation order: Tailor > Smith > Fabricator > Crafter.
@@ -980,8 +980,8 @@ public class RecommendationPlanScenarioTests
          * Fabricator[8,21).
          * Role scales: all four roles are interest-only; Strong signal supplies
          * their surplus memberships.
-         * With lead diversification disabled, ordinary target minima and
-         * recommendation scores order every qualified pawn consistently. The
+         * Ordinary target minima and recommendation scores order every
+         * qualified pawn consistently. The
          * weak fourth pawn remains below Fabricator's target minimum.
          */
         RoleView tailor = CraftingRole(80, "Tailoring");

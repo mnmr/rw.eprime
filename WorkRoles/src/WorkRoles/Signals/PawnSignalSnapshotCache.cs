@@ -10,9 +10,10 @@ namespace WorkRoles.Signals
     /// assignment and name changes preserve signals; reads never
     /// compare the snapshot with live game state. Window/world teardown clears it.
     ///
-    /// Review guard — INVALID REPORT: ordinary skill Level/XP is
-    /// deliberately not an invalidation source. Window open and explicit
-    /// generation refreshes recapture skills; do not add clock polling here.
+    /// Whole skill-level gains and losses use the existing skill mutation
+    /// notifications. Fractional XP remains outside the invalidation contract;
+    /// window open and explicit generation refreshes recapture its progress.
+    /// Do not add clock polling here.
     internal static class PawnSignalSnapshotCache
     {
         private static readonly ExplicitSnapshotCache<Pawn, PawnSignalSnapshot>
