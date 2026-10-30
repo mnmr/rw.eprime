@@ -283,6 +283,11 @@ namespace Implanner
             internal readonly HashSet<int> ProtectedItems = new HashSet<int>();
             private readonly List<CraftNeed<ThingDef>> missing = new List<CraftNeed<ThingDef>>();
             private int startedBenches;
+            // Pass-owned promises for uncounted ingredient instances. Different
+            // recipes can accept different subsets of the same def (fresh corpses
+            // versus any corpse); one physical item cannot fund two bills.
+            private readonly Dictionary<int, int> promisedInstances = new Dictionary<int, int>();
+            private bool committedFreshCorpse, committedRottenCorpse;
             private PlannerChange change;
 
             internal ColonyDispatch(PlannerModel model, ReconcilePass pass, Colony colony)
@@ -387,8 +392,16 @@ namespace Implanner
                         Bill_Production bill = owned[i].Bill;
                         bool started = inProgress.Contains(bill);
                         if (started != (round == 0)) continue;
-                        if (!started && (!bill.recipe.AvailableNow
-                            || !budget.TryCommit(CostsOf(bill.recipe, Math.Max(bill.repeatCount, 1)))))
+                        if (!started) bill.allowedSkillRange.min = model.ProductionSkill;
+                        Building_WorkTable bench = owned[i].Bench;
+                        bool hasSlot = billsOnBench.TryGetValue(bench, out int heldBills);
+                        if (!started && (startedBenches > model.ProductionConcurrency
+                            || !bill.recipe.AvailableNow
+                            || !bench.UsableForBillsAfterFueling()
+                            || (model.OnlyDesignatedBenches && !model.IsBenchDesignated(bench.thingIDNumber))
+                            || (!hasSlot && startedBenches >= model.ProductionConcurrency)
+                            || heldBills >= PlannerModel.BillsPerBench
+                            || !CommitQueuedBill(bill)))
                         {
                             bill.billStack.Delete(bill);
                             change |= model.RemoveOwnedProductionBill(pass.BillId(bill));
@@ -611,7 +624,7 @@ namespace Implanner
             /// the shortfall, queued right here in rollout order.
             private Craft TryCraft(ThingDef item, int depth, int minQuality = 0)
             {
-                ProductionRoute<ThingDef> route = SelectRoute(item);
+                ProductionRoute<ThingDef> route = SelectRoute(item, minQuality);
                 RecipeDef? recipe = route.Recipe == null ? null
                     : DefDatabase<RecipeDef>.GetNamedSilentFail(route.Recipe.Id);
                 if (!choices.ContainsKey(item))
@@ -629,9 +642,9 @@ namespace Implanner
                         recipe != null && route.Blocked ? route.Blocker : null);
                 }
                 if (recipe == null) return Craft.Blocked;
-                var costs = CostsOf(recipe, 1);
-                if (budget.TryCommit(costs))
-                    return QueueCraft(recipe, item, minQuality);
+                var costs = route.Recipe!.Costs;
+                if (!route.Blocked && TryCommitCosts(recipe, costs))
+                    return QueueCraft(recipe, item, minQuality, costs);
                 if (!model.AllowIntermediaries || depth >= MaxIntermediaryDepth
                     || !expanded.Add(item)) return Craft.Blocked;
                 if (!route.Blocked)
@@ -651,9 +664,10 @@ namespace Implanner
                             intermediaryNeed.TryGetValue(cost.Resource, out int prior);
                             intermediaryNeed[cost.Resource] = Math.Max(prior, shortfall);
                         }
-                        if (i == route.Crafts.Count - 1 || !budget.TryCommit(craft.Costs)) continue;
+                        if (i == route.Crafts.Count - 1) continue;
                         RecipeDef next = DefDatabase<RecipeDef>.GetNamed(craft.Id);
-                        QueueCraft(next, craft.Item, 0);
+                        if (!TryCommitCosts(next, craft.Costs)) continue;
+                        QueueCraft(next, craft.Item, 0, craft.Costs);
                     }
                     return Craft.Waiting;
                 }
@@ -666,11 +680,14 @@ namespace Implanner
                 return Craft.Blocked;
             }
 
-            private Craft QueueCraft(RecipeDef recipe, ThingDef item, int minQuality)
+            private Craft QueueCraft(RecipeDef recipe, ThingDef item, int minQuality,
+                IReadOnlyList<(ThingDef Resource, int Count)> costs)
             {
                 Building_WorkTable? bench = FindFreeBench(recipe);
                 if (bench == null) return Craft.NoBench;
                 Bill_Production bill = MakeBill(recipe, 1, model.ProductionSkill);
+                RestrictIngredients(bill, costs);
+                RestrictCorpseFreshness(bill);
                 bench.BillStack.AddBill(bill);
                 TakeSlot(bench);
                 string billId = pass.BillId(bill);
@@ -681,12 +698,26 @@ namespace Implanner
                 return Craft.Created;
             }
 
-            private ProductionRoute<ThingDef> SelectRoute(ThingDef item)
+            private ProductionRoute<ThingDef> SelectRoute(ThingDef item, int minQuality = 0)
             {
                 AddRecipeFacts(item);
                 ProductionBudget<ThingDef> future = budget.Copy();
                 supply.AddAvailableTo(future);
-                return ProductionRoute<ThingDef>.Select(item, recipeFacts, budget, intermediaries,
+                var facts = recipeFacts;
+                if (minQuality > 0)
+                {
+                    facts = new Dictionary<ThingDef, IReadOnlyList<ProductionRecipe<ThingDef>>>(recipeFacts);
+                    var filtered = new List<ProductionRecipe<ThingDef>>();
+                    foreach (var candidate in recipeFacts[item])
+                    {
+                        var recipe = DefDatabase<RecipeDef>.GetNamed(candidate.Id);
+                        filtered.Add(new ProductionRecipe<ThingDef>(candidate.Id, item, candidate.Output,
+                            candidate.Costs, candidate.Available, candidate.Work,
+                            AlternativeCosts(recipe, 1, minQuality)));
+                    }
+                    facts[item] = filtered;
+                }
+                return ProductionRoute<ThingDef>.Select(item, facts, budget, intermediaries,
                     MaxIntermediaryDepth, future);
             }
 
@@ -700,15 +731,159 @@ namespace Implanner
                 {
                     RecipeDef recipe = candidates[i];
                     var costs = CostsOf(recipe, 1);
+                    var alternatives = AlternativeCosts(recipe, 1, 0);
                     facts.Add(new ProductionRecipe<ThingDef>(recipe.defName, item,
                         OutputCount(recipe, item), costs, recipe.AvailableNow && HasEligibleBench(recipe),
-                        recipe.WorkAmountTotal(null)));
+                        recipe.WorkAmountTotal(null), alternatives));
                     for (int k = 0; k < costs.Count; k++)
                     {
                         ThingDef ingredient = costs[k].Item1;
                         if (!model.AllowIntermediaries || !CanMakeIntermediate(ingredient)) continue;
                         intermediaries.Add(ingredient);
                         AddRecipeFacts(ingredient);
+                    }
+                    for (int g = 0; g < alternatives.Count; g++)
+                        for (int k = 0; k < alternatives[g].Count; k++)
+                        {
+                            ThingDef ingredient = alternatives[g][k].Resource;
+                            if (!model.AllowIntermediaries || !CanMakeIntermediate(ingredient)) continue;
+                            intermediaries.Add(ingredient);
+                            AddRecipeFacts(ingredient);
+                        }
+                }
+            }
+
+            private List<IReadOnlyList<(ThingDef Resource, int Count)>> AlternativeCosts(
+                RecipeDef recipe, int crafts, int minimum, Bill? bill = null)
+            {
+                var groups = new List<IReadOnlyList<(ThingDef Resource, int Count)>>();
+                for (int i = 0; i < recipe.ingredients.Count; i++)
+                {
+                    IngredientCount ingredient = recipe.ingredients[i];
+                    if (ingredient.IsFixedIngredient) continue;
+                    var options = new List<(ThingDef Resource, int Count)>();
+                    foreach (ThingDef def in ingredient.filter.AllowedThingDefs)
+                    {
+                        ThingFilter? allowed = bill?.ingredientFilter ?? recipe.defaultIngredientFilter;
+                        if (!recipe.fixedIngredientFilter.Allows(def)
+                            || (allowed != null && !allowed.Allows(def))
+                            || (IngredientQuality.TryQualityOf(def, out int quality) && quality < minimum)) continue;
+                        if (def.resourceReadoutPriority == ResourceCountPriority.Uncounted && !def.isTechHediff
+                            && IngredientStock(def, ingredient.filter, recipe.fixedIngredientFilter, allowed) == 0) continue;
+                        if (!budget.Tracks(def))
+                            budget.Track(def, IngredientStock(def), model.ResourceReserveOf(def.defName));
+                        options.Add((def, ingredient.CountRequiredOfFor(def, recipe, bill) * crafts));
+                    }
+                    options.Sort(static (a, b) =>
+                    {
+                        IngredientQuality.TryQualityOf(a.Resource, out int qa);
+                        IngredientQuality.TryQualityOf(b.Resource, out int qb);
+                        int order = qa.CompareTo(qb);
+                        return order != 0 ? order : string.CompareOrdinal(a.Resource.defName, b.Resource.defName);
+                    });
+                    groups.Add(options);
+                }
+                return groups;
+            }
+
+            private bool CommitQueuedBill(Bill_Production bill)
+            {
+                ThingDef? item = bill.recipe.ProducedThingDef;
+                if (item == null) return false;
+                int crafts = Math.Max(bill.repeatCount, 1);
+                var facts = new ProductionRecipe<ThingDef>(bill.recipe.defName, item, 1,
+                    CostsOf(bill.recipe, crafts), true, alternatives: AlternativeCosts(bill.recipe,
+                        crafts, Math.Max(0, model.ProductionBillQualityOf(pass.BillId(bill))), bill));
+                var recipes = new Dictionary<ThingDef, IReadOnlyList<ProductionRecipe<ThingDef>>>
+                    { [item] = new[] { facts } };
+                var route = ProductionRoute<ThingDef>.Select(item, recipes, budget, new HashSet<ThingDef>());
+                if (route.Blocked || route.Recipe == null || !TryCommitCosts(bill.recipe, route.Recipe.Costs, bill)) return false;
+                RestrictIngredients(bill, route.Recipe.Costs);
+                RestrictCorpseFreshness(bill);
+                return true;
+            }
+
+            private bool TryCommitCosts(RecipeDef recipe,
+                IReadOnlyList<(ThingDef Resource, int Count)> costs, Bill? bill = null)
+            {
+                Dictionary<int, int>? chosen = null;
+                committedFreshCorpse = committedRottenCorpse = false;
+                for (int c = 0; c < costs.Count; c++)
+                {
+                    ThingDef def = costs[c].Resource;
+                    if (def.isTechHediff || def.resourceReadoutPriority != ResourceCountPriority.Uncounted) continue;
+                    int left = costs[c].Count;
+                    ThingFilter? allowed = bill?.ingredientFilter ?? recipe.defaultIngredientFilter;
+                    for (int m = 0; m < colony.Maps.Count && left > 0; m++)
+                    {
+                        var things = colony.Maps[m].listerThings.ThingsOfDef(def);
+                        // Spend rotten corpses first where allowed, preserving
+                        // fresh ones for recipes such as VGE genoframes.
+                        for (int round = 0; round < 2 && left > 0; round++)
+                        for (int i = 0; i < things.Count && left > 0; i++)
+                        {
+                            Thing thing = things[i];
+                            bool rotten = thing is Corpse && thing.GetRotStage() != RotStage.Fresh;
+                            if (rotten != (round == 0)) continue;
+                            if (thing.IsForbidden(Faction.OfPlayer) || !recipe.fixedIngredientFilter.Allows(thing)
+                                || (allowed != null && !allowed.Allows(thing))) continue;
+                            bool accepts = false;
+                            for (int k = 0; k < recipe.ingredients.Count; k++)
+                                if (recipe.ingredients[k].filter.Allows(thing)) { accepts = true; break; }
+                            if (!accepts) continue;
+                            promisedInstances.TryGetValue(thing.thingIDNumber, out int promised);
+                            int used = 0;
+                            chosen?.TryGetValue(thing.thingIDNumber, out used);
+                            int take = Math.Min(left, Math.Max(0, thing.stackCount - promised - used));
+                            if (take == 0) continue;
+                            (chosen ??= new Dictionary<int, int>())[thing.thingIDNumber] = used + take;
+                            if (thing is Corpse)
+                            {
+                                if (rotten) committedRottenCorpse = true;
+                                else committedFreshCorpse = true;
+                            }
+                            left -= take;
+                        }
+                    }
+                    if (left > 0) return false;
+                }
+                if (!budget.TryCommit(costs)) return false;
+                if (chosen != null)
+                    foreach (var pair in chosen)
+                    {
+                        promisedInstances.TryGetValue(pair.Key, out int prior);
+                        promisedInstances[pair.Key] = prior + pair.Value;
+                    }
+                return true;
+            }
+
+            private void RestrictCorpseFreshness(Bill bill)
+            {
+                if (!committedFreshCorpse && !committedRottenCorpse) return;
+                // Express the allocated subset through the game's own filter:
+                // a genome bill paid with a rotten corpse must not take the
+                // nearer fresh corpse needed by a frame bill.
+                if (!committedFreshCorpse)
+                    bill.ingredientFilter.SetAllow(SpecialThingFilterDefOf.AllowFresh, false);
+                if (!committedRottenCorpse)
+                    bill.ingredientFilter.SetAllow(DefDatabase<SpecialThingFilterDef>.GetNamed("AllowRotten"), false);
+            }
+
+            // The actual game must consume the alternatives whose materials
+            // the dispatcher promised; otherwise two bills can spend one frame.
+            private static void RestrictIngredients(Bill bill,
+                IReadOnlyList<(ThingDef Resource, int Count)> costs)
+            {
+                for (int i = 0; i < bill.recipe.ingredients.Count; i++)
+                {
+                    var ingredient = bill.recipe.ingredients[i];
+                    if (ingredient.IsFixedIngredient) continue;
+                    foreach (ThingDef def in ingredient.filter.AllowedThingDefs)
+                    {
+                        bool selected = false;
+                        for (int c = 0; c < costs.Count; c++)
+                            if (costs[c].Resource == def) { selected = true; break; }
+                        bill.ingredientFilter.SetAllow(def, selected);
                     }
                 }
             }
@@ -719,7 +894,7 @@ namespace Implanner
                 for (int i = 0; i < benches.Count; i++)
                 {
                     Building_WorkTable bench = benches[i];
-                    if (!users.Contains(bench.def)) continue;
+                    if (!users.Contains(bench.def) || !bench.UsableForBillsAfterFueling()) continue;
                     if (model.IsBenchDesignated(bench.thingIDNumber)) return true;
                     if (!model.OnlyDesignatedBenches && (!model.OnlyIdleBenches || !HasOtherWork(bench)))
                         return true;
@@ -740,6 +915,9 @@ namespace Implanner
             /// benches that can work it and have bill-stack room.
             private Building_WorkTable? FindFreeBench(RecipeDef recipe)
             {
+                // Grandfather interrupted crafts, but drain excess benches
+                // before retaining or admitting any queued successors.
+                if (startedBenches > model.ProductionConcurrency) return null;
                 // Every craft of the rollout is examined each pass; skip
                 // the bench scan once no bench can take another bill.
                 if (startedBenches >= model.ProductionConcurrency)
@@ -759,7 +937,7 @@ namespace Implanner
                 for (int i = 0; i < benches.Count; i++)
                 {
                     Building_WorkTable bench = benches[i];
-                    if (!users.Contains(bench.def)) continue;
+                    if (!users.Contains(bench.def) || !bench.UsableForBillsAfterFueling()) continue;
                     if (bench.BillStack.Count >= BillStack.MaxCount) continue;
                     billsOnBench.TryGetValue(bench, out int mine);
                     if (mine >= PlannerModel.BillsPerBench) continue;
@@ -810,9 +988,31 @@ namespace Implanner
                 }
                 return costs;
             }
-            private int IngredientStock(ThingDef item)
+            private int IngredientStock(ThingDef item, ThingFilter? ingredient = null,
+                ThingFilter? fixedFilter = null, ThingFilter? allowed = null)
             {
-                if (!item.isTechHediff) return ColonyResourceCount(colony.Maps, item);
+                if (!item.isTechHediff && item.resourceReadoutPriority != ResourceCountPriority.Uncounted)
+                    return ColonyResourceCount(colony.Maps, item);
+                // Corpses (VGE's first genoframe ingredient) are deliberately
+                // absent from ResourceCounter. Count actual eligible instances
+                // only at this production boundary, including freshness filters.
+                if (!item.isTechHediff)
+                {
+                    int available = 0;
+                    for (int m = 0; m < colony.Maps.Count; m++)
+                    {
+                        var instances = colony.Maps[m].listerThings.ThingsOfDef(item);
+                        for (int i = 0; i < instances.Count; i++)
+                        {
+                            Thing thing = instances[i];
+                            if (!thing.IsForbidden(Faction.OfPlayer)
+                                && (ingredient == null || ingredient.Allows(thing))
+                                && (fixedFilter == null || fixedFilter.Allows(thing))
+                                && (allowed == null || allowed.Allows(thing))) available += thing.stackCount;
+                        }
+                    }
+                    return available;
+                }
                 int count = 0;
                 List<Thing> things = FreeThings(item);
                 for (int i = 0; i < things.Count; i++)

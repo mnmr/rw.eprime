@@ -35,7 +35,7 @@ namespace Implanner
             return decides;
         }
 
-        private static bool TryQualityOf(ThingDef def, out int quality)
+        internal static bool TryQualityOf(ThingDef def, out int quality)
         {
             quality = 0;
             List<DefModExtension>? extensions = def.modExtensions;

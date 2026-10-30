@@ -31,6 +31,31 @@ namespace Implanner.Core
             int free = Math.Max(0, usable - reserved);
             return new StockCoverage(needed, covered, free);
         }
+
+        /// Slots arrive in surgery rollout order; a bound item only covers
+        /// its own slot. Unreserved stock follows production's best-item-first
+        /// allocation. -1 means no currently available bound item.
+        public static StockCoverage Of(IReadOnlyList<(int Minimum, int ReservedQuality)> slots,
+            IReadOnlyList<int> unreserved, int heldBack)
+        {
+            var free = new List<int>(unreserved);
+            free.Sort();
+            free.RemoveRange(0, Math.Min(free.Count, Math.Max(0, heldBack)));
+            int lowest = ImplantQuality.Highest + 1;
+            for (int i = 0; i < slots.Count; i++) lowest = Math.Min(lowest, slots[i].Minimum);
+            int usefulFree = 0;
+            for (int i = 0; i < free.Count; i++) if (free[i] >= lowest) usefulFree++;
+            int covered = 0;
+            for (int i = 0; i < slots.Count; i++)
+            {
+                if (slots[i].ReservedQuality >= slots[i].Minimum) { covered++; continue; }
+                int pick = free.Count - 1;
+                if (pick >= 0 && free[pick] >= slots[i].Minimum)
+                { covered++; free.RemoveAt(pick); }
+            }
+            return new StockCoverage(slots.Count, covered, usefulFree);
+        }
+
     }
 
     /// One colonist's contribution to the surgery breakdown: the effective

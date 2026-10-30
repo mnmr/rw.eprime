@@ -105,18 +105,21 @@ namespace Implanner
                     + "with " + PlannerAutomation.BlockedBy + " active.");
         }
 
-        /// Whether a reserved item still meets its goal's plan minimum
-        /// quality (items without quality always do).
-        private static bool MeetsPlanMinimum(PawnEvaluation evaluation,
+        /// Reservations must still improve the current part, including after
+        /// a wound heals while another slot holds the batch back.
+        private static bool MeetsPlanMinimum(Pawn pawn, PawnEvaluation evaluation,
             string goalKey, Thing item)
         {
             if (!GoalKeys.TryResolveImplantSlot(evaluation.Goals, goalKey,
-                    out ImplantGoal goal, out _))
+                    out ImplantGoal goal, out int ordinal))
                 return true;
             ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(goal.ImplantDefName);
-            return entry == null
-                || ImplantQualities.QualityOf(item)
-                    >= PawnProjection.PlanMinimumFor(entry, evaluation.Plan.MinQuality);
+            BodyPartRecord? part = entry != null
+                ? PawnProjection.ResolveSlotPart(pawn, entry, ordinal) : null;
+            if (entry == null || part == null) return false;
+            int minimum = PawnProjection.MinimumAcceptableQuality(
+                pawn, entry, part, evaluation.Plan.MinQuality);
+            return minimum != ImplantQuality.None && ImplantQualities.QualityOf(item) >= minimum;
         }
 
         private static void Reconcile(ImplannerStore store, bool boundaryHit)
@@ -139,17 +142,17 @@ namespace Implanner
             change |= store.SeedSurgeryConcurrency(index.PawnsById.Count);
 
             // Reservation lifecycle: release-and-report. A reservation exists
-            // only while its goal is in the pawn's ACTIVE batch AND the pawn
-            // can still collect the item; anything else — delivered (the
-            // slot is no longer missing), outside the batch being worked
-            // (tier iteration moved on, or a stale cross-tier holding from
-            // an older version), goal removed, pawn gone, item destroyed,
+            // while its missing goal is in the active batch or has a live
+            // owned operation, AND the pawn can still collect the item.
+            // Delivered goals, abandoned batches without an operation,
+            // goals removed, pawn gone, item destroyed,
             // forbidden, taken, or the pawn now settled at a different
             // colony — releases it. A pawn merely away (caravan, mission,
             // in flight) keeps its reservations: it may return, and
             // re-allocation on return is automatic either way. An item below
-            // the plan's minimum quality (the player raised it) is released
-            // too. A pushed-out implant's reservation, or an upgrade's item,
+            // the plan's minimum quality or the current part's efficiency
+            // floor (including healing) is released too. A pushed-out
+            // implant's reservation, or an upgrade's item,
             // lives as long as its reinstall record, whatever the plan says.
             var reservationIds = new List<int>(model.Reservations.Keys);
             reservationIds.Sort();
@@ -162,13 +165,21 @@ namespace Implanner
                 PawnEvaluation? evaluation = reinstall
                     ? null
                     : pass.Evaluate(reservation.PawnId);
+                bool scheduled = false;
+                if (evaluation != null && evaluation.Missing.Contains(reservation.GoalKey)
+                    && index.PawnsById.TryGetValue(reservation.PawnId, out Pawn? patient))
+                {
+                    string? billId = model.OwnedBill(reservation.PawnId, reservation.GoalKey);
+                    scheduled = billId != null && pass.FindBill(patient.BillStack, billId) is Bill_Medical;
+                }
                 bool valid = (reinstall
                         || (evaluation != null
-                            && evaluation.BatchKeys.Contains(reservation.GoalKey)))
+                            && (evaluation.BatchKeys.Contains(reservation.GoalKey) || scheduled)))
                     && index.ItemsById.TryGetValue(itemId, out Thing? item)
                     && !item.IsForbidden(Faction.OfPlayer)
                     && index.PawnMayCollect(reservation.PawnId, itemId)
-                    && (reinstall || MeetsPlanMinimum(evaluation!, reservation.GoalKey, item));
+                    && (reinstall || MeetsPlanMinimum(index.PawnsById[reservation.PawnId],
+                        evaluation!, reservation.GoalKey, item));
                 if (!valid)
                     change |= model.ReleaseReservation(itemId);
             }

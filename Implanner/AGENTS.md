@@ -46,7 +46,7 @@ efficiency per instance (`ImplantQualities.InstalledEfficiency`), and the
 substitution floor is the goal's implant at the plan minimum raised until it
 is no worse than a natural part. An installed exact kind below the minimum
 still counts as done. A reservation whose item
-falls below its plan's minimum (the player raised it) is released.
+falls below its plan's minimum or the current part-efficiency floor (including healing) is released.
 Operations install their reserved item: the implant is a fixed ingredient,
 accepted by `Bill.IsFixedOrAllowedIngredient` before the bill's filter, so
 `Patch_BoundSurgeryIngredient` refuses every other implant item for a bill in
@@ -213,7 +213,7 @@ are excluded from the catalog: only ordinary humanlikes are plannable.
 | Modular-host extension type (`ModCompatibility.modularExtension`) | Loaded assembly set (static per session); resolved once by type name; no teardown (process-lifetime immutable fact) |
 | Quality mod handles (`ImplantQualities`) | Loaded assembly set (static per session): Quality Bionics Remastered's API delegates and hediff comp field, Vanilla Genetics Expanded's comp types, Elite Bionics Framework's comp props fields, resolved once by type name; never a result (Quality Bionics Remastered's multipliers are player settings, read through its API on every call); the last observed efficiency multiplier table is compared on the approved 1020-tick boundary (`ImplantQualities.CheckSettings`, no-op without the mod; the mod has no change notification) and a change advances `ImplantQualities.SettingsRevision` and `ExternalPawnFacts.Revision`; no teardown |
 | Quality Jobs bridge (`QualityJobsBridge.manageBill`) | Active mod list + loaded assemblies (static per session); `QualityJobsApi.ManageBill` bound once when `ApiVersion` >= 2; a thrown call disables it for the process (one warning); no teardown |
-| Surgery ingredient bindings (`SurgeryBindings`) | The model's reservations (Reservations domain) and owned operation bills (Surgery domain): bill loadID to reserved item id, also publishes reserved item IDs and owned production-bill IDs (Production domain); republished by the store on changes of these domains, on construction and after load; read only by `Patch_BoundSurgeryIngredient`; `Reset` on world teardown |
+| Surgery ingredient bindings (`SurgeryBindings`) | The model's reservations (Reservations domain) and owned operation bills (Surgery domain): bill loadID to reserved item id (or -1 for owned unbound operations, preventing new ingredient searches), also publishes reserved item IDs and owned production-bill IDs (Production domain); republished by the store on changes of these domains, on construction and after load; read only by `Patch_BoundSurgeryIngredient`; `Reset` on world teardown |
 | Endless Growth bill-limit callable (`ModCompatibility.endlessGrowthBillMaximum`) | Loaded assembly set (static per session); resolves the same provider used by the mod's bill constructors, only when repairing an owned bill with the legacy maximum of 20; caches the delegate, never its result; retains no world or game object |
 | Implant conflict facts (`ImplantConflicts.facts`) | Loaded definition set (static per session; label-free, so deliberately not language-gated); `Release` via `Catalogs.Release` |
 | Production recipes (`PlannerProduction.productionRecipes`) | Loaded definition set (static per session): all non-surgery candidates with a worktable user, ordered by ordinal defName; availability is evaluated per dispatch, never cached; entries never change; `Reset` on world teardown |
@@ -267,7 +267,7 @@ changes (for the display-only gear column), implant hediff add/remove
 (`PawnProjection.IsTrackedImplant`: `countsAsAddedPartOrImplant` or any
 catalog kind, since Bionic modularity's modules clear the flag; the same
 filter `PawnProjection` applies when projecting installed implants),
-pawn spawn/despawn/faction change, caravan membership.
+pawn spawn/despawn/faction change, caravan membership, and life-stage transitions across the adult eligibility boundary. Ordinary age ticks within a life stage do not invalidate facts.
 
 Changes to these dependencies require updated behavioral tests in the same change.
 

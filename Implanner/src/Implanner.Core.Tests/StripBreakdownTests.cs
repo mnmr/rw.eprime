@@ -8,6 +8,24 @@ namespace Implanner.Core.Tests;
 /// missing implant slots, ordered like automation dispatches them.
 public class StripBreakdownTests
 {
+    [Test]
+    public async Task MixedQualityPlansOnlyCountStockThatCanFillEachSlot()
+    {
+        // Two real VGE claws: Normal stock cannot complete an Excellent plan.
+        var coverage = StockCoverage.Of(new[] { (2, -1), (4, -1) }, new[] { 2, 2 }, 0);
+        await Assert.That(coverage.Covered).IsEqualTo(1);
+        await Assert.That(coverage.Queued).IsEqualTo(1);
+        // Hold-back keeps the lowest free item, while a reserved Excellent
+        // item still covers its surgery. Surplus remains visible as free stock.
+        coverage = StockCoverage.Of(new[] { (2, -1), (4, 4) }, new[] { 0, 2, 2 }, 1);
+        await Assert.That(coverage.Covered).IsEqualTo(2);
+        await Assert.That(coverage.Free).IsEqualTo(2);
+        coverage = StockCoverage.Of(new[] { (2, 4), (4, -1) }, new[] { 2 }, 0);
+        await Assert.That(coverage.Covered).IsEqualTo(1);
+        coverage = StockCoverage.Of(new[] { (2, -1), (4, -1) }, new[] { 2, 4 }, 0);
+        await Assert.That(coverage.Covered).IsEqualTo(1);
+    }
+
     /// Coverage counts reserved items (they exist and need no production)
     /// but the free figure excludes both hold-back and reservations, and
     /// free stock is never capped to the need.

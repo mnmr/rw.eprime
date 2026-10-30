@@ -92,7 +92,9 @@ namespace Implanner
                 change |= model.RemoveOwnedBill(pawnId, removalKey);
                 return change | model.ActivateReinstalls(pawnId, removalKey);
             }
-            if (bill != null && def != null && part != null) return change;
+            if (bill != null && def != null && part != null
+                && (bill.recipe != RecipeDefOf.RemoveBodyPart
+                    || PlannerUpgrades.SafeToRemovePart(pawn, part))) return change;
             if (bill != null) pawn.BillStack.Delete(bill);
             change |= model.RemoveOwnedBill(pawnId, removalKey);
             int itemId = ReservedItem(model, pawnId, record.Key);

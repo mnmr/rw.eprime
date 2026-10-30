@@ -1,0 +1,1 @@
+<ModMetaData><name>Implanner reservation review</name><author>Temporary diagnostic</author><packageId>eprime.implanner.reviewreservations</packageId><supportedVersions><li>1.7</li></supportedVersions><loadAfter><li>eprime.implanner</li></loadAfter></ModMetaData>

@@ -5,6 +5,74 @@ namespace Implanner.Core.Tests;
 public class ProductionRouteTests
 {
     [Test]
+    public async Task DiverseCorpsesCannotFundAnImpossibleFrameQuality()
+    {
+        var corpses = new List<(string, int)>();
+        var budget = new ProductionBudget<string>();
+        for (int i = 0; i < 15; i++)
+        { string corpse = "Corpse" + i; corpses.Add((corpse, 1)); budget.Track(corpse, 1, 0); }
+        var recipes = new Dictionary<string, IReadOnlyList<ProductionRecipe<string>>>();
+        recipes["Frame0"] = new[] { new ProductionRecipe<string>("Frame0", "Frame0", 1,
+            Array.Empty<(string, int)>(), true,
+            alternatives: new[] { (IReadOnlyList<(string, int)>)corpses }) };
+        var intermediaries = new HashSet<string> { "Frame0" };
+        for (int i = 1; i <= 4; i++)
+        {
+            string frame = "Frame" + i;
+            recipes[frame] = new[] { new ProductionRecipe<string>(frame, frame, 1,
+                new[] { ("Frame" + (i - 1), 2) }, true) };
+            intermediaries.Add(frame);
+        }
+        // VGE's Excellent frame needs sixteen corpses, irrespective of species.
+        await Assert.That(ProductionRoute<string>.Select("Frame4", recipes, budget, intermediaries).Blocked).IsTrue();
+        var feasible = ProductionRoute<string>.Select("Frame2", recipes, budget, intermediaries);
+        await Assert.That(feasible.Blocked).IsFalse();
+        await VerifyCompletes(feasible, budget, "Frame2");
+        recipes["Genome"] = new[] { new ProductionRecipe<string>("Genome", "Genome", 1,
+            new[] { ("Corpse0", 1) }, true) };
+        recipes["Claw"] = new[] { new ProductionRecipe<string>("Claw", "Claw", 1,
+            new[] { ("Genome", 1), ("Frame3", 1) }, true) };
+        intermediaries.Add("Genome");
+        for (int i = 8; i < 15; i++) budget.Track("Corpse" + i, 0, 0);
+        // The genome's sibling consumes the ninth corpse. The capacity bound
+        // must also run after a preceding sibling has spent shared stock.
+        await Assert.That(ProductionRoute<string>.Select("Claw", recipes, budget, intermediaries).Blocked).IsTrue();
+        budget.Track("Corpse8", 1, 0);
+        feasible = ProductionRoute<string>.Select("Claw", recipes, budget, intermediaries);
+        await Assert.That(feasible.Blocked).IsFalse();
+        await VerifyCompletes(feasible, budget, "Claw");
+    }
+
+    [Test]
+    public async Task CategoryIngredientMustBeStockedOrCraftedBeforeTheImplant()
+    {
+        var recipes = new Dictionary<string, IReadOnlyList<ProductionRecipe<string>>>
+        {
+            ["Claw"] = new[] { new ProductionRecipe<string>("Claw", "Claw", 1,
+                new[] { ("Genome", 2) }, true, alternatives: new[] {
+                    (IReadOnlyList<(string, int)>)new[] { ("NormalFrame", 1), ("ExcellentFrame", 1) } }) },
+            ["NormalFrame"] = new[] { new ProductionRecipe<string>("Frame", "NormalFrame", 1,
+                new[] { ("Steel", 5) }, true) }
+        };
+        var budget = new ProductionBudget<string>();
+        budget.Track("Genome", 2, 0);
+        budget.Track("Steel", 5, 0);
+        var route = ProductionRoute<string>.Select("Claw", recipes, budget, new HashSet<string>());
+        await Assert.That(route.Blocked).IsTrue();
+        route = ProductionRoute<string>.Select("Claw", recipes, budget, new HashSet<string> { "NormalFrame" });
+        await Assert.That(route.Blocked).IsFalse();
+        await Assert.That(route.Crafts.Count).IsEqualTo(2);
+        await VerifyCompletes(route, budget, "Claw");
+        // Use an already available acceptable alternative without spending
+        // another bench slot manufacturing the first-listed option.
+        budget.Track("ExcellentFrame", 1, 0);
+        route = ProductionRoute<string>.Select("Claw", recipes, budget, new HashSet<string> { "NormalFrame" });
+        await Assert.That(route.Crafts.Count).IsEqualTo(1);
+        await Assert.That(route.Recipe!.Costs).Contains(("ExcellentFrame", 1));
+        await VerifyCompletes(route, budget, "Claw");
+    }
+
+    [Test]
     public async Task PrerequisitesLeaveEnoughMaterialsToFinishTheParentAndItsSiblings()
     {
         var recipes = new Dictionary<string, IReadOnlyList<ProductionRecipe<string>>>

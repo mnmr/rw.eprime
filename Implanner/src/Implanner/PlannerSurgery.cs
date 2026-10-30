@@ -617,6 +617,36 @@ namespace Implanner
             var pawnIds = new List<int>(model.Assignments.Keys);
             pawnIds.Sort();
 
+            // Reinstalls outlive plan assignments. Refresh every live owned
+            // medical bill before batch, health, or reservation gates.
+            foreach (var owner in model.OwnedBills)
+            {
+                Colony? colony = index.ColonyOfPawn(owner.Key);
+                if (colony == null || !index.PawnsById.TryGetValue(owner.Key, out Pawn? patient)) continue;
+                int floor = PatientFloor(model, index, colony, patient, owner.Key);
+                foreach (string billId in owner.Value.Values)
+                    if (pass.FindBill(patient.BillStack, billId) is Bill_Medical bill)
+                    {
+                        ModCompatibility.RepairBillSkillMaximum(bill);
+                        bill.allowedSkillRange.min = floor;
+                    }
+            }
+
+            var reservedItemByGoal = new Dictionary<(int, string), int>();
+            foreach (KeyValuePair<int, ItemReservation> pair in model.Reservations)
+                reservedItemByGoal[(pair.Value.PawnId, pair.Value.GoalKey)] = pair.Key;
+            // A doctor may already carry the implant, which is then absent
+            // from the map item index. Let that job finish its chosen surgery.
+            var inProgress = new HashSet<Bill>();
+            for (int c = 0; c < index.Colonies.Count; c++)
+                for (int m = 0; m < index.Colonies[c].Maps.Count; m++)
+                {
+                    var doctors = index.Colonies[c].Maps[m].mapPawns.AllPawnsSpawned;
+                    for (int d = 0; d < doctors.Count; d++)
+                        if (doctors[d].CurJob?.bill is Bill_Medical active)
+                            inProgress.Add(active);
+                }
+
             // Retract owned operations whose goal is no longer pursued
             // (delivered, removed, or blocked) BEFORE counting the
             // concurrency cap, so a pawn whose last record just went stale
@@ -634,17 +664,17 @@ namespace Implanner
                 List<string>? stale = null;
                 foreach (KeyValuePair<string, string> pair in owned)
                 {
+                    Bill? operation = pass.FindBill(pawn.BillStack, pair.Value);
                     // Reinstall operations and upgrade removals answer to
                     // their records (PlannerReinstall), never to the plan.
                     if (model.IsActiveReinstall(pawnId, pair.Key)
                         || GoalKeys.IsUpgrade(pair.Key))
                         continue;
-                    if (!evaluation.Missing.Contains(pair.Key))
+                    if (!evaluation.Missing.Contains(pair.Key)
+                        || (!NeedsNoItem(pawn, evaluation.Goals, pair.Key)
+                            && !reservedItemByGoal.ContainsKey((pawnId, pair.Key))
+                            && (operation == null || !inProgress.Contains(operation))))
                         (stale ??= new List<string>()).Add(pair.Key);
-                    else if (pass.FindBill(pawn.BillStack, pair.Value) is Bill_Medical bill)
-                        // Retained operations may be outside the active batch
-                        // or waiting on health/stock; repair before those gates.
-                        ModCompatibility.RepairBillSkillMaximum(bill);
                 }
                 if (stale == null) continue;
                 stale.Sort(StringComparer.Ordinal);
@@ -655,10 +685,6 @@ namespace Implanner
                     change |= model.RemoveOwnedBill(pawnId, stale[k]);
                 }
             }
-
-            var reservedItemByGoal = new Dictionary<(int, string), int>();
-            foreach (KeyValuePair<int, ItemReservation> pair in model.Reservations)
-                reservedItemByGoal[(pair.Value.PawnId, pair.Value.GoalKey)] = pair.Key;
 
             // Concurrent-surgeries cap: colonists per colony that hold live
             // Implanner operations after retraction. New colonists only
@@ -704,17 +730,23 @@ namespace Implanner
 
                 // The cap gates only colonists without scheduled operations.
                 IReadOnlyDictionary<string, string>? owned = model.OwnedBillsFor(pawnId);
-                if (owned == null || owned.Count == 0)
+                bool needsSlot = (owned == null || owned.Count == 0)
+                    && !(model.CountHospitalized && IsHospitalized(pawn));
+                if (needsSlot)
                 {
                     plannedByColony.TryGetValue(
                         colony.LocationId, out int planned);
                     if (planned >= model.SurgeryConcurrency) continue;
-                    plannedByColony[colony.LocationId] = planned + 1;
                 }
 
                 for (int k = 0; k < releasable.Count; k++)
                     change |= EnsureOperation(model, pass, pawn, pawnId,
                         evaluation.Goals, releasable[k], floor);
+                if (needsSlot && model.OwnedBillsFor(pawnId)?.Count > 0)
+                {
+                    plannedByColony.TryGetValue(colony.LocationId, out int planned);
+                    plannedByColony[colony.LocationId] = planned + 1;
+                }
             }
             SweepUnassigned(model, pass, ref change);
             return change;

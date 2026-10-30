@@ -140,7 +140,7 @@ namespace Implanner.Core
     /// Materials one colony can still promise to new one-craft bills. A
     /// craft fits only when stock covers its cost plus everything already
     /// promised to queued (not yet started) bills plus the player's
-    /// reserve, for every fixed ingredient; a craft that does not fit
+    /// reserve, for every selected ingredient; a craft that does not fit
     /// promises nothing.
     public sealed class ProductionBudget<TKey> where TKey : notnull
     {
@@ -148,6 +148,12 @@ namespace Implanner.Core
             new Dictionary<TKey, (int, int, int)>();
 
         public bool Tracks(TKey resource) => resources.ContainsKey(resource);
+
+        public int Available(TKey resource)
+        {
+            resources.TryGetValue(resource, out var r);
+            return Math.Max(0, r.Stock - r.Reserve - r.Promised);
+        }
 
         /// A route probe owns its copy; trying an alternative never spends the
         /// dispatcher's materials. Only the selected, queued craft commits them.

@@ -11,6 +11,33 @@ namespace Implanner.Core.Tests;
 /// and come back as temp ids that ImportPlans remaps.
 public class PlansXmlTests
 {
+    [Test]
+    public async Task RepeatedImplantElementsDoNotCreateImpossibleDuplicateSlots()
+    {
+        const string xml = "<ImplannerPlans><Plan Name=\"Both arms\">"
+            + "<Implant Def=\"BionicArm\"><Slot>0</Slot></Implant>"
+            + "<Implant Def=\"BionicArm\"><Slot>0</Slot><Slot>1</Slot></Implant>"
+            + "</Plan></ImplannerPlans>";
+        await Assert.That(PlansXml.TryImport(xml, out var parsed, out _)).IsTrue();
+        var model = new PlannerModel();
+        int nextId = 100;
+        model.ImportPlans(parsed, () => nextId++);
+        model.AssignPlan(1, model.Plans[0].Id);
+        var goals = model.EffectiveImplants(model.AssignedPlan(1)!);
+        var contexts = new List<ImplantContext>();
+        for (int i = 0; i < goals.Count; i++)
+            contexts.Add(new ImplantContext(new[] { "LeftArm", "RightArm" }, 1.25f));
+        var installed = new[] {
+            new InstalledImplant("BionicArm", "LeftArm", 1.25f),
+            new InstalledImplant("BionicArm", "RightArm", 1.25f)
+        };
+        var result = PlanEvaluator.Evaluate(goals, installed, contexts, false);
+        await Assert.That(result.State).IsEqualTo(PawnPlanState.Complete);
+        await Assert.That(result.TotalUnits).IsEqualTo(2);
+        await Assert.That(result.SatisfiedUnits).IsEqualTo(2);
+        await Assert.That(PlanEvaluator.MissingImplantSlotKeys(goals, installed, contexts).Count).IsEqualTo(0);
+    }
+
     // Tests run in parallel: id sources must be per-test, not static.
     int nextPlanId = 1;
 

@@ -28,6 +28,24 @@ namespace Implanner.Patches
         }
     }
 
+    [HarmonyPatch(typeof(Pawn_AgeTracker), "RecalculateLifeStageIndex")]
+    public static class Patch_LifeStage_PawnFacts
+    {
+        public static void Prefix(int ___cachedLifeStageIndex, out int __state) =>
+            __state = ___cachedLifeStageIndex;
+
+        public static void Postfix(Pawn ___pawn, int ___cachedLifeStageIndex, int __state)
+        {
+            if (__state == ___cachedLifeStageIndex || __state < 0) return;
+            var stages = ___pawn.RaceProps.lifeStageAges;
+            if (__state >= stages.Count || ___cachedLifeStageIndex < 0
+                || ___cachedLifeStageIndex >= stages.Count) return;
+            bool wasAdult = stages[__state].def.developmentalStage == DevelopmentalStage.Adult;
+            bool isAdult = stages[___cachedLifeStageIndex].def.developmentalStage == DevelopmentalStage.Adult;
+            if (wasAdult != isAdult) PawnFactsTransitions.BumpFor(___pawn);
+        }
+    }
+
     [HarmonyPatch(typeof(Pawn_ApparelTracker), nameof(Pawn_ApparelTracker.Notify_ApparelAdded))]
     public static class Patch_ApparelAdded_PawnFacts
     {

@@ -253,6 +253,7 @@ namespace Implanner
                 return null;
             if (addedPart)
             {
+                if (!SafeToRemovePart(pawn, part)) return null;
                 RecipeDef remove = RecipeDefOf.RemoveBodyPart;
                 return remove.AvailableNow && remove.AvailableOnNow(pawn, part)
                     && PlannerSurgery.AppliesTo(remove, pawn, part)
@@ -278,6 +279,11 @@ namespace Implanner
             }
             return best;
         }
+
+        // The removal and replacement are separate operations. The patient
+        // must survive the missing-part interval (notably heart and liver).
+        internal static bool SafeToRemovePart(Pawn pawn, BodyPartRecord part) =>
+            !pawn.health.WouldDieAfterAddingHediff(HediffDefOf.MissingBodyPart, part, 1f);
 
         private static bool AnythingElseOn(Pawn pawn, Hediff hediff, BodyPartRecord part)
         {

@@ -12,7 +12,9 @@ namespace Implanner
     //   at a time).
     // Key: the operation bill's loadID (the numeric suffix of its unique load
     //   id "Bill_[recipe]_[loadID]").
-    // Value: the reserved item's thing id; the map is replaced wholesale on
+    // Value: the reserved item's thing id, or -1 for an owned operation
+    // temporarily without a reservation (refuses new implant searches).
+    // The map is replaced wholesale on
     //   publication and never mutated afterwards.
     // Dependencies: the model's owned operation bills (Surgery domain) and
     //   item reservations (Reservations domain).
@@ -48,6 +50,9 @@ namespace Implanner
             if ((change & (PlannerChange.Surgery | PlannerChange.Reservations)) != 0)
             {
                 var map = new Dictionary<int, int>();
+                foreach (var pawn in model.OwnedBills)
+                    foreach (string billId in pawn.Value.Values)
+                        if (TryParseLoadId(billId, out int loadId)) map[loadId] = -1;
                 foreach (KeyValuePair<int, ItemReservation> pair in model.Reservations)
                 {
                     string? billId = model.OwnedBill(pair.Value.PawnId, pair.Value.GoalKey);

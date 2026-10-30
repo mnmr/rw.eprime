@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup><TargetFramework>net10.0</TargetFramework><LangVersion>10</LangVersion><AssemblyName>Implanner.SurgeryGateProbe</AssemblyName><OutputPath>Probe/1.7/Assemblies/</OutputPath><AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath><GenerateDependencyFile>false</GenerateDependencyFile></PropertyGroup>
+ <ItemGroup>
+  <Reference Include="Assembly-CSharp" HintPath="C:/Program Files (x86)/Steam/steamapps/common/RimWorld/Assembly-CSharp.dll" Private="false" />
+  <Reference Include="UnityStubs" HintPath="C:/Program Files (x86)/Steam/steamapps/common/RimWorld/UnityStubs.dll" Private="false" />
+  <Reference Include="0Harmony" HintPath="C:/Program Files (x86)/Steam/steamapps/workshop/content/294100/2009463077/1.7/Assemblies/0Harmony.dll" Private="false" />
+  <Reference Include="Implanner" HintPath="../../../../mod/1.7/Assemblies/Implanner.dll" Private="false" />
+  <Reference Include="Implanner.Core" HintPath="../../../../mod/1.7/Assemblies/Implanner.Core.dll" Private="false" />
+ </ItemGroup>
+</Project>

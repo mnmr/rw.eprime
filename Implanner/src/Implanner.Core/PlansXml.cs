@@ -226,7 +226,17 @@ namespace Implanner.Core
                     }
                     if (ordinals == null) continue; // no valid slots → drop implant
                     ordinals.Sort();
-                    goals.Add(new ImplantGoal(0, def, ordinals));
+                    int existing = goals.FindIndex(g => g.ImplantDefName == def);
+                    if (existing < 0)
+                        goals.Add(new ImplantGoal(0, def, ordinals));
+                    else
+                    {
+                        var merged = new List<int>(goals[existing].SlotOrdinals);
+                        for (int i = 0; i < ordinals.Count; i++)
+                            if (!merged.Contains(ordinals[i])) merged.Add(ordinals[i]);
+                        merged.Sort();
+                        goals[existing] = new ImplantGoal(0, def, merged);
+                    }
                 }
 
                 keptNames.Add(name, tempId);

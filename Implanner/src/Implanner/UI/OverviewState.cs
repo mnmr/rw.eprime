@@ -947,10 +947,8 @@ namespace Implanner.UI
             // upgrade over its installed base, which wants none (the same
             // per-slot rule reservation and production apply).
             var needed = new Dictionary<ThingDef, int>();
-            // The lowest quality any of those slots accepts per item: stock
-            // below it covers nothing (Quality Bionics Remastered, Vanilla
-            // Genetics Expanded).
-            var lowestAccepted = new Dictionary<ThingDef, int>();
+            var work = new List<SurgeryWorkItem>();
+            var needByGoal = new Dictionary<(int, string), (ThingDef Item, int Minimum)>();
             int neededTotal = 0;
             for (int i = 0; i < rows.Count; i++)
             {
@@ -959,6 +957,8 @@ namespace Implanner.UI
                 if (row.Evaluation.State == PawnPlanState.Complete) continue;
                 List<string> missing = PawnProjection.MissingImplantSlotKeys(
                     model, row.Pawn, row.Goals, row.MinQuality);
+                SurgeryCandidate candidate = model.Iteration == IterationStrategy.Asap
+                    ? PawnProjection.CandidateOf(row.Pawn) : default;
                 for (int k = 0; k < missing.Count; k++)
                 {
                     if (!GoalKeys.TryResolveImplantSlot(
@@ -977,8 +977,12 @@ namespace Implanner.UI
                             row.Pawn, entry!, part, row.MinQuality)
                         : ImplantQuality.None;
                     if (minimum == ImplantQuality.None) continue;
-                    if (!lowestAccepted.TryGetValue(item, out int lowest) || minimum < lowest)
-                        lowestAccepted[item] = minimum;
+                    int pawnId = row.Pawn.thingIDNumber;
+                    needByGoal[(pawnId, missing[k])] = (item, minimum);
+                    work.Add(new SurgeryWorkItem(pawnId, model.PriorityOf(pawnId),
+                        StarRanking.TierOf(model.ImplantStarsOf(goal.ImplantDefName)), missing[k],
+                        goal.ImplantDefName, entry!.Limb, candidate,
+                        model.ImplantOrderOf(goal.ImplantDefName)));
                     needed.TryGetValue(item, out int count);
                     needed[item] = count + 1;
                     neededTotal++;
@@ -1003,6 +1007,8 @@ namespace Implanner.UI
             // in-stock number.
             var stock = new Dictionary<ThingDef, int>();
             var reservedStock = new Dictionary<ThingDef, int>();
+            var freeQualities = new Dictionary<ThingDef, List<int>>();
+            var boundQuality = new Dictionary<(int, string), int>();
             for (int m = 0; m < maps.Count; m++)
             {
                 List<Thing> haulables = maps[m].listerThings.ThingsInGroup(
@@ -1011,12 +1017,21 @@ namespace Implanner.UI
                 {
                     Thing thing = haulables[i];
                     if (!needed.ContainsKey(thing.def)
-                        || thing.IsForbidden(RimWorld.Faction.OfPlayer)
-                        || ImplantQualities.QualityOf(thing) < lowestAccepted[thing.def])
+                        || thing.IsForbidden(RimWorld.Faction.OfPlayer))
                         continue;
                     stock.TryGetValue(thing.def, out int count);
                     stock[thing.def] = count + thing.stackCount;
-                    if (model.Reservations.ContainsKey(thing.thingIDNumber))
+                    bool isReserved = model.TryGetReservation(thing.thingIDNumber, out var binding);
+                    int quality = ImplantQualities.QualityOf(thing);
+                    if (isReserved)
+                        boundQuality[(binding.PawnId, binding.GoalKey)] = quality;
+                    else
+                    {
+                        if (!freeQualities.TryGetValue(thing.def, out var qualities))
+                            freeQualities[thing.def] = qualities = new List<int>();
+                        for (int n = 0; n < thing.stackCount; n++) qualities.Add(quality);
+                    }
+                    if (isReserved)
                     {
                         reservedStock.TryGetValue(thing.def, out int reserved);
                         reservedStock[thing.def] = reserved + thing.stackCount;
@@ -1025,6 +1040,16 @@ namespace Implanner.UI
             }
             Dictionary<ThingDef, int> holdBack =
                 PlannerSurgery.ImplantItemReserves(model);
+            SurgeryPlanner.Order(work, model.Iteration);
+            var slots = new Dictionary<ThingDef, List<(int Minimum, int ReservedQuality)>>();
+            for (int i = 0; i < work.Count; i++)
+            {
+                var key = (work[i].PawnId, work[i].GoalKey);
+                var need = needByGoal[key];
+                if (!slots.TryGetValue(need.Item, out var list))
+                    slots[need.Item] = list = new List<(int, int)>();
+                list.Add((need.Minimum, boundQuality.TryGetValue(key, out int q) ? q : -1));
+            }
             var coverage = new Dictionary<ThingDef, StockCoverage>();
             var onHand = new Dictionary<ThingDef, int>();
             int covered = 0, freeStock = 0;
@@ -1033,11 +1058,13 @@ namespace Implanner.UI
                 stock.TryGetValue(pair.Key, out int have);
                 holdBack.TryGetValue(pair.Key, out int held);
                 reservedStock.TryGetValue(pair.Key, out int reserved);
-                StockCoverage item = StockCoverage.Of(pair.Value, have, held, reserved);
+                freeQualities.TryGetValue(pair.Key, out var free);
+                StockCoverage item = StockCoverage.Of(slots[pair.Key],
+                    (IReadOnlyList<int>?)free ?? Array.Empty<int>(), held);
                 coverage[pair.Key] = item;
                 onHand[pair.Key] = have;
                 // Usable stock (past the hold-back) drives craft counts.
-                stock[pair.Key] = System.Math.Max(0, have - held);
+                stock[pair.Key] = item.Covered;
                 covered += item.Covered;
                 freeStock += System.Math.Max(0, item.Covered - reserved);
             }

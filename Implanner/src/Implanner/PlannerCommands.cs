@@ -80,6 +80,7 @@ namespace Implanner
         {
             ImplannerStore? store = ImplannerStore.Current;
             if (store == null || implantDefName.NullOrEmpty()) return;
+            if (string.Equals(implantDefName, beforeDefName, System.StringComparison.Ordinal)) return;
             Core.PlannerModel model = store.Model;
 
             var tier = new List<string>();

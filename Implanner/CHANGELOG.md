@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Fixed: Surgery holdbacks, concurrency, and doctor requirements now stay valid when options or patient conditions change.
+- Fixed: Quality upgrades avoid fatal intermediate removals, and healed limbs reject inferior reserved implants.
+- Fixed: Production respects updated bench and skill limits, budgets variable ingredients and prerequisites, and reports coverage per required quality.
+- Fixed: Aborted ranking drags preserve order, shared XML merges duplicate implant slots, and new adults appear in the overview immediately.
+
 ## 1.2.1 — 2026-10-30
 
 - Changed: Clarified some help texts and tooltips.

@@ -1,0 +1,1 @@
+<ModMetaData><name>Implanner Production Review Probe</name><author>Implanner tests</author><packageId>implanner.review.production</packageId><supportedVersions><li>1.7</li></supportedVersions><modDependencies><li><packageId>EPrime.Implanner</packageId><displayName>Implanner</displayName></li></modDependencies></ModMetaData>
