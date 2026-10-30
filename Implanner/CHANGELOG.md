@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1 — 2026-10-30
+
+- Changed: Clarified some help texts and tooltips.
+
 ## 1.2.0 — 2026-10-26
 
 - Added: Built-in translations. Available languages: English, French, German, Italian, Japanese, Korean, Brazilian Portuguese, Spanish (European and Latin American), Simplified Chinese, Traditional Chinese, Turkish, Ukrainian, and Vietnamese.

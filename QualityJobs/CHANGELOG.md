@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.2.3 — 2026-10-30
+
+- Changed: Clarified some help texts and tooltips.
+- Fixed: A charging mech could block others from working on a bill.
+
 ## 1.2.2 — 2026-10-29
 
 - Added: Option to allow mechs and robots (Misc Robots mods) to work on Quality Jobs, despite them not earning XP.

@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.5.2 — 2026-10-30
+
+- Changed: Clarified some help texts and tooltips.
+
 ## 1.5.1 — 2026-10-28
 
 - Changed: Changed font size option from override to picker, so users can set it explicitly.
