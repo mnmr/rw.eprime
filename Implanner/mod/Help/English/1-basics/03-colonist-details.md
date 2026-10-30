@@ -17,8 +17,9 @@ their plan with its current status:
 - **Surgery scheduled**: the operation is on the colonist's bill list.
 - **Recovering**: surgery waits while the colonist is bleeding, has
   untreated wounds, or is down. Anesthetic sleep does not count.
-- **Blocked by doctor floor**: no doctor at the colony meets the required
-  Medicine skill (see [surgery options](topic:surgery-options)).
+- **Waiting for a doctor with Medical ...+**: no eligible doctor meets this
+  operation's skill requirement. Check doctor availability or adjust the
+  minimum on the Automation tab (see [surgery options](topic:surgery-options)).
 - **Complete**: installed.
 
 <!-- l10n:b-7d5d4531ac6c -->

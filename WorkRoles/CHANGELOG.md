@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 1.7.4 — 2026-10-30 
+
+- Added: Button to set defaults for new games, carrying over your current settings.
+- Fixed: Improved import/export data coverage for things added after the feature was built, along with some bug fixes.
+- Fixed: Various bugs and omissions in the mech/robots support.
+
 ## 1.7.3 — 2026-10-29
 
 - Added: Support for role assignments for mechs and robots (Misc Robots and Misc Robots++).

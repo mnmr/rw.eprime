@@ -16,10 +16,12 @@ fits, Implanner removes it and adds it again once the stock is back.
 ![The keep-in-stock resource floors](keep-in-stock.png)
 
 <!-- l10n:b-5864119cb6f1 -->
-**Implant reservations** hold finished implants back for manual use.
-Reserve one bionic arm and automation only assigns arms beyond the first,
-keeping one free for emergency surgery or trade. Production still counts a
-held-back item as missing, so the stock is replenished.
+**Implant reservations** hold up to the configured number of existing implants
+back for manual use. Reserve one bionic arm and automation only assigns arms
+beyond the first, leaving that arm free for emergency surgery or trade.
+Automatic production makes additional implants while assigned plans need them.
+To replenish emergency stock when no plan needs an implant, add a crafting bill
+yourself.
 Upgrade bills also leave held-back implants and implants needed for planned
 surgeries untouched. Only spare implants can be used as production ingredients.
 

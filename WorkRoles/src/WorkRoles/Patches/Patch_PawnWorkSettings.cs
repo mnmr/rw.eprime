@@ -147,6 +147,24 @@ namespace WorkRoles.Patches
             PawnLocationTracker.NotifyDespawned(__instance, __state);
     }
 
+    /// Kill marks a pawn dead before DeSpawn/Destroy can recognize an unassigned
+    /// mechanical worker. Preserve that membership across the native transition.
+    [HarmonyPatch(typeof(Pawn), nameof(Pawn.Kill))]
+    public static class Patch_MechanicalPawn_Kill
+    {
+        public static void Prefix(Pawn __instance, out int? __state) =>
+            __state = RoleStore.Current?.mechanicalWorkersEnabled == true
+                && MechanicalWorkers.IsColonyWorker(__instance) ? UiVersion.Roster : (int?)null;
+
+        public static void Postfix(Pawn __instance, int? __state)
+        {
+            if (!__state.HasValue || !__instance.Dead) return;
+            // Managed destruction may already have invalidated the cohort.
+            if (UiVersion.Roster == __state.Value) UiVersion.RosterChanged();
+            ExternalPawnFacts.Release(__instance);
+        }
+    }
+
     /// Evict destroyed pawns from runtime orders and the persistent role store.
     /// The window-owned external generation is released or rebuilt as a whole.
     [HarmonyPatch(typeof(Pawn), nameof(Pawn.Destroy))]
@@ -180,6 +198,10 @@ namespace WorkRoles.Patches
     [HarmonyPatch(typeof(MemoryUtility), nameof(MemoryUtility.ClearAllMapsAndWorld))]
     public static class Patch_MemoryUtility_ClearAllMapsAndWorld
     {
+        // Some vanilla menu/permadeath paths clear the world without disposing
+        // Game. Flush while the owning store and game settings still exist.
+        public static void Prefix() => SetupDefaults.Dispose();
+
         public static void Postfix()
         {
             PrioritySetWatcher.ReleaseForTeardown();

@@ -8,7 +8,7 @@ Un ensemble de ressources est une seule case affichant la quantité totale de pl
 ![Liste des ensembles dans leur éditeur](pool-list.png)
 
 <!-- l10n:b-7cdfbcf6c4a5 -->
-Un ensemble utilise l'icône de sa première ressource jusqu'à ce que vous en choisissiez une autre (voir [Modifier un ensemble](topic:editing-a-pool)). Survoler sa case liste les ressources que vous possédez, chacune avec sa quantité (voir [Survoler et cliquer sur une case](topic:hovering-and-clicking-a-slot)). Un ensemble vide n'affiche rien dans le panneau.
+Un ensemble utilise l'icône de sa première ressource jusqu'à ce que vous en choisissiez une autre (voir [Modifier un ensemble](topic:editing-a-pool)). Survoler sa case dans le panneau liste chaque ressource dont la quantité affichée est différente de zéro, après application des filtres de comptage et déduction des travaux prévus. Lorsque l'option Afficher les déficits en nombres négatifs est activée, une quantité négative signifie que les travaux prévus nécessitent plus de ressources que vous n'en possédez (voir [Survoler et cliquer sur une case](topic:hovering-and-clicking-a-slot)). Un ensemble vide n'affiche rien dans le panneau.
 
 <!-- l10n:b-f7406520e022 -->
 Les noms doivent être uniques. Les ensembles appartiennent à la sauvegarde : tous les joueurs voient les mêmes en multijoueur.

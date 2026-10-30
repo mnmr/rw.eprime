@@ -90,7 +90,9 @@ namespace WorkRoles.Core.Recs
         // Owner/key/teardown: same window/store and union of the two cohorts above.
         // Values: owned immutable pawn inputs and verdict maps. Projection keys
         // use the pawn's assignment revision and published external identity;
-        // verdict keys consume only skill membership/signals and role work/gates.
+        // Verdict keys consume skill membership/signals and role work/gates;
+        // mechanical pawns additionally consume native capability/work evidence
+        // and blocker policy, which exempts veto roles from capability ratings.
         // Refresh: on cohort generation change; equal inputs/results retain identity.
         private readonly Dictionary<TPawn, PawnEntry> pawnEntries =
             new Dictionary<TPawn, PawnEntry>(ReferenceIdentityComparer<TPawn>.Instance);
@@ -210,7 +212,8 @@ namespace WorkRoles.Core.Recs
                 PawnView input = colony.Pawns[index];
                 bool same = entry.Verdicts != null && entry.VerdictPawn != null
                     && RecommendationInputEquality.PawnSuitability(input, entry.VerdictPawn)
-                    && RecommendationInputEquality.RoleSuitability(colony.Roles, entry.VerdictRoles!);
+                    && RecommendationInputEquality.RoleSuitability(colony.Roles,
+                        entry.VerdictRoles!, input.IsMechanical);
                 if (!same)
                 {
                     var rebuilt = RoleSuitability.VerdictsForPawn(snapshot.Context, index);
@@ -332,7 +335,8 @@ namespace WorkRoles.Core.Recs
             if (a.BiologicalAgeTicks != b.BiologicalAgeTicks || a.AgeLimitsApply != b.AgeLimitsApply
                 || a.HasRangedWeapon != b.HasRangedWeapon || a.ShootingLevel != b.ShootingLevel
                 || a.FireFear != b.FireFear || a.Incapacitated != b.Incapacitated
-                || a.IsMechanitor != b.IsMechanitor || !a.CapableWorkTypes.SetEquals(b.CapableWorkTypes)
+                || a.IsMechanitor != b.IsMechanitor || a.IsMechanical != b.IsMechanical
+                || !a.CapableWorkTypes.SetEquals(b.CapableWorkTypes)
                 || !Dictionary(a.SkillLevels, b.SkillLevels) || !PawnSignals(a, b)
                 || !a.WorkEvidence.ContentEquals(b.WorkEvidence)
                 || a.Existing.Count != b.Existing.Count) return false;
@@ -345,13 +349,18 @@ namespace WorkRoles.Core.Recs
         internal static bool Suitability(ColonyView left, ColonyView right)
         {
             if (ReferenceEquals(left, right)) return true;
-            if (left.Pawns.Count != right.Pawns.Count || !RoleSuitability(left.Roles, right.Roles)) return false;
+            if (left.Pawns.Count != right.Pawns.Count) return false;
+            bool mechanical = false;
             for (int index = 0; index < left.Pawns.Count; index++)
+            {
                 if (!PawnSuitability(left.Pawns[index], right.Pawns[index])) return false;
-            return true;
+                mechanical |= left.Pawns[index].IsMechanical;
+            }
+            return RoleSuitability(left.Roles, right.Roles, mechanical);
         }
 
-        internal static bool RoleSuitability(IReadOnlyList<RoleView> left, IReadOnlyList<RoleView> right)
+        internal static bool RoleSuitability(IReadOnlyList<RoleView> left,
+            IReadOnlyList<RoleView> right, bool mechanical)
         {
             if (ReferenceEquals(left, right)) return true;
             if (left.Count != right.Count) return false;
@@ -360,6 +369,7 @@ namespace WorkRoles.Core.Recs
                 RoleView a = left[index], b = right[index];
                 if (ReferenceEquals(a, b)) continue;
                 if (a.Id != b.Id || a.PartialCapability != b.PartialCapability
+                    || mechanical && a.Blocker != b.Blocker
                     || !Sequence(a.MemberRoleIds, b.MemberRoleIds)
                     || !RoleWorkSpec.StructurallyEqual(a.WorkSpec, b.WorkSpec)) return false;
             }
@@ -369,6 +379,9 @@ namespace WorkRoles.Core.Recs
         internal static bool PawnSuitability(PawnView a, PawnView b)
         {
             if (ReferenceEquals(a, b)) return true;
+            if (a.IsMechanical != b.IsMechanical) return false;
+            if (a.IsMechanical && (!a.CapableWorkTypes.SetEquals(b.CapableWorkTypes)
+                || !a.WorkEvidence.ContentEquals(b.WorkEvidence))) return false;
             if (a.SkillLevels.Count != b.SkillLevels.Count || !PawnSignals(a, b)) return false;
             foreach (string skill in a.SkillLevels.Keys)
                 if (!b.SkillLevels.ContainsKey(skill)) return false;

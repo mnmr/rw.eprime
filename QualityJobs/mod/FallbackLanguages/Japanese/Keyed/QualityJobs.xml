@@ -2,11 +2,11 @@
 <LanguageData>
   <QJ_AnyQuality>不問</QJ_AnyQuality>
   <QJ_AtStockCap>未完成品の上限に到達</QJ_AtStockCap>
-  <QJ_AutoBest>仕上げ必要レベルを自動調整</QJ_AutoBest>
+  <QJ_AutoBest>最適な仕上げ担当者を自動選択</QJ_AutoBest>
   <QJ_AutoBestCurrent>現在: {0}</QJ_AutoBestCurrent>
   <QJ_AutoBestNone>条件を満たす作業者なし</QJ_AutoBestNone>
-  <QJ_AutoBestTip>オン: コロニーで最も優れた仕上げ担当だけが作業を完成でき、その担当者に合わせて必要レベルを自動調整します。この比較では、外出中、ダウン中、作業中の作業者も候補に含めます。\n\nオフ: 設定した仕上げ必要レベルを満たす、適格な作業者なら完成できます。</QJ_AutoBestTip>
-  <QJ_BillTargetQualityTip>完成品がこの品質未満の場合、加工回数を1回増やして代わりの品を作ります。完成した品は残します。\n\n指定回数を作る加工指示に適用します。他の反復モードは、それぞれの条件で停止時期を決めます。</QJ_BillTargetQualityTip>
+  <QJ_AutoBestTip>オン: スキル、創作意欲、スペシャリストの役割、対応する品質ボーナスから品質の期待値を比較し、コロニー内で最上位の作業者だけに仕上げを任せます。手動で設定した必要スキルレベルは無視されます。外出中、ダウン中、作業中の作業者も比較に含めます。最上位の作業者がこのマップで仕上げられない場合、作業は待機します。\n\nオフ: 手動で設定した必要スキルレベルと、その他の仕上げ条件を満たす適格な作業者なら誰でも仕上げを行えます。</QJ_AutoBestTip>
+  <QJ_BillTargetQualityTip>「X 回繰り返す」では、目標品質に達しなかった品も残りますが、残りの回数は減りません。追加の製作にはさらに材料を使います。「不問」ではどの結果も受け入れます。\n\n「在庫 X 個まで繰り返す」では、代わりに通常の加工指示の品質範囲を設定してください。この設定は「無制限」には影響しません。</QJ_BillTargetQualityTip>
   <QJ_Clear>解除</QJ_Clear>
   <QJ_CompatibilityFinishIt>Finish it!は、Quality Jobsが加工指示から切り離した未完成品に使うと失敗することがあります。</QJ_CompatibilityFinishIt>
   <QJ_CompatibilityNoJobAuthors>No Job Authorsの強制仕上げやAchtung互換オプションが有効な場合、Quality Jobsを介さずに品質確保用の作業を再開することがあります。</QJ_CompatibilityNoJobAuthors>
@@ -29,7 +29,7 @@
   <QJ_MigrationBody>Quality Jobsは既存の品質付き加工指示を{0}件検出しました。従来の動作を続けられるよう、管理対象にはしていません。未完成品の共有はどちらの場合も利用できます。</QJ_MigrationBody>
   <QJ_MigrationContinue>続ける</QJ_MigrationContinue>
   <QJ_MigrationEnableExisting>既存の品質付き加工指示でQuality Jobsを有効にしますか？</QJ_MigrationEnableExisting>
-  <QJ_MigrationEnableExistingTip>オン: 既存の加工指示をQuality Jobsで管理し、仕上げ必要レベルの自動調整を有効にします。コロニーで条件を満たす最も優れた作業者が仕上げを担当します。一時的に作業できない作業者も候補に含めます。創作意欲と生産のスペシャリストの条件は無効で、低品質の完成品を作り直しません。\n\nオフ: 既存の加工指示はバニラと同じ方法で完成します。未完成品の共有には影響しません。</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationEnableExistingTip>オン: 既存の加工指示をQuality Jobsで管理し、「最適な仕上げ担当者を自動選択」を有効にします。コロニーで条件を満たす最も優れた作業者が仕上げを担当します。一時的に作業できない作業者も候補に含めます。創作意欲と生産のスペシャリストの条件は無効で、低品質の完成品を作り直しません。\n\nオフ: 既存の加工指示はバニラと同じ方法で完成します。未完成品の共有には影響しません。</QJ_MigrationEnableExistingTip>
   <QJ_MigrationTitle>既存の品質付き加工指示</QJ_MigrationTitle>
   <QJ_MinQualityLabel>目標品質</QJ_MinQualityLabel>
   <QJ_NoGameLoaded>セーブごとの設定を変更するには、セーブを読み込んでください。</QJ_NoGameLoaded>
@@ -49,35 +49,35 @@
   <QJ_SettingsBillDefaults>加工指示の初期設定</QJ_SettingsBillDefaults>
   <QJ_SettingsConstructionDefaults>建築の初期設定</QJ_SettingsConstructionDefaults>
   <QJ_SettingsDefaultCap>未完成品の初期上限: {0}</QJ_SettingsDefaultCap>
-  <QJ_SettingsDefaultCapTip>製品ごとの未完成品上限の初期値です。同じ製品を作る全ての加工指示で上限を共有します。\n\n上限に達すると新規製作を開始しませんが、作業中の品は完成できます。0は無制限です。</QJ_SettingsDefaultCapTip>
+  <QJ_SettingsDefaultCapTip>製品ごとの未完成品の在庫上限の初期値を設定します。集計はマップごとに行い、同じマップ上の同じ製品の未完成品は、加工指示や作業台をまたいで全て合算します。ただし、上限に達したときに新規製作を開始しなくなるのは、Quality Jobsが管理する加工指示だけです。\n\n既存の未完成品は引き続き作業を再開したり、完成させたりできます。0は無制限です。製品ごとの在庫上限を設定すると、その製品を作る全ての加工指示で、この初期値より優先されます。</QJ_SettingsDefaultCapTip>
   <QJ_SettingsEnabledNote>切替は読み込み中のセーブに適用します。無効にすると全ての品をバニラの状態に戻し、このセーブのQuality Jobs設定を破棄します。\n\nModを導入したままなら、次回このセーブを読み込む際に初期設定で再び有効になります。無効化はModを外す準備のための機能です。</QJ_SettingsEnabledNote>
-  <QJ_SettingsFinisherSkillTip>このスキルレベル以上の作業者だけが仕上げを行えます。それ以前の作業は他の適格な作業者も行えます。\n\n仕上げ必要レベルの自動調整がオンの場合、この値は手動設定の初期値として保持しますが、使用しません。</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsFinisherSkillTip>このスキルレベル以上の作業者だけが仕上げを行えます。それ以前の作業は他の適格な作業者も行えます。\n\n「最適な仕上げ担当者を自動選択」がオンの場合、この値は手動設定の初期値として保持しますが、使用しません。</QJ_SettingsFinisherSkillTip>
   <QJ_SettingsGlobalOptions>全体設定</QJ_SettingsGlobalOptions>
   <QJ_SettingsHighPriorityFinish>仕上げ作業を高優先度にする</QJ_SettingsHighPriorityFinish>
   <QJ_SettingsHighPriorityFinishTip>オン: 仕上げ担当に選ばれた作業者は、次に仕事を探す際、消火、医療、救助、療養以外の全ての仕事より先に仕上げを行います。現在の作業は中断しません。\n\nオフ: 仕上げは該当する作業種別の中で最優先ですが、その作業者の設定で優先度が高い作業種別を先に行います。</QJ_SettingsHighPriorityFinishTip>
-  <QJ_SettingsManageNewBills>新規の品質付き加工指示を管理</QJ_SettingsManageNewBills>
-  <QJ_SettingsManageNewBillsTip>オン: 新規の品質付き加工指示を、この列の設定でQuality Jobsが管理します。個々の加工指示の設定で変更できます。\n\nオフ: 加工指示の設定画面でQuality Jobsを有効にしない限り、バニラと同じ動作になります。</QJ_SettingsManageNewBillsTip>
+  <QJ_SettingsManageNewBills>品質付き加工指示をデフォルトで管理</QJ_SettingsManageNewBills>
+  <QJ_SettingsManageNewBillsTip>新規の品質付き加工指示と、このデフォルト設定に従っている既存の加工指示を管理するかどうかを設定します。オン: この列のデフォルト設定でQuality Jobsが対象の加工指示を管理します。各加工指示の「この加工指示を管理」の設定が、このデフォルト設定より優先されます。\n\nオフ: 対象の加工指示は通常どおり完成します。オフにすると、対象の加工指示で待機中の未完成品も解放され、Quality Jobsの条件を満たさずに完成できるようになります。</QJ_SettingsManageNewBillsTip>
   <QJ_SettingsManageNewConstruction>新規の建築を管理</QJ_SettingsManageNewConstruction>
   <QJ_SettingsManageNewConstructionTip>オン: 品質を持つ新規の建築物を、この列の設定で自動管理します。「品質管理」ボタンで個別に設定や解除ができます。\n\nオフ: 個別に有効にしない限り、新規の建築はバニラと同じ動作になります。</QJ_SettingsManageNewConstructionTip>
   <QJ_SettingsShareWork>未完成品を共有</QJ_SettingsShareWork>
-  <QJ_SettingsShareWorkTip>オン: 未完成品の担当者制限を解除し、条件を満たす作業者なら他の人が始めた作業を引き継げます。\n\nオフ: 未完成品の担当者が作業を始めた人に固定される、バニラと同じ動作です。</QJ_SettingsShareWorkTip>
+  <QJ_SettingsShareWorkTip>他の適格な作業者が通常の未完成品の作業を再開できるようにします。オフにすると、その作業は元の製作者が引き続き担当します。\n\n管理対象の加工指示は、引き続き条件を満たす担当者に仕上げを引き継げます。その指示の仕上げ条件を解除するには、「この加工指示を管理」をオフにしてください。</QJ_SettingsShareWorkTip>
   <QJ_SettingsShowToolbarButton>ツールバーボタンを表示</QJ_SettingsShowToolbarButton>
   <QJ_SettingsShowToolbarButtonTip>画面右下の表示切替ボタンの横に、Quality Jobsの設定を開くボタンを追加します。</QJ_SettingsShowToolbarButtonTip>
   <QJ_SettingsUnlimitedHint>0 = 無制限</QJ_SettingsUnlimitedHint>
   <QJ_StartRebuilding>建て替え開始</QJ_StartRebuilding>
   <QJ_StatusFinishers>仕上げ候補: {0}</QJ_StatusFinishers>
   <QJ_StatusFinishersNone>仕上げ候補: なし</QJ_StatusFinishersNone>
-  <QJ_StatusFinishersTip>このマップで現在仕上げを行える作業者を、最適な候補から順に表示します。必要な作業種別を実行でき、上記の仕上げ条件を満たす必要があります。\n\nダウン中、精神変調中、このマップにいない作業者は含めません。</QJ_StatusFinishersTip>
+  <QJ_StatusFinishersTip>このマップで現在仕上げを行える作業者を、最適な候補から順に表示します。必要な作業種別を実行でき、上記の仕上げ条件を満たす必要があります。 加工指示パネルでは、選択中の指示の条件に基づく一覧です。同じ製品を作る他の指示では条件が異なる場合があります。\n\nダウン中、精神変調中、このマップにいない作業者は含めません。</QJ_StatusFinishersTip>
   <QJ_StatusHeader>状態</QJ_StatusHeader>
   <QJ_StatusQueue>待機: {0} · 仕上げ中: {1}</QJ_StatusQueue>
   <QJ_StatusQueueShared>未完成: {0} · 待機: {1} · 仕上げ中: {2}</QJ_StatusQueueShared>
-  <QJ_StatusQueueTip>未完成: 作業を許可された製作者なら誰でも続けられる共有品。待機: 条件を満たす仕上げ担当を待って中断している品。仕上げ中: 仕上げ担当を割り当てた品。</QJ_StatusQueueTip>
-  <QJ_StatusStalled>仕上げ候補がおらず待機中</QJ_StatusStalled>
+  <QJ_StatusQueueTip>このマップの全加工指示と作業台を通じて、追跡対象となっている同じ製品の未完成品を集計しています。\n\n未完成: 作業を許可された製作者なら誰でも続けられる共有品。待機: 条件を満たす仕上げ担当を待って中断している品。仕上げ中: 仕上げ担当を割り当てた品。</QJ_StatusQueueTip>
+  <QJ_StatusStalled>この加工指示の仕上げ条件を満たす担当者がいません。</QJ_StatusStalled>
   <QJ_StatusStalledConstruction>仕上げ候補がおらず建築停止中</QJ_StatusStalledConstruction>
   <QJ_StatusStalledConstructionTip>この建築は仕上げ待ちで中断しています。現在条件を満たす作業者がいないため完成しません。\n\n必要スキル、創作意欲、生産のスペシャリストの条件と、予定している建築担当者がこのマップにいて建築を行えるかを確認してください。</QJ_StatusStalledConstructionTip>
-  <QJ_StatusStalledTip>未完成品が待機していますが、現在仕上げ条件を満たす作業者がいないため、仕上げ作業を作成していません。\n\n必要スキル、創作意欲、生産のスペシャリストの条件と、予定している担当者がこのマップにいて該当作業を行えるかを確認してください。停滞中は未完成品上限により新規製作も止まることがあります。</QJ_StatusStalledTip>
+  <QJ_StatusStalledTip>この加工指示の仕上げ条件を満たす作業者が現在いません。待機列の集計には、このマップで同じ製品を作る全指示が含まれます。他の指示では条件が異なる場合があります。\n\n必要スキル、創作意欲やスペシャリストの条件に加え、担当予定者がその仕事を行えるか、このマップにいるかを確認してください。未完成品の在庫上限に達している場合も、新たな製作を始められなくなります。</QJ_StatusStalledTip>
   <QJ_StockCapLabel>未完成品上限: {0}</QJ_StockCapLabel>
-  <QJ_StockCapTooltip>この製品の未完成品の上限数です。同じ製品を作る全ての加工指示で上限を共有します。\n\n0は無制限です。</QJ_StockCapTooltip>
+  <QJ_StockCapTooltip>マップごとに、この製品の新規製作を制限します。同じマップ上のこの製品の未完成品は、加工指示や作業台をまたいで全て合算します。ただし、上限に達したときに新規製作を開始しなくなるのは、Quality Jobsが管理する加工指示だけです。\n\n既存の未完成品は引き続き作業を再開したり、完成させたりできます。0は無制限です。この値を変更すると、この製品を作る全ての加工指示の上限が変わります。集計はマップごとに行います。</QJ_StockCapTooltip>
   <QJ_ToolbarButtonTip>Quality Jobsの設定とヘルプを開きます。</QJ_ToolbarButtonTip>
   <QJ_UnfinishedWorkWaiting>この加工指示の未完成品は再開待ちです</QJ_UnfinishedWorkWaiting>
   <QJ_WelcomeBody>Quality Jobsでは、条件を満たす作業者が品物や建物の作業を分担できます。品質を決めるのは仕上げ担当者なので、設定した条件を満たす作業者だけが完成させられます。加工指示と建築の両方に対応しています。</QJ_WelcomeBody>

@@ -28,7 +28,23 @@ namespace QualityJobs
 
         internal static bool Available(Pawn pawn)
             => IsColonyWorker(pawn) && pawn.Spawned && !pawn.Downed
-                && !pawn.InMentalState;
+                && !pawn.InMentalState
+                && NativeScheduleAllowsWork(pawn);
+
+        private static bool NativeScheduleAllowsWork(Pawn pawn)
+        {
+            // Both native robot trees honor drafted orders before work. AIRobot
+            // otherwise owns its scheduler independently, including without Bio.
+            if (MiscRobotSupport.IsRobot(pawn)) return !pawn.Drafted;
+            if (!pawn.RaceProps.IsMechanoid) return true;
+            // These are the native mech tree's exclusive work gates. Ordinary
+            // busy jobs (including charging) remain eligible, as for humans.
+            // Keep this availability separate from the full-colony quality pool.
+            return !pawn.Drafted && pawn.IsColonyMechPlayerControlled
+                && pawn.GetMechWorkMode() == MechWorkModeDefOf.Work
+                && !pawn.IsFormingCaravan()
+                && pawn.needs?.energy?.IsLowEnergySelfShutdown != true;
+        }
 
         internal static void CollectColonyWorkers(List<Pawn> result)
         {

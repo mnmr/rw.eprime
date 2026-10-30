@@ -10,6 +10,7 @@ namespace WorkRoles.Core
         public const string Settlements = "settlements";       // any player settlement
         public const string Caravans = "caravans";             // caravans + anywhere that is no home
         public const string Nowhere = "nowhere";               // intentional never-match fallback
+        public const string UnresolvedPrefix = "unresolved:"; // portable name retained, never matches live ids
         public const string SettlementPrefix = "settlement:";  // one settlement by id
         public const string ShipPrefix = "ship:";              // one ship by id
 

@@ -2,7 +2,7 @@
 title: Niveaux d'implants
 ---
 <!-- l10n:b-5f84f9b2d5c3 -->
-La colonne de droite classe les choix propres au plan en cinq niveaux d'étoiles ; un implant hérité est classé dans son plan de base. Faites glisser une ligne vers un autre niveau pour la déplacer.
+La colonne de droite classe les choix propres au plan en cinq niveaux d'étoiles. Le classement des implants est commun à tous les plans de cette sauvegarde : déplacer un implant ici change sa priorité partout où il apparaît. Plus il a d'étoiles, plus sa priorité est élevée. Faites glisser les implants entre les niveaux ou au sein d'un même niveau pour définir leur ordre. Pour déplacer un implant hérité, ouvrez le plan de base qui l'a sélectionné.
 
 <!-- l10n:b-21a47f167054 -->
 ![Niveaux d'étoiles avec implants classés de priorité maximale à normale](tier-panel.png)

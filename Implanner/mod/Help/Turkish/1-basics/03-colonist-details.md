@@ -13,7 +13,7 @@ Tablodan bir kolonici seçtiğinizde ayrıntı paneli, planındaki her implantı
 - **Hazır**: ayrılan eşya kolonicinin kolonisine ulaşmış.
 - **Ameliyat planlandı**: ameliyat kolonicinin sipariş listesinde.
 - **İyileşiyor**: kolonici kanıyorsa, tedavisiz yaraları varsa veya yere düşmüşse ameliyat bekler. Anestezi uykusu sayılmaz.
-- **Doktor beceri sınırı engelliyor**: kolonide hiçbir doktor gereken Tıbbi beceriyi karşılamıyor ([ameliyat seçenekleri](topic:surgery-options) konusuna bakın).
+- **Tıbbi becerisi ...+ olan doktor bekleniyor**: uygun doktorların hiçbiri bu ameliyatın beceri gereksinimini karşılamıyor. Doktorların müsaitliğini kontrol edin veya Otomasyon sekmesindeki asgari değeri ayarlayın ([ameliyat seçenekleri](topic:surgery-options) konusuna bakın).
 - **Tamamlandı**: takılmış.
 
 <!-- l10n:b-7d5d4531ac6c -->

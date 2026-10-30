@@ -117,7 +117,7 @@
   <WR_RecTuneHunterTiersRowDesc>Limites de tiro para a posição dinâmica do Caçador. O patamar 1 coloca-o logo após o trabalho básico, os patamares 2 e 3 após as funções de trabalho intermediárias e finais, e os níveis acima do patamar 4 colocam-no em último.</WR_RecTuneHunterTiersRowDesc>
   <WR_TrainingSection>Rota de formação</WR_TrainingSection>
   <WR_TrainingHelp>Defina aqui como os colonos adquirem habilidades e progridem até esta função. Um percurso pode ter várias faixas que se sobrepõem. Se o percurso for recomendado a um colono, receberá recomendações de todas as funções que correspondem ao seu nível atual.</WR_TrainingHelp>
-  <WR_TrainingTipWhat>Progressão da própria função: cada função membro tem uma faixa de habilidade em que é recomendada. A função principal permanece sempre no seu percurso.</WR_TrainingTipWhat>
+  <WR_TrainingTipWhat>Progressão da própria função: cada função membro tem uma faixa de habilidade em que é recomendada. A função-alvo permanece em sua rota e deve ter um nível inicial maior que o de todas as funções de formação.</WR_TrainingTipWhat>
   <WR_TrainingTipBands>As faixas sobrepostas coexistem; sem sobreposição, a função posterior substitui a anterior.</WR_TrainingTipBands>
   <WR_TrainingTipOrder>As atribuições dão prioridade aos limites mínimos de faixa mais altos. Com faixas iguais, dão prioridade à habilidade de função mais fraca do trabalhador e depois à ordem salva do percurso.</WR_TrainingTipOrder>
   <WR_AddNew>Adicionar nova</WR_AddNew>
@@ -129,9 +129,9 @@
   <WR_RecSkillsSection>Habilidades</WR_RecSkillsSection>
   <WR_RecScalingSection>Escala de atribuição</WR_RecScalingSection>
   <WR_RoleColonyMinLabel>Mínimo da colônia:</WR_RoleColonyMinLabel>
-  <WR_RoleColonyMinTip>Número mínimo de atribuições desta função.</WR_RoleColonyMinTip>
+  <WR_RoleColonyMinTip>Quantidade mínima de trabalhadores a prever para o trabalho desta função. Funções de formação podem preencher algumas vagas: um valor acima de zero reserva uma vaga para a própria função. O sistema usa o maior valor: este mínimo ou a quantidade de trabalhadores definida por Cobertura.</WR_RoleColonyMinTip>
   <WR_RoleCoverageLabel>Cobertura:</WR_RoleCoverageLabel>
-  <WR_RoleCoverageTip>Percentagem de colonos que idealmente deve receber esta função.</WR_RoleCoverageTip>
+  <WR_RoleCoverageTip>Planeja atender a esta porcentagem da colônia, arredondada para um número inteiro de trabalhadores. O sistema usa o maior valor: esta quantidade ou o Mínimo da colônia. Funções de formação podem preencher algumas vagas.</WR_RoleCoverageTip>
   <WR_RoleCategoryLabel>Importância para a colônia:</WR_RoleCategoryLabel>
   <WR_RoleCategoryTip>Importância desta função no planejamento da colônia. “Não definido” deixa a função sem classificação.</WR_RoleCategoryTip>
   <WR_RoleCategoryNone>Não definido</WR_RoleCategoryNone>
@@ -150,7 +150,7 @@
   <WR_PartialCapabilityTip>Quando ativada, esta função é recomendada a colonos que podem executar algumas das suas tarefas, mas não todas. Nunca é recomendada a quem não consegue executar nenhuma. Útil para funções abrangentes que todos devem ter, como tarefas comuns em períodos sem outro trabalho.</WR_PartialCapabilityTip>
   <WR_PartialCapabilityLockedTip>Esta função já é recomendada a colonos que podem executar algumas tarefas, mas não todas. As funções sem trabalho qualificado e as de caça permitem sempre isto.</WR_PartialCapabilityLockedTip>
   <WR_RoleAgeBandsLabel>Grupos etários que podem receber esta função:</WR_RoleAgeBandsLabel>
-  <WR_RoleAgeBandsTip>Os colonos fora das faixas selecionadas nunca recebem esta função nem a sua recomendação. Clique em uma faixa exterior para incluir todas até ela, na primeira ou última selecionada para removê-la, ou em uma faixa intermediária para selecionar apenas essa. Os limites seguem as idades a que o jogo permite trabalhar. Todas as tarefas desta função são possíveis a partir dos {0} anos.</WR_RoleAgeBandsTip>
+  <WR_RoleAgeBandsTip>Essas faixas etárias limitam as atribuições automáticas e as recomendações. A atribuição manual e a colagem ainda podem dar essa função a colonos fora das faixas. Clique em uma faixa exterior para incluir todas até ela, na primeira ou última selecionada para removê-la, ou em uma faixa intermediária para selecionar apenas essa. Os limites seguem as idades a que o jogo permite trabalhar. Todas as tarefas desta função são possíveis a partir dos {0} anos.</WR_RoleAgeBandsTip>
   <WR_WorkTypesLabel>Tipos de trabalho</WR_WorkTypesLabel>
   <WR_WorkTypesTip>Só colonos capazes de executar os tipos de trabalho indicados são elegíveis para esta função.\n\nDerivados das tarefas selecionadas e apresentados como informação.</WR_WorkTypesTip>
   <WR_UsedSkillsLabel>Usadas</WR_UsedSkillsLabel>
@@ -171,7 +171,7 @@
   <WR_RemoveSkillTip>Remover este requisito explícito obrigatório de habilidade.</WR_RemoveSkillTip>
   <WR_RoleMissingRequiredSkills>Habilidades obrigatórias desativadas para {0}: {1}.</WR_RoleMissingRequiredSkills>
   <WR_PathAddRoleTip>Adiciona uma função a este percurso.</WR_PathAddRoleTip>
-  <WR_BandChipTip>Arraste uma extremidade para redimensionar a faixa de habilidade, ou o centro para movê-la.</WR_BandChipTip>
+  <WR_BandChipTip>Arraste uma extremidade para redimensionar a faixa de habilidade, ou o centro para movê-la. Mantenha o nível inicial da função-alvo acima do nível inicial de todas as funções de formação, ou a rota não recomendará formação para essa função-alvo.</WR_BandChipTip>
   <WR_PriorityGridTitle>Grade de prioridades</WR_PriorityGridTitle>
   <WR_ShowPriorityGridTip>Mostrar a grade de prioridades de todos os colonos listados, respeitando os filtros ativos de função e localização (posições brutas ou 0 a 4 do jogo original, selecionáveis na janela).</WR_ShowPriorityGridTip>
   <WR_GridModeRaw>Prioridades WorkRoles</WR_GridModeRaw>
@@ -217,7 +217,7 @@
   <WR_TipBestFitsLabel>Melhores candidatos</WR_TipBestFitsLabel>
   <WR_TipWholeType>{0} (todas as tarefas)</WR_TipWholeType>
   <WR_TipMore>+{0}</WR_TipMore>
-  <WR_RoleCapNeverDo>{0} nunca realizará {1}</WR_RoleCapNeverDo>
+  <WR_RoleCapNeverDo>{0} não pode realizar {1} no momento</WR_RoleCapNeverDo>
   <WR_RoleCapAllJobs>qualquer das tarefas desta função</WR_RoleCapAllJobs>
   <WR_RoleCapSomeJobs>{0} das {1} tarefas desta função</WR_RoleCapSomeJobs>
   <WR_RoleJobIncapable>incapaz deste trabalho</WR_RoleJobIncapable>
@@ -372,8 +372,8 @@ A tarefa não foi interrompida. Este aviso aparece uma vez por partida salva.</W
   <WR_RecTipSelection>Seleção</WR_RecTipSelection>
   <WR_RecTipAssignmentsOne>1 atribuição pedida</WR_RecTipAssignmentsOne>
   <WR_RecTipAssignmentsMany>{0} atribuições pedidas</WR_RecTipAssignmentsMany>
-  <WR_RecTipWithWaiverOne>{0} (1 dispensa de formação)</WR_RecTipWithWaiverOne>
-  <WR_RecTipWithWaiversMany>{0} ({1} dispensas de formação)</WR_RecTipWithWaiversMany>
+  <WR_RecTipWithWaiverOne>{0} (até 1 vaga pode ser preenchida por uma função de formação)</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0} (até {1} vagas podem ser preenchidas por funções de formação)</WR_RecTipWithWaiversMany>
   <WR_RecTipEveryoneCapable>Atribuída a todos os capazes</WR_RecTipEveryoneCapable>
   <WR_RecDecisionAuto>Atribuída automaticamente a quem for capaz.</WR_RecDecisionAuto>
   <WR_RecDecisionSignals>Atende ao limite de sinal configurado.</WR_RecDecisionSignals>
@@ -381,9 +381,9 @@ A tarefa não foi interrompida. Este aviso aparece uma vez por partida salva.</W
   <WR_RecDecisionTraining>Atribuída através do percurso de formação de {0}.</WR_RecDecisionTraining>
   <WR_RecDecisionTrainingUnknown>Atribuída por meio de um percurso de formação.</WR_RecDecisionTrainingUnknown>
   <WR_RecDecisionDirectSlot>Selecionado diretamente para preencher a vaga {0} de {1} de {2}.</WR_RecDecisionDirectSlot>
-  <WR_RecDecisionTrainingSlot>Selecionado para preencher a vaga {0} de {1} de {2}. Uma dispensa de formação substituiu {2} por {3} ({4}; {2} exige {5}).</WR_RecDecisionTrainingSlot>
-  <WR_RecDecisionTrainingSlotSimple>Selecionado para preencher a vaga {0} de {1} de {2}. Uma dispensa de formação substituiu {2} por {3}.</WR_RecDecisionTrainingSlotSimple>
-  <WR_RecDecisionTrainingSlotUnknown>Selecionado para preencher a vaga {0} de {1} por meio de uma dispensa de formação, atribuindo {2}.</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecDecisionTrainingSlot>Selecionado para preencher a vaga {0} de {1} de {2} com a função de formação {3} ({4}; na rota de formação, {2} começa no nível {5}).</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>Selecionado para preencher a vaga {0} de {1} de {2} com a função de formação {3}.</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>Selecionado para preencher a vaga {0} de {1} com a função de formação {2}.</WR_RecDecisionTrainingSlotUnknown>
   <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
   <WR_RecDecisionDirectFallbackSlot>Selecionado diretamente para preencher a vaga {0} de {1} de {2}, porque nenhum substituto de formação se qualificou para essa vaga.</WR_RecDecisionDirectFallbackSlot>
   <WR_RecDecisionCoverageRepairSlot>Selecionado diretamente para preencher a vaga obrigatória restante {0} de {1} de {2}.</WR_RecDecisionCoverageRepairSlot>
@@ -620,7 +620,7 @@ A tarefa não foi interrompida. Este aviso aparece uma vez por partida salva.</W
   <WR_WelcomeFind>Abra WorkRoles com o botão Trabalho na parte inferior da tela. A aba Ajuda começa com uma visita guiada.</WR_WelcomeFind>
   <WR_WelcomeTakeMeThere>Abrir agora</WR_WelcomeTakeMeThere>
   <WR_WelcomeSmallScreen>A tela do jogo mede {0}x{1} (resolução dividida pela escala da interface). WorkRoles foi projetado para {2}x{3} ou mais, por exemplo 1920x1080 com escala de interface 1,25. Funciona em telas menores, mas alguns rótulos são abreviados e as abas precisam de mais rolagem. Reduzir a escala da interface nas opções do jogo dá mais espaço à janela.</WR_WelcomeSmallScreen>
-  <WR_RoleWorkAversion>O preceito {1} de {0} opõe-se a {2}. As recomendações aplicam uma penalidade finita: dois passos de prioridade ou seis pontos virtuais de habilidade ao escolher um campeão. A cobertura exigida ainda pode selecionar este trabalhador. A prioridade do Caçador recua dois patamares, até ao máximo de cinco; a alternativa existente do primeiro patamar continua a aplicar-se.</WR_RoleWorkAversion>
+  <WR_RoleWorkAversion>O preceito {1} de {0} se opõe a {2}. O WorkRoles prefere outro colono adequado, mas ainda pode recomendar este colono quando a colônia precisa de alguém para fazer o trabalho. Isso não proíbe o trabalho. Para Caçador, a aversão também coloca a caça mais adiante na ordem de trabalho recomendada.</WR_RoleWorkAversion>
   <WR_WorkBlockedTags>categorias de trabalho desativadas</WR_WorkBlockedTags>
   <WR_WorkBlockedCapacity>falta de uma capacidade de saúde obrigatória</WR_WorkBlockedCapacity>
   <WR_WorkBlockedRace>proibido pelas restrições de trabalho desta raça</WR_WorkBlockedRace>
@@ -638,4 +638,23 @@ A tarefa não foi interrompida. Este aviso aparece uma vez por partida salva.</W
   <WR_OptMechanicalWorkers>Mostrar robôs e mecanoides em Colonos</WR_OptMechanicalWorkers>
   <WR_OptMechanicalWorkersTip>Atribua funções aos mecanoides de Biotech e aos robôs de Misc. Robots na aba Colonos. Gerencie grupos de controle, áreas permitidas, ativação e recarga nas abas de sempre. Desativar esta opção os oculta e restaura suas prioridades de trabalho habituais, mas mantém as funções salvas.</WR_OptMechanicalWorkersTip>
   <WR_RecMechanicalLearningProtected>Esta atribuição de aprendizado é mantida enquanto robôs ou mecanoides cuidam do serviço. Ela pode ser removida quando a meta de treinamento for atingida.</WR_RecMechanicalLearningProtected>
+  <WR_DefaultAutoUpdate>Atualizar automaticamente após editar a configuração</WR_DefaultAutoUpdate>
+  <WR_DefaultClear>Usar padrões originais em novos jogos</WR_DefaultClear>
+  <WR_DefaultConflictBody>Esta colônia tem uma configuração do WorkRoles diferente do seu padrão para novos jogos. Usar a configuração desta colônia como padrão e mantê-la atualizada quando você editar a configuração? Sua colônia atual não será alterada.</WR_DefaultConflictBody>
+  <WR_DefaultEmptyBody>Salve a configuração completa desta colônia para jogos futuros. Colônias existentes mantêm suas próprias configurações. Atribuições de funções aos trabalhadores, vínculos de ordens, buscas e seções recolhidas ficam de fora.</WR_DefaultEmptyBody>
+  <WR_DefaultKeep>Manter meu padrão nesta sessão</WR_DefaultKeep>
+  <WR_DefaultSavedBody>Há uma configuração pessoal salva para novos jogos. Salve a configuração completa desta colônia para substituí-la. Colônias existentes mantêm suas próprias configurações. Atribuições de funções aos trabalhadores, vínculos de ordens, buscas e seções recolhidas ficam de fora.</WR_DefaultSavedBody>
+  <WR_DefaultStopAuto>Desativar atualização automática</WR_DefaultStopAuto>
+  <WR_DefaultUseCurrent>Usar esta configuração em novos jogos</WR_DefaultUseCurrent>
+  <WR_LocationUnresolved>Indisponível: {0}</WR_LocationUnresolved>
+  <WR_LocationUnresolvedTip>Este local importado não existe aqui. Esta regra fica inativa até você substituí-lo por um local desta colônia.</WR_LocationUnresolvedTip>
+  <WR_NewGameDefaults>Definir padrões</WR_NewGameDefaults>
+  <WR_SetupFailed>Não foi possível salvar ou ler o padrão do WorkRoles: {0}</WR_SetupFailed>
+  <WR_SetupGameSettings>Configurações da colônia</WR_SetupGameSettings>
+  <WR_SetupGameSettingsInfo>Substitui as configurações da fórmula de recomendação, a otimização automática, o comportamento das prioridades e as opções de trabalhadores mecânicos.</WR_SetupGameSettingsInfo>
+  <WR_SetupPlayerSettings>Minhas preferências de exibição</WR_SetupPlayerSettings>
+  <WR_SetupPlayerSettingsInfo>Opcional: substitui a exibição dos marcadores, a organização da paleta, as colunas de habilidades, os emblemas e o tamanho da janela. Os outros jogadores no multijogador mantêm suas preferências.</WR_SetupPlayerSettingsInfo>
+  <WR_RecMechanicalSelected>Pode realizar trabalhos não cobertos pelos outros papéis recomendados.</WR_RecMechanicalSelected>
+  <WR_RecMechanicalRetained>Mantém seu papel principal atual.</WR_RecMechanicalRetained>
+  <WR_RecMechanicalIncapacitated>Esta unidade está incapacitada. Seus papéis são mantidos para quando ela se recuperar.</WR_RecMechanicalIncapacitated>
 </LanguageData>

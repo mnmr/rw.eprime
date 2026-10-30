@@ -2,8 +2,9 @@
 title: How automation works
 ---
 <!-- l10n:b-44e89be1e85f -->
-Automation checks the colony a couple of times per in-game hour, and
-every edit you make triggers an immediate extra pass:
+Automation checks the colony roughly twice per in-game hour. After an edit,
+it checks again when game time next advances. Unpause to apply the automation
+changes. Each check works through these steps:
 
 <!-- l10n:b-6eb19bb9f96f -->
 1. Count what enlisted colonists still miss.
@@ -18,16 +19,23 @@ every edit you make triggers an immediate extra pass:
 <!-- l10n:b-a747349bea45 -->
 The colony summary at the top of the Overview tab shows all of this:
 whether automation is on, what production is crafting or waiting for,
-how many implants are in stock and still queued, and who is next for
+how many implants are in stock and still to produce, and who is next for
 surgery. Hover the production or surgery figures for a breakdown per
 implant, including what each item is waiting for.
+
+<!-- l10n:production-counts -->
+In the production tooltip, **Still to produce** counts needed implants not
+yet covered by stock, including work without a crafting bill. **In crafting
+bills** counts the output expected from existing Implanner bills, whether
+waiting or underway.
 
 <!-- l10n:b-8fea0b171c65 -->
 ![The colony summary with production and surgery status](colony-next.png)
 
 <!-- l10n:b-26d1852e16fa -->
-Batching delays surgery until several implants can be installed in one
-anesthetic sleep. A batch is everything the
+Each implant still needs its own operation. Batching delays surgery until
+several implants can be installed in one anesthetic sleep, reducing separate
+periods under anesthetic. A batch is everything the
 colonist needs next, either their current tier or their whole plan,
 depending on the iteration strategy (see
 [surgery options](topic:surgery-options)). One strategy skips batching

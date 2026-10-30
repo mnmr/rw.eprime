@@ -8,9 +8,9 @@ title: Tùy chọn phẫu thuật
 **Trình tự thực hiện** quyết định thứ tự cung cấp cấy ghép. Ưu tiên cư dân ở thẻ Tổng quan luôn quyết định ai trước.
 
 <!-- l10n:b-cae0082f85d5 -->
-- **Theo bậc**: mỗi cư dân nhận cấy ghép bậc cao nhất trước, rồi xuống các bậc sau. Mổ khi giữ đủ cả bậc. Mỗi người cần nhiều lần mổ hơn nhưng mọi người hưởng lợi sớm hơn.
-- **Trọn bộ**: hoàn thành cả kế hoạch một cư dân rồi mới đến người sau. Mổ chờ giữ đủ cả kế hoạch. Mỗi người cần ít lần mổ hơn, nhưng người cuối thứ tự ưu tiên chờ lâu nhất.
-- **Sớm nhất**: mỗi cấy ghép trong kho được xếp lịch ngay cho người ưu tiên cao nhất còn thiếu nó. Nếu cùng ưu tiên, chân dành cho người chậm nhất; tay ưu tiên người mang vũ khí cận chiến, rồi tổng kỹ năng Chế tạo và Trí tuệ cao nhất. Không chờ đủ đợt: một chân sinh học được xếp lịch ngay khi giữ được và có tại chỗ, dù phải mổ riêng từng cấy ghép.
+- **Theo bậc**: mỗi cư dân nhận cấy ghép bậc cao nhất trước, rồi xuống các bậc sau. Cư dân được mổ khi đã dành đủ cấy ghép cho cả bậc. Họ có thể nhận cấy ghép sớm hơn, nhưng có thể cần gây mê riêng cho các bậc sau.
+- **Trọn bộ**: hoàn thành cả kế hoạch của một cư dân rồi mới đến người sau. Chờ dành đủ cấy ghép cho cả kế hoạch mới mổ. Mỗi cấy ghép vẫn cần một ca mổ riêng, nhưng gom theo đợt có thể giảm số lần gây mê riêng biệt. Người cuối thứ tự ưu tiên chờ lâu nhất.
+- **Sớm nhất**: mỗi cấy ghép trong kho được xếp lịch ngay cho cư dân ưu tiên cao nhất còn thiếu nó. Nếu cùng ưu tiên, chân dành cho người chậm nhất; tay ưu tiên người mang vũ khí cận chiến, rồi người có tổng kỹ năng Chế tạo và Trí tuệ cao nhất. Không chờ đủ đợt: một chân sinh học được xếp lịch ngay khi đã được dành riêng và có tại chỗ, dù có thể phải gây mê riêng khi các bộ phận khác được đưa đến.
 
 <!-- l10n:b-be821f0459ef -->
 **Số ca mổ đồng thời** giới hạn số cư dân mỗi khu định cư có ca mổ được xếp cùng lúc. Ban đầu là một suất trên mười cư dân. Bật **Tính cả bệnh nhân hiện có** để cư dân và nô lệ nằm giường bệnh hoặc gục ngã chờ điều trị cũng chiếm suất; ca cấy ghép mới chờ bệnh viện còn chỗ. Tù nhân, khách và bệnh nhân từ phe khác không chiếm suất.

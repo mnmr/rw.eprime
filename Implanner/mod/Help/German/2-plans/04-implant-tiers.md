@@ -2,7 +2,7 @@
 title: Implantatstufen
 ---
 <!-- l10n:b-5f84f9b2d5c3 -->
-Die rechte Spalte ordnet eigene Auswahlen in fünf Sternstufen ein. Geerbte Implantate werden im Basisplan eingestuft. Ziehe eine Zeile auf eine andere Stufe, um sie zu verschieben.
+Die rechte Spalte zeigt die eigenen Auswahlen des Plans in fünf Sternstufen. Die Implantateinstufungen gelten für alle Pläne dieses Spielstands: Wenn du hier ein Implantat verschiebst, ändert sich seine Priorität überall, wo es vorkommt. Mehr Sterne bedeuten höhere Priorität. Ziehe Implantate zwischen den Sternstufen oder innerhalb einer Stufe, um die Reihenfolge festzulegen. Um ein geerbtes Implantat zu verschieben, öffne den Basisplan, in dem es ausgewählt wurde.
 
 <!-- l10n:b-21a47f167054 -->
 ![Sternstufen von höchster bis normaler Priorität](tier-panel.png)

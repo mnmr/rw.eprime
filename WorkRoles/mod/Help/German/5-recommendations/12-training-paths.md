@@ -12,3 +12,6 @@ Jedes Band steht für eine Rolle und den Fertigkeitsbereich, in dem sie gilt. B�
 
 <!-- l10n:b-bb878752b11b -->
 Ziehe an den Enden eines Bandes, um seinen Bereich zu verändern, oder an seiner Mitte, um es zu verschieben. Wo sich Bänder nicht überlappen, ersetzt die spätere Rolle die frühere; bei Überschneidungen ergänzen sich die Rollen. Vor dem Hinzufügen einer Rolle, die keine der Zielfertigkeiten trainiert, erscheint eine Warnung. Du kannst sie trotzdem hinzufügen, wenn eine Mod verändert, wofür Erfahrung vergeben wird.
+
+<!-- l10n:target-start-order -->
+Die Anfangsstufe der Zielrolle muss höher sein als die aller Trainingsrollen. Beginnt ein anderes Band auf derselben oder einer höheren Stufe, empfiehlt dieser Pfad kein Training für die Zielrolle. Lass die Enden der Bänder überlappen, damit während eines Übergangs beide Rollen erhalten bleiben.

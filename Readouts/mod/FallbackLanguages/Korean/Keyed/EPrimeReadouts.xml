@@ -101,14 +101,14 @@
   <EPR.QualityJobsMissingTip>EPrime's Quality Jobs가 필요하지만 설치되지 않았습니다.</EPR.QualityJobsMissingTip>
   <EPR.QualityJobsOutdatedTip>설치된 EPrime's Quality Jobs가 필요한 연동 기능을 제공하지 않습니다. 업데이트하면 이 옵션을 사용할 수 있습니다.</EPR.QualityJobsOutdatedTip>
   <EPR.QualityJobsRework>Quality Jobs 지원</EPR.QualityJobsRework>
-  <EPR.QualityJobsReworkTip>목표 품질이 있는 계획서와 건물은 예상 재시도 횟수를 계산해 전체 재료를 확보합니다. 재건축 시 해체하면 기본 게임의 반환 비율만큼 돌려받는 것으로 계산합니다.</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsReworkTip>Quality Jobs가 관리하는 목표 품질에 맞춰 활성화된 제작 계획서 및 건설 재료 차감량을 조정합니다. 추가 시도에 필요한 재료를 예상하고 건물 해체 시 돌려받는 재료도 반영합니다. 사용하려면 위에서 해당 재료 차감 옵션을 켜세요.</EPR.QualityJobsReworkTip>
   <EPR.ReserveForBills>제작 계획서 재료 차감</EPR.ReserveForBills>
-  <EPR.ReserveForBillsTip>대기 중인 계획서가 앞으로 소비할 재료를 뺍니다. 재료를 정확히 한 종류로만 충족할 수 있을 때만 계산합니다. "아무 가죽" 같은 열린 선택지는 차감하지 않습니다.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBillsTip>대기 중인 제작 계획서에 필요한 재료를 뺍니다. 각 재료는 계획서에서 허용한 자원 종류가 정확히 하나일 때만 계산합니다. 예를 들어 모든 가죽을 허용하면 차감하지 않고, 한 종류의 가죽만 허용하면 해당 가죽의 필요량을 차감합니다.</EPR.ReserveForBillsTip>
   <EPR.ReserveForBuildables>건설 재료 차감</EPR.ReserveForBuildables>
   <EPR.ReserveForBuildablesTip>청사진과 미완성 골조에 앞으로 필요한 재료를 뺍니다. 이미 골조에 운반된 재료는 중복 계산하지 않고, 금지된 청사진은 제외합니다.</EPR.ReserveForBuildablesTip>
   <EPR.ResourcePoolEditor>자원 묶음 편집기</EPR.ResourcePoolEditor>
   <EPR.Resources>자원</EPR.Resources>
-  <EPR.RestoreConfirm>모든 그룹과 기준값을 기본 구성으로 바꾸시겠습니까? 멀티플레이에서는 모든 플레이어에게 적용됩니다.</EPR.RestoreConfirm>
+  <EPR.RestoreConfirm>모든 그룹과 자원 묶음을 기본 구성으로 바꾸고, 모든 기준값과 수량 재정의 설정을 지우시겠습니까? 멀티플레이에서는 모든 플레이어에게 적용됩니다.</EPR.RestoreConfirm>
   <EPR.RestoreDefaults>기본값 복원</EPR.RestoreDefaults>
   <EPR.Results>결과</EPR.Results>
   <EPR.RuleAlwaysOff>항상 끄기</EPR.RuleAlwaysOff>
@@ -138,13 +138,13 @@
   <EPR.TierLayoutTip>삼각형 버튼이나 가리키기로 펼친 추가 단의 배치 방식입니다. 가로는 같은 행의 오른쪽에 추가하고, 세로는 단마다 새 행을 만들어 띠의 높이를 늘립니다.</EPR.TierLayoutTip>
   <EPR.TierLayoutVertical>세로</EPR.TierLayoutVertical>
   <EPR.TipAvailableStock>가용 {0} · 재고 {1}</EPR.TipAvailableStock>
-  <EPR.TipDrain>소모</EPR.TipDrain>
-  <EPR.TipEach>개당</EPR.TipEach>
+  <EPR.TipDrain>차감량</EPR.TipDrain>
+  <EPR.TipEach>회당 비용</EPR.TipEach>
   <EPR.TipInStock>재고</EPR.TipInStock>
   <EPR.TipMixedResources>혼합</EPR.TipMixedResources>
   <EPR.TipOtherPlannedWork>기타 ({0})</EPR.TipOtherPlannedWork>
   <EPR.TipPlannedWork>예정 작업</EPR.TipPlannedWork>
-  <EPR.TipQueued>대기</EPR.TipQueued>
+  <EPR.TipQueued>남은 작업</EPR.TipQueued>
   <EPR.TipResource>자원</EPR.TipResource>
   <EPR.Title>EPrime's Readouts</EPR.Title>
   <EPR.UseVanilla>기본 자원 표시 사용</EPR.UseVanilla>

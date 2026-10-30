@@ -2,7 +2,7 @@
 title: Hovering and clicking a slot
 ---
 <!-- l10n:b-3d212ef2233a -->
-Hold the mouse over an icon to see the name, the exact count, and the description behind the counter. For a resource pool (see [What a resource pool is](topic:what-a-resource-pool-is)) the tooltip lists every member you own some of, with its own count:
+Hold the mouse over an icon to see the name, the exact count, and the description behind the counter. For a resource pool (see [What a resource pool is](topic:what-a-resource-pool-is)), the tooltip lists each member whose displayed count is not zero. These counts include your counting filters and planned-work deductions. With Show overruns as negative numbers enabled, a negative count means planned work needs more than you have.
 
 <!-- l10n:b-374206ad0776 -->
 ![The tooltip for the Meals pool](slot-tooltip.png)

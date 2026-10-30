@@ -2,11 +2,11 @@
 <LanguageData>
   <QJ_AnyQuality>Herhangi</QJ_AnyQuality>
   <QJ_AtStockCap>yarım iş stok sınırına ulaşıldı</QJ_AtStockCap>
-  <QJ_AutoBest>Bitirme becerisini otomatik ayarla</QJ_AutoBest>
+  <QJ_AutoBest>En iyi tamamlayıcıyı otomatik seç</QJ_AutoBest>
   <QJ_AutoBestCurrent>Şu anda: {0}</QJ_AutoBestCurrent>
   <QJ_AutoBestNone>Uygun çalışan yok</QJ_AutoBestNone>
-  <QJ_AutoBestTip>İşaretli: İşi yalnızca kolonideki uygun en iyi tamamlayıcı bitirebilir; beceri şartı o çalışanı otomatik izler. Bu karşılaştırmada uzakta, yere düşmüş veya meşgul çalışanlar da mevcut sayılır.\n\nİşaretsiz: Belirlediğiniz bitirme becerisini karşılayan her uygun çalışan işi bitirebilir.</QJ_AutoBestTip>
-  <QJ_BillTargetQualityTip>Bitirilen eşyanın kalitesi bunun altında çıkarsa yerine yenisi üretilsin diye sipariş sayısı bir artırılır. Eşyanın kendisi tutulur.\n\nBu, sabit sayıda eşya üreten siparişler için geçerlidir; diğer tekrar modları ne zaman duracaklarını kendileri belirler.</QJ_BillTargetQualityTip>
+  <QJ_AutoBestTip>İşaretli: Tamamlamayı koloninin en üst sıradaki çalışanlarına ayırır. Sıralama; beceri, Yaratıcılık İlhamı, uzman rolleri ve desteklenen kalite bonuslarına göre beklenen kaliteyi karşılaştırır. Manuel beceri gereksiniminiz dikkate alınmaz. Uzakta, yere düşmüş veya meşgul çalışanlar da hesaba katılır; en üst sıradaki çalışanlardan hiçbiri bu haritada işi tamamlayamıyorsa iş bekler.\n\nİşaretsiz: Manuel beceri gereksiniminizi ve diğer tamamlama koşullarını karşılayan her uygun çalışan işi tamamlayabilir.</QJ_AutoBestTip>
+  <QJ_BillTargetQualityTip>X kere yap modunda, hedef kalitenin altında kalan eşya tutulur ancak kalan üretim sayısı azalmaz. Sonraki denemeler ek malzeme tüketir. Herhangi seçeneği tüm sonuçları kabul eder.\n\nX tane oluncaya kadar yap modunda, bunun yerine normal iş emrinin kalite aralığını ayarlayın. Bu ayar Sonsuza kadar yap modunu etkilemez.</QJ_BillTargetQualityTip>
   <QJ_Clear>Temizle</QJ_Clear>
   <QJ_CompatibilityFinishIt>Finish it!, Quality Jobs'ın siparişinden ayırdığı yarım işlerde kullanıldığında hata verebilir.</QJ_CompatibilityFinishIt>
   <QJ_CompatibilityNoJobAuthors>No Job Authors, zorla bitirme veya Achtung uyumluluğu seçenekleri açıkken kalite için ayrılmış işleri Quality Jobs dışında sürdürebilir.</QJ_CompatibilityNoJobAuthors>
@@ -29,7 +29,7 @@
   <QJ_MigrationBody>Quality Jobs, kaliteye tabi {0} mevcut sipariş buldu. Mevcut davranışlarıyla devam edebilmeleri için yönetim dışı bırakıldılar. Paylaşılan yarım işler her iki durumda da kullanılabilir.</QJ_MigrationBody>
   <QJ_MigrationContinue>Devam</QJ_MigrationContinue>
   <QJ_MigrationEnableExisting>Kaliteli eşyalara yönelik mevcut siparişlerde Quality Jobs etkinleştirilsin mi?</QJ_MigrationEnableExisting>
-  <QJ_MigrationEnableExistingTip>İşaretli: Mevcut siparişler, Bitirme becerisini otomatik ayarla açık olarak Quality Jobs'ı kullanır. Son dokunuşu kolonideki uygun en iyi çalışan yapar; geçici olarak müsait olmayanlar da sayılır. İlham ve üretim uzmanı şartları kapalıdır; düşük kaliteli sonuçlar yeniden denenmez.\n\nİşaretsiz: Mevcut siparişler temel oyunun bitirme davranışını korur. Yarım iş paylaşımı etkilenmez.</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationEnableExistingTip>İşaretli: Mevcut iş emirleri, En iyi tamamlayıcıyı otomatik seç etkin olarak Quality Jobs'ı kullanır. Son dokunuşu kolonideki uygun en iyi çalışan yapar; geçici olarak müsait olmayan çalışanlar da hesaba katılır. İlham ve üretim uzmanı gereksinimleri devre dışıdır ve düşük kaliteli sonuçlar yeniden denenmez.\n\nİşaretsiz: Mevcut iş emirleri temel oyunun tamamlama davranışını korur. Yarım iş paylaşımı etkilenmez.</QJ_MigrationEnableExistingTip>
   <QJ_MigrationTitle>Mevcut kalite siparişleri</QJ_MigrationTitle>
   <QJ_MinQualityLabel>Hedef kalite</QJ_MinQualityLabel>
   <QJ_NoGameLoaded>Kayda özel davranışı değiştirmek için bir kayıt yükleyin.</QJ_NoGameLoaded>
@@ -49,35 +49,35 @@
   <QJ_SettingsBillDefaults>Varsayılan sipariş seçenekleri</QJ_SettingsBillDefaults>
   <QJ_SettingsConstructionDefaults>Varsayılan inşaat seçenekleri</QJ_SettingsConstructionDefaults>
   <QJ_SettingsDefaultCap>Varsayılan yarım iş stok sınırı: {0}</QJ_SettingsDefaultCap>
-  <QJ_SettingsDefaultCapTip>Her ürün için varsayılan azami yarım eşya sayısını belirler. Aynı eşyayı üreten tüm siparişler bu sınırı paylaşır.\n\nSınıra ulaşıldığında yeni eşyalara başlanmaz; devam edenler yine bitirilebilir. 0, sınırsız demektir.</QJ_SettingsDefaultCapTip>
+  <QJ_SettingsDefaultCapTip>Her harita ayrı sayılmak üzere, ürün başına varsayılan yarım eşya sınırını belirler. Bir haritada aynı ürüne ait tüm yarım eşyalar, iş emri ve tezgâh ayrımı olmadan birlikte sayılır; ancak sınıra ulaşıldığında yalnızca Quality Jobs tarafından yönetilen iş emirleri yeni eşyalara başlamayı durdurur.\n\nMevcut eşyalara yine devam edilebilir veya bunlar tamamlanabilir. 0, sınırsız demektir. Bir ürünün stok sınırı ayarı, o ürünü üreten tüm iş emirlerinde bu varsayılanın yerine geçer.</QJ_SettingsDefaultCapTip>
   <QJ_SettingsEnabledNote>Anahtar, yüklü kayıt için geçerlidir. Devre dışı bırakmak tüm eşyaları temel oyundaki hâline döndürür ve bu kaydın Quality Jobs ayarlarını siler.\n\nMod kurulu kalırsa kayıt sonraki yüklenişinde varsayılan ayarlarla yeniden etkinleşir. Devre dışı bırakma, modu kaldırmaya hazırlık içindir.</QJ_SettingsEnabledNote>
-  <QJ_SettingsFinisherSkillTip>Son dokunuşu yalnızca bu beceri düzeyinde veya üstündeki çalışanlar yapabilir; önceki aşamaları diğer uygun çalışanlar yapabilir.\n\nBitirme becerisini otomatik ayarla işaretliyken bu değer manuel varsayılan olarak saklanır ama kullanılmaz.</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsFinisherSkillTip>Son dokunuşu yalnızca bu beceri düzeyinde veya üstündeki çalışanlar yapabilir; işin önceki aşamalarını diğer uygun çalışanlar yapabilir.\n\nEn iyi tamamlayıcıyı otomatik seç işaretliyken bu değer manuel varsayılan olarak saklanır ama kullanılmaz.</QJ_SettingsFinisherSkillTip>
   <QJ_SettingsGlobalOptions>Genel seçenekler</QJ_SettingsGlobalOptions>
   <QJ_SettingsHighPriorityFinish>Tamamlayıcılar için yüksek öncelikli iş kullan</QJ_SettingsHighPriorityFinish>
   <QJ_SettingsHighPriorityFinishTip>İşaretli: Bir eşyayı bitirmek için seçilen çalışan, bir sonraki iş arayışında yangın söndürme, tıbbi bakım, kurtarma ve yatak istirahati dışındaki tüm işlerden önce bu işi alır. Mevcut işi bölünmez.\n\nİşaretsiz: Bitirme işi kendi iş türünde ilk sıradadır, ancak çalışanın daha yüksek öncelik verdiği iş türleri yine önce gelir.</QJ_SettingsHighPriorityFinishTip>
-  <QJ_SettingsManageNewBills>Yeni kalite siparişlerini yönet</QJ_SettingsManageNewBills>
-  <QJ_SettingsManageNewBillsTip>İşaretli: Quality Jobs, kaliteli ürün veren siparişleri varsayılan olarak bu sütundaki seçeneklerle yönetir. Her siparişin ayarları ayrı değiştirilebilir.\n\nİşaretsiz: Quality Jobs sipariş ayarlarında açılmadıkça temel oyun davranışı kullanılır.</QJ_SettingsManageNewBillsTip>
+  <QJ_SettingsManageNewBills>Kaliteli ürün iş emirlerini varsayılan olarak yönet</QJ_SettingsManageNewBills>
+  <QJ_SettingsManageNewBillsTip>Yeni kaliteli ürün iş emirleri ve hâlâ bu varsayılana uyan mevcut iş emirleri için yönetim varsayılanını belirler. İşaretli: Quality Jobs, bu iş emirlerini bu sütundaki varsayılanlarla yönetir. İş emrinin kendi Bu siparişi yönet ayarı, bu varsayılanın yerine geçer.\n\nİşaretsiz: Bu iş emirleri normal şekilde tamamlanır. Bu seçeneğin kapatılması, etkilenen iş emirlerindeki bekleyen eşyaları da serbest bırakır; böylece Quality Jobs gereksinimlerini karşılamadan tamamlanabilirler.</QJ_SettingsManageNewBillsTip>
   <QJ_SettingsManageNewConstruction>Yeni inşaat işlerini yönet</QJ_SettingsManageNewConstruction>
   <QJ_SettingsManageNewConstructionTip>İşaretli: Kaliteye tabi yeni binalar bu sütundaki seçeneklerle otomatik yönetilir. Her bina Kaliteli iş düğmesiyle ayarlanabilir veya yönetimden çıkarılabilir.\n\nİşaretsiz: Ayrı ayrı açılmadıkça yeni binalar temel oyun davranışını kullanır.</QJ_SettingsManageNewConstructionTip>
   <QJ_SettingsShareWork>Yarım işleri paylaş</QJ_SettingsShareWork>
-  <QJ_SettingsShareWorkTip>İşaretli: Yarım eşyaların kilidi açılır; uygun her çalışan başkasının başladığı işi sürdürebilir.\n\nİşaretsiz: Yarım eşyanın onu başlatan çalışana bağlı kaldığı temel oyun davranışı.</QJ_SettingsShareWorkTip>
+  <QJ_SettingsShareWorkTip>Diğer uygun çalışanların sıradan yarım işleri sürdürmesine izin verir. Bu seçeneği kapatmak, bu işleri başlatan zanaatkâra bağlı tutar.\n\nYönetilen iş emirleri, işi yine de uygun bir tamamlayıcıya devredebilir; bir iş emrinin bitirme şartlarını kaldırmak için Bu siparişi yönet seçeneğini kapatın.</QJ_SettingsShareWorkTip>
   <QJ_SettingsShowToolbarButton>Araç çubuğu düğmesini göster</QJ_SettingsShowToolbarButton>
   <QJ_SettingsShowToolbarButtonTip>Ekranın sağ altındaki görünüm düğmelerinin yanına bir düğme ekler. Bu düğme Quality Jobs ayarlarını açar.</QJ_SettingsShowToolbarButtonTip>
   <QJ_SettingsUnlimitedHint>0 = sınırsız</QJ_SettingsUnlimitedHint>
   <QJ_StartRebuilding>Yeniden inşayı başlat</QJ_StartRebuilding>
   <QJ_StatusFinishers>Uygun tamamlayıcılar: {0}</QJ_StatusFinishers>
   <QJ_StatusFinishersNone>Uygun tamamlayıcılar: yok</QJ_StatusFinishersNone>
-  <QJ_StatusFinishersTip>Bu haritada son dokunuşu yapmaya şu anda uygun çalışanlar; en iyi aday önce gelir. Gereken iş türünü yapabilen ve yukarıdaki bitirme şartlarını karşılayan çalışanlar uygundur.\n\nYere düşmüş, zihinsel kriz geçiren veya bu haritadan uzakta olan çalışanlar sayılmaz.</QJ_StatusFinishersTip>
+  <QJ_StatusFinishersTip>Bu haritada son dokunuşu yapmaya şu anda uygun çalışanlar; en iyi aday önce gelir. Gereken iş türünü yapabilen ve yukarıdaki bitirme şartlarını karşılayan çalışanlar uygundur. İş emri panelinde bu liste, seçili iş emrinin şartlarını kullanır; aynı ürünü üreten diğer iş emirlerinin şartları farklı olabilir.\n\nYere düşmüş, zihinsel kriz geçiren veya bu haritadan uzakta olan çalışanlar sayılmaz.</QJ_StatusFinishersTip>
   <QJ_StatusHeader>Durum</QJ_StatusHeader>
   <QJ_StatusQueue>Bekleyen: {0} · Bitirilen: {1}</QJ_StatusQueue>
   <QJ_StatusQueueShared>Yarım: {0} · Bekleyen: {1} · Bitirilen: {2}</QJ_StatusQueueShared>
-  <QJ_StatusQueueTip>Yarım: paylaşım havuzunda bulunan ve izinli herhangi bir zanaatkârın sürdürebileceği eşyalar. Bekleyen: uygun tamamlayıcı bekleyen duraklatılmış eşyalar. Bitirilen: bir tamamlayıcıya atanmış eşyalar.</QJ_StatusQueueTip>
-  <QJ_StatusStalled>Bekleyen eşyalar için uygun tamamlayıcı yok</QJ_StatusStalled>
+  <QJ_StatusQueueTip>Sayılar, bu haritadaki tüm iş emirleri ve tezgâhlarda bu ürüne ait takip edilen yarım eşyaları kapsar.\n\nYarım: paylaşım havuzunda bulunan ve izinli herhangi bir zanaatkârın sürdürebileceği eşyalar. Bekleyen: uygun tamamlayıcı bekleyen duraklatılmış eşyalar. Bitirilen: bir tamamlayıcıya atanmış eşyalar.</QJ_StatusQueueTip>
+  <QJ_StatusStalled>Bu iş emrinin şartlarını karşılayan tamamlayıcı yok.</QJ_StatusStalled>
   <QJ_StatusStalledConstruction>Uygun tamamlayıcı yok — inşaat bekliyor</QJ_StatusStalledConstruction>
   <QJ_StatusStalledConstructionTip>Bu bina son dokunuşu beklemek için duraklatıldı; şu anda uygun çalışan olmadığı için tamamlanmayacak.\n\nBitirme becerisi, ilham ve uzman şartlarını; amaçlanan inşaatçının İnşa işini yapabildiğini ve bu haritada bulunduğunu kontrol edin.</QJ_StatusStalledConstructionTip>
-  <QJ_StatusStalledTip>Yarım eşyalar bekliyor, ancak şu anda onları bitirebilecek uygun çalışan yok; bu yüzden bitirme işleri oluşturulmuyor.\n\nBitirme becerisi, ilham ve uzman şartlarını; amaçlanan tamamlayıcının gereken iş türünü yapabildiğini ve bu haritada bulunduğunu kontrol edin. Beklerken stok sınırı yeni eşyalara başlanmasını da engelleyebilir.</QJ_StatusStalledTip>
+  <QJ_StatusStalledTip>Şu anda hiçbir çalışan bu iş emrinin bitirme şartlarını karşılamıyor. Kuyruk sayıları, bu haritada bu ürünü üreten tüm iş emirlerini kapsar; diğer iş emirlerinin şartları farklı olabilir.\n\nBitirme becerisi, ilham ve uzman şartlarını; amaçlanan tamamlayıcının gereken iş türünü yapabildiğini ve bu haritada bulunduğunu kontrol edin. Stok sınırına ulaşılması da yeni eşyalara başlanmasını engelleyebilir.</QJ_StatusStalledTip>
   <QJ_StockCapLabel>Stok sınırı: {0}</QJ_StockCapLabel>
-  <QJ_StockCapTooltip>Bu ürünün azami yarım eşya sayısı. Sınır ürün başına paylaşılır; bu eşyayı üreten tüm siparişler hesaba katılır.\n\n0, sınırsız demektir.</QJ_StockCapTooltip>
+  <QJ_StockCapTooltip>Bu ürün için her haritada yeni işe başlanmasını sınırlar. Bir haritada bu ürüne ait tüm yarım eşyalar, iş emri ve tezgâh ayrımı olmadan birlikte sayılır; ancak sınıra ulaşıldığında yalnızca Quality Jobs tarafından yönetilen iş emirleri yeni eşyalara başlamayı durdurur.\n\nMevcut eşyalara yine devam edilebilir veya bunlar tamamlanabilir. 0, sınırsız demektir. Bu değerin değiştirilmesi, her harita ayrı sayılmak üzere ürünün tüm iş emirlerindeki sınırını değiştirir.</QJ_StockCapTooltip>
   <QJ_ToolbarButtonTip>Quality Jobs ayarlarını ve yardımını aç.</QJ_ToolbarButtonTip>
   <QJ_UnfinishedWorkWaiting>bu siparişin yarım eşyası sürdürülmeyi bekliyor</QJ_UnfinishedWorkWaiting>
   <QJ_WelcomeBody>Quality Jobs, uygun çalışanların bir eşya veya bina üzerindeki işi paylaşmasını sağlar. Kaliteyi işi tamamlayan belirlediği için yalnızca belirlediğiniz şartları karşılayan bir çalışan işi tamamlayabilir. Üretim emirlerinde ve inşaatta çalışır.</QJ_WelcomeBody>

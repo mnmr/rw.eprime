@@ -22,7 +22,7 @@ Drei Wege zum Zuweisen:
 - Klicke auf die ![Plus-Schaltfläche](tex:UI/Buttons/Plus|24) am Zeilenende und wähle aus dem Menü.
 
 <!-- l10n:b-3634ad4cacb9 -->
-Beim Ablegen bestimmst du zugleich die Position: Ein Ziehen weist also Rolle und Priorität zu. Beste Eignung im Tooltip zeigt vorab, wem das [Empfehlungssystem](topic:recommendations) sie geben würde.
+Beim Ablegen bestimmst du zugleich die Position: Ein Ziehen weist also Rolle und Priorität zu. Beste Eignung ordnet Kolonisten nach ihrer Eignung für diese Rolle. [Empfehlungen](topic:recommendations) berücksichtigen auch den Bedarf der Kolonie, Training und Arbeitsabneigungen und können deshalb andere Kolonisten auswählen.
 
 <!-- l10n:b-e85c035e0a4a -->
 ## Mehrere Kolonisten zugleich

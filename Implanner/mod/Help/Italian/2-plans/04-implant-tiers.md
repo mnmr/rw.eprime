@@ -2,7 +2,7 @@
 title: Fasce degli impianti
 ---
 <!-- l10n:b-5f84f9b2d5c3 -->
-La colonna destra ordina le scelte proprie del piano in cinque fasce di stelle; gli impianti ereditati sono classificati nel piano base. Trascina una riga su un'altra fascia per spostarla.
+La colonna destra mostra gli impianti scelti direttamente nel piano in cinque fasce di stelle. La classificazione degli impianti è condivisa da tutti i piani di questo salvataggio: spostare un impianto qui ne modifica la priorità ovunque compaia. Più stelle indicano una priorità maggiore. Trascina gli impianti tra le fasce o all'interno di una fascia per stabilirne l'ordine. Per spostare un impianto ereditato, apri il piano base in cui è stato scelto.
 
 <!-- l10n:b-21a47f167054 -->
 ![Fasce di stelle con impianti dalla priorità massima a quella normale](tier-panel.png)

@@ -117,7 +117,7 @@
   <WR_RecTuneHunterTiersRowDesc>“獵人”動態位置的射擊等級分界。第 1 檔將獵人放在基礎工作之後，第 2、3 檔分別放在中間和最後的工作職責之後，超過第 4 檔則排在末尾。</WR_RecTuneHunterTiersRowDesc>
   <WR_TrainingSection>訓練路徑</WR_TrainingSection>
   <WR_TrainingHelp>在此定義殖民者如何學習新技能並逐步勝任此職責。訓練路徑可包含多個區間，職責可以重疊。路徑被推薦時，會推薦該殖民者當前技能等級所涵蓋的全部職責。</WR_TrainingHelp>
-  <WR_TrainingTipWhat>職責自身的成長路線：每個成員職責都有對應推薦技能區間。目標職責本身始終保留在路徑中。</WR_TrainingTipWhat>
+  <WR_TrainingTipWhat>職責自身的成長路線：每個成員職責都有對應的推薦技能區間。目標職責始終保留在路徑中，且起始等級必須高於所有訓練職責。</WR_TrainingTipWhat>
   <WR_TrainingTipBands>重疊區間的職責同時存在；區間不重疊時，後續職責替換前一個。</WR_TrainingTipBands>
   <WR_TrainingTipOrder>分配優先排列區間下限更高的職責。區間相同時，先按工作者最弱的職責技能，再按路徑儲存順序排序。</WR_TrainingTipOrder>
   <WR_AddNew>新增</WR_AddNew>
@@ -129,9 +129,9 @@
   <WR_RecSkillsSection>技能</WR_RecSkillsSection>
   <WR_RecScalingSection>分配規模</WR_RecScalingSection>
   <WR_RoleColonyMinLabel>殖民地最低人數：</WR_RoleColonyMinLabel>
-  <WR_RoleColonyMinTip>此職責的最少分配人數。</WR_RoleColonyMinTip>
+  <WR_RoleColonyMinTip>為此職責的工作規劃的最低工作人數。訓練職責可填補部分名額：設為大於零時，會為此職責本身保留一個名額。引擎取此最低人數與覆蓋率換算人數中較大者。</WR_RoleColonyMinTip>
   <WR_RoleCoverageLabel>覆蓋率：</WR_RoleCoverageLabel>
-  <WR_RoleCoverageTip>理想情況下應獲得此職責的殖民者比例。</WR_RoleCoverageTip>
+  <WR_RoleCoverageTip>按殖民地人數的此百分比規劃工作人數，並四捨五入為整數。引擎取此人數與殖民地最低人數中較大者。訓練職責可填補部分名額。</WR_RoleCoverageTip>
   <WR_RoleCategoryLabel>殖民地重要性：</WR_RoleCategoryLabel>
   <WR_RoleCategoryTip>規劃殖民地時此職責的重要程度。“未設定”表示不分類。</WR_RoleCategoryTip>
   <WR_RoleCategoryNone>未設定</WR_RoleCategoryNone>
@@ -150,7 +150,7 @@
   <WR_PartialCapabilityTip>啟用後，只能執行其中部分工作的殖民者也可獲推薦。完全無法執行其中工作的角色絕不會獲推薦。適用於希望人人承擔的廣泛職責，例如共同的閒暇雜務。</WR_PartialCapabilityTip>
   <WR_PartialCapabilityLockedTip>此職責已允許只能執行部分工作的殖民者獲推薦。無技能工作職責和狩獵職責始終允許此項。</WR_PartialCapabilityLockedTip>
   <WR_RoleAgeBandsLabel>可分配此職責的年齡組：</WR_RoleAgeBandsLabel>
-  <WR_RoleAgeBandsTip>所選年齡區間外的殖民者不會被分配或推薦此職責。點選範圍外區間可延伸選擇至該處；點選首末已選區間可移除它；點選中間區間則只選擇該區間。區間邊界依據遊戲解鎖工作的年齡。此職責全部工作從 {0} 歲起均可執行。</WR_RoleAgeBandsTip>
+  <WR_RoleAgeBandsTip>這些年齡區間限制自動分配和推薦。手動分配或貼上仍可將此職責交給區間外的殖民者。點選範圍外區間可延伸選擇至該處；點選首末已選區間可移除它；點選中間區間則只選擇該區間。區間邊界依據遊戲解鎖工作的年齡。此職責全部工作從 {0} 歲起均可執行。</WR_RoleAgeBandsTip>
   <WR_WorkTypesLabel>工作類型</WR_WorkTypesLabel>
   <WR_WorkTypesTip>只有能執行指定工作類型的殖民者才有資格承擔此職責。\n\n根據所選工作推導，僅供參考。</WR_WorkTypesTip>
   <WR_UsedSkillsLabel>使用</WR_UsedSkillsLabel>
@@ -171,7 +171,7 @@
   <WR_RemoveSkillTip>移除此技能硬性要求。</WR_RemoveSkillTip>
   <WR_RoleMissingRequiredSkills>{0} 的必需技能已禁用：{1}。</WR_RoleMissingRequiredSkills>
   <WR_PathAddRoleTip>將職責加入此路徑。</WR_PathAddRoleTip>
-  <WR_BandChipTip>拖動端點調整技能區間大小，拖動中部移動整個區間。</WR_BandChipTip>
+  <WR_BandChipTip>拖動端點調整技能區間大小，拖動中部移動整個區間。目標職責的起始等級必須高於所有訓練職責的起始等級，否則路徑不會推薦朝該目標發展的訓練。</WR_BandChipTip>
   <WR_PriorityGridTitle>優先級表格</WR_PriorityGridTitle>
   <WR_ShowPriorityGridTip>顯示列表中所有殖民者的優先級表格，遵循當前職責和地點篩選。可在窗口中切換原始排序或原版 0–4 優先級。</WR_ShowPriorityGridTip>
   <WR_GridModeRaw>WorkRoles 優先級</WR_GridModeRaw>
@@ -217,7 +217,7 @@
   <WR_TipBestFitsLabel>最佳人選</WR_TipBestFitsLabel>
   <WR_TipWholeType>{0}（全部工作）</WR_TipWholeType>
   <WR_TipMore>另有 {0} 項</WR_TipMore>
-  <WR_RoleCapNeverDo>{0} 永遠不會執行{1}</WR_RoleCapNeverDo>
+  <WR_RoleCapNeverDo>{0} 目前無法執行{1}</WR_RoleCapNeverDo>
   <WR_RoleCapAllJobs>此職責中的任何工作</WR_RoleCapAllJobs>
   <WR_RoleCapSomeJobs>此職責 {1} 項工作中的 {0} 項</WR_RoleCapSomeJobs>
   <WR_RoleJobIncapable>無法執行此工作</WR_RoleJobIncapable>
@@ -372,8 +372,8 @@ WorkRoles 通過遊戲標準方法為受管理殖民者提供工作列表。另�
   <WR_RecTipSelection>選擇</WR_RecTipSelection>
   <WR_RecTipAssignmentsOne>需要 1 個分配</WR_RecTipAssignmentsOne>
   <WR_RecTipAssignmentsMany>需要 {0} 個分配</WR_RecTipAssignmentsMany>
-  <WR_RecTipWithWaiverOne>{0}（1 次訓練替代）</WR_RecTipWithWaiverOne>
-  <WR_RecTipWithWaiversMany>{0}（{1} 次訓練替代）</WR_RecTipWithWaiversMany>
+  <WR_RecTipWithWaiverOne>{0}（最多 1 個名額可使用訓練職責）</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0}（最多 {1} 個名額可使用訓練職責）</WR_RecTipWithWaiversMany>
   <WR_RecTipEveryoneCapable>分配給所有能勝任者</WR_RecTipEveryoneCapable>
   <WR_RecDecisionAuto>自動分配給所有能勝任者。</WR_RecDecisionAuto>
   <WR_RecDecisionSignals>達到配置的信號門檻。</WR_RecDecisionSignals>
@@ -381,9 +381,9 @@ WorkRoles 通過遊戲標準方法為受管理殖民者提供工作列表。另�
   <WR_RecDecisionTraining>通過 {0} 的訓練路徑分配。</WR_RecDecisionTraining>
   <WR_RecDecisionTrainingUnknown>通過訓練路徑分配。</WR_RecDecisionTrainingUnknown>
   <WR_RecDecisionDirectSlot>直接入選，填補 {2} 的 {1} 個名額中的第 {0} 個。</WR_RecDecisionDirectSlot>
-  <WR_RecDecisionTrainingSlot>入選以填補 {2} 的 {1} 個名額中的第 {0} 個。通過訓練替代，以 {3} 替代 {2}（{4}；{2} 需要 {5}）。</WR_RecDecisionTrainingSlot>
-  <WR_RecDecisionTrainingSlotSimple>入選以填補 {2} 的 {1} 個名額中的第 {0} 個。通過訓練替代，以 {3} 替代 {2}。</WR_RecDecisionTrainingSlotSimple>
-  <WR_RecDecisionTrainingSlotUnknown>通過訓練替代入選，填補 {1} 個名額中的第 {0} 個，分配 {2}。</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecDecisionTrainingSlot>使用訓練職責 {3}，入選以填補 {2} 的 {1} 個名額中的第 {0} 個（{4}；訓練路徑中的 {2} 從等級 {5} 開始）。</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>使用訓練職責 {3}，入選以填補 {2} 的 {1} 個名額中的第 {0} 個。</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>使用訓練職責 {2}，入選以填補 {1} 個名額中的第 {0} 個。</WR_RecDecisionTrainingSlotUnknown>
   <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
   <WR_RecDecisionDirectFallbackSlot>直接入選填補 {2} 的 {1} 個名額中的第 {0} 個，因為沒有合格的訓練替代職責。</WR_RecDecisionDirectFallbackSlot>
   <WR_RecDecisionCoverageRepairSlot>直接入選，填補 {2} 的 {1} 個必需名額中剩餘的第 {0} 個。</WR_RecDecisionCoverageRepairSlot>
@@ -620,7 +620,7 @@ WorkRoles 通過遊戲標準方法為受管理殖民者提供工作列表。另�
   <WR_WelcomeFind>點選螢幕底部的“工作”按鈕打開 WorkRoles。“幫助”頁以引導教程開始。</WR_WelcomeFind>
   <WR_WelcomeTakeMeThere>立即打開</WR_WelcomeTakeMeThere>
   <WR_WelcomeSmallScreen>當前遊戲介面為 {0}x{1}（分辨率除以介面縮放）。WorkRoles 按 {2}x{3} 或更大尺寸設計，例如 1920x1080、介面縮放 1.25。更小螢幕仍可使用，但部分標籤會縮短，分頁需要更多滾動。降低遊戲選項中的介面縮放可增加窗口空間。</WR_WelcomeSmallScreen>
-  <WR_RoleWorkAversion>{0} 的戒律 {1} 反對 {2}。推薦會施加有限分數懲罰：兩個優先級檔位，或選擇主力時六點虛擬技能分。必需覆蓋仍可使其入選。獵人順序後移兩檔，最多至第五檔；原有第一檔後備規則仍適用。</WR_RoleWorkAversion>
+  <WR_RoleWorkAversion>{0} 的戒律 {1} 反對 {2}。WorkRoles 會優先選擇其他合適的殖民者，但殖民地需要有人承擔此工作時，仍可能推薦這名殖民者。這不會禁止該工作。對獵人而言，這種排斥也會使狩獵在推薦工作順序中後移。</WR_RoleWorkAversion>
   <WR_WorkBlockedTags>工作標籤已禁用</WR_WorkBlockedTags>
   <WR_WorkBlockedCapacity>缺少必需的身體能力</WR_WorkBlockedCapacity>
   <WR_WorkBlockedRace>此種族的工作限制不允許</WR_WorkBlockedRace>
@@ -638,4 +638,23 @@ WorkRoles 通過遊戲標準方法為受管理殖民者提供工作列表。另�
   <WR_OptMechanicalWorkers>在殖民者中顯示機器人與機械族</WR_OptMechanicalWorkers>
   <WR_OptMechanicalWorkersTip>在「殖民者」分頁中，為 Biotech 機械族與 Misc. Robots 的機器人指派職責。控制群組、允許區域、啟用與充電仍在各自原有的分頁中設定。關閉此選項會隱藏它們，並恢復原有的工作優先順序，但會保留已儲存的職責。</WR_OptMechanicalWorkersTip>
   <WR_RecMechanicalLearningProtected>即使機器人或機械族已提供這項服務，仍會保留此學習指派。達到訓練目標後即可解除。</WR_RecMechanicalLearningProtected>
+  <WR_DefaultAutoUpdate>編輯配置後自動更新</WR_DefaultAutoUpdate>
+  <WR_DefaultClear>新遊戲使用內建預設值</WR_DefaultClear>
+  <WR_DefaultConflictBody>此殖民地的 WorkRoles 設定與您的新遊戲預設值不同。是否將此殖民地的設定設為預設值，並在編輯配置時持續更新？目前的殖民地不會改變。</WR_DefaultConflictBody>
+  <WR_DefaultEmptyBody>儲存此殖民地的完整設定，供日後的新遊戲使用。現有殖民地保留各自的設定。不包含角色職責分配、清單綁定、搜尋及區段收合狀態。</WR_DefaultEmptyBody>
+  <WR_DefaultKeep>本次遊玩保留我的預設值</WR_DefaultKeep>
+  <WR_DefaultSavedBody>已儲存供新遊戲使用的個人設定。儲存此殖民地的完整設定即可將其替換。現有殖民地保留各自的設定。不包含角色職責分配、清單綁定、搜尋及區段收合狀態。</WR_DefaultSavedBody>
+  <WR_DefaultStopAuto>關閉自動更新</WR_DefaultStopAuto>
+  <WR_DefaultUseCurrent>新遊戲使用此設定</WR_DefaultUseCurrent>
+  <WR_LocationUnresolved>無法使用：{0}</WR_LocationUnresolved>
+  <WR_LocationUnresolvedTip>此處不存在匯入的位置。在您將其替換為此殖民地中的位置之前，此規則不會生效。</WR_LocationUnresolvedTip>
+  <WR_NewGameDefaults>設定預設值</WR_NewGameDefaults>
+  <WR_SetupFailed>無法儲存或讀取 WorkRoles 預設值：{0}</WR_SetupFailed>
+  <WR_SetupGameSettings>殖民地設定</WR_SetupGameSettings>
+  <WR_SetupGameSettingsInfo>替換推薦公式設定、自動最佳化、優先級行為及機械工作者選項。</WR_SetupGameSettingsInfo>
+  <WR_SetupPlayerSettings>我的顯示偏好</WR_SetupPlayerSettings>
+  <WR_SetupPlayerSettingsInfo>可選：替換您的標籤顯示、調色盤排列、技能欄、徽章及視窗大小。多人遊戲中的其他玩家保留各自的偏好設定。</WR_SetupPlayerSettingsInfo>
+  <WR_RecMechanicalSelected>可以承擔其他推薦角色未涵蓋的工作。</WR_RecMechanicalSelected>
+  <WR_RecMechanicalRetained>保留目前的主要角色。</WR_RecMechanicalRetained>
+  <WR_RecMechanicalIncapacitated>該工作單位已倒地。角色會保留，待其恢復後繼續工作。</WR_RecMechanicalIncapacitated>
 </LanguageData>

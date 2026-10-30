@@ -22,7 +22,8 @@ namespace WorkRoles.Capabilities
         // Owner: world. Key: pawn identity. Value: detached immutable evidence
         // plus its private capacity observations. Dependencies: pawn race, disabled work,
         // required-capacity booleans, current precepts, faction, nullifying
-        // traits/hediffs, audited Vivi gathering-stat positivity (including
+        // traits/hediffs, native mech/Misc. Robots work definitions,
+        // audited Vivi gathering-stat positivity (including
         // equipped straw/brush offsets), and definitions. Refresh: capture and matching events,
         // never periodic. Equal evidence keeps identity and publishes no stamp.
         // Teardown: ExternalPawnFacts.Release/InvalidateAll; no map references.
@@ -45,6 +46,12 @@ namespace WorkRoles.Capabilities
             WorkTags disabled = pawn.CombinedDisabledWorkTags;
             foreach (WorkGiverDef giver in DefDatabase<WorkGiverDef>.AllDefsListForReading)
             {
+                // Use the same native execution contract as CompiledJobOrders.
+                // Misc. Robots' generic skill/work trackers do not describe
+                // which jobs a specialist model actually supports.
+                if (!MechanicalWorkers.CanDo(pawn, giver))
+                    blocks.Add(new WorkCapabilityFact(giver.defName, null,
+                        pawn.def.modContentPack?.PackageId ?? "ludeon.rimworld", "WR_RoleJobIncapable"));
                 if ((giver.workTags & disabled) != WorkTags.None)
                     blocks.Add(new WorkCapabilityFact(giver.defName, null, "ludeon.rimworld", "WR_WorkBlockedTags"));
                 if (giver.requiredCapacities != null)

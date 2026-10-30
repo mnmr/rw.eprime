@@ -101,14 +101,14 @@
   <EPR.QualityJobsMissingTip>Потрібен EPrime's Quality Jobs, який не встановлено.</EPR.QualityJobsMissingTip>
   <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs установлено, але ця версія не підтримує потрібну інтеграцію. Оновіть мод, щоб увімкнути цей параметр.</EPR.QualityJobsOutdatedTip>
   <EPR.QualityJobsRework>Підтримка Quality Jobs</EPR.QualityJobsRework>
-  <EPR.QualityJobsReworkTip>Для замовлень і споруд із цільовою якістю оцінює кількість потрібних спроб та резервує матеріали на всі. Під час розбирання споруд повертається та частка матеріалів, яку повертає базова гра.</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsReworkTip>Коригує ввімкнене резервування для замовлень і споруд відповідно до цільової якості, якою керує Quality Jobs. Оцінює матеріали для додаткових спроб і враховує матеріали, що повертаються під час розбирання споруд. Щоб скористатися цим, увімкніть відповідний параметр резервування вище.</EPR.QualityJobsReworkTip>
   <EPR.ReserveForBills>Резервувати для замовлень</EPR.ReserveForBills>
-  <EPR.ReserveForBillsTip>Віднімає інгредієнти, які ще потрібні незавершеним замовленням. Замовлення резервує інгредієнт лише тоді, коли є рівно один спосіб задовольнити цю вимогу. «Будь-яка шкіра» й подібні відкриті варіанти нічого не резервують.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBillsTip>Віднімає інгредієнти, потрібні незавершеним виробничим замовленням. Інгредієнт враховується лише тоді, коли замовлення дозволяє для нього рівно один тип ресурсу. Наприклад, якщо дозволено будь-яку шкіру, нічого не резервується; якщо лише один тип шкіри — враховується потрібна кількість цієї шкіри.</EPR.ReserveForBillsTip>
   <EPR.ReserveForBuildables>Резервувати для будівництва</EPR.ReserveForBuildables>
   <EPR.ReserveForBuildablesTip>Віднімає матеріали, які ще потрібні кресленням і недобудованим каркасам. Уже доставлені до каркаса матеріали не враховуються повторно, а заборонені креслення ігноруються.</EPR.ReserveForBuildablesTip>
   <EPR.ResourcePoolEditor>Редактор наборів ресурсів</EPR.ResourcePoolEditor>
   <EPR.Resources>Ресурси</EPR.Resources>
-  <EPR.RestoreConfirm>Замінити ВСІ групи й пороги типовим набором? У мережевій грі це впливає на всіх гравців.</EPR.RestoreConfirm>
+  <EPR.RestoreConfirm>Замінити всі групи й набори ресурсів вбудованим типовим набором та очистити всі пороги й перевизначення кількості? У мережевій грі це впливає на всіх гравців.</EPR.RestoreConfirm>
   <EPR.RestoreDefaults>Відновити типові</EPR.RestoreDefaults>
   <EPR.Results>Результати</EPR.Results>
   <EPR.RuleAlwaysOff>Завжди вимкнено</EPR.RuleAlwaysOff>
@@ -138,13 +138,13 @@
   <EPR.TierLayoutTip>Як розгорнута група показує додаткові рівні — після клацання трикутників чи наведення. Горизонтальне додає їх праворуч у тому самому рядку. Вертикальне відводить кожному рівню окремий рядок і збільшує висоту смуги.</EPR.TierLayoutTip>
   <EPR.TierLayoutVertical>Вертикальне</EPR.TierLayoutVertical>
   <EPR.TipAvailableStock>{0} доступно · {1} у запасі</EPR.TipAvailableStock>
-  <EPR.TipDrain>Витрати</EPR.TipDrain>
-  <EPR.TipEach>На одиницю</EPR.TipEach>
+  <EPR.TipDrain>Віднято</EPR.TipDrain>
+  <EPR.TipEach>Витрати на спробу</EPR.TipEach>
   <EPR.TipInStock>У запасі</EPR.TipInStock>
   <EPR.TipMixedResources>Різні</EPR.TipMixedResources>
   <EPR.TipOtherPlannedWork>Інші ({0})</EPR.TipOtherPlannedWork>
   <EPR.TipPlannedWork>Заплановані роботи</EPR.TipPlannedWork>
-  <EPR.TipQueued>У черзі</EPR.TipQueued>
+  <EPR.TipQueued>Залишок робіт</EPR.TipQueued>
   <EPR.TipResource>Ресурс</EPR.TipResource>
   <EPR.Title>EPrime's Readouts</EPR.Title>
   <EPR.UseVanilla>Панель ресурсів базової гри</EPR.UseVanilla>

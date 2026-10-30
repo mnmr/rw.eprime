@@ -33,7 +33,7 @@
   <EPR.PoolTip>Adicionar como conjunto de recursos: um espaço com a quantidade total de todos os itens desta categoria</EPR.PoolTip>
   <EPR.EnableTip>Mostrar este grupo no painel de recursos</EPR.EnableTip>
   <EPR.RestoreDefaults>Restaurar padrões</EPR.RestoreDefaults>
-  <EPR.RestoreConfirm>Substituir TODOS os grupos e limites pelas configurações padrão? Isto afeta todos os jogadores em uma partida multijogador.</EPR.RestoreConfirm>
+  <EPR.RestoreConfirm>Substituir todos os grupos e conjuntos de recursos pelos padrões integrados e limpar todos os limites e ajustes de contagem? Isso afeta todos os jogadores em uma partida multijogador.</EPR.RestoreConfirm>
   <EPR.Help>Ajuda</EPR.Help>
   <EPR.HelpGroups>Estes são seus grupos de exibição de recursos. Cada grupo aparece em uma faixa própria.
 
@@ -80,20 +80,20 @@ Clique em um espaço para definir suas opções de exibição. Clique com o bot�
   <EPR.CountOptions>Opções de contagem</EPR.CountOptions>
   <EPR.PlannedWorkOptions>Trabalho planejado</EPR.PlannedWorkOptions>
   <EPR.ReserveForBills>Reservar recursos para ordens de produção</EPR.ReserveForBills>
-  <EPR.ReserveForBillsTip>Subtrai os ingredientes que as ordens pendentes ainda precisam consumir. Uma ordem só reserva um ingrediente quando existe exatamente uma forma de satisfazer essa necessidade. “Qualquer couro” e outras escolhas abertas não reservam nada.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBillsTip>Subtrai os ingredientes necessários para as ordens de produção pendentes. Um ingrediente só é contado quando a ordem permite exatamente um tipo de recurso para ele. Por exemplo, permitir qualquer couro não reserva nada; permitir apenas um tipo de couro inclui o custo desse couro.</EPR.ReserveForBillsTip>
   <EPR.ReserveForBuildables>Reservar recursos para construções</EPR.ReserveForBuildables>
   <EPR.ReserveForBuildablesTip>Subtrai os materiais que os projetos e as estruturas em construção ainda precisam. Os materiais já entregues em uma estrutura não são contados novamente, e os projetos proibidos são ignorados.</EPR.ReserveForBuildablesTip>
   <EPR.ShowNegativeCounts>Mostrar déficits como números negativos</EPR.ShowNegativeCounts>
   <EPR.ShowNegativeCountsTip>Quando o trabalho planejado precisa de mais do que possui, mostra a quantidade em falta em vez de parar no zero.</EPR.ShowNegativeCountsTip>
   <EPR.QualityJobsRework>Suporte para Quality Jobs</EPR.QualityJobsRework>
-  <EPR.QualityJobsReworkTip>Para ordens e construções com uma qualidade desejada, estima quantas tentativas serão necessárias e reserva recursos para todas. As estruturas reconstruídas devolvem a proporção de materiais que o jogo original restitui ao desconstruí-las.</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsReworkTip>Ajusta as reservas ativadas para ordens e construções aos objetivos de qualidade gerenciados pelo Quality Jobs. Estima os materiais necessários para tentativas adicionais e considera os materiais recuperados ao desconstruir. Ative a opção de reserva correspondente acima para usar este recurso.</EPR.QualityJobsReworkTip>
   <EPR.QualityJobsMissingTip>Requer EPrime's Quality Jobs, que não está instalado.</EPR.QualityJobsMissingTip>
   <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs está instalado, mas não disponibiliza a integração necessária. Atualize-o para ativar esta opção.</EPR.QualityJobsOutdatedTip>
   <EPR.TipPlannedWork>Trabalho planejado</EPR.TipPlannedWork>
   <EPR.TipResource>Recurso</EPR.TipResource>
-  <EPR.TipQueued>Em espera</EPR.TipQueued>
-  <EPR.TipEach>Por unidade</EPR.TipEach>
-  <EPR.TipDrain>Consumo</EPR.TipDrain>
+  <EPR.TipQueued>Trabalho restante</EPR.TipQueued>
+  <EPR.TipEach>Custo por tentativa</EPR.TipEach>
+  <EPR.TipDrain>Descontado</EPR.TipDrain>
   <EPR.TipInStock>Em estoque</EPR.TipInStock>
   <EPR.TipAvailableStock>{0} disponíveis · {1} em estoque</EPR.TipAvailableStock>
   <EPR.TipOtherPlannedWork>Outro ({0})</EPR.TipOtherPlannedWork>

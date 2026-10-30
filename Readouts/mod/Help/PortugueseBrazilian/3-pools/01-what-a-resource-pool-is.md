@@ -8,7 +8,7 @@ Um conjunto reúne vários recursos em um espaço que mostra a quantidade total.
 ![Lista de conjuntos no editor](pool-list.png)
 
 <!-- l10n:b-7cdfbcf6c4a5 -->
-O conjunto usa o ícone do primeiro integrante até você escolher outro (veja [Editar um conjunto](topic:editing-a-pool)). Passar o cursor lista os integrantes que você possui, com suas quantidades (veja [Passar o cursor e clicar em um espaço](topic:hovering-and-clicking-a-slot)). Um conjunto sem integrantes não aparece no painel.
+O conjunto usa o ícone do primeiro integrante até você escolher outro (veja [Editar um conjunto](topic:editing-a-pool)). Passar o cursor sobre o espaço de um conjunto no painel lista cada integrante cuja contagem exibida seja diferente de zero, após aplicar os filtros de contagem e os descontos do trabalho planejado. Com Mostrar déficits como números negativos ativado, uma contagem negativa significa que o trabalho planejado exige mais do que você tem (veja [Passar o cursor e clicar em um espaço](topic:hovering-and-clicking-a-slot)). Um conjunto sem integrantes não aparece no painel.
 
 <!-- l10n:b-f7406520e022 -->
 Os nomes devem ser únicos. Os conjuntos pertencem à partida e são os mesmos para todos no multijogador.

@@ -132,7 +132,7 @@
   <!-- Role-owned training paths -->
   <WR_TrainingSection>Training Path</WR_TrainingSection>
   <WR_TrainingHelp>Here you can define how colonists acquire new skills and progress toward this role. A training path can have multiple bands, so that roles can overlap. Colonists will be recommended all roles at their current skill level if the training path is recommended for them.</WR_TrainingHelp>
-  <WR_TrainingTipWhat>The role's own progression: each member role carries a skill band where it is recommended. The role itself always stays in its path.</WR_TrainingTipWhat>
+  <WR_TrainingTipWhat>The role's own progression: each member role carries a skill band where it is recommended. The target role stays in its path and must have a higher starting level than every training role.</WR_TrainingTipWhat>
   <WR_TrainingTipBands>Overlapping bands coexist; where bands do not overlap the later role replaces the earlier.</WR_TrainingTipBands>
   <WR_TrainingTipOrder>Assignments prioritize higher band minimums. Equal bands prioritize the worker's weakest role skill, then the stored path order.</WR_TrainingTipOrder>
   <WR_AddNew>Add New</WR_AddNew>
@@ -146,9 +146,9 @@
   <WR_RecSkillsSection>Skills</WR_RecSkillsSection>
   <WR_RecScalingSection>Assignment Scaling</WR_RecScalingSection>
   <WR_RoleColonyMinLabel>Colony minimum:</WR_RoleColonyMinLabel>
-  <WR_RoleColonyMinTip>The minimum assignment count for this role.</WR_RoleColonyMinTip>
+  <WR_RoleColonyMinTip>Minimum workers to plan for this role's work. Training roles may fill some places: setting this above zero reserves one place for the role itself. The engine uses whichever is larger: this minimum or the worker count from Coverage.</WR_RoleColonyMinTip>
   <WR_RoleCoverageLabel>Coverage:</WR_RoleCoverageLabel>
-  <WR_RoleCoverageTip>What percentage of colonists should ideally get this role.</WR_RoleCoverageTip>
+  <WR_RoleCoverageTip>Plan for this percentage of the colony, rounded to a whole worker. The engine uses whichever is larger: this number or Colony minimum. Training roles may fill some places.</WR_RoleCoverageTip>
   <WR_RoleCategoryLabel>Colony importance:</WR_RoleCategoryLabel>
   <WR_RoleCategoryTip>How important holding this role is when planning the colony. "Not set" leaves the role unclassified.</WR_RoleCategoryTip>
   <WR_RoleCategoryNone>Not set</WR_RoleCategoryNone>
@@ -167,7 +167,7 @@
   <WR_PartialCapabilityTip>When enabled, this role is recommended for colonists who can do some of its jobs but not all of them. Colonists who can do none of its jobs are never recommended it. Useful for broad roles that every colonist should hold, such as a shared role for idle work.</WR_PartialCapabilityTip>
   <WR_PartialCapabilityLockedTip>This role is already recommended for colonists who can do some of its jobs but not all of them. Roles without skilled work and hunting roles always allow this.</WR_PartialCapabilityLockedTip>
   <WR_RoleAgeBandsLabel>Age groups that may be assigned this role:</WR_RoleAgeBandsLabel>
-  <WR_RoleAgeBandsTip>Colonists outside the selected age bands are never assigned or recommended this role. Click a band outside the selection to include everything up to it, click the first or last selected band to remove it, and click a middle band to select only that band. Band edges follow the ages at which the game unlocks work. Every job in this role is possible from age {0}.</WR_RoleAgeBandsTip>
+  <WR_RoleAgeBandsTip>These age bands limit automatic assignments and recommendations. Manual assignment and paste can still give this role to colonists outside the bands. Click a band outside the selection to include everything up to it, click the first or last selected band to remove it, and click a middle band to select only that band. Band edges follow the ages at which the game unlocks work. Every job in this role is possible from age {0}.</WR_RoleAgeBandsTip>
   <WR_WorkTypesLabel>Work types</WR_WorkTypesLabel>
   <WR_WorkTypesTip>Only colonists able to perform work of the specified types are eligible for this role.\n\nDerived from the selected jobs and shown for information.</WR_WorkTypesTip>
   <WR_UsedSkillsLabel>Used</WR_UsedSkillsLabel>
@@ -188,7 +188,7 @@
   <WR_RemoveSkillTip>Remove this explicit hard skill gate.</WR_RemoveSkillTip>
   <WR_RoleMissingRequiredSkills>Required skills disabled for {0}: {1}.</WR_RoleMissingRequiredSkills>
   <WR_PathAddRoleTip>Adds a role to this path.</WR_PathAddRoleTip>
-  <WR_BandChipTip>Drag an end to resize the skill band, drag the middle to move it.</WR_BandChipTip>
+  <WR_BandChipTip>Drag an end to resize the skill band, drag the middle to move it. Keep the target role's starting level higher than every training role's starting level, or the path will not recommend training toward that target.</WR_BandChipTip>
   <WR_PriorityGridTitle>Priority Grid</WR_PriorityGridTitle>
   <WR_ShowPriorityGridTip>Show the priority grid for all listed colonists, respecting the active role and location filters (raw ranks or vanilla 0-4, switchable in the dialog).</WR_ShowPriorityGridTip>
   <WR_GridModeRaw>WorkRoles priorities</WR_GridModeRaw>
@@ -254,7 +254,7 @@
   <WR_TipWholeType>{0} (all jobs)</WR_TipWholeType>
   <WR_TipMore>+{0} more</WR_TipMore>
   <!-- Capability sentence snippets, chained as "{never-do}[: reason(s)]"; {1} is a job list, "{0} of {1} jobs" or "any jobs". -->
-  <WR_RoleCapNeverDo>{0} will never do {1}</WR_RoleCapNeverDo>
+  <WR_RoleCapNeverDo>{0} cannot currently do {1}</WR_RoleCapNeverDo>
   <WR_RoleCapAllJobs>any of the jobs in this role</WR_RoleCapAllJobs>
   <WR_RoleCapSomeJobs>{0} of the {1} jobs in this role</WR_RoleCapSomeJobs>
   <WR_RoleJobIncapable>incapable of this work</WR_RoleJobIncapable>
@@ -436,8 +436,8 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <WR_RecTipSelection>Selection</WR_RecTipSelection>
   <WR_RecTipAssignmentsOne>1 assignment requested</WR_RecTipAssignmentsOne>
   <WR_RecTipAssignmentsMany>{0} assignments requested</WR_RecTipAssignmentsMany>
-  <WR_RecTipWithWaiverOne>{0} (1 training waiver)</WR_RecTipWithWaiverOne>
-  <WR_RecTipWithWaiversMany>{0} ({1} training waivers)</WR_RecTipWithWaiversMany>
+  <WR_RecTipWithWaiverOne>{0} (up to 1 place may use a training role)</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0} (up to {1} places may use training roles)</WR_RecTipWithWaiversMany>
   <WR_RecTipEveryoneCapable>Assigned to everyone capable</WR_RecTipEveryoneCapable>
   <WR_RecDecisionAuto>Assigned automatically to everyone capable of the work.</WR_RecDecisionAuto>
   <WR_RecDecisionSignals>Meets the configured signal threshold.</WR_RecDecisionSignals>
@@ -446,9 +446,9 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <WR_RecDecisionTrainingUnknown>Assigned through a training path.</WR_RecDecisionTrainingUnknown>
   <WR_RecDecisionDirectSlot>Selected directly to fill slot {0} of {1} for {2}.</WR_RecDecisionDirectSlot>
   <!-- {0}=slot, {1}=requested slots, {2}=target role, {3}=substitute role, {4}=skill and pawn-level list, {5}=chosen path's target-band minimum. -->
-  <WR_RecDecisionTrainingSlot>Selected to fill slot {0} of {1} for {2}. A training waiver substituted {2} with {3} ({4}; {2} requires {5}).</WR_RecDecisionTrainingSlot>
-  <WR_RecDecisionTrainingSlotSimple>Selected to fill slot {0} of {1} for {2}. A training waiver substituted {2} with {3}.</WR_RecDecisionTrainingSlotSimple>
-  <WR_RecDecisionTrainingSlotUnknown>Selected to fill slot {0} of {1} through a training waiver, assigning {2}.</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecDecisionTrainingSlot>Selected to fill place {0} of {1} for {2} using training role {3} ({4}; the training path starts {2} at level {5}).</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>Selected to fill place {0} of {1} for {2} using training role {3}.</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>Selected to fill place {0} of {1} using training role {2}.</WR_RecDecisionTrainingSlotUnknown>
   <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
   <WR_RecDecisionDirectFallbackSlot>Selected directly to fill slot {0} of {1} for {2} because no training substitute qualified for that slot.</WR_RecDecisionDirectFallbackSlot>
   <WR_RecDecisionCoverageRepairSlot>Selected directly to fill remaining required slot {0} of {1} for {2}.</WR_RecDecisionCoverageRepairSlot>
@@ -797,7 +797,7 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <!-- {0}x{1} = the game screen (resolution divided by UI scale), {2}x{3} = the design size -->
   <WR_WelcomeSmallScreen>Your game screen is {0}x{1} (resolution divided by UI scale). WorkRoles is designed for {2}x{3} or larger, for example 1920x1080 at UI scale 1.25. It still works on a smaller screen, but some labels are shortened and the tabs need more scrolling. Lowering the UI scale in the game's options gives the window more room.</WR_WelcomeSmallScreen>
 
-  <WR_RoleWorkAversion>{0}'s precept {1} opposes {2}. Recommendations apply a finite score penalty: two priority steps, or six virtual skill points when choosing a champion. Required coverage can still select this worker. Hunter priority moves two tiers later, capped at tier five; its existing first-tier fallback still applies.</WR_RoleWorkAversion>
+  <WR_RoleWorkAversion>{0}'s precept {1} opposes {2}. WorkRoles prefers another suitable colonist, but may still recommend this colonist when the colony needs someone to cover the work. This does not forbid the work. For Hunter, the aversion also moves hunting later in the recommended work order.</WR_RoleWorkAversion>
   <WR_WorkBlockedTags>disabled work tags</WR_WorkBlockedTags>
   <WR_WorkBlockedCapacity>missing a required health capacity</WR_WorkBlockedCapacity>
   <WR_WorkBlockedRace>not permitted by this race's work restrictions</WR_WorkBlockedRace>
@@ -812,4 +812,23 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <WR_OptMechanicalRecommendations>Use robot and mech coverage in human recommendations</WR_OptMechanicalRecommendations>
   <WR_OptMechanicalRecommendationsTip>Recommend fewer colonists for work already assigned to your robots and mechs. Only each robot or mech's main role counts, and it must be able to do all of that work without area or work restrictions. Pinned roles and unfinished colonist training are kept.</WR_OptMechanicalRecommendationsTip>
   <WR_RecMechanicalLearningProtected>This learning assignment is retained while robots or mechs cover the service. It can be released when the training target is reached.</WR_RecMechanicalLearningProtected>
+  <WR_NewGameDefaults>Set defaults</WR_NewGameDefaults>
+  <WR_DefaultConflictBody>This colony has a different WorkRoles setup from your new-game default. Use this colony's setup as the default and keep it updated when you edit the configuration? Your current colony will not be changed.</WR_DefaultConflictBody>
+  <WR_DefaultSavedBody>A personal setup is saved for new games. Save this colony's complete setup to replace it. Existing colonies keep their own setup. Pawn assignments, bill bindings, searches and collapsed sections are excluded.</WR_DefaultSavedBody>
+  <WR_DefaultEmptyBody>Save this colony's complete setup for future games. Existing colonies keep their own setup. Pawn assignments, bill bindings, searches and collapsed sections are excluded.</WR_DefaultEmptyBody>
+  <WR_DefaultAutoUpdate>Automatically update after configuration edits</WR_DefaultAutoUpdate>
+  <WR_DefaultUseCurrent>Use this setup for new games</WR_DefaultUseCurrent>
+  <WR_DefaultKeep>Keep my default for this session</WR_DefaultKeep>
+  <WR_DefaultStopAuto>Turn off auto-update</WR_DefaultStopAuto>
+  <WR_DefaultClear>Use built-in defaults for new games</WR_DefaultClear>
+  <WR_SetupFailed>Could not save or read the WorkRoles default: {0}</WR_SetupFailed>
+  <WR_SetupGameSettings>Colony settings</WR_SetupGameSettings>
+  <WR_SetupGameSettingsInfo>Replace recommendation formula settings, automatic optimization, priority behavior and mechanical-worker options.</WR_SetupGameSettingsInfo>
+  <WR_SetupPlayerSettings>My display preferences</WR_SetupPlayerSettings>
+  <WR_SetupPlayerSettingsInfo>Optional: replace your chip display, palette arrangement, skill columns, badges and window size. Other multiplayer players keep their preferences.</WR_SetupPlayerSettingsInfo>
+  <WR_LocationUnresolved>Unavailable: {0}</WR_LocationUnresolved>
+  <WR_LocationUnresolvedTip>This imported location does not exist here. This rule remains inactive until you replace it with a location in this colony.</WR_LocationUnresolvedTip>
+  <WR_RecMechanicalSelected>Can do work not covered by its other recommended roles.</WR_RecMechanicalSelected>
+  <WR_RecMechanicalRetained>Keeps its current main role.</WR_RecMechanicalRetained>
+  <WR_RecMechanicalIncapacitated>This worker is downed. Its roles are kept for when it recovers.</WR_RecMechanicalIncapacitated>
 </LanguageData>

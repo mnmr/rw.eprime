@@ -2,7 +2,7 @@
 title: Níveis de implantes
 ---
 <!-- l10n:b-5f84f9b2d5c3 -->
-A coluna direita distribui as escolhas próprias em cinco níveis de estrelas. Implantes herdados são classificados no plano base. Arraste uma linha para outro nível para movê-la.
+A coluna direita mostra as escolhas próprias do plano em cinco níveis de estrelas. A classificação dos implantes é compartilhada por todos os planos desta partida: mover um implante aqui altera sua prioridade em todos os planos em que aparece. Mais estrelas significam maior prioridade. Arraste entre níveis de estrelas ou dentro de um nível para definir a ordem. Para mover um implante herdado, abra o plano base que o escolheu.
 
 <!-- l10n:b-21a47f167054 -->
 ![Níveis de estrelas da prioridade máxima à normal](tier-panel.png)

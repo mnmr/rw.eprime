@@ -131,6 +131,13 @@ namespace WorkRoles
             cached = this;
         }
 
+        internal bool IsNewWorld { get; private set; }
+        public override void FinalizeInit(bool fromLoad)
+        {
+            base.FinalizeInit(fromLoad);
+            IsNewWorld = !fromLoad;
+        }
+
         public static RoleStore? Current
         {
             get

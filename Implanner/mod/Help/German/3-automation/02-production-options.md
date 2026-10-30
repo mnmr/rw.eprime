@@ -2,7 +2,7 @@
 title: Produktionsoptionen
 ---
 <!-- l10n:b-bdd2b459773e -->
-Mit **Fertigungsaufträge für fehlende Implantate automatisch hinzufügen** erstellt Implanner Aufträge an geeigneten Werkbänken und entfernt eigene Aufträge, sobald der Bedarf entfällt. Deine selbst erstellten Aufträge werden nie entfernt. Jeder Auftrag fertigt ein Exemplar in der späteren Operationsreihenfolge: Bei Vollständige Sätze kommen Beine vor Armen, wenn sie im Plan höher stehen.
+Mit **Fertigungsaufträge für fehlende Implantate automatisch hinzufügen** erstellt Implanner Aufträge an geeigneten Werkbänken und entfernt eigene Aufträge, sobald der Bedarf entfällt. Deine selbst erstellten Aufträge werden nie entfernt. Jeder Auftrag fertigt ein Exemplar in der späteren Operationsreihenfolge: Bei Vollständige Sätze kommen die Beine eines Kolonisten vor seinen Armen, wenn Beine in deiner gemeinsamen Implantatrangfolge höher stehen.
 
 <!-- l10n:b-8effc9e9b828 -->
 Gibt es mehrere Rezepte für ein Implantat, bevorzugt Implanner eine verfügbare und sofort bezahlbare Möglichkeit. Ein freies Basisimplantat kann verbessert werden; andernfalls kann ein direktes Rezept das fortgeschrittene Implantat aus Materialien herstellen. Ist nur die Verbesserung verfügbar, kann Zwischenproduktion zuerst das Basisimplantat fertigen. Rezepte müssen erforscht sein und von einer geeigneten Werkbank unterstützt werden.

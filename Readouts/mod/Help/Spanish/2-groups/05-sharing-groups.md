@@ -31,6 +31,9 @@ Importar lee un fichero guardado o el portapapeles y muestra una vista previa an
 <!-- l10n:b-1c0ab7a10c14 -->
 Puedes seleccionar cualquier categoría presente en el fichero. Puedes cambiar las categorías relacionadas de una en una, aunque una selección intermedia esté incompleta. Importar permanece desactivado hasta que la configuración elegida tenga referencias válidas a conjuntos y grupos; pasa el cursor sobre el botón desactivado para ver qué falta.
 
+<!-- l10n:import-dependency-recovery -->
+Si los umbrales o las reglas de recuento de recursos necesitan un conjunto que falta, importa esos ajustes junto con sus Conjuntos de recursos, o deja esas categorías sin cambios. Si los ajustes del jugador necesitan un grupo que falta, importa **Grupos** y **Ajustes del jugador y grupos activados** juntos, o deja ambos sin cambios.
+
 <!-- l10n:b-3081ef3ab31d -->
 Las categorías ausentes de una exportación antigua permanecen sin cambios. Se omiten las entradas que requieren contenido de mods no disponible.
 
@@ -41,4 +44,4 @@ En multijugador, los grupos, conjuntos, umbrales y excepciones de recuento impor
 ## Guardar o restaurar valores predeterminados
 
 <!-- l10n:b-6181f2c14286 -->
-Establecer valores predeterminados guarda una configuración personal para futuras colonias (consulta [Valores predeterminados para nuevas partidas](topic:new-game-defaults)). Restaurar valores predeterminados pide confirmación y sustituye la configuración de la colonia actual por la incluida con Readouts. En multijugador, este restablecimiento afecta a la configuración compartida de todos.
+Establecer valores predeterminados guarda una configuración personal para futuras colonias (consulta [Valores predeterminados para nuevas partidas](topic:new-game-defaults)). Restaurar valores predeterminados pide confirmación y, después, sustituye todos los grupos y conjuntos de recursos por los predeterminados del mod y borra todos los umbrales y excepciones de recuento. En multijugador, este restablecimiento afecta a la configuración compartida de todos.

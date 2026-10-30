@@ -8,7 +8,7 @@ A resource pool is one slot that shows the combined count of several resources. 
 ![The pool list in the Resource Pool Editor](pool-list.png)
 
 <!-- l10n:b-7cdfbcf6c4a5 -->
-A pool uses the icon of its first member until you choose another one (see [Editing a pool](topic:editing-a-pool)). Hovering a pool slot in the readout lists the members you own some of, each with its own count (see [Hovering and clicking a slot](topic:hovering-and-clicking-a-slot)). A pool with no members shows nothing in the readout.
+A pool uses the icon of its first member until you choose another one (see [Editing a pool](topic:editing-a-pool)). Hovering a pool slot in the readout lists each member whose displayed count is not zero, after counting filters and planned-work deductions. With Show overruns as negative numbers enabled, a negative count means planned work needs more than you have (see [Hovering and clicking a slot](topic:hovering-and-clicking-a-slot)). A pool with no members shows nothing in the readout.
 
 <!-- l10n:b-f7406520e022 -->
 Pool names must be unique. Pools belong to the save, so every player in a multiplayer game sees the same pools.

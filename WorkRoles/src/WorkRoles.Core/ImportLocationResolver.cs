@@ -67,7 +67,7 @@ namespace WorkRoles.Core
             return resolved != null
                 && resolved.TryGetValue(fileToken, out string runtimeToken)
                 && !string.IsNullOrEmpty(runtimeToken)
-                ? runtimeToken : null;
+                ? runtimeToken : LocationRules.UnresolvedPrefix + fileToken;
         }
     }
 }

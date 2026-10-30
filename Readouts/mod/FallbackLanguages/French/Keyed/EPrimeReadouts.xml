@@ -33,7 +33,7 @@
   <EPR.PoolTip>Ajouter un ensemble de ressources : une case affichant la quantité totale de tous les objets de cette catégorie</EPR.PoolTip>
   <EPR.EnableTip>Afficher ce groupe dans le panneau</EPR.EnableTip>
   <EPR.RestoreDefaults>Rétablir les valeurs par défaut</EPR.RestoreDefaults>
-  <EPR.RestoreConfirm>Remplacer TOUS les groupes et seuils par ceux par défaut ? Cela concerne tous les joueurs en multijoueur.</EPR.RestoreConfirm>
+  <EPR.RestoreConfirm>Remplacer tous les groupes et ensembles de ressources par les valeurs par défaut intégrées, et effacer tous les seuils et réglages personnalisés de comptage ? Cela concerne tous les joueurs en multijoueur.</EPR.RestoreConfirm>
   <EPR.Help>Aide</EPR.Help>
   <EPR.HelpGroups>Voici vos groupes d'affichage des ressources. Chaque groupe apparaît dans une bande distincte.
 
@@ -80,20 +80,20 @@ Cliquez sur une case pour régler son affichage. Faites un clic droit pour retir
   <EPR.CountOptions>Options de comptage</EPR.CountOptions>
   <EPR.PlannedWorkOptions>Travaux prévus</EPR.PlannedWorkOptions>
   <EPR.ReserveForBills>Réserver les ressources des ordres de production</EPR.ReserveForBills>
-  <EPR.ReserveForBillsTip>Déduit les ingrédients que vos ordres de production en attente doivent encore consommer. Un ordre ne réserve un ingrédient que s'il n'existe qu'une seule façon de satisfaire ce besoin. « N'importe quel cuir » et les autres choix ouverts ne réservent rien.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBillsTip>Déduit les ingrédients nécessaires aux ordres de production en attente. Un ingrédient n'est comptabilisé que si l'ordre n'autorise qu'un seul type de ressource pour cet ingrédient. Par exemple, autoriser n'importe quel cuir ne réserve rien ; n'autoriser qu'un seul type de cuir inclut le coût de ce cuir.</EPR.ReserveForBillsTip>
   <EPR.ReserveForBuildables>Réserver les ressources des constructions</EPR.ReserveForBuildables>
   <EPR.ReserveForBuildablesTip>Déduit les matériaux encore nécessaires aux plans de construction et aux structures inachevées. Les matériaux déjà livrés à une structure ne sont pas comptés à nouveau, et les plans interdits sont ignorés.</EPR.ReserveForBuildablesTip>
   <EPR.ShowNegativeCounts>Afficher les déficits en nombres négatifs</EPR.ShowNegativeCounts>
   <EPR.ShowNegativeCountsTip>Lorsque les travaux prévus exigent plus que vos stocks, affiche la quantité manquante au lieu de s'arrêter à zéro.</EPR.ShowNegativeCountsTip>
   <EPR.QualityJobsRework>Prise en charge de Quality Jobs</EPR.QualityJobsRework>
-  <EPR.QualityJobsReworkTip>Pour les ordres et les constructions ayant une qualité cible, estime le nombre d'essais nécessaires et réserve les ressources pour tous ces essais. Les constructions refaites restituent la part de matériaux rendue par le jeu de base lors de leur déconstruction.</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsReworkTip>Ajuste les réservations activées pour les ordres et les constructions aux qualités cibles gérées par Quality Jobs. Estime les matériaux nécessaires aux tentatives supplémentaires et tient compte des matériaux récupérés lors des déconstructions. Activez l’option de réservation correspondante ci-dessus pour l’utiliser.</EPR.QualityJobsReworkTip>
   <EPR.QualityJobsMissingTip>Nécessite EPrime's Quality Jobs, qui n'est pas installé.</EPR.QualityJobsMissingTip>
   <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs est installé, mais ne fournit pas l'intégration nécessaire. Mettez-le à jour pour activer cette option.</EPR.QualityJobsOutdatedTip>
   <EPR.TipPlannedWork>Travaux prévus</EPR.TipPlannedWork>
   <EPR.TipResource>Ressource</EPR.TipResource>
-  <EPR.TipQueued>En attente</EPR.TipQueued>
-  <EPR.TipEach>Par unité</EPR.TipEach>
-  <EPR.TipDrain>Consommation</EPR.TipDrain>
+  <EPR.TipQueued>Travail restant</EPR.TipQueued>
+  <EPR.TipEach>Coût unitaire</EPR.TipEach>
+  <EPR.TipDrain>Déduit</EPR.TipDrain>
   <EPR.TipInStock>En stock</EPR.TipInStock>
   <EPR.TipAvailableStock>{0} disponibles · {1} en stock</EPR.TipAvailableStock>
   <EPR.TipOtherPlannedWork>Autres ({0})</EPR.TipOtherPlannedWork>

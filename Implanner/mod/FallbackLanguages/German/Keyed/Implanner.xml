@@ -33,7 +33,7 @@
   <IMP_StripAutomationOn>Automatisierung an</IMP_StripAutomationOn>
   <IMP_StripAutomationOff>Automatisierung aus</IMP_StripAutomationOff>
   <IMP_StripProduction>Produktion: {0}%</IMP_StripProduction>
-  <IMP_StripStock>{0} auf Lager, {1} in der Warteschlange</IMP_StripStock>
+  <IMP_StripStock>{0} auf Lager, {1} noch herzustellen</IMP_StripStock>
   <IMP_StripMaking>Stellt {0} her</IMP_StripMaking>
   <IMP_StripMakingFor>Stellt Materialien für {0} her</IMP_StripMakingFor>
   <IMP_StripWaiting>Wartet auf {0}</IMP_StripWaiting>
@@ -53,8 +53,8 @@
   <IMP_TipColFree>Frei</IMP_TipColFree>
   <IMP_TipColReserved>Reserviert</IMP_TipColReserved>
   <IMP_TipColHeldBack>Zurückgehalten</IMP_TipColHeldBack>
-  <IMP_TipColQueued>Eingereiht</IMP_TipColQueued>
-  <IMP_TipColCrafting>In Herstellung</IMP_TipColCrafting>
+  <IMP_TipColQueued>Noch herzustellen</IMP_TipColQueued>
+  <IMP_TipColCrafting>In Fertigungsaufträgen</IMP_TipColCrafting>
   <IMP_TipColStatus>Status</IMP_TipColStatus>
   <IMP_TipCovered>Gedeckt</IMP_TipCovered>
   <IMP_TipMaking>In Herstellung</IMP_TipMaking>
@@ -86,7 +86,7 @@
   <IMP_GoalReady>Bereit</IMP_GoalReady>
   <IMP_GoalScheduled>Operation geplant</IMP_GoalScheduled>
   <IMP_GoalRecovering>Erholt sich</IMP_GoalRecovering>
-  <IMP_GoalBlockedFloor>Durch Arztmindeststufe blockiert ({0})</IMP_GoalBlockedFloor>
+  <IMP_GoalBlockedFloor>Warte auf einen Arzt mit Medizin {0}+</IMP_GoalBlockedFloor>
   <IMP_GoalBlockedLoss>Würde {0} zerstören</IMP_GoalBlockedLoss>
   <IMP_PlansHeader>Pläne</IMP_PlansHeader>
   <IMP_AddPlan>Neuer Plan</IMP_AddPlan>
@@ -101,7 +101,7 @@
   <IMP_PlanColonists>{0} Kolonisten</IMP_PlanColonists>
   <IMP_DeletePlan>Plan löschen</IMP_DeletePlan>
   <IMP_PlanMinQuality>Mindestqualität: {0}</IMP_PlanMinQuality>
-  <IMP_PlanMinQualityTip>Implantate für diesen Plan werden mindestens in dieser Qualität eingesetzt und hergestellt. Implantate ohne Qualitätsstufe sind davon nicht betroffen.\n\nEin gesundes Körperteil wird niemals durch ein schlechteres Implantat ersetzt. Bei einem bionischen Implantat von niedriger Qualität wird auf ein besseres Exemplar gewartet, sofern das Körperteil nicht fehlt oder beschädigt ist.</IMP_PlanMinQualityTip>
+  <IMP_PlanMinQualityTip>Mindestqualität für neu eingesetzte Implantate, einschließlich geerbter Planauswahlen. Bereits eingesetzte Implantate der geplanten Art zählen weiterhin als vollständig, auch unter dieser Mindestqualität. Aktiviere Beste Implantate an Kolonisten mit hoher Priorität geben, um einen Austausch gegen bessere Exemplare zu erlauben. Implantate ohne Qualitätsstufe sind nicht betroffen.\n\nEin gesundes Körperteil wird niemals durch ein schlechteres Implantat ersetzt. Bei einem bionischen Implantat von niedriger Qualität wird auf ein besseres Exemplar gewartet, sofern das Körperteil nicht fehlt oder beschädigt ist.</IMP_PlanMinQualityTip>
   <IMP_PlanMinQualityNoQualityJobs>Quality Jobs ist nicht geladen, daher darf jeder Handwerker ein Implantat fertigstellen. Ein Implantat unter dieser Qualität wird erneut hergestellt.</IMP_PlanMinQualityNoQualityJobs>
   <IMP_DeletePlanConfirm>Plan „{0}“ löschen? Zugewiesene Kolonisten verlieren ihre Zuweisung; erweiternde Pläne erben nicht mehr davon.</IMP_DeletePlanConfirm>
   <IMP_ImplantGroupOther>Sonstige</IMP_ImplantGroupOther>
@@ -118,7 +118,7 @@
   <IMP_NoMatchingImplants>Keine Implantate entsprechen der Suche.</IMP_NoMatchingImplants>
   <IMP_RankTiersTitle>Implantatstufen</IMP_RankTiersTitle>
   <IMP_Help>Hilfe</IMP_Help>
-  <IMP_RankTiersHelp>Implantate lassen sich in 5 Stufen einteilen. Die Platzierung beeinflusst Produktionsreihenfolge und Operationen, abhängig von den Automatisierungsoptionen.\n\nZiehe Gegenstände zum Umordnen.</IMP_RankTiersHelp>
+  <IMP_RankTiersHelp>Die Rangfolge der Implantate gilt für alle Pläne in diesem Spielstand. Verschiebst du hier ein Implantat, ändert sich seine Priorität überall, wo es vorkommt. Mehr Sterne bedeuten höhere Priorität.\n\nZiehe Implantate zwischen den Sternstufen oder innerhalb einer Stufe, um die Reihenfolge festzulegen. Die Rangfolge steuert Produktion und Operationen entsprechend deiner Automatisierungsstrategie.</IMP_RankTiersHelp>
   <IMP_TierHighest>Höchste Priorität</IMP_TierHighest>
   <IMP_TierHigh>Hohe Priorität</IMP_TierHigh>
   <IMP_TierMedium>Mittlere Priorität</IMP_TierMedium>
@@ -154,17 +154,17 @@
   <IMP_OptCatalog>Katalog</IMP_OptCatalog>
   <IMP_OptShowPurchaseOnly>Nicht herstellbare Implantate anzeigen</IMP_OptShowPurchaseOnly>
   <IMP_CleanupTitle>Automatisierung ausschalten?</IMP_CleanupTitle>
-  <IMP_CleanupBody>Implanner hat diese Aufträge erstellt. OK schaltet die Automatisierung aus und entfernt angekreuzte Aufträge. Nicht angekreuzte bleiben bestehen und werden beim erneuten Einschalten wieder übernommen. Reservierte Implantate werden in beiden Fällen freigegeben. Abbrechen lässt die Automatisierung eingeschaltet.</IMP_CleanupBody>
+  <IMP_CleanupBody>Implanner hat diese Aufträge erstellt. OK schaltet die Automatisierung aus und entfernt angekreuzte Aufträge. Nicht angekreuzte bleiben aktiv: Kolonisten können die Gegenstände weiterhin herstellen oder die Operationen durchführen. Beim erneuten Einschalten übernimmt Implanner wieder die Verwaltung der verbleibenden Aufträge. Reservierte Implantate werden in beiden Fällen freigegeben. Abbrechen lässt die Automatisierung eingeschaltet.</IMP_CleanupBody>
   <IMP_AutomationOffTitle>Automatisierung ist ausgeschaltet</IMP_AutomationOffTitle>
   <IMP_AutomationOffBody>{0} verteilt diese Kolonie über mehrere Ebenen. Implanner kann Implantate oder Operationen nicht über Ebenengrenzen hinweg transportieren. Deshalb werden keine Gegenstände mehr reserviert und keine Operationen geplant, statt jeden Plan nur halb umzusetzen.\n\nAlles andere funktioniert weiterhin. Erstelle und weise Pläne zu und ordne Implantate. Füge Operationen selbst hinzu; Implanner verfolgt, was eingesetzt ist und was noch fehlt.</IMP_AutomationOffBody>
-  <IMP_OptEnableTip>Der Hauptschalter für alles, was Implanner selbstständig tut: Implantate reservieren, Operationen planen und Fertigungsaufträge erstellen. Ausgeschaltet verfolgt Implanner weiter Pläne und Fortschritt, handelt aber nicht mehr. Beim Ausschalten kannst du wählen, welche bestehenden Aufträge bleiben.</IMP_OptEnableTip>
+  <IMP_OptEnableTip>Der Hauptschalter für alles, was Implanner selbstständig tut: Implantate reservieren, Operationen planen und Fertigungsaufträge erstellen. Ausgeschaltet verfolgt Implanner weiterhin Pläne und Fortschritt. Beim Ausschalten wählst du, welche bestehenden Aufträge bleiben; diese bleiben aktiv, sodass Kolonisten weiterhin fertigen oder die Operationen durchführen können.</IMP_OptEnableTip>
   <IMP_OptIterationTip>Reihenfolge für fehlende Implantate. Die Kolonistenpriorität in der Übersicht entscheidet immer, wer zuerst kommt.\n\nStufenweise Gruppen: Alle erhalten zuerst Implantate der höchsten Stufe, danach geht es abwärts. Ein Kolonist wird operiert, sobald seine ganze Stufe reserviert ist.\n\nVollständige Sätze: Erst den ganzen Plan eines Kolonisten abschließen, dann den nächsten beginnen. Operationen warten auf die Reservierung des gesamten Plans.\n\nSofort: Jedes vorrätige Implantat wird sofort für den höchstpriorisierten Kolonisten eingeplant, dem es fehlt. Bei gleicher Priorität gehen Beine an den langsamsten Kolonisten, Arme zuerst an Träger einer Nahkampfwaffe, danach an den Kolonisten mit der höchsten Summe aus Handwerk und Intellekt.</IMP_OptIterationTip>
   <IMP_OptAutoFloorTip>Operationsaufträge sind auf deinen besten verfügbaren Arzt beschränkt, damit kein Anfänger einen bionischen Einbau verpfuscht, nur weil er zuerst am OP-Tisch war. Die Beschränkung folgt dem besten Arzt jeder Kolonie bei Zu- und Abgängen. Niemand kann sich selbst operieren; Operationen am besten Arzt übernimmt der zweitbeste.\n\nDeaktiviere dies, um eine feste Mindeststufe einzustellen.</IMP_OptAutoFloorTip>
   <IMP_OptSurgeryConcurrencyTip>Wie viele Kolonisten je Kolonie gleichzeitig geplante Operationen haben dürfen. Höhere Werte reihen mehr Kolonisten parallel ein; niedrigere halten Krankenhaus und Ärzte frei. Beginnt bei einem je zehn Kolonisten. Shift beim Klick auf +/- ändert um 10, Ctrl um 5.</IMP_OptSurgeryConcurrencyTip>
   <IMP_OptCountHospitalizedTip>Kolonisten und Sklaven in Krankenbetten sowie kampfunfähige, behandlungsbedürftige Personen belegen ebenfalls Operationsplätze. Neue Implanner-Operationen warten, bis unter der obigen Grenze Platz ist. Gefangene, Gäste und Besuchspatienten anderer Fraktionen belegen nie einen Platz. Deaktiviert werden Implantatoperationen unabhängig von laufenden Behandlungen geplant.</IMP_OptCountHospitalizedTip>
-  <IMP_OptUpgradeByPriorityTip>Höherwertige Implantate gehen an Kolonisten mit höchster Priorität in der Übersicht. Neue Operationen verwenden die niedrigste vom Plan akzeptierte Qualität, damit bessere Implantate frei bleiben.\n\nWird ein besseres Implantat verfügbar, erhält es der höchstpriorisierte Kolonist mit einem schlechteren derselben Art. Sein altes wird zuerst entfernt und geht an den nächsten Kolonisten. Auch ein für einen niedriger priorisierten Kolonisten reserviertes Implantat wird übertragen, solange dessen Operation noch nicht geplant ist.\n\nJeder Austausch ist eine zusätzliche Operation. Deaktiviert erhält jeder Kolonist bei seinem Zug das beste vorrätige Implantat.</IMP_OptUpgradeByPriorityTip>
+  <IMP_OptUpgradeByPriorityTip>Höherwertige Implantate gehen an Kolonisten mit höchster Priorität im Reiter Übersicht. Neue Operationen verwenden die niedrigste vom Plan akzeptierte Qualität, damit bessere Implantate frei bleiben.\n\nWird ein besseres Implantat verfügbar, erhält es der höchstpriorisierte Kolonist mit einem schlechteren derselben Art. Sein altes Implantat wird zuerst entfernt und geht dann an den nächsten Kolonisten in der Reihenfolge. Auch ein für einen niedriger priorisierten Kolonisten reserviertes Implantat wird weitergegeben, solange dessen Operation noch nicht angesetzt ist.\n\nDer Austausch eines eingesetzten Implantats gegen ein höherwertiges erfordert zwei Operationen: Entfernung und Einsetzen. Ist die Option deaktiviert, erhält jeder Kolonist das beste vorrätige Implantat, sobald er an der Reihe ist.</IMP_OptUpgradeByPriorityTip>
   <IMP_OptManualFloorTip>Die Mindeststufe in Medizin für Implanner-Operationen. Aufträge warten auf einen verfügbaren Arzt mit mindestens dieser Stufe. Beim Ausschalten der automatischen Zuweisung beginnt der Wert beim aktuell besten Arzt.</IMP_OptManualFloorTip>
-  <IMP_OptImplantReservesTip>Implantate, die für die manuelle Verwendung zurückgehalten werden. Die Automatik reserviert nur Bestände oberhalb dieser Mengen. So bleiben von jedem aufgeführten Implantat immer so viele für Notoperationen oder den Handel frei. Zurückgehaltene Gegenstände gelten für die Produktion nicht als verfügbar. Es wird weiter produziert, bis die Automatik ohne sie fortfahren kann.</IMP_OptImplantReservesTip>
+  <IMP_OptImplantReservesTip>Hält bis zu dieser Anzahl vorhandene Implantate für die manuelle Verwendung frei. Implanner verwendet sie weder für geplante Operationen noch als Fertigungszutaten. Die automatische Produktion fertigt weitere Implantate, solange zugewiesene Pläne sie benötigen. Um Notfallvorräte aufzufüllen, wenn kein Plan das Implantat benötigt, erstelle selbst einen Fertigungsauftrag.</IMP_OptImplantReservesTip>
   <IMP_AddImplantReserveTip>Wähle ein Implantat, das der Automatik vorenthalten wird.</IMP_AddImplantReserveTip>
   <IMP_OptAllowMultipleBladdersTip>Blasenimplantate verschiedener Mods gelten im Spiel als getrennte Implantate. Ein Kolonist kann daher mehrere zugleich tragen, deren Wirkungen sich addieren. Deaktiviere dies, um sie als einen Platz zu behandeln: Eine Auswahl im Plan überschreibt die anderen; wer bereits eines der folgenden Implantate hat, gilt als fertig. Es wird niemals etwas entfernt.\n\nBetroffene Implantate:\n{0}</IMP_OptAllowMultipleBladdersTip>
   <IMP_OptAllowMultipleHygieneEnhancersTip>Hygieneverbesserer verschiedener Mods gelten im Spiel als getrennte Implantate. Ein Kolonist kann daher mehrere zugleich tragen, deren Wirkungen sich addieren. Deaktiviere dies, um sie als einen Platz zu behandeln: Eine Auswahl im Plan überschreibt die anderen; wer bereits eines der folgenden Implantate hat, gilt als fertig. Es wird niemals etwas entfernt.\n\nBetroffene Implantate:\n{0}</IMP_OptAllowMultipleHygieneEnhancersTip>

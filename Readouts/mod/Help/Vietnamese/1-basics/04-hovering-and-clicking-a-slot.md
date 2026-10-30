@@ -2,7 +2,7 @@
 title: Trỏ và nhấp ô
 ---
 <!-- l10n:b-3d212ef2233a -->
-Giữ chuột trên biểu tượng để xem tên, số chính xác và mô tả. Với tập tài nguyên (xem [Tập tài nguyên là gì](topic:what-a-resource-pool-is)), chú giải liệt kê từng thành viên bạn có cùng số lượng riêng:
+Giữ chuột trên biểu tượng để xem tên, số lượng chính xác và mô tả của tài nguyên được đếm. Với tập tài nguyên (xem [Tập tài nguyên là gì](topic:what-a-resource-pool-is)), chú giải liệt kê từng thành viên có số lượng hiển thị khác 0. Các số lượng này đã tính đến bộ lọc đếm và phần khấu trừ cho công việc đã lên kế hoạch. Khi bật Hiện thiếu hụt bằng số âm, số âm nghĩa là công việc đã lên kế hoạch cần nhiều hơn số bạn có.
 
 <!-- l10n:b-374206ad0776 -->
 ![Chú giải tập Bữa ăn](slot-tooltip.png)

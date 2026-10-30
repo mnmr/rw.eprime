@@ -22,7 +22,7 @@ Trois façons d'affecter un rôle :
 - Cliquez sur le ![bouton plus](tex:UI/Buttons/Plus|24) au bout de la ligne d'un colon, puis choisissez dans le menu.
 
 <!-- l10n:b-3634ad4cacb9 -->
-Déposer une pastille choisit aussi sa place dans la ligne : un glissement affecte et définit la priorité en un geste. La liste Meilleurs candidats de l'infobulle montre à qui le [moteur de recommandations](topic:recommendations) attribuerait ce rôle.
+Déposer une pastille choisit aussi sa place dans la ligne : un glissement affecte et définit la priorité en un geste. Meilleurs candidats classe les colons selon leur aptitude pour ce rôle. Les [recommandations](topic:recommendations) tiennent aussi compte des besoins de la colonie, de la formation et des aversions au travail, et peuvent donc choisir d'autres colons.
 
 <!-- l10n:b-e85c035e0a4a -->
 ## Plusieurs colons à la fois

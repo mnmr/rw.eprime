@@ -17,7 +17,7 @@ Quando un addetto alla rifinitura soddisfa i requisiti, Quality Jobs crea un ord
 Il livello massimo di abilità e l'assegnazione a un lavoratore specifico dell'ordine originale si applicano finché l'oggetto non viene messo da parte per il completamento. Puoi assegnare il lavoro a un apprendista mentre un colono più abile, un mech della colonia o un robot supportato esegue l'ordine dedicato al completamento. Gli addetti al completamento devono comunque essere in grado di eseguire la ricetta e soddisfare i requisiti di Quality Jobs.
 
 <!-- l10n:status -->
-La sezione **{k:QJ_StatusHeader}** mostra i lavori **Incompleti** condivisi, gli oggetti **In attesa** di un addetto al completamento e quelli già assegnati per il **Completamento**. Passa il puntatore sullo stato e sull'elenco degli addetti al completamento per maggiori dettagli. Se il lavoro non procede, consulta [quando il lavoro resta in attesa](topic:waiting).
+La sezione **{k:QJ_StatusHeader}** conta gli oggetti incompiuti registrati per questo prodotto tra tutti gli ordini e i banchi di lavoro su questa mappa: lavori condivisi **Incompiuti**, oggetti in **Attesa** di un lavoratore idoneo al completamento e oggetti già assegnati alla **Finitura**. L'elenco dei lavoratori e l'avviso usano i requisiti dell'ordine selezionato; altri ordini dello stesso prodotto possono avere requisiti diversi. Passa il puntatore sullo stato e sull'elenco per altri dettagli. Vedi [quando il lavoro attende](topic:waiting) se nulla procede.
 
 <!-- l10n:disable -->
 Deseleziona **{k:QJ_ManageBill}** per tornare a completarlo normalmente. Se la condivisione è attiva, gli altri lavoratori possono comunque proseguirne il lavoro condiviso.

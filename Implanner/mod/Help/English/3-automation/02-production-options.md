@@ -7,7 +7,7 @@ on, Implanner places bills for missing implants at benches that can make
 them, and removes its own bills when the need disappears. Bills you
 created yourself are never removed. Each bill runs one craft, in the
 order the surgeries will install them: with Full sets, a colonist's legs
-come before their arms if legs rank higher in the plan.
+come before their arms if legs rank higher in your shared implant rankings.
 
 <!-- l10n:b-8effc9e9b828 -->
 When several recipes make the same implant, Implanner prefers an available

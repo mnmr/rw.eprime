@@ -31,6 +31,9 @@ Importieren liest eine gespeicherte Datei oder die Zwischenablage und zeigt eine
 <!-- l10n:b-1c0ab7a10c14 -->
 Jede in der Datei enthaltene Kategorie kann ausgewählt werden. Du kannst zusammengehörige Kategorien einzeln ändern, auch wenn eine Zwischenauswahl unvollständig ist. Importieren bleibt deaktiviert, bis die gewählte Einrichtung gültige Pool- und Gruppenverweise hat. Fahre über die deaktivierte Schaltfläche, um zu sehen, was fehlt.
 
+<!-- l10n:import-dependency-recovery -->
+Wenn Schwellen oder Regeln zur Ressourcenzählung einen fehlenden Pool benötigen, importiere diese Einstellungen zusammen mit ihren Ressourcenpools oder lasse diese Kategorien unverändert. Wenn Spielereinstellungen eine fehlende Gruppe benötigen, importiere **Gruppen** und **Spielereinstellungen und aktivierte Gruppen** zusammen oder lasse beide unverändert.
+
 <!-- l10n:b-3081ef3ab31d -->
 Kategorien, die in einem älteren Export fehlen, bleiben unverändert. Einträge, die nicht verfügbare Mod-Inhalte benötigen, werden übersprungen.
 
@@ -41,4 +44,4 @@ Im Mehrspielermodus ändern importierte Gruppen, Pools, Schwellen und Zählüber
 ## Standards speichern oder wiederherstellen
 
 <!-- l10n:b-6181f2c14286 -->
-Standards festlegen speichert eine persönliche Einrichtung für künftige Kolonien (siehe [Standards für neue Spiele](topic:new-game-defaults)). Standards wiederherstellen ersetzt nach Bestätigung die Einrichtung der aktuellen Kolonie durch die mit Readouts gelieferte Einrichtung. Im Mehrspielermodus betrifft dieses Zurücksetzen die gemeinsame Einrichtung aller Spieler.
+Standards festlegen speichert eine persönliche Einrichtung für künftige Kolonien (siehe [Standards für neue Spiele](topic:new-game-defaults)). Standards wiederherstellen ersetzt nach Bestätigung alle Gruppen und Ressourcenpools durch die mitgelieferten Standards und löscht alle Schwellen und Zählüberschreibungen. Im Mehrspielermodus betrifft dieses Zurücksetzen die gemeinsame Einrichtung aller Spieler.

@@ -31,6 +31,9 @@ Import reads a saved file or the clipboard and shows a preview before changing a
 <!-- l10n:b-1c0ab7a10c14 -->
 Every category present in the file can be selected. You can change related categories one at a time, even if an intermediate choice is incomplete. Import stays disabled until the chosen setup has valid pool and group references; hover the disabled button to see what is missing.
 
+<!-- l10n:import-dependency-recovery -->
+If thresholds or resource count rules need a missing pool, import those settings together with their Resource pools, or leave those categories unchanged. If player settings need a missing group, import **Groups** and **Player settings and enabled groups** together, or leave both unchanged.
+
 <!-- l10n:b-3081ef3ab31d -->
 Categories absent from an older export stay unchanged. Entries requiring unavailable mod content are skipped.
 
@@ -41,4 +44,4 @@ In multiplayer, imported groups, pools, thresholds and count overrides change th
 ## Save or restore defaults
 
 <!-- l10n:b-6181f2c14286 -->
-Set defaults saves a personal setup for future colonies (see [New-game defaults](topic:new-game-defaults)). Restore defaults asks for confirmation, then replaces the current colony's setup with the one shipped with Readouts. In multiplayer, that reset affects everyone's shared setup.
+Set defaults saves a personal setup for future colonies (see [New-game defaults](topic:new-game-defaults)). Restore defaults asks for confirmation, then replaces all groups and resource pools with the built-in defaults and clears all thresholds and count overrides. In multiplayer, that reset affects everyone's shared setup.

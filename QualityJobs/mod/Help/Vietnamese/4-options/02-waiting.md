@@ -2,12 +2,12 @@
 title: Khi công việc phải chờ
 ---
 <!-- l10n:check -->
-Trước tiên, xem **{k:QJ_StatusHeader}** trong bảng lệnh sản xuất hoặc xây dựng. **Không có người đủ điều kiện hoàn thiện** nghĩa là công việc đang chờ các yêu cầu bạn đặt ra được đáp ứng, chứ không phải tiến độ đã mất.
+Trước tiên, xem **{k:QJ_StatusHeader}** trong bảng lệnh sản xuất hoặc xây dựng. Trong bảng lệnh sản xuất, **{k:QJ_StatusStalled}** dựa trên yêu cầu của lệnh đang chọn, còn số lượng trong hàng đợi bao gồm mọi lệnh làm sản phẩm này trên bản đồ này. Các lệnh khác có thể có yêu cầu khác. Trong bảng xây dựng, **Không có người đủ điều kiện hoàn thiện** nghĩa là hiện không có thợ xây nào đáp ứng yêu cầu của công trình đó. Những cảnh báo này không có nghĩa là tiến độ đã mất.
 
 <!-- l10n:checklist -->
 - Loại công việc cần thiết đã được bật cho người dự định hoàn thiện chưa, và người đó có đang ở trên bản đồ này và có thể làm việc không?
 - Yêu cầu kỹ năng có quá cao không, hay bạn đang chờ Cảm hứng sáng tạo hoặc một chuyên gia sản xuất?
-- Tự điều chỉnh có đang chờ lao động có chất lượng kỳ vọng cao hơn sẵn sàng làm việc, chẳng hạn trở về từ đoàn lữ hành hoặc sạc xong không?
+- **{k:QJ_AutoBest}** có đang chờ lao động có chất lượng kỳ vọng cao hơn sẵn sàng làm việc, chẳng hạn trở về từ đoàn lữ hành hoặc sạc xong không?
 - Người làm có thể tiếp cận và giữ chỗ vật phẩm hoặc khung công trình, cũng như sử dụng bàn làm việc không? Hãy kiểm tra vật phẩm bị cấm, khu vực được phép, giới hạn của lệnh sản xuất và việc giữ chỗ của người khác.
 - Đã đạt giới hạn số vật phẩm dở dang chưa? Hãy hoàn thiện các vật phẩm đang chờ trước khi bắt đầu thêm, hoặc chủ động tăng giới hạn.
 

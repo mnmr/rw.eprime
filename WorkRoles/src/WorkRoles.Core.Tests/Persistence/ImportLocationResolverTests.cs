@@ -18,8 +18,8 @@ public class ImportLocationResolverTests
 
     [Test]
     [Arguments("ship:The Wanderer", "ship:9")]
-    [Arguments("settlement:Missing", null)]
-    [Arguments("ship:Localized Elsewhere", null)]
+    [Arguments("settlement:Missing", "unresolved:settlement:Missing")]
+    [Arguments("ship:Localized Elsewhere", "unresolved:ship:Localized Elsewhere")]
     [Arguments("nowhere", "nowhere")]
     public async Task AppliedMappingDoesNotConsultAnotherClientsLabels(string fileToken, string? expectedRuntimeToken)
     {

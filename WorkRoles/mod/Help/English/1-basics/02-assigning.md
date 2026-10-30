@@ -27,8 +27,9 @@ colonist's row and pick from the menu.
 
 <!-- l10n:b-3634ad4cacb9 -->
 Dropping a chip also picks its position in the row, so a drag assigns and
-prioritizes in one motion. The tooltip's Best fits list is a preview of
-who the [recommendation engine](topic:recommendations) would give it to.
+prioritizes in one motion. Best fits ranks colonists by aptitude for this
+role. [Recommendations](topic:recommendations) also consider colony demand,
+training and work aversions, so they may choose different colonists.
 
 <!-- l10n:b-e85c035e0a4a -->
 ## Several colonists at once

@@ -2,12 +2,12 @@
 title: Quando il lavoro resta in attesa
 ---
 <!-- l10n:check -->
-Inizia da **{k:QJ_StatusHeader}** nel pannello dell'ordine o della costruzione. **Nessun lavoratore idoneo al completamento** indica che il lavoro attende che i requisiti siano soddisfatti, non che i progressi siano andati persi.
+Inizia da **{k:QJ_StatusHeader}** nel pannello dell'ordine o della costruzione. Nel pannello di un ordine, **{k:QJ_StatusStalled}** si riferisce ai requisiti dell'ordine selezionato, mentre i conteggi della coda includono tutti gli ordini che producono questo prodotto su questa mappa. Gli altri ordini possono avere requisiti diversi. Nel pannello di una costruzione, **Nessuno è idoneo al completamento** significa che nessun costruttore soddisfa attualmente i requisiti di quella costruzione. Questi avvisi non indicano che i progressi siano andati persi.
 
 <!-- l10n:checklist -->
 - Il tipo di lavoro richiesto è abilitato per chi deve completarlo? Si trova su questa mappa ed è in grado di lavorare?
 - Il requisito di abilità è troppo alto, oppure stai aspettando Creatività ispirata o uno specialista della produzione?
-- La regolazione automatica sta aspettando che un lavoratore con una qualità attesa più alta diventi disponibile, ad esempio che torni da una carovana o finisca di ricaricarsi?
+- **{k:QJ_AutoBest}** sta aspettando che un lavoratore con una qualità attesa più alta diventi disponibile, ad esempio che torni da una carovana o finisca di ricaricarsi?
 - Il lavoratore può raggiungere e prenotare l'oggetto o la struttura in costruzione e usare il banco di lavoro? Controlla gli oggetti vietati, le aree consentite, le restrizioni dell'ordine e le prenotazioni da parte di altri lavoratori.
 - È stato raggiunto il limite di scorta? Completa gli oggetti in attesa prima di iniziarne altri, oppure aumenta intenzionalmente il limite.
 

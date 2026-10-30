@@ -8,13 +8,13 @@ Con Quality Bionics Remastered o Vanilla Genetics Expanded, los implantes tienen
 ![Cabecera con el botón Calidad mínima](plan-min-quality.png)
 
 <!-- l10n:b-84db128338c2 -->
-Todos sus implantes, incluidos los heredados, se fabrican e instalan a esa calidad o superior. Los que no tienen calidad no se ven afectados. Un nuevo plan derivado empieza con el mismo mínimo del base.
+El mínimo se aplica a las nuevas instalaciones de este plan, incluidas las elecciones heredadas. La fabricación automática busca alcanzar esa calidad y puede necesitar varios intentos. No afecta a los implantes sin calidad. Un plan nuevo que deriva de otro empieza con el mismo mínimo.
 
 <!-- l10n:b-93af25d8591d -->
 Implanner nunca sustituye una parte sana por otra peor. Un brazo biónico horrible funciona peor que uno natural, por lo que espera a un objeto mejor salvo que el brazo falte o esté gravemente dañado. Si varios objetos cumplen, el mejor va al colono cuyo turno llega primero.
 
 <!-- l10n:b-0e7cf20ad9dc -->
-Quien ya tenga el implante previsto lo conserva aunque no alcance el mínimo, salvo que actives la opción siguiente.
+Un implante ya instalado del tipo previsto sigue contando como completado, aunque no alcance la calidad mínima. Activa **Dar los mejores implantes a los colonos prioritarios** para permitir su reemplazo por uno de mayor calidad, como se explica a continuación.
 
 <!-- l10n:b-b163fd8a6054 -->
 ## Mejores implantes para colonos prioritarios
@@ -31,7 +31,7 @@ Con **Dar los mejores implantes a los colonos prioritarios**, en las opciones de
 - También se cede un objeto reservado para alguien menos prioritario si su operación aún no está programada.
 
 <!-- l10n:b-e246867de4e8 -->
-Cada intercambio implica una cirugía extra. Solo ocurre si no hay otra operación de Implanner esperándole y queda sitio bajo el límite de cirugías simultáneas. Nunca se intercambia un implante si quitarlo retiraría también otra cosa de la parte.
+Reemplazar un implante instalado por otro de mejor calidad requiere dos operaciones: extracción e instalación. El reemplazo solo comienza si no hay otra cirugía de Implanner pendiente para ese colono y queda espacio dentro del límite de cirugías simultáneas. Nunca se reemplaza un implante si extraerlo también retiraría otra cosa de esa parte del cuerpo.
 
 <!-- l10n:b-37015122025b -->
 Al fabricar para el plan:

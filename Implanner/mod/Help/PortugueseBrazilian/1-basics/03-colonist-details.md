@@ -13,7 +13,7 @@ Selecione um colono para ver cada implante do plano e seu estado:
 - **Pronto**: o item reservado chegou à colônia do colono.
 - **Cirurgia agendada**: a operação está na lista de ordens do colono.
 - **Em recuperação**: a cirurgia aguarda enquanto houver sangramento, ferimentos sem tratamento ou o colono estiver incapacitado no chão. Sono por anestesia não conta.
-- **Bloqueado pela habilidade médica mínima**: nenhum médico local tem a Medicina exigida (veja [Opções de cirurgia](topic:surgery-options)).
+- **Aguardando médico com Medicina ...+**: nenhum médico apto atende ao requisito de habilidade desta operação. Verifique a disponibilidade de médicos ou ajuste o mínimo na aba Automação (veja [Opções de cirurgia](topic:surgery-options)).
 - **Concluído**: instalado.
 
 <!-- l10n:b-7d5d4531ac6c -->

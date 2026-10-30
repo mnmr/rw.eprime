@@ -55,7 +55,9 @@ namespace WorkRoles.UI
         // immutable-by-publication snapshot of every repaint-ready cell plus the
         // display mode. Dependencies: role/assignment priority projections,
         // work-type definitions, pawn disabled-work state, whole skill levels,
-        // passions, unmanaged vanilla priorities, and manual-priority mode.
+        // human passions, unmanaged vanilla priorities (native declared
+        // priorities for Misc robots), native mechanical work definitions,
+        // and manual-priority mode.
         // Refresh: immediate on an event-driven key change. Equality: equal
         // rebuilt contents retain identity within the same RoleStore owner.
         // Teardown: PostClose drops snapshot/owner references and revision stamps.
@@ -452,9 +454,23 @@ namespace WorkRoles.UI
             WorkTypeDef workType, RoleStore? store)
         {
             if (pawn.WorkTypeIsDisabled(workType)) return default;
+            bool mechanical = MechanicalWorkers.IsMechanical(pawn);
+            if (mechanical)
+            {
+                bool nativeWork = false;
+                List<WorkGiverDef> givers = workType.workGiversByPriority;
+                for (int i = 0; i < givers.Count; i++)
+                    if (MechanicalWorkers.CanDo(pawn, givers[i]))
+                    {
+                        nativeWork = true;
+                        break;
+                    }
+                if (!nativeWork) return default;
+            }
 
             float skill = pawn.skills != null
-                ? pawn.skills.AverageOfRelevantSkillsFor(workType) : 10f;
+                ? pawn.skills.AverageOfRelevantSkillsFor(workType)
+                : mechanical ? pawn.RaceProps.mechFixedSkillLevel : 10f;
             Texture2D baseTexture;
             Texture2D blendTexture;
             float blendAlpha;
@@ -477,8 +493,8 @@ namespace WorkRoles.UI
                 blendAlpha = (skill - 14f) / 6f;
             }
 
-            Passion passion = pawn.skills?.MaxPassionOfRelevantSkillsFor(workType)
-                ?? Passion.None;
+            Passion passion = mechanical ? Passion.None
+                : pawn.skills?.MaxPassionOfRelevantSkillsFor(workType) ?? Passion.None;
             Texture2D? passionTexture = passion == Passion.Major
                 ? WidgetsWork.PassionWorkboxMajorIcon
                 : passion == Passion.Minor
@@ -495,7 +511,9 @@ namespace WorkRoles.UI
             }
             else
             {
-                rawPriority = pawn.workSettings?.GetPriority(workType) ?? 0;
+                rawPriority = mechanical && MiscRobotSupport.IsRobot(pawn)
+                    ? MiscRobotSupport.NativePriority(pawn, workType)
+                    : pawn.workSettings?.GetPriority(workType) ?? 0;
                 vanillaPriority = rawPriority;
             }
 

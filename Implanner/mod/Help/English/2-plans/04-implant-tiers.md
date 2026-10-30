@@ -2,9 +2,11 @@
 title: Implant tiers
 ---
 <!-- l10n:b-5f84f9b2d5c3 -->
-The right column ranks the plan's own picks into five star tiers; an
-inherited implant is ranked on its base plan. Drag a row onto another tier
-to move it.
+The right column shows the plan's own picks in five star tiers. Implant
+rankings are shared by every plan in this save: moving an implant here
+changes its priority everywhere it appears. More stars mean higher priority.
+Drag between star tiers or within a tier to set the order. To move an
+inherited implant, open the base plan that picked it.
 
 <!-- l10n:b-21a47f167054 -->
 ![Star tiers with implants ranked from highest to normal priority](tier-panel.png)

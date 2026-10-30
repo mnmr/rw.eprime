@@ -33,7 +33,7 @@
   <IMP_StripAutomationOn>Automatización activada</IMP_StripAutomationOn>
   <IMP_StripAutomationOff>Automatización desactivada</IMP_StripAutomationOff>
   <IMP_StripProduction>Producción: {0}%</IMP_StripProduction>
-  <IMP_StripStock>{0} en existencias, {1} en cola</IMP_StripStock>
+  <IMP_StripStock>{0} en existencias, {1} pendientes de producir</IMP_StripStock>
   <IMP_StripMaking>Fabricando {0}</IMP_StripMaking>
   <IMP_StripMakingFor>Fabricando materiales para {0}</IMP_StripMakingFor>
   <IMP_StripWaiting>Esperando {0}</IMP_StripWaiting>
@@ -53,8 +53,8 @@
   <IMP_TipColFree>Libres</IMP_TipColFree>
   <IMP_TipColReserved>Reservados</IMP_TipColReserved>
   <IMP_TipColHeldBack>Apartados</IMP_TipColHeldBack>
-  <IMP_TipColQueued>En cola</IMP_TipColQueued>
-  <IMP_TipColCrafting>En fabricación</IMP_TipColCrafting>
+  <IMP_TipColQueued>Pendientes de producir</IMP_TipColQueued>
+  <IMP_TipColCrafting>En órdenes de fabricación</IMP_TipColCrafting>
   <IMP_TipColStatus>Estado</IMP_TipColStatus>
   <IMP_TipCovered>Cubierto</IMP_TipCovered>
   <IMP_TipMaking>Fabricando</IMP_TipMaking>
@@ -86,7 +86,7 @@
   <IMP_GoalReady>Listo</IMP_GoalReady>
   <IMP_GoalScheduled>Cirugía programada</IMP_GoalScheduled>
   <IMP_GoalRecovering>Recuperándose</IMP_GoalRecovering>
-  <IMP_GoalBlockedFloor>Bloqueado por habilidad médica mínima ({0})</IMP_GoalBlockedFloor>
+  <IMP_GoalBlockedFloor>Esperando un médico con Medicina {0}+</IMP_GoalBlockedFloor>
   <IMP_GoalBlockedLoss>Destruiría {0}</IMP_GoalBlockedLoss>
   <IMP_PlansHeader>Planes</IMP_PlansHeader>
   <IMP_AddPlan>Nuevo plan</IMP_AddPlan>
@@ -101,7 +101,7 @@
   <IMP_PlanColonists>{0} colonos</IMP_PlanColonists>
   <IMP_DeletePlan>Eliminar plan</IMP_DeletePlan>
   <IMP_PlanMinQuality>Calidad mínima: {0}</IMP_PlanMinQuality>
-  <IMP_PlanMinQualityTip>Los implantes de este plan se instalan y fabrican con esta calidad o superior. No afecta a los implantes sin calidad.\n\nNunca se sustituye una parte sana por otra peor. Un implante biónico de baja calidad espera a que haya un objeto mejor, salvo que la parte falte o esté dañada.</IMP_PlanMinQualityTip>
+  <IMP_PlanMinQualityTip>Calidad mínima aceptada para nuevas instalaciones, incluidas las elecciones heredadas del plan. Los implantes ya instalados del tipo previsto siguen contando como completados, aunque no alcancen ese mínimo. Activa Dar los mejores implantes a los colonos prioritarios para permitir su reemplazo por otros de mayor calidad. No afecta a los implantes sin calidad.\n\nNunca se sustituye una parte sana por otra peor. Un implante biónico de baja calidad espera a que haya un objeto mejor, salvo que la parte falte o esté dañada.</IMP_PlanMinQualityTip>
   <IMP_PlanMinQualityNoQualityJobs>Quality Jobs no está cargado, así que cualquier artesano puede terminar un implante. Si su calidad queda por debajo de este mínimo, se fabrica otro.</IMP_PlanMinQualityNoQualityJobs>
   <IMP_DeletePlanConfirm>¿Eliminar el plan «{0}»? Los colonos asignados perderán la asignación y los planes que lo amplíen dejarán de heredar de él.</IMP_DeletePlanConfirm>
   <IMP_ImplantGroupOther>Otros</IMP_ImplantGroupOther>
@@ -118,7 +118,7 @@
   <IMP_NoMatchingImplants>Ningún implante coincide con la búsqueda.</IMP_NoMatchingImplants>
   <IMP_RankTiersTitle>Niveles de implantes</IMP_RankTiersTitle>
   <IMP_Help>Ayuda</IMP_Help>
-  <IMP_RankTiersHelp>Los implantes pueden agruparse en 5 niveles. Su posición afecta al orden de producción y a las cirugías, según las opciones de automatización.\n\nArrastra los objetos para reordenarlos.</IMP_RankTiersHelp>
+  <IMP_RankTiersHelp>Todos los planes de esta partida comparten la clasificación de implantes. Mover un implante aquí cambia su prioridad dondequiera que aparezca. Más estrellas indican mayor prioridad.\n\nArrastra los implantes entre niveles de estrellas o dentro de un nivel para establecer el orden. La clasificación orienta la producción y las cirugías según tu estrategia de automatización.</IMP_RankTiersHelp>
   <IMP_TierHighest>Prioridad máxima</IMP_TierHighest>
   <IMP_TierHigh>Prioridad alta</IMP_TierHigh>
   <IMP_TierMedium>Prioridad media</IMP_TierMedium>
@@ -154,17 +154,17 @@
   <IMP_OptCatalog>Catálogo</IMP_OptCatalog>
   <IMP_OptShowPurchaseOnly>Mostrar implantes que solo pueden adquirirse</IMP_OptShowPurchaseOnly>
   <IMP_CleanupTitle>¿Desactivar la automatización?</IMP_CleanupTitle>
-  <IMP_CleanupBody>Implanner creó estos proyectos. Aceptar desactiva la automatización y elimina los marcados. Los no marcados permanecen y vuelven a gestionarse al reactivar la automatización. En ambos casos se liberan los implantes reservados. Cancelar mantiene la automatización activada.</IMP_CleanupBody>
+  <IMP_CleanupBody>Implanner creó estos proyectos y operaciones. Aceptar desactiva la automatización y elimina los marcados. Los no marcados siguen activos: los colonos pueden seguir fabricando o realizando esas operaciones. Implanner vuelve a gestionar los que queden al reactivar la automatización. En ambos casos se liberan los implantes reservados. Cancelar mantiene la automatización activa.</IMP_CleanupBody>
   <IMP_AutomationOffTitle>La automatización está desactivada</IMP_AutomationOffTitle>
   <IMP_AutomationOffBody>{0} reparte esta colonia entre varios niveles. Implanner no puede trasladar un implante ni una operación entre niveles, así que deja de reservar objetos y programar cirugías para evitar completar solo parte de cada plan.\n\nTodo lo demás sigue funcionando. Puedes crear planes, asignarlos y ordenar tus implantes. Añade tú las operaciones e Implanner llevará la cuenta de lo instalado y de lo que falta.</IMP_AutomationOffBody>
-  <IMP_OptEnableTip>Interruptor general de todo lo que Implanner hace por su cuenta: reservar implantes, programar operaciones y crear proyectos de fabricación. Desactivado, sigue mostrando los planes y el progreso, pero deja de actuar sobre ellos. Al desactivarlo también pregunta qué proyectos existentes quieres conservar.</IMP_OptEnableTip>
+  <IMP_OptEnableTip>Interruptor general de todo lo que Implanner hace por su cuenta: reservar implantes, programar operaciones y crear proyectos de fabricación. Desactivado, sigue mostrando los planes y el progreso. Al desactivarlo, pregunta qué proyectos y operaciones existentes quieres conservar; estos siguen activos, de modo que los colonos pueden seguir fabricando o realizando esas operaciones.</IMP_OptEnableTip>
   <IMP_OptIterationTip>Orden en que la automatización atiende los implantes pendientes. La prioridad del colono en Resumen siempre decide quién va primero.\n\nLotes por nivel: todos reciben primero los implantes del nivel más alto y después se pasa al siguiente. Cada colono entra en cirugía cuando tiene reservado todo su nivel.\n\nConjuntos completos: completa el plan de un colono antes de empezar con el siguiente. La cirugía espera hasta que esté reservado todo el plan.\n\nEn cuanto sea posible: cada implante disponible se programa de inmediato para el colono de mayor prioridad que lo necesite. A igual prioridad, las piernas van al más lento y los brazos primero a quienes lleven un arma cuerpo a cuerpo y después a quien tenga la mayor suma de Fabricación e Intelectual.</IMP_OptIterationTip>
   <IMP_OptAutoFloorTip>Las cirugías se limitan al mejor médico disponible para que un principiante no estropee una instalación biónica por llegar primero al quirófano. El requisito se adapta al mejor médico de cada colonia cuando cambia su población. Nadie puede operarse a sí mismo: las operaciones del mejor médico se asignan al siguiente mejor.\n\nDesactívalo para establecer una habilidad mínima fija.</IMP_OptAutoFloorTip>
   <IMP_OptSurgeryConcurrencyTip>Cuántos colonos de cada colonia pueden tener cirugías programadas a la vez. Los valores altos añaden más colonos en paralelo; los bajos dejan libres el hospital y los médicos. Empieza con uno por cada diez colonos. Mantén Mayús al hacer clic en +/- para cambiar de 10 en 10, o Ctrl para cambiar de 5 en 5.</IMP_OptSurgeryConcurrencyTip>
   <IMP_OptCountHospitalizedTip>Los colonos y esclavos que estén en camas médicas, o incapacitados y esperando tratamiento, también ocupan plazas de cirugía. Las nuevas cirugías de Implanner esperan hasta que haya sitio bajo el límite anterior. Los prisioneros, invitados y pacientes visitantes de otras facciones nunca ocupan plaza. Desactívalo para programar implantes sin tener en cuenta a quienes ya reciben tratamiento.</IMP_OptCountHospitalizedTip>
-  <IMP_OptUpgradeByPriorityTip>Los implantes de mayor calidad van a los colonos con mayor prioridad en Resumen. Las nuevas cirugías usan la menor calidad aceptada por el plan para dejar libres los mejores implantes.\n\nCuando hay uno mejor, lo recibe el colono de mayor prioridad que tenga otro peor del mismo tipo. Primero se retira su implante anterior y luego pasa al siguiente colono. También se cede uno reservado para un colono de menor prioridad si su cirugía aún no está programada.\n\nCada cambio supone una cirugía adicional. Desactivado, cada colono recibe el mejor implante disponible cuando llega su turno.</IMP_OptUpgradeByPriorityTip>
+  <IMP_OptUpgradeByPriorityTip>Los implantes de mayor calidad van a los colonos con mayor prioridad en la pestaña Resumen. Las nuevas cirugías usan la menor calidad aceptada por el plan para dejar libres los mejores implantes.\n\nCuando hay uno mejor, lo recibe el colono de mayor prioridad que tenga otro peor del mismo tipo. Primero se retira su implante anterior y luego pasa al siguiente colono. También se cede uno reservado para un colono de menor prioridad si su cirugía aún no está programada.\n\nReemplazar un implante instalado por otro de mayor calidad requiere dos operaciones: extracción e instalación. Desactivado, cada colono recibe el mejor implante disponible cuando llega su turno.</IMP_OptUpgradeByPriorityTip>
   <IMP_OptManualFloorTip>Habilidad mínima de Medicina necesaria para realizar cirugías de Implanner. Las operaciones esperan a que haya un médico con ese nivel o superior. Al desactivar la asignación automática, el valor inicial es la habilidad del mejor médico actual.</IMP_OptManualFloorTip>
-  <IMP_OptImplantReservesTip>Implantes apartados para uso manual. La automatización solo asigna las existencias que excedan estas cantidades, para que siempre conserves esos implantes para urgencias o comercio. La producción no los considera disponibles y sigue fabricando hasta que la automatización pueda avanzar sin ellos.</IMP_OptImplantReservesTip>
+  <IMP_OptImplantReservesTip>Mantiene hasta esta cantidad de implantes existentes libres para uso manual. Implanner no los usa en cirugías previstas ni como ingredientes de fabricación. La producción automática fabrica más implantes mientras los planes asignados los necesiten. Para reponer las reservas de emergencia cuando ningún plan necesite el implante, agrega tú mismo un proyecto de fabricación.</IMP_OptImplantReservesTip>
   <IMP_AddImplantReserveTip>Elige un implante que apartar de la automatización.</IMP_AddImplantReserveTip>
   <IMP_OptAllowMultipleBladdersTip>El juego trata los implantes de vejiga de distintos mods como implantes diferentes, por lo que un colono puede llevar varios y acumular sus efectos. Desactívalo para tratarlos como una sola casilla: elegir uno en un plan sustituye a los demás y tener ya cualquiera de los siguientes cuenta como completado. Nunca se retira nada.\n\nImplantes afectados:\n{0}</IMP_OptAllowMultipleBladdersTip>
   <IMP_OptAllowMultipleHygieneEnhancersTip>El juego trata los potenciadores de higiene de distintos mods como implantes diferentes, por lo que un colono puede llevar varios y acumular sus efectos. Desactívalo para tratarlos como una sola casilla: elegir uno en un plan sustituye a los demás y tener ya cualquiera de los siguientes cuenta como completado. Nunca se retira nada.\n\nImplantes afectados:\n{0}</IMP_OptAllowMultipleHygieneEnhancersTip>

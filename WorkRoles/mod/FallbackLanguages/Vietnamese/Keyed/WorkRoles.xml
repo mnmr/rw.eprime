@@ -51,7 +51,7 @@ Tắt "Tự tối ưu khu định cư mỗi giờ trong trò chơi" ở thẻ T�
   <WR_BadgeBlocker>chặn</WR_BadgeBlocker>
   <WR_BadgeHours>giới hạn giờ</WR_BadgeHours>
   <WR_BadgeLocation>giới hạn nơi</WR_BadgeLocation>
-  <WR_BandChipTip>Kéo đầu để đổi khoảng kỹ năng, kéo giữa để di chuyển.</WR_BandChipTip>
+  <WR_BandChipTip>Kéo đầu để đổi khoảng kỹ năng, kéo giữa để di chuyển. Giữ cấp bắt đầu của vai trò mục tiêu cao hơn cấp bắt đầu của mọi vai trò rèn luyện, nếu không lộ trình sẽ không đề xuất rèn luyện để tiến tới mục tiêu đó.</WR_BandChipTip>
   <WR_BillRoleOption>Vai trò: {0}</WR_BillRoleOption>
   <WR_BillWorkerRoleTip>Chỉ cư dân đang có vai trò này hoạt động mới làm lệnh; vai trò có điều kiện áp dụng quy tắc của nó (như giờ hoạt động). Chọn người làm sẽ xóa giới hạn vai trò và ngược lại.</WR_BillWorkerRoleTip>
   <WR_BlockerRole>Vai trò chặn</WR_BlockerRole>
@@ -324,9 +324,9 @@ Việc không bị ngắt. Thông báo chỉ hiện một lần mỗi bản lưu
   <WR_RecDecisionSignalSurplus>Được chọn bổ sung theo đánh giá dấu hiệu.</WR_RecDecisionSignalSurplus>
   <WR_RecDecisionSignals>Đạt ngưỡng dấu hiệu đã đặt.</WR_RecDecisionSignals>
   <WR_RecDecisionTraining>Được giao qua lộ trình rèn luyện cho {0}.</WR_RecDecisionTraining>
-  <WR_RecDecisionTrainingSlot>Được chọn lấp suất {0} trên {1} cho {2}. Ngoại lệ rèn luyện thay {2} bằng {3} ({4}; {2} cần {5}).</WR_RecDecisionTrainingSlot>
-  <WR_RecDecisionTrainingSlotSimple>Được chọn lấp suất {0} trên {1} cho {2}. Ngoại lệ rèn luyện thay {2} bằng {3}.</WR_RecDecisionTrainingSlotSimple>
-  <WR_RecDecisionTrainingSlotUnknown>Được chọn lấp suất {0} trên {1} qua ngoại lệ rèn luyện, giao {2}.</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecDecisionTrainingSlot>Được chọn lấp suất {0} trên {1} cho {2} bằng vai trò rèn luyện {3} ({4}; lộ trình rèn luyện bắt đầu {2} ở cấp {5}).</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>Được chọn lấp suất {0} trên {1} cho {2} bằng vai trò rèn luyện {3}.</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>Được chọn lấp suất {0} trên {1} bằng vai trò rèn luyện {2}.</WR_RecDecisionTrainingSlotUnknown>
   <WR_RecDecisionTrainingUnknown>Được giao qua lộ trình rèn luyện.</WR_RecDecisionTrainingUnknown>
   <WR_RecDecisionUnavailable>Công việc của vai trò chưa có cho đến khi nghiên cứu xong.</WR_RecDecisionUnavailable>
   <WR_RecDecisionWeakSignal>Đánh giá dấu hiệu dưới ngưỡng đã đặt; nhu cầu nhân lực bắt buộc cũng không chọn người này.</WR_RecDecisionWeakSignal>
@@ -351,8 +351,8 @@ Việc không bị ngắt. Thông báo chỉ hiện một lần mỗi bản lưu
   <WR_RecTipSelection>Lựa chọn</WR_RecTipSelection>
   <WR_RecTipSignalVerdict>Đánh giá dấu hiệu</WR_RecTipSignalVerdict>
   <WR_RecTipSkills>Kỹ năng được xét</WR_RecTipSkills>
-  <WR_RecTipWithWaiverOne>{0} (1 ngoại lệ rèn luyện)</WR_RecTipWithWaiverOne>
-  <WR_RecTipWithWaiversMany>{0} ({1} ngoại lệ rèn luyện)</WR_RecTipWithWaiversMany>
+  <WR_RecTipWithWaiverOne>{0} (tối đa 1 suất có thể dùng vai trò rèn luyện)</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0} (tối đa {1} suất có thể dùng vai trò rèn luyện)</WR_RecTipWithWaiversMany>
   <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
   <WR_RecTuneCandidateMinimumSignal>Dấu hiệu tối thiểu của ứng viên</WR_RecTuneCandidateMinimumSignal>
   <WR_RecTuneCandidateMinimumSignalDesc>Dấu hiệu thấp nhất được chọn vai trò thường. Tăng để loại ứng viên yếu trước khi chọn chủ lực và số người tối thiểu.</WR_RecTuneCandidateMinimumSignalDesc>
@@ -451,10 +451,10 @@ Việc không bị ngắt. Thông báo chỉ hiện một lần mỗi bản lưu
   <WR_RestoreRecOrder>Thứ tự đề xuất (đặt lại mặc định)</WR_RestoreRecOrder>
   <WR_RestoreSnapColorItem>{0} (khớp màu với bảng màu)</WR_RestoreSnapColorItem>
   <WR_RoleAgeBandsLabel>Nhóm tuổi được giao vai trò này:</WR_RoleAgeBandsLabel>
-  <WR_RoleAgeBandsTip>Cư dân ngoài khoảng tuổi đã chọn không bao giờ được giao hoặc đề xuất vai trò này. Nhấp khoảng ngoài vùng chọn để gồm mọi khoảng đến đó; nhấp khoảng đầu/cuối đang chọn để bỏ; nhấp khoảng giữa để chỉ chọn khoảng đó. Ranh giới theo tuổi trò chơi mở khóa công việc. Mọi việc trong vai trò có thể làm từ tuổi {0}.</WR_RoleAgeBandsTip>
+  <WR_RoleAgeBandsTip>Các khoảng tuổi này giới hạn việc tự động giao và đề xuất vai trò. Giao thủ công và dán vẫn có thể giao vai trò này cho cư dân ngoài các khoảng đã chọn. Nhấp khoảng ngoài vùng chọn để chọn mọi khoảng đến đó; nhấp khoảng đầu hoặc cuối đang chọn để bỏ; nhấp khoảng giữa để chỉ chọn khoảng đó. Ranh giới theo tuổi trò chơi mở khóa công việc. Mọi việc trong vai trò này đều có thể làm từ tuổi {0}.</WR_RoleAgeBandsTip>
   <WR_RoleAwfulSignal>{0} có dấu hiệu Rất không phù hợp cho vai trò này: {1}.</WR_RoleAwfulSignal>
   <WR_RoleCapAllJobs>bất kỳ việc nào trong vai trò này</WR_RoleCapAllJobs>
-  <WR_RoleCapNeverDo>{0} sẽ không bao giờ làm {1}</WR_RoleCapNeverDo>
+  <WR_RoleCapNeverDo>{0} hiện không thể làm {1}</WR_RoleCapNeverDo>
   <WR_RoleCapSomeJobs>{0} trên {1} việc trong vai trò này</WR_RoleCapSomeJobs>
   <WR_RoleCategoryImportant>Quan trọng</WR_RoleCategoryImportant>
   <WR_RoleCategoryLabel>Tầm quan trọng:</WR_RoleCategoryLabel>
@@ -463,9 +463,9 @@ Việc không bị ngắt. Thông báo chỉ hiện một lần mỗi bản lưu
   <WR_RoleCategoryOptional>Tùy chọn</WR_RoleCategoryOptional>
   <WR_RoleCategoryTip>Mức quan trọng của việc giữ vai trò này khi lập kế hoạch khu định cư. "Chưa đặt" để vai trò chưa phân loại.</WR_RoleCategoryTip>
   <WR_RoleColonyMinLabel>Tối thiểu mỗi khu:</WR_RoleColonyMinLabel>
-  <WR_RoleColonyMinTip>Số phân công tối thiểu cho vai trò.</WR_RoleColonyMinTip>
+  <WR_RoleColonyMinTip>Số người làm tối thiểu cần dự tính cho công việc của vai trò này. Vai trò rèn luyện có thể đảm nhiệm một số vị trí: đặt giá trị lớn hơn không sẽ dành một vị trí cho chính vai trò này. Bộ máy dùng số lớn hơn giữa mức tối thiểu này và số người tính từ Tỷ lệ nhân lực.</WR_RoleColonyMinTip>
   <WR_RoleCoverageLabel>Tỷ lệ nhân lực:</WR_RoleCoverageLabel>
-  <WR_RoleCoverageTip>Tỷ lệ cư dân lý tưởng nên nhận vai trò này.</WR_RoleCoverageTip>
+  <WR_RoleCoverageTip>Dự tính số người theo tỷ lệ phần trăm dân số này, làm tròn thành số người nguyên. Bộ máy dùng số lớn hơn giữa số này và Tối thiểu mỗi khu. Vai trò rèn luyện có thể đảm nhiệm một số vị trí.</WR_RoleCoverageTip>
   <WR_RoleDisplayCaption>Hiện vai trò</WR_RoleDisplayCaption>
   <WR_RoleJobIncapable>không làm được việc này</WR_RoleJobIncapable>
   <WR_RoleJobNoRangedWeapon>không có vũ khí tầm xa</WR_RoleJobNoRangedWeapon>
@@ -486,7 +486,7 @@ Việc không bị ngắt. Thông báo chỉ hiện một lần mỗi bản lưu
   <WR_RoleTipForcedOnGlobalOff>BUỘC BẬT cho cư dân này (vai trò TẮT toàn cục)</WR_RoleTipForcedOnGlobalOff>
   <WR_RoleTooOld>{0} quá lớn tuổi cho vai trò này (tối đa {1} tuổi).</WR_RoleTooOld>
   <WR_RoleTooYoung>{0} quá nhỏ tuổi cho vai trò này (tối thiểu {1} tuổi).</WR_RoleTooYoung>
-  <WR_RoleWorkAversion>Giáo lý {1} của {0} phản đối {2}. Đề xuất trừ điểm hữu hạn: hai bậc ưu tiên, hoặc sáu điểm kỹ năng ảo khi chọn chủ lực. Nhu cầu bắt buộc vẫn có thể chọn người này. Thợ săn lùi hai bậc, tối đa bậc năm; phương án dự phòng bậc đầu hiện có vẫn áp dụng.</WR_RoleWorkAversion>
+  <WR_RoleWorkAversion>Giáo lý {1} của {0} phản đối {2}. WorkRoles ưu tiên cư dân phù hợp khác, nhưng vẫn có thể đề xuất cư dân này khi khu định cư cần người đảm nhiệm công việc. Điều này không cấm làm việc đó. Với Thợ săn, sự phản đối còn đẩy việc săn bắt xuống sau trong thứ tự công việc được đề xuất.</WR_RoleWorkAversion>
   <WR_RolesRestored>Đã khôi phục: {0}</WR_RolesRestored>
   <WR_RolesTab>Vai trò</WR_RolesTab>
   <WR_RowNew>{0} (mới)</WR_RowNew>
@@ -600,7 +600,7 @@ Thông báo hiện một lần mỗi mod trong mỗi bản lưu.</WR_SetPriority
   <WR_TrainingSection>Lộ trình rèn luyện</WR_TrainingSection>
   <WR_TrainingTipBands>Khoảng chồng lấp cùng tồn tại; khi không chồng lấp, vai trò sau thay vai trò trước.</WR_TrainingTipBands>
   <WR_TrainingTipOrder>Phân công ưu tiên khoảng có mức tối thiểu cao hơn. Khoảng bằng nhau ưu tiên kỹ năng vai trò yếu nhất của người làm, rồi đến thứ tự lộ trình đã lưu.</WR_TrainingTipOrder>
-  <WR_TrainingTipWhat>Tiến trình riêng của vai trò: mỗi thành viên có khoảng kỹ năng được đề xuất. Bản thân vai trò luôn ở trong lộ trình của nó.</WR_TrainingTipWhat>
+  <WR_TrainingTipWhat>Tiến trình riêng của vai trò: mỗi vai trò thành viên có một khoảng kỹ năng mà trong đó vai trò được đề xuất. Vai trò mục tiêu luôn nằm trong lộ trình của nó và phải có cấp bắt đầu cao hơn mọi vai trò rèn luyện.</WR_TrainingTipWhat>
   <WR_TreeFlat>Phẳng</WR_TreeFlat>
   <WR_TreeNested>Lồng nhau</WR_TreeNested>
   <WR_TreeToggleTip>Bật/tắt lồng vai trò được bao phủ dưới vai trò kết hợp.</WR_TreeToggleTip>
@@ -638,4 +638,23 @@ Thông báo hiện một lần mỗi mod trong mỗi bản lưu.</WR_SetPriority
   <WR_OptMechanicalWorkers>Hiện robot và mech trong Cư dân</WR_OptMechanicalWorkers>
   <WR_OptMechanicalWorkersTip>Gán vai trò cho mech của Biotech và robot của Misc. Robots trong thẻ Cư dân. Vẫn dùng các thẻ quen thuộc của chúng để quản lý nhóm điều khiển, khu vực cho phép, kích hoạt và sạc. Tắt tùy chọn này sẽ ẩn chúng và khôi phục mức ưu tiên công việc như trước, nhưng vẫn giữ các vai trò đã lưu.</WR_OptMechanicalWorkersTip>
   <WR_RecMechanicalLearningProtected>Phân công rèn luyện này vẫn được giữ khi robot hoặc mech đảm nhiệm công việc. Có thể bỏ phân công khi đạt mục tiêu rèn luyện.</WR_RecMechanicalLearningProtected>
+  <WR_DefaultAutoUpdate>Tự động cập nhật sau khi sửa cấu hình</WR_DefaultAutoUpdate>
+  <WR_DefaultClear>Dùng mặc định có sẵn cho ván mới</WR_DefaultClear>
+  <WR_DefaultConflictBody>Thiết lập WorkRoles của khu định cư này khác với mặc định cho ván mới của bạn. Dùng thiết lập của khu này làm mặc định và cập nhật mỗi khi bạn sửa cấu hình? Khu định cư hiện tại sẽ không bị thay đổi.</WR_DefaultConflictBody>
+  <WR_DefaultEmptyBody>Lưu toàn bộ thiết lập của khu định cư này cho các ván sau. Các khu định cư hiện có giữ thiết lập riêng. Không bao gồm phân công nhân vật, liên kết lệnh, tìm kiếm và các mục đang thu gọn.</WR_DefaultEmptyBody>
+  <WR_DefaultKeep>Giữ mặc định của tôi trong phiên này</WR_DefaultKeep>
+  <WR_DefaultSavedBody>Đã lưu thiết lập cá nhân cho ván mới. Lưu toàn bộ thiết lập của khu định cư này để thay thế. Các khu định cư hiện có giữ thiết lập riêng. Không bao gồm phân công nhân vật, liên kết lệnh, tìm kiếm và các mục đang thu gọn.</WR_DefaultSavedBody>
+  <WR_DefaultStopAuto>Tắt tự động cập nhật</WR_DefaultStopAuto>
+  <WR_DefaultUseCurrent>Dùng thiết lập này cho ván mới</WR_DefaultUseCurrent>
+  <WR_LocationUnresolved>Không khả dụng: {0}</WR_LocationUnresolved>
+  <WR_LocationUnresolvedTip>Địa điểm được nhập này không tồn tại ở đây. Quy tắc này sẽ không hoạt động cho đến khi bạn thay bằng một địa điểm trong khu định cư này.</WR_LocationUnresolvedTip>
+  <WR_NewGameDefaults>Đặt mặc định</WR_NewGameDefaults>
+  <WR_SetupFailed>Không thể lưu hoặc đọc thiết lập mặc định của WorkRoles: {0}</WR_SetupFailed>
+  <WR_SetupGameSettings>Thiết lập khu định cư</WR_SetupGameSettings>
+  <WR_SetupGameSettingsInfo>Thay thế thiết lập công thức đề xuất, tối ưu hóa tự động, cách xử lý ưu tiên và tùy chọn người máy lao động.</WR_SetupGameSettingsInfo>
+  <WR_SetupPlayerSettings>Tùy chọn hiển thị của tôi</WR_SetupPlayerSettings>
+  <WR_SetupPlayerSettingsInfo>Tùy chọn: thay thế cách hiển thị thẻ, bố trí bảng vai trò, cột kỹ năng, huy hiệu và kích thước cửa sổ của bạn. Những người chơi khác trong chế độ nhiều người giữ tùy chọn riêng.</WR_SetupPlayerSettingsInfo>
+  <WR_RecMechanicalSelected>Có thể làm những công việc chưa được các vai trò đề xuất khác đảm nhiệm.</WR_RecMechanicalSelected>
+  <WR_RecMechanicalRetained>Giữ vai trò chính hiện tại.</WR_RecMechanicalRetained>
+  <WR_RecMechanicalIncapacitated>Đơn vị này đã gục ngã. Các vai trò được giữ lại để tiếp tục khi hồi phục.</WR_RecMechanicalIncapacitated>
 </LanguageData>

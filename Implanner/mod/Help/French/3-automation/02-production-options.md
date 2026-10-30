@@ -2,7 +2,7 @@
 title: Options de production
 ---
 <!-- l10n:b-bdd2b459773e -->
-Avec **Ajouter automatiquement des ordres pour les implants manquants**, Implanner place des ordres sur les établis capables de les fabriquer et retire ses propres ordres lorsque le besoin disparaît. Vos ordres manuels ne sont jamais retirés. Chaque ordre fabrique un objet, dans l'ordre de pose prévu : avec Ensembles complets, les jambes d'un colon précèdent ses bras si elles sont mieux classées dans le plan.
+Avec **Ajouter automatiquement des ordres pour les implants manquants** activé, Implanner place des ordres sur les établis capables de les fabriquer et retire ses propres ordres lorsque le besoin disparaît. Vos ordres manuels ne sont jamais retirés. Chaque ordre fabrique un objet, dans l'ordre de pose prévu : avec Ensembles complets, les jambes d'un colon précèdent ses bras si elles sont mieux classées dans votre classement commun des implants.
 
 <!-- l10n:b-8effc9e9b828 -->
 Si plusieurs recettes produisent le même implant, Implanner préfère une voie disponible qu'il peut payer immédiatement. Un implant de base libre peut être amélioré ; sinon, une recette directe peut fabriquer l'implant avancé à partir de matériaux. Si seule la voie d'amélioration est activée, la production d'intermédiaires peut fabriquer la base d'abord. Les recettes doivent être recherchées et disposer d'un établi admissible.

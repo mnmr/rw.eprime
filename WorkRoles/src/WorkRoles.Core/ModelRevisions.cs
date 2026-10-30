@@ -32,6 +32,8 @@ namespace WorkRoles.Core
         private int batchDepth;
         private int batchSequence;
         public int Current { get; private set; }
+        /// Event subscribers are store-owned and explicitly released on teardown.
+        public event Action<ModelDomain>? Published;
         public int For(ModelDomain domain) => Read(domains, domain);
         public int ForRole(int id, ModelDomain domain) =>
             Math.Max(Read(globalDomains, domain), roles.TryGetValue(id, out int[] stamps) ? Read(stamps, domain) : 0);
@@ -63,6 +65,7 @@ namespace WorkRoles.Core
                     if (global) globalDomains[i] = sequence;
                     if (keyed != null) keyed[i] = sequence;
                 }
+            Published?.Invoke(changed);
         }
         public IDisposable Batch() { batchDepth++; return new BatchScope(this); }
         private sealed class BatchScope : IDisposable

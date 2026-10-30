@@ -12,3 +12,6 @@ Cada faixa é uma função e seu intervalo de habilidade, podendo sobrepor. Carc
 
 <!-- l10n:b-bb878752b11b -->
 Arraste as pontas para redimensionar ou o meio para mover. Sem sobreposição, a função posterior substitui a anterior; com sobreposição, complementam-se. Funções que não treinam nenhuma habilidade da meta avisam antes de entrar. Ainda é possível adicioná-las se um mod mudar as fontes de experiência.
+
+<!-- l10n:target-start-order -->
+Mantenha o nível inicial da função-alvo acima do nível inicial de todas as funções de formação. Se outra faixa começar no mesmo nível ou acima, esta rota não recomendará formação para a função-alvo. Sobreponha as pontas das faixas para manter ambas as funções durante uma transição.

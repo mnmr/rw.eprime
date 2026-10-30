@@ -22,7 +22,7 @@ Há três maneiras de atribuir:
 - Clique no ![botão de mais](tex:UI/Buttons/Plus|24) no fim da linha e escolha no menu.
 
 <!-- l10n:b-3634ad4cacb9 -->
-O local onde você solta também define a prioridade. A lista Melhores candidatos antecipa quem o [mecanismo de recomendações](topic:recommendations) escolheria.
+Ao soltar uma ficha, você também define sua posição na linha: um só movimento atribui a função e define sua prioridade. Melhores candidatos ordena os colonos pela aptidão para essa função. As [recomendações](topic:recommendations) também consideram as necessidades da colônia, a formação e as aversões ao trabalho, por isso podem escolher outros colonos.
 
 <!-- l10n:b-e85c035e0a4a -->
 ## Vários colonos de uma vez

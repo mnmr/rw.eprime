@@ -12,6 +12,9 @@ namespace WorkRoles.Core.Recs
     /// from the pawn signal snapshot before the recommendation engine runs.
     public class PawnView
     {
+        /// Mechanical suitability includes native job capability. Human
+        /// aptitude ratings retain their established, separate warning policy.
+        public bool IsMechanical;
         public PawnWorkEvidence WorkEvidence = PawnWorkEvidence.Empty;
         public Dictionary<string, int> SkillLevels = new Dictionary<string, int>();
         public Dictionary<string, SignalBucket> SignalBuckets =

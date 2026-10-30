@@ -10,8 +10,8 @@ title: Rollenoptionen
 <!-- l10n:b-3bf9b89f299d -->
 - **Bedeutung für die Kolonie**: „Wichtig“ setzt die Rolle in der Reihe eines Kolonisten vor gleich stark bewertete Produktionsarbeit; „Optional“ verschiebt sie zum Ende.
 - **Zeitbedarf**: Teilzeitaufgaben stehen vor gleich stark bewerteter Vollzeitarbeit; gelegentliche Lückenfüller kommen zuletzt.
-- **Abzug für wiederholte Hauptverantwortung**: Verhindert, dass ein besonders leistungsfähiger Kolonist bei jeder Rolle zum Hauptverantwortlichen wird. Schalte dies für Rollen aus, bei denen das erwünscht ist.
-- **Skalierung der Zuweisungen**: Das Kolonieminimum legt fest, wie viele Rolleninhaber die Logik finden muss; die Abdeckung gibt den angestrebten Anteil der Kolonisten in Prozent an.
+- **Abzug für wiederholte Hauptverantwortung**: Wirkt dem entgegen, dass ein besonders leistungsfähiger Kolonist bei jeder Rolle zum Hauptverantwortlichen wird. Schalte dies für Rollen aus, bei denen das erwünscht ist.
+- **Skalierung der Zuweisungen**: Das Kolonieminimum legt eine Arbeiterzahl fest; die Abdeckung gibt einen Prozentsatz der Kolonie an, der auf eine ganze Arbeiterzahl gerundet wird. Die Logik verwendet die größere der beiden Zahlen. Trainingsrollen können einige Plätze belegen; ein Kolonieminimum über null reserviert einen Platz für die Zielrolle selbst.
 - **Fertigkeiten**: Arbeitsarten und verwendete, trainierte oder vorausgesetzte Fertigkeiten werden aus den Arbeiten der Rolle abgeleitet. „Fertigkeit hinzufügen“ ergänzt eine zwingende Voraussetzung: Einem Kolonisten, bei dem diese Fertigkeit deaktiviert ist, wird die Rolle niemals empfohlen.
 - **Trainingspfad**: Wird in einem [eigenen Thema](topic:training-paths) behandelt.
 

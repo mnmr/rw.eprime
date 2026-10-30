@@ -51,7 +51,7 @@
   <WR_BadgeBlocker>блокування</WR_BadgeBlocker>
   <WR_BadgeHours>обмежені години</WR_BadgeHours>
   <WR_BadgeLocation>обмежені місця</WR_BadgeLocation>
-  <WR_BandChipTip>Перетягуйте край для зміни меж навички, середину — для переміщення діапазону.</WR_BandChipTip>
+  <WR_BandChipTip>Перетягуйте край для зміни меж діапазону навички, середину — для переміщення діапазону. Початковий рівень цільової ролі має бути вищим за початковий рівень кожної навчальної ролі, інакше шлях не рекомендуватиме навчання для досягнення цієї цілі.</WR_BandChipTip>
   <WR_BillRoleOption>Роль: {0}</WR_BillRoleOption>
   <WR_BillWorkerRoleTip>Замовлення виконують лише колоністи, для яких ця роль активна; умовна роль дотримується своїх правил, зокрема годин. Вибір працівника скасовує обмеження роллю й навпаки.</WR_BillWorkerRoleTip>
   <WR_BlockerRole>Блокувальна роль</WR_BlockerRole>
@@ -324,9 +324,9 @@ WorkRoles надає керованим колоністам списки зав
   <WR_RecDecisionSignalSurplus>Додатковий кандидат за оцінкою ознак.</WR_RecDecisionSignalSurplus>
   <WR_RecDecisionSignals>Відповідає заданому порогу ознаки.</WR_RecDecisionSignals>
   <WR_RecDecisionTraining>Призначено через шлях навчання для {0}.</WR_RecDecisionTraining>
-  <WR_RecDecisionTrainingSlot>Добір на місце {0} із {1} для {2}. Навчальна заміна: замість {2} призначено {3} ({4}; {2} потребує {5}).</WR_RecDecisionTrainingSlot>
-  <WR_RecDecisionTrainingSlotSimple>Добір на місце {0} із {1} для {2}. Навчальна заміна: замість {2} призначено {3}.</WR_RecDecisionTrainingSlotSimple>
-  <WR_RecDecisionTrainingSlotUnknown>Добір на місце {0} із {1} через навчальну заміну; призначено {2}.</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecDecisionTrainingSlot>Вибрано на місце {0} із {1} для {2} з навчальною роллю {3} ({4}; у шляху навчання {2} починається з рівня {5}).</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>Вибрано на місце {0} із {1} для {2} з навчальною роллю {3}.</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>Вибрано на місце {0} із {1} з навчальною роллю {2}.</WR_RecDecisionTrainingSlotUnknown>
   <WR_RecDecisionTrainingUnknown>Призначено через шлях навчання.</WR_RecDecisionTrainingUnknown>
   <WR_RecDecisionUnavailable>Робота недоступна до завершення дослідження.</WR_RecDecisionUnavailable>
   <WR_RecDecisionWeakSignal>Оцінка ознак нижча за поріг, і працівник не потрібен для обов'язкового охоплення.</WR_RecDecisionWeakSignal>
@@ -351,8 +351,8 @@ WorkRoles надає керованим колоністам списки зав
   <WR_RecTipSelection>Добір</WR_RecTipSelection>
   <WR_RecTipSignalVerdict>Оцінка ознак</WR_RecTipSignalVerdict>
   <WR_RecTipSkills>Враховані навички</WR_RecTipSkills>
-  <WR_RecTipWithWaiverOne>{0} (1 навчальна заміна)</WR_RecTipWithWaiverOne>
-  <WR_RecTipWithWaiversMany>{0} (навчальних замін: {1})</WR_RecTipWithWaiversMany>
+  <WR_RecTipWithWaiverOne>{0} (до 1 місця може займати навчальна роль)</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0} (до {1} місць можуть займати навчальні ролі)</WR_RecTipWithWaiversMany>
   <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
   <WR_RecTuneCandidateMinimumSignal>Мінімальна ознака кандидата</WR_RecTuneCandidateMinimumSignal>
   <WR_RecTuneCandidateMinimumSignalDesc>Найнижча ознака для звичайного добору ролей. Підвищення відсіює слабших до вибору провідного виконавця й мінімальної кількості працівників.</WR_RecTuneCandidateMinimumSignalDesc>
@@ -451,10 +451,10 @@ WorkRoles надає керованим колоністам списки зав
   <WR_RestoreRecOrder>Порядок рекомендацій (відновити типовий)</WR_RestoreRecOrder>
   <WR_RestoreSnapColorItem>{0} (узгодити колір із палітрою)</WR_RestoreSnapColorItem>
   <WR_RoleAgeBandsLabel>Вікові групи, яким доступна роль:</WR_RoleAgeBandsLabel>
-  <WR_RoleAgeBandsTip>Колоністам поза вибраними віковими групами роль не призначається й не рекомендується. Клацніть групу поза вибором, щоб включити всі до неї; першу або останню вибрану — щоб вилучити; середню — щоб вибрати лише її. Межі відповідають віку відкриття робіт у грі. Усі завдання цієї ролі можливі з віку {0}.</WR_RoleAgeBandsTip>
+  <WR_RoleAgeBandsTip>Ці вікові групи обмежують автоматичні призначення та рекомендації. Ручне призначення й вставлення все одно можуть надати цю роль колоністам поза вибраними групами. Клацніть групу поза вибором, щоб включити всі до неї; першу або останню вибрану — щоб вилучити; середню — щоб вибрати лише її. Межі відповідають віку відкриття робіт у грі. Усі завдання цієї ролі можливі з віку {0}.</WR_RoleAgeBandsTip>
   <WR_RoleAwfulSignal>{0} має ознаку непридатності до цієї ролі: {1}.</WR_RoleAwfulSignal>
   <WR_RoleCapAllJobs>жодного завдання цієї ролі</WR_RoleCapAllJobs>
-  <WR_RoleCapNeverDo>{0} ніколи не виконуватиме {1}</WR_RoleCapNeverDo>
+  <WR_RoleCapNeverDo>{0} зараз не може виконувати {1}</WR_RoleCapNeverDo>
   <WR_RoleCapSomeJobs>{0} із {1} завдань цієї ролі</WR_RoleCapSomeJobs>
   <WR_RoleCategoryImportant>Важлива</WR_RoleCategoryImportant>
   <WR_RoleCategoryLabel>Важливість для колонії:</WR_RoleCategoryLabel>
@@ -463,9 +463,9 @@ WorkRoles надає керованим колоністам списки зав
   <WR_RoleCategoryOptional>Необов'язкова</WR_RoleCategoryOptional>
   <WR_RoleCategoryTip>Важливість ролі під час планування колонії. «Не задано» залишає її без класифікації.</WR_RoleCategoryTip>
   <WR_RoleColonyMinLabel>Мінімум у колонії:</WR_RoleColonyMinLabel>
-  <WR_RoleColonyMinTip>Мінімальна кількість призначень цієї ролі.</WR_RoleColonyMinTip>
+  <WR_RoleColonyMinTip>Мінімальна кількість працівників, запланована для роботи цієї ролі. Навчальні ролі можуть займати частину місць; значення понад нуль резервує одне місце для самої ролі. Система використовує більше з двох значень: цей мінімум або кількість працівників за охопленням.</WR_RoleColonyMinTip>
   <WR_RoleCoverageLabel>Охоплення:</WR_RoleCoverageLabel>
-  <WR_RoleCoverageTip>Який відсоток колоністів бажано призначити на цю роль.</WR_RoleCoverageTip>
+  <WR_RoleCoverageTip>Запланований відсоток колонії з округленням до цілого працівника. Система використовує більше з двох значень: цю кількість або мінімум колонії. Навчальні ролі можуть займати частину місць.</WR_RoleCoverageTip>
   <WR_RoleDisplayCaption>Вигляд ролей</WR_RoleDisplayCaption>
   <WR_RoleJobIncapable>не здатен до цієї роботи</WR_RoleJobIncapable>
   <WR_RoleJobNoRangedWeapon>немає далекобійної зброї</WR_RoleJobNoRangedWeapon>
@@ -486,7 +486,7 @@ WorkRoles надає керованим колоністам списки зав
   <WR_RoleTipForcedOnGlobalOff>ПРИМУСОВО ВВІМКНЕНО для цього колоніста (глобально ВИМКНЕНО)</WR_RoleTipForcedOnGlobalOff>
   <WR_RoleTooOld>{0}: завеликий вік для ролі (максимум {1}).</WR_RoleTooOld>
   <WR_RoleTooYoung>{0}: замалий вік для ролі (мінімум {1}).</WR_RoleTooYoung>
-  <WR_RoleWorkAversion>{0}: припис {1} заперечує {2}. Рекомендації застосовують обмежений штраф: два кроки пріоритету або шість умовних балів навички під час вибору провідного виконавця. Обов'язкове охоплення все одно може вибрати працівника. Мисливець зміщується на два рівні пізніше, максимум до п'ятого; наявний запасний варіант першого рівня зберігається.</WR_RoleWorkAversion>
+  <WR_RoleWorkAversion>{0}: припис {1} заперечує {2}. WorkRoles віддає перевагу іншому придатному колоністу, але може рекомендувати цього, якщо колонії потрібен виконавець цієї роботи. Це не забороняє роботу. Для мисливця така неприязнь також зміщує полювання на пізніше в рекомендованому порядку робіт.</WR_RoleWorkAversion>
   <WR_RolesRestored>Відновлено: {0}</WR_RolesRestored>
   <WR_RolesTab>Ролі</WR_RolesTab>
   <WR_RowNew>{0} (нова)</WR_RowNew>
@@ -600,7 +600,7 @@ WorkRoles керує пріоритетами колоністів із роля
   <WR_TrainingSection>Шлях навчання</WR_TrainingSection>
   <WR_TrainingTipBands>Діапазони, що перекриваються, співіснують; інакше пізніша роль замінює ранню.</WR_TrainingTipBands>
   <WR_TrainingTipOrder>Призначення віддають перевагу вищим нижнім межам. За однакових діапазонів першою йде найслабша навичка працівника, потім — збережений порядок шляху.</WR_TrainingTipOrder>
-  <WR_TrainingTipWhat>Власний розвиток ролі: кожна роль-учасниця має діапазон навички для рекомендації. Сама роль завжди залишається у своєму шляху.</WR_TrainingTipWhat>
+  <WR_TrainingTipWhat>Власний розвиток ролі: кожна роль-учасниця має діапазон навички, у якому її рекомендовано. Цільова роль залишається у своєму шляху та повинна мати вищий початковий рівень, ніж кожна навчальна роль.</WR_TrainingTipWhat>
   <WR_TreeFlat>Списком</WR_TreeFlat>
   <WR_TreeNested>Вкладено</WR_TreeNested>
   <WR_TreeToggleTip>Перемкнути вкладення охоплених ролей під об'єднаною роллю.</WR_TreeToggleTip>
@@ -638,4 +638,23 @@ WorkRoles керує пріоритетами колоністів із роля
   <WR_OptMechanicalWorkers>Показувати роботів і механоїдів у «Колоністах»</WR_OptMechanicalWorkers>
   <WR_OptMechanicalWorkersTip>Призначайте ролі механоїдам Biotech і роботам Misc. Robots на вкладці «Колоністи». Групами керування, дозволеними зонами, активацією й заряджанням керуйте на їхніх звичних вкладках. Вимкнення цієї опції приховає їх і поверне звичайні пріоритети роботи, але збереже призначені ролі.</WR_OptMechanicalWorkersTip>
   <WR_RecMechanicalLearningProtected>Це навчальне призначення зберігається, поки роботи або механоїди виконують відповідну роботу. Його можна скасувати після досягнення цілі навчання.</WR_RecMechanicalLearningProtected>
+  <WR_DefaultAutoUpdate>Автоматично оновлювати після змін конфігурації</WR_DefaultAutoUpdate>
+  <WR_DefaultClear>Вбудовані налаштування для нових ігор</WR_DefaultClear>
+  <WR_DefaultConflictBody>Налаштування WorkRoles цієї колонії відрізняються від ваших типових налаштувань для нових ігор. Використовувати налаштування цієї колонії як типові й оновлювати їх після змін конфігурації? Поточна колонія не зміниться.</WR_DefaultConflictBody>
+  <WR_DefaultEmptyBody>Збережіть повні налаштування цієї колонії для майбутніх ігор. Наявні колонії збережуть власні налаштування. Призначення персонажів, прив'язки замовлень, пошукові запити та згорнуті розділи не включаються.</WR_DefaultEmptyBody>
+  <WR_DefaultKeep>Зберегти мої типові налаштування на цей сеанс</WR_DefaultKeep>
+  <WR_DefaultSavedBody>Для нових ігор збережено особисті налаштування. Збережіть повні налаштування цієї колонії, щоб замінити їх. Наявні колонії збережуть власні налаштування. Призначення персонажів, прив'язки замовлень, пошукові запити та згорнуті розділи не включаються.</WR_DefaultSavedBody>
+  <WR_DefaultStopAuto>Вимкнути автооновлення</WR_DefaultStopAuto>
+  <WR_DefaultUseCurrent>Ці налаштування для нових ігор</WR_DefaultUseCurrent>
+  <WR_LocationUnresolved>Недоступно: {0}</WR_LocationUnresolved>
+  <WR_LocationUnresolvedTip>Цього імпортованого місця тут немає. Правило залишатиметься неактивним, доки ви не заміните його місцем у цій колонії.</WR_LocationUnresolvedTip>
+  <WR_NewGameDefaults>Зберегти як типові</WR_NewGameDefaults>
+  <WR_SetupFailed>Не вдалося зберегти або прочитати типові налаштування WorkRoles: {0}</WR_SetupFailed>
+  <WR_SetupGameSettings>Налаштування колонії</WR_SetupGameSettings>
+  <WR_SetupGameSettingsInfo>Замінити налаштування формули рекомендацій, автоматичної оптимізації, поведінки пріоритетів і механічних працівників.</WR_SetupGameSettingsInfo>
+  <WR_SetupPlayerSettings>Мої налаштування відображення</WR_SetupPlayerSettings>
+  <WR_SetupPlayerSettingsInfo>Необов'язково: замінити відображення плашок, розташування палітри, стовпці навичок, позначки та розмір вікна. Інші гравці в багатокористувацькій грі збережуть власні налаштування.</WR_SetupPlayerSettingsInfo>
+  <WR_RecMechanicalSelected>Може виконувати роботу, не охоплену іншими рекомендованими ролями.</WR_RecMechanicalSelected>
+  <WR_RecMechanicalRetained>Зберігає свою поточну основну роль.</WR_RecMechanicalRetained>
+  <WR_RecMechanicalIncapacitated>Цей працівник знерухомлений. Його ролі збережено до одужання.</WR_RecMechanicalIncapacitated>
 </LanguageData>

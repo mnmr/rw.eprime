@@ -2,7 +2,7 @@
 title: Survoler et cliquer sur une case
 ---
 <!-- l10n:b-3d212ef2233a -->
-Survolez une icône pour voir le nom, la quantité exacte et la description du compteur. Pour un ensemble de ressources (voir [Qu'est-ce qu'un ensemble ?](topic:what-a-resource-pool-is)), l'infobulle liste chaque ressource que vous possédez avec sa quantité :
+Survolez une icône pour voir le nom, la quantité exacte et la description du compteur. Pour un ensemble de ressources (voir [Qu'est-ce qu'un ensemble ?](topic:what-a-resource-pool-is)), l'infobulle liste chaque ressource dont la quantité affichée est différente de zéro. Ces quantités tiennent compte de vos filtres de comptage et des déductions liées aux travaux prévus. Lorsque l'option « Afficher les déficits en nombres négatifs » est activée, une quantité négative signifie que les travaux prévus nécessitent plus de ressources que vous n'en possédez.
 
 <!-- l10n:b-374206ad0776 -->
 ![Infobulle de l'ensemble Repas](slot-tooltip.png)

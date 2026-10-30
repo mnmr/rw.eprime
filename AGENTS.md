@@ -327,6 +327,28 @@ Changes to these dependencies require updated behavioral tests in the same chang
 
 ## Required testing
 
+### Coherent batches and player-facing completion
+
+- Implement related changes and their tests in coherent batches, then run a
+  coordinated verification batch. Preserve the failing-regression requirement
+  below. Do not repeat full builds or in-game validation after every small edit;
+  use focused checks when a failure or specific uncertainty justifies them.
+- Derive scenarios from player expectations and verify observable outcomes.
+  Fixtures MUST preserve relevant real-world conditions, including native and
+  long localized names, partial or impossible actions, supported game/mod/DLC
+  combinations, and transitions such as paused edits and save/load. Do not
+  simplify away the conditions that could expose a defect.
+- For UI changes, actually review the captured visuals before declaring
+  completion. Check applicable grouping, selection, hover, scrolling and
+  supported display scales, including clipping, overflow, alignment and visual
+  artifacts. Capturing screenshots without inspecting them is not verification.
+- Optional features MUST be checked with their options disabled against the
+  pre-feature baseline. Existing behavior and UI must remain unchanged outside
+  the explicitly requested additions; test option transitions as well.
+- Completion claims MUST match the verified scope. Passing builds and selected
+  tests do not establish that the whole feature works. State remaining coverage
+  gaps and unresolved defects explicitly; do not describe them as complete.
+
 For behavior that can reasonably be verified at an automated executable
 boundary, bug fixes and behavior changes must begin with a failing regression
 test that fails for the intended reason. Runtime-only RimWorld or Unity

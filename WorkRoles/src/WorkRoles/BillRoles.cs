@@ -14,7 +14,8 @@ namespace WorkRoles
         /// giver that serves the bill's giver (a bench, or the patient pawn for
         /// surgery, judged by vanilla's own ThingIsUsableBillGiver) and matches
         /// the recipe's required giver work type — either the giver itself or
-        /// its whole work type.
+        /// its whole work type, including jobs retained when a mod moves them
+        /// to another work type.
         public static List<Role> EligibleRoles(Bill bill)
         {
             var result = new List<Role>();
@@ -38,34 +39,37 @@ namespace WorkRoles
                 bool matches = false;
                 if (role.composite)
                 {
-                    // Coverage is the members' expanded giver union, so it is
-                    // exactly the jobs the composite provides.
-                    var coverage = role.Coverage();
-                    foreach (var giver in givers)
-                        if (coverage.Contains(giver.defName))
+                    // Structural coverage intentionally omits historical jobs.
+                    // Bill choices must include the work compilation retains.
+                    foreach (int memberId in role.memberRoleIds)
+                    {
+                        Role? member = store.RoleById(memberId);
+                        if (member == null || member.composite || member.blocker) continue;
+                        if (ProvidesBillGiver(member, givers))
                         {
                             matches = true;
                             break;
                         }
+                    }
                 }
                 else
-                    foreach (var entry in role.entries)
-                    {
-                        foreach (var giver in givers)
-                        {
-                            if (entry.Kind == JobEntryKind.WorkGiver
-                                ? entry.DefName == giver.defName
-                                : giver.workType != null && entry.DefName == giver.workType.defName)
-                            {
-                                matches = true;
-                                break;
-                            }
-                        }
-                        if (matches) break;
-                    }
+                    matches = ProvidesBillGiver(role, givers);
                 if (matches) result.Add(role);
             }
             return result;
+        }
+
+        private static bool ProvidesBillGiver(Role role, List<WorkGiverDef> givers)
+        {
+            var entries = JobOrderCompiler.WithMovedSnapshotGivers(
+                role.entries, role.workTypeSnapshots, GameJobCatalog.Instance);
+            foreach (var entry in entries)
+                foreach (var giver in givers)
+                    if (entry.Kind == JobEntryKind.WorkGiver
+                        ? entry.DefName == giver.defName
+                        : giver.workType != null && entry.DefName == giver.workType.defName)
+                        return true;
+            return false;
         }
 
         /// The role a bill is restricted to, or null.

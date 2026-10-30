@@ -19,6 +19,8 @@ namespace WorkRolesMechanicalVerification
         private static void ReviewCheck(bool value, string message)
         {
             Log.Message("[MechanicalProbe] " + (value ? "PASS " : "REVIEW FAILURE ") + message);
+            System.IO.File.AppendAllText(System.IO.Path.Combine(Root, "mechanical-checks.txt"),
+                (value ? "PASS " : "FAIL ") + message + Environment.NewLine);
             if (!value) reviewFailures++;
         }
         private static string AssignmentIds(Pawn pawn) => string.Join(",", RoleStore.Current.pawnSets[pawn].assignments.Select(a => a.roleId));

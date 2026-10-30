@@ -17,5 +17,5 @@ Compartir el trabajo inicial es distinto de reservar el toque final. Un objeto g
 Cuando **{k:QJ_SettingsAllowRobotPreparation}** está desactivado, un objeto compartido sin terminar sigue reservado para el trabajo de los colonos mientras su orden original exista y esté gestionada. Retomarlo mediante una orden no gestionada no permite que un mecanoide o robot se haga cargo de ese trabajo. Los mecanoides y robots aptos aún pueden realizar las tareas de finalización asignadas por Quality Jobs.
 
 <!-- l10n:off -->
-Desactiva el uso compartido para que cada trabajo compartido vuelva a pertenecer a un solo trabajador. Las órdenes gestionadas aún pueden reservar el toque final. Desactivar **{k:QJ_ManageBill}** libera los trabajos de esa orden que esperan un acabado de calidad; no desactiva el uso compartido para la colonia.
+Desactiva el trabajo compartido para que el trabajo ordinario sin terminar siga a cargo de su artesano original. Las órdenes gestionadas pueden seguir reservando el toque final y asignárselo a un trabajador apto para terminarlo. Desactivar **{k:QJ_ManageBill}** elimina los requisitos de acabado de esa orden y libera sus trabajos pendientes de terminar; no desactiva el trabajo compartido para la colonia.
 

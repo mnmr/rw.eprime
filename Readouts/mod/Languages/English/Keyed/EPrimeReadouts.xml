@@ -38,7 +38,7 @@
   <EPR.PoolTip>Add as a pooled entry: one slot showing the combined count of everything in this category</EPR.PoolTip>
   <EPR.EnableTip>Show this group in the readout</EPR.EnableTip>
   <EPR.RestoreDefaults>Restore defaults</EPR.RestoreDefaults>
-  <EPR.RestoreConfirm>Replace ALL groups and thresholds with the default set? This affects every player in multiplayer.</EPR.RestoreConfirm>
+  <EPR.RestoreConfirm>Replace all groups and resource pools with the built-in defaults, and clear all thresholds and count overrides? This affects every player in multiplayer.</EPR.RestoreConfirm>
   <EPR.Help>Help</EPR.Help>
   <EPR.HelpGroups>These are your resource display groups. Each group renders as a separate band.&#10;&#10;Click the checkmark to toggle visibility or [x] to delete the group.&#10;&#10;Add new groups using the name input and Add button.</EPR.HelpGroups>
   <EPR.HelpResources>Browse resources and defined resource pools to add them to the selected group.&#10;&#10;Click an entry to append it to the group, or drag it to place it in a specific tier slot. Assigned entries are dimmed and marked; right-click them or click their checkmark to remove them.</EPR.HelpResources>
@@ -85,20 +85,20 @@
   <EPR.CountOptions>Count Options</EPR.CountOptions>
   <EPR.PlannedWorkOptions>Planned Work</EPR.PlannedWorkOptions>
   <EPR.ReserveForBills>Reserve resources for bill items</EPR.ReserveForBills>
-  <EPR.ReserveForBillsTip>Subtracts the ingredients your outstanding bills still have to consume. A bill only reserves an ingredient it can be satisfied by in exactly one way. "Any leather" and similar open choices reserve nothing.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBillsTip>Subtracts the ingredients needed by outstanding production bills. An ingredient is counted only when the bill allows exactly one resource type for it. For example, allowing any leather reserves nothing; allowing only one leather type includes that leather's cost.</EPR.ReserveForBillsTip>
   <EPR.ReserveForBuildables>Reserve resources for buildables</EPR.ReserveForBuildables>
   <EPR.ReserveForBuildablesTip>Subtracts the materials your blueprints and part-built frames still need. Materials already hauled into a frame are not counted again, and forbidden blueprints are ignored.</EPR.ReserveForBuildablesTip>
   <EPR.ShowNegativeCounts>Show overruns as negative numbers</EPR.ShowNegativeCounts>
   <EPR.ShowNegativeCountsTip>When planned work needs more than you have, show how far short you are instead of stopping at zero.</EPR.ShowNegativeCountsTip>
   <EPR.QualityJobsRework>Quality Jobs support</EPR.QualityJobsRework>
-  <EPR.QualityJobsReworkTip>For bills and buildables with a quality target, estimate how many attempts the target will take and reserve for all of them. Rebuilt structures give back the share vanilla refunds when they are deconstructed.</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsReworkTip>Adjusts enabled bill and buildable reservations for quality targets managed by Quality Jobs. Estimates materials for repeat attempts and accounts for construction refunds. Enable the corresponding reservation option above to use it.</EPR.QualityJobsReworkTip>
   <EPR.QualityJobsMissingTip>Requires EPrime's Quality Jobs, which is not installed.</EPR.QualityJobsMissingTip>
   <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs is installed but does not offer the integration this needs. Update it to enable this option.</EPR.QualityJobsOutdatedTip>
   <EPR.TipPlannedWork>Planned Work</EPR.TipPlannedWork>
   <EPR.TipResource>Resource</EPR.TipResource>
-  <EPR.TipQueued>Queued</EPR.TipQueued>
-  <EPR.TipEach>Each</EPR.TipEach>
-  <EPR.TipDrain>Drain</EPR.TipDrain>
+  <EPR.TipQueued>Remaining work</EPR.TipQueued>
+  <EPR.TipEach>Cost each</EPR.TipEach>
+  <EPR.TipDrain>Deducted</EPR.TipDrain>
   <EPR.TipInStock>In Stock</EPR.TipInStock>
   <EPR.TipAvailableStock>{0} available · {1} in stock</EPR.TipAvailableStock>
   <EPR.TipOtherPlannedWork>Other ({0})</EPR.TipOtherPlannedWork>

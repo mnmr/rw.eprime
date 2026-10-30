@@ -12,9 +12,10 @@ namespace WorkRoles
         {
             var store = RoleStore.Current;
             if (store == null || store.seeded) return;
+            bool personalSetup = SetupDefaults.TrySeed(store);
 
             var defs = DefDatabase<RoleDef>.AllDefsListForReading;
-            if (defs.Count == 0)
+            if (!personalSetup && defs.Count == 0)
             {
                 // Def-load failure (bad mod interaction). Leave 'seeded' unset so a
                 // fixed modlist seeds normally on the next load.
@@ -22,23 +23,33 @@ namespace WorkRoles
                 return;
             }
 
-            // Groups first, in authored order — roles then land in them by label.
-            foreach (var groupDef in DefDatabase<RoleGroupDef>.AllDefsListForReading
+            if (!personalSetup)
+            {
+                // Groups first, in authored order — roles then land in them by label.
+                foreach (var groupDef in DefDatabase<RoleGroupDef>.AllDefsListForReading
                          .OrderBy(d => d.order))
-                if (SeededDefIdentity.GroupLabel(groupDef) is { Length: > 0 } groupLabel)
-                    RoleCommands.EnsureGroup(groupLabel, groupDef.defName);
-            foreach (var def in defs)
-                RoleCommands.CreateRoleFromDef(def);
+                    if (SeededDefIdentity.GroupLabel(groupDef) is { Length: > 0 } groupLabel)
+                        RoleCommands.EnsureGroup(groupLabel, groupDef.defName);
+                foreach (var def in defs) RoleCommands.CreateRoleFromDef(def);
+                SeedTrainingPaths(store);
+            }
+            else
+            {
+                store.pathsSeeded = true;
+                // Omitted installed work is intentional in an authored setup.
+                // A later newly installed work type still gets normal coverage.
+                foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+                    if (!store.knownWorkTypes.Contains(workType.defName)) store.knownWorkTypes.Add(workType.defName);
+            }
             store.seeded = true;
             store.defaultRecommendationExclusionsSeeded = true;
-            SeedTrainingPaths(store);
 
             // Role ranks read as numbers; default vanilla's per-save "manual
             // priorities" switch on at adoption. Applied once — turning it off
             // in Options afterwards sticks. Direct write, not the SyncMethod:
             // seeding already runs in the synced simulation on every client.
             var playSettings = Current.Game?.playSettings;
-            if (playSettings != null && !playSettings.useWorkPriorities)
+            if (!personalSetup && playSettings != null && !playSettings.useWorkPriorities)
             {
                 playSettings.useWorkPriorities = true;
                 foreach (var pawn in PawnsFinder.AllMapsWorldAndTemporary_Alive)
@@ -57,7 +68,7 @@ namespace WorkRoles
             var migrationRoles = MigrationRolesFromStore(store);
             var relaxedRoles = MigrationPlanner.RelaxedMatchRoles(
                 migrationRoles, GameJobCatalog.Instance);
-            if (relaxedRoles.Count > 0)
+            if (!personalSetup && relaxedRoles.Count > 0)
             {
                 var grids = new List<IReadOnlyDictionary<string, int>>();
                 foreach (var pawn in PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive)
@@ -80,7 +91,7 @@ namespace WorkRoles
                     // Capture the pre-migration grid: after the first assignment the
                     // pawn is managed and priority reads answer from roles.
                     var before = pawn.IsColonist || pawn.IsSlaveOfColony ? CapablePriorities(pawn) : null;
-                    if (!TryAssignRolesFromVanillaPriorities(pawn, relaxedRoles, generated)) continue;
+                    if (!TryAssignRolesFromVanillaPriorities(pawn, relaxedRoles, generated, allowCarriers: !personalSetup)) continue;
                     assigned++;
 
                     // Self-check: every work type the pawn had enabled must survive
@@ -248,7 +259,11 @@ namespace WorkRoles
         /// pawns through the normal single-role match); created labels are
         /// reported through generatedRoleLabels.
         public static bool TryAssignRolesFromVanillaPriorities(Pawn pawn,
-            ISet<int>? relaxedRoles = null, List<string>? generatedRoleLabels = null)
+            ISet<int>? relaxedRoles = null, List<string>? generatedRoleLabels = null) =>
+            TryAssignRolesFromVanillaPriorities(pawn, relaxedRoles, generatedRoleLabels, allowCarriers: true);
+
+        private static bool TryAssignRolesFromVanillaPriorities(Pawn pawn,
+            ISet<int>? relaxedRoles, List<string>? generatedRoleLabels, bool allowCarriers)
         {
             var store = RoleStore.Current;
             if (store == null || !store.seeded) return false;
@@ -264,6 +279,9 @@ namespace WorkRoles
                 relaxedRoles ?? MigrationPlanner.RelaxedMatchRoles(migrationRoles, GameJobCatalog.Instance),
                 CarrierEligible);
             if (slots.Count == 0) return false;
+            // Keep the pawn's complete vanilla grid if this setup cannot express
+            // it. Partial adoption would disable omitted work on managed pawns.
+            if (!allowCarriers && slots.Any(slot => slot.CarrierWorkType != null)) return false;
 
             foreach (var slot in slots)
             {

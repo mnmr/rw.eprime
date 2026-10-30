@@ -17,5 +17,5 @@ Condividere il lavoro iniziale è diverso dal riservare il tocco finale. Un ogge
 Quando **{k:QJ_SettingsAllowRobotPreparation}** è disattivato, un oggetto incompiuto condiviso resta riservato al lavoro dei coloni finché il suo ordine originale esiste ed è gestito. Riprenderlo tramite un ordine non gestito non consente a un mech o a un robot di subentrare nel lavoro. I mech e i robot idonei possono comunque svolgere gli incarichi di completamento assegnati da Quality Jobs.
 
 <!-- l10n:off -->
-Disattiva la condivisione per ripristinare la normale proprietà dei lavori condivisi. Gli ordini gestiti possono comunque riservare il tocco finale. Disattivare **{k:QJ_ManageBill}** libera i lavori di quell'ordine in attesa di essere completati con la qualità richiesta; non disattiva la condivisione per la colonia.
+Disattiva la condivisione per lasciare il normale lavoro incompiuto all'artigiano che l'ha iniziato. Gli ordini gestiti possono ancora riservare l'ultimo tocco e affidarlo a un lavoratore idoneo al completamento. Disattivare **{k:QJ_ManageBill}** rimuove i requisiti di completamento di quell'ordine e ne sblocca i lavori in attesa di essere completati; non disattiva la condivisione per la colonia.
 

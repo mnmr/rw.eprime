@@ -31,6 +31,9 @@ Oyuncu ayarları, etkin gruplar ile genel görünüm ve sayım seçeneklerinizi 
 <!-- l10n:b-1c0ab7a10c14 -->
 Dosyada bulunan her kategori seçilebilir. Ara bir seçim eksik olsa bile ilişkili kategorileri tek tek değiştirebilirsiniz. Seçilen yapılandırmadaki havuz ve grup başvuruları geçerli olana kadar İçe aktar devre dışı kalır; neyin eksik olduğunu görmek için devre dışı düğmenin üzerine gelin.
 
+<!-- l10n:import-dependency-recovery -->
+Eşikler veya kaynak sayım kuralları eksik bir havuza ihtiyaç duyuyorsa bu ayarları ilgili Kaynak havuzları ile birlikte içe aktarın ya da bu kategorileri değiştirmeyin. Oyuncu ayarları eksik bir gruba ihtiyaç duyuyorsa **Gruplar** ve **Oyuncu ayarları ve etkin gruplar** kategorilerini birlikte içe aktarın ya da ikisini de değiştirmeyin.
+
 <!-- l10n:b-3081ef3ab31d -->
 Eski bir dışa aktarımda bulunmayan kategoriler değişmez. Kullanılamayan mod içeriği gerektiren girdiler atlanır.
 
@@ -41,4 +44,4 @@ Eski bir dışa aktarımda bulunmayan kategoriler değişmez. Kullanılamayan mo
 ## Varsayılanları kaydetme veya geri yükleme
 
 <!-- l10n:b-6181f2c14286 -->
-Varsayılanları belirle, gelecekteki koloniler için kişisel bir yapılandırma kaydeder ([Yeni oyun varsayılanları](topic:new-game-defaults) konusuna bakın). Varsayılanları geri yükle onay ister, ardından mevcut koloninin yapılandırmasını Readouts ile gelen yapılandırmayla değiştirir. Çok oyunculu oyunda bu sıfırlama herkesin ortak yapılandırmasını etkiler.
+Varsayılanları belirle, gelecekteki koloniler için kişisel bir yapılandırma kaydeder ([Yeni oyun varsayılanları](topic:new-game-defaults) konusuna bakın). Varsayılanları geri yükle onay ister, ardından tüm grupları ve kaynak havuzlarını yerleşik varsayılanlarla değiştirir ve tüm eşikleri ve sayım istisnalarını temizler. Çok oyunculu oyunda bu sıfırlama herkesin ortak yapılandırmasını etkiler.

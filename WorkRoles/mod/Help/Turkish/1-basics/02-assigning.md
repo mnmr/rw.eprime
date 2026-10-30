@@ -22,7 +22,7 @@ Rol atamanın üç yolu:
 - Kolonici satırının sonundaki ![artı düğmesine](tex:UI/Buttons/Plus|24) tıklayıp menüden seçin.
 
 <!-- l10n:b-3634ad4cacb9 -->
-Etiketi bıraktığınız yer satırdaki konumunu da seçer; tek sürüklemeyle atama ve öncelik verirsiniz. İpucundaki En uygun roller listesi, [öneri motorunun](topic:recommendations) rolü kime vereceğini gösteren önizlemedir.
+Etiketi bıraktığınız yer satırdaki konumunu da seçer; tek sürüklemeyle atama ve öncelik verirsiniz. En uygunlar listesi, kolonicileri bu role yatkınlıklarına göre sıralar. [Öneriler](topic:recommendations) ayrıca koloninin ihtiyaçlarını, eğitimi ve iş isteksizliklerini de dikkate aldığından farklı koloniciler seçebilir.
 
 <!-- l10n:b-e85c035e0a4a -->
 ## Birkaç koloniciye birden

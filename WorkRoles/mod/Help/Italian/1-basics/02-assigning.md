@@ -22,7 +22,7 @@ Tre modi per assegnare un ruolo:
 - Fai clic sul ![pulsante più](tex:UI/Buttons/Plus|24) in fondo alla riga del colono e scegli dal menu.
 
 <!-- l10n:b-3634ad4cacb9 -->
-La posizione in cui rilasci la tessera stabilisce anche la sua priorità: un unico trascinamento assegna e ordina. L'elenco Più adatti nel suggerimento anticipa a chi il [sistema di consigli](topic:recommendations) proporrebbe il ruolo.
+La posizione in cui rilasci la tessera stabilisce anche la sua priorità: un unico trascinamento assegna e ordina. Più adatti classifica i coloni in base alla loro attitudine per questo ruolo. I [consigli](topic:recommendations) tengono conto anche delle esigenze della colonia, della formazione e delle avversioni al lavoro, quindi possono scegliere coloni diversi.
 
 <!-- l10n:b-e85c035e0a4a -->
 ## Più coloni contemporaneamente

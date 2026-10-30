@@ -8,7 +8,7 @@ title: Seçenekler ve varsayılanlar
 Bir kayıt yüklüyken Seçenekler, o koloninin ayarlarını değiştirir. Ana menüden açılan mod ayarları ise yeni kayıtların varsayılanlarını belirler. **{k:QJ_SettingsShowToolbarButton}** kişisel görüntüleme tercihinizdir; düğmeyi gizlemek modu devre dışı bırakmaz. Mod ayarlarını oyunun Seçenekler menüsünden açmaya devam edebilirsiniz.
 
 <!-- l10n:bill-defaults -->
-**{k:QJ_SettingsBillDefaults}**, varsayılanları kullanan iş emirlerini yönetir. Her iş emrinin kendi ayarları bunların önüne geçer. Bu nedenle bir iş emri varsayılanını değiştirmek, özelleştirilmemiş mevcut iş emirlerini etkileyebilir. Tamamlanmamış ürün stok sınırı her iş emri için ayrı ayrı değil, ürün bazında ortak uygulanır.
+**{k:QJ_SettingsBillDefaults}**, varsayılanları kullanan iş emirlerini yönetir. Her iş emrinin kendi ayarları bunların önüne geçer. **{k:QJ_SettingsManageNewBills}**, yeni iş emirlerini ve hâlâ bu yönetim varsayılanını kullanan mevcut iş emirlerini etkiler. Bu seçeneği kapatmak, bu emirlerdeki bekleyen eşyaları serbest bırakarak normal şekilde tamamlanmalarını sağlar. Diğer iş emri varsayılanları da ilgili ayarı özelleştirilmemiş mevcut iş emirlerini etkileyebilir. Tamamlanmamış ürün stok sınırı, her harita ayrı sayılmak üzere ürün bazında ortak uygulanır.
 
 <!-- l10n:construction-defaults -->
 **{k:QJ_SettingsConstructionDefaults}**, bir inşaat için yönetim etkinleştirildiğinde veya inşaat otomatik olarak yönetildiğinde uygulanır. Zaten yönetilen yapılar kendi ayarlarını korur. İnşaat hedefi **{k:QJ_NoRetries}**, üretim hedefi ise **{k:QJ_AnyQuality}** seçeneğini kullanır.

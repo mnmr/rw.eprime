@@ -17,7 +17,7 @@ Cuando un encargado del acabado cumple los requisitos, Quality Jobs crea una ord
 El nivel máximo de habilidad y la asignación a un trabajador concreto de la orden original se aplican hasta que el objeto se aparta para el acabado. Puedes asignar el trabajo a un aprendiz mientras un colono más capacitado, un mecanoide de la colonia o un robot compatible se encarga de la orden específica de finalización. Los encargados del acabado deben ser capaces de realizar la receta y cumplir los requisitos de Quality Jobs.
 
 <!-- l10n:status -->
-La sección **{k:QJ_StatusHeader}** muestra el trabajo compartido **Sin terminar**, los objetos **En espera** de alguien que los termine y los ya asignados para su **Finalización**. Pasa el cursor por el estado y la lista de trabajadores encargados de terminar los objetos para ver más detalles. Consulta [cuándo queda trabajo en espera](topic:waiting) si nada avanza.
+La sección **{k:QJ_StatusHeader}** cuenta los objetos sin terminar registrados para este producto entre todas las órdenes y mesas de trabajo de este mapa: trabajo compartido **Sin acabar**, objetos en **Espera** de un trabajador apto y objetos ya asignados que se están **Acabando**. La lista de trabajadores aptos y el aviso usan los requisitos de la orden seleccionada; otras órdenes que fabrican el mismo producto pueden tener requisitos distintos. Pasa el cursor sobre el estado y la lista para obtener más detalles. Consulta [cuando el trabajo espera](topic:waiting) si nada avanza.
 
 <!-- l10n:disable -->
 Desmarca **{k:QJ_ManageBill}** para que vuelva a completarse de la forma habitual. Otros trabajadores podrán seguir realizando el trabajo compartido de esta orden si la opción de compartir está activada.

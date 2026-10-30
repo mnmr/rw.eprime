@@ -17,5 +17,5 @@ Chia sẻ các công đoạn đầu khác với dành riêng công đoạn hoàn
 Khi **{k:QJ_SettingsAllowRobotPreparation}** bị tắt, công việc trên vật phẩm dở dang được chia sẻ vẫn dành cho cư dân chừng nào lệnh gốc còn tồn tại và được quản lý. Nhận vật phẩm qua một lệnh không được quản lý cũng không cho phép mech hoặc robot tiếp quản công việc đó. Mech và robot đủ điều kiện vẫn có thể thực hiện các nhiệm vụ hoàn thiện do Quality Jobs phân công.
 
 <!-- l10n:off -->
-Tắt chia sẻ để trả công việc đã chia sẻ về chế độ sở hữu thông thường. Các yêu cầu sản xuất được quản lý vẫn có thể dành riêng công đoạn hoàn thiện. Tắt **{k:QJ_ManageBill}** sẽ giải phóng các sản phẩm đang chờ người hoàn thiện đạt yêu cầu chất lượng của yêu cầu đó; thao tác này không tắt chia sẻ cho cả thuộc địa.
+Tắt chia sẻ để giữ công việc dang dở thông thường cho người chế tạo ban đầu. Các lệnh sản xuất được quản lý vẫn có thể dành riêng công đoạn hoàn thiện và giao cho người hoàn thiện đủ điều kiện. Tắt **{k:QJ_ManageBill}** sẽ xóa các yêu cầu hoàn thiện của lệnh đó và giải phóng công việc đang chờ đáp ứng yêu cầu chất lượng; thao tác này không tắt chia sẻ cho cả thuộc địa.
 

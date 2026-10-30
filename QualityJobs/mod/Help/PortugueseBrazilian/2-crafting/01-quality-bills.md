@@ -17,7 +17,7 @@ Quando um finalizador atende aos requisitos, o Quality Jobs cria uma ordem tempo
 O nível máximo de habilidade e a atribuição a um trabalhador específico da ordem de produção original se aplicam até que o item seja separado para finalização. Você pode atribuir o trabalho a um aprendiz enquanto um colono mais habilidoso, um mecanoide da colônia ou um robô compatível assume a ordem exclusiva de finalização. Os finalizadores ainda precisam ser capazes de executar a receita e atender aos requisitos do Quality Jobs.
 
 <!-- l10n:status -->
-A seção **{k:QJ_StatusHeader}** mostra o trabalho **Inacabado** compartilhado, os itens **Aguardando** um finalizador e os itens já atribuídos para **Finalização**. Passe o cursor sobre o status e a lista de finalizadores para ver mais detalhes. Veja [quando o trabalho fica parado](topic:waiting) se nada estiver avançando.
+A seção **{k:QJ_StatusHeader}** conta os itens inacabados rastreados deste produto entre todas as ordens e bancadas deste mapa: trabalho compartilhado **Inacab.**, itens em **Espera** de um finalizador e itens já atribuídos com o estado **Finalizando**. A lista de finalizadores e o aviso usam os requisitos da ordem selecionada; outras ordens do mesmo produto podem ter requisitos diferentes. Passe o cursor sobre o estado e a lista para ver detalhes. Veja [quando o trabalho espera](topic:waiting) se nada estiver avançando.
 
 <!-- l10n:disable -->
 Desmarque **{k:QJ_ManageBill}** para que ela volte a ser concluída normalmente. Seu trabalho compartilhado ainda pode ser continuado por outros trabalhadores quando o compartilhamento estiver habilitado.

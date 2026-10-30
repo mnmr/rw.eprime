@@ -2,7 +2,7 @@
 title: Pasar el cursor y hacer clic en una casilla
 ---
 <!-- l10n:b-3d212ef2233a -->
-Mantén el mouse sobre un icono para ver su nombre, cantidad exacta y descripción. En un conjunto (consulta [Qué es un conjunto de recursos](topic:what-a-resource-pool-is)), la descripción enumera los miembros de los que tienes existencias y sus cantidades:
+Mantén el mouse sobre un icono para ver su nombre, cantidad exacta y descripción. En un conjunto de recursos (consulta [Qué es un conjunto de recursos](topic:what-a-resource-pool-is)), la descripción emergente enumera cada miembro cuya cantidad mostrada sea distinta de cero. Estas cantidades tienen en cuenta los filtros de recuento y las deducciones por trabajo planificado. Con Mostrar los déficits como números negativos activado, una cantidad negativa indica que el trabajo planificado necesita más de lo que tienes.
 
 <!-- l10n:b-374206ad0776 -->
 ![Descripción del conjunto Comidas](slot-tooltip.png)

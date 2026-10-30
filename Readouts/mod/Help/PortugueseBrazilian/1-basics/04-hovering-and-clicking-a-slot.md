@@ -2,7 +2,7 @@
 title: Passar o cursor e clicar em um espaço
 ---
 <!-- l10n:b-3d212ef2233a -->
-Mantenha o mouse sobre um ícone para ver o nome, a quantidade exata e a descrição. Para um conjunto (veja [O que é um conjunto de recursos](topic:what-a-resource-pool-is)), a dica lista os integrantes que você possui, com suas quantidades:
+Mantenha o mouse sobre um ícone para ver o nome, a quantidade exata e a descrição do que o contador representa. Para um conjunto de recursos (veja [O que é um conjunto de recursos](topic:what-a-resource-pool-is)), a dica lista cada integrante cuja quantidade exibida seja diferente de zero. Essas quantidades levam em conta seus filtros de contagem e as deduções de trabalho planejado. Com a opção Mostrar déficits como números negativos ativada, uma quantidade negativa significa que o trabalho planejado exige mais do que você possui.
 
 <!-- l10n:b-374206ad0776 -->
 ![Dica do conjunto Refeições](slot-tooltip.png)

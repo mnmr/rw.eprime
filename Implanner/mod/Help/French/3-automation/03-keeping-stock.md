@@ -11,7 +11,7 @@ Deux réglages empêchent l'automatisation de vider vos réserves.
 ![Stocks minimaux de ressources](keep-in-stock.png)
 
 <!-- l10n:b-5864119cb6f1 -->
-**Implants mis de côté** conserve des implants terminés pour un usage manuel. Mettez un bras bionique de côté : l'automatisation n'affecte que les bras supplémentaires, en gardant un exemplaire libre pour les urgences ou le commerce. La production considère toujours un objet mis de côté comme manquant, afin de renouveler le stock.
+**Implants mis de côté** conserve pour un usage manuel des implants existants, jusqu’au nombre indiqué. Mettez un bras bionique de côté : l’automatisation n’affecte que les bras supplémentaires, laissant celui-ci libre pour les urgences ou le commerce. La production automatique fabrique des implants supplémentaires tant que les plans assignés en ont besoin. Pour renouveler un stock d’urgence lorsqu’aucun plan n’a besoin de l’implant, ajoutez vous-même un ordre de fabrication.
 Les ordres d'amélioration préservent aussi les implants mis de côté et ceux nécessaires aux opérations prévues. Seuls les implants excédentaires peuvent servir d'ingrédients.
 
 <!-- l10n:b-04d4c3acbddc -->

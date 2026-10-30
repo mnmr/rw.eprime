@@ -117,7 +117,7 @@
   <WR_RecTuneHunterTiersRowDesc>Seuils de tir pour la place dynamique du Chasseur. Le palier 1 le place juste après les travaux de base, les paliers 2 et 3 après les rôles de travail intermédiaires et derniers ; au-delà du palier 4, il passe en dernier.</WR_RecTuneHunterTiersRowDesc>
   <WR_TrainingSection>Parcours de formation</WR_TrainingSection>
   <WR_TrainingHelp>Définissez ici comment les colons acquièrent des compétences et progressent vers ce rôle. Un parcours peut avoir plusieurs plages qui se chevauchent. Si le parcours est recommandé à un colon, tous les rôles correspondant à son niveau actuel lui sont recommandés.</WR_TrainingHelp>
-  <WR_TrainingTipWhat>Progression propre au rôle : chaque rôle membre possède une plage de compétence où il est recommandé. Le rôle lui-même reste toujours dans son parcours.</WR_TrainingTipWhat>
+  <WR_TrainingTipWhat>Progression propre au rôle : chaque rôle membre possède une plage de compétence où il est recommandé. Le rôle cible reste dans son parcours et son niveau de départ doit être supérieur à celui de chaque rôle de formation.</WR_TrainingTipWhat>
   <WR_TrainingTipBands>Les plages qui se chevauchent coexistent ; sinon, le rôle suivant remplace le précédent.</WR_TrainingTipBands>
   <WR_TrainingTipOrder>Les affectations privilégient les minima de plage les plus élevés. À plage égale, elles privilégient la compétence de rôle la plus faible du travailleur, puis l'ordre enregistré du parcours.</WR_TrainingTipOrder>
   <WR_AddNew>Ajouter</WR_AddNew>
@@ -129,9 +129,9 @@
   <WR_RecSkillsSection>Compétences</WR_RecSkillsSection>
   <WR_RecScalingSection>Échelle des affectations</WR_RecScalingSection>
   <WR_RoleColonyMinLabel>Minimum de la colonie :</WR_RoleColonyMinLabel>
-  <WR_RoleColonyMinTip>Nombre minimal d'affectations pour ce rôle.</WR_RoleColonyMinTip>
+  <WR_RoleColonyMinTip>Nombre minimal de travailleurs à prévoir pour les tâches de ce rôle. Les rôles de formation peuvent occuper certaines places : une valeur supérieure à zéro réserve une place au rôle lui-même. Le moteur retient le plus grand effectif entre ce minimum et le nombre de travailleurs calculé à partir de la couverture.</WR_RoleColonyMinTip>
   <WR_RoleCoverageLabel>Couverture :</WR_RoleCoverageLabel>
-  <WR_RoleCoverageTip>Pourcentage de colons devant idéalement recevoir ce rôle.</WR_RoleCoverageTip>
+  <WR_RoleCoverageTip>Pourcentage de la colonie à prévoir, arrondi à un nombre entier de travailleurs. Le moteur retient le plus grand effectif entre ce nombre et le minimum de la colonie. Les rôles de formation peuvent occuper certaines places.</WR_RoleCoverageTip>
   <WR_RoleCategoryLabel>Importance pour la colonie :</WR_RoleCategoryLabel>
   <WR_RoleCategoryTip>Importance de ce rôle dans l'organisation de la colonie. « Non défini » laisse le rôle sans catégorie.</WR_RoleCategoryTip>
   <WR_RoleCategoryNone>Non défini</WR_RoleCategoryNone>
@@ -150,7 +150,7 @@
   <WR_PartialCapabilityTip>Si activée, ce rôle est recommandé aux colons pouvant effectuer certaines de ses tâches, mais pas toutes. Il n'est jamais recommandé à ceux qui ne peuvent en effectuer aucune. Utile pour les rôles larges que tous devraient avoir, comme les tâches communes pendant les temps libres.</WR_PartialCapabilityTip>
   <WR_PartialCapabilityLockedTip>Ce rôle est déjà recommandé aux colons pouvant effectuer certaines de ses tâches, mais pas toutes. Les rôles sans travail qualifié et les rôles de chasse l'autorisent toujours.</WR_PartialCapabilityLockedTip>
   <WR_RoleAgeBandsLabel>Tranches d'âge autorisées pour ce rôle :</WR_RoleAgeBandsLabel>
-  <WR_RoleAgeBandsTip>Les colons hors des tranches choisies ne reçoivent jamais ce rôle ni sa recommandation. Cliquez sur une tranche extérieure pour étendre la sélection jusqu'à elle, sur la première ou la dernière sélectionnée pour la retirer, ou sur une tranche centrale pour ne garder qu'elle. Les limites suivent les âges de déblocage du travail dans le jeu. Toutes les tâches de ce rôle sont possibles dès {0} ans.</WR_RoleAgeBandsTip>
+  <WR_RoleAgeBandsTip>Ces tranches d'âge limitent les affectations automatiques et les recommandations. L'affectation manuelle et le collage peuvent toujours donner ce rôle à des colons hors de ces tranches. Cliquez sur une tranche extérieure pour étendre la sélection jusqu'à elle, sur la première ou la dernière sélectionnée pour la retirer, ou sur une tranche centrale pour ne garder qu'elle. Les limites suivent les âges de déblocage du travail dans le jeu. Toutes les tâches de ce rôle sont possibles dès {0} ans.</WR_RoleAgeBandsTip>
   <WR_WorkTypesLabel>Types de travail</WR_WorkTypesLabel>
   <WR_WorkTypesTip>Seuls les colons capables d'effectuer les types de travail indiqués sont admissibles à ce rôle.\n\nDérivés des tâches choisies et affichés à titre informatif.</WR_WorkTypesTip>
   <WR_UsedSkillsLabel>Utilisées</WR_UsedSkillsLabel>
@@ -171,7 +171,7 @@
   <WR_RemoveSkillTip>Retirer cette condition impérative de compétence.</WR_RemoveSkillTip>
   <WR_RoleMissingRequiredSkills>Compétences requises désactivées pour {0} : {1}.</WR_RoleMissingRequiredSkills>
   <WR_PathAddRoleTip>Ajoute un rôle à ce parcours.</WR_PathAddRoleTip>
-  <WR_BandChipTip>Faites glisser une extrémité pour redimensionner la plage de compétence, ou le milieu pour la déplacer.</WR_BandChipTip>
+  <WR_BandChipTip>Faites glisser une extrémité pour redimensionner la plage de compétence, ou le milieu pour la déplacer. Gardez le niveau de départ du rôle cible supérieur à celui de chaque rôle de formation, sinon le parcours ne recommandera pas de formation vers ce rôle cible.</WR_BandChipTip>
   <WR_PriorityGridTitle>Grille de priorités</WR_PriorityGridTitle>
   <WR_ShowPriorityGridTip>Afficher la grille de priorités des colons listés selon les filtres actifs de rôle et de lieu (rangs bruts ou 0–4 du jeu de base, au choix dans la fenêtre).</WR_ShowPriorityGridTip>
   <WR_GridModeRaw>Priorités WorkRoles</WR_GridModeRaw>
@@ -217,7 +217,7 @@
   <WR_TipBestFitsLabel>Meilleurs candidats</WR_TipBestFitsLabel>
   <WR_TipWholeType>{0} (toutes les tâches)</WR_TipWholeType>
   <WR_TipMore>+{0} de plus</WR_TipMore>
-  <WR_RoleCapNeverDo>{0} ne fera jamais {1}</WR_RoleCapNeverDo>
+  <WR_RoleCapNeverDo>{0} ne peut pas effectuer {1} actuellement</WR_RoleCapNeverDo>
   <WR_RoleCapAllJobs>aucune des tâches de ce rôle</WR_RoleCapAllJobs>
   <WR_RoleCapSomeJobs>{0} des {1} tâches de ce rôle</WR_RoleCapSomeJobs>
   <WR_RoleJobIncapable>incapable de ce travail</WR_RoleJobIncapable>
@@ -372,8 +372,8 @@ La tâche n'a pas été interrompue. Cet avertissement apparaît une fois par sa
   <WR_RecTipSelection>Sélection</WR_RecTipSelection>
   <WR_RecTipAssignmentsOne>1 affectation demandée</WR_RecTipAssignmentsOne>
   <WR_RecTipAssignmentsMany>{0} affectations demandées</WR_RecTipAssignmentsMany>
-  <WR_RecTipWithWaiverOne>{0} (1 dérogation de formation)</WR_RecTipWithWaiverOne>
-  <WR_RecTipWithWaiversMany>{0} ({1} dérogations de formation)</WR_RecTipWithWaiversMany>
+  <WR_RecTipWithWaiverOne>{0} (jusqu’à 1 place peut être remplie par un rôle de formation)</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0} (jusqu’à {1} places peuvent être remplies par des rôles de formation)</WR_RecTipWithWaiversMany>
   <WR_RecTipEveryoneCapable>Affecté à tous ceux qui en sont capables</WR_RecTipEveryoneCapable>
   <WR_RecDecisionAuto>Affecté automatiquement à toute personne capable d'effectuer ce travail.</WR_RecDecisionAuto>
   <WR_RecDecisionSignals>Atteint le seuil de signal configuré.</WR_RecDecisionSignals>
@@ -381,9 +381,9 @@ La tâche n'a pas été interrompue. Cet avertissement apparaît une fois par sa
   <WR_RecDecisionTraining>Affecté par le parcours de formation de {0}.</WR_RecDecisionTraining>
   <WR_RecDecisionTrainingUnknown>Affecté par un parcours de formation.</WR_RecDecisionTrainingUnknown>
   <WR_RecDecisionDirectSlot>Choisi directement pour remplir la place {0} sur {1} pour {2}.</WR_RecDecisionDirectSlot>
-  <WR_RecDecisionTrainingSlot>Choisi pour remplir la place {0} sur {1} pour {2}. Une dérogation de formation a remplacé {2} par {3} ({4} ; {2} exige {5}).</WR_RecDecisionTrainingSlot>
-  <WR_RecDecisionTrainingSlotSimple>Choisi pour remplir la place {0} sur {1} pour {2}. Une dérogation de formation a remplacé {2} par {3}.</WR_RecDecisionTrainingSlotSimple>
-  <WR_RecDecisionTrainingSlotUnknown>Choisi pour remplir la place {0} sur {1} par une dérogation de formation, en affectant {2}.</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecDecisionTrainingSlot>Choisi pour remplir la place {0} sur {1} pour {2} avec le rôle de formation {3} ({4} ; dans le parcours de formation, {2} commence au niveau {5}).</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>Choisi pour remplir la place {0} sur {1} pour {2} avec le rôle de formation {3}.</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>Choisi pour remplir la place {0} sur {1} avec le rôle de formation {2}.</WR_RecDecisionTrainingSlotUnknown>
   <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
   <WR_RecDecisionDirectFallbackSlot>Choisi directement pour remplir la place {0} sur {1} pour {2}, faute de remplaçant de formation admissible.</WR_RecDecisionDirectFallbackSlot>
   <WR_RecDecisionCoverageRepairSlot>Choisi directement pour remplir la place requise restante {0} sur {1} pour {2}.</WR_RecDecisionCoverageRepairSlot>
@@ -620,7 +620,7 @@ La tâche n'a pas été interrompue. Cet avertissement apparaît une fois par sa
   <WR_WelcomeFind>Ouvrez WorkRoles avec le bouton Travail en bas de l'écran. L'onglet Aide commence par une visite guidée.</WR_WelcomeFind>
   <WR_WelcomeTakeMeThere>Y accéder maintenant</WR_WelcomeTakeMeThere>
   <WR_WelcomeSmallScreen>Votre écran de jeu mesure {0}x{1} (résolution divisée par l'échelle de l'interface). WorkRoles est conçu pour au moins {2}x{3}, par exemple 1920x1080 avec une échelle de 1,25. Il fonctionne sur un écran plus petit, mais certains libellés sont abrégés et les onglets nécessitent plus de défilement. Réduire l'échelle de l'interface dans les options du jeu laisse plus d'espace à la fenêtre.</WR_WelcomeSmallScreen>
-  <WR_RoleWorkAversion>Le précepte {1} de {0} s'oppose à {2}. Les recommandations appliquent une pénalité limitée : deux crans de priorité, ou six points de compétence virtuels pour choisir un champion. La couverture requise peut toujours retenir ce travailleur. La priorité du Chasseur recule de deux paliers, au maximum jusqu'au cinquième ; son repli existant vers le premier palier reste applicable.</WR_RoleWorkAversion>
+  <WR_RoleWorkAversion>Le précepte {1} de {0} s'oppose à {2}. WorkRoles privilégie un autre colon adapté, mais peut tout de même recommander ce colon si la colonie a besoin de quelqu'un pour effectuer ce travail. Cela n'interdit pas le travail. Pour le Chasseur, cette aversion repousse aussi la chasse dans l'ordre de travail recommandé.</WR_RoleWorkAversion>
   <WR_WorkBlockedTags>catégories de travail désactivées</WR_WorkBlockedTags>
   <WR_WorkBlockedCapacity>capacité de santé requise manquante</WR_WorkBlockedCapacity>
   <WR_WorkBlockedRace>interdit par les restrictions de travail de cette race</WR_WorkBlockedRace>
@@ -638,4 +638,23 @@ La tâche n'a pas été interrompue. Cet avertissement apparaît une fois par sa
   <WR_OptMechanicalWorkers>Afficher les robots et mécanoïdes dans Colons</WR_OptMechanicalWorkers>
   <WR_OptMechanicalWorkersTip>Attribuez des rôles aux mécanoïdes de Biotech et aux robots de Misc. Robots dans l’onglet Colons. Gérez les groupes de contrôle, les zones autorisées, l’activation et la recharge dans leurs onglets habituels. Désactiver cette option les masque et rétablit leurs priorités de travail habituelles, mais conserve leurs rôles enregistrés.</WR_OptMechanicalWorkersTip>
   <WR_RecMechanicalLearningProtected>Cette affectation de formation est conservée tant que les robots ou mécanoïdes assurent le service. Elle peut être libérée lorsque l'objectif de formation est atteint.</WR_RecMechanicalLearningProtected>
+  <WR_DefaultAutoUpdate>Mettre à jour automatiquement après modification de la configuration</WR_DefaultAutoUpdate>
+  <WR_DefaultClear>Utiliser les paramètres intégrés pour les nouvelles parties</WR_DefaultClear>
+  <WR_DefaultConflictBody>La configuration WorkRoles de cette colonie diffère de celle définie par défaut pour vos nouvelles parties. Utiliser la configuration de cette colonie par défaut et la mettre à jour lorsque vous la modifiez ? Votre colonie actuelle ne sera pas modifiée.</WR_DefaultConflictBody>
+  <WR_DefaultEmptyBody>Enregistrez la configuration complète de cette colonie pour les prochaines parties. Les colonies existantes conservent leur propre configuration. Les affectations des personnages, les liaisons aux ordres de fabrication, les recherches et les sections repliées sont exclues.</WR_DefaultEmptyBody>
+  <WR_DefaultKeep>Conserver mes paramètres par défaut pour cette session</WR_DefaultKeep>
+  <WR_DefaultSavedBody>Une configuration personnelle est enregistrée pour les nouvelles parties. Enregistrez la configuration complète de cette colonie pour la remplacer. Les colonies existantes conservent leur propre configuration. Les affectations des personnages, les liaisons aux ordres de fabrication, les recherches et les sections repliées sont exclues.</WR_DefaultSavedBody>
+  <WR_DefaultStopAuto>Désactiver la mise à jour automatique</WR_DefaultStopAuto>
+  <WR_DefaultUseCurrent>Utiliser cette configuration pour les nouvelles parties</WR_DefaultUseCurrent>
+  <WR_LocationUnresolved>Indisponible : {0}</WR_LocationUnresolved>
+  <WR_LocationUnresolvedTip>Cet emplacement importé n'existe pas ici. Cette règle reste inactive tant que vous ne le remplacez pas par un emplacement de cette colonie.</WR_LocationUnresolvedTip>
+  <WR_NewGameDefaults>Définir les valeurs par défaut</WR_NewGameDefaults>
+  <WR_SetupFailed>Impossible d'enregistrer ou de lire la configuration par défaut de WorkRoles : {0}</WR_SetupFailed>
+  <WR_SetupGameSettings>Paramètres de la colonie</WR_SetupGameSettings>
+  <WR_SetupGameSettingsInfo>Remplacer les paramètres de la formule de recommandation, l'optimisation automatique, le comportement des priorités et les options des travailleurs mécaniques.</WR_SetupGameSettingsInfo>
+  <WR_SetupPlayerSettings>Mes préférences d'affichage</WR_SetupPlayerSettings>
+  <WR_SetupPlayerSettingsInfo>Facultatif : remplacer l'affichage des pastilles, la disposition de la palette, les colonnes de compétences, les badges et la taille de la fenêtre. Les autres joueurs en multijoueur conservent leurs préférences.</WR_SetupPlayerSettingsInfo>
+  <WR_RecMechanicalSelected>Peut effectuer des tâches que ses autres rôles recommandés ne couvrent pas.</WR_RecMechanicalSelected>
+  <WR_RecMechanicalRetained>Conserve son rôle principal actuel.</WR_RecMechanicalRetained>
+  <WR_RecMechanicalIncapacitated>Cette unité est à terre. Ses rôles sont conservés pour son rétablissement.</WR_RecMechanicalIncapacitated>
 </LanguageData>

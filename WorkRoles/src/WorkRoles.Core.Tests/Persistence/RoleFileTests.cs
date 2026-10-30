@@ -52,7 +52,6 @@ public class RoleFileTests
         string xml = RoleFile.Build(document);
         RoleFileDocument parsed = RoleFile.Parse(xml);
 
-        await Assert.That(RoleFile.FormatVersion).IsEqualTo("13");
         await Assert.That(string.Join("|", parsed.roles[0].locations)).IsEqualTo("nowhere");
     }
 
@@ -355,7 +354,6 @@ public class RoleFileTests
             recommendationOrder = { "Doctor", "Shooter", "Sniper" },
         };
         string xml = RoleFile.Build(doc);
-        await Assert.That(System.Xml.Linq.XElement.Parse(xml).Attribute("version")!.Value).IsEqualTo("13");
 
         var parsed = RoleFile.Parse(xml);
         await Assert.That(parsed.error == null).IsTrue();
@@ -596,7 +594,6 @@ public class RoleFileTests
             })
             .ToArray();
 
-        await Assert.That(RoleFile.FormatVersion).IsEqualTo("13");
         await Assert.That(parsed.groupsWithIds.Select(group => group.fileId
             ?? throw new InvalidOperationException("Group identity was not parsed."))).IsEquivalentTo(["group-a", "group-b"]);
         await Assert.That(RoleFile.ResolveGroup(parsed, second.groupId, second.group)?.fileId).IsEqualTo("group-b");

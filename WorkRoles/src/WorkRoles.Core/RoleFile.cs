@@ -45,6 +45,9 @@ namespace WorkRoles.Core
         public string? group;   // role-list group name; null = the Default group
         public string? groupId;
         public string? colorRef;
+        // Presence distinguishes an explicit reset from an older export.
+        public bool hasIcon;
+        public string? iconPath;
         public bool autoAssign;
         public bool blocker;
         public bool enabled = true;
@@ -150,6 +153,10 @@ namespace WorkRoles.Core
 
     public class RoleFileDocument
     {
+        public bool hasRoles = true;
+        public bool hasPalette = true;
+        public SetupOptions? gameSettings;
+        public SetupOptions? playerSettings;
         public List<(string name, ColorRgb color)> palette = new List<(string, ColorRgb)>();
         /// User group names in display order (the Default group is never listed).
         public List<string> groups = new List<string>();
@@ -188,11 +195,20 @@ namespace WorkRoles.Core
         /// and retires OptionalSkills. Older skill lists are read and dropped.
         /// Parsing is lenient across versions (older readers ignore unknown
         /// elements, newer ones default absentees and skip retired ones).
-        public const string FormatVersion = "13";
+        // v14: optional setup sections, explicit empty sections, custom icons,
+        // save-wide options and opt-in per-player preferences.
+        public const string FormatVersion = "14";
 
         // Hand-editing help, embedded in every export. Non-obvious parts only.
         private const string FormatNotes = @"
   Format notes:
+  - Palette, Roles, GameSettings and PlayerSettings are independent sections.
+    An omitted section leaves the destination unchanged; an explicit empty
+    section can clear/reset it. PlayerSettings import is opt-in and local.
+  - Options/Icon stores a custom icon path; an empty Icon hides the icon.
+    Icon mode=""default"" restores the template icon. An absent Icon preserves it.
+    Unknown jobs, skills and icons are retained for temporarily missing mods.
+    Unmatched named locations remain inactive and retain their exported names.
   - Palette entries define custom colors (#rrggbb). Roles reference a color by
     NAME only: a palette entry or a built-in color name (e.g. ""red-800"").
   - A Role's <Options> only lists non-defaults. ActiveHours is a 24-character
@@ -211,8 +227,8 @@ namespace WorkRoles.Core
     Assignment order uses band minimum descending, then the pawn's weakest role
     skill; entry order is the final tie-breaker. Legacy <TrainingPaths>
     sections still import and fold into their target role.
-  - <RecommendationOrder> lists roleId references with labels: importing it
-    replaces the stored recommendation order (unlisted roles place dynamically).
+  - <RecommendationOrder> is legacy compatibility data. Recommendations now
+    use automatic ordering; the current import UI does not apply this section.
   - A Role's <Tuning> colonyMin and coverage attributes hold its assignment
     demand: the minimum assignment count and the ideal colonist percentage.
   - <RequiredSkills> is an optional comma-separated list of hard skill gates.
@@ -235,10 +251,10 @@ namespace WorkRoles.Core
                     palette.Add(new XElement("Color", new XAttribute("name", name), color.Hex()));
             else
                 palette.Add(new XComment(PaletteSample)); // syntax sample, not imported
-            root.Add(palette);
+            if (doc.hasPalette) root.Add(palette);
 
             IReadOnlyList<FileGroup> effectiveGroups = GroupsWithStableIds(doc);
-            if (effectiveGroups.Count > 0)
+            if (doc.hasRoles && effectiveGroups.Count > 0)
             {
                 // Element form so future per-group options land as attributes.
                 var groups = new XElement("Groups");
@@ -259,7 +275,9 @@ namespace WorkRoles.Core
                 foreach (var role in doc.roles)
                     if (role != null)
                         roles.Add(Encode(role));
-            root.Add(roles);
+            if (doc.hasRoles) root.Add(roles);
+            if (doc.gameSettings != null) root.Add(doc.gameSettings.ToXml("GameSettings"));
+            if (doc.playerSettings != null) root.Add(doc.playerSettings.ToXml("PlayerSettings"));
 
             if (doc.trainingPaths?.Count > 0)
             {
@@ -327,6 +345,9 @@ namespace WorkRoles.Core
                 element.Add(new XAttribute("groupId", role.groupId));
 
             var options = new XElement("Options");
+            if (role.hasIcon) options.Add(role.iconPath == null
+                ? new XElement("Icon", new XAttribute("mode", "default"))
+                : new XElement("Icon", role.iconPath));
             if (!string.IsNullOrEmpty(role.colorRef))
                 options.Add(new XElement("Color", role.colorRef));
             if (role.autoAssign)
@@ -443,7 +464,17 @@ namespace WorkRoles.Core
             int.TryParse(root.Attribute("version")?.Value,
                 NumberStyles.Integer, CultureInfo.InvariantCulture,
                 out int formatVersion);
+            if (formatVersion >= 14 && ValidateSetupShape(root) is string shapeError)
+            { doc.error = shapeError; return doc; }
             bool hasExplicitSkillGates = formatVersion >= 13;
+            doc.hasRoles = root.Element("Roles") != null;
+            doc.hasPalette = root.Element("Palette") != null;
+            try
+            {
+                doc.gameSettings = SetupOptions.Read(root.Element("GameSettings"), player: false);
+                doc.playerSettings = SetupOptions.Read(root.Element("PlayerSettings"), player: true);
+            }
+            catch (FormatException e) { doc.error = e.Message; return doc; }
             foreach (var colorEl in root.Element("Palette")?.Elements("Color")
                      ?? Enumerable.Empty<XElement>())
             {
@@ -491,9 +522,54 @@ namespace WorkRoles.Core
                         EmptyToNull(roleEl.Attribute("roleId")?.Value?.Trim()), label));
                 }
             }
-            if (doc.roles.Count == 0)
+            if (doc.roles.Count == 0 && (formatVersion < 14
+                || !(doc.hasRoles || doc.hasPalette || doc.gameSettings != null || doc.playerSettings != null)))
                 doc.error = "document contains no valid roles";
+            if (formatVersion >= 14 && doc.error == null)
+                doc.error = RoleFileDependencies.Validate(doc);
             return doc;
+        }
+
+        // Legacy files retain their tolerant reader. A complete setup must not
+        // silently discard malformed rows before an overwrite clears live data.
+        private static string? ValidateSetupShape(XElement root)
+        {
+            if (root.Name != "WorkRoles") return "Expected a WorkRoles document";
+            var colors = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var color in root.Element("Palette")?.Elements("Color") ?? Enumerable.Empty<XElement>())
+            {
+                string? name = (string?)color.Attribute("name");
+                if (string.IsNullOrWhiteSpace(name) || !colors.Add(name!) || !ColorRgb.TryParseHex(color.Value, out _))
+                    return "Invalid or duplicate palette color: " + name;
+            }
+            foreach (var role in root.Element("Roles")?.Elements("Role") ?? Enumerable.Empty<XElement>())
+            {
+                string? name = (string?)role.Attribute("name");
+                if (string.IsNullOrWhiteSpace(name)) return "A role is missing its name";
+                var options = role.Element("Options");
+                string? hours = options?.Element("ActiveHours")?.Value.Trim();
+                if (hours != null && (hours.Length != 24 || hours.Any(c => c != '0' && c != '1')))
+                    return "Invalid active hours: " + name;
+                foreach (var location in options?.Element("Locations")?.Elements() ?? Enumerable.Empty<XElement>())
+                {
+                    if (location.Name == "Settlements" || location.Name == "Caravans" || location.Name == "Nowhere") continue;
+                    if ((location.Name != "Settlement" && location.Name != "Ship")
+                        || string.IsNullOrWhiteSpace((string?)location.Attribute("name")))
+                        return "Invalid location restriction: " + name;
+                }
+                foreach (var entry in options?.Element("Tuning")?.Element("Training")?.Elements("Role") ?? Enumerable.Empty<XElement>())
+                    if (string.IsNullOrWhiteSpace(entry.Value)
+                        || !int.TryParse((string?)entry.Attribute("min"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int min)
+                        || !int.TryParse((string?)entry.Attribute("max"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int max)
+                        || min < 0 || max > SkillProgressionMath.MaxLevel || max - min < SkillProgressionMath.MinSpan)
+                        return "Invalid training band: " + name;
+                foreach (var member in role.Element("Members")?.Elements("Role") ?? Enumerable.Empty<XElement>())
+                    if (string.IsNullOrWhiteSpace(member.Value)) return "Missing composite member: " + name;
+                foreach (var job in role.Element("Jobs")?.Elements() ?? Enumerable.Empty<XElement>())
+                    if ((job.Name != "WorkType" && job.Name != "WorkGiver") || string.IsNullOrWhiteSpace(job.Value))
+                        return "Invalid job entry: " + name;
+            }
+            return null;
         }
 
         private static FileTrainingPath? ParseTrainingPath(XElement el)
@@ -714,6 +790,9 @@ namespace WorkRoles.Core
             var options = el.Element("Options");
             if (options != null)
             {
+                role.hasIcon = options.Element("Icon") != null;
+                role.iconPath = options.Element("Icon")?.Attribute("mode")?.Value == "default"
+                    ? null : options.Element("Icon")?.Value.Trim();
                 role.colorRef = options.Element("Color")?.Value.Trim();
                 role.autoAssign = options.Element("AutoAssign")?.Value.Trim() == "true";
                 role.blocker = options.Element("Blocker")?.Value.Trim() == "true";

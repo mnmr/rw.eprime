@@ -12,7 +12,7 @@
   <IMP_BenchNoNewBills>계획서를 추가하려면 "Implanner 작업대"를 해제하세요</IMP_BenchNoNewBills>
   <IMP_BenchToggle>Implanner 작업대</IMP_BenchToggle>
   <IMP_BenchToggleTip>Implanner가 이 작업대에 제작 계획서를 우선 배치하며, 기존 계획서는 중단됩니다. 선택된 동안은 계획서를 추가하거나 붙여넣거나 중단·재개할 수 없습니다.\n\n직접 관리하려면 해제하세요. 지정 전에 이미 중단된 계획서는 그대로 중단 상태를 유지하고, 나머지는 재개됩니다.</IMP_BenchToggleTip>
-  <IMP_CleanupBody>Implanner가 만든 계획서입니다. 확인을 누르면 자동화가 꺼지고 선택한 계획서가 삭제됩니다. 선택하지 않은 계획서는 남아 있다가 자동화를 다시 켜면 관리가 재개됩니다. 예약된 이식물은 어느 경우든 해제됩니다. 취소하면 자동화가 유지됩니다.</IMP_CleanupBody>
+  <IMP_CleanupBody>Implanner가 만든 계획서입니다. 확인을 누르면 자동화가 꺼지고 선택한 계획서가 삭제됩니다. 선택하지 않은 계획서는 활성 상태로 남아 정착민이 계속 제작하거나 해당 수술을 할 수 있습니다. 자동화를 다시 켜면 Implanner가 남은 계획서 관리를 재개합니다. 예약된 이식물은 어느 경우든 해제됩니다. 취소하면 자동화가 유지됩니다.</IMP_CleanupBody>
   <IMP_CleanupTitle>자동화를 끄시겠습니까?</IMP_CleanupTitle>
   <IMP_ColColonist>정착민</IMP_ColColonist>
   <IMP_ColMelee>격</IMP_ColMelee>
@@ -38,7 +38,7 @@
   <IMP_ExtendsNothing>없음</IMP_ExtendsNothing>
   <IMP_ExtendsPlan>기본 계획</IMP_ExtendsPlan>
   <IMP_FromClipboard>클립보드에서</IMP_FromClipboard>
-  <IMP_GoalBlockedFloor>의사 기술 기준 미달 ({0})</IMP_GoalBlockedFloor>
+  <IMP_GoalBlockedFloor>의학 {0} 이상인 의사 대기 중</IMP_GoalBlockedFloor>
   <IMP_GoalBlockedLoss>{0} 파괴 위험</IMP_GoalBlockedLoss>
   <IMP_GoalComplete>완료</IMP_GoalComplete>
   <IMP_GoalMissing>부족</IMP_GoalMissing>
@@ -96,11 +96,11 @@
   <IMP_OptDesignatedBenches>Implanner 작업대만 사용</IMP_OptDesignatedBenches>
   <IMP_OptDesignatedBenchesTip>계획서 탭에서 "Implanner 작업대"로 지정한 작업대에만 제작 계획서를 둡니다. 지정된 작업대가 없는 정착지에서는 이식물을 만들지 않습니다. 끄면 지정 작업대를 우선 사용하고, 모두 계획서 두 개씩을 보유한 뒤 다른 작업대를 사용합니다. 어느 경우든 "계획서를 둘 작업대 수" 제한이 적용됩니다.</IMP_OptDesignatedBenchesTip>
   <IMP_OptEnable>자동화 사용</IMP_OptEnable>
-  <IMP_OptEnableTip>이식물 예약, 수술 지정, 제작 계획서 생성 등 Implanner의 모든 자동 동작을 제어합니다. 꺼도 계획과 진행도는 추적하지만 직접 실행하지 않습니다. 끌 때 기존 계획서 중 무엇을 유지할지도 선택합니다.</IMP_OptEnableTip>
+  <IMP_OptEnableTip>이식물 예약, 수술 지정, 제작 계획서 생성 등 Implanner의 모든 자동 동작을 제어합니다. 꺼도 계획과 진행도는 추적합니다. 끌 때 기존 계획서 중 무엇을 유지할지 묻습니다. 유지한 계획서는 활성 상태로 남으므로 정착민이 계속 제작하거나 해당 수술을 할 수 있습니다.</IMP_OptEnableTip>
   <IMP_OptIdleBenches>유휴 작업대에만 계획서 추가</IMP_OptIdleBenches>
   <IMP_OptIdleBenchesTip>대기 중인 작업이 없는 작업대에만 새 Implanner 계획서를 추가합니다. 직접 지정한 제작을 우선하고 남는 시간에 이식물을 만듭니다. 끄면 기존 작업 뒤에 이식물 계획서를 추가할 수 있습니다.</IMP_OptIdleBenchesTip>
   <IMP_OptImplantReserves>이식물 비축량</IMP_OptImplantReserves>
-  <IMP_OptImplantReservesTip>수동 사용을 위해 남겨 둘 이식물입니다. 자동화는 이 수량을 초과한 재고만 예약하므로 긴급 수술이나 거래에 쓸 물량이 유지됩니다. 제작 시 비축분은 가용 재고로 세지 않으며, 비축분을 쓰지 않고 자동화를 진행할 수 있을 때까지 제작합니다.</IMP_OptImplantReservesTip>
+  <IMP_OptImplantReservesTip>현재 있는 이식물 중 이 수량까지 수동 사용을 위해 남겨 둡니다. Implanner는 비축분을 예정 수술에 배정하거나 제작 재료로 사용하지 않습니다. 자동 제작은 배정된 계획에 이식물이 필요한 동안에만 추가로 제작합니다. 어떤 계획에도 필요하지 않은 이식물을 긴급용으로 보충하려면 직접 제작 계획서를 추가하세요.</IMP_OptImplantReservesTip>
   <IMP_OptIntermediaries>부족한 중간재 제작 허용</IMP_OptIntermediaries>
   <IMP_OptIntermediariesTip>부품 같은 재료가 부족해 이식물을 만들 수 없으면, 제작 가능한 가공품에 한해 그 재료의 계획서도 추가합니다. 생산 사슬 전체를 따라 부족량을 확인합니다. 철 같은 원자재는 제작하지 않으므로 직접 확보해야 합니다.</IMP_OptIntermediariesTip>
   <IMP_OptIteration>진행 방식</IMP_OptIteration>
@@ -121,7 +121,7 @@
   <IMP_OptSurgeryConcurrency>동시 수술 인원</IMP_OptSurgeryConcurrency>
   <IMP_OptSurgeryConcurrencyTip>정착지마다 동시에 수술을 지정할 수 있는 정착민 수입니다. 높이면 여러 정착민이 함께 대기하고, 낮추면 병원과 의사의 여유를 유지합니다. 기본값은 정착민 열 명당 한 명입니다. +/- 클릭 시 Shift를 누르면 10씩, Ctrl을 누르면 5씩 바뀝니다.</IMP_OptSurgeryConcurrencyTip>
   <IMP_OptUpgradeByPriority>높은 우선순위에 좋은 이식물 배정</IMP_OptUpgradeByPriority>
-  <IMP_OptUpgradeByPriorityTip>개요 탭에서 우선순위가 가장 높은 정착민에게 높은 품질의 이식물을 배정합니다. 새 수술은 계획이 허용하는 최저 품질을 사용해 좋은 이식물을 남겨 둡니다.\n\n더 좋은 이식물을 확보하면 같은 종류의 낮은 품질 이식물을 가진 정착민 중 우선순위가 가장 높은 사람에게 배정합니다. 기존 이식물을 먼저 제거한 뒤 다음 정착민에게 넘깁니다. 낮은 우선순위 정착민에게 예약된 이식물도 아직 수술을 지정하지 않았다면 넘길 수 있습니다.\n\n교체할 때마다 수술이 추가됩니다. 끄면 각 정착민의 차례에 재고 중 가장 좋은 이식물을 사용합니다.</IMP_OptUpgradeByPriorityTip>
+  <IMP_OptUpgradeByPriorityTip>개요 탭에서 우선순위가 가장 높은 정착민에게 높은 품질의 이식물을 배정합니다. 새 수술은 계획이 허용하는 최저 품질을 사용해 좋은 이식물을 남겨 둡니다.\n\n더 좋은 이식물을 확보하면 같은 종류의 낮은 품질 이식물을 가진 정착민 중 우선순위가 가장 높은 사람에게 배정합니다. 기존 이식물을 먼저 제거한 뒤 다음 정착민에게 넘깁니다. 낮은 우선순위 정착민에게 예약된 이식물도 아직 수술을 지정하지 않았다면 넘깁니다.\n\n설치된 이식물을 더 좋은 품질로 교체하려면 제거와 설치, 두 번의 수술이 필요합니다. 끄면 각 정착민의 차례에 재고 중 가장 좋은 이식물을 사용합니다.</IMP_OptUpgradeByPriorityTip>
   <IMP_Overrides>{0} 대체</IMP_Overrides>
   <IMP_PlanColonists>정착민 {0}명</IMP_PlanColonists>
   <IMP_PlanCounts>이식물 {0}개</IMP_PlanCounts>
@@ -129,7 +129,7 @@
   <IMP_PlanGoalCount>이식물 {0}개</IMP_PlanGoalCount>
   <IMP_PlanMinQuality>최소 품질: {0}</IMP_PlanMinQuality>
   <IMP_PlanMinQualityNoQualityJobs>Quality Jobs가 로드되지 않아 모든 제작자가 이식물을 완성할 수 있습니다. 이 품질보다 낮게 나오면 다시 제작합니다.</IMP_PlanMinQualityNoQualityJobs>
-  <IMP_PlanMinQualityTip>이 계획의 이식물은 해당 품질 이상으로 설치·제작합니다. 품질이 없는 이식물에는 적용하지 않습니다.\n\n건강한 신체 부위를 더 나쁜 이식물로 교체하지 않습니다. 저품질 생체공학 부위는 원래 부위가 없거나 손상된 경우가 아니면 더 나은 물품을 기다립니다.</IMP_PlanMinQualityTip>
+  <IMP_PlanMinQualityTip>상속한 계획의 선택을 포함하여 새로 설치할 이식물에 허용할 최소 품질입니다. 이미 설치된 이식물이 계획한 종류라면 이 최소 품질 미만이어도 완료로 계산합니다. 더 좋은 품질로 교체하도록 허용하려면 "높은 우선순위에 좋은 이식물 배정" 옵션을 켜세요. 품질이 없는 이식물에는 적용하지 않습니다.\n\n건강한 신체 부위를 더 나쁜 이식물로 교체하지 않습니다. 저품질 생체공학 부위는 원래 부위가 없거나 손상된 경우가 아니면 더 나은 물품을 기다립니다.</IMP_PlanMinQualityTip>
   <IMP_PlanNameTitle>계획 이름</IMP_PlanNameTitle>
   <IMP_PlansHeader>계획</IMP_PlansHeader>
   <IMP_Priority0>최우선</IMP_Priority0>
@@ -137,7 +137,7 @@
   <IMP_Priority2>보통</IMP_Priority2>
   <IMP_Priority3>낮음</IMP_Priority3>
   <IMP_Priority4>마지막</IMP_Priority4>
-  <IMP_RankTiersHelp>이식물을 다섯 등급으로 나눌 수 있습니다. 배치는 제작 순서와 자동화 옵션에 따른 수술 순서에 영향을 줍니다.\n\n끌어서 순서를 바꾸세요.</IMP_RankTiersHelp>
+  <IMP_RankTiersHelp>이식물 순위는 이 저장 파일의 모든 계획에서 공유합니다. 여기서 이식물을 옮기면 해당 이식물이 포함된 모든 계획의 우선순위가 바뀝니다. 별이 많을수록 우선순위가 높습니다.\n\n별 등급 사이 또는 같은 등급 안에서 끌어 순서를 정하세요. 이 순위는 자동화 진행 방식에 따라 제작과 수술 순서에 반영됩니다.</IMP_RankTiersHelp>
   <IMP_RankTiersTitle>이식물 등급</IMP_RankTiersTitle>
   <IMP_ReadFailed>파일을 읽을 수 없습니다: {0}</IMP_ReadFailed>
   <IMP_RegionHead>머리</IMP_RegionHead>
@@ -168,7 +168,7 @@
   <IMP_StripMakingFor>{0} 재료 제작 중</IMP_StripMakingFor>
   <IMP_StripNothingToCraft>제작할 것 없음</IMP_StripNothingToCraft>
   <IMP_StripProduction>제작: {0}%</IMP_StripProduction>
-  <IMP_StripStock>재고 {0}개, 대기 {1}개</IMP_StripStock>
+  <IMP_StripStock>재고 {0}개, 추가 제작 필요 {1}개</IMP_StripStock>
   <IMP_StripSurgery>수술: {0}%</IMP_StripSurgery>
   <IMP_StripWaiting>{0} 대기 중</IMP_StripWaiting>
   <IMP_StripWaitingBench>작업대 대기 중</IMP_StripWaitingBench>
@@ -184,7 +184,7 @@
   <IMP_TierNormal>보통 우선순위</IMP_TierNormal>
   <IMP_TipBenchesInUse>Implanner 계획서가 있는 작업대: {0}</IMP_TipBenchesInUse>
   <IMP_TipCapacity>신체 부위: {0}</IMP_TipCapacity>
-  <IMP_TipColCrafting>제작</IMP_TipColCrafting>
+  <IMP_TipColCrafting>제작 계획서에 포함</IMP_TipColCrafting>
   <IMP_TipColFree>가용</IMP_TipColFree>
   <IMP_TipColHeldBack>비축</IMP_TipColHeldBack>
   <IMP_TipColImplant>이식물</IMP_TipColImplant>
@@ -193,7 +193,7 @@
   <IMP_TipColMissing>부족</IMP_TipColMissing>
   <IMP_TipColNeeded>필요</IMP_TipColNeeded>
   <IMP_TipColPlanned>계획</IMP_TipColPlanned>
-  <IMP_TipColQueued>대기</IMP_TipColQueued>
+  <IMP_TipColQueued>추가 제작 필요</IMP_TipColQueued>
   <IMP_TipColReserved>예약</IMP_TipColReserved>
   <IMP_TipColScheduled>지정</IMP_TipColScheduled>
   <IMP_TipColStatus>상태</IMP_TipColStatus>

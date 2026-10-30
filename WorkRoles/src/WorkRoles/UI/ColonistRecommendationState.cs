@@ -26,7 +26,9 @@ namespace WorkRoles.UI
         // assignment presentation revision; map cohort keyed by map identity,
         // roster revision and pawn-list revision. Value: owned fix targets and
         // preview explanations, immutable after publication. Dependencies: the
-        // producer's plan plus current assignment state/pins, role identities.
+        // producer's plan plus current assignment state/pins, role identities;
+        // mechanical targets also publish native capability verdicts and reasons
+        // from the same detached worker/catalog inputs, without a human plan.
         // Refresh: immediate on an explicit model/external change. Equality:
         // unchanged producer/assignment inputs reuse targets; the expensive
         // plan survives assignment enabled/disabled/force-on edits. Teardown:
@@ -524,7 +526,12 @@ namespace WorkRoles.UI
                     (recommendations, UiVersion.PresentationForPawn(pawn)), (this, i), BuildPawnPlan));
             }
             for (int i = 0; i < workers.Pawns.Count; i++)
-                result.Add(BuildMechanicalFixPlan(store, workers.Pawns[i], workers.Workers[i], snapshot.Colony));
+            {
+                PawnFixPlan mechanicalPlan = BuildMechanicalFixPlan(store,
+                    workers.Pawns[i], workers.Workers[i], snapshot.Colony);
+                result.Add(mechanicalPlan);
+                planSuitability[workers.Pawns[i]] = mechanicalPlan.MechanicalSuitability;
+            }
             if (plans != null && plans.Count == result.Count)
             {
                 bool equal = true;
@@ -537,7 +544,9 @@ namespace WorkRoles.UI
 
         private PawnFixPlan BuildMechanicalFixPlan(RoleStore store, Pawn pawn, MechanicalWorkerView worker, ColonyView colony)
         {
-            PawnFixTarget fix = MechanicalDutyPlan.BuildFixTarget(colony, worker);
+            var explanations = new Dictionary<int, RoleRecommendationExplanation>();
+            var suitability = new Dictionary<int, SignalBucket>();
+            PawnFixTarget fix = MechanicalDutyPlan.BuildFixTarget(colony, worker, explanations, suitability);
             store.pawnSets.TryGetValue(pawn, out PawnRoleSet? set);
             var existing = set?.assignments ?? new List<RoleAssignment>();
             IReadOnlyList<int> ordered = fix.RoleIds;
@@ -556,7 +565,8 @@ namespace WorkRoles.UI
                 {
                     if (previous.Pawn != pawn || previous.Target.Count != target.Count || previous.OrderChanged != changed
                         || !addedIds.SetEquals(previous.Added.Select(r => r.id))
-                        || !removedIds.SetEquals(previous.Removed.Select(r => r.id))) continue;
+                        || !removedIds.SetEquals(previous.Removed.Select(r => r.id))
+                        || !MechanicalFeedbackEquals(previous, explanations, suitability)) continue;
                     bool equal = true;
                     for (int i = 0; i < target.Count; i++)
                         if (previous.Target[i].roleId != target[i].roleId || previous.Target[i].state != target[i].state
@@ -564,12 +574,40 @@ namespace WorkRoles.UI
                     if (equal) return previous;
                 }
             var plan = new PawnFixPlan(pawn, target, changed);
+            foreach (var pair in explanations) plan.Explanations.Add(pair.Key, pair.Value);
+            foreach (var pair in suitability) plan.MechanicalSuitability.Add(pair.Key, pair.Value);
             foreach (RoleAssignment assignment in target)
                 if (!existing.Any(a => a.roleId == assignment.roleId) && store.RoleById(assignment.roleId) is Role added) plan.Added.Add(added);
             foreach (RoleAssignment assignment in existing)
                 if (!target.Any(a => a.roleId == assignment.roleId) && store.RoleById(assignment.roleId) is Role role) plan.Removed.Add(role);
             plan.SealPresentationDependencies();
             return plan;
+        }
+
+        private static bool MechanicalFeedbackEquals(PawnFixPlan previous,
+            Dictionary<int, RoleRecommendationExplanation> explanations,
+            Dictionary<int, SignalBucket> suitability)
+        {
+            if (previous.Explanations.Count != explanations.Count
+                || previous.MechanicalSuitability.Count != suitability.Count) return false;
+            foreach (var pair in suitability)
+                if (!previous.MechanicalSuitability.TryGetValue(pair.Key, out SignalBucket bucket)
+                    || bucket != pair.Value) return false;
+            // These are the facts emitted by MechanicalDutyPlan. Human demand,
+            // selection slots and training metadata are never attached here.
+            foreach (var pair in explanations)
+            {
+                if (!previous.Explanations.TryGetValue(pair.Key, out RoleRecommendationExplanation? before)) return false;
+                RoleRecommendationExplanation after = pair.Value;
+                if (before.Recommended != after.Recommended || before.SpecialPickReason != after.SpecialPickReason
+                    || before.RejectReason != after.RejectReason || before.SignalBucket != after.SignalBucket
+                    || before.BaseSignalBucket != after.BaseSignalBucket || before.SignalSkillLevel != after.SignalSkillLevel
+                    || before.SignalSkillDefName != after.SignalSkillDefName
+                    || before.RequiredSkills.Count != after.RequiredSkills.Count) return false;
+                for (int i = 0; i < before.RequiredSkills.Count; i++)
+                    if (before.RequiredSkills[i] != after.RequiredSkills[i]) return false;
+            }
+            return true;
         }
 
         private PawnFixPlan BuildPawnFixPlan(int i)
@@ -666,6 +704,8 @@ namespace WorkRoles.UI
         internal bool HasChanges => Added.Count > 0 || Removed.Count > 0 || OrderChanged;
         internal Dictionary<int, RoleRecommendationExplanation> Explanations { get; } =
             new Dictionary<int, RoleRecommendationExplanation>();
+        internal Dictionary<int, SignalBucket> MechanicalSuitability { get; } =
+            new Dictionary<int, SignalBucket>();
 
         internal void SealPresentationDependencies()
         {

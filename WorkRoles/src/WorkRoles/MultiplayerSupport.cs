@@ -100,6 +100,8 @@ namespace WorkRoles
             sync.Bind(ref selection.paths);
             sync.Bind(ref selection.pathsOverwrite);
             sync.Bind(ref selection.order);
+            sync.Bind(ref selection.gameSettings);
+            sync.Bind(ref selection.playerSettings);
             BindList(sync, ref selection.paletteRows);
             BindList(sync, ref selection.roleRows);
             BindList(sync, ref selection.pathRows);

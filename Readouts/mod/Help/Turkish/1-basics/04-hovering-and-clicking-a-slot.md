@@ -2,7 +2,7 @@
 title: Yuva üzerine gelme ve tıklama
 ---
 <!-- l10n:b-3d212ef2233a -->
-Adı, kesin sayıyı ve sayacın açıklamasını görmek için imleci simgede tutun. Kaynak havuzunda ([Kaynak havuzu nedir?](topic:what-a-resource-pool-is) konusuna bakın) ipucu, elinizde bulunan her üyeyi kendi sayısıyla listeler:
+Adı, kesin sayıyı ve sayacın açıklamasını görmek için imleci simgede tutun. Kaynak havuzunda ([Kaynak havuzu nedir?](topic:what-a-resource-pool-is) konusuna bakın) ipucu, görüntülenen sayısı sıfır olmayan her üyeyi listeler. Bu sayılar, sayım filtrelerinizi ve planlanan işler için düşülen miktarları hesaba katar. "Eksikleri negatif sayılarla göster" etkinse negatif sayı, planlanan işlerin elinizdekinden fazlasını gerektirdiği anlamına gelir.
 
 <!-- l10n:b-374206ad0776 -->
 ![Yemekler havuzunun ipucu](slot-tooltip.png)

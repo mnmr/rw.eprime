@@ -12,3 +12,9 @@ Mỗi khoảng là vai trò cùng phạm vi kỹ năng áp dụng; các khoảng
 
 <!-- l10n:b-bb878752b11b -->
 Kéo hai đầu để đổi phạm vi, kéo giữa để di chuyển. Không chồng lấp thì vai trò sau thay vai trò trước; chồng lấp thì bổ sung. Vai trò không rèn kỹ năng mục tiêu nào có cảnh báo trước khi thêm; bạn vẫn thêm được khi mod đổi nguồn kinh nghiệm.
+
+<!-- l10n:target-start-order -->
+Giữ cấp bắt đầu của vai trò mục tiêu cao hơn cấp bắt đầu của mọi vai trò rèn luyện.
+Nếu khoảng khác bắt đầu ở cấp bằng hoặc cao hơn, lộ trình này sẽ không
+đề xuất rèn luyện để tiến tới vai trò mục tiêu. Cho các đầu khoảng chồng lấp
+để giữ cả hai vai trò trong giai đoạn chuyển tiếp.

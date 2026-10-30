@@ -2,12 +2,12 @@
 title: Wenn Arbeit wartet
 ---
 <!-- l10n:check -->
-Prüfe zuerst den **{k:QJ_StatusHeader}** im Auftrags- oder Baufenster. **Niemand zum Fertigstellen geeignet** bedeutet, dass die Arbeit auf die Erfüllung deiner Anforderungen wartet und nicht, dass ihr Fortschritt verloren gegangen ist.
+Prüfe zuerst **{k:QJ_StatusHeader}** im Auftrags- oder Baufenster. Im Auftragsfenster bezieht sich **{k:QJ_StatusStalled}** auf die Anforderungen des ausgewählten Auftrags, während die Warteschlangenzahlen alle Aufträge für dieses Produkt auf dieser Karte umfassen. Andere Aufträge können andere Anforderungen haben. Bei einem Bau bedeutet **Kein geeigneter Fertigsteller**, dass derzeit kein Bauarbeiter dessen Anforderungen erfüllt. Diese Warnungen bedeuten nicht, dass Arbeitsfortschritt verloren gegangen ist.
 
 <!-- l10n:checklist -->
 - Ist die erforderliche Arbeitsart für die zum Fertigstellen vorgesehene Person aktiviert, und ist sie auf dieser Karte und arbeitsfähig?
 - Ist die Fertigkeitsanforderung zu hoch, oder wartest du auf inspirierte Kreativität oder einen Produktionsspezialisten?
-- Wartet die automatische Anpassung darauf, dass ein Arbeiter mit höherer erwarteter Qualität verfügbar wird, etwa von einer Karawane zurückkehrt oder das Aufladen beendet?
+- Wartet **{k:QJ_AutoBest}** darauf, dass eine Arbeitskraft mit höherer erwarteter Qualität verfügbar wird, etwa von einer Karawane zurückkehrt oder das Aufladen beendet?
 - Kann die Arbeitskraft den Gegenstand oder das Baugerüst erreichen und reservieren sowie die Werkbank benutzen? Prüfe verbotene Gegenstände, erlaubte Gebiete, Auftragsbeschränkungen und konkurrierende Reservierungen.
 - Ist die Bestandsobergrenze erreicht? Stelle wartende Gegenstände fertig, bevor du weitere beginnst, oder erhöhe die Obergrenze gezielt.
 

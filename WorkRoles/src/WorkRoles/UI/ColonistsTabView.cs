@@ -184,7 +184,6 @@ namespace WorkRoles.UI
         // growing the panel.
         private const float PortraitFrameSize = 88f;
         private const float PortraitFrameH = 96f;
-        private const float PortraitNameH = 20f;
         private const float ActivitySlotH = 18f;
 
         // Stats panel layout constants
@@ -3359,14 +3358,20 @@ namespace WorkRoles.UI
                 NameWidth, boxes.NameBox);
             GameFont oldFont = Text.Font;
             TextAnchor oldAnchor = Text.Anchor;
+            bool oldWordWrap = Text.WordWrap;
             Color oldColor = GUI.color;
             try
             {
+                if (row.FitName)
+                {
+                    Text.Font = GameFont.Small;
+                    Text.WordWrap = false;
+                }
                 Text.Anchor = TextAnchor.MiddleLeft;
                 // Slaves get the game's own sandy-yellow name color, as in
                 // vanilla lists.
                 GUI.color = row.NameColor;
-                Widgets.Label(nameRect, row.Label);
+                Widgets.Label(nameRect, row.ShownLabel);
 
                 if (hasCaption)
                 {
@@ -3401,6 +3406,7 @@ namespace WorkRoles.UI
             {
                 Text.Font = oldFont;
                 Text.Anchor = oldAnchor;
+                Text.WordWrap = oldWordWrap;
                 GUI.color = oldColor;
             }
 
@@ -3902,7 +3908,7 @@ namespace WorkRoles.UI
             private readonly ColonistSkillCellSnapshot[] skills;
 
             internal ColonistRowSnapshot(Pawn pawn,
-                string label, Color nameColor,
+                string label, string shownLabel, bool fitName, Color nameColor,
                 bool isColonist, bool downed, ChipDisplay chipDisplay,
                 string copiedToast, int activityRevision, int runtimeRevision, int activeRoleId,
                 ColonistChipSequenceSnapshot sequence,
@@ -3915,6 +3921,8 @@ namespace WorkRoles.UI
                 this.sequence = sequence;
                 Pawn = pawn;
                 Label = label;
+                ShownLabel = shownLabel;
+                FitName = fitName;
                 NameColor = nameColor;
                 IsColonist = isColonist;
                 Downed = downed;
@@ -3933,6 +3941,8 @@ namespace WorkRoles.UI
 
             internal Pawn Pawn { get; }
             internal string Label { get; }
+            internal string ShownLabel { get; }
+            internal bool FitName { get; }
             internal Color NameColor { get; }
             internal bool IsColonist { get; }
             internal bool Downed { get; }
@@ -3959,10 +3969,11 @@ namespace WorkRoles.UI
                 ColonistChipSequenceSnapshot nextSequence,
                 List<RoleChipLayout>? nextChips, float height,
                 int activityRevision, int runtimeRevision, int activeRoleId,
-                string label, Color nameColor, bool isColonist, bool downed, string copiedToast,
+                string label, string shownLabel, bool fitName, Color nameColor,
+                bool isColonist, bool downed, string copiedToast,
                 ColonistStatsSnapshot stats, SkillCaptionTuning captionTuning,
                 List<RowCaptionSegment>? nextCaption, ColonistSkillCellSnapshot[]? nextSkills) =>
-                new ColonistRowSnapshot(Pawn, label, nameColor, isColonist,
+                new ColonistRowSnapshot(Pawn, label, shownLabel, fitName, nameColor, isColonist,
                     downed, ChipDisplay, copiedToast, activityRevision,
                     runtimeRevision, activeRoleId, nextSequence, nextChips ?? chips,
                     height, nextCaption ?? caption, LineBoxes, nextSkills ?? skills,
@@ -4090,8 +4101,11 @@ namespace WorkRoles.UI
         // facts, activity and definition revisions, display mode, width, configured skill
         // columns and their exact widths, published skill stats and consumed
         // champion-caption tuning, the skill-caption toggle, font
-        // line boxes/tiny-font support, and
-        // language. Refresh: immediate on scope/key change; targeted per pawn
+        // line boxes/tiny-font support, and language. Full names are retained;
+        // only mechanical names are fitted in Small, consuming NameWidth and
+        // UI metrics. Human labels retain their original rendering. Fitted names
+        // are reused for unrelated stats/activity changes.
+        // Refresh: immediate on scope/key change; targeted per pawn
         // on activity change, on that pawn's external capture change, and on
         // its chip sequence changing identity. Equality: exact keys preserve
         // row identity. Relevant tuning updates replace only skill/caption
@@ -4178,15 +4192,24 @@ namespace WorkRoles.UI
                 : pawn.IsSlave ? PawnNameColorUtility.PawnNameColorOf(pawn) : Color.white;
             bool isColonist = observedPawnFacts ? cached!.IsColonist : pawn.IsColonist;
             bool downed = observedPawnFacts ? cached!.Downed : pawn.Downed;
+            bool fitName = observedPawnFacts ? cached!.FitName : MechanicalWorkers.IsMechanical(pawn);
             bool samePawnFacts = cached != null && cached.Label == label
                 && cached.NameColor == nameColor && cached.IsColonist == isColonist
-                && cached.Downed == downed;
+                && cached.Downed == downed && cached.FitName == fitName;
             if (!observedPawnFacts) rowExternalRevisions[pawn] = externalRevision;
             if (cached != null && sameStats && sameCaption && samePawnFacts
                 && cached.ActivityRevision == activityRevision
                 && cached.RuntimeRevision == runtimeRevision
                 && ReferenceEquals(cached.Sequence, sequence))
                 return cached;
+            string shownLabel;
+            if (!fitName)
+                shownLabel = label;
+            else if (cached != null && cached.Label == label && cached.FitName)
+                shownLabel = cached.ShownLabel;
+            else
+                using (new TextBlock(GameFont.Small))
+                    shownLabel = WrText.Truncate(label, NameWidth);
             List<RoleChipLayout>? layout = null;
             float height;
             if (cached != null && ReferenceEquals(cached.Sequence, sequence))
@@ -4219,7 +4242,7 @@ namespace WorkRoles.UI
             {
                 ColonistRowSnapshot updated = cached.Refresh(sequence,
                     layout, height, activityRevision, runtimeRevision, activity.RoleId,
-                    label, nameColor, isColonist, downed, copiedToast,
+                    label, shownLabel, fitName, nameColor, isColonist, downed, copiedToast,
                     stats, captionTuning,
                     sameCaption ? null : BuildRowCaption(pawn, store, stats),
                     sameStats ? null : BuildSkillCells(stats, columns, widths));
@@ -4227,7 +4250,7 @@ namespace WorkRoles.UI
                 return updated;
             }
             var entry = new ColonistRowSnapshot(pawn,
-                label,
+                label, shownLabel, fitName,
                 nameColor,
                 isColonist,
                 downed,
@@ -4522,7 +4545,8 @@ namespace WorkRoles.UI
             return entry.pass;
         }
 
-        // Lazy per-pawn tips for the roster name column: the vanilla builder
+        // Lazy per-pawn tips shared by the roster name column and selected
+        // name tag: the vanilla builder
         // runs per call, so WrTip defers it to the first hovered pass and
         // freezes the text per hover session. Selected-panel activity and trait
         // tips are detached in ColonistSelectedPanelState instead.
@@ -4790,16 +4814,33 @@ namespace WorkRoles.UI
             var nameTagRect = new Rect(
                 portraitFrameRect.x
                     + (portraitFrameRect.width - chrome.NameTagWidth) / 2f,
-                portraitFrameRect.y - PortraitNameH / 2f,
-                chrome.NameTagWidth, PortraitNameH);
+                portraitFrameRect.y - chrome.NameTagHeight / 2f,
+                chrome.NameTagWidth, chrome.NameTagHeight);
             Widgets.DrawBoxSolidWithOutline(nameTagRect,
                 new Color(0.05f, 0.05f, 0.05f, 1f),
                 new Color(1f, 1f, 1f, 0.25f));
             Text.Anchor = TextAnchor.MiddleCenter;
+            bool nameWordWrap = Text.WordWrap;
             GUI.color = chrome.NameColor;
-            Widgets.Label(nameTagRect, chrome.Label);
+            try
+            {
+                if (chrome.FitName)
+                {
+                    Text.WordWrap = false;
+                    Widgets.Label(new Rect(
+                        nameTagRect.x + ColonistSelectedPanelState.NameTagPadding,
+                        nameTagRect.y,
+                        nameTagRect.width - 2f * ColonistSelectedPanelState.NameTagPadding,
+                        nameTagRect.height), chrome.ShownLabel);
+                }
+                else
+                    Widgets.Label(nameTagRect, chrome.Label);
+            }
+            finally { Text.WordWrap = nameWordWrap; }
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
+            if (chrome.FitName && Mouse.IsOver(nameTagRect))
+                PawnTip(selected.Pawn).Region(nameTagRect);
 
             float slotY = portraitFrameRect.yMax + 4f;
             DrawActivitySlot(

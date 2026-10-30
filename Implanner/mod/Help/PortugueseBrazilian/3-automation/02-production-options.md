@@ -2,7 +2,7 @@
 title: Opções de produção
 ---
 <!-- l10n:b-bdd2b459773e -->
-**Adicionar automaticamente ordens de fabricação para implantes em falta** coloca ordens nas bancadas capazes e remove as próprias quando deixam de ser necessárias. Ordens criadas por você nunca são removidas. Cada ordem fabrica uma vez, seguindo a instalação: com Conjuntos completos, as pernas vêm antes dos braços se estiverem acima no plano.
+Com **Adicionar automaticamente ordens de fabricação para implantes em falta** ativado, Implanner coloca ordens nas bancadas capazes de fabricar os implantes necessários e remove suas próprias ordens quando deixam de ser necessárias. Ordens criadas por você nunca são removidas. Cada ordem fabrica uma vez, seguindo a ordem de instalação nas cirurgias: com Conjuntos completos, as pernas de um colono vêm antes dos braços se tiverem prioridade maior na classificação compartilhada de implantes.
 
 <!-- l10n:b-8effc9e9b828 -->
 Quando várias receitas produzem o mesmo implante, Implanner prefere uma rota disponível que possa pagar agora. Pode melhorar um implante básico livre ou fabricar diretamente o avançado com materiais. Se só a melhoria estiver habilitada, a produção intermediária pode fazer a base primeiro. Receitas precisam estar pesquisadas e ter uma bancada elegível.

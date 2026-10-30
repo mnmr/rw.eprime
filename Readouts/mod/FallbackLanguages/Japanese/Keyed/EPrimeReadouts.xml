@@ -100,14 +100,14 @@
   <EPR.QualityJobsMissingTip>EPrime's Quality Jobsが必要ですが、未導入です。</EPR.QualityJobsMissingTip>
   <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobsは導入済みですが、必要な連携機能がありません。更新するとこの設定を使えます。</EPR.QualityJobsOutdatedTip>
   <EPR.QualityJobsRework>Quality Jobs連携</EPR.QualityJobsRework>
-  <EPR.QualityJobsReworkTip>目標品質がある加工指示と建築について、目標に達するまでの予想試行回数を求め、全試行分の材料を確保します。建て替え時は、解体でバニラが返却する分を差し引きます。</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsReworkTip>Quality Jobsが管理する目標品質に合わせて、有効になっている加工指示と建築の材料確保量を調整します。再試行に必要な材料を見積もり、建築物の解体で戻る材料も考慮します。利用するには、上にある対応する材料確保オプションを有効にしてください。</EPR.QualityJobsReworkTip>
   <EPR.ReserveForBills>加工指示の材料を差し引く</EPR.ReserveForBills>
-  <EPR.ReserveForBillsTip>未完了の加工指示が今後消費する材料を差し引きます。材料の選択肢が1種類に確定する場合のみ確保します。「任意の革」など、自由に選べる材料は差し引きません。</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBillsTip>未完了の加工指示に必要な材料を差し引きます。指示で許可された資源の種類が1種類だけの場合に、その材料を計算に含めます。例えば、任意の革を許可すると何も確保せず、革を1種類だけ許可するとその革の必要量を確保します。</EPR.ReserveForBillsTip>
   <EPR.ReserveForBuildables>建築の材料を差し引く</EPR.ReserveForBuildables>
   <EPR.ReserveForBuildablesTip>設計図と建築途中の枠に必要な残りの材料を差し引きます。既に枠へ運び込んだ材料は二重に数えず、禁止された設計図は無視します。</EPR.ReserveForBuildablesTip>
   <EPR.ResourcePoolEditor>資源プール編集</EPR.ResourcePoolEditor>
   <EPR.Resources>資源</EPR.Resources>
-  <EPR.RestoreConfirm>全てのグループとしきい値を初期設定で置き換えますか？マルチプレイでは全員に影響します。</EPR.RestoreConfirm>
+  <EPR.RestoreConfirm>全てのグループと資源プールを標準の初期設定に戻し、全てのしきい値と個数の上書き設定を消去しますか？マルチプレイでは全員に影響します。</EPR.RestoreConfirm>
   <EPR.RestoreDefaults>初期設定に戻す</EPR.RestoreDefaults>
   <EPR.Results>検索結果</EPR.Results>
   <EPR.RuleAlwaysOff>常にオフ</EPR.RuleAlwaysOff>
@@ -137,13 +137,13 @@
   <EPR.TierLayoutTip>三角ボタンやホバーで展開した際の追加段の配置です。横並びでは同じ行の右側に追加し、縦並びでは段ごとに行を分けて表示帯を高くします。</EPR.TierLayoutTip>
   <EPR.TierLayoutVertical>縦並び</EPR.TierLayoutVertical>
   <EPR.TipAvailableStock>利用可能{0} · 在庫{1}</EPR.TipAvailableStock>
-  <EPR.TipDrain>消費量</EPR.TipDrain>
-  <EPR.TipEach>1回分</EPR.TipEach>
+  <EPR.TipDrain>差引量</EPR.TipDrain>
+  <EPR.TipEach>1回の材料費</EPR.TipEach>
   <EPR.TipInStock>在庫</EPR.TipInStock>
   <EPR.TipMixedResources>混合</EPR.TipMixedResources>
   <EPR.TipOtherPlannedWork>その他（{0}）</EPR.TipOtherPlannedWork>
   <EPR.TipPlannedWork>予定作業</EPR.TipPlannedWork>
-  <EPR.TipQueued>待機数</EPR.TipQueued>
+  <EPR.TipQueued>残り作業数</EPR.TipQueued>
   <EPR.TipResource>資源</EPR.TipResource>
   <EPR.Title>EPrime's Readouts</EPR.Title>
   <EPR.UseVanilla>バニラの資源表示を使う</EPR.UseVanilla>

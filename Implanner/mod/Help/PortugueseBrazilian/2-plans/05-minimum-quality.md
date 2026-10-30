@@ -8,13 +8,13 @@ Com Quality Bionics Remastered ou Vanilla Genetics Expanded, os implantes têm q
 ![Cabeçalho com Qualidade mínima](plan-min-quality.png)
 
 <!-- l10n:b-84db128338c2 -->
-Todos os implantes do plano, inclusive herdados, são instalados e fabricados nessa qualidade ou acima. Os que não têm qualidade não são afetados. Um plano derivado novo começa com o mínimo do plano base.
+O mínimo se aplica às novas instalações deste plano, incluindo as escolhas herdadas. A fabricação automática busca essa qualidade e pode precisar de várias tentativas para alcançá-la. Implantes sem qualidade não são afetados. Um novo plano derivado começa com o mesmo mínimo do plano base.
 
 <!-- l10n:b-93af25d8591d -->
 Implanner nunca troca uma parte saudável por outra pior. Um braço biônico horrível funciona pior que um natural e aguarda um item melhor, a menos que o braço esteja ausente ou muito danificado. Entre vários itens aceitáveis, o melhor vai para quem chegar primeiro na ordem.
 
 <!-- l10n:b-0e7cf20ad9dc -->
-Um colono que já tem o implante planejado o mantém, mesmo abaixo do mínimo, exceto com a opção seguinte.
+Um implante já instalado do tipo planejado continua contando como concluído, mesmo abaixo da qualidade mínima. Ative **Dar os melhores implantes aos colonos mais prioritários** para permitir a substituição por exemplares de qualidade superior, como explicado abaixo.
 
 <!-- l10n:b-b163fd8a6054 -->
 ## Melhores implantes para colonos prioritários
@@ -31,7 +31,7 @@ Com **Dar os melhores implantes aos colonos mais prioritários**, nas opções d
 - Itens reservados para alguém de menor prioridade também podem ser transferidos, desde que sua cirurgia ainda não esteja agendada.
 
 <!-- l10n:b-e246867de4e8 -->
-Cada troca exige cirurgia extra. Só acontece quando não há outra cirurgia de Implanner esperando pelo colono e existe vaga no limite simultâneo. Nunca ocorre se remover o implante também retiraria outra coisa da parte.
+Substituir um implante instalado por outro de qualidade superior exige duas operações: remoção e instalação. A troca só começa quando não há outra cirurgia de Implanner esperando pelo colono e existe vaga no limite de cirurgias simultâneas. Um implante nunca é trocado se sua remoção também retiraria outra coisa da parte do corpo.
 
 <!-- l10n:b-37015122025b -->
 Ao fabricar para o plano:

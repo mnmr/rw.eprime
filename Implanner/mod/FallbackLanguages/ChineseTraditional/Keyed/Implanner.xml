@@ -54,7 +54,7 @@
   <IMP_TipColReserved>已分配</IMP_TipColReserved>
   <IMP_TipColHeldBack>留作手動使用</IMP_TipColHeldBack>
   <IMP_TipColQueued>待生產</IMP_TipColQueued>
-  <IMP_TipColCrafting>製作中</IMP_TipColCrafting>
+  <IMP_TipColCrafting>已列入生產清單</IMP_TipColCrafting>
   <IMP_TipColStatus>狀態</IMP_TipColStatus>
   <IMP_TipCovered>已滿足</IMP_TipCovered>
   <IMP_TipMaking>製作中</IMP_TipMaking>
@@ -86,7 +86,7 @@
   <IMP_GoalReady>已就緒</IMP_GoalReady>
   <IMP_GoalScheduled>已安排手術</IMP_GoalScheduled>
   <IMP_GoalRecovering>恢復中</IMP_GoalRecovering>
-  <IMP_GoalBlockedFloor>未達到醫生技能下限（{0}）</IMP_GoalBlockedFloor>
+  <IMP_GoalBlockedFloor>等待醫療技能達 {0} 級以上的醫生</IMP_GoalBlockedFloor>
   <IMP_GoalBlockedLoss>將破壞 {0}</IMP_GoalBlockedLoss>
   <IMP_PlansHeader>方案</IMP_PlansHeader>
   <IMP_AddPlan>新建方案</IMP_AddPlan>
@@ -101,7 +101,7 @@
   <IMP_PlanColonists>{0} 名殖民者</IMP_PlanColonists>
   <IMP_DeletePlan>刪除方案</IMP_DeletePlan>
   <IMP_PlanMinQuality>最低品質：{0}</IMP_PlanMinQuality>
-  <IMP_PlanMinQualityTip>此方案按此品質或更高品質安裝和製作植入體。沒有品質的植入體不受影響。\n\n不會用更差的植入體替換健康身體部位。低品質仿生體會等待更好的物品，除非該部位已缺失或受損。</IMP_PlanMinQualityTip>
+  <IMP_PlanMinQualityTip>新安裝可接受的最低品質，也適用於從基礎方案繼承的選擇項。已經安裝的植入體只要是方案指定的類型，即使低於此最低品質也仍計為完成。啟用「將最佳植入體分配給高優先級殖民者」即可允許換裝品質更好的植入體。無品質的植入體不受影響。\n\n不會用更差的植入體替換健康身體部位。低品質仿生體會等待更好的物品，除非該部位已缺失或受損。</IMP_PlanMinQualityTip>
   <IMP_PlanMinQualityNoQualityJobs>未載入 Quality Jobs，因此任何工匠都可完成植入體。成品低於此品質時，會再次製作。</IMP_PlanMinQualityNoQualityJobs>
   <IMP_DeletePlanConfirm>刪除方案“{0}”？分配了此方案的殖民者將失去分配，繼承此方案的其他方案也將停止繼承。</IMP_DeletePlanConfirm>
   <IMP_ImplantGroupOther>其他</IMP_ImplantGroupOther>
@@ -118,7 +118,7 @@
   <IMP_NoMatchingImplants>沒有符合搜索條件的植入體。</IMP_NoMatchingImplants>
   <IMP_RankTiersTitle>植入體層級</IMP_RankTiersTitle>
   <IMP_Help>幫助</IMP_Help>
-  <IMP_RankTiersHelp>植入體可分為 5 個層級。位置會影響生產和手術順序，具體取決於自動化選項。\n\n拖動物品可調整順序。</IMP_RankTiersHelp>
+  <IMP_RankTiersHelp>此存檔中的所有方案共用植入體排名。在此移動植入體，會改變所有使用它的方案中的優先級。星數越多，優先級越高。\n\n在不同星級之間或同一星級內拖動，即可調整順序。排名會依照你的自動化策略決定生產與手術順序。</IMP_RankTiersHelp>
   <IMP_TierHighest>最高優先級</IMP_TierHighest>
   <IMP_TierHigh>高優先級</IMP_TierHigh>
   <IMP_TierMedium>中等優先級</IMP_TierMedium>
@@ -154,17 +154,17 @@
   <IMP_OptCatalog>目錄</IMP_OptCatalog>
   <IMP_OptShowPurchaseOnly>顯示僅能購買的植入體</IMP_OptShowPurchaseOnly>
   <IMP_CleanupTitle>關閉自動化？</IMP_CleanupTitle>
-  <IMP_CleanupBody>這些清單由 Implanner 創建。確認會關閉自動化，並移除已勾選的清單。未勾選的清單會保留，重新啟用自動化後繼續接管。兩種情況下都會釋放已分配的植入體物品。取消則保持自動化開啟。</IMP_CleanupBody>
+  <IMP_CleanupBody>這些清單由 Implanner 建立。確認會關閉自動化，並移除已勾選的清單。未勾選的清單仍然有效，殖民者仍可繼續製作或進行這些手術。重新啟用自動化後，Implanner 會恢復管理保留的清單。無論保留與否，已分配的植入體物品都會被釋放。取消則保持自動化開啟。</IMP_CleanupBody>
   <IMP_AutomationOffTitle>自動化已關閉</IMP_AutomationOffTitle>
   <IMP_AutomationOffBody>{0} 將此殖民地分布在多個樓層。Implanner 無法跨樓層運輸植入體或執行手術，因此停止分配物品和安排手術，以免每個方案都只能完成一部分。\n\n其他功能仍然可用。你可以繼續創建和分配方案，並排序植入體。自行添加手術後，Implanner 會跟蹤已安裝和仍缺少的植入體。</IMP_AutomationOffBody>
-  <IMP_OptEnableTip>控制 Implanner 所有自動操作的總開關：分配植入體、安排手術和創建生產清單。關閉後仍會跟蹤方案與進度，只是不再執行操作。關閉時還會詢問保留哪些現有清單。</IMP_OptEnableTip>
+  <IMP_OptEnableTip>控制 Implanner 所有自動操作的總開關：分配植入體物品、安排手術和建立製作清單。關閉後 Implanner 仍會追蹤方案與進度。關閉時會詢問保留哪些現有清單；保留的清單仍然有效，因此殖民者仍可繼續製作或進行這些手術。</IMP_OptEnableTip>
   <IMP_OptIterationTip>決定自動化處理缺失植入體的順序。“概覽”頁的殖民者優先級始終決定先後。\n\n按層級分批：先讓所有人獲得最高層級的植入體，再依次處理較低層級。某殖民者整個層級所需物品都已分配後才進入手術。\n\n整套安裝：完成一名殖民者的整個方案後再處理下一名。全部方案物品都已分配後才安排手術。\n\n盡快安裝：庫存中的每個植入體立即安排給缺少它且優先級最高的殖民者。優先級相同時，腿優先給行動最慢者；手臂先給裝備近戰武器者，再給手工與知識技能總和最高者。</IMP_OptIterationTip>
   <IMP_OptAutoFloorTip>手術清單僅允許當前最佳醫生執行，避免新手醫生僅因先到手術臺就失誤損壞仿生體。每個殖民地的要求會隨人員來去跟隨最佳醫生變化。任何人都無法給自己動手術，因此最佳醫生本人的手術交給次佳醫生。\n\n關閉後可手動設定固定技能下限。</IMP_OptAutoFloorTip>
   <IMP_OptSurgeryConcurrencyTip>每個殖民地可同時持有已安排手術的殖民者人數。較高值可讓更多人並行排隊，較低值則為醫院和醫生保留餘力。初始為每十名殖民者一名。點選 +/- 時按住 Shift 可每次調整 10，按住 Ctrl 則調整 5。</IMP_OptSurgeryConcurrencyTip>
   <IMP_OptCountHospitalizedTip>躺在醫療床上的殖民者和奴隸，以及倒地等待治療者，也會佔用手術名額。新的 Implanner 手術會等待，直到醫院佔用人數低於上述上限。囚犯、訪客和其他派系的來訪患者不會佔名額。關閉後，安排植入手術時將不考慮已接受治療的人。</IMP_OptCountHospitalizedTip>
-  <IMP_OptUpgradeByPriorityTip>更高品質的植入體優先給“概覽”頁中優先級最高的殖民者。新手術使用方案允許的最低品質，以騰出更好的植入體。\n\n有更好的同類植入體時，持有較差植入體且優先級最高的殖民者會獲得它。先移除其舊植入體，再把舊件分給下一人。已分配給較低優先級殖民者的植入體也可轉交，前提是對方尚未安排手術。\n\n每次交換都要額外手術。關閉時，每名殖民者輪到自己時獲得庫存中最好的植入體。</IMP_OptUpgradeByPriorityTip>
+  <IMP_OptUpgradeByPriorityTip>更高品質的植入體優先給「概覽」頁中優先級最高的殖民者。新手術使用方案允許的最低品質，以騰出更好的植入體。\n\n有更好的同類植入體時，持有較差植入體且優先級最高的殖民者會獲得它。先移除其舊植入體，再把舊件分給下一人。已分配給較低優先級殖民者的植入體也可轉交，前提是對方尚未安排手術。\n\n將已安裝的植入體換成更高品質的植入體需要兩次手術：移除與安裝。關閉時，每名殖民者輪到自己時獲得庫存中最好的植入體。</IMP_OptUpgradeByPriorityTip>
   <IMP_OptManualFloorTip>執行 Implanner 手術所需的最低醫療技能。清單會等待達到此等級的醫生。關閉自動分配時，初始值設為當前最佳醫生的技能。</IMP_OptManualFloorTip>
-  <IMP_OptImplantReservesTip>為手動使用留下的植入體。自動化僅分配超過這些數量的庫存，確保始終保留指定數量用於急救或交易。生產不會將留存物品視為可用，並會繼續製作，直到不動用它們也能推進自動化。</IMP_OptImplantReservesTip>
+  <IMP_OptImplantReservesTip>從現有植入體中留出最多此數量，供手動使用。Implanner 不會將這些植入體分配給計劃手術，也不會將其用作製作原料。只有已分配的方案仍需要植入體時，自動生產才會製作額外植入體。如果沒有方案需求但想補充急救庫存，請自行新增製作清單。</IMP_OptImplantReservesTip>
   <IMP_AddImplantReserveTip>選擇要留存、不供自動化使用的植入體。</IMP_AddImplantReserveTip>
   <IMP_OptAllowMultipleBladdersTip>來自不同模組的膀胱植入體在遊戲中屬於不同植入體，因此殖民者可同時擁有多個，效果也會疊加。關閉後將它們視為同一個欄位：在方案中選擇一個會覆蓋其他選項，已擁有下列任意一個的殖民者即視為完成。不會移除任何現有植入體。\n\n受影響的植入體：\n{0}</IMP_OptAllowMultipleBladdersTip>
   <IMP_OptAllowMultipleHygieneEnhancersTip>來自不同模組的衛生增強裝置在遊戲中屬於不同植入體，因此殖民者可同時擁有多個，效果也會疊加。關閉後將它們視為同一個欄位：在方案中選擇一個會覆蓋其他選項，已擁有下列任意一個的殖民者即視為完成。不會移除任何現有植入體。\n\n受影響的植入體：\n{0}</IMP_OptAllowMultipleHygieneEnhancersTip>

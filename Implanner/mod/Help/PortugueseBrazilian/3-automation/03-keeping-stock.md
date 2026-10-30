@@ -11,7 +11,7 @@ Duas opções impedem que a automação esvazie seus depósitos.
 ![Mínimos de recursos mantidos em estoque](keep-in-stock.png)
 
 <!-- l10n:b-5864119cb6f1 -->
-**Implantes separados** guarda implantes prontos para uso manual. Separar um braço biônico faz a automação usar apenas os excedentes, deixando um para emergências ou comércio. A produção trata o item separado como indisponível para atender à demanda e repõe o estoque.
+**Implantes separados** guarda implantes já existentes para uso manual, até a quantidade configurada. Ao separar um braço biônico, a automação só atribui os braços adicionais e deixa esse braço livre para cirurgias de emergência ou comércio. A produção automática fabrica mais implantes enquanto os planos atribuídos precisarem deles. Para repor o estoque de emergência quando nenhum plano precisar do implante, adicione uma ordem de fabricação por conta própria.
 Ordens de melhoria também não usam implantes separados nem os necessários para cirurgias planejadas. Só os excedentes viram ingredientes.
 
 <!-- l10n:b-04d4c3acbddc -->

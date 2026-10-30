@@ -33,7 +33,7 @@
   <IMP_StripAutomationOn>Automazione attiva</IMP_StripAutomationOn>
   <IMP_StripAutomationOff>Automazione disattivata</IMP_StripAutomationOff>
   <IMP_StripProduction>Produzione: {0}%</IMP_StripProduction>
-  <IMP_StripStock>{0} in magazzino, {1} in coda</IMP_StripStock>
+  <IMP_StripStock>{0} in magazzino, {1} ancora da produrre</IMP_StripStock>
   <IMP_StripMaking>Produzione di {0}</IMP_StripMaking>
   <IMP_StripMakingFor>Produzione dei materiali per {0}</IMP_StripMakingFor>
   <IMP_StripWaiting>In attesa di {0}</IMP_StripWaiting>
@@ -53,8 +53,8 @@
   <IMP_TipColFree>Liberi</IMP_TipColFree>
   <IMP_TipColReserved>Assegnati</IMP_TipColReserved>
   <IMP_TipColHeldBack>Accantonati</IMP_TipColHeldBack>
-  <IMP_TipColQueued>In coda</IMP_TipColQueued>
-  <IMP_TipColCrafting>In produzione</IMP_TipColCrafting>
+  <IMP_TipColQueued>Ancora da produrre</IMP_TipColQueued>
+  <IMP_TipColCrafting>Negli ordini di produzione</IMP_TipColCrafting>
   <IMP_TipColStatus>Stato</IMP_TipColStatus>
   <IMP_TipCovered>Coperto</IMP_TipCovered>
   <IMP_TipMaking>In produzione</IMP_TipMaking>
@@ -86,7 +86,7 @@
   <IMP_GoalReady>Pronto</IMP_GoalReady>
   <IMP_GoalScheduled>Intervento programmato</IMP_GoalScheduled>
   <IMP_GoalRecovering>In convalescenza</IMP_GoalRecovering>
-  <IMP_GoalBlockedFloor>Bloccato dal livello medico minimo ({0})</IMP_GoalBlockedFloor>
+  <IMP_GoalBlockedFloor>In attesa di un medico con Medicina {0}+</IMP_GoalBlockedFloor>
   <IMP_GoalBlockedLoss>Distruggerebbe {0}</IMP_GoalBlockedLoss>
   <IMP_PlansHeader>Piani</IMP_PlansHeader>
   <IMP_AddPlan>Nuovo piano</IMP_AddPlan>
@@ -101,7 +101,7 @@
   <IMP_PlanColonists>{0} coloni</IMP_PlanColonists>
   <IMP_DeletePlan>Elimina piano</IMP_DeletePlan>
   <IMP_PlanMinQuality>Qualità minima: {0}</IMP_PlanMinQuality>
-  <IMP_PlanMinQualityTip>Gli impianti di questo piano vengono installati e prodotti con questa qualità o superiore. Gli impianti privi di qualità non sono interessati.\n\nUn impianto non sostituisce mai una parte sana del corpo con una peggiore. Un impianto bionico di bassa qualità attende un esemplare migliore, salvo che la parte del corpo sia mancante o danneggiata.</IMP_PlanMinQualityTip>
+  <IMP_PlanMinQualityTip>Qualità minima accettata per le nuove installazioni, comprese le scelte ereditate del piano. Gli impianti già installati del tipo previsto continuano a contare come completati, anche sotto questo minimo. Attiva Dai gli impianti migliori ai coloni con priorità alta per consentire la sostituzione con esemplari di qualità migliore. Gli impianti privi di qualità non sono interessati.\n\nUn impianto non sostituisce mai una parte sana del corpo con una peggiore. Un impianto bionico di bassa qualità attende un esemplare migliore, salvo che la parte del corpo sia mancante o danneggiata.</IMP_PlanMinQualityTip>
   <IMP_PlanMinQualityNoQualityJobs>Quality Jobs non è caricato, quindi qualsiasi artigiano può completare un impianto. Un impianto prodotto con qualità inferiore a questa viene fabbricato di nuovo.</IMP_PlanMinQualityNoQualityJobs>
   <IMP_DeletePlanConfirm>Eliminare il piano "{0}"? I coloni assegnati perderanno l'assegnazione e i piani che lo estendono smetteranno di ereditarne gli impianti.</IMP_DeletePlanConfirm>
   <IMP_ImplantGroupOther>Altro</IMP_ImplantGroupOther>
@@ -118,7 +118,7 @@
   <IMP_NoMatchingImplants>Nessun impianto corrisponde alla ricerca.</IMP_NoMatchingImplants>
   <IMP_RankTiersTitle>Fasce degli impianti</IMP_RankTiersTitle>
   <IMP_Help>Aiuto</IMP_Help>
-  <IMP_RankTiersHelp>Gli impianti possono essere suddivisi in 5 fasce. La posizione influisce sull'ordine di produzione e sulla chirurgia, secondo le opzioni di automazione.\n\nTrascina gli oggetti per riordinarli.</IMP_RankTiersHelp>
+  <IMP_RankTiersHelp>Le classifiche degli impianti sono condivise da tutti i piani di questo salvataggio. Spostare un impianto qui ne cambia la priorità ovunque compaia. Più stelle indicano una priorità maggiore.\n\nTrascina gli impianti tra le fasce di stelle o all'interno di una fascia per definirne l'ordine. Le classifiche guidano la produzione e gli interventi chirurgici secondo la tua strategia di automazione.</IMP_RankTiersHelp>
   <IMP_TierHighest>Priorità massima</IMP_TierHighest>
   <IMP_TierHigh>Priorità alta</IMP_TierHigh>
   <IMP_TierMedium>Priorità media</IMP_TierMedium>
@@ -154,17 +154,17 @@
   <IMP_OptCatalog>Catalogo</IMP_OptCatalog>
   <IMP_OptShowPurchaseOnly>Mostra gli impianti non fabbricabili</IMP_OptShowPurchaseOnly>
   <IMP_CleanupTitle>Disattivare l'automazione?</IMP_CleanupTitle>
-  <IMP_CleanupBody>Questi ordini sono stati creati da Implanner. OK disattiva l'automazione e rimuove gli ordini selezionati. Quelli non selezionati restano e saranno nuovamente gestiti quando riattiverai l'automazione. Gli impianti assegnati vengono liberati in entrambi i casi. Annulla mantiene attiva l'automazione.</IMP_CleanupBody>
+  <IMP_CleanupBody>Questi ordini sono stati creati da Implanner. OK disattiva l’automazione e rimuove gli ordini selezionati. Quelli non selezionati restano attivi: i coloni possono ancora produrre gli oggetti o eseguire quegli interventi. Implanner torna a gestire gli ordini rimasti quando riattivi l’automazione. Gli impianti assegnati vengono liberati in entrambi i casi. Annulla mantiene attiva l’automazione.</IMP_CleanupBody>
   <IMP_AutomationOffTitle>L'automazione è disattivata</IMP_AutomationOffTitle>
   <IMP_AutomationOffBody>{0} distribuisce questa colonia su più piani. Implanner non può trasportare un impianto o un intervento oltre il confine tra piani, quindi smette di assegnare oggetti e programmare interventi per evitare di realizzare solo metà di ogni piano.\n\nTutto il resto continua a funzionare. Puoi creare piani, assegnarli e ordinare gli impianti. Aggiungi gli interventi manualmente e Implanner terrà traccia degli impianti installati e di quelli mancanti.</IMP_AutomationOffBody>
-  <IMP_OptEnableTip>L'interruttore principale di tutto ciò che Implanner fa autonomamente: assegnare impianti, programmare interventi e creare ordini di produzione. Se disattivo, Implanner continua a seguire piani e avanzamento, ma smette di agire su di essi. Disattivandolo, puoi anche scegliere quali ordini esistenti conservare.</IMP_OptEnableTip>
+  <IMP_OptEnableTip>L’interruttore principale di tutto ciò che Implanner fa autonomamente: assegnare impianti, programmare interventi e creare ordini di produzione. Se disattivo, Implanner continua a seguire piani e avanzamento. Disattivandolo, scegli quali ordini esistenti conservare; questi restano attivi, quindi i coloni possono ancora produrre gli oggetti o eseguire quegli interventi.</IMP_OptEnableTip>
   <IMP_OptIterationTip>L'ordine in cui l'automazione affronta gli impianti mancanti. La priorità dei coloni nella scheda Panoramica decide sempre chi viene prima.\n\nGruppi per fascia: tutti ricevono prima gli impianti della fascia più alta, poi si scende alle successive. Un colono va in chirurgia quando tutti gli impianti della sua fascia sono assegnati.\n\nSet completi: completa l'intero piano di un colono prima di iniziare il successivo. La chirurgia attende che siano assegnati tutti gli impianti del piano.\n\nAppena possibile: ogni impianto in magazzino viene subito programmato per il colono con la priorità più alta a cui manca. A parità di priorità, le gambe vanno al colono più lento e le braccia prima a chi ha equipaggiata un'arma da mischia, poi a chi ha la somma più alta delle abilità Artigianato e Ricerca.</IMP_OptIterationTip>
   <IMP_OptAutoFloorTip>Gli interventi sono riservati al miglior medico disponibile, così un principiante non rovina un'installazione bionica solo perché arriva per primo al tavolo operatorio. Il requisito segue il miglior medico di ogni colonia quando le persone arrivano o partono. Nessuno può operare sé stesso, quindi gli interventi sul miglior medico spettano al secondo migliore.\n\nDisattiva questa opzione per impostare un livello minimo fisso.</IMP_OptAutoFloorTip>
   <IMP_OptSurgeryConcurrencyTip>Quanti coloni per colonia possono avere interventi programmati contemporaneamente. Valori più alti mettono in coda più coloni in parallelo; valori più bassi lasciano liberi l'ospedale e i medici. Il valore iniziale è uno ogni dieci coloni. Tieni premuto Shift mentre fai clic su +/- per cambiare di 10, oppure Ctrl per cambiare di 5.</IMP_OptSurgeryConcurrencyTip>
   <IMP_OptCountHospitalizedTip>Anche i coloni e gli schiavi nei letti medici, oppure a terra in attesa di cure, occupano posti chirurgici. I nuovi interventi di Implanner attendono che l'ospedale abbia spazio entro il limite indicato sopra. Prigionieri, ospiti e pazienti in visita di altre fazioni non occupano mai un posto. Disattiva l'opzione per programmare gli impianti indipendentemente da chi sta già ricevendo cure.</IMP_OptCountHospitalizedTip>
-  <IMP_OptUpgradeByPriorityTip>Gli impianti di qualità superiore vanno ai coloni con priorità più alta nella scheda Panoramica. I nuovi interventi usano la qualità minima accettata dal piano, lasciando liberi gli impianti migliori.\n\nQuando è disponibile un impianto migliore, lo riceve il colono con priorità più alta che ne possiede uno peggiore dello stesso tipo. Il vecchio impianto viene prima rimosso e poi passa al colono successivo. Anche un impianto già assegnato a un colono con priorità inferiore viene ceduto, purché l'intervento non sia ancora programmato.\n\nOgni scambio richiede un intervento aggiuntivo. Se disattivo, ogni colono riceve il miglior impianto disponibile quando arriva il suo turno.</IMP_OptUpgradeByPriorityTip>
+  <IMP_OptUpgradeByPriorityTip>Gli impianti di qualità superiore vanno ai coloni con priorità più alta nella scheda Panoramica. I nuovi interventi usano la qualità minima accettata dal piano, lasciando liberi gli impianti migliori.\n\nQuando è disponibile un impianto migliore, lo riceve il colono con priorità più alta che ne possiede uno peggiore dello stesso tipo. Il vecchio impianto viene prima rimosso e poi passa al colono successivo. Anche un impianto già assegnato a un colono con priorità inferiore viene ceduto, purché l'intervento non sia ancora programmato.\n\nSostituire un impianto installato con uno di qualità superiore richiede due interventi: rimozione e installazione. Se disattivo, ogni colono riceve il miglior impianto disponibile quando arriva il suo turno.</IMP_OptUpgradeByPriorityTip>
   <IMP_OptManualFloorTip>L'abilità Medicina minima richiesta per eseguire gli interventi di Implanner. Gli ordini attendono un medico con questo livello o superiore. Quando disattivi l'assegnazione automatica, il valore iniziale corrisponde al tuo miglior medico attuale.</IMP_OptManualFloorTip>
-  <IMP_OptImplantReservesTip>Impianti accantonati per l'uso manuale. L'automazione assegna solo le quantità eccedenti questi valori, lasciando sempre libero questo numero di ciascun impianto per interventi urgenti o commercio. La produzione non considera disponibili gli oggetti accantonati e continua a fabbricare finché l'automazione può procedere senza di essi.</IMP_OptImplantReservesTip>
+  <IMP_OptImplantReservesTip>Lascia liberi per l’uso manuale fino a questo numero di impianti già esistenti. Implanner non li usa per gli interventi pianificati né come ingredienti di produzione. La produzione automatica fabbrica altri impianti finché i piani assegnati ne hanno bisogno. Per reintegrare le scorte di emergenza quando nessun piano richiede l’impianto, aggiungi tu un ordine di produzione.</IMP_OptImplantReservesTip>
   <IMP_AddImplantReserveTip>Scegli un impianto da accantonare per impedirne l'uso automatico.</IMP_AddImplantReserveTip>
   <IMP_OptAllowMultipleBladdersTip>Per il gioco, gli impianti della vescica di mod diverse sono impianti separati: un colono può averne più di uno e gli effetti si sommano. Disattiva questa opzione per trattarli come un unico alloggiamento: sceglierne uno nel piano sostituisce gli altri e un colono che possiede già uno degli impianti elencati sotto risulta completo. Non viene mai rimosso nulla.\n\nImpianti interessati:\n{0}</IMP_OptAllowMultipleBladdersTip>
   <IMP_OptAllowMultipleHygieneEnhancersTip>Per il gioco, i potenziatori igienici di mod diverse sono impianti separati: un colono può averne più di uno e gli effetti si sommano. Disattiva questa opzione per trattarli come un unico alloggiamento: sceglierne uno nel piano sostituisce gli altri e un colono che possiede già uno degli impianti elencati sotto risulta completo. Non viene mai rimosso nulla.\n\nImpianti interessati:\n{0}</IMP_OptAllowMultipleHygieneEnhancersTip>

@@ -11,19 +11,19 @@ Colonist priority on the Overview tab always decides who goes first.
 <!-- l10n:b-cae0082f85d5 -->
 - **Tier batching**: every colonist gets the implants in their best tier
   first, then work moves down the tiers. A colonist goes into surgery
-  once their whole tier is reserved. Each colonist needs more surgeries,
-  but every colonist benefits sooner.
+  once their whole tier is reserved. Colonists can receive implants sooner,
+  but may need separate periods under anesthetic for later tiers.
 - **Full sets**: finish one colonist's whole plan before starting the
-  next. Surgery waits until the whole plan is reserved. Each colonist
-  needs fewer surgeries, but the last colonist in priority order waits
-  the longest.
+  next. Surgery waits until the whole plan is reserved. Each implant still
+  needs its own operation, but batching can reduce separate periods under
+  anesthetic. The last colonist in priority order waits the longest.
 - **ASAP**: every implant in stock is scheduled right away for the
   colonist with the highest priority who is missing it. At equal
   priority, legs go to the slowest colonist, and arms go to colonists
   carrying a melee weapon first, then to whoever has the highest Crafting
   and Intellectual skills combined. Nothing waits for a batch: a single
   bionic leg is scheduled as soon as it is reserved and on site, even if
-  that means one surgery per implant.
+  that means separate periods under anesthetic as more items arrive.
 
 <!-- l10n:b-be821f0459ef -->
 **Concurrent surgeries** caps how many colonists per colony can have

@@ -2,7 +2,7 @@
 title: İmplant kademeleri
 ---
 <!-- l10n:b-5f84f9b2d5c3 -->
-Sağ sütun planın kendi seçimlerini beş yıldız kademesine sıralar; devralınmış implant temel planında sıralanır. Taşımak için satırı başka kademeye sürükleyin.
+Sağ sütun, planın kendi seçimlerini beş yıldız kademesinde gösterir. İmplant sıralamaları bu kayıttaki tüm planlar arasında ortaktır: bir implantı burada taşımak, yer aldığı her plandaki önceliğini değiştirir. Daha çok yıldız, daha yüksek öncelik demektir. Sıralamayı belirlemek için implantları yıldız kademeleri arasında veya aynı kademe içinde sürükleyin. Devralınan bir implantı taşımak için onu seçen temel planı açın.
 
 <!-- l10n:b-21a47f167054 -->
 ![En yüksekten normal önceliğe sıralanan yıldız kademeleri](tier-panel.png)

@@ -33,7 +33,7 @@
   <EPR.PoolTip>添加為資源集合：用一個欄位顯示此類別中所有物品的總數</EPR.PoolTip>
   <EPR.EnableTip>在資源面板中顯示此分組</EPR.EnableTip>
   <EPR.RestoreDefaults>恢復預設值</EPR.RestoreDefaults>
-  <EPR.RestoreConfirm>用預設配置替換所有分組和閾值？多人遊戲中會影響所有玩家。</EPR.RestoreConfirm>
+  <EPR.RestoreConfirm>將所有分組和資源集合替換為內建預設值，並清除所有閾值和計數覆寫設定？多人遊戲中會影響所有玩家。</EPR.RestoreConfirm>
   <EPR.Help>幫助</EPR.Help>
   <EPR.HelpGroups>這些是資源顯示分組，每個分組佔一條獨立的橫帶。
 
@@ -80,20 +80,20 @@
   <EPR.CountOptions>計數選項</EPR.CountOptions>
   <EPR.PlannedWorkOptions>計劃工作</EPR.PlannedWorkOptions>
   <EPR.ReserveForBills>為生產清單預留資源</EPR.ReserveForBills>
-  <EPR.ReserveForBillsTip>扣除未完成生產清單仍需消耗的原料。只有某項原料恰好有一種滿足方式時，才會為其預留資源。“任意皮革”等開放選擇不預留任何資源。</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBillsTip>扣除未完成生產清單所需的原料。只有清單對某項原料僅允許一種資源時，才會計入。例如，允許任意皮革時不預留資源；僅允許一種皮革時，才會計入該皮革的用量。</EPR.ReserveForBillsTip>
   <EPR.ReserveForBuildables>為建築預留資源</EPR.ReserveForBuildables>
   <EPR.ReserveForBuildablesTip>扣除藍圖和施工框架仍需的材料。已搬入框架的材料不會重複計入，禁止施工的藍圖會被忽略。</EPR.ReserveForBuildablesTip>
   <EPR.ShowNegativeCounts>以負數顯示資源缺口</EPR.ShowNegativeCounts>
   <EPR.ShowNegativeCountsTip>計劃工作所需資源超過現有數量時，顯示缺少多少，而不是最低只顯示零。</EPR.ShowNegativeCountsTip>
   <EPR.QualityJobsRework>Quality Jobs 支持</EPR.QualityJobsRework>
-  <EPR.QualityJobsReworkTip>對於設有品質目標的生產清單和建築，估算達到目標所需的嘗試次數，並為所有嘗試預留資源。重建建築在拆除時按原版規則返還部分材料。</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsReworkTip>根據 Quality Jobs 管理的品質目標，調整已啟用的生產清單與建築資源預留。估算額外嘗試所需的材料，並計入拆除建築時返還的材料。使用此功能前，請先啟用上方對應的資源預留選項。</EPR.QualityJobsReworkTip>
   <EPR.QualityJobsMissingTip>需要 EPrime's Quality Jobs，但尚未安裝。</EPR.QualityJobsMissingTip>
   <EPR.QualityJobsOutdatedTip>已安裝 EPrime's Quality Jobs，但其版本不提供所需的集成功能。請更新後啟用此選項。</EPR.QualityJobsOutdatedTip>
   <EPR.TipPlannedWork>計劃工作</EPR.TipPlannedWork>
   <EPR.TipResource>資源</EPR.TipResource>
-  <EPR.TipQueued>已排隊</EPR.TipQueued>
-  <EPR.TipEach>每份</EPR.TipEach>
-  <EPR.TipDrain>消耗</EPR.TipDrain>
+  <EPR.TipQueued>剩餘工作</EPR.TipQueued>
+  <EPR.TipEach>每次用量</EPR.TipEach>
+  <EPR.TipDrain>已扣除</EPR.TipDrain>
   <EPR.TipInStock>庫存</EPR.TipInStock>
   <EPR.TipAvailableStock>可用 {0} · 庫存 {1}</EPR.TipAvailableStock>
   <EPR.TipOtherPlannedWork>其他（{0}）</EPR.TipOtherPlannedWork>

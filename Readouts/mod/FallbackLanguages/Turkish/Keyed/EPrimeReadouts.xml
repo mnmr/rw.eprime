@@ -101,14 +101,14 @@ Grubun sonuna eklemek için bir girdiye tıklayın veya belirli bir kademe yuvas
   <EPR.QualityJobsMissingTip>Kurulu olmayan EPrime's Quality Jobs gereklidir.</EPR.QualityJobsMissingTip>
   <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs kurulu ama gereken entegrasyonu sunmuyor. Bu seçeneği açmak için güncelleyin.</EPR.QualityJobsOutdatedTip>
   <EPR.QualityJobsRework>Quality Jobs desteği</EPR.QualityJobsRework>
-  <EPR.QualityJobsReworkTip>Kalite hedefi olan siparişler ve yapılar için hedefe kaç denemede ulaşılacağını tahmin eder ve tümü için kaynak ayırır. Yeniden yapılan yapılar söküldüğünde temel oyunun iade ettiği malzeme payını geri verir.</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsReworkTip>Etkin sipariş ve yapı kaynak ayırma seçeneklerini Quality Jobs tarafından yönetilen kalite hedeflerine göre uyarlar. Tekrarlanan denemeler için gereken malzemeleri tahmin eder ve inşaat malzemesi iadelerini hesaba katar. Kullanmak için yukarıdaki ilgili kaynak ayırma seçeneğini etkinleştirin.</EPR.QualityJobsReworkTip>
   <EPR.ReserveForBills>Siparişler için kaynak ayır</EPR.ReserveForBills>
-  <EPR.ReserveForBillsTip>Bekleyen siparişlerin henüz tüketeceği malzemeleri çıkarır. Bir sipariş, yalnızca tam olarak tek şekilde karşılanabilen malzemeyi ayırır. "Herhangi bir deri" gibi açık seçenekler için hiçbir şey ayrılmaz.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBillsTip>Bekleyen üretim siparişlerinin gerektirdiği malzemeleri çıkarır. Bir malzeme, yalnızca sipariş o malzeme için tam olarak tek bir kaynak türüne izin veriyorsa hesaba katılır. Örneğin, herhangi bir deriye izin verilirse hiçbir şey ayrılmaz; yalnızca tek bir deri türüne izin verilirse o derinin maliyeti hesaba katılır.</EPR.ReserveForBillsTip>
   <EPR.ReserveForBuildables>Yapılar için kaynak ayır</EPR.ReserveForBuildables>
   <EPR.ReserveForBuildablesTip>Planların ve yarım inşa iskeletlerinin hâlâ ihtiyaç duyduğu malzemeleri çıkarır. İskelete taşınmış malzemeler tekrar sayılmaz, yasaklı planlar yok sayılır.</EPR.ReserveForBuildablesTip>
   <EPR.ResourcePoolEditor>Kaynak havuzu düzenleyici</EPR.ResourcePoolEditor>
   <EPR.Resources>Kaynaklar</EPR.Resources>
-  <EPR.RestoreConfirm>TÜM gruplar ve eşikler varsayılan kümeyle değiştirilsin mi? Bu, çok oyunculu oyunda herkesi etkiler.</EPR.RestoreConfirm>
+  <EPR.RestoreConfirm>Tüm gruplar ve kaynak havuzları yerleşik varsayılanlarla değiştirilsin ve tüm eşikler ile özel sayım ayarları temizlensin mi? Bu, çok oyunculu oyunda herkesi etkiler.</EPR.RestoreConfirm>
   <EPR.RestoreDefaults>Varsayılanları geri yükle</EPR.RestoreDefaults>
   <EPR.Results>Sonuçlar</EPR.Results>
   <EPR.RuleAlwaysOff>Daima kapalı</EPR.RuleAlwaysOff>
@@ -138,13 +138,13 @@ Grubun sonuna eklemek için bir girdiye tıklayın veya belirli bir kademe yuvas
   <EPR.TierLayoutTip>Üçgenlerle geçiş yaptığınızda veya imleci üzerine getirdiğinizde genişleyen grubun ek kademelerinin nasıl gösterileceği. Yatay, bunları aynı satırda sağa ekler. Dikey, her kademeyi ayrı satıra koyarak şeridi yükseltir.</EPR.TierLayoutTip>
   <EPR.TierLayoutVertical>Dikey</EPR.TierLayoutVertical>
   <EPR.TipAvailableStock>{0} kullanılabilir · {1} stokta</EPR.TipAvailableStock>
-  <EPR.TipDrain>Tüketim</EPR.TipDrain>
-  <EPR.TipEach>Birim</EPR.TipEach>
+  <EPR.TipDrain>Çıkarılan</EPR.TipDrain>
+  <EPR.TipEach>Deneme başına maliyet</EPR.TipEach>
   <EPR.TipInStock>Stokta</EPR.TipInStock>
   <EPR.TipMixedResources>Karışık</EPR.TipMixedResources>
   <EPR.TipOtherPlannedWork>Diğer ({0})</EPR.TipOtherPlannedWork>
   <EPR.TipPlannedWork>Planlanan işler</EPR.TipPlannedWork>
-  <EPR.TipQueued>Sırada</EPR.TipQueued>
+  <EPR.TipQueued>Kalan iş</EPR.TipQueued>
   <EPR.TipResource>Kaynak</EPR.TipResource>
   <EPR.Title>EPrime's Readouts</EPR.Title>
   <EPR.UseVanilla>Temel oyunun göstergesini kullan</EPR.UseVanilla>

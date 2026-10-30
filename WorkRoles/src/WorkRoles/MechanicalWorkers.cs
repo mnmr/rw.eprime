@@ -183,6 +183,25 @@ namespace WorkRoles
                 && pawn.RaceProps.mechEnabledWorkTypes.Contains(giver.workType);
         }
 
+        // Called only by the external-facts producer. Native work definitions
+        // decide which skills are useful; a generic robot skill tracker alone
+        // does not. Temporary job availability and role assignments are not
+        // skill dependencies. The producer publishes these levels for all UI
+        // and recommendation consumers, under its factual/definition gates.
+        internal static void CaptureWorkSkills(Pawn pawn, IDictionary<string, int> levels)
+        {
+            foreach (WorkGiverDef giver in DefDatabase<WorkGiverDef>.AllDefsListForReading)
+            {
+                if (giver.workType?.relevantSkills == null || !CanDo(pawn, giver)) continue;
+                foreach (SkillDef def in giver.workType.relevantSkills)
+                {
+                    SkillRecord? skill = pawn.skills?.GetSkill(def);
+                    if (skill != null && skill.TotallyDisabled) continue;
+                    levels[def.defName] = skill?.Level ?? pawn.RaceProps.mechFixedSkillLevel;
+                }
+            }
+        }
+
         internal static List<Pawn> ListedPawns(ScopeOption scope)
         {
             List<Pawn> result = ColonyScope.PawnsIn(scope);

@@ -7,28 +7,28 @@
   <QJ_ManageBill>管理此生產清單</QJ_ManageBill>
   <QJ_FinisherSkill>收尾門檻：{0}</QJ_FinisherSkill>
   <QJ_FinisherSkillTip>只有技能達到或高於此等級的工作者才能完成最後工序。其他符合條件的工作者可進行前期製作。</QJ_FinisherSkillTip>
-  <QJ_AutoBest>自動調整收尾技能要求</QJ_AutoBest>
-  <QJ_AutoBestTip>勾選：僅允許殖民地中最優秀的可用完工者完成此工作，技能要求會自動跟隨該工作者調整。比較時，暫時離開、倒地或忙碌的工作者仍視為可用。\n\n不勾選：任何符合條件且達到手動設定之收尾技能要求的工作者，都可完成此工作。</QJ_AutoBestTip>
+  <QJ_AutoBest>自動選擇最佳完工者</QJ_AutoBest>
+  <QJ_AutoBestTip>勾選：僅允許殖民地中排名最高的工作者完成最後工序。排名依據為技能、創作靈感、專家角色及支援的品質加成所決定的預期品質。手動設定的技能要求將被忽略。離開地圖、倒地或忙碌的工作者仍計入比較；若沒有排名最高的工作者能在此地圖上完工，工作便會等待。\n\n不勾選：任何達到手動技能要求及其他完工條件的合格工作者，都可完成最後工序。</QJ_AutoBestTip>
   <QJ_AutoBestCurrent>當前：{0}</QJ_AutoBestCurrent>
   <QJ_AutoBestNone>無符合條件的工作者</QJ_AutoBestNone>
   <QJ_MigrationTitle>現有品質生產清單</QJ_MigrationTitle>
   <QJ_MigrationBody>Quality Jobs 找到了 {0} 項現有的品質生產清單。它們仍未納入管理，以保持當前行為。無論選擇哪種方式，都可共享未完成品。</QJ_MigrationBody>
   <QJ_MigrationEnableExisting>為現有品質物品生產清單啟用 Quality Jobs？</QJ_MigrationEnableExisting>
-  <QJ_MigrationEnableExistingTip>勾選：現有清單使用 Quality Jobs，並啟用自動調整收尾技能。由殖民地中最優秀且符合條件的工作者完成最後工序，暫時無法工作的工作者也計入比較。不要求創作靈感或生產專家，低品質成品也不會觸發重做。\n\n不勾選：現有清單保留原版完成方式。不影響未完成品共享。</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationEnableExistingTip>勾選：現有製作清單使用 Quality Jobs，並啟用「自動選擇最佳完工者」。由殖民地中最優秀且符合條件的工作者完成最後工序；暫時無法工作的工作者仍計入比較。不要求創作靈感或生產專家，低品質成品也不會觸發重做。\n\n不勾選：現有製作清單保留原版完成方式。不影響未完成品共享。</QJ_MigrationEnableExistingTip>
   <QJ_MigrationContinue>繼續</QJ_MigrationContinue>
   <QJ_RequireInspired>要求創作狂熱</QJ_RequireInspired>
   <QJ_RequireSpecialist>要求製造專家</QJ_RequireSpecialist>
   <QJ_StockCapLabel>庫存上限：{0}</QJ_StockCapLabel>
-  <QJ_StockCapTooltip>此產品未完成品的最大數量。同一產品共用上限，因此所有生產該物品的清單都計入此限制。\n\n0 表示無限制。</QJ_StockCapTooltip>
+  <QJ_StockCapTooltip>限制各地圖上此產品新開始製作的數量。同一地圖上此產品的所有未完成品會跨製作清單與工作台合併計算，但達到上限時，只有受 Quality Jobs 管理的製作清單會停止開始製作新物品。\n\n現有物品仍可繼續製作或完工。0 表示無限制。變更此值會更改所有製作清單中此產品的上限，各地圖分別計算。</QJ_StockCapTooltip>
   <QJ_StatusHeader>狀態</QJ_StatusHeader>
   <QJ_StatusQueue>等待中：{0} · 收尾中：{1}</QJ_StatusQueue>
   <QJ_StatusQueueShared>未完成：{0} · 等待中：{1} · 收尾中：{2}</QJ_StatusQueueShared>
-  <QJ_StatusQueueTip>未完成：共享池中任何獲準工匠都能繼續製作的物品。等待中：已暫停、需要符合要求的角色收尾的物品。收尾中：已分配給收尾者的物品。</QJ_StatusQueueTip>
+  <QJ_StatusQueueTip>數量包含此地圖上所有生產清單與工作台中，該產品已被追蹤的未完成物品。\n\n未完成：共享池中任何獲準工匠都能繼續製作的物品。等待中：已暫停、需要符合要求的角色收尾的物品。收尾中：已分配給收尾者的物品。</QJ_StatusQueueTip>
   <QJ_StatusFinishers>符合收尾條件的人選：{0}</QJ_StatusFinishers>
   <QJ_StatusFinishersNone>符合收尾條件的人選：無</QJ_StatusFinishersNone>
-  <QJ_StatusFinishersTip>此地圖上當前符合收尾條件的工作者，最佳人選列在最前。工作者必須能執行所需工作類型，並滿足上方收尾要求。\n\n倒地、處於精神異常狀態或不在此地圖的工作者不計入。</QJ_StatusFinishersTip>
-  <QJ_StatusStalled>等待中的物品沒有合適的收尾者</QJ_StatusStalled>
-  <QJ_StatusStalledTip>有未完成品在等待，但當前沒有工作者滿足收尾條件，因此不會生成收尾工作。\n\n請檢查收尾技能、靈感和專家要求，以及預定的收尾者是否能執行相應工作類型且位於此地圖。停滯期間，庫存上限也可能阻止開始製作新物品。</QJ_StatusStalledTip>
+  <QJ_StatusFinishersTip>此地圖上當前符合收尾條件的工作者，最佳人選列在最前。工作者必須能執行所需工作類型，並滿足上方收尾要求。 在生產清單面板中，此名單使用目前所選清單的要求；製作同一產品的其他生產清單可能有不同要求。\n\n倒地、處於精神異常狀態或不在此地圖的工作者不計入。</QJ_StatusFinishersTip>
+  <QJ_StatusStalled>沒有人員符合此清單的收尾要求。</QJ_StatusStalled>
+  <QJ_StatusStalledTip>目前沒有人員符合此生產清單的收尾要求。佇列數量包含此地圖上製作此產品的所有生產清單；其他生產清單可能有不同要求。\n\n請檢查所需技能等級、創作狂熱和製造專家要求，以及預定收尾人員是否能執行該工作類型並位於此地圖。庫存上限已滿也可能阻止新物品開工。</QJ_StatusStalledTip>
   <QJ_StatusStalledConstruction>沒有合適的收尾者——施工已停滯</QJ_StatusStalledConstruction>
   <QJ_StatusStalledConstructionTip>建築已暫停，等待最後工序，但當前沒有工作者符合條件，因此無法完工。\n\n請檢查收尾技能、靈感和專家要求，以及預定的建造者是否能執行建造工作且位於此地圖。</QJ_StatusStalledConstructionTip>
   <QJ_OddsHeader>品質機率</QJ_OddsHeader>
@@ -38,19 +38,19 @@
   <QJ_SettingsBillDefaults>生產清單預設選項</QJ_SettingsBillDefaults>
   <QJ_SettingsConstructionDefaults>建造預設選項</QJ_SettingsConstructionDefaults>
   <QJ_SettingsGlobalOptions>全局選項</QJ_SettingsGlobalOptions>
-  <QJ_SettingsManageNewBills>管理新增品質生產清單</QJ_SettingsManageNewBills>
-  <QJ_SettingsManageNewBillsTip>勾選：Quality Jobs 預設按本欄選項管理生產品質物品的清單。可在各清單設定中單獨覆蓋。\n\n不勾選：清單使用原版行為，除非在其設定窗口中單獨啟用 Quality Jobs。</QJ_SettingsManageNewBillsTip>
+  <QJ_SettingsManageNewBills>預設管理品質物品製作清單</QJ_SettingsManageNewBills>
+  <QJ_SettingsManageNewBillsTip>設定新增品質物品製作清單，以及仍沿用此預設值的現有製作清單的預設管理方式。勾選：Quality Jobs 依照本欄的預設值管理這些製作清單。各製作清單的「管理此生產清單」設定會覆蓋此預設值。\n\n不勾選：這些製作清單會正常完工。關閉此選項也會解除受影響製作清單中等待物品的完工限制，讓它們無須滿足 Quality Jobs 的要求即可完工。</QJ_SettingsManageNewBillsTip>
   <QJ_SettingsManageNewConstruction>管理新增建造工作</QJ_SettingsManageNewConstruction>
   <QJ_SettingsManageNewConstructionTip>勾選：新增品質建築自動按本欄選項管理。可通過“品質工作”按鈕單獨配置或取消管理。\n\n不勾選：新建築使用原版行為，除非單獨啟用。</QJ_SettingsManageNewConstructionTip>
   <QJ_RequireInspiredTip>勾選：僅有創作狂熱的殖民者可以完成最後工序；其他工作者可進行此前工作。完工時會消耗靈感，與原版相同。\n\n不勾選：不要求創作狂熱。</QJ_RequireInspiredTip>
   <QJ_RequireSpecialistTip>勾選：只有理念職位提供生產品質加成的殖民者才能完成最後工序；其他工作者可進行此前工作。\n\n不勾選：不要求製造專家職位。</QJ_RequireSpecialistTip>
-  <QJ_SettingsFinisherSkillTip>只有技能達到或高於此等級的工作者才能完成最後工序；其他符合條件的工作者可進行前期工序。\n\n啟用自動調整收尾技能後，此值保留為手動預設值，但不用於判定。</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsFinisherSkillTip>只有技能達到或高於此等級的工作者才能完成最後工序；其他符合條件的工作者可進行前期工作。\n\n勾選「自動選擇最佳完工者」時，此值保留為手動預設值，但不用於判定。</QJ_SettingsFinisherSkillTip>
   <QJ_SettingsShareWork>共享未完成品</QJ_SettingsShareWork>
-  <QJ_SettingsShareWorkTip>勾選：解除未完成品的製作者限制，任何合格工作者都可接續他人的工作。\n\n不勾選：保持原版行為，未完成品仍綁定最初製作者。</QJ_SettingsShareWorkTip>
+  <QJ_SettingsShareWorkTip>允許其他符合條件的人員繼續加工普通未完成物品。關閉後，這些物品仍由原製作者加工。\n\n受管理的生產清單仍可將工作交給符合條件的人員收尾；關閉「管理此生產清單」即可移除該清單的收尾要求。</QJ_SettingsShareWorkTip>
   <QJ_SettingsHighPriorityFinish>提高收尾工作優先級</QJ_SettingsHighPriorityFinish>
   <QJ_SettingsHighPriorityFinishTip>勾選：被選中收尾的工作者下次尋找工作時，會優先進行收尾，僅滅火、醫療、救援和臥床休息優先於它。不會中斷當前工作。\n\n不勾選：收尾是所屬工作類型內的首要任務，但該工作者排序更靠前的其他工作類型仍優先。</QJ_SettingsHighPriorityFinishTip>
   <QJ_SettingsDefaultCap>預設未完成品庫存上限：{0}</QJ_SettingsDefaultCap>
-  <QJ_SettingsDefaultCapTip>設定每種產品未完成品的預設數量上限。生產同一物品的所有清單共用此上限。\n\n達到上限後不再開始製作新物品，已開始的仍可完成。0 表示無限制。</QJ_SettingsDefaultCapTip>
+  <QJ_SettingsDefaultCapTip>設定每種產品未完成品的預設數量上限，各地圖分別計算。同一地圖上同一產品的所有未完成品會跨製作清單與工作台合併計算，但達到上限時，只有受 Quality Jobs 管理的製作清單會停止開始製作新物品。\n\n現有物品仍可繼續製作或完工。0 表示無限制。產品本身的庫存上限設定會覆蓋所有生產該產品之製作清單的此項預設值。</QJ_SettingsDefaultCapTip>
   <QJ_SettingsUnlimitedHint>0 = 無限制</QJ_SettingsUnlimitedHint>
   <QJ_SettingsShowToolbarButton>顯示工具欄按鈕</QJ_SettingsShowToolbarButton>
   <QJ_SettingsShowToolbarButtonTip>在螢幕右下角的顯示開關旁添加按鈕，用於打開 Quality Jobs 設定。</QJ_SettingsShowToolbarButtonTip>
@@ -70,7 +70,7 @@
   <QJ_NoRetries>不重試</QJ_NoRetries>
   <QJ_AnyQuality>任意</QJ_AnyQuality>
   <QJ_RetriedUntilTip>除非選擇“不重試”，否則建築會反覆拆除重建，直到獲得所選品質或更高品質。\n\n每次重試都會損失部分材料。</QJ_RetriedUntilTip>
-  <QJ_BillTargetQualityTip>成品低於此品質時，生產清單的次數增加一次，以製作替代品。原成品仍會保留。\n\n僅適用於製作固定數量物品的清單；其他重複模式自行決定何時停止。</QJ_BillTargetQualityTip>
+  <QJ_BillTargetQualityTip>選擇「製作x次」時，低於目標品質的物品會保留，但不會扣除剩餘次數。後續嘗試會消耗更多材料。「任意」接受所有結果。\n\n選擇「製作直到擁有x個」時，請改用生產清單原有的品質範圍設定。此設定不影響「永遠製作」。</QJ_BillTargetQualityTip>
   <QJ_Clear>清除</QJ_Clear>
   <QJ_ConstructionPanelTitle>品質工作</QJ_ConstructionPanelTitle>
   <QJ_FinishGiverLabel>完成品質工作</QJ_FinishGiverLabel>

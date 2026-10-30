@@ -25,6 +25,8 @@ namespace WorkRoles.UI
             Palette,
             Roles,
             Paths,
+            GameSettings,
+            PlayerSettings,
         }
 
         private enum RenderKind
@@ -33,6 +35,7 @@ namespace WorkRoles.UI
             SectionHeader,
             MergeRow,
             Info,
+            SettingsHeader,
             BottomPadding,
         }
 
@@ -129,6 +132,20 @@ namespace WorkRoles.UI
         private bool rolesOverwrite;
         private bool pathsInclude;
         private bool pathsOverwrite;
+        private bool gameSettingsInclude;
+        private bool playerSettingsInclude;
+        // Owner: dialog/store. Key: exact catalog/work/rule/recommendation revisions
+        // and explicit selection edits. Value: immutable dependency error text.
+        // Refresh: WindowUpdate or gated first presentation; equal results reuse text.
+        // Teardown: close drops store, document and cached command delegate.
+        private bool validationDirty = true;
+        private int validationRevision = -1;
+        private RoleStore? validationOwner;
+        private string? validationError;
+        private readonly System.Action applyPending;
+        private ImportSelection? pendingSelection;
+        private string gameSettingsTitle = "", playerSettingsTitle = "";
+        private string gameSettingsInfo = "", playerSettingsInfo = "";
         private int paletteIncludedCount;
         private int roleIncludedCount;
         private int pathIncludedCount;
@@ -179,14 +196,16 @@ namespace WorkRoles.UI
         {
             this.xml = xml;
             this.doc = doc;
+            applyPending = ApplyPending;
             paletteSelectionBySource = new bool[doc.palette.Count];
             for (int i = 0; i < paletteSelectionBySource.Length; i++)
                 paletteSelectionBySource[i] = true;
             pathMergeUi = NewRows(doc.trainingPaths.Count);
             EnsureMergeRows();
-            paletteInclude = paletteRows.Count > 0 || doc.palette.Count > 0;
-            rolesInclude = roleRows.Count > 0;
+            paletteInclude = doc.hasPalette;
+            rolesInclude = doc.hasRoles;
             pathsInclude = rolesInclude && doc.trainingPaths.Count > 0;
+            gameSettingsInclude = doc.gameSettings != null;
 
             pathIncludedCount = pathMergeUi.Count;
         }
@@ -208,6 +227,7 @@ namespace WorkRoles.UI
             EnsureMergeRows();
             EnsureUiText();
             EnforceRoleDependencies();
+            EnsureValidation();
             float listTop = DrawCachedPreviewTitle(inRect, titleText);
             var listRect = PreviewBodyRect(inRect, listTop);
             float rowW = listRect.width - 16f;
@@ -230,10 +250,17 @@ namespace WorkRoles.UI
 
             bool canApply = (paletteInclude && (paletteOverwrite || paletteIncludedCount > 0))
                 || (rolesInclude && (rolesOverwrite || roleIncludedCount > 0))
-                || (pathsInclude && (pathsOverwrite || pathIncludedCount > 0));
-            if (DrawPreviewFooter(inRect, canApply))
+                || (pathsInclude && (pathsOverwrite || pathIncludedCount > 0))
+                || gameSettingsInclude || playerSettingsInclude;
+            if (DrawPreviewFooter(inRect, canApply && validationError == null))
             {
-                var selection = new ImportSelection
+                pendingSelection = BuildSelection();
+                WorkRolesGameComponent.RunOutsideOnGUI(applyPending);
+                Close();
+            }
+        }
+
+        private ImportSelection BuildSelection() => new ImportSelection
                 {
                     xml = xml,
                     palette = paletteInclude,
@@ -243,14 +270,36 @@ namespace WorkRoles.UI
                     paths = pathsInclude,
                     pathsOverwrite = pathsOverwrite,
                     order = false,
+                    gameSettings = gameSettingsInclude,
+                    playerSettings = playerSettingsInclude,
                     paletteRows = SelectedPaletteSourceIndices(),
                     roleRows = SelectedIndices(roleMergeUi),
                     pathRows = SelectedIndices(pathMergeUi),
                 };
-                RoleIO.ResolveImportLocations(selection, doc, ColonyScope.Locations());
-                RoleCommands.ApplyImport(selection);
-                Close();
-            }
+
+        private void ApplyPending()
+        {
+            var selection = pendingSelection; pendingSelection = null;
+            if (selection == null) return;
+            RoleIO.ResolveImportLocations(selection, doc, ColonyScope.Locations());
+            RoleCommands.ApplyImport(selection);
+        }
+
+        public override void WindowUpdate()
+        {
+            base.WindowUpdate();
+            EnsureMergeRows(); EnsureValidation();
+        }
+
+        private void EnsureValidation()
+        {
+            RoleStore? store = RoleStore.Current;
+            int revision = store?.Revisions.For(ModelDomain.Catalog | ModelDomain.RolePresentation | ModelDomain.RoleWork
+                | ModelDomain.RoleRules | ModelDomain.RoleRecommendation) ?? -1;
+            if (!validationDirty && ReferenceEquals(validationOwner, store) && validationRevision == revision) return;
+            string? next = store == null ? "No loaded colony" : RoleIO.ValidateSelection(store, doc, BuildSelection());
+            if (validationError != next) { validationError = next; rowLayoutDirty = true; }
+            validationOwner = store; validationRevision = revision; validationDirty = false;
         }
 
         private void EnsureMergeRows()
@@ -326,6 +375,10 @@ namespace WorkRoles.UI
                 mergeLabel = "WR_ModeMerge".Translate();
                 overwriteLabel = "WR_ModeOverwrite".Translate();
                 nothingToMergeText = "WR_NothingToMerge".Translate();
+                gameSettingsTitle = "WR_SetupGameSettings".Translate();
+                playerSettingsTitle = "WR_SetupPlayerSettings".Translate();
+                gameSettingsInfo = "WR_SetupGameSettingsInfo".Translate();
+                playerSettingsInfo = "WR_SetupPlayerSettingsInfo".Translate();
                 mergeControlWidth = WrText.FitWidth(mergeLabel) + 8f + RadioW;
                 overwriteControlWidth = WrText.FitWidth(overwriteLabel) + 8f + RadioW;
 
@@ -397,12 +450,12 @@ namespace WorkRoles.UI
             {
                 Text.Font = GameFont.Small;
                 Text.WordWrap = true;
-                AddSection(nextRows, heights, width, Section.Palette,
+                if (doc.hasPalette) AddSection(nextRows, heights, width, Section.Palette,
                     paletteTitle,
                     paletteInclude, paletteOverwrite, paletteMergeUi,
                     paletteOverwriteInfo);
                 AddSimpleRow(nextRows, heights, RenderKind.Gap, SectionGap);
-                AddSection(nextRows, heights, width, Section.Roles,
+                if (doc.hasRoles) AddSection(nextRows, heights, width, Section.Roles,
                     rolesTitle,
                     rolesInclude, rolesOverwrite, roleMergeUi, rolesOverwriteInfo);
                 if (pathMergeUi.Count > 0)
@@ -413,6 +466,11 @@ namespace WorkRoles.UI
                         pathsInclude, pathsOverwrite, pathMergeUi,
                         pathsOverwriteInfo);
                 }
+                if (doc.gameSettings != null)
+                    AddSettingsSection(nextRows, heights, width, Section.GameSettings, gameSettingsTitle, gameSettingsInfo);
+                if (doc.playerSettings != null)
+                    AddSettingsSection(nextRows, heights, width, Section.PlayerSettings, playerSettingsTitle, playerSettingsInfo);
+                if (validationError != null) AddInfoRow(nextRows, heights, width, validationError);
                 // Preserve MeasureContent's trailing breathing room exactly.
                 AddSimpleRow(nextRows, heights, RenderKind.BottomPadding, RowH);
             }
@@ -467,6 +525,16 @@ namespace WorkRoles.UI
                 AddInfoRow(target, heights, width, overwriteInfo[i]);
         }
 
+        private static void AddSettingsSection(List<RenderRow> rows, List<float> heights,
+            float width, Section section, string title, string description)
+        {
+            AddSimpleRow(rows, heights, RenderKind.Gap, SectionGap);
+            float height = Mathf.Ceil(Text.CalcHeight(title, width - 30f));
+            rows.Add(new RenderRow(RenderKind.SettingsHeader, section, text: title, textHeight: height));
+            heights.Add(Mathf.Max(Mathf.Ceil(Text.LineHeight), height) + 4f);
+            AddInfoRow(rows, heights, width, description);
+        }
+
         private static void AddSimpleRow(
             List<RenderRow> target,
             List<float> heights,
@@ -512,6 +580,17 @@ namespace WorkRoles.UI
                         case RenderKind.MergeRow:
                             DrawMergeRow(row.Section, row.SourceIndex, row.Text,
                                 width, y);
+                            break;
+                        case RenderKind.SettingsHeader:
+                            bool before = row.Section == Section.GameSettings ? gameSettingsInclude : playerSettingsInclude;
+                            bool value = before;
+                            Widgets.CheckboxLabeled(new Rect(0f, y, width, row.TextHeight), row.Text, ref value);
+                            if (before != value)
+                            {
+                                if (row.Section == Section.GameSettings) gameSettingsInclude = value;
+                                else playerSettingsInclude = value;
+                                validationDirty = true;
+                            }
                             break;
                         case RenderKind.Info:
                             if (Event.current.type == EventType.Repaint)
@@ -596,7 +675,7 @@ namespace WorkRoles.UI
                     overwrite = true;
             }
             if (includeBefore != include || overwriteBefore != overwrite)
-                rowLayoutDirty = true;
+            { rowLayoutDirty = true; validationDirty = true; }
         }
 
         private void DrawMergeRow(
@@ -612,6 +691,7 @@ namespace WorkRoles.UI
             Widgets.CheckboxLabeled(new Rect(16f, y, width - 16f, RowH - 2f),
                 label, ref row.included);
             if (before == row.included) return;
+            validationDirty = true;
             switch (section)
             {
                 case Section.Palette:
@@ -676,6 +756,7 @@ namespace WorkRoles.UI
         {
             renderSnapshot = null;
             mergeOwner = null;
+            validationOwner = null;
             paletteRows?.Clear();
             roleRows?.Clear();
             paletteMergeUi?.Clear();

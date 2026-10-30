@@ -28,22 +28,31 @@ namespace WorkRoles.UI
 
     internal sealed class ColonistSelectedChromeSnapshot
     {
-        internal ColonistSelectedChromeSnapshot(string label,
-            float nameTagWidth, Color nameColor)
+        internal ColonistSelectedChromeSnapshot(string label, string shownLabel,
+            float nameTagWidth, float nameTagHeight, Color nameColor, bool fitName)
         {
             Label = label;
+            ShownLabel = shownLabel;
             NameTagWidth = nameTagWidth;
+            NameTagHeight = nameTagHeight;
             NameColor = nameColor;
+            FitName = fitName;
         }
 
         internal string Label { get; }
+        internal string ShownLabel { get; }
         internal float NameTagWidth { get; }
+        internal float NameTagHeight { get; }
         internal Color NameColor { get; }
+        internal bool FitName { get; }
 
         internal bool ContentEquals(ColonistSelectedChromeSnapshot other) =>
             other != null
             && string.Equals(Label, other.Label, StringComparison.Ordinal)
+            && string.Equals(ShownLabel, other.ShownLabel, StringComparison.Ordinal)
             && NameTagWidth == other.NameTagWidth
+            && NameTagHeight == other.NameTagHeight
+            && FitName == other.FitName
             && NameColor.r == other.NameColor.r
             && NameColor.g == other.NameColor.g
             && NameColor.b == other.NameColor.b
@@ -129,6 +138,8 @@ namespace WorkRoles.UI
 
     internal sealed class ColonistSelectedPanelState
     {
+        internal const float NameTagPadding = 5f;
+
         private readonly ActivityState activityState;
 
         // Owner: Colonists window. Key: RoleStore and selected Pawn reference
@@ -137,7 +148,10 @@ namespace WorkRoles.UI
         // buffers never escape. The portrait is not part of the snapshot: the
         // draw pass fetches it from vanilla's per-frame PortraitsCache.
         // Dependencies: chrome and traits use the pawn's ExternalPawnFacts
-        // revision (plus language and the portrait-width name-tag clamp);
+        // revision and language. Mechanical chrome retains a fitted Small-font
+        // label and measured line height; human chrome preserves its original
+        // full label and 20px tag. Additionally keyed by
+        // UI metrics and the portrait-width name-tag clamp/padding;
         // activity uses ActivityTracker.RevisionOf(pawn),
         // RuntimeForPawn and definition revision for claiming-role changes,
         // the active role's presentation revision, language, UI metrics and slot width. Refresh:
@@ -271,23 +285,30 @@ namespace WorkRoles.UI
             float portraitSize)
         {
             string label = pawn.LabelShortCap;
+            bool fitName = MechanicalWorkers.IsMechanical(pawn);
             GameFont previousFont = Text.Font;
-            float nameTagWidth;
+            string shownLabel;
+            float nameTagWidth, nameTagHeight;
             try
             {
                 Text.Font = GameFont.Small;
-                nameTagWidth = Mathf.Clamp(WrText.FitWidth(label) + 10f,
+                nameTagWidth = Mathf.Clamp(
+                    WrText.FitWidth(label) + 2f * NameTagPadding,
                     40f, portraitSize);
+                shownLabel = fitName ? WrText.Truncate(label,
+                    nameTagWidth - 2f * NameTagPadding) : label;
+                // Retain the established human name-tag geometry exactly.
+                nameTagHeight = fitName ? Mathf.Ceil(Text.LineHeight) : 20f;
             }
             finally
             {
                 Text.Font = previousFont;
             }
             return new ColonistSelectedChromeSnapshot(
-                label, nameTagWidth,
+                label, shownLabel, nameTagWidth, nameTagHeight,
                 pawn.IsSlave
                     ? PawnNameColorUtility.PawnNameColorOf(pawn)
-                    : Color.white);
+                    : Color.white, fitName);
         }
 
         private ColonistSelectedActivitySnapshot BuildActivity(RoleStore store,

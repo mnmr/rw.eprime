@@ -12,3 +12,6 @@ Cada banda es un rol y su intervalo de habilidad. Pueden solaparse: Carcelero cu
 
 <!-- l10n:b-bb878752b11b -->
 Arrastra extremos para cambiar el intervalo o el centro para moverlo. Sin solapamiento, el posterior sustituye al anterior; con él, se complementan. Un rol que no entrena ninguna habilidad objetivo avisa antes de añadirse; aun así puedes incluirlo si un mod cambia qué otorga experiencia.
+
+<!-- l10n:target-start-order -->
+Mantén el nivel inicial del rol objetivo por encima del nivel inicial de todos los roles de formación. Si otra banda comienza en el mismo nivel o en uno superior, esta ruta no recomendará formación para alcanzar el rol objetivo. Solapa los extremos de las bandas para conservar ambos roles durante una transición.

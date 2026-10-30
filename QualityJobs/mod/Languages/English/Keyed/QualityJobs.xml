@@ -14,28 +14,28 @@
   <QJ_ManageBill>Manage this bill</QJ_ManageBill>
   <QJ_FinisherSkill>Finisher skill: {0}</QJ_FinisherSkill>
   <QJ_FinisherSkillTip>Only workers at or above this skill level are allowed to finish the work. Other eligible workers may do the earlier crafting.</QJ_FinisherSkillTip>
-  <QJ_AutoBest>Auto-adjust finisher skill</QJ_AutoBest>
-  <QJ_AutoBestTip>Checked: Only the best available finisher in the colony may complete this work, and the skill requirement follows that worker automatically. Workers who are away, downed, or busy still count as available for this comparison.\n\nUnchecked: Any eligible worker that meets the finisher skill you set may complete the work.</QJ_AutoBestTip>
+  <QJ_AutoBest>Choose the best finisher automatically</QJ_AutoBest>
+  <QJ_AutoBestTip>Checked: Reserve finishing for the colony's top-ranked workers, comparing expected quality from skill, Inspired Creativity, specialist roles and supported quality bonuses. Your manual skill requirement is ignored. Away, downed or busy workers still count; if no top-ranked worker can finish on this map, the work waits.\n\nUnchecked: Any eligible worker meeting your manual skill requirement and other finisher requirements may finish.</QJ_AutoBestTip>
   <QJ_AutoBestCurrent>Currently: {0}</QJ_AutoBestCurrent>
   <QJ_AutoBestNone>No eligible worker</QJ_AutoBestNone>
   <QJ_MigrationTitle>Existing quality bills</QJ_MigrationTitle>
   <QJ_MigrationBody>Quality Jobs found {0} existing quality bill(s). They have been left unmanaged so they can continue with their current behavior. Shared unfinished work remains available either way.</QJ_MigrationBody>
   <QJ_MigrationEnableExisting>Enable Quality Jobs on existing bills for quality items?</QJ_MigrationEnableExisting>
-  <QJ_MigrationEnableExistingTip>Checked: Existing bills use Quality Jobs with Auto-adjust finisher skill enabled. The best eligible worker in the colony performs the finishing touch; temporarily unavailable workers still count. Inspiration and production-specialist requirements are disabled, and low-quality results are not retried.\n\nUnchecked: Existing bills keep vanilla completion behavior. Sharing unfinished work is unaffected.</QJ_MigrationEnableExistingTip>
+  <QJ_MigrationEnableExistingTip>Checked: Existing bills use Quality Jobs with Choose the best finisher automatically enabled. The best eligible worker in the colony performs the finishing touch; temporarily unavailable workers still count. Inspiration and production-specialist requirements are disabled, and low-quality results are not retried.\n\nUnchecked: Existing bills keep vanilla completion behavior. Sharing unfinished work is unaffected.</QJ_MigrationEnableExistingTip>
   <QJ_MigrationContinue>Continue</QJ_MigrationContinue>
   <QJ_RequireInspired>Require inspired creativity</QJ_RequireInspired>
   <QJ_RequireSpecialist>Require production specialist</QJ_RequireSpecialist>
   <QJ_StockCapLabel>Stock cap: {0}</QJ_StockCapLabel>
-  <QJ_StockCapTooltip>The maximum number of unfinished items of this product. The cap is shared per product, so every bill producing this item counts against it.\n\n0 means unlimited.</QJ_StockCapTooltip>
+  <QJ_StockCapTooltip>Limits new work on this product on each map. All unfinished items of this product on a map count together across bills and benches, but only Quality Jobs-managed bills stop starting new items when the cap is reached.\n\nExisting items can still be resumed or finished. 0 means unlimited. Changing this value changes the product's cap for every bill, with each map counted separately.</QJ_StockCapTooltip>
   <QJ_StatusHeader>Status</QJ_StatusHeader>
   <QJ_StatusQueue>Waiting: {0} · Finishing: {1}</QJ_StatusQueue>
   <QJ_StatusQueueShared>Unfinished: {0} · Waiting: {1} · Finishing: {2}</QJ_StatusQueueShared>
-  <QJ_StatusQueueTip>Unfinished: items in the sharing pool that any allowed crafter may continue. Waiting: paused items that need a qualifying finisher. Finishing: items assigned to a finisher.</QJ_StatusQueueTip>
+  <QJ_StatusQueueTip>Counts include this product's tracked unfinished items across all bills and benches on this map.\n\nUnfinished: items in the sharing pool that any allowed crafter may continue. Waiting: paused items that need a qualifying finisher. Finishing: items assigned to a finisher.</QJ_StatusQueueTip>
   <QJ_StatusFinishers>Eligible finishers: {0}</QJ_StatusFinishers>
   <QJ_StatusFinishersNone>Eligible finishers: none</QJ_StatusFinishersNone>
-  <QJ_StatusFinishersTip>Workers on this map who currently qualify to perform the finishing touch, best candidate first. A worker qualifies when they can perform the required work type and meet the finisher requirements above.\n\nDowned workers, workers in a mental state, and workers away from this map do not count.</QJ_StatusFinishersTip>
-  <QJ_StatusStalled>Waiting items have no eligible finisher</QJ_StatusStalled>
-  <QJ_StatusStalledTip>Unfinished items are waiting, but no worker currently qualifies to finish them, so no finish jobs are being created.\n\nCheck the finisher skill requirement, the inspiration and specialist requirements, and whether the intended finisher can perform the work type and is on this map. While stalled, the stock cap may also block new items from being started.</QJ_StatusStalledTip>
+  <QJ_StatusFinishersTip>Workers on this map who currently qualify to perform the finishing touch, best candidate first. A worker qualifies when they can perform the required work type and meet the finisher requirements above. In a bill panel, this list uses the selected bill's requirements; other bills making the same product may use different requirements.\n\nDowned workers, workers in a mental state, and workers away from this map do not count.</QJ_StatusFinishersTip>
+  <QJ_StatusStalled>No finisher meets this bill's requirements.</QJ_StatusStalled>
+  <QJ_StatusStalledTip>No worker currently meets this bill's finisher requirements. The queue counts cover all bills making this product on this map; other bills may use different requirements.\n\nCheck the finisher skill requirement, the inspiration and specialist requirements, and whether the intended finisher can perform the work type and is on this map. A full stock cap may also block new items from being started.</QJ_StatusStalledTip>
   <QJ_StatusStalledConstruction>No eligible finisher — build is stalled</QJ_StatusStalledConstruction>
   <QJ_StatusStalledConstructionTip>This building is paused waiting for a finishing touch, but no worker currently qualifies, so it will not complete.\n\nCheck the finisher skill requirement, the inspiration and specialist requirements, and whether the intended builder can perform Construction and is on this map.</QJ_StatusStalledConstructionTip>
   <QJ_OddsHeader>Quality odds</QJ_OddsHeader>
@@ -45,21 +45,21 @@
   <QJ_SettingsBillDefaults>Default bill options</QJ_SettingsBillDefaults>
   <QJ_SettingsConstructionDefaults>Default construction options</QJ_SettingsConstructionDefaults>
   <QJ_SettingsGlobalOptions>Global options</QJ_SettingsGlobalOptions>
-  <QJ_SettingsManageNewBills>Manage new quality bills</QJ_SettingsManageNewBills>
-  <QJ_SettingsManageNewBillsTip>Checked: Quality Jobs manages quality-producing bills by default using the options in this column. Individual bills can override these options in their bill settings.\n\nUnchecked: Bills use vanilla behavior unless Quality Jobs has been enabled in the bill settings dialog.</QJ_SettingsManageNewBillsTip>
+  <QJ_SettingsManageNewBills>Manage quality bills by default</QJ_SettingsManageNewBills>
+  <QJ_SettingsManageNewBillsTip>Sets the management default for new quality bills and existing bills that still follow this default. Checked: Quality Jobs manages those bills using the defaults in this column. A bill's own Manage this bill setting overrides this default.\n\nUnchecked: Those bills finish normally. Turning this off also releases waiting items from affected bills so they can finish without meeting Quality Jobs requirements.</QJ_SettingsManageNewBillsTip>
   <QJ_SettingsManageNewConstruction>Manage new construction jobs</QJ_SettingsManageNewConstruction>
   <QJ_SettingsManageNewConstructionTip>Checked: New quality-producing buildings are managed automatically using the options in this column. Individual buildings can be configured or cleared with the Quality Job button.\n\nUnchecked: New buildings use vanilla behavior unless enabled individually.</QJ_SettingsManageNewConstructionTip>
   <QJ_RequireInspiredTip>Checked: Only a colonist with Inspired Creativity may perform the finishing touch; other workers may do the earlier work. The inspiration is consumed on completion, as in vanilla.\n\nUnchecked: Inspired Creativity is not required.</QJ_RequireInspiredTip>
   <QJ_RequireSpecialistTip>Checked: Only a colonist whose Ideology role grants a production quality bonus may perform the finishing touch; other workers may do the earlier work.\n\nUnchecked: A production-specialist role is not required.</QJ_RequireSpecialistTip>
-  <QJ_SettingsFinisherSkillTip>Only workers at or above this skill level may perform the finishing touch; other eligible workers may do the earlier work.\n\nWhen Auto-adjust finisher skill is checked, this value is kept as the manual default but is not used.</QJ_SettingsFinisherSkillTip>
+  <QJ_SettingsFinisherSkillTip>Only workers at or above this skill level may perform the finishing touch; other eligible workers may do the earlier work.\n\nWhen Choose the best finisher automatically is checked, this value is kept as the manual default but is not used.</QJ_SettingsFinisherSkillTip>
   <QJ_SettingsShareWork>Share unfinished work</QJ_SettingsShareWork>
-  <QJ_SettingsShareWorkTip>Checked: Unfinished items are unlocked so any eligible worker can continue work that someone else started.\n\nUnchecked: Vanilla behavior, where an unfinished item stays bound to the worker who started it.</QJ_SettingsShareWorkTip>
+  <QJ_SettingsShareWorkTip>Allows other eligible workers to resume ordinary unfinished work. Turning this off keeps that work with its original crafter.\n\nManaged bills can still hand work to a qualifying finisher; turn off Manage this bill to remove that bill's finishing requirements.</QJ_SettingsShareWorkTip>
   <QJ_SettingsHighPriorityFinish>Use high-priority job for finishers</QJ_SettingsHighPriorityFinish>
   <QJ_SettingsHighPriorityFinishTip>Checked: A worker chosen to finish an item takes that job the next time they look for work, before every other kind of work except firefighting, medical care, rescuing and bed rest. Their current job is not interrupted.\n\nUnchecked: The finish job is the first job within its work type, but work types the worker ranks higher still come first.</QJ_SettingsHighPriorityFinishTip>
   <QJ_SettingsAllowRobotPreparation>Allow mechs and robots to work on quality jobs</QJ_SettingsAllowRobotPreparation>
   <QJ_SettingsAllowRobotPreparationTip>Allow mechs and supported robots to work on managed crafting and construction jobs. Turn this off to reserve that work and its skill experience for colonists. This also stops their current work on managed jobs. Eligible mechs and robots can still finish jobs assigned by Quality Jobs. Ordinary unmanaged jobs are unaffected.</QJ_SettingsAllowRobotPreparationTip>
   <QJ_SettingsDefaultCap>Default unfinished stock cap: {0}</QJ_SettingsDefaultCap>
-  <QJ_SettingsDefaultCapTip>Sets the default maximum number of unfinished items for each product. All bills producing the same item share the cap.\n\nBills stop starting new items when the cap is reached; in-progress items may still finish. 0 means unlimited.</QJ_SettingsDefaultCapTip>
+  <QJ_SettingsDefaultCapTip>Sets the default unfinished-item cap for each product, with each map counted separately. All unfinished items of a product on a map count together across bills and benches, but only Quality Jobs-managed bills stop starting new items when the cap is reached.\n\nExisting items can still be resumed or finished. 0 means unlimited. A product's stock-cap setting overrides this default for every bill producing that product.</QJ_SettingsDefaultCapTip>
   <QJ_SettingsUnlimitedHint>0 = unlimited</QJ_SettingsUnlimitedHint>
   <QJ_SettingsShowToolbarButton>Show toolbar button</QJ_SettingsShowToolbarButton>
   <QJ_SettingsShowToolbarButtonTip>Adds a button beside the view toggles in the lower right corner of the screen. The button opens the Quality Jobs settings.</QJ_SettingsShowToolbarButtonTip>
@@ -79,7 +79,7 @@
   <QJ_NoRetries>No retries</QJ_NoRetries>
   <QJ_AnyQuality>Any</QJ_AnyQuality>
   <QJ_RetriedUntilTip>The build is deconstructed and rebuilt until it rolls the selected quality or better, except when No retries is selected.\n\nSome materials are lost on each retry.</QJ_RetriedUntilTip>
-  <QJ_BillTargetQualityTip>When a finished item rolls below this quality, the bill count is raised by one so a replacement is produced. The item itself is kept.\n\nThis applies to bills set to make a fixed number of items; the other repeat modes already decide for themselves when to stop.</QJ_BillTargetQualityTip>
+  <QJ_BillTargetQualityTip>For Do X times, a below-target item is kept but does not reduce the remaining count. Further attempts use more materials. Any accepts every result.\n\nFor Do until you have X, set the normal bill's quality range instead. This setting does not affect Do forever.</QJ_BillTargetQualityTip>
   <QJ_Clear>Clear</QJ_Clear>
   <QJ_ConstructionPanelTitle>Quality Job</QJ_ConstructionPanelTitle>
   <QJ_FinishGiverLabel>finish quality work</QJ_FinishGiverLabel>

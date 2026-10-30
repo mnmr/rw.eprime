@@ -117,7 +117,7 @@
   <WR_RecTuneHunterTiersRowDesc>Límites de Disparo para la posición dinámica del Cazador. El nivel 1 lo coloca justo tras el trabajo básico; los niveles 2 y 3, tras los roles laborales intermedios y finales; por encima del nivel 4 queda el último.</WR_RecTuneHunterTiersRowDesc>
   <WR_TrainingSection>Ruta de formación</WR_TrainingSection>
   <WR_TrainingHelp>Define cómo aprenden los colonos y avanzan hacia este rol. Una ruta puede tener varias bandas y roles solapados. Si se recomienda la ruta a un colono, recibe todos los roles correspondientes a su nivel actual.</WR_TrainingHelp>
-  <WR_TrainingTipWhat>Progresión propia del rol: cada miembro tiene una banda de habilidad en la que se recomienda. El propio rol siempre permanece en su ruta.</WR_TrainingTipWhat>
+  <WR_TrainingTipWhat>Progresión propia del rol: cada rol miembro tiene una banda de habilidad en la que se recomienda. El rol objetivo permanece en su ruta y debe tener un nivel inicial superior al de todos los roles de formación.</WR_TrainingTipWhat>
   <WR_TrainingTipBands>Las bandas solapadas coexisten; donde no se solapan, el rol posterior sustituye al anterior.</WR_TrainingTipBands>
   <WR_TrainingTipOrder>Se priorizan los mínimos de banda más altos. A igualdad de banda, va primero la habilidad más débil del trabajador y luego el orden guardado de la ruta.</WR_TrainingTipOrder>
   <WR_AddNew>Añadir nuevo</WR_AddNew>
@@ -129,9 +129,9 @@
   <WR_RecSkillsSection>Habilidades</WR_RecSkillsSection>
   <WR_RecScalingSection>Escala de asignaciones</WR_RecScalingSection>
   <WR_RoleColonyMinLabel>Mínimo de la colonia:</WR_RoleColonyMinLabel>
-  <WR_RoleColonyMinTip>Número mínimo de asignaciones de este rol.</WR_RoleColonyMinTip>
+  <WR_RoleColonyMinTip>Número mínimo de trabajadores previsto para el trabajo de este rol. Los roles de formación pueden cubrir algunas plazas: un valor superior a cero reserva una plaza para el propio rol. El motor usa el mayor de estos valores: este mínimo o el número de trabajadores calculado a partir de Cobertura.</WR_RoleColonyMinTip>
   <WR_RoleCoverageLabel>Cobertura:</WR_RoleCoverageLabel>
-  <WR_RoleCoverageTip>Porcentaje ideal de colonos que deberían recibir este rol.</WR_RoleCoverageTip>
+  <WR_RoleCoverageTip>Porcentaje de la colonia previsto, redondeado a un número entero de trabajadores. El motor usa el mayor de estos valores: este número o Mínimo de la colonia. Los roles de formación pueden cubrir algunas plazas.</WR_RoleCoverageTip>
   <WR_RoleCategoryLabel>Importancia para la colonia:</WR_RoleCategoryLabel>
   <WR_RoleCategoryTip>Importancia de cubrir este rol al planificar la colonia. «Sin definir» deja el rol sin clasificar.</WR_RoleCategoryTip>
   <WR_RoleCategoryNone>Sin definir</WR_RoleCategoryNone>
@@ -150,7 +150,7 @@
   <WR_PartialCapabilityTip>Permite recomendarlo a colonos capaces de hacer parte de sus trabajos, aunque no todos. Nunca se recomienda a quien no puede hacer ninguno. Útil en roles amplios para todos, como las tareas para ratos libres.</WR_PartialCapabilityTip>
   <WR_PartialCapabilityLockedTip>Este rol ya admite colonos capaces de realizar solo parte de sus trabajos. Los roles sin trabajo especializado y los de caza siempre lo permiten.</WR_PartialCapabilityLockedTip>
   <WR_RoleAgeBandsLabel>Grupos de edad que pueden recibir este rol:</WR_RoleAgeBandsLabel>
-  <WR_RoleAgeBandsTip>Fuera de las bandas elegidas, el rol nunca se asigna ni recomienda. Pulsa una banda exterior para incluir hasta ella, la primera o última seleccionada para quitarla, o una intermedia para seleccionar solo esa. Los límites siguen las edades de desbloqueo del juego. Todos los trabajos del rol son posibles desde los {0} años.</WR_RoleAgeBandsTip>
+  <WR_RoleAgeBandsTip>Estas bandas de edad limitan las asignaciones automáticas y las recomendaciones. La asignación manual y el pegado pueden seguir dando este rol a colonos fuera de las bandas. Pulsa una banda exterior para incluir hasta ella, la primera o última seleccionada para quitarla, o una intermedia para seleccionar solo esa. Los límites siguen las edades de desbloqueo del juego. Todos los trabajos del rol son posibles desde los {0} años.</WR_RoleAgeBandsTip>
   <WR_WorkTypesLabel>Tipos de trabajo</WR_WorkTypesLabel>
   <WR_WorkTypesTip>Solo son aptos los colonos capaces de realizar los tipos de trabajo indicados.\n\nSe deduce de los trabajos elegidos y se muestra como información.</WR_WorkTypesTip>
   <WR_UsedSkillsLabel>Utilizadas</WR_UsedSkillsLabel>
@@ -171,7 +171,7 @@
   <WR_RemoveSkillTip>Quita este requisito estricto de habilidad.</WR_RemoveSkillTip>
   <WR_RoleMissingRequiredSkills>Habilidades obligatorias desactivadas para {0}: {1}.</WR_RoleMissingRequiredSkills>
   <WR_PathAddRoleTip>Añade un rol a esta ruta.</WR_PathAddRoleTip>
-  <WR_BandChipTip>Arrastra un extremo para cambiar la banda; arrastra el centro para moverla.</WR_BandChipTip>
+  <WR_BandChipTip>Arrastra un extremo para ajustar el intervalo de habilidad; arrastra el centro para mover la banda. Mantén el nivel inicial del rol objetivo por encima del de todos los roles de formación; de lo contrario, la ruta no recomendará formación para alcanzar ese rol.</WR_BandChipTip>
   <WR_PriorityGridTitle>Tabla de prioridades</WR_PriorityGridTitle>
   <WR_ShowPriorityGridTip>Muestra las prioridades de los colonos listados respetando los filtros de rol y ubicación activos; el diálogo permite elegir rangos propios o el intervalo original 0–4.</WR_ShowPriorityGridTip>
   <WR_GridModeRaw>Prioridades de WorkRoles</WR_GridModeRaw>
@@ -217,7 +217,7 @@
   <WR_TipBestFitsLabel>Mejores candidatos</WR_TipBestFitsLabel>
   <WR_TipWholeType>{0} (todos los trabajos)</WR_TipWholeType>
   <WR_TipMore>+{0} más</WR_TipMore>
-  <WR_RoleCapNeverDo>{0} nunca realizará {1}</WR_RoleCapNeverDo>
+  <WR_RoleCapNeverDo>{0} no puede realizar {1} actualmente</WR_RoleCapNeverDo>
   <WR_RoleCapAllJobs>ninguno de los trabajos de este rol</WR_RoleCapAllJobs>
   <WR_RoleCapSomeJobs>{0} de los {1} trabajos de este rol</WR_RoleCapSomeJobs>
   <WR_RoleJobIncapable>incapaz de realizar este trabajo</WR_RoleJobIncapable>
@@ -372,8 +372,8 @@ No se interrumpió el trabajo. Este aviso aparece una vez por partida.</WR_Giver
   <WR_RecTipSelection>Selección</WR_RecTipSelection>
   <WR_RecTipAssignmentsOne>Se solicita 1 asignación</WR_RecTipAssignmentsOne>
   <WR_RecTipAssignmentsMany>Se solicitan {0} asignaciones</WR_RecTipAssignmentsMany>
-  <WR_RecTipWithWaiverOne>{0} (1 sustitución por formación)</WR_RecTipWithWaiverOne>
-  <WR_RecTipWithWaiversMany>{0} ({1} sustituciones por formación)</WR_RecTipWithWaiversMany>
+  <WR_RecTipWithWaiverOne>{0} (hasta 1 plaza puede cubrirse con un rol de formación)</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0} (hasta {1} plazas pueden cubrirse con roles de formación)</WR_RecTipWithWaiversMany>
   <WR_RecTipEveryoneCapable>Asignado a todos los capaces</WR_RecTipEveryoneCapable>
   <WR_RecDecisionAuto>Asignado automáticamente a quien pueda realizar el trabajo.</WR_RecDecisionAuto>
   <WR_RecDecisionSignals>Alcanza el umbral de señal configurado.</WR_RecDecisionSignals>
@@ -381,9 +381,9 @@ No se interrumpió el trabajo. Este aviso aparece una vez por partida.</WR_Giver
   <WR_RecDecisionTraining>Asignado mediante la ruta de formación de {0}.</WR_RecDecisionTraining>
   <WR_RecDecisionTrainingUnknown>Asignado mediante una ruta de formación.</WR_RecDecisionTrainingUnknown>
   <WR_RecDecisionDirectSlot>Elegido directamente para cubrir la plaza {0} de {1} de {2}.</WR_RecDecisionDirectSlot>
-  <WR_RecDecisionTrainingSlot>Elegido para cubrir la plaza {0} de {1} de {2}. Una sustitución por formación cambió {2} por {3} ({4}; {2} requiere {5}).</WR_RecDecisionTrainingSlot>
-  <WR_RecDecisionTrainingSlotSimple>Elegido para cubrir la plaza {0} de {1} de {2}. Una sustitución por formación cambió {2} por {3}.</WR_RecDecisionTrainingSlotSimple>
-  <WR_RecDecisionTrainingSlotUnknown>Elegido para cubrir la plaza {0} de {1} mediante formación, asignando {2}.</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecDecisionTrainingSlot>Elegido para cubrir la plaza {0} de {1} de {2} con el rol de formación {3} ({4}; en la ruta de formación, {2} comienza en el nivel {5}).</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>Elegido para cubrir la plaza {0} de {1} de {2} con el rol de formación {3}.</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>Elegido para cubrir la plaza {0} de {1} con el rol de formación {2}.</WR_RecDecisionTrainingSlotUnknown>
   <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
   <WR_RecDecisionDirectFallbackSlot>Elegido directamente para cubrir la plaza {0} de {1} de {2} porque ningún sustituto de formación cumplía los requisitos.</WR_RecDecisionDirectFallbackSlot>
   <WR_RecDecisionCoverageRepairSlot>Elegido directamente para cubrir la plaza obligatoria restante {0} de {1} de {2}.</WR_RecDecisionCoverageRepairSlot>
@@ -620,7 +620,7 @@ No se interrumpió el trabajo. Este aviso aparece una vez por partida.</WR_Giver
   <WR_WelcomeFind>Abre WorkRoles con el botón Trabajo en la parte inferior. La pestaña Ayuda empieza con una visita guiada.</WR_WelcomeFind>
   <WR_WelcomeTakeMeThere>Abrir ahora</WR_WelcomeTakeMeThere>
   <WR_WelcomeSmallScreen>Tu pantalla de juego es de {0}x{1} (resolución dividida por escala de interfaz). WorkRoles está diseñado para {2}x{3} o más, por ejemplo 1920x1080 con escala 1.25. Funciona en pantallas menores, pero acorta algunas etiquetas y requiere más desplazamiento. Reducir la escala de interfaz en las opciones del juego deja más espacio.</WR_WelcomeSmallScreen>
-  <WR_RoleWorkAversion>El precepto {1} de {0} se opone a {2}. Las recomendaciones aplican una penalización limitada: dos pasos de prioridad o seis puntos virtuales de habilidad al elegir principales. La cobertura obligatoria aún puede elegir al trabajador. Cazador baja dos niveles, hasta un máximo del quinto; sigue aplicándose su alternativa existente del primer nivel.</WR_RoleWorkAversion>
+  <WR_RoleWorkAversion>El precepto {1} de {0} se opone a {2}. WorkRoles prefiere a otro colono apto, pero puede recomendar a este si la colonia necesita a alguien que cubra el trabajo. Esto no prohíbe el trabajo. Para Cazador, la aversión también retrasa la caza en el orden de trabajo recomendado.</WR_RoleWorkAversion>
   <WR_WorkBlockedTags>etiquetas de trabajo desactivadas</WR_WorkBlockedTags>
   <WR_WorkBlockedCapacity>falta una capacidad de salud necesaria</WR_WorkBlockedCapacity>
   <WR_WorkBlockedRace>las restricciones laborales de esta raza no lo permiten</WR_WorkBlockedRace>
@@ -638,4 +638,23 @@ No se interrumpió el trabajo. Este aviso aparece una vez por partida.</WR_Giver
   <WR_OptMechanicalWorkers>Mostrar robots y mecanoides en Colonos</WR_OptMechanicalWorkers>
   <WR_OptMechanicalWorkersTip>Asigna roles a los mecanoides de Biotech y a los robots de Misc. Robots en la pestaña Colonos. Gestiona los grupos de control, las zonas permitidas, la activación y la recarga en sus pestañas habituales. Al desactivar esta opción, se ocultan y vuelven a sus prioridades de trabajo habituales, pero conservan sus roles guardados.</WR_OptMechanicalWorkersTip>
   <WR_RecMechanicalLearningProtected>Esta asignación de aprendizaje se mantiene mientras los robots o mecanoides cubren el servicio. Puede retirarse cuando se alcance el objetivo de formación.</WR_RecMechanicalLearningProtected>
+  <WR_DefaultAutoUpdate>Actualizar automáticamente al editar la configuración</WR_DefaultAutoUpdate>
+  <WR_DefaultClear>Usar los valores predeterminados originales en partidas nuevas</WR_DefaultClear>
+  <WR_DefaultConflictBody>Esta colonia tiene una configuración de WorkRoles distinta de la predeterminada para partidas nuevas. ¿Quieres usar la configuración de esta colonia como predeterminada y mantenerla actualizada cuando la edites? Tu colonia actual no cambiará.</WR_DefaultConflictBody>
+  <WR_DefaultEmptyBody>Guarda la configuración completa de esta colonia para futuras partidas. Las colonias existentes conservan su propia configuración. Se excluyen las asignaciones de personajes, las vinculaciones de órdenes de trabajo, las búsquedas y las secciones contraídas.</WR_DefaultEmptyBody>
+  <WR_DefaultKeep>Mantener mis valores predeterminados durante esta sesión</WR_DefaultKeep>
+  <WR_DefaultSavedBody>Hay una configuración personal guardada para partidas nuevas. Guarda la configuración completa de esta colonia para sustituirla. Las colonias existentes conservan su propia configuración. Se excluyen las asignaciones de personajes, las vinculaciones de órdenes de trabajo, las búsquedas y las secciones contraídas.</WR_DefaultSavedBody>
+  <WR_DefaultStopAuto>Desactivar la actualización automática</WR_DefaultStopAuto>
+  <WR_DefaultUseCurrent>Usar esta configuración en partidas nuevas</WR_DefaultUseCurrent>
+  <WR_LocationUnresolved>No disponible: {0}</WR_LocationUnresolved>
+  <WR_LocationUnresolvedTip>Esta ubicación importada no existe aquí. Esta regla permanecerá inactiva hasta que la sustituyas por una ubicación de esta colonia.</WR_LocationUnresolvedTip>
+  <WR_NewGameDefaults>Establecer valores predeterminados</WR_NewGameDefaults>
+  <WR_SetupFailed>No se ha podido guardar o leer la configuración predeterminada de WorkRoles: {0}</WR_SetupFailed>
+  <WR_SetupGameSettings>Ajustes de la colonia</WR_SetupGameSettings>
+  <WR_SetupGameSettingsInfo>Sustituye los ajustes de la fórmula de recomendación, la optimización automática, el comportamiento de las prioridades y las opciones de los trabajadores mecánicos.</WR_SetupGameSettingsInfo>
+  <WR_SetupPlayerSettings>Mis preferencias de visualización</WR_SetupPlayerSettings>
+  <WR_SetupPlayerSettingsInfo>Opcional: sustituye la visualización de las etiquetas, la disposición de la paleta, las columnas de habilidades, los distintivos y el tamaño de la ventana. Los demás jugadores de la partida multijugador conservan sus preferencias.</WR_SetupPlayerSettingsInfo>
+  <WR_RecMechanicalSelected>Puede realizar tareas que sus otros roles recomendados no cubren.</WR_RecMechanicalSelected>
+  <WR_RecMechanicalRetained>Conserva su rol principal actual.</WR_RecMechanicalRetained>
+  <WR_RecMechanicalIncapacitated>Esta unidad está incapacitada. Conserva sus roles para cuando se recupere.</WR_RecMechanicalIncapacitated>
 </LanguageData>

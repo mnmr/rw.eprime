@@ -45,6 +45,7 @@ namespace WorkRolesMechanicalVerification
                     if (PhaseMode.StartsWith("reload-")) ResumeFixture(); else Setup();
                     return;
                 }
+                if (phase == 100) { ContinuePresentation(); return; }
                 if (phase != 0) { ContinueLifecycle(); return; }
                 if (elapsed > 10000) throw new InvalidOperationException("Work timeout: " + string.Join(";", workers.Select(p => p.LabelShort + ": " + p.CurJob)));
                 for (int i = 0; i < 50; i++)
@@ -73,6 +74,8 @@ namespace WorkRolesMechanicalVerification
                 { p.jobs.curJob = null; p.jobs.curDriver = null; p.jobs.ClearQueuedJobs(); p.pather.StopDead(); }
             var humans = map.mapPawns.FreeColonistsSpawned.Where(p => !p.DevelopmentalStage.Baby()).ToList();
             RoleCommands.SetMechanicalWorkersEnabled(true);
+            if (PhaseMode == "presentation" && !ModsConfig.BiotechActive)
+            { PrepareRobotsWithoutBiotech(); PreparePresentation(); return; }
             Check(!store.mechanicalRecommendationsEnabled, "mechanical recommendation integration defaults off");
             Pawn mechanitor = humans.First(p => !p.Downed);
             if (!mechanitor.health.hediffSet.HasHediff(HediffDefOf.MechlinkImplant))
@@ -121,6 +124,7 @@ namespace WorkRolesMechanicalVerification
             RoleCommands.SetMechanicalWorkersEnabled(true);
             Check(workers.All(store.IsManaged), "support re-enable restores dormant assignments");
             VerifyWarmOrders(humans[0]);
+            if (PhaseMode == "presentation") { PreparePresentation(); return; }
             Mark("RUNNING native cleaning");
         }
     }

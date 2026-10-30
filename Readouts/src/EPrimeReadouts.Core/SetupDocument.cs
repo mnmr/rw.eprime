@@ -393,7 +393,7 @@ namespace EPrimeReadouts.Core
                 {
                     bool found = false;
                     foreach (var group in Groups) if (ReadoutGroupNames.Comparer.Equals(name, group.Name)) found = true;
-                    if (!found) { error = "Player settings require group: " + name; return false; }
+                    if (!found) { error = "This selection is missing a group required by Player settings. Import Groups and Player settings together, or leave both unchanged. Missing group: " + name; return false; }
                 }
             return true;
         }
@@ -402,7 +402,7 @@ namespace EPrimeReadouts.Core
         {
             error = null;
             if (!ReadoutsXml.IsPortablePoolRef(token) || pools.Contains(ReadoutsXml.PortablePoolName(token))) return true;
-            error = "Retained or imported settings require pool: " + ReadoutsXml.PortablePoolName(token); return false;
+            error = "This selection is missing a resource pool required by its thresholds or resource count rules. Import those settings together with their Resource pools, or leave those categories unchanged. Missing pool: " + ReadoutsXml.PortablePoolName(token); return false;
         }
 
         public bool TryApply(ReadoutModel model, SetupSections selected, Func<int> takePoolId,

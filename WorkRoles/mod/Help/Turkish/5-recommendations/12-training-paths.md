@@ -12,3 +12,6 @@ Her aralık, geçerli olduğu beceri düzeyiyle bir roldür; aralıklar örtüş
 
 <!-- l10n:b-bb878752b11b -->
 Aralığı boyutlandırmak için uçlarını, taşımak için ortasını sürükleyin. Örtüşmeyen yerlerde sonraki rol öncekinin yerini alır; örtüşenlerde birbirini tamamlar. Hedefin hiçbir becerisini geliştirmeyen roller eklenmeden önce uyarır; bir mod deneyim veren işleri değiştiriyorsa yine ekleyebilirsiniz.
+
+<!-- l10n:target-start-order -->
+Hedef rolün başlangıç düzeyini tüm eğitim rollerinin başlangıç düzeylerinden yüksek tutun. Başka bir aralık aynı veya daha yüksek düzeyde başlıyorsa bu yol, hedef role yönelik eğitim önermez. Geçiş sırasında her iki rolü de korumak için aralıkların uçlarını örtüştürün.

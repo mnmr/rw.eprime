@@ -22,7 +22,7 @@ Hay tres formas de asignar:
 - Pulsa el ![botón más](tex:UI/Buttons/Plus|24) al final de la fila y elige en el menú.
 
 <!-- l10n:b-3634ad4cacb9 -->
-Al soltarla también eliges su posición, asignando y priorizando en un solo gesto. Mejores candidatos anticipa a quién la daría el [motor de recomendaciones](topic:recommendations).
+Al soltar la ficha también eliges su posición en la fila, asignando y priorizando en un solo gesto. Mejores candidatos ordena a los colonos según su aptitud para este rol. Las [recomendaciones](topic:recommendations) también tienen en cuenta las necesidades de la colonia, la formación y las aversiones al trabajo, por lo que pueden elegir a otros colonos.
 
 <!-- l10n:b-e85c035e0a4a -->
 ## Varios colonos a la vez

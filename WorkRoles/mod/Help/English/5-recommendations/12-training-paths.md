@@ -20,3 +20,9 @@ Where bands do not overlap the later role replaces the earlier; where
 they do, the roles complement. Roles that train none of the target's
 skills warn before being added; you can still add one when a mod changes
 what grants XP.
+
+<!-- l10n:target-start-order -->
+Keep the target role's starting level higher than every training role's
+starting level. If another band starts at the same or a higher level,
+this path will not recommend training toward the target. Overlap the ends
+of bands to keep both roles during a transition.

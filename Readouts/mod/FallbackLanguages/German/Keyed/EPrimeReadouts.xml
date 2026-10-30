@@ -33,7 +33,7 @@
   <EPR.PoolTip>Als Ressourcenpool hinzufügen: ein Feld mit der Gesamtzahl aller Ressourcen in dieser Kategorie</EPR.PoolTip>
   <EPR.EnableTip>Diese Gruppe in der Ressourcenanzeige zeigen</EPR.EnableTip>
   <EPR.RestoreDefaults>Standards wiederherstellen</EPR.RestoreDefaults>
-  <EPR.RestoreConfirm>ALLE Gruppen und Schwellenwerte durch die Standards ersetzen? Das betrifft im Mehrspielermodus alle Spieler.</EPR.RestoreConfirm>
+  <EPR.RestoreConfirm>Alle Gruppen und Ressourcenpools durch die integrierten Standards ersetzen und alle Schwellenwerte und Anzahlüberschreibungen löschen? Das betrifft im Mehrspielermodus alle Spieler.</EPR.RestoreConfirm>
   <EPR.Help>Hilfe</EPR.Help>
   <EPR.HelpGroups>Dies sind deine Gruppen für die Ressourcenanzeige. Jede Gruppe erscheint als eigenes Band.
 
@@ -80,20 +80,20 @@ Klicke auf ein Feld für dessen Anzeigeoptionen. Rechtsklick entfernt die Zuweis
   <EPR.CountOptions>Zähloptionen</EPR.CountOptions>
   <EPR.PlannedWorkOptions>Geplante Arbeiten</EPR.PlannedWorkOptions>
   <EPR.ReserveForBills>Ressourcen für Auftragsprodukte reservieren</EPR.ReserveForBills>
-  <EPR.ReserveForBillsTip>Zieht die Zutaten ab, die deine offenen Aufträge noch verbrauchen müssen. Ein Auftrag reserviert eine Zutat nur, wenn ihr Bedarf auf genau eine Weise gedeckt werden kann. „Beliebiges Leder“ und ähnliche offene Optionen reservieren nichts.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBillsTip>Zieht die Zutaten ab, die offene Produktionsaufträge benötigen. Eine Zutat wird nur berücksichtigt, wenn der Auftrag dafür genau einen Ressourcentyp zulässt. Ist beispielsweise beliebiges Leder erlaubt, wird nichts reserviert; ist nur eine Lederart erlaubt, wird deren Bedarf berücksichtigt.</EPR.ReserveForBillsTip>
   <EPR.ReserveForBuildables>Ressourcen für Bauvorhaben reservieren</EPR.ReserveForBuildables>
   <EPR.ReserveForBuildablesTip>Zieht die Materialien ab, die deine Baupläne und begonnenen Rahmen noch benötigen. Bereits zu einem Rahmen gebrachte Materialien werden nicht erneut gezählt. Verbotene Baupläne werden ignoriert.</EPR.ReserveForBuildablesTip>
   <EPR.ShowNegativeCounts>Fehlmengen als negative Zahlen anzeigen</EPR.ShowNegativeCounts>
   <EPR.ShowNegativeCountsTip>Zeigt bei höherem Bedarf durch geplante Arbeiten die Fehlmenge an, statt bei null aufzuhören.</EPR.ShowNegativeCountsTip>
   <EPR.QualityJobsRework>Unterstützung für Quality Jobs</EPR.QualityJobsRework>
-  <EPR.QualityJobsReworkTip>Schätzt bei Aufträgen und Bauvorhaben mit Zielqualität die nötigen Versuche und reserviert für alle. Bei Neubauten wird der Anteil berücksichtigt, den das Grundspiel beim Abbau zurückgibt.</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsReworkTip>Passt aktivierte Reservierungen für Aufträge und Bauvorhaben an die von Quality Jobs verwalteten Qualitätsziele an. Schätzt den Materialbedarf für weitere Versuche und berücksichtigt beim Abbau zurückgewonnene Materialien. Aktiviere dazu die entsprechende Reservierungsoption weiter oben.</EPR.QualityJobsReworkTip>
   <EPR.QualityJobsMissingTip>Benötigt EPrime's Quality Jobs, das nicht installiert ist.</EPR.QualityJobsMissingTip>
   <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs ist installiert, bietet aber nicht die benötigte Integration. Aktualisiere die Mod, um diese Option zu aktivieren.</EPR.QualityJobsOutdatedTip>
   <EPR.TipPlannedWork>Geplante Arbeiten</EPR.TipPlannedWork>
   <EPR.TipResource>Ressource</EPR.TipResource>
-  <EPR.TipQueued>Eingereiht</EPR.TipQueued>
-  <EPR.TipEach>Je Stück</EPR.TipEach>
-  <EPR.TipDrain>Verbrauch</EPR.TipDrain>
+  <EPR.TipQueued>Verbleibende Arbeit</EPR.TipQueued>
+  <EPR.TipEach>Kosten je Versuch</EPR.TipEach>
+  <EPR.TipDrain>Abgezogen</EPR.TipDrain>
   <EPR.TipInStock>Auf Lager</EPR.TipInStock>
   <EPR.TipAvailableStock>{0} verfügbar · {1} auf Lager</EPR.TipAvailableStock>
   <EPR.TipOtherPlannedWork>Sonstige ({0})</EPR.TipOtherPlannedWork>

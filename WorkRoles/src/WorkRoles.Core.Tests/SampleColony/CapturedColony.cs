@@ -113,6 +113,10 @@ internal sealed class CapturedColony
             if (type == typeof(ColonyView) && element.Element(field.Name) == null
                 && (field.Name == nameof(ColonyView.IntegrateMechanicalWorkers)
                     || field.Name == nameof(ColonyView.MechanicalWorkers))) continue;
+            // The accepted pawn cohort was captured before mechanical support
+            // and contains humans only. Keep those frozen expected outputs.
+            if (type == typeof(PawnView) && field.Name == nameof(PawnView.IsMechanical)
+                && element.Element(field.Name) == null) continue;
             field.SetValue(result, Read(Required(element, field.Name), field.FieldType));
         }
         return result;

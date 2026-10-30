@@ -8,7 +8,7 @@ title: Tùy chọn và mặc định
 Khi đã tải bản lưu, thẻ Tùy chọn thay đổi thiết lập của thuộc địa đó. Từ menu chính, thiết lập mod cung cấp các giá trị mặc định cho bản lưu mới. **{k:QJ_SettingsShowToolbarButton}** là tùy chọn hiển thị cá nhân của bạn; ẩn nút này không vô hiệu hóa mod. Bạn vẫn có thể mở thiết lập mod từ menu Tùy chọn của trò chơi.
 
 <!-- l10n:bill-defaults -->
-**{k:QJ_SettingsBillDefaults}** áp dụng cho các lệnh dùng thiết lập mặc định. Thiết lập riêng của từng lệnh sẽ được ưu tiên. Vì vậy, thay đổi mặc định có thể ảnh hưởng đến các lệnh hiện có chưa được tùy chỉnh. Giới hạn sản phẩm dở dang được dùng chung theo loại sản phẩm, thay vì tính riêng cho từng lệnh.
+**{k:QJ_SettingsBillDefaults}** áp dụng cho các lệnh dùng thiết lập mặc định. Thiết lập riêng của từng lệnh sẽ được ưu tiên. **{k:QJ_SettingsManageNewBills}** ảnh hưởng đến các lệnh mới và các lệnh hiện có vẫn dùng mặc định quản lý này. Tắt tùy chọn này sẽ giải phóng các vật phẩm đang chờ của những lệnh đó để chúng được hoàn thiện bình thường. Các mặc định khác của lệnh cũng có thể ảnh hưởng đến các lệnh hiện có chưa có thiết lập riêng cho tùy chọn tương ứng. Giới hạn vật phẩm dở dang được dùng chung theo loại sản phẩm và tính riêng trên từng bản đồ.
 
 <!-- l10n:construction-defaults -->
 **{k:QJ_SettingsConstructionDefaults}** được áp dụng khi bật quản lý cho một công trình hoặc khi công trình được quản lý tự động. Các công trình đang được quản lý vẫn giữ thiết lập riêng. Mục tiêu xây dựng dùng **{k:QJ_NoRetries}**; mục tiêu chế tạo dùng **{k:QJ_AnyQuality}**.

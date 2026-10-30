@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RimWorldVersion Condition="'$(RimWorldVersion)' == ''">1.7</RimWorldVersion>
+    <TargetFramework Condition="'$(RimWorldVersion)' == '1.6'">net472</TargetFramework>
+    <TargetFramework Condition="'$(RimWorldVersion)' == '1.7'">net10.0</TargetFramework>
+    <LangVersion>10</LangVersion>
+    <AssemblyName>WorkRoles.MechanicalReview</AssemblyName>
+    <OutputPath>Probe/$(RimWorldVersion)/Assemblies/</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <WorkRolesModRoot Condition="'$(WorkRolesModRoot)' == ''">../../../mod</WorkRolesModRoot>
+    <QualityJobsModRoot Condition="'$(QualityJobsModRoot)' == ''">../../../../QualityJobs/mod</QualityJobsModRoot>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(RimWorldVersion)' == '1.6'">
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" />
+    <PackageReference Include="Lib.Harmony" Version="2.*" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="WorkRoles" HintPath="$(WorkRolesModRoot)/$(RimWorldVersion)/Assemblies/WorkRoles.dll" Private="false" />
+    <Reference Include="WorkRoles.Core" HintPath="$(WorkRolesModRoot)/$(RimWorldVersion)/Assemblies/WorkRoles.Core.dll" Private="false" />
+    <Reference Include="QualityJobs" HintPath="$(QualityJobsModRoot)/$(RimWorldVersion)/Assemblies/QualityJobs.dll" Private="false" />
+    <Reference Include="QualityJobs.Core" HintPath="$(QualityJobsModRoot)/$(RimWorldVersion)/Assemblies/QualityJobs.Core.dll" Private="false" />
+  </ItemGroup>
+  <Import Project="../../../../Shared/Build/RimWorld17.props" Condition="'$(RimWorldVersion)' == '1.7'" />
+</Project>

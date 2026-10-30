@@ -27,9 +27,12 @@ namespace WorkRoles.Core
             for (int i = 0; i < source.Count; i++)
             {
                 string token = source[i];
+                if (token == null) continue;
                 string? keep = null;
                 if (token == LocationRules.Settlements
-                    || token == LocationRules.Caravans)
+                    || token == LocationRules.Caravans
+                    || token == LocationRules.Nowhere
+                    || token.StartsWith(LocationRules.UnresolvedPrefix, StringComparison.Ordinal))
                     keep = token;
                 else if (!string.IsNullOrEmpty(token)
                     && token.StartsWith(

@@ -12,3 +12,6 @@ Ogni fascia rappresenta un ruolo e l'intervallo di abilità in cui vale; le fasc
 
 <!-- l10n:b-bb878752b11b -->
 Trascina le estremità per ridimensionare l'intervallo, il centro per spostarlo. Dove le fasce non si sovrappongono, il ruolo successivo sostituisce il precedente; dove si sovrappongono, si completano. Prima di aggiungere un ruolo che non allena nessuna abilità dell'obiettivo, appare un avviso. Puoi comunque aggiungerlo se una mod cambia ciò che assegna esperienza.
+
+<!-- l10n:target-start-order -->
+Mantieni il livello iniziale del ruolo obiettivo superiore a quello di ogni ruolo formativo. Se un'altra fascia inizia allo stesso livello o a un livello superiore, il percorso non consiglierà la formazione verso il ruolo obiettivo. Sovrapponi le estremità delle fasce per mantenere entrambi i ruoli durante una transizione.

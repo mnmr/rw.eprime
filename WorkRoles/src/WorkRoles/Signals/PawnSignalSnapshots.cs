@@ -9,7 +9,10 @@ namespace WorkRoles.Signals
     {
         internal static PawnSignalSnapshot Build(Pawn pawn)
         {
-            if (pawn == null) return PawnSignalSnapshot.Empty;
+            // RecsAdapter publishes neutral signals for the native work skills
+            // of mechanical workers. Do not infer human passions/learning from
+            // the generic SkillRecords supplied by Misc. Robots.
+            if (pawn == null || MechanicalWorkers.IsMechanical(pawn)) return PawnSignalSnapshot.Empty;
             var enabledSkills = new List<string>();
             var persistentlyBadSkills = new List<string>();
             if (pawn.skills?.skills != null)

@@ -11,10 +11,10 @@ well the implant works. A plan then shows a **Minimum quality** button beside
 ![The plan header with the Minimum quality button](plan-min-quality.png)
 
 <!-- l10n:b-84db128338c2 -->
-Every implant of the plan, inherited ones included, is
-installed and crafted at that quality or better. Implants without a quality
-are not affected. A new plan that extends another starts with the same
-minimum.
+The minimum applies to new installations for this plan, including inherited
+choices. Automatic crafting targets this quality and may need repeated
+attempts to reach it. Implants without a quality are not affected. A new plan
+that extends another starts with the same minimum.
 
 <!-- l10n:b-93af25d8591d -->
 Implanner never replaces a healthy body part with a worse one. An awful
@@ -23,8 +23,9 @@ unless the colonist's arm is missing or badly damaged. When several items
 qualify, the best one goes to the colonist whose turn comes first.
 
 <!-- l10n:b-0e7cf20ad9dc -->
-A colonist who already has the planned implant keeps it, even below the
-minimum, unless the option below is switched on.
+An already-installed implant of the planned kind still counts as complete,
+even below the minimum. Enable **Give the best implants to high-priority
+colonists** to allow better-quality replacements, as described below.
 
 <!-- l10n:b-b163fd8a6054 -->
 ## Better implants for high-priority colonists
@@ -48,10 +49,11 @@ priority:
   too, as long as their surgery is not scheduled yet.
 
 <!-- l10n:b-e246867de4e8 -->
-Every exchange is an extra surgery. A colonist only gets one while no
-other Implanner surgery is waiting for them and the concurrent surgeries
-limit has room. An implant is never exchanged when removing it would also
-take something else off the body part.
+Replacing an installed implant with a better-quality one requires two
+operations: removal and installation. A replacement only starts while no
+other Implanner surgery is waiting for that colonist and the concurrent
+surgeries limit has room. An implant is never exchanged when removing it
+would also take something else off the body part.
 
 <!-- l10n:b-37015122025b -->
 When Implanner crafts an implant for the plan:

@@ -51,7 +51,7 @@
   <WR_BadgeBlocker>ブロッカー</WR_BadgeBlocker>
   <WR_BadgeHours>時間制限</WR_BadgeHours>
   <WR_BadgeLocation>場所制限</WR_BadgeLocation>
-  <WR_BandChipTip>端をドラッグしてスキル範囲を変更し、中央をドラッグして移動します。</WR_BandChipTip>
+  <WR_BandChipTip>端をドラッグしてスキル範囲を変更し、中央をドラッグして移動します。目標ロールの開始レベルは、すべての育成ロールの開始レベルより高くしてください。そうしないと、このパスでは目標に向けた育成がおすすめされません。</WR_BandChipTip>
   <WR_BillRoleOption>ロール: {0}</WR_BillRoleOption>
   <WR_BillWorkerRoleTip>このロールを有効に持つ入植者だけが加工します。条件付きロールは時間などのルールにも従います。担当者を選ぶとロール制限を解除し、逆も同様です。</WR_BillWorkerRoleTip>
   <WR_BlockerRole>ブロッカーロール</WR_BlockerRole>
@@ -324,9 +324,9 @@ WorkRolesはゲーム標準の仕組みで管理中の入植者に作業一覧�
   <WR_RecDecisionSignalSurplus>適性判定により追加候補に選ばれました。</WR_RecDecisionSignalSurplus>
   <WR_RecDecisionSignals>設定した適性の下限を満たします。</WR_RecDecisionSignals>
   <WR_RecDecisionTraining>{0}の育成パスから割り当てました。</WR_RecDecisionTraining>
-  <WR_RecDecisionTrainingSlot>{2}の{1}枠中{0}番目に選ばれました。育成代替で{2}を{3}に置換しました（{4}、{2}には{5}が必要）。</WR_RecDecisionTrainingSlot>
-  <WR_RecDecisionTrainingSlotSimple>{2}の{1}枠中{0}番目に選ばれました。育成代替で{2}を{3}に置換しました。</WR_RecDecisionTrainingSlotSimple>
-  <WR_RecDecisionTrainingSlotUnknown>育成代替で{1}枠中{0}番目に選ばれ、{2}を割り当てました。</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecDecisionTrainingSlot>育成ロール{3}で{2}の{1}枠中{0}番目を埋めるために選ばれました（{4}。育成パスでは{2}がレベル{5}から始まります）。</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>育成ロール{3}で{2}の{1}枠中{0}番目を埋めるために選ばれました。</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>育成ロール{2}で{1}枠中{0}番目を埋めるために選ばれました。</WR_RecDecisionTrainingSlotUnknown>
   <WR_RecDecisionTrainingUnknown>育成パスから割り当てました。</WR_RecDecisionTrainingUnknown>
   <WR_RecDecisionUnavailable>研究が終わるまで、このロールの仕事は利用できません。</WR_RecDecisionUnavailable>
   <WR_RecDecisionWeakSignal>適性が設定した下限未満で、必要人数の選考でも選ばれませんでした。</WR_RecDecisionWeakSignal>
@@ -351,8 +351,8 @@ WorkRolesはゲーム標準の仕組みで管理中の入植者に作業一覧�
   <WR_RecTipSelection>選択理由</WR_RecTipSelection>
   <WR_RecTipSignalVerdict>適性要因の判定</WR_RecTipSignalVerdict>
   <WR_RecTipSkills>評価したスキル</WR_RecTipSkills>
-  <WR_RecTipWithWaiverOne>{0}（育成代替1人）</WR_RecTipWithWaiverOne>
-  <WR_RecTipWithWaiversMany>{0}（育成代替{1}人）</WR_RecTipWithWaiversMany>
+  <WR_RecTipWithWaiverOne>{0}（最大1枠を育成ロールで埋められます）</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0}（最大{1}枠を育成ロールで埋められます）</WR_RecTipWithWaiversMany>
   <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
   <WR_RecTuneCandidateMinimumSignal>候補の最低適性</WR_RecTuneCandidateMinimumSignal>
   <WR_RecTuneCandidateMinimumSignalDesc>通常のロール選択に認める適性の下限です。上げると最適担当者や最低人数の選択前に弱い候補を除外します。</WR_RecTuneCandidateMinimumSignalDesc>
@@ -451,10 +451,10 @@ WorkRolesはゲーム標準の仕組みで管理中の入植者に作業一覧�
   <WR_RestoreRecOrder>おすすめ順（初期設定に戻す）</WR_RestoreRecOrder>
   <WR_RestoreSnapColorItem>{0}（パレットの色に合わせる）</WR_RestoreSnapColorItem>
   <WR_RoleAgeBandsLabel>割り当て可能な年齢帯:</WR_RoleAgeBandsLabel>
-  <WR_RoleAgeBandsTip>選択外の年齢帯には割り当て・おすすめを行いません。範囲外をクリックするとそこまで広げ、選択の端をクリックすると外し、中央をクリックするとその帯だけにします。区切りはゲームで仕事が解禁される年齢です。このロールの全作業は{0}歳から可能です。</WR_RoleAgeBandsTip>
+  <WR_RoleAgeBandsTip>この年齢帯は自動割り当てとおすすめを制限します。手動割り当てや貼り付けでは、年齢帯外の入植者にもこのロールを割り当てられます。範囲外をクリックするとそこまで広げ、選択の端をクリックすると外し、中央をクリックするとその帯だけにします。区切りはゲームで仕事が解禁される年齢です。このロールの全作業は{0}歳から可能です。</WR_RoleAgeBandsTip>
   <WR_RoleAwfulSignal>{0}にはこのロールで「極めて不向き」の要因があります: {1}。</WR_RoleAwfulSignal>
   <WR_RoleCapAllJobs>このロールの全作業</WR_RoleCapAllJobs>
-  <WR_RoleCapNeverDo>{0}は{1}を実行しません</WR_RoleCapNeverDo>
+  <WR_RoleCapNeverDo>{0}は現在{1}ができません</WR_RoleCapNeverDo>
   <WR_RoleCapSomeJobs>このロールの作業{1}件中{0}件</WR_RoleCapSomeJobs>
   <WR_RoleCategoryImportant>重要</WR_RoleCategoryImportant>
   <WR_RoleCategoryLabel>重要度:</WR_RoleCategoryLabel>
@@ -463,9 +463,9 @@ WorkRolesはゲーム標準の仕組みで管理中の入植者に作業一覧�
   <WR_RoleCategoryOptional>任意</WR_RoleCategoryOptional>
   <WR_RoleCategoryTip>コロニーの割り当てでこのロールをどれだけ重視するかです。「未設定」は未分類にします。</WR_RoleCategoryTip>
   <WR_RoleColonyMinLabel>最低人数:</WR_RoleColonyMinLabel>
-  <WR_RoleColonyMinTip>このロールを割り当てる最低人数です。</WR_RoleColonyMinTip>
+  <WR_RoleColonyMinTip>このロールの作業に必要とする最低人数です。一部の枠は育成ロールで埋められますが、1以上にするとこのロール自体の枠を1人分確保します。この最低人数と担当率から求めた人数のうち、大きい方を使います。</WR_RoleColonyMinTip>
   <WR_RoleCoverageLabel>担当率:</WR_RoleCoverageLabel>
-  <WR_RoleCoverageTip>入植者の何%にこのロールを持たせたいかを設定します。</WR_RoleCoverageTip>
+  <WR_RoleCoverageTip>コロニー全体に対する担当者の割合を設定し、人数は整数に丸めます。この人数と最低人数のうち、大きい方を使います。一部の枠は育成ロールで埋められます。</WR_RoleCoverageTip>
   <WR_RoleDisplayCaption>ロール表示</WR_RoleDisplayCaption>
   <WR_RoleJobIncapable>この仕事は不可能</WR_RoleJobIncapable>
   <WR_RoleJobNoRangedWeapon>遠距離武器なし</WR_RoleJobNoRangedWeapon>
@@ -486,7 +486,7 @@ WorkRolesはゲーム標準の仕組みで管理中の入植者に作業一覧�
   <WR_RoleTipForcedOnGlobalOff>この入植者で強制オン（全体では無効）</WR_RoleTipForcedOnGlobalOff>
   <WR_RoleTooOld>{0}はこのロールの上限年齢（{1}歳）を超えています。</WR_RoleTooOld>
   <WR_RoleTooYoung>{0}はこのロールの最低年齢（{1}歳）未満です。</WR_RoleTooYoung>
-  <WR_RoleWorkAversion>{0}の戒律「{1}」は{2}に反対しています。おすすめでは優先度2段階、最適担当者の選択では仮想スキル6点を減点します。必要人数を満たすために選ばれる場合はあります。狩人は2段階後ろへ移動し、上限は第5段階です。既存の第1段階への代替規則は適用します。</WR_RoleWorkAversion>
+  <WR_RoleWorkAversion>{0}の戒律「{1}」は{2}に反対しています。WorkRolesはほかの適任の入植者を優先しますが、コロニーで作業の担当者が必要な場合は、この入植者をおすすめすることもあります。作業を禁止するものではありません。狩人の場合は、推奨作業順でも狩猟が後ろに移動します。</WR_RoleWorkAversion>
   <WR_RolesRestored>復元: {0}</WR_RolesRestored>
   <WR_RolesTab>ロール</WR_RolesTab>
   <WR_RowNew>{0}（新規）</WR_RowNew>
@@ -600,7 +600,7 @@ WorkRolesはゲーム標準の仕組みで管理中の入植者に作業一覧�
   <WR_TrainingSection>育成パス</WR_TrainingSection>
   <WR_TrainingTipBands>重なる範囲のロールは共存し、重ならない範囲では後のロールに置き換わります。</WR_TrainingTipBands>
   <WR_TrainingTipOrder>範囲の下限が高いロールを先にします。同じ範囲なら、作業者の最も弱い関連スキル、保存したパス順の順に比較します。</WR_TrainingTipOrder>
-  <WR_TrainingTipWhat>ロール独自の育成過程です。各構成ロールにおすすめするスキル範囲を設定します。目標ロール自身は常にパスに残ります。</WR_TrainingTipWhat>
+  <WR_TrainingTipWhat>ロール独自の育成過程です。各構成ロールにおすすめするスキル範囲を設定します。目標ロール自体はパスに残り、開始レベルはすべての育成ロールより高くする必要があります。</WR_TrainingTipWhat>
   <WR_TreeFlat>一覧</WR_TreeFlat>
   <WR_TreeNested>階層</WR_TreeNested>
   <WR_TreeToggleTip>作業をカバーするロールの下に、対象ロールを入れ子表示します。</WR_TreeToggleTip>
@@ -638,4 +638,23 @@ WorkRolesはゲーム標準の仕組みで管理中の入植者に作業一覧�
   <WR_OptMechanicalWorkers>入植者一覧にロボットとメカノイドを表示</WR_OptMechanicalWorkers>
   <WR_OptMechanicalWorkersTip>「入植者」タブでBiotechのメカノイドやMisc. Robotsのロボットにロールを割り当てられます。制御グループ、許可エリア、起動、充電は、それぞれのいつものタブで設定してください。この設定をオフにすると一覧から非表示になり、通常の仕事の優先順位に戻りますが、保存済みのロールは残ります。</WR_OptMechanicalWorkersTip>
   <WR_RecMechanicalLearningProtected>ロボットやメカノイドが業務を担当していても、この育成用の割り当ては維持されます。育成目標に達すると解除できます。</WR_RecMechanicalLearningProtected>
+  <WR_DefaultAutoUpdate>設定の編集後に自動更新</WR_DefaultAutoUpdate>
+  <WR_DefaultClear>新規ゲームに組み込みの既定設定を使う</WR_DefaultClear>
+  <WR_DefaultConflictBody>このコロニーのWorkRoles設定は、新規ゲーム用の既定設定と異なります。このコロニーの設定を既定として使い、設定の編集時に自動更新しますか？現在のコロニーは変更されません。</WR_DefaultConflictBody>
+  <WR_DefaultEmptyBody>このコロニーの設定一式を、今後のゲーム用に保存します。既存のコロニーはそれぞれの設定を維持します。各人へのロール割り当て、製造指示の紐付け、検索、セクションの折りたたみ状態は含まれません。</WR_DefaultEmptyBody>
+  <WR_DefaultKeep>今回は自分の既定設定を維持</WR_DefaultKeep>
+  <WR_DefaultSavedBody>新規ゲーム用に個人設定が保存されています。このコロニーの設定一式を保存すると、それを置き換えます。既存のコロニーはそれぞれの設定を維持します。各人へのロール割り当て、製造指示の紐付け、検索、セクションの折りたたみ状態は含まれません。</WR_DefaultSavedBody>
+  <WR_DefaultStopAuto>自動更新をオフ</WR_DefaultStopAuto>
+  <WR_DefaultUseCurrent>この設定を新規ゲームに使う</WR_DefaultUseCurrent>
+  <WR_LocationUnresolved>利用不可: {0}</WR_LocationUnresolved>
+  <WR_LocationUnresolvedTip>インポートした場所はここには存在しません。このコロニー内の場所に置き換えるまで、このルールは無効のままです。</WR_LocationUnresolvedTip>
+  <WR_NewGameDefaults>初期設定を保存</WR_NewGameDefaults>
+  <WR_SetupFailed>WorkRolesの既定設定を保存または読み込みできませんでした: {0}</WR_SetupFailed>
+  <WR_SetupGameSettings>コロニー設定</WR_SetupGameSettings>
+  <WR_SetupGameSettingsInfo>おすすめの計算式、自動最適化、優先度の動作、機械作業者の設定を置き換えます。</WR_SetupGameSettingsInfo>
+  <WR_SetupPlayerSettings>自分の表示設定</WR_SetupPlayerSettings>
+  <WR_SetupPlayerSettingsInfo>任意: チップ表示、パレット配置、スキル列、バッジ、ウィンドウサイズを置き換えます。マルチプレイのほかのプレイヤーは各自の設定を維持します。</WR_SetupPlayerSettingsInfo>
+  <WR_RecMechanicalSelected>他の推奨役割ではカバーされない仕事を担当できます。</WR_RecMechanicalSelected>
+  <WR_RecMechanicalRetained>現在の主な役割を維持します。</WR_RecMechanicalRetained>
+  <WR_RecMechanicalIncapacitated>この作業者は行動不能です。回復後に備えて役割を維持します。</WR_RecMechanicalIncapacitated>
 </LanguageData>

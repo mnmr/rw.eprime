@@ -22,7 +22,7 @@ Ba cách giao vai trò:
 - Nhấp ![nút cộng](tex:UI/Buttons/Plus|24) cuối hàng cư dân và chọn từ trình đơn.
 
 <!-- l10n:b-3634ad4cacb9 -->
-Thả thẻ cũng chọn vị trí trong hàng, nên một lần kéo vừa giao vừa đặt ưu tiên. Danh sách Phù hợp nhất trong chú giải xem trước người [bộ đề xuất](topic:recommendations) sẽ chọn.
+Thả thẻ cũng chọn vị trí trong hàng, nên một lần kéo vừa giao vừa đặt ưu tiên. Phù hợp nhất xếp hạng cư dân theo năng lực đảm nhận vai trò này. [Bộ đề xuất](topic:recommendations) còn xét nhu cầu của thuộc địa, việc rèn luyện và sự chán ghét công việc, nên có thể chọn những cư dân khác.
 
 <!-- l10n:b-e85c035e0a4a -->
 ## Nhiều cư dân cùng lúc

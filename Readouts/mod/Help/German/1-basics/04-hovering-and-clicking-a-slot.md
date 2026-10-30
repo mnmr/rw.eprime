@@ -2,7 +2,7 @@
 title: Mit dem Mauszeiger über ein Feld fahren und darauf klicken
 ---
 <!-- l10n:b-3d212ef2233a -->
-Halte den Mauszeiger über ein Symbol, um Namen, genaue Anzahl und Beschreibung des Zählers zu sehen. Bei Ressourcenpools (siehe [Was ist ein Ressourcenpool?](topic:what-a-resource-pool-is)) listet der Tooltip alle enthaltenen Ressourcen auf, von denen du etwas besitzt, mit jeweils eigener Anzahl:
+Halte den Mauszeiger über ein Symbol, um Namen, genaue Anzahl und Beschreibung des Zählers zu sehen. Bei Ressourcenpools (siehe [Was ist ein Ressourcenpool?](topic:what-a-resource-pool-is)) listet der Tooltip alle enthaltenen Ressourcen auf, deren angezeigte Anzahl nicht null ist. Diese Zahlen berücksichtigen deine Zählfilter und Abzüge für geplante Arbeiten. Wenn „Fehlmengen als negative Zahlen anzeigen“ aktiviert ist, bedeutet eine negative Zahl, dass geplante Arbeiten mehr benötigen, als du besitzt.
 
 <!-- l10n:b-374206ad0776 -->
 ![Der Tooltip für den Mahlzeitenpool](slot-tooltip.png)

@@ -2,7 +2,7 @@
 title: Puntatore e clic su una casella
 ---
 <!-- l10n:b-3d212ef2233a -->
-Tieni il puntatore su un'icona per vedere nome, quantità esatta e descrizione dietro il contatore. Per un insieme, descritto in [cos'è un insieme di risorse](topic:what-a-resource-pool-is), il suggerimento elenca ogni risorsa di cui possiedi qualcosa con la propria quantità:
+Tieni il puntatore su un'icona per vedere nome, quantità esatta e descrizione dietro il contatore. Per un insieme di risorse (vedi [Cos'è un insieme di risorse](topic:what-a-resource-pool-is)), il suggerimento elenca ogni risorsa la cui quantità visualizzata è diversa da zero. Queste quantità tengono conto dei filtri di conteggio e delle deduzioni per i lavori pianificati. Con «Mostra le carenze come numeri negativi» attivo, una quantità negativa indica che i lavori pianificati richiedono più risorse di quante ne possiedi.
 
 <!-- l10n:b-374206ad0776 -->
 ![Il suggerimento dell'insieme Pasti](slot-tooltip.png)

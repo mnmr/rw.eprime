@@ -1,0 +1,7 @@
+<ModMetaData>
+  <name>WorkRoles Bill Review Probe</name>
+  <author>WorkRoles review</author>
+  <packageId>eprime.workroles.billreviewprobe</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <modDependencies><li><packageId>mnmr.workroles</packageId><displayName>WorkRoles</displayName><downloadUrl>https://github.com/mnmr/rw.eprime</downloadUrl></li></modDependencies>
+</ModMetaData>

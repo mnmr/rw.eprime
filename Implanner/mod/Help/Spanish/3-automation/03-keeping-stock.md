@@ -11,7 +11,7 @@ Dos opciones impiden que la automatización vacíe tus almacenes.
 ![Mínimos de recursos que conservar](keep-in-stock.png)
 
 <!-- l10n:b-5864119cb6f1 -->
-**Implantes apartados** reserva implantes terminados para uso manual. Apartar un brazo biónico hace que la automatización asigne solo los que sobren, dejando uno para urgencias o comercio. La producción sigue considerando ese objeto como no disponible para cubrir la necesidad y repone existencias.
+**Implantes apartados** guarda implantes existentes para uso manual, hasta la cantidad indicada. Si apartas un brazo biónico, la automatización solo asigna los brazos adicionales y deja ese brazo libre para urgencias o comercio. La producción automática fabrica más implantes mientras los planes asignados los necesiten. Para reponer las reservas de emergencia cuando ningún plan necesite el implante, añade tú mismo un proyecto de fabricación.
 Los proyectos de mejora tampoco tocan los apartados ni los necesarios para cirugías previstas. Solo los sobrantes pueden usarse como ingredientes.
 
 <!-- l10n:b-04d4c3acbddc -->

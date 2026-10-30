@@ -2,7 +2,7 @@
 title: Üretim seçenekleri
 ---
 <!-- l10n:b-bdd2b459773e -->
-**Eksik implantlar için otomatik üretim siparişi ekle** açıkken Implanner, eksik implantları yapabilen tezgâhlara sipariş koyar ve ihtiyaç kalmayınca kendi siparişlerini kaldırır. Sizin oluşturduğunuz siparişleri asla kaldırmaz. Her sipariş, ameliyatta takılma sırasına göre bir adet üretir: Tam setlerde, planda bacaklar üst sıradaysa kolonicinin bacakları kollarından önce gelir.
+**Eksik implantlar için otomatik üretim siparişi ekle** açıkken Implanner, eksik implantları yapabilen tezgâhlara sipariş koyar ve ihtiyaç kalmayınca kendi siparişlerini kaldırır. Sizin oluşturduğunuz siparişleri asla kaldırmaz. Her sipariş, ameliyatta takılma sırasına göre bir adet üretir: Tam setlerde, ortak implant sıralamanızda bacaklar üst sıradaysa kolonicinin bacakları kollarından önce gelir.
 
 <!-- l10n:b-8effc9e9b828 -->
 Aynı implantı birkaç tarif üretebiliyorsa Implanner şu anda maliyeti karşılanabilen kullanılabilir yolu seçer. Serbest bir temel implant yükseltilebilir; yoksa doğrudan tarif, malzemelerden ileri implantı yapabilir. Yalnızca yükseltme yolu açıksa ara ürün üretimi önce temel implantı yapabilir. Tarif araştırılmış olmalı ve uygun tezgâh tarafından desteklenmelidir.

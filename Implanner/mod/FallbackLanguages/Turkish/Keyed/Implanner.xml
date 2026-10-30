@@ -12,7 +12,7 @@
   <IMP_BenchNoNewBills>Buraya iş siparişi eklemek için "Implanner tezgâhı" işaretini kaldırın</IMP_BenchNoNewBills>
   <IMP_BenchToggle>Implanner tezgâhı</IMP_BenchToggle>
   <IMP_BenchToggleTip>Implanner üretim siparişlerini önce bu tezgâha koyar ve mevcut siparişleri duraklatır. İşaretliyken buraya sipariş ekleyemez, yapıştıramaz, siparişleri duraklatamaz veya sürdüremezsiniz.\n\nKontrolü geri almak için işareti kaldırın. İşaretlediğinizde zaten duraklatılmış olan siparişler öyle kalır, diğerleri sürdürülür.</IMP_BenchToggleTip>
-  <IMP_CleanupBody>Bu siparişleri Implanner oluşturdu. Tamam, otomasyonu kapatır ve işaretli siparişleri kaldırır. İşaretlenmeyen siparişler kalır ve otomasyon yeniden açıldığında tekrar devralınır. Her iki durumda da ayrılan implantlar serbest bırakılır. İptal, otomasyonu açık tutar.</IMP_CleanupBody>
+  <IMP_CleanupBody>Bu siparişleri Implanner oluşturdu. Tamam, otomasyonu kapatır ve işaretli siparişleri kaldırır. İşaretlenmeyen siparişler etkin kalır: koloniciler bunlara göre üretim yapmaya veya ameliyatları gerçekleştirmeye devam edebilir. Otomasyon yeniden açıldığında Implanner kalan siparişlerin yönetimini devralır. Her iki durumda da ayrılan implantlar serbest bırakılır. İptal, otomasyonu açık tutar.</IMP_CleanupBody>
   <IMP_CleanupTitle>Otomasyon kapatılsın mı?</IMP_CleanupTitle>
   <IMP_ColColonist>Kolonici</IMP_ColColonist>
   <IMP_ColMelee>Y</IMP_ColMelee>
@@ -38,7 +38,7 @@
   <IMP_ExtendsNothing>Hiçbiri</IMP_ExtendsNothing>
   <IMP_ExtendsPlan>Temel plan</IMP_ExtendsPlan>
   <IMP_FromClipboard>Panodan</IMP_FromClipboard>
-  <IMP_GoalBlockedFloor>Doktor beceri sınırı engelliyor ({0})</IMP_GoalBlockedFloor>
+  <IMP_GoalBlockedFloor>Tıbbi becerisi {0}+ olan doktor bekleniyor</IMP_GoalBlockedFloor>
   <IMP_GoalBlockedLoss>{0} yok edilir</IMP_GoalBlockedLoss>
   <IMP_GoalComplete>Tamamlandı</IMP_GoalComplete>
   <IMP_GoalMissing>Eksik</IMP_GoalMissing>
@@ -96,11 +96,11 @@
   <IMP_OptDesignatedBenches>Yalnızca Implanner tezgâhlarını kullan</IMP_OptDesignatedBenches>
   <IMP_OptDesignatedBenchesTip>Üretim siparişleri yalnızca Siparişler sekmesinde "Implanner tezgâhı" işaretli tezgâhlara gider; bunlardan biri yoksa koloni implant üretmez. Kapalıyken siparişler önce Implanner tezgâhlarına gider, hepsinde ikişer sipariş olduğunda diğer tezgâhlar kullanılır. "Sipariş verilebilecek tezgâh sayısı" sınırı her iki durumda da geçerlidir.</IMP_OptDesignatedBenchesTip>
   <IMP_OptEnable>Otomasyonu etkinleştir</IMP_OptEnable>
-  <IMP_OptEnableTip>Implanner'ın kendiliğinden yaptığı her şeyin ana anahtarı: implant ayırma, ameliyat planlama ve üretim siparişi oluşturma. Kapalıyken Implanner planları ve ilerlemeyi izler ama bunlara göre işlem yapmaz. Kapatılırken mevcut siparişlerinden hangilerinin tutulacağı da sorulur.</IMP_OptEnableTip>
+  <IMP_OptEnableTip>Implanner'ın kendiliğinden yaptığı her şeyin ana anahtarı: implant ayırma, ameliyat planlama ve üretim siparişi oluşturma. Kapalıyken Implanner planları ve ilerlemeyi izlemeye devam eder. Kapatılırken mevcut siparişlerinden hangilerinin tutulacağı sorulur; tutulan siparişler etkin kalır, dolayısıyla koloniciler bunlara göre üretim yapmaya veya ameliyatları gerçekleştirmeye devam edebilir.</IMP_OptEnableTip>
   <IMP_OptIdleBenches>Yalnızca boş tezgâhlarda sipariş oluşturmaya izin ver</IMP_OptIdleBenches>
   <IMP_OptIdleBenchesTip>Yeni Implanner siparişleri yalnızca bekleyen işi olmayan tezgâhlara gider. Kendi üretim kuyruklarınız önceliğini korur, implant üretimi boşlukları doldurur. İmplant siparişlerinin kendi siparişlerinizin arkasına eklenmesine izin vermek için kapatın.</IMP_OptIdleBenchesTip>
   <IMP_OptImplantReserves>Manuel kullanım için ayrılan implantlar</IMP_OptImplantReserves>
-  <IMP_OptImplantReservesTip>Manuel kullanım için ayrılan implantlar. Otomasyon yalnızca bu sayıların üzerindeki stoğu ayırır; böylece her listelenen implanttan bu kadarı acil ameliyat veya ticaret için serbest kalır. Üretim, bu eşyaları kullanılabilir saymaz ve otomasyon onlarsız ilerleyebilene kadar üretmeye devam eder.</IMP_OptImplantReservesTip>
+  <IMP_OptImplantReservesTip>Mevcut implantlardan en fazla bu sayı kadarını manuel kullanım için serbest tutar. Implanner bunları planlı ameliyatlarda veya üretim malzemesi olarak kullanmaz. Atanmış planlar gerektirdiği sürece otomatik üretim ek implantlar üretir. Hiçbir planın implanta ihtiyacı yokken acil durum stoğunu yenilemek için kendiniz bir üretim siparişi ekleyin.</IMP_OptImplantReservesTip>
   <IMP_OptIntermediaries>Eksik ara ürünler için üretim siparişine izin ver</IMP_OptIntermediaries>
   <IMP_OptIntermediariesTip>Bir implant siparişi, bileşen gibi bir malzeme eksik olduğundan karşılanamıyorsa Implanner, üretilebilir bir mamul olan bu malzeme için de sipariş ekleyebilir. Eksikler tüm üretim zinciri boyunca izlenir. Çelik gibi ham kaynaklar üretilmez; bunları yine kendiniz toplamalısınız.</IMP_OptIntermediariesTip>
   <IMP_OptIteration>İşleme stratejisi</IMP_OptIteration>
@@ -121,7 +121,7 @@
   <IMP_OptSurgeryConcurrency>Eşzamanlı ameliyatlar</IMP_OptSurgeryConcurrency>
   <IMP_OptSurgeryConcurrencyTip>Her kolonide aynı anda kaç kolonicinin ameliyatı planlanabilir. Yüksek değerler daha çok koloniciyi paralel olarak sıraya alır; düşük değerler hastaneyi ve doktorları serbest tutar. Başlangıçta her on kolonici için birdir. +/- düğmelerine tıklarken Shift ile 10, Ctrl ile 5 değiştirin.</IMP_OptSurgeryConcurrencyTip>
   <IMP_OptUpgradeByPriority>En iyi implantları yüksek öncelikli kolonicilere ver</IMP_OptUpgradeByPriority>
-  <IMP_OptUpgradeByPriorityTip>Daha kaliteli implantlar Genel bakış sekmesinde en yüksek önceliğe sahip kolonicilere gider. Yeni ameliyatlar planın kabul ettiği en düşük kaliteyi kullanarak daha iyileri serbest tutar.\n\nDaha iyi bir implant geldiğinde, aynı türün daha kötüsüne sahip en yüksek öncelikli kolonici onu alır. Önce eski implantı çıkarılır, sonra sıradaki koloniciye gider. Daha düşük öncelikli bir kolonici için ayrılmış implant da ameliyatı henüz planlanmamışsa devredilir.\n\nHer değişim fazladan bir ameliyattır. Kapalıyken her kolonici, sırası geldiğinde stoktaki en iyi implantı alır.</IMP_OptUpgradeByPriorityTip>
+  <IMP_OptUpgradeByPriorityTip>Daha kaliteli implantlar Genel bakış sekmesinde en yüksek önceliğe sahip kolonicilere gider. Yeni ameliyatlarda planın kabul ettiği en düşük kalite kullanılarak daha iyi implantlar boşta tutulur.\n\nDaha iyi bir implant mevcut olduğunda, aynı türün daha kötüsüne sahip en yüksek öncelikli kolonici onu alır. Önce eski implantı çıkarılır, sonra sıradaki koloniciye verilir. Daha düşük öncelikli bir kolonici için ayrılmış implant da ameliyatı henüz planlanmamışsa devredilir.\n\nTakılı bir implantı daha kaliteli bir implantla değiştirmek iki ameliyat gerektirir: çıkarma ve takma. Kapalıyken her kolonici, sırası geldiğinde stoktaki en iyi implantı alır.</IMP_OptUpgradeByPriorityTip>
   <IMP_Overrides>{0} yerine geçer</IMP_Overrides>
   <IMP_PlanColonists>{0} kolonici</IMP_PlanColonists>
   <IMP_PlanCounts>{0} implant</IMP_PlanCounts>
@@ -129,7 +129,7 @@
   <IMP_PlanGoalCount>{0} implant</IMP_PlanGoalCount>
   <IMP_PlanMinQuality>Asgari kalite: {0}</IMP_PlanMinQuality>
   <IMP_PlanMinQualityNoQualityJobs>Quality Jobs yüklü değil, bu yüzden herhangi bir zanaatkâr implantı bitirebilir. Bu kalitenin altında çıkan implant yeniden üretilir.</IMP_PlanMinQualityNoQualityJobs>
-  <IMP_PlanMinQualityTip>Bu planın implantları bu kalitede veya daha yüksek kalitede üretilip takılır. Kalitesi olmayan implantlar etkilenmez.\n\nBir implant, sağlıklı bir vücut parçasını asla daha kötüsüyle değiştirmez. Vücut parçası eksik veya hasarlı değilse düşük kaliteli biyonik daha iyi bir eşya bekler.</IMP_PlanMinQualityTip>
+  <IMP_PlanMinQualityTip>Üst plandan devralınan seçimler de dahil olmak üzere yeni takılacak implantlar için kabul edilen asgari kalite. Planlanan türdeki mevcut implantlar bu sınırın altında olsa bile tamamlanmış sayılır. Daha kaliteli implantlarla değiştirilmelerine izin vermek için En iyi implantları yüksek öncelikli kolonicilere ver seçeneğini etkinleştirin. Kalitesi olmayan implantlar etkilenmez.\n\nBir implant, sağlıklı bir vücut parçasını asla daha kötüsüyle değiştirmez. Vücut parçası eksik veya hasarlı değilse düşük kaliteli biyonik daha iyi bir eşya bekler.</IMP_PlanMinQualityTip>
   <IMP_PlanNameTitle>Plan adı</IMP_PlanNameTitle>
   <IMP_PlansHeader>Planlar</IMP_PlansHeader>
   <IMP_Priority0>İlk</IMP_Priority0>
@@ -137,7 +137,7 @@
   <IMP_Priority2>Normal</IMP_Priority2>
   <IMP_Priority3>Düşük</IMP_Priority3>
   <IMP_Priority4>Son</IMP_Priority4>
-  <IMP_RankTiersHelp>İmplantlar 5 farklı kademede gruplanabilir. Yerleşim, üretim sırasını ve ameliyatları etkiler (otomasyon seçeneklerine bağlı olarak).\n\nÖğeleri yeniden sıralamak için sürükleyin.</IMP_RankTiersHelp>
+  <IMP_RankTiersHelp>İmplant sıralamaları bu kayıttaki tüm planlarda ortaktır. Bir implantı burada taşımak, yer aldığı her yerdeki önceliğini değiştirir. Daha fazla yıldız, daha yüksek öncelik demektir.\n\nSıralamayı belirlemek için implantları yıldız kademeleri arasında veya aynı kademe içinde sürükleyin. Sıralamalar, otomasyon stratejinize göre üretime ve ameliyatlara yön verir.</IMP_RankTiersHelp>
   <IMP_RankTiersTitle>İmplant kademeleri</IMP_RankTiersTitle>
   <IMP_ReadFailed>Dosya okunamadı: {0}</IMP_ReadFailed>
   <IMP_RegionHead>Baş</IMP_RegionHead>
@@ -168,7 +168,7 @@
   <IMP_StripMakingFor>{0} için malzeme üretiliyor</IMP_StripMakingFor>
   <IMP_StripNothingToCraft>Üretilecek bir şey yok</IMP_StripNothingToCraft>
   <IMP_StripProduction>Üretim: %{0}</IMP_StripProduction>
-  <IMP_StripStock>Stokta {0}, sırada {1}</IMP_StripStock>
+  <IMP_StripStock>Stokta {0}, üretilecek {1}</IMP_StripStock>
   <IMP_StripSurgery>Ameliyat: %{0}</IMP_StripSurgery>
   <IMP_StripWaiting>{0} bekleniyor</IMP_StripWaiting>
   <IMP_StripWaitingBench>Tezgâh bekleniyor</IMP_StripWaitingBench>
@@ -184,7 +184,7 @@
   <IMP_TierNormal>Normal öncelik</IMP_TierNormal>
   <IMP_TipBenchesInUse>Implanner siparişi bulunan tezgâhlar: {0}</IMP_TipBenchesInUse>
   <IMP_TipCapacity>Vücut parçası: {0}</IMP_TipCapacity>
-  <IMP_TipColCrafting>Üretimde</IMP_TipColCrafting>
+  <IMP_TipColCrafting>Üretim siparişlerinde</IMP_TipColCrafting>
   <IMP_TipColFree>Serbest</IMP_TipColFree>
   <IMP_TipColHeldBack>Manuele ayrılan</IMP_TipColHeldBack>
   <IMP_TipColImplant>İmplant</IMP_TipColImplant>
@@ -193,7 +193,7 @@
   <IMP_TipColMissing>Eksik</IMP_TipColMissing>
   <IMP_TipColNeeded>Gereken</IMP_TipColNeeded>
   <IMP_TipColPlanned>Planlanan</IMP_TipColPlanned>
-  <IMP_TipColQueued>Sıradaki</IMP_TipColQueued>
+  <IMP_TipColQueued>Üretilecek</IMP_TipColQueued>
   <IMP_TipColReserved>Ayrılan</IMP_TipColReserved>
   <IMP_TipColScheduled>Ameliyatı planlı</IMP_TipColScheduled>
   <IMP_TipColStatus>Durum</IMP_TipColStatus>

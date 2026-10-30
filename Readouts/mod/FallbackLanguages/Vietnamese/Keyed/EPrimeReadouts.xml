@@ -101,14 +101,14 @@ Nhấp mục để thêm vào cuối nhóm, hoặc kéo vào một ô ở bậc 
   <EPR.QualityJobsMissingTip>Cần EPrime's Quality Jobs, hiện chưa được cài.</EPR.QualityJobsMissingTip>
   <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs đã cài nhưng chưa có tích hợp cần thiết. Cập nhật để bật tùy chọn này.</EPR.QualityJobsOutdatedTip>
   <EPR.QualityJobsRework>Hỗ trợ Quality Jobs</EPR.QualityJobsRework>
-  <EPR.QualityJobsReworkTip>Với lệnh và công trình có chất lượng mục tiêu, ước tính số lần cần thử và dành nguyên liệu cho tất cả. Công trình xây lại hoàn trả phần nguyên liệu theo trò chơi gốc khi tháo dỡ.</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsReworkTip>Điều chỉnh lượng tài nguyên dành cho lệnh và công trình theo mục tiêu chất lượng do Quality Jobs quản lý khi các tùy chọn dành tài nguyên tương ứng được bật. Ước tính vật liệu cho các lần làm lại và tính đến vật liệu thu hồi từ công trình. Bật tùy chọn dành tài nguyên tương ứng ở trên để sử dụng.</EPR.QualityJobsReworkTip>
   <EPR.ReserveForBills>Dành tài nguyên cho lệnh</EPR.ReserveForBills>
-  <EPR.ReserveForBillsTip>Trừ nguyên liệu các lệnh chưa hoàn thành còn cần. Lệnh chỉ dành trước nguyên liệu nếu có đúng một cách đáp ứng. "Bất kỳ da nào" và lựa chọn mở tương tự không dành trước gì.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBillsTip>Trừ nguyên liệu cần cho các lệnh sản xuất chưa hoàn thành. Một nguyên liệu chỉ được tính khi lệnh cho phép dùng đúng một loại tài nguyên cho nguyên liệu đó. Ví dụ, cho phép dùng bất kỳ loại da nào sẽ không dành trước gì; chỉ cho phép một loại da sẽ tính lượng da đó cần dùng.</EPR.ReserveForBillsTip>
   <EPR.ReserveForBuildables>Dành tài nguyên cho công trình</EPR.ReserveForBuildables>
   <EPR.ReserveForBuildablesTip>Trừ nguyên liệu bản thiết kế và khung đang xây còn cần. Không tính lại vật liệu đã chuyển vào khung; bỏ qua bản thiết kế bị cấm.</EPR.ReserveForBuildablesTip>
   <EPR.ResourcePoolEditor>Sửa tập tài nguyên</EPR.ResourcePoolEditor>
   <EPR.Resources>Tài nguyên</EPR.Resources>
-  <EPR.RestoreConfirm>Thay TẤT CẢ nhóm và ngưỡng bằng bộ mặc định? Ảnh hưởng mọi người chơi trong chế độ nhiều người.</EPR.RestoreConfirm>
+  <EPR.RestoreConfirm>Thay tất cả nhóm và tập tài nguyên bằng thiết lập mặc định có sẵn, đồng thời xóa mọi ngưỡng và tùy chỉnh số lượng? Thao tác này ảnh hưởng đến mọi người chơi trong chế độ nhiều người.</EPR.RestoreConfirm>
   <EPR.RestoreDefaults>Khôi phục mặc định</EPR.RestoreDefaults>
   <EPR.Results>Kết quả</EPR.Results>
   <EPR.RuleAlwaysOff>Luôn tắt</EPR.RuleAlwaysOff>
@@ -138,13 +138,13 @@ Nhấp mục để thêm vào cuối nhóm, hoặc kéo vào một ô ở bậc 
   <EPR.TierLayoutTip>Cách nhóm mở rộng hiển thị các bậc phụ, dù mở bằng nút tam giác hay trỏ chuột. Ngang thêm chúng bên phải trên cùng hàng. Dọc đặt mỗi bậc trên hàng riêng và làm dải cao hơn.</EPR.TierLayoutTip>
   <EPR.TierLayoutVertical>Dọc</EPR.TierLayoutVertical>
   <EPR.TipAvailableStock>{0} có thể dùng · {1} trong kho</EPR.TipAvailableStock>
-  <EPR.TipDrain>Tiêu hao</EPR.TipDrain>
-  <EPR.TipEach>Mỗi</EPR.TipEach>
+  <EPR.TipDrain>Đã trừ</EPR.TipDrain>
+  <EPR.TipEach>Chi phí mỗi lần</EPR.TipEach>
   <EPR.TipInStock>Trong kho</EPR.TipInStock>
   <EPR.TipMixedResources>Hỗn hợp</EPR.TipMixedResources>
   <EPR.TipOtherPlannedWork>Khác ({0})</EPR.TipOtherPlannedWork>
   <EPR.TipPlannedWork>Việc dự kiến</EPR.TipPlannedWork>
-  <EPR.TipQueued>Đang chờ</EPR.TipQueued>
+  <EPR.TipQueued>Công việc còn lại</EPR.TipQueued>
   <EPR.TipResource>Tài nguyên</EPR.TipResource>
   <EPR.Title>EPrime's Readouts</EPR.Title>
   <EPR.UseVanilla>Dùng bảng tài nguyên gốc</EPR.UseVanilla>

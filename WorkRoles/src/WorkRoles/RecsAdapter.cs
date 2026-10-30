@@ -206,6 +206,7 @@ namespace WorkRoles
             PawnView facts = snapshot.RecommendationFacts;
             var view = new PawnView
             {
+                IsMechanical = facts.IsMechanical,
                 BiologicalAgeTicks = facts.BiologicalAgeTicks,
                 AgeLimitsApply = facts.AgeLimitsApply,
                 HasRangedWeapon = facts.HasRangedWeapon,
@@ -238,6 +239,7 @@ namespace WorkRoles
             signalSnapshot = signalSnapshot ?? PawnSignalSnapshot.Empty;
             var facts = new PawnView
             {
+                IsMechanical = MechanicalWorkers.IsMechanical(pawn),
                 BiologicalAgeTicks = pawn.ageTracker?.AgeBiologicalTicks ?? long.MaxValue,
                 AgeLimitsApply = AgeLimitsApplyTo(pawn),
                 HasRangedWeapon = pawn.equipment?.Primary?.def?.IsRangedWeapon == true,
@@ -252,17 +254,20 @@ namespace WorkRoles
                     && pawn.genes.GenesListForReading.Any(g =>
                         FireFearGenes.Contains(g.def.defName)),
             };
-            if (pawn.skills != null)
+            if (facts.IsMechanical)
+            {
+                MechanicalWorkers.CaptureWorkSkills(pawn, facts.SkillLevels);
+                // Mechanical workers have fixed native skills, not human
+                // learning potential. Publish neutral usable-skill signals
+                // alongside the same levels used by the stats panel.
+                signalSnapshot = PawnSignalSnapshot.Create(facts.SkillLevels.Keys, SignalSnapshot.Empty);
+            }
+            else if (pawn.skills != null)
                 foreach (SkillRecord skill in pawn.skills.skills)
                 {
                     if (skill.TotallyDisabled) continue;
                     facts.SkillLevels[skill.def.defName] = skill.Level;
                 }
-            else if (MechanicalWorkers.IsMechanical(pawn))
-                foreach (WorkTypeDef type in pawn.RaceProps.mechEnabledWorkTypes)
-                    if (type.relevantSkills != null)
-                        foreach (SkillDef skill in type.relevantSkills)
-                            facts.SkillLevels[skill.defName] = pawn.RaceProps.mechFixedSkillLevel;
             Dictionary<string, int>? ageBlocked = null;
             foreach (WorkTypeDef workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
             {

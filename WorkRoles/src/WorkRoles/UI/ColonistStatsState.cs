@@ -212,7 +212,6 @@ namespace WorkRoles.UI
         private ExternalCapture CaptureExternal(Pawn pawn)
         {
             externalSnapshots.TryGet(pawn, out ExternalCapture? previous);
-            SkillCapture skills = CaptureSkills(pawn);
             int factRevision = ExternalPawnFacts.FactRevisions.RevisionOf(pawn);
             int factGeneration = ExternalPawnFacts.FactRevisions.FullGeneration;
             int workRevision = ExternalPawnFacts.WorkEvidenceRevisions.RevisionOf(pawn);
@@ -224,13 +223,14 @@ namespace WorkRoles.UI
                 && previous.WorkGeneration == workGeneration
                 ? previous.Snapshot
                 : RecsAdapter.CapturePawnSnapshot(pawn, PawnSignalSnapshotCache.Get(pawn));
+            SkillCapture skills = CaptureSkills(pawn, snapshot);
             return new ExternalCapture {
                 Snapshot = snapshot, Skills = skills,
                 FactRevision = factRevision, FactGeneration = factGeneration,
                 WorkRevision = workRevision, WorkGeneration = workGeneration };
         }
 
-        private SkillCapture CaptureSkills(Pawn pawn)
+        private SkillCapture CaptureSkills(Pawn pawn, PawnExternalSnapshot snapshot)
         {
             int revision = ExternalPawnFacts.FactRevisions.RevisionOf(pawn);
             int generation = ExternalPawnFacts.FactRevisions.FullGeneration;
@@ -238,8 +238,8 @@ namespace WorkRoles.UI
             if (entry != null && entry.Revision == revision && entry.Generation == generation)
                 return entry.Capture;
             SkillCapture? previous = entry?.Capture;
-            PawnSignalSnapshot signals = PawnSignalSnapshotCache.Get(pawn);
-            List<SkillLine> lines = SkillsTip.Lines(pawn);
+            PawnSignalSnapshot signals = snapshot.Signals;
+            List<SkillLine> lines = SkillsTip.Lines(pawn, snapshot);
             var inputs = new SkillInput[lines.Count];
             var byDef = new Dictionary<SkillDef, SkillInput>();
             bool equal = previous != null && previous.Inputs.Length == lines.Count;

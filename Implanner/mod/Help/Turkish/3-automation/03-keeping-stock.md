@@ -11,7 +11,7 @@ title: Stok koruma
 ![Stokta tutma kaynak alt sınırları](keep-in-stock.png)
 
 <!-- l10n:b-5864119cb6f1 -->
-**Manuel kullanım için ayrılan implantlar**, bitmiş implantları manuel kullanıma saklar. Bir biyonik kol ayırırsanız otomasyon yalnızca ilkinden fazlasını atar; biri acil ameliyat veya ticaret için serbest kalır. Üretim, manuele ayrılmış eşyayı hâlâ eksik sayarak stoğu yeniler. Yükseltme siparişleri de manuele ayrılmış veya planlı ameliyatlara gereken implantlara dokunmaz. Yalnızca fazlalık implantlar üretim malzemesi olabilir.
+**Manuel kullanım için ayrılan implantlar**, mevcut implantlardan en fazla ayarlanan sayı kadarını manuel kullanıma saklar. Bir biyonik kol ayırırsanız otomasyon yalnızca ilkinden fazlasını atar; o kol acil ameliyat veya ticaret için serbest kalır. Atanmış planlar gerektirdiği sürece otomatik üretim ek implantlar üretir. Hiçbir planın implanta ihtiyacı yokken acil durum stoğunu yenilemek için kendiniz bir üretim siparişi ekleyin. Yükseltme siparişleri de manuel kullanım için ayrılmış veya planlı ameliyatlara gereken implantlara dokunmaz. Yalnızca fazlalık implantlar üretim malzemesi olarak kullanılabilir.
 
 <!-- l10n:b-04d4c3acbddc -->
 ![Bir biyonik kolu manuele ayıran implant rezervi](implant-reservations.png)

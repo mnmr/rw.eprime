@@ -2,7 +2,7 @@
 title: Tùy chọn sản xuất
 ---
 <!-- l10n:b-bdd2b459773e -->
-Bật **Tự thêm lệnh chế tạo bộ phận cấy ghép còn thiếu** để Implanner đặt lệnh tại bàn làm được và xóa lệnh của nó khi hết nhu cầu. Không xóa lệnh bạn tạo. Mỗi lệnh chế tạo một lần theo thứ tự lắp: với Trọn bộ, chân trước tay nếu chân xếp cao hơn trong kế hoạch.
+Bật **Tự thêm lệnh chế tạo bộ phận cấy ghép còn thiếu** để Implanner đặt lệnh tại các bàn có thể chế tạo chúng và xóa lệnh của mình khi hết nhu cầu. Các lệnh bạn tự tạo không bao giờ bị xóa. Mỗi lệnh chế tạo một lần theo thứ tự lắp khi phẫu thuật: với Trọn bộ, chân của một cư dân được làm trước tay nếu chân xếp cao hơn trong bảng xếp hạng cấy ghép dùng chung của bạn.
 
 <!-- l10n:b-8effc9e9b828 -->
 Khi nhiều công thức làm cùng cấy ghép, Implanner ưu tiên cách hiện đủ nguyên liệu. Có thể nâng cấp bộ phận cơ bản còn trống; nếu không, công thức trực tiếp làm loại nâng cao từ nguyên liệu. Nếu chỉ có cách nâng cấp, sản xuất trung gian có thể làm bản cơ bản trước. Công thức phải được nghiên cứu và có bàn đủ điều kiện.

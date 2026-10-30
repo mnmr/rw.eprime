@@ -23,8 +23,8 @@ namespace WorkRoles.UI
         private readonly System.Action drawGrip;
         private int observedLanguageRevision;
 
-        /// Top-right action buttons: one 130px button on every tab that has
-        /// one, plus two 90px import/export buttons on Roles (8px gaps).
+        /// Top-right actions: the Roles tab groups Import, Export, Set defaults
+        /// and Restore Defaults with measured widths and 8px gaps.
         private static readonly Color AutoManagedColor =
             new Color(0.55f, 0.8f, 0.45f);
         private static readonly Color AutoManagedBackground =
@@ -249,6 +249,7 @@ namespace WorkRoles.UI
             nothingToRestoreMessage = "WR_NothingToRestore".Translate().ToString();
             exportLabel = "WR_Export".Translate().ToString();
             importLabel = "WR_Import".Translate().ToString();
+            defaultsLabel = "WR_NewGameDefaults".Translate().ToString();
             colonistsTab.InvalidateLanguageCaches();
             rolesTab.InvalidateLanguageCaches();
             recommendationsTab.InvalidateLanguageCaches();
@@ -280,6 +281,7 @@ namespace WorkRoles.UI
             resizing = false;
             pendingWindowRect.Clear();
             rolesTab.CommitEdits();
+            SetupDefaults.QueueFlush();
             KeyOverride.Restore();
             // Producer snapshots regrow on reopen (Reset forces every stamp
             // stale); dropping them here releases pawns from unloaded saves.
@@ -311,14 +313,21 @@ namespace WorkRoles.UI
         private string nothingToRestoreMessage = null!;
         private string exportLabel = null!;
         private string importLabel = null!;
+        private string defaultsLabel = null!;
+        private static readonly System.Action exportSetup = ExportSetup;
+        private static void ExportSetup()
+        {
+            var store = RoleStore.Current;
+            if (store != null) Find.WindowStack.Add(new Dialog_ExportPreview(RoleIO.BuildXml(store)));
+        }
 
         // Owner: window. Key: language and UI metric revisions. Value: measured
-        // Small-font action widths and line bounds. Dependencies: the five
+        // Small-font action widths and line bounds. Dependencies: the six
         // translated captions and active font metrics. Refresh: immediate at
         // either revision change. Equality: unchanged keys reuse scalar values.
         // Teardown: window-owned values; PostClose resets the measurement stamp.
         private int actionMetricRevision = -1, actionLanguageRevision = -1;
-        private float actionWidth, ioWidth, actionHeight;
+        private float actionWidth, defaultsWidth, ioWidth, actionHeight;
 
         private void EnsureActionMetrics()
         {
@@ -330,6 +339,7 @@ namespace WorkRoles.UI
                 actionWidth = Mathf.Max(130f, Mathf.Max(
                     Mathf.Max(WrText.FitWidth(restoreDefaultsLabel), WrText.FitWidth(fixMyColonyLabel)) + 24f,
                     WrText.FitWidth(autoManagedLabel) + 34f));
+                defaultsWidth = Mathf.Max(130f, WrText.FitWidth(defaultsLabel) + 24f);
                 ioWidth = Mathf.Max(90f, Mathf.Max(WrText.FitWidth(importLabel), WrText.FitWidth(exportLabel)) + 24f);
                 actionHeight = Mathf.Max(28f, Mathf.Ceil(Text.LineHeight) + 6f);
             }
@@ -450,11 +460,11 @@ namespace WorkRoles.UI
             for (int i = 0; i < tabs!.Count; i++) // ObserveLanguageRevision built the list this pass
                 tabs[i].labelColor = i == (int)curTab ? TabStrip.ActiveLabelColor : (Color?)null;
             // The strip stops short of the per-tab action buttons at the top
-            // right (widest cluster: Import, Export, Restore Defaults on the
+            // right (widest cluster: Import, Export, Set defaults, Restore Defaults on the
             // Roles tab), so narrow windows shrink the tabs instead of
             // burying the last ones under the buttons.
             var tabStrip = new Rect(content.x, content.y,
-                content.width - actionWidth - 2f * (8f + ioWidth) - 8f, content.height);
+                content.width - actionWidth - defaultsWidth - 2f * ioWidth - 32f, content.height);
             TabStrip.Draw(tabStrip, tabs, WorkRolesTex.TabAtlas);
             TabStrip.DrawActiveTabSeam(tabStrip, (int)curTab, tabs.Count);
 
@@ -493,14 +503,15 @@ namespace WorkRoles.UI
                         Find.WindowStack.Add(new Dialog_RestorePreview(items));
                 }
 
-                var exportRect = new Rect(actionRect.x - 8f - ioWidth, btnY, ioWidth, actionHeight);
+                var defaultsRect = new Rect(actionRect.x - 8f - defaultsWidth, btnY, defaultsWidth, actionHeight);
+                if (Widgets.ButtonText(defaultsRect, defaultsLabel))
+                    SetupDefaults.QueueDefaultDialog();
+
+                var exportRect = new Rect(defaultsRect.x - 8f - ioWidth, btnY, ioWidth, actionHeight);
                 WrTips.Key("WR_ExportTip", RoleIO.ExportFile).Region(exportRect);
                 if (Widgets.ButtonText(exportRect, exportLabel))
                 {
-                    RoleStore? store = RoleStore.Current;
-                    if (store != null)
-                        Find.WindowStack.Add(new Dialog_ExportPreview(
-                            RoleIO.BuildXml(store)));
+                    WorkRolesGameComponent.RunOutsideOnGUI(exportSetup);
                 }
 
                 var importRect = new Rect(exportRect.x - 8f - ioWidth, btnY, ioWidth, actionHeight);

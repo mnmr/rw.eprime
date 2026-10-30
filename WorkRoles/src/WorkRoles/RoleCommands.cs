@@ -138,17 +138,25 @@ namespace WorkRoles
         {
             if (Store == null || selection == null || selection.xml.NullOrEmpty()) return;
             var doc = RoleIO.Parse(selection.xml);
-            if (doc.error != null) return;
+            bool local = !MP.IsInMultiplayer || MP.IsExecutingSyncCommandIssuedBySelf;
+            string? error = RoleIO.ValidateSelection(Store, doc, selection);
+            if (error != null)
+            {
+                if (local) UI.WrToast.Show("WR_ImportParseFailed".Translate(error), MessageTypeDefOf.RejectInput);
+                return;
+            }
             var resolvedLocations = ImportLocationResolver.BuildMap(
                 selection.locationFileTokens, selection.locationRuntimeTokens);
             using var batch = Store.Revisions.Batch();
             ImportApplyResult result = ApplyImportToStore(Store, doc,
-                selection.palette, selection.paletteOverwrite, selection.paletteRows,
-                selection.roles, selection.rolesOverwrite, selection.roleRows,
+                selection.palette && doc.hasPalette, selection.paletteOverwrite, selection.paletteRows,
+                selection.roles && doc.hasRoles, selection.rolesOverwrite, selection.roleRows,
                 selection.paths, selection.pathsOverwrite, selection.pathRows,
                 selection.order, resolvedLocations);
-            if (!result.Changed) return;
-            UI.WrToast.Show(result.Summary, MessageTypeDefOf.PositiveEvent);
+            bool settingsChanged = selection.gameSettings && ApplyGameSetup(doc.gameSettings);
+            if (local && selection.playerSettings) RoleSetupBridge.ApplyPlayer(doc.playerSettings);
+            if (result.Changed || settingsChanged) SetupDefaults.Changed();
+            if (local && (result.Changed || settingsChanged)) UI.WrToast.Show(result.Summary, MessageTypeDefOf.PositiveEvent);
         }
 
         /// Applies the restore items selected in the Restore Defaults preview:
@@ -178,6 +186,7 @@ namespace WorkRoles
             var playSettings = Current.Game?.playSettings;
             if (playSettings == null || playSettings.useWorkPriorities == value) return;
             playSettings.useWorkPriorities = value;
+            SetupDefaults.Changed();
             foreach (var pawn in PawnsFinder.AllMapsWorldAndTemporary_Alive)
                 if (pawn.Faction == Faction.OfPlayer && pawn.workSettings != null)
                     pawn.workSettings.Notify_UseWorkPrioritiesChanged();
@@ -189,6 +198,7 @@ namespace WorkRoles
         {
             if (Store == null || Store.reportVanillaPriorities == value) return;
             Store.reportVanillaPriorities = value;
+            SetupDefaults.Changed();
         }
 
         /// Emergency pass membership rule: every claimed emergency job, or
@@ -199,6 +209,7 @@ namespace WorkRoles
         {
             if (Store == null || Store.rolePriorityEmergencyRule == value) return;
             Store.rolePriorityEmergencyRule = value;
+            SetupDefaults.Changed();
             CompiledJobOrders.InvalidateRuntimeAll();
         }
 
@@ -208,6 +219,7 @@ namespace WorkRoles
         {
             if (Store == null || Store.mechanicalWorkersEnabled == value) return;
             Store.mechanicalWorkersEnabled = value;
+            SetupDefaults.Changed();
             MechanicalWorkers.NotifyChanged(force: true);
             using var batch = Store.Revisions.Batch();
             foreach (var pair in Store.pawnSets)
@@ -226,6 +238,7 @@ namespace WorkRoles
         {
             if (Store == null || Store.mechanicalRecommendationsEnabled == value) return;
             Store.mechanicalRecommendationsEnabled = value;
+            SetupDefaults.Changed();
             MechanicalWorkers.NotifyChanged();
         }
 
@@ -234,6 +247,7 @@ namespace WorkRoles
         {
             if (Store == null || Store.autoOptimize == value) return;
             Store.autoOptimize = value;
+            SetupDefaults.Changed();
             AutoOptimizePresentationRevision.Bump();
         }
 
@@ -274,6 +288,7 @@ namespace WorkRoles
             if (ReferenceEquals(current, changed)) return;
             Store.recommendationTuning = changed;
             Store.RecommendationTuningRevision++;
+            SetupDefaults.Changed();
         }
 
         /// Atomic reset of one section of the shared formula inputs. The key
@@ -293,6 +308,7 @@ namespace WorkRoles
             if (ReferenceEquals(current, changed)) return;
             Store.recommendationTuning = changed;
             Store.RecommendationTuningRevision++;
+            SetupDefaults.Changed();
         }
 
         /// Per-role recommendation tuning. Enums travel as primitive ints for
@@ -453,7 +469,9 @@ namespace WorkRoles
         }
 
         [SyncMethod]
-        public static void DeleteRole(int roleId)
+        public static void DeleteRole(int roleId) => DeleteRoleCore(roleId, sweepGroups: true);
+
+        private static void DeleteRoleCore(int roleId, bool sweepGroups)
         {
             var role = FindRole(roleId);
             if (role == null) return;
@@ -512,7 +530,7 @@ namespace WorkRoles
             UiVersion.AggregateChanged(ModelDomain.Catalog | ModelDomain.RoleRecommendation);
             Store.Revisions.ForgetRole(roleId);
             RoleWorkSpecs.Remove(roleId);
-            SweepEmptyGroups();
+            if (sweepGroups) SweepEmptyGroups();
             CompiledJobOrders.EnqueueReconciles(keepers);
         }
 
@@ -843,6 +861,7 @@ namespace WorkRoles
                 hasCustomColor = values.HasCustomColor,
                 color = values.Color,
                 iconPath = values.IconPath,
+                preserveUnavailableEntries = source.preserveUnavailableEntries,
                 templateDefName = values.TemplateDefName,
                 // A player-named duplicate has no seeded-name provenance,
                 // just as ForPlayerDuplicate removes its template identity.
@@ -1039,6 +1058,7 @@ namespace WorkRoles
         /// Engine path (load sweep): runs in the synced simulation on every client.
         internal static bool ScrubDeadEntriesDirect(Role role)
         {
+            if (role.preserveUnavailableEntries) return false;
             var dead = JobOrderCompiler.DeadEntryIndexes(role.entries, GameJobCatalog.Instance);
             if (dead.Count == 0) return false;
             foreach (int index in dead.OrderByDescending(i => i))

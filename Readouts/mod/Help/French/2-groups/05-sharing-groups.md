@@ -31,6 +31,9 @@ Importer lit un fichier enregistré ou le presse-papiers et affiche un aperçu a
 <!-- l10n:b-1c0ab7a10c14 -->
 Toutes les catégories présentes dans le fichier peuvent être sélectionnées. Vous pouvez modifier les catégories liées une par une, même si un choix intermédiaire est incomplet. Importer reste désactivé tant que les références aux ensembles et aux groupes ne sont pas valides ; survolez le bouton désactivé pour savoir ce qui manque.
 
+<!-- l10n:import-dependency-recovery -->
+Si des seuils ou des règles de comptage des ressources ont besoin d’un groupe de ressources manquant, importez ces paramètres avec leurs Groupes de ressources, ou laissez ces catégories inchangées. Si les paramètres du joueur ont besoin d’un groupe manquant, importez **Groupes** et **Paramètres du joueur et groupes activés** ensemble, ou laissez les deux inchangés.
+
 <!-- l10n:b-3081ef3ab31d -->
 Les catégories absentes d'un ancien export restent inchangées. Les entrées nécessitant du contenu de mod indisponible sont ignorées.
 
@@ -41,4 +44,4 @@ En multijoueur, les groupes, ensembles, seuils et règles de comptage personnali
 ## Enregistrer ou rétablir les valeurs par défaut
 
 <!-- l10n:b-6181f2c14286 -->
-Définir les valeurs par défaut enregistre une configuration personnelle pour les futures colonies (voir [Valeurs par défaut des nouvelles parties](topic:new-game-defaults)). Rétablir les valeurs par défaut demande confirmation, puis remplace la configuration de la colonie actuelle par celle fournie avec Readouts. En multijoueur, cette réinitialisation affecte la configuration partagée de tous les joueurs.
+Définir les valeurs par défaut enregistre une configuration personnelle pour les futures colonies (voir [Valeurs par défaut des nouvelles parties](topic:new-game-defaults)). Rétablir les valeurs par défaut demande confirmation, puis remplace tous les groupes et ensembles de ressources par ceux fournis par défaut et efface tous les seuils et règles de comptage personnalisées. En multijoueur, cette réinitialisation affecte la configuration partagée de tous les joueurs.

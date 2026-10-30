@@ -9,9 +9,10 @@ Work bills can be restricted to a role instead of a single worker:
 
 <!-- l10n:b-52a4bf2cffdc -->
 Only colonists actively holding the role work the bill, and a
-[conditional role](topic:conditional-roles) brings its rules along. This shines when a bill needs a particular
-skill mix: a drug production bill restricted to a role that combines
-crafting and intellectual jobs always lands on someone qualified.
+[conditional role](topic:conditional-roles) brings its rules along. For
+example, assign a drug-making role to your chosen producers, then restrict
+the bill to that role. The bill's normal skill requirements still apply;
+role membership alone does not guarantee the skills needed for the bill.
 
 <!-- l10n:b-308a614fd129 -->
 Picking a specific worker clears the role restriction, and picking a role

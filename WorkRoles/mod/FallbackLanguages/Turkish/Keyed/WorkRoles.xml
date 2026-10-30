@@ -51,7 +51,7 @@ Kolonimi düzenle düğmesini geri getirmek için Seçenekler sekmesinde "Koloni
   <WR_BadgeBlocker>Engelleyici</WR_BadgeBlocker>
   <WR_BadgeHours>Sınırlı saatler</WR_BadgeHours>
   <WR_BadgeLocation>Sınırlı konumlar</WR_BadgeLocation>
-  <WR_BandChipTip>Beceri aralığını yeniden boyutlandırmak için ucunu, taşımak için ortasını sürükleyin.</WR_BandChipTip>
+  <WR_BandChipTip>Beceri aralığını yeniden boyutlandırmak için ucunu, taşımak için ortasını sürükleyin. Hedef rolün başlangıç düzeyini tüm eğitim rollerinin başlangıç düzeylerinden yüksek tutun; aksi takdirde yol, bu hedefe yönelik eğitim önermez.</WR_BandChipTip>
   <WR_BillRoleOption>Rol: {0}</WR_BillRoleOption>
   <WR_BillWorkerRoleTip>Bu siparişi yalnızca bu rolü etkin olarak taşıyan koloniciler yapar; koşullu rol kendi kurallarını uygular (ör. etkin saatler). Bir çalışan seçmek rol kısıtlamasını kaldırır, tersi de geçerlidir.</WR_BillWorkerRoleTip>
   <WR_BlockerRole>Engelleyici rol</WR_BlockerRole>
@@ -324,9 +324,9 @@ WorkRoles, yönetilen her koloniciye standart oyun yöntemleriyle iş listesi ve
   <WR_RecDecisionSignalSurplus>İşaret değerlendirmesine göre ek aday seçildi.</WR_RecDecisionSignalSurplus>
   <WR_RecDecisionSignals>Ayarlanan işaret eşiğini karşılıyor.</WR_RecDecisionSignals>
   <WR_RecDecisionTraining>{0} rolünün eğitim yolu üzerinden atandı.</WR_RecDecisionTraining>
-  <WR_RecDecisionTrainingSlot>{2} rolünün {0}/{1} kontenjanına seçildi. Eğitim muafiyeti, {2} yerine {3} atadı ({4}; {2} için {5} gerekiyor).</WR_RecDecisionTrainingSlot>
-  <WR_RecDecisionTrainingSlotSimple>{2} rolünün {0}/{1} kontenjanına seçildi. Eğitim muafiyeti, {2} yerine {3} atadı.</WR_RecDecisionTrainingSlotSimple>
-  <WR_RecDecisionTrainingSlotUnknown>Eğitim muafiyetiyle {0}/{1} kontenjanına seçilerek {2} atandı.</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecDecisionTrainingSlot>{2} rolünün {0}/{1} kontenjanını {3} eğitim rolüyle doldurmak üzere seçildi ({4}; eğitim yolu, {2} rolünü {5}. seviyede başlatır).</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>{2} rolünün {0}/{1} kontenjanını {3} eğitim rolüyle doldurmak üzere seçildi.</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>{0}/{1} kontenjanını {2} eğitim rolüyle doldurmak üzere seçildi.</WR_RecDecisionTrainingSlotUnknown>
   <WR_RecDecisionTrainingUnknown>Bir eğitim yolu üzerinden atandı.</WR_RecDecisionTrainingUnknown>
   <WR_RecDecisionUnavailable>Araştırması tamamlanana kadar bu rolün işleri kullanılamaz.</WR_RecDecisionUnavailable>
   <WR_RecDecisionWeakSignal>İşaret değerlendirmesi ayarlanan eşiğin altında; zorunlu kapsam da bu çalışanı seçmedi.</WR_RecDecisionWeakSignal>
@@ -351,8 +351,8 @@ WorkRoles, yönetilen her koloniciye standart oyun yöntemleriyle iş listesi ve
   <WR_RecTipSelection>Seçim</WR_RecTipSelection>
   <WR_RecTipSignalVerdict>İşaret değerlendirmesi</WR_RecTipSignalVerdict>
   <WR_RecTipSkills>Hesaba katılan beceriler</WR_RecTipSkills>
-  <WR_RecTipWithWaiverOne>{0} (1 eğitim muafiyeti)</WR_RecTipWithWaiverOne>
-  <WR_RecTipWithWaiversMany>{0} ({1} eğitim muafiyeti)</WR_RecTipWithWaiversMany>
+  <WR_RecTipWithWaiverOne>{0} (en fazla 1 kontenjanda eğitim rolü kullanılabilir)</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0} (en fazla {1} kontenjanda eğitim rolleri kullanılabilir)</WR_RecTipWithWaiversMany>
   <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
   <WR_RecTuneCandidateMinimumSignal>Aday için asgari işaret</WR_RecTuneCandidateMinimumSignal>
   <WR_RecTuneCandidateMinimumSignalDesc>Olağan rol seçimine kabul edilen en düşük işaret. Artırmak, lider ve asgari rol sahibi seçiminden önce zayıf adayları eler.</WR_RecTuneCandidateMinimumSignalDesc>
@@ -451,10 +451,10 @@ WorkRoles, yönetilen her koloniciye standart oyun yöntemleriyle iş listesi ve
   <WR_RestoreRecOrder>Öneri sırası (varsayılana döndür)</WR_RestoreRecOrder>
   <WR_RestoreSnapColorItem>{0} (rengi paletle eşleştir)</WR_RestoreSnapColorItem>
   <WR_RoleAgeBandsLabel>Bu rolün atanabileceği yaş grupları:</WR_RoleAgeBandsLabel>
-  <WR_RoleAgeBandsTip>Seçili yaş aralıkları dışındaki kolonicilere bu rol asla atanmaz veya önerilmez. Seçim dışındaki bir aralığa tıklamak oraya kadar her şeyi ekler; ilk veya son seçili aralığa tıklamak onu çıkarır; ortadakine tıklamak yalnızca onu seçer. Sınırlar, oyunun işleri açtığı yaşları izler. Bu roldeki her iş {0} yaşından itibaren yapılabilir.</WR_RoleAgeBandsTip>
+  <WR_RoleAgeBandsTip>Bu yaş aralıkları otomatik atamaları ve önerileri sınırlar. Elle atama ve yapıştırma yoluyla bu rol, aralıkların dışındaki kolonicilere de verilebilir. Seçim dışındaki bir aralığa tıklamak oraya kadar her şeyi ekler; ilk veya son seçili aralığa tıklamak onu çıkarır; ortadakine tıklamak yalnızca onu seçer. Sınırlar, oyunun işleri açtığı yaşları izler. Bu roldeki her iş {0} yaşından itibaren yapılabilir.</WR_RoleAgeBandsTip>
   <WR_RoleAwfulSignal>{0} için bu rolde Çok uygunsuz işareti var: {1}.</WR_RoleAwfulSignal>
   <WR_RoleCapAllJobs>bu roldeki işlerin hiçbirini</WR_RoleCapAllJobs>
-  <WR_RoleCapNeverDo>{0}, {1} asla yapmayacak.</WR_RoleCapNeverDo>
+  <WR_RoleCapNeverDo>{0} şu anda {1} yapamıyor</WR_RoleCapNeverDo>
   <WR_RoleCapSomeJobs>bu roldeki {1} işin {0} tanesini</WR_RoleCapSomeJobs>
   <WR_RoleCategoryImportant>Önemli</WR_RoleCategoryImportant>
   <WR_RoleCategoryLabel>Koloni önemi:</WR_RoleCategoryLabel>
@@ -463,9 +463,9 @@ WorkRoles, yönetilen her koloniciye standart oyun yöntemleriyle iş listesi ve
   <WR_RoleCategoryOptional>İsteğe bağlı</WR_RoleCategoryOptional>
   <WR_RoleCategoryTip>Koloni planlanırken bu role sahip olmanın önemi. "Ayarlanmadı" rolü sınıflandırmaz.</WR_RoleCategoryTip>
   <WR_RoleColonyMinLabel>Koloni asgarisi:</WR_RoleColonyMinLabel>
-  <WR_RoleColonyMinTip>Bu rolün asgari atama sayısı.</WR_RoleColonyMinTip>
+  <WR_RoleColonyMinTip>Bu rolün işleri için planlanacak asgari çalışan sayısı. Eğitim rolleri bazı yerleri doldurabilir: sıfırdan büyük bir değer, rolün kendisine bir yer ayırır. Motor, bu asgari sayı ile Kapsamdan hesaplanan çalışan sayısından büyük olanı kullanır.</WR_RoleColonyMinTip>
   <WR_RoleCoverageLabel>Kapsam:</WR_RoleCoverageLabel>
-  <WR_RoleCoverageTip>İdeal olarak kolonicilerin yüzde kaçının bu rolü alması gerektiği.</WR_RoleCoverageTip>
+  <WR_RoleCoverageTip>Koloninin bu yüzdesi için tam çalışan sayısına yuvarlayarak plan yapar. Motor, bu sayı ile Koloni asgarisinden büyük olanı kullanır. Eğitim rolleri bazı yerleri doldurabilir.</WR_RoleCoverageTip>
   <WR_RoleDisplayCaption>Rol görünümü</WR_RoleDisplayCaption>
   <WR_RoleJobIncapable>bu işi yapamaz</WR_RoleJobIncapable>
   <WR_RoleJobNoRangedWeapon>menzilli silah yok</WR_RoleJobNoRangedWeapon>
@@ -486,7 +486,7 @@ WorkRoles, yönetilen her koloniciye standart oyun yöntemleriyle iş listesi ve
   <WR_RoleTipForcedOnGlobalOff>Bu kolonici için ZORLA AÇIK (rol genel olarak KAPALI)</WR_RoleTipForcedOnGlobalOff>
   <WR_RoleTooOld>{0} bu rol için çok yaşlı (azami yaş {1}).</WR_RoleTooOld>
   <WR_RoleTooYoung>{0} bu rol için çok genç (asgari yaş {1}).</WR_RoleTooYoung>
-  <WR_RoleWorkAversion>{0} adlı kolonicinin {1} öğretisi {2} işine karşı. Öneriler sınırlı bir puan cezası uygular: iki öncelik adımı veya lider seçiminde altı sanal beceri puanı. Zorunlu kapsam yine bu çalışanı seçebilir. Avcı önceliği beşinci kademeyi aşmadan iki kademe geriye gider; mevcut birinci kademe yedek davranışı yine geçerlidir.</WR_RoleWorkAversion>
+  <WR_RoleWorkAversion>{0} adlı kolonicinin {1} öğretisi {2} işine karşıdır. WorkRoles başka bir uygun koloniciyi tercih eder, ancak kolonide bu işi üstlenecek birine ihtiyaç varsa bu koloniciyi yine de önerebilir. Bu, işi yasaklamaz. Avcı rolünde bu isteksizlik, avlanmayı önerilen iş sıralamasında da geriye taşır.</WR_RoleWorkAversion>
   <WR_RolesRestored>Geri yüklendi: {0}</WR_RolesRestored>
   <WR_RolesTab>Roller</WR_RolesTab>
   <WR_RowNew>{0} (yeni)</WR_RowNew>
@@ -600,7 +600,7 @@ Bu bildirim kayıt başına her mod için bir kez gösterilir.</WR_SetPriorityBl
   <WR_TrainingSection>Eğitim yolu</WR_TrainingSection>
   <WR_TrainingTipBands>Örtüşen aralıklar birlikte bulunur; örtüşmeyenlerde sonraki rol öncekinin yerini alır.</WR_TrainingTipBands>
   <WR_TrainingTipOrder>Atamalar yüksek aralık alt sınırlarına öncelik verir. Aralıklar eşitse çalışanın en zayıf rol becerisi, sonra kayıtlı yol sırası önceliklidir.</WR_TrainingTipOrder>
-  <WR_TrainingTipWhat>Rolün kendi ilerleyişi: her üye rolün önerildiği bir beceri aralığı vardır. Rolün kendisi daima kendi yolunda kalır.</WR_TrainingTipWhat>
+  <WR_TrainingTipWhat>Rolün kendi ilerleyişi: her üye rolün önerildiği bir beceri aralığı vardır. Hedef rol kendi yolunda kalır ve başlangıç düzeyi tüm eğitim rollerininkinden yüksek olmalıdır.</WR_TrainingTipWhat>
   <WR_TreeFlat>Düz</WR_TreeFlat>
   <WR_TreeNested>İç içe</WR_TreeNested>
   <WR_TreeToggleTip>Kapsanan rollerin onları birleştiren rolün altında iç içe gösterimini aç/kapat.</WR_TreeToggleTip>
@@ -638,4 +638,23 @@ Bu bildirim kayıt başına her mod için bir kez gösterilir.</WR_SetPriorityBl
   <WR_OptMechanicalWorkers>Kolonicilerde robotları ve mekanoitleri göster</WR_OptMechanicalWorkers>
   <WR_OptMechanicalWorkersTip>Biotech mekanoitlerine ve Misc. Robots robotlarına Koloniciler sekmesinden rol atayın. Kontrol gruplarını, izin verilen bölgeleri, etkinleştirmeyi ve şarjı her zamanki sekmelerinden yönetin. Bu seçeneği kapatırsanız listede gizlenir ve alışılmış iş önceliklerine dönerler; kayıtlı rolleri ise korunur.</WR_OptMechanicalWorkersTip>
   <WR_RecMechanicalLearningProtected>Robotlar veya mekanoitler hizmeti karşılarken bu öğrenme ataması korunur. Eğitim hedefine ulaşıldığında kaldırılabilir.</WR_RecMechanicalLearningProtected>
+  <WR_DefaultAutoUpdate>Yapılandırma değişikliklerinden sonra otomatik güncelle</WR_DefaultAutoUpdate>
+  <WR_DefaultClear>Yeni oyunlarda yerleşik varsayılanları kullan</WR_DefaultClear>
+  <WR_DefaultConflictBody>Bu koloninin WorkRoles yapılandırması, yeni oyunlar için varsayılanınızdan farklı. Bu koloninin yapılandırması varsayılan olarak kullanılsın ve yapılandırmayı düzenlediğinizde güncel tutulsun mu? Mevcut koloniniz değişmeyecek.</WR_DefaultConflictBody>
+  <WR_DefaultEmptyBody>Bu koloninin tüm yapılandırmasını gelecekteki oyunlar için kaydedin. Mevcut koloniler kendi yapılandırmalarını korur. Karakter atamaları, üretim emri bağlantıları, aramalar ve daraltılmış bölümler dahil edilmez.</WR_DefaultEmptyBody>
+  <WR_DefaultKeep>Bu oturumda varsayılanımı koru</WR_DefaultKeep>
+  <WR_DefaultSavedBody>Yeni oyunlar için kişisel bir yapılandırma kayıtlı. Bunun yerine bu koloninin tüm yapılandırmasını kaydedin. Mevcut koloniler kendi yapılandırmalarını korur. Karakter atamaları, üretim emri bağlantıları, aramalar ve daraltılmış bölümler dahil edilmez.</WR_DefaultSavedBody>
+  <WR_DefaultStopAuto>Otomatik güncellemeyi kapat</WR_DefaultStopAuto>
+  <WR_DefaultUseCurrent>Yeni oyunlarda bu yapılandırmayı kullan</WR_DefaultUseCurrent>
+  <WR_LocationUnresolved>Kullanılamıyor: {0}</WR_LocationUnresolved>
+  <WR_LocationUnresolvedTip>İçe aktarılan bu konum burada mevcut değil. Bu kural, konumu bu kolonideki bir konumla değiştirene kadar devre dışı kalır.</WR_LocationUnresolvedTip>
+  <WR_NewGameDefaults>Varsayılanları belirle</WR_NewGameDefaults>
+  <WR_SetupFailed>WorkRoles varsayılanı kaydedilemedi veya okunamadı: {0}</WR_SetupFailed>
+  <WR_SetupGameSettings>Koloni ayarları</WR_SetupGameSettings>
+  <WR_SetupGameSettingsInfo>Öneri formülü ayarlarını, otomatik optimizasyonu, öncelik davranışını ve mekanik çalışan seçeneklerini değiştirir.</WR_SetupGameSettingsInfo>
+  <WR_SetupPlayerSettings>Görünüm tercihlerim</WR_SetupPlayerSettings>
+  <WR_SetupPlayerSettingsInfo>İsteğe bağlı: etiket görünümünüzü, palet düzeninizi, beceri sütunlarınızı, rozetlerinizi ve pencere boyutunuzu değiştirir. Çok oyunculu oyundaki diğer oyuncular kendi tercihlerini korur.</WR_SetupPlayerSettingsInfo>
+  <WR_RecMechanicalSelected>Önerilen diğer rollerinin kapsamadığı işleri yapabilir.</WR_RecMechanicalSelected>
+  <WR_RecMechanicalRetained>Mevcut ana rolünü korur.</WR_RecMechanicalRetained>
+  <WR_RecMechanicalIncapacitated>Bu çalışan yere düşmüş durumda. İyileştiğinde devam edebilmesi için rolleri korunur.</WR_RecMechanicalIncapacitated>
 </LanguageData>

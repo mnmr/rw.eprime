@@ -11,8 +11,9 @@ Hai thiết lập ngăn tự động hóa rút cạn kho.
 ![Mức tài nguyên giữ trong kho](keep-in-stock.png)
 
 <!-- l10n:b-5864119cb6f1 -->
-**Cấy ghép giữ riêng** dành thành phẩm để dùng thủ công. Giữ riêng một tay sinh học thì tự động hóa chỉ phân bổ từ cái thứ hai, để một cái dùng mổ khẩn cấp hoặc trao đổi. Sản xuất vẫn tính đồ giữ riêng là thiếu để bổ sung kho.
-Lệnh nâng cấp cũng không dùng đồ giữ riêng hoặc cần cho ca mổ dự kiến. Chỉ đồ dư được dùng làm nguyên liệu.
+**Cấy ghép giữ riêng** giữ lại tối đa số lượng cấy ghép hiện có đã đặt để dùng thủ công. Giữ riêng một tay sinh học thì tự động hóa chỉ phân bổ từ cái thứ hai, để một cái dùng mổ khẩn cấp hoặc trao đổi.
+Sản xuất tự động chế tạo thêm cấy ghép khi các kế hoạch đã gán còn cần chúng. Để bổ sung kho khẩn cấp khi không có kế hoạch nào cần cấy ghép, hãy tự thêm lệnh chế tạo.
+Lệnh nâng cấp cũng không dùng cấy ghép giữ riêng hoặc cấy ghép cần cho ca mổ dự kiến. Chỉ cấy ghép dư mới được dùng làm nguyên liệu sản xuất.
 
 <!-- l10n:b-04d4c3acbddc -->
 ![Giữ riêng một tay sinh học](implant-reservations.png)

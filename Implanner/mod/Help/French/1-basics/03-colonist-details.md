@@ -13,7 +13,7 @@ Sélectionnez un colon dans la table : le panneau de détails présente chaque i
 - **Prêt** : l'objet réservé est arrivé dans la colonie du colon.
 - **Opération programmée** : l'opération figure dans sa liste d'ordres.
 - **En convalescence** : l'opération attend si le colon saigne, a des blessures non traitées ou est à terre. Le sommeil anesthésique ne compte pas.
-- **Bloqué par le niveau médical requis** : aucun médecin de la colonie n'atteint la compétence de Médecine exigée (voir [Options de chirurgie](topic:surgery-options)).
+- **En attente d'un médecin avec Médecine ...+** : aucun médecin admissible n'atteint le niveau de compétence requis pour cette opération. Vérifiez la disponibilité des médecins ou ajustez le minimum dans l'onglet Automatisation (voir [Options de chirurgie](topic:surgery-options)).
 - **Terminé** : l'implant est posé.
 
 <!-- l10n:b-7d5d4531ac6c -->

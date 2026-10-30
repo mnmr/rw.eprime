@@ -167,6 +167,12 @@ namespace WorkRoles.UI
                         return "WR_RecDecisionProtected".Translate();
                     case SpecialPickReason.Incapacitated:
                         return "WR_RecDecisionIncapacitated".Translate();
+                    case SpecialPickReason.MechanicalWork:
+                        return "WR_RecMechanicalSelected".Translate();
+                    case SpecialPickReason.MechanicalPrimary:
+                        return "WR_RecMechanicalRetained".Translate();
+                    case SpecialPickReason.MechanicalIncapacitated:
+                        return "WR_RecMechanicalIncapacitated".Translate();
                     default:
                         return "WR_RecDecisionRecommended".Translate();
                 }

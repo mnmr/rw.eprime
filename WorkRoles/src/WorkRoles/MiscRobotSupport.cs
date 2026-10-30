@@ -53,7 +53,10 @@ namespace WorkRoles
             && containedStations.TryGetValue(pawn, out Thing? station) && !station.Destroyed
                 ? station : null;
         internal static bool HasPersistenceAnchor(Pawn pawn) => ContainingStation(pawn) is Thing station
-            && (station.MapHeld != null || station.ParentHolder != null);
+            // Airborne gravships serialize their placement tables directly;
+            // carried stations have neither a map nor an IThingHolder there.
+            && (station.MapHeld != null || station.ParentHolder != null
+                || Find.CurrentGravship?.ContainsThing(station) == true);
         internal static bool AutomaticWorkEnabled(Pawn pawn)
         {
             Thing? station = ContainingStation(pawn) ?? stationFor?.Invoke(pawn);
@@ -71,6 +74,15 @@ namespace WorkRoles
                     return priority(types[i]!) > 0
                         && giver.workType.workGiversByPriority.Contains(giver);
             return false;
+        }
+
+        internal static int NativePriority(Pawn pawn, WorkTypeDef type)
+        {
+            IList? types = workTypes?.Invoke(pawn.def);
+            if (types == null || workType == null || priority == null) return 0;
+            for (int i = 0; i < types.Count; i++)
+                if (workType(types[i]!) == type) return priority(types[i]!);
+            return 0;
         }
 
         // Return affected native members; WorkRoles owns their model/cache
@@ -115,9 +127,10 @@ namespace WorkRoles
 
         internal static void NotifyAreaRemoved(Area area)
         {
-            if (!ReferenceEquals(owner, Current.Game)) return;
+            if (RoleStore.Current?.mechanicalWorkersEnabled != true
+                || !ReferenceEquals(owner, Current.Game)) return;
             // Native plain-list containers are absent from PawnsFinder.
-            // Keep native restrictions valid even while WR support is off.
+            // Extend native cleanup only while robot support is enabled.
             foreach (var entry in containedStations)
                 entry.Key.playerSettings?.Notify_AreaRemoved(area);
         }

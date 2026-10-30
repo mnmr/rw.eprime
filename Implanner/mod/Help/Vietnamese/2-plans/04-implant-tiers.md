@@ -2,7 +2,7 @@
 title: Bậc cấy ghép
 ---
 <!-- l10n:b-5f84f9b2d5c3 -->
-Cột phải xếp lựa chọn riêng của kế hoạch vào năm bậc sao; cấy ghép kế thừa được xếp ở kế hoạch gốc. Kéo hàng sang bậc khác để chuyển.
+Cột phải hiển thị các cấy ghép do chính kế hoạch chọn theo năm bậc sao. Thứ hạng cấy ghép được dùng chung cho mọi kế hoạch trong bản lưu này: di chuyển một cấy ghép ở đây sẽ thay đổi mức ưu tiên của nó ở mọi nơi nó xuất hiện. Càng nhiều sao, mức ưu tiên càng cao. Kéo giữa các bậc sao hoặc trong cùng một bậc để đặt thứ tự. Để di chuyển cấy ghép kế thừa, hãy mở kế hoạch gốc đã chọn nó.
 
 <!-- l10n:b-21a47f167054 -->
 ![Các bậc sao từ ưu tiên cao nhất đến thường](tier-panel.png)

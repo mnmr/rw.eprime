@@ -7,6 +7,55 @@ namespace WorkRoles.Core.Tests.Planner;
 public class RoleSuitabilityTests
 {
     [Test]
+    public async Task HumanBadgesRetainPreMechanicalRatingsWhenWorkIsUnavailable()
+    {
+        // These are the pre-feature player-visible ratings: human aptitude is
+        // separate from the assigned chip's incapable-work warning.
+        RoleView haul = RecsTestBed.Unskilled(1, "Hauling", "HaulGeneral");
+        RoleView sow = RecsTestBed.Skilled(2, "Growing", "Plants", "GrowerSow");
+        var human = new PawnView { CapableWorkTypes = { "Growing" } };
+        human.SkillLevels["Plants"] = 12;
+        human.SignalBuckets["Plants"] = SignalBucket.Great;
+        human.WorkEvidence = PawnWorkEvidence.Create([
+            new WorkCapabilityFact("GrowerSow", null, "ludeon.rimworld", "WR_WorkBlockedCapacity")], []);
+
+        Dictionary<int, SignalBucket> verdicts =
+            RoleSuitability.Verdicts(RecsTestBed.Colony([haul, sow], human))[0];
+
+        await Assert.That(verdicts[haul.Id]).IsEqualTo(SignalBucket.Neutral);
+        await Assert.That(verdicts[sow.Id]).IsEqualTo(SignalBucket.Great);
+    }
+
+    [Test]
+    public async Task NoExecutableJobsShowsAwfulEvenWithSkillsAndForUnskilledOrCompositeRoles()
+    {
+        RoleView farm = RecsTestBed.Skilled(1, "Growing", "Plants", "Sow");
+        RoleView haul = RecsTestBed.Unskilled(2, "Hauling", "Haul");
+        RoleView clean = RecsTestBed.Unskilled(3, "Cleaning", "Clean");
+        RoleView mixed = RecsTestBed.Unskilled(4, "Cleaning", "Clean", "Haul");
+        RecsTestBed.SetSpec(mixed, RecsTestBed.Capability("Cleaning", 0, RecsTestBed.Giver("Clean")),
+            RecsTestBed.Capability("Hauling", 0, RecsTestBed.Giver("Haul")));
+        RoleView composite = RecsTestBed.Unskilled(5, "Hauling", "Haul", "Sow");
+        RecsTestBed.SetSpec(composite, farm.WorkSpec.Capabilities[0], haul.WorkSpec.Capabilities[0]);
+        composite.MemberRoleIds = [farm.Id, haul.Id];
+        var cleaner = new PawnView { IsMechanical = true, CapableWorkTypes = { "Growing", "Hauling", "Cleaning" } };
+        cleaner.SkillLevels["Plants"] = 20;
+        cleaner.SignalBuckets["Plants"] = SignalBucket.Exceptional;
+        cleaner.WorkEvidence = PawnWorkEvidence.Create([
+            new WorkCapabilityFact("Sow", null, "robot", "unsupported"),
+            new WorkCapabilityFact("Haul", null, "robot", "unsupported")], []);
+        var colony = RecsTestBed.Colony([farm, haul, clean, mixed, composite], cleaner);
+
+        Dictionary<int, SignalBucket> verdicts = RoleSuitability.Verdicts(colony)[0];
+
+        await Assert.That(verdicts[farm.Id]).IsEqualTo(SignalBucket.Awful);
+        await Assert.That(verdicts[haul.Id]).IsEqualTo(SignalBucket.Awful);
+        await Assert.That(verdicts[composite.Id]).IsEqualTo(SignalBucket.Awful);
+        await Assert.That(verdicts[clean.Id]).IsEqualTo(SignalBucket.Neutral);
+        await Assert.That(verdicts[mixed.Id]).IsEqualTo(SignalBucket.Neutral);
+    }
+
+    [Test]
     public async Task EmptyRoleSkillProfileDoesNotFallBackToParentWorkTypeSkills()
     {
         var role = RecsTestBed.Unskilled(1, "Doctor", "Rescue");

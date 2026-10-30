@@ -30,28 +30,75 @@ namespace WorkRoles
 
         public static RoleFileDocument Parse(string xml) => RoleFile.Parse(xml);
 
-        /// The full export document — the custom palette slots the exported roles
-        /// actually USE, plus every role — as indented XML text.
+        internal static string? ValidateSelection(RoleStore store, RoleFileDocument doc, ImportSelection selection)
+        {
+            if (doc.error != null) return doc.error;
+            if (!selection.roles || !doc.hasRoles) return null;
+            var rows = RoleRows(store, doc, selection.rolesOverwrite);
+            var chosen = new HashSet<int>(selection.roleRows);
+            var selected = new List<FileRole>();
+            var effective = new Dictionary<FileRole, FileRole?>();
+            var replacements = new Dictionary<int, FileRole>();
+            for (int i = 0; i < rows.Count; i++)
+            {
+                var row = rows[i];
+                bool apply = selection.rolesOverwrite || chosen.Contains(i);
+                if (apply)
+                {
+                    selected.Add(row.role);
+                    effective[row.role] = row.role;
+                    if (row.existing != null) replacements[row.existing.id] = row.role;
+                }
+                else effective[row.role] = row.existing == null ? null : new FileRole
+                {
+                    composite = row.existing.composite, activeHours = row.existing.activeHours,
+                    locations = row.existing.locationTokens,
+                };
+            }
+            string? error = RoleFileDependencies.Validate(doc, selected, role => effective[role]);
+            if (error != null) return error;
+            if (!selection.rolesOverwrite)
+                foreach (Role role in store.roles)
+                {
+                    if (!role.composite || replacements.ContainsKey(role.id)) continue;
+                    foreach (int memberId in role.memberRoleIds)
+                        if (replacements.TryGetValue(memberId, out var member)
+                            && (member.composite || member.activeHours != FileRole.AllHours || member.locations.Count != 0))
+                            return "Invalid composite member: " + role.label + " → " + member.label;
+                }
+            if (selection.paths)
+                for (int i = 0; i < doc.trainingPaths.Count; i++)
+                    if (selection.pathsOverwrite || selection.pathRows.Contains(i))
+                        foreach (var entry in RoleFile.EntriesWithStableIds(doc.trainingPaths[i]))
+                        {
+                            var source = RoleFile.ResolveRole(doc, entry.role.fileId, entry.role.label);
+                            if (source == null || effective[source] == null)
+                                return "Missing training dependency: " + entry.role.label;
+                        }
+            return null;
+        }
+
+        /// Complete portable setup, captured only at explicit IO/default actions.
         public static string BuildXml(RoleStore store)
         {
-            store.SyncSwatchNames();
             var doc = new RoleFileDocument();
-            var usedSlots = new SortedSet<int>();
-            foreach (var role in store.roles)
-                if (role.hasCustomColor)
-                {
-                    int slot = CustomSlotOf(role.color, store);
-                    if (slot >= 0) usedSlots.Add(slot);
-                }
-            foreach (int slot in usedSlots)
-                doc.palette.Add((store.customSwatchNames[slot], ToRgb(store.customSwatches[slot])));
+            var roleFileIds = new Dictionary<int, string>();
+            for (int i = 0; i < store.roles.Count; i++) roleFileIds.Add(store.roles[i].id, "role-" + (i + 1));
+            var groupFileIds = new Dictionary<int, string>();
+            foreach (var group in store.groups)
+                if (group.id != RoleGroup.DefaultId) groupFileIds.Add(group.id, "group-" + (groupFileIds.Count + 1));
+            for (int slot = 0; slot < store.customSwatches.Count; slot++)
+                if (store.customSwatches[slot].a >= 0.5f)
+                    doc.palette.Add((slot < store.customSwatchNames.Count
+                        && !store.customSwatchNames[slot].NullOrEmpty()
+                            ? store.customSwatchNames[slot] : "custom-" + (slot + 1), ToRgb(store.customSwatches[slot])));
             foreach (var group in store.groups)
                 if (group.id != RoleGroup.DefaultId)
                 {
                     doc.groups.Add(group.label);
                     doc.groupsWithIds.Add(new FileGroup
                     {
-                        fileId = GroupFileId(group.id),
+                        fileId = groupFileIds[group.id],
                         name = group.label,
                         nameSourceDef = group.nameSourceDef,
                     });
@@ -66,20 +113,22 @@ namespace WorkRoles
                     string? memberLabel = store.RoleById(role.trainingRoleIds[i])?.label;
                     if (memberLabel != null)
                         training.Add(new FileTrainingPathEntry(
-                            RoleFileId(role.trainingRoleIds[i]), memberLabel,
+                            roleFileIds[role.trainingRoleIds[i]], memberLabel,
                             role.trainingMins[i], role.trainingMaxes[i]));
                 }
                 doc.roles.Add(new FileRole
                 {
-                    fileId = RoleFileId(role.id),
+                    fileId = roleFileIds[role.id],
                     label = role.label,
                     templateDef = role.templateDefName,
                     generatedWorkTypeDefName = role.generatedWorkTypeDefName,
                     customName = role.customName,
+                    hasIcon = true,
+                    iconPath = role.iconPath,
                     group = role.groupId == RoleGroup.DefaultId ? null
                         : store.GroupById(role.groupId)?.label,
                     groupId = role.groupId == RoleGroup.DefaultId ? null
-                        : GroupFileId(role.groupId),
+                        : groupFileIds.TryGetValue(role.groupId, out string? groupFileId) ? groupFileId : null,
                     colorRef = role.hasCustomColor ? EncodeColorRef(role.color, store, doc) : null,
                     autoAssign = role.autoAssign,
                     blocker = role.blocker,
@@ -106,20 +155,21 @@ namespace WorkRoles
                         .Select(id => store.RoleById(id))
                         .OfType<Role>()
                         .Select(member => new FileRoleReference(
-                            RoleFileId(member.id), member.label))
+                            roleFileIds[member.id], member.label))
                         .ToList(),
                 });
             }
+            doc.gameSettings = RoleSetupBridge.CaptureGame(store);
+            doc.playerSettings = RoleSetupBridge.CapturePlayer();
             return RoleFile.Build(doc);
         }
 
-        private static string RoleFileId(int roleId) => "role-" + roleId;
-        private static string GroupFileId(int groupId) => "group-" + groupId;
-
-        /// Specific locations export by NAME (ids are save-local); stale tokens
-        /// (a location that no longer exists) drop out of the export.
+        /// Specific locations export by NAME (ids are save-local); stale ids
+        /// remain inactive instead of accidentally broadening the restriction.
         private static string? FileLocationToken(string token)
         {
+            if (token.StartsWith(LocationRules.UnresolvedPrefix, System.StringComparison.Ordinal))
+                return token.Substring(LocationRules.UnresolvedPrefix.Length);
             if (token == LocationRules.Settlements
                 || token == LocationRules.Caravans
                 || token == LocationRules.Nowhere)
@@ -127,7 +177,8 @@ namespace WorkRoles
             bool ship = token.StartsWith(LocationRules.ShipPrefix);
             string id = token.Substring(token.IndexOf(':') + 1);
             var loc = ColonyScope.Locations().FirstOrDefault(l => l.Id == id);
-            if (loc == null) return null;
+            // A vanished location must never turn a restriction into Anywhere.
+            if (loc == null) return LocationRules.Nowhere;
             return (ship ? LocationRules.ShipPrefix : LocationRules.SettlementPrefix) + loc.Label;
         }
 
@@ -170,7 +221,8 @@ namespace WorkRoles
                     return SwatchPalette.ExportName(i);
             int slot = CustomSlotOf(color, store);
             if (slot >= 0)
-                return store.customSwatchNames[slot];
+                return slot < store.customSwatchNames.Count && !store.customSwatchNames[slot].NullOrEmpty()
+                    ? store.customSwatchNames[slot] : "custom-" + (slot + 1);
             foreach (var def in DefDatabase<PaletteDef>.AllDefsListForReading)
                 if (color.IndistinguishableFrom(def.color))
                     return def.defName;
@@ -777,7 +829,7 @@ namespace WorkRoles
                 {
                     foreach (var role in RoleIO.OverwriteDeletes(store, plannedRoles))
                     {
-                        RoleCommands.DeleteRole(role.id);
+                        DeleteRoleCore(role.id, sweepGroups: false);
                         deleted++;
                     }
                     // Matched renames may swap names. Remove every changing
@@ -823,6 +875,8 @@ namespace WorkRoles
                         updated++;
                     }
                     target.generatedWorkTypeDefName = row.role.generatedWorkTypeDefName;
+                    target.preserveUnavailableEntries = true;
+                    if (row.role.hasIcon) target.iconPath = row.role.iconPath;
                     // An authored import can match an existing template role by
                     // label; retaining that role's template metadata must not
                     // turn the imported name into a translated seed name.
@@ -907,6 +961,12 @@ namespace WorkRoles
                 // member list re-validates against the final imported state.
                 foreach (var role in store.roles)
                     store.SanitizeCompositeMembers(role);
+                if (rolesOverwrite)
+                {
+                    store.roles.Clear();
+                    foreach (RoleIO.RoleRow row in appliedRows) store.roles.Add(row.existing!);
+                    store.InvalidateRoleIndex();
+                }
                 RoleCommands.SweepEmptyGroups();
                 Seeding.RefreshWorkTypeSnapshots(publishChanges: false);
                 store.MigrateRoleTuning();

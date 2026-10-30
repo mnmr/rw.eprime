@@ -2,7 +2,7 @@
 title: Opzioni di produzione
 ---
 <!-- l10n:b-bdd2b459773e -->
-Con **Aggiungi automaticamente ordini per gli impianti mancanti** attivo, Implanner aggiunge ordini ai banchi capaci di produrli e rimuove i propri ordini quando il bisogno scompare. Non rimuove mai gli ordini creati da te. Ogni ordine produce un oggetto, nell'ordine previsto per l'installazione: con Set completi, le gambe di un colono precedono le braccia se sono classificate più in alto nel piano.
+Con **Aggiungi automaticamente ordini per gli impianti mancanti** attivo, Implanner aggiunge ordini ai banchi capaci di produrli e rimuove i propri ordini quando il bisogno scompare. Non rimuove mai gli ordini creati da te. Ogni ordine produce un oggetto, nell'ordine previsto per l'installazione: con Set completi, le gambe di un colono precedono le braccia se sono classificate più in alto nelle classifiche condivise degli impianti.
 
 <!-- l10n:b-8effc9e9b828 -->
 Quando più ricette producono lo stesso impianto, Implanner preferisce un percorso disponibile che possa pagare subito. Un impianto base libero può essere potenziato; altrimenti una ricetta diretta può produrre quello avanzato dai materiali. Se è abilitato solo il potenziamento, la produzione di intermedi può fabbricare prima la base. Le ricette devono essere ricercate e supportate da un banco idoneo.

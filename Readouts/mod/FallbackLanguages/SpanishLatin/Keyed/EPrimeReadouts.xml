@@ -33,7 +33,7 @@
   <EPR.PoolTip>Añadir como conjunto: una casilla muestra la suma de todo lo incluido en esta categoría</EPR.PoolTip>
   <EPR.EnableTip>Mostrar este grupo en el panel</EPR.EnableTip>
   <EPR.RestoreDefaults>Restaurar valores predeterminados</EPR.RestoreDefaults>
-  <EPR.RestoreConfirm>¿Sustituir TODOS los grupos y umbrales por los predeterminados? Afecta a todos los jugadores en multijugador.</EPR.RestoreConfirm>
+  <EPR.RestoreConfirm>¿Restablecer todos los grupos y conjuntos de recursos a los valores predeterminados incluidos con el mod y borrar todos los umbrales y ajustes de conteo? Esto afecta a todos los jugadores en multijugador.</EPR.RestoreConfirm>
   <EPR.Help>Ayuda</EPR.Help>
   <EPR.HelpGroups>Estos son tus grupos de recursos. Cada grupo se muestra en una franja independiente.
 
@@ -80,20 +80,20 @@ Haz clic en una casilla para configurar su visualización. Haz clic derecho para
   <EPR.CountOptions>Opciones de recuento</EPR.CountOptions>
   <EPR.PlannedWorkOptions>Trabajo previsto</EPR.PlannedWorkOptions>
   <EPR.ReserveForBills>Reservar recursos para proyectos</EPR.ReserveForBills>
-  <EPR.ReserveForBillsTip>Resta los ingredientes que aún consumirán los proyectos pendientes. Un proyecto solo reserva un ingrediente cuando hay exactamente una forma de satisfacerlo. «Cualquier cuero» y otras opciones abiertas no reservan nada.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBillsTip>Resta los ingredientes necesarios para los proyectos de producción pendientes. Solo se cuenta un ingrediente si el proyecto permite exactamente un tipo de recurso para él. Por ejemplo, permitir cualquier cuero no reserva nada; permitir un solo tipo de cuero incluye el costo de ese cuero.</EPR.ReserveForBillsTip>
   <EPR.ReserveForBuildables>Reservar recursos para construcciones</EPR.ReserveForBuildables>
   <EPR.ReserveForBuildablesTip>Resta los materiales que aún necesitan los planos y las estructuras en construcción. No vuelve a contar los materiales ya transportados a una estructura e ignora los planos prohibidos.</EPR.ReserveForBuildablesTip>
   <EPR.ShowNegativeCounts>Mostrar los déficits como números negativos</EPR.ShowNegativeCounts>
   <EPR.ShowNegativeCountsTip>Si el trabajo previsto necesita más de lo que tienes, muestra cuánto falta en lugar de detenerse en cero.</EPR.ShowNegativeCountsTip>
   <EPR.QualityJobsRework>Compatibilidad con Quality Jobs</EPR.QualityJobsRework>
-  <EPR.QualityJobsReworkTip>Para proyectos y construcciones con un objetivo de calidad, estima cuántos intentos harán falta y reserva recursos para todos ellos. Las estructuras reconstruidas devuelven la proporción de materiales que recupera el juego original al desmantelarlas.</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsReworkTip>Ajusta las reservas activadas para proyectos y construcciones a los objetivos de calidad administrados por Quality Jobs. Estima los materiales necesarios para los intentos adicionales y toma en cuenta los materiales recuperados al desmantelar construcciones. Activa la opción de reserva correspondiente de arriba para usarla.</EPR.QualityJobsReworkTip>
   <EPR.QualityJobsMissingTip>Requiere EPrime's Quality Jobs, que no está instalado.</EPR.QualityJobsMissingTip>
   <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs está instalado, pero no ofrece la integración necesaria. Actualízalo para activar esta opción.</EPR.QualityJobsOutdatedTip>
   <EPR.TipPlannedWork>Trabajo previsto</EPR.TipPlannedWork>
   <EPR.TipResource>Recurso</EPR.TipResource>
-  <EPR.TipQueued>En cola</EPR.TipQueued>
-  <EPR.TipEach>Por unidad</EPR.TipEach>
-  <EPR.TipDrain>Consumo</EPR.TipDrain>
+  <EPR.TipQueued>Trabajo restante</EPR.TipQueued>
+  <EPR.TipEach>Costo por intento</EPR.TipEach>
+  <EPR.TipDrain>Descontado</EPR.TipDrain>
   <EPR.TipInStock>En existencias</EPR.TipInStock>
   <EPR.TipAvailableStock>{0} disponibles · {1} en existencias</EPR.TipAvailableStock>
   <EPR.TipOtherPlannedWork>Otros ({0})</EPR.TipOtherPlannedWork>

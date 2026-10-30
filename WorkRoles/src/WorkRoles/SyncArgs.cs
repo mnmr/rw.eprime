@@ -14,6 +14,8 @@ namespace WorkRoles
         public bool paths;
         public bool pathsOverwrite;
         public bool order;
+        public bool gameSettings;
+        public bool playerSettings;
         public List<int> paletteRows = new List<int>();
         public List<int> roleRows = new List<int>();
         public List<int> pathRows = new List<int>();

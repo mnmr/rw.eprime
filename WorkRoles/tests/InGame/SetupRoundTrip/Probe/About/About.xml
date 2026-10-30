@@ -1,0 +1,7 @@
+<ModMetaData>
+  <name>WorkRoles Setup Verification</name>
+  <author>WorkRoles tests</author>
+  <packageId>eprime.workroles.setupprobe</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <modDependencies><li><packageId>mnmr.workroles</packageId><displayName>WorkRoles</displayName><downloadUrl>https://github.com/mnmr/rw.workroles</downloadUrl></li></modDependencies>
+</ModMetaData>

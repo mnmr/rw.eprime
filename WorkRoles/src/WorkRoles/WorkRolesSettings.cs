@@ -31,6 +31,7 @@ namespace WorkRoles
     /// deliberately NOT world state (each MP player keeps their own view).
     public class WorkRolesSettings : ModSettings
     {
+        public bool autoUpdateDefault;
         public ChipDisplay chipDisplay = ChipDisplay.Normal;
         /// Colonist table chips in equal-width grid columns (false = stacked
         /// at their natural widths). New installs start in the grid with
@@ -119,6 +120,7 @@ namespace WorkRoles
 
         public override void ExposeData()
         {
+            Scribe_Values.Look(ref autoUpdateDefault, "autoUpdateDefault");
             var persistedChipDisplay =
                 ChipDisplayPreferenceCodec.Encode((int)chipDisplay);
             Scribe_Values.Look(ref persistedChipDisplay, "chipDisplay", "Normal");

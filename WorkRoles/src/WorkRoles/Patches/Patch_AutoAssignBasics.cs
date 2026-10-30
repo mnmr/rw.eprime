@@ -11,7 +11,8 @@ namespace WorkRoles.Patches
     {
         private static bool IsColonyMember(Pawn pawn) =>
             pawn?.IsColonist == true || pawn?.IsSlaveOfColony == true
-            || pawn != null && MechanicalWorkers.IsColonyWorker(pawn);
+            || pawn != null && RoleStore.Current?.mechanicalWorkersEnabled == true
+                && MechanicalWorkers.IsColonyWorker(pawn);
 
         private static void Prefix(Pawn __instance, out bool __state) =>
             __state = IsColonyMember(__instance);

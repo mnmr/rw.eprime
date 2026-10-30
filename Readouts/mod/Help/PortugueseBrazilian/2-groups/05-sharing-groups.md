@@ -31,6 +31,9 @@ Importar lê um arquivo salvo ou a área de transferência e mostra uma prévia 
 <!-- l10n:b-1c0ab7a10c14 -->
 Todas as categorias presentes no arquivo podem ser selecionadas. Você pode alterar categorias relacionadas uma por vez, mesmo que uma escolha intermediária esteja incompleta. Importar fica desativado até que a configuração escolhida tenha referências válidas a conjuntos e grupos; passe o mouse sobre o botão desativado para ver o que falta.
 
+<!-- l10n:import-dependency-recovery -->
+Se os limites ou as regras de contagem de recursos precisarem de um conjunto ausente, importe essas configurações junto com seus Conjuntos de recursos ou deixe essas categorias inalteradas. Se as configurações do jogador precisarem de um grupo ausente, importe **Grupos** e **Configurações do jogador e grupos ativados** juntos ou deixe ambos inalterados.
+
 <!-- l10n:b-3081ef3ab31d -->
 Categorias ausentes de uma exportação antiga permanecem inalteradas. Entradas que exigem conteúdo de mods indisponíveis são ignoradas.
 
@@ -41,4 +44,4 @@ No multijogador, grupos, conjuntos, limites e substituições de contagem import
 ## Salvar ou restaurar padrões
 
 <!-- l10n:b-6181f2c14286 -->
-Definir padrões salva uma configuração pessoal para futuras colônias (veja [Padrões para novos jogos](topic:new-game-defaults)). Restaurar padrões pede confirmação e substitui a configuração da colônia atual pela configuração original do Readouts. No multijogador, essa redefinição afeta a configuração compartilhada de todos.
+Definir padrões salva uma configuração pessoal para futuras colônias (veja [Padrões para novos jogos](topic:new-game-defaults)). Restaurar padrões pede confirmação, depois substitui todos os grupos e conjuntos de recursos pelos padrões incluídos no mod e limpa todos os limites e substituições de contagem. No multijogador, essa redefinição afeta a configuração compartilhada de todos.

@@ -17,7 +17,7 @@ When a finisher qualifies, Quality Jobs creates a temporary **Finish …** bill 
 The original bill's maximum skill level and specific worker assignment apply until the item is set aside for finishing. You can assign the work to a trainee while a more skilled colonist, colony mech or supported robot takes the dedicated finishing bill. Finishers must still be capable of the recipe and meet the Quality Jobs requirements.
 
 <!-- l10n:status -->
-The **{k:QJ_StatusHeader}** section shows shared **Unfinished** work, items **Waiting** for a finisher, and items already assigned for **Finishing**. Hover the status and finisher list for more detail. See [when work waits](topic:waiting) if nothing is progressing.
+The **{k:QJ_StatusHeader}** section counts this product's tracked unfinished items across all bills and benches on this map: shared **Unfinished** work, items **Waiting** for a finisher, and items already assigned for **Finishing**. The finisher list and warning use the selected bill's requirements; other bills making the same product may use different requirements. Hover the status and finisher list for more detail. See [when work waits](topic:waiting) if nothing is progressing.
 
 <!-- l10n:disable -->
 Clear **{k:QJ_ManageBill}** to let it complete normally again. Its shared work can still be continued by other workers when sharing is enabled.

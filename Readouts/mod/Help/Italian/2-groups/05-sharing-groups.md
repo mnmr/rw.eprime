@@ -31,6 +31,9 @@ Importa legge un file salvato o il contenuto degli appunti e mostra un'anteprima
 <!-- l10n:b-1c0ab7a10c14 -->
 Puoi selezionare ogni categoria presente nel file. Puoi cambiare le categorie correlate una alla volta, anche se una scelta intermedia è incompleta. Importa resta disabilitato finché la configurazione scelta non contiene riferimenti validi a insiemi e gruppi; passa il puntatore sul pulsante disabilitato per vedere cosa manca.
 
+<!-- l10n:import-dependency-recovery -->
+Se le soglie o le regole di conteggio delle risorse richiedono un insieme mancante, importa queste impostazioni insieme ai relativi Insiemi di risorse, oppure lascia invariate queste categorie. Se le impostazioni del giocatore richiedono un gruppo mancante, importa insieme **Gruppi** e **Impostazioni del giocatore e gruppi attivi**, oppure lascia invariati entrambi.
+
 <!-- l10n:b-3081ef3ab31d -->
 Le categorie assenti dalle vecchie esportazioni restano invariate. Le voci che richiedono contenuti di mod non disponibili vengono ignorate.
 
@@ -41,4 +44,4 @@ In multigiocatore, gruppi, insiemi, soglie ed eccezioni di conteggio importati c
 ## Salvare o ripristinare i valori predefiniti
 
 <!-- l10n:b-6181f2c14286 -->
-Imposta valori predefiniti salva una configurazione personale per le colonie future (vedi [Valori predefiniti per nuove partite](topic:new-game-defaults)). Ripristina i valori predefiniti chiede conferma, poi sostituisce la configurazione della colonia attuale con quella inclusa in Readouts. In multigiocatore, il ripristino modifica la configurazione condivisa da tutti.
+Imposta valori predefiniti salva una configurazione personale per le colonie future (vedi [Valori predefiniti per nuove partite](topic:new-game-defaults)). Ripristina i valori predefiniti chiede conferma, poi sostituisce tutti i gruppi e gli insiemi di risorse con quelli predefiniti inclusi nella mod e cancella tutte le soglie e le eccezioni di conteggio. In multigiocatore, il ripristino modifica la configurazione condivisa da tutti.

@@ -84,7 +84,8 @@ namespace WorkRoles.UI
         // Owner: Colonists window profile. Key: the profile's persisted skill
         // column names and definition revision. Value: an immutable bounded
         // snapshot of stable game-owned SkillDef references. Dependencies:
-        // profile edits, definition availability/reload, and initial profile load.
+        // profile list identity (including imports), definition availability/reload,
+        // and initial profile load. Settings lists are replaced on every edit.
         // Refresh: immediate on an explicit column edit; otherwise lazy after a
         // definition revision. Equality: an equal rebuild preserves snapshot
         // identity and revision. Teardown: ReleaseSnapshots drops the snapshot.
@@ -92,6 +93,7 @@ namespace WorkRoles.UI
         private bool skillColumnsLoaded;
         private int skillColumnsDefinitionRevision = -1;
         private int skillColumnsRevision;
+        private List<string>? skillColumnSource;
 
         internal ColonistsRosterState(ColonistsViewProfile profile,
             Func<Pawn, SkillDef, float> skillSortValue)
@@ -221,6 +223,7 @@ namespace WorkRoles.UI
             sectionsSort = null;
             skillColumns = null;
             skillColumnsLoaded = false;
+            skillColumnSource = null;
             skillColumnsDefinitionRevision = -1;
             catalog = null;
             catalogOwner = null;
@@ -635,12 +638,14 @@ namespace WorkRoles.UI
         private void EnsureSkillColumnsLoaded()
         {
             int definitionRevision = DefinitionReloadCoordinator.Revision;
+            List<string>? saved = profile.GetSkillColumns();
             if (skillColumnsLoaded
+                && ReferenceEquals(skillColumnSource, saved)
                 && skillColumnsDefinitionRevision == definitionRevision) return;
             skillColumnsLoaded = true;
+            skillColumnSource = saved;
             skillColumnsDefinitionRevision = definitionRevision;
             var rebuilt = new List<SkillDef>();
-            List<string>? saved = profile.GetSkillColumns();
             if (saved != null)
                 foreach (string defName in saved)
                 {
@@ -652,7 +657,8 @@ namespace WorkRoles.UI
             PublishSkillColumns(rebuilt);
             string sort = profile.GetSortColumn();
             if (!sort.NullOrEmpty()
-                && skillColumns!.IndexOfDefName(sort) < 0)
+                && skillColumns!.IndexOfDefName(sort) < 0
+                && (saved == null || !saved.Contains(sort)))
                 profile.SetSortColumn("");
         }
 
@@ -669,6 +675,11 @@ namespace WorkRoles.UI
             var saved = new List<string>(skillColumns!.Count);
             for (int i = 0; i < skillColumns.Count; i++)
                 saved.Add(skillColumns.At(i).defName);
+            // Editing available columns must not erase temporarily absent mods.
+            if (skillColumnSource != null)
+                foreach (string name in skillColumnSource)
+                    if (DefDatabase<SkillDef>.GetNamedSilentFail(name) == null && !saved.Contains(name))
+                        saved.Add(name);
             profile.SetSkillColumns(saved);
         }
     }

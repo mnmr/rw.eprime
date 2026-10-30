@@ -8,13 +8,13 @@ Mit Quality Bionics Remastered oder Vanilla Genetics Expanded besitzen Implantat
 ![Plankopf mit Mindestqualität](plan-min-quality.png)
 
 <!-- l10n:b-84db128338c2 -->
-Jedes Implantat des Plans, auch geerbte, wird mindestens in dieser Qualität hergestellt und eingesetzt. Implantate ohne Qualität bleiben unverändert. Ein neuer erweiternder Plan beginnt mit derselben Mindestqualität.
+Die Mindestqualität gilt für neu eingesetzte Implantate dieses Plans, einschließlich geerbter Auswahlen. Die automatische Fertigung strebt diese Qualität an und kann dafür mehrere Versuche benötigen. Implantate ohne Qualitätsstufe sind nicht betroffen. Ein neuer Plan, der einen anderen erweitert, beginnt mit derselben Mindestqualität.
 
 <!-- l10n:b-93af25d8591d -->
 Implanner ersetzt nie ein gesundes Körperteil durch ein schlechteres. Ein übler bionischer Arm arbeitet schlechter als ein natürlicher und wartet daher auf ein besseres Exemplar, außer der Arm fehlt oder ist schwer beschädigt. Passen mehrere Gegenstände, erhält der zuerst bediente Kolonist den besten.
 
 <!-- l10n:b-0e7cf20ad9dc -->
-Bereits vorhandene geplante Implantate bleiben auch unter der Mindestqualität erhalten, sofern die folgende Option aus ist.
+Ein bereits eingesetztes Implantat der geplanten Art zählt weiterhin als vollständig, auch unter der Mindestqualität. Aktiviere **Beste Implantate an Kolonisten mit hoher Priorität geben**, um den unten beschriebenen Austausch gegen bessere Exemplare zu erlauben.
 
 <!-- l10n:b-b163fd8a6054 -->
 ## Bessere Implantate für Kolonisten mit hoher Priorität
@@ -31,7 +31,7 @@ Mit **Beste Implantate an Kolonisten mit hoher Priorität geben** in den Operati
 - Auch für niedriger priorisierte Kolonisten reservierte Gegenstände werden übertragen, solange deren Operation noch nicht geplant ist.
 
 <!-- l10n:b-e246867de4e8 -->
-Jeder Austausch ist eine zusätzliche Operation. Er findet nur statt, wenn keine andere Implanner-Operation für den Kolonisten wartet und die Grenze gleichzeitiger Operationen Platz lässt. Ein Implantat wird nie ausgetauscht, wenn seine Entfernung auch etwas anderes vom Körperteil entfernen würde.
+Ein eingesetztes Implantat durch eines höherer Qualität zu ersetzen, erfordert zwei Operationen: Entfernung und Einsetzen. Ein Austausch beginnt nur, wenn keine andere Implanner-Operation für den Kolonisten wartet und die Grenze gleichzeitiger Operationen noch Spielraum lässt. Ein Implantat wird nie ausgetauscht, wenn seine Entfernung auch etwas anderes vom Körperteil entfernen würde.
 
 <!-- l10n:b-37015122025b -->
 Bei der Herstellung für einen Plan gilt:

@@ -4,15 +4,17 @@ title: When automation stands down
 <!-- l10n:b-a8ac20c632db -->
 **Enable automation** at the top of the tab is the master switch. Switched
 off, Implanner becomes a planning tool only: plans, progress, and rankings
-keep working, but nothing is reserved, crafted, or scheduled.
+keep working, but Implanner stops reserving items and creating crafting or
+surgery bills. Existing bills you choose to keep remain active.
 
 <!-- l10n:b-22363c7318de -->
 ![The automation master switch](automation-enable.png)
 
 <!-- l10n:b-094c02cc109b -->
 Switching it off first asks what to do with the bills automation already
-created. Checked bills are removed. Unchecked bills stay in place and are
-picked up again when automation is switched back on. Reserved items are
+created. Checked bills are removed. Unchecked bills remain active: colonists
+can still craft or perform those operations. Implanner resumes managing any
+remaining bills when automation is switched back on. Reserved items are
 released either way, and Cancel keeps automation on.
 
 <!-- l10n:b-6747bf547c20 -->

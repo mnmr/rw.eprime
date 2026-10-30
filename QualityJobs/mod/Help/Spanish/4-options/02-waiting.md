@@ -2,12 +2,12 @@
 title: Cuando el trabajo queda en espera
 ---
 <!-- l10n:check -->
-Empieza por **{k:QJ_StatusHeader}** en el panel de la orden o de construcción. **Nadie cumple los requisitos para terminar** significa que el trabajo está esperando a que se cumplan tus requisitos, no que se haya perdido su progreso.
+Consulta primero **{k:QJ_StatusHeader}** en el panel de la orden o de la construcción. En una orden, **{k:QJ_StatusStalled}** se refiere a los requisitos de la orden seleccionada, mientras que los recuentos de la cola incluyen todas las órdenes que fabrican este producto en este mapa. Otras órdenes pueden tener requisitos distintos. En una construcción, **Construcción detenida: nadie apto** significa que ningún constructor cumple actualmente los requisitos de esa obra. Estos avisos no significan que se haya perdido el progreso.
 
 <!-- l10n:checklist -->
 - ¿Tiene activado el tipo de trabajo necesario quien debe terminarlo? ¿Está en este mapa y puede trabajar?
 - ¿Es demasiado alto el requisito de habilidad, o estás esperando a alguien con Creatividad inspirada o a un especialista en producción?
-- ¿Está el ajuste automático esperando a que esté disponible un trabajador con mayor calidad esperada, por ejemplo, a que vuelva de una caravana o termine de recargarse?
+- ¿Está **{k:QJ_AutoBest}** esperando a que esté disponible un trabajador con mayor calidad esperada, por ejemplo, a que vuelva de una caravana o termine de recargarse?
 - ¿Puede el trabajador llegar al objeto o a la estructura, reservarlos y usar la mesa de trabajo? Revisa los objetos prohibidos, las áreas permitidas, las restricciones de la orden y las reservas de otros trabajadores.
 - ¿Se ha alcanzado el límite de existencias? Termina los objetos pendientes antes de empezar otros, o aumenta el límite si así lo deseas.
 

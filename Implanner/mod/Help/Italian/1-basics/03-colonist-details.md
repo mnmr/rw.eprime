@@ -13,7 +13,7 @@ Seleziona un colono nella tabella: il pannello dei dettagli mostra ogni impianto
 - **Pronto**: l'oggetto assegnato è arrivato nella colonia del colono.
 - **Intervento programmato**: l'operazione compare nell'elenco degli interventi del colono.
 - **In convalescenza**: la chirurgia attende se il colono sanguina, ha ferite non curate o è a terra. Il sonno da anestesia non conta.
-- **Bloccato dal livello medico minimo**: nessun medico della colonia raggiunge il livello di Medicina richiesto; vedi [opzioni chirurgiche](topic:surgery-options).
+- **In attesa di un medico con Medicina ...+**: nessun medico idoneo soddisfa il requisito di abilità di questo intervento. Controlla la disponibilità dei medici o modifica il minimo nella scheda Automazione; vedi [opzioni chirurgiche](topic:surgery-options).
 - **Completo**: installato.
 
 <!-- l10n:b-7d5d4531ac6c -->

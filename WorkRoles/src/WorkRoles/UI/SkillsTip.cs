@@ -43,10 +43,32 @@ namespace WorkRoles.UI
         /// Level shown as fractional (e.g. 12.37) where the decimal is xp progress.
         public static List<SkillLine> Lines(Pawn pawn)
         {
+            if (MechanicalWorkers.IsMechanical(pawn))
+            {
+                var levels = new Dictionary<string, int>();
+                MechanicalWorkers.CaptureWorkSkills(pawn, levels);
+                return MechanicalLines(levels);
+            }
             if (pawn.skills == null) return new List<SkillLine>();
             var result = new List<SkillLine>(pawn.skills.skills.Count);
             foreach (var s in pawn.skills.skills)
                 result.Add(Line(s));
+            return result;
+        }
+
+        internal static List<SkillLine> Lines(Pawn pawn, PawnExternalSnapshot snapshot) =>
+            MechanicalWorkers.IsMechanical(pawn)
+                ? MechanicalLines(snapshot.RecommendationFacts.SkillLevels) : Lines(pawn);
+
+        private static List<SkillLine> MechanicalLines(IReadOnlyDictionary<string, int> levels)
+        {
+            var result = new List<SkillLine>(DefDatabase<SkillDef>.DefCount);
+            foreach (SkillDef def in DefDatabase<SkillDef>.AllDefsListForReading)
+            {
+                bool enabled = levels.TryGetValue(def.defName, out int level);
+                result.Add(new SkillLine(def, def.skillLabel.CapitalizeFirst(),
+                    enabled ? level.ToString() : "-", Passion.None, 0, level, !enabled));
+            }
             return result;
         }
 

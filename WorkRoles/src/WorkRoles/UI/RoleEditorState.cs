@@ -484,6 +484,11 @@ namespace WorkRoles.UI
                     Check(true, "WR_LocationNowhere".Translate()),
                     LocationRules.Nowhere,
                     "WR_LocationNowhereTip".Translate().ToString()));
+            foreach (string unresolved in role.locationTokens)
+                if (unresolved.StartsWith(LocationRules.UnresolvedPrefix, StringComparison.Ordinal))
+                    result.Add(new RoleLocationOptionSnapshot(
+                        Check(true, "WR_LocationUnresolved".Translate(unresolved.Substring(LocationRules.UnresolvedPrefix.Length))),
+                        unresolved, "WR_LocationUnresolvedTip".Translate().ToString()));
             result.Add(new RoleLocationOptionSnapshot(
                 Check(role.locationTokens.Contains(LocationRules.Settlements),
                     "WR_LocationSettlements".Translate()),
@@ -516,6 +521,8 @@ namespace WorkRoles.UI
             if (role.locationTokens.Count > 1)
                 return "WR_LocationCount".Translate(role.locationTokens.Count);
             string token = role.locationTokens[0];
+            if (token.StartsWith(LocationRules.UnresolvedPrefix, StringComparison.Ordinal))
+                return "WR_LocationUnresolved".Translate(token.Substring(LocationRules.UnresolvedPrefix.Length));
             if (token == LocationRules.Settlements)
                 return "WR_LocationSettlements".Translate();
             if (token == LocationRules.Caravans)

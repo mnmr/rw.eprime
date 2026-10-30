@@ -8,13 +8,13 @@ Quality Bionics Remastered veya Vanilla Genetics Expanded yüklüyken implant e�
 ![Asgari kalite düğmeli plan başlığı](plan-min-quality.png)
 
 <!-- l10n:b-84db128338c2 -->
-Devralınanlar dâhil planın her implantı bu veya daha yüksek kalitede üretilip takılır. Kalitesi olmayan implantlar etkilenmez. Başka planı temel alan yeni plan aynı asgari değerle başlar.
+Asgari kalite, devralınan seçimler dâhil bu plan kapsamında yeni takılacak implantlar için geçerlidir. Otomatik üretim bu kaliteyi hedefler ve buna ulaşmak için birden fazla deneme gerekebilir. Kalitesi olmayan implantlar etkilenmez. Başka planı temel alan yeni plan aynı asgari değerle başlar.
 
 <!-- l10n:b-93af25d8591d -->
 Implanner, sağlıklı vücut parçasını asla daha kötüsüyle değiştirmez. Berbat biyonik kol doğal koldan kötü çalışır; kolonici kolunu kaybetmemiş veya kolu ağır hasarlı değilse daha iyi eşya beklenir. Birkaç eşya uygunsa en iyisi sırası önce gelen koloniciye gider.
 
 <!-- l10n:b-0e7cf20ad9dc -->
-Planlanan implantı zaten taşıyan kolonici, aşağıdaki seçenek açılmadıkça asgarinin altında olsa bile onu korur.
+Planlanan türde zaten takılı bir implant, asgari kalitenin altında olsa bile tamamlanmış sayılır. Aşağıda açıklandığı gibi daha kaliteli implantlarla değişime izin vermek için **En iyi implantları yüksek öncelikli kolonicilere ver** seçeneğini açın.
 
 <!-- l10n:b-b163fd8a6054 -->
 ## Yüksek öncelikli kolonicilere daha iyi implantlar
@@ -31,7 +31,7 @@ Planlanan implantı zaten taşıyan kolonici, aşağıdaki seçenek açılmadık
 - Daha düşük öncelikli koloniciye ayrılan eşya da onun ameliyatı henüz planlanmamışsa devredilir.
 
 <!-- l10n:b-e246867de4e8 -->
-Her değişim fazladan ameliyattır. Bir kolonici ancak bekleyen başka Implanner ameliyatı yoksa ve eşzamanlı ameliyat sınırında yer varsa bunu alır. Çıkarmak aynı vücut parçasından başka bir şeyi de sökecekse implant asla değiştirilmez.
+Takılı bir implantı daha kaliteli olanıyla değiştirmek iki ameliyat gerektirir: çıkarma ve takma. Değişim ancak kolonicinin bekleyen başka Implanner ameliyatı yoksa ve eşzamanlı ameliyat sınırında yer varsa başlar. Çıkarmak aynı vücut parçasından başka bir şeyi de sökecekse implant asla değiştirilmez.
 
 <!-- l10n:b-37015122025b -->
 Implanner plan için implant üretirken:

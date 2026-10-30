@@ -1,9 +1,10 @@
 param([ValidateSet('1.6','1.7')][string]$Version='1.7', [string]$Label='native-work',
- [ValidateSet('all','native','reload-off','reload-on')][string]$Phase='all', [string]$SourceSaveDirectory='')
+ [ValidateSet('all','native','reload-off','reload-on','presentation')][string]$Phase='all', [string]$SourceSaveDirectory='', [switch]$WithoutBiotech)
 $ErrorActionPreference='Stop'
 $source=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..\..'))
 $tools=Join-Path $source 'Shared\tools\automation'
 $params=@{Purpose="WorkRoles $Version optional mechanical rows and native work ($Label)";ModSourceRoot=$source;ModSet='workroles-mechanical-workers';AdditionalModSource=@("$PSScriptRoot\Probe")}
+if($WithoutBiotech){$params.ModSet='workroles-mechanical-no-biotech'}
 if($Version -eq '1.6') {
  $params.GameRoot='D:\Code\RimWorld\Readouts\temp\linux-validation\game-1.6'
  $params.WslDistribution='Ubuntu-22.04';$params.WslRenderer='Software'
@@ -23,11 +24,22 @@ try {
  & "$tools\launch.ps1" -RunId $run.runId -TimeoutMinutes 5 -AllowRecoverableSaveErrors
  . "$tools\automation-common.ps1" -RunId $run.runId
  $deadline=[DateTime]::UtcNow.AddSeconds(60)
+ $capturedStage=''
  do {
   Invoke-SharedGameCommand @{command='status'} | Out-Null
   $file=Join-Path $run.profile 'mechanical-stage.txt'
   $stage=if(Test-Path $file){(Get-Content $file -Raw).Trim()}else{''}
-  if($stage.StartsWith('FAILED')){throw $stage}
+  if($stage.StartsWith('CAPTURE ') -and $capturedStage -ne $stage){
+   if($stage -eq 'CAPTURE omni-long-name'){
+    & "$tools\capture-hover.ps1" -RunId $run.runId -X 105 -Y 847 -OutName 'omni-long-name.png' -WaitMilliseconds 1200
+   }else{& "$tools\capture.ps1" -RunId $run.runId -OutName ($stage.Substring(8)+'.png')}
+   [IO.File]::WriteAllText((Join-Path $run.profile ('presentation-captured-'+$stage.Substring(8)+'.txt')), '')
+   $capturedStage=$stage
+  }
+  if($stage.StartsWith('FAILED')){
+   & "$tools\capture.ps1" -RunId $run.runId -OutName 'failed.png'
+   throw $stage
+  }
   if($stage -eq 'SUCCESS' -or $stage -eq 'EXPORTED'){break}
   if([DateTime]::UtcNow -gt $deadline){throw "Scenario timeout: $stage"}
   Start-Sleep -Milliseconds 100
@@ -39,7 +51,7 @@ try {
  New-Item -ItemType Directory -Path $saved -Force | Out-Null
  Copy-Item -LiteralPath (Join-Path $run.profile 'Config/ModsConfig.xml') -Destination $saved
  Get-ChildItem -LiteralPath (Join-Path $run.profile 'Saves') -Filter 'MechanicalSupport*.rws' | Copy-Item -Destination $saved
- foreach($name in 'Player.log','Player.log.host-error.txt','run.json','launch.json','host.json','linux-host.json','linux-console.log','linux-host.log','stall.json','hard-cap.json','Captures','mechanical-stage.txt') {
+ foreach($name in 'Player.log','Player.log.host-error.txt','run.json','launch.json','host.json','linux-host.json','linux-console.log','linux-host.log','stall.json','hard-cap.json','Captures','mechanical-stage.txt','mechanical-checks.txt') {
   $path=Join-Path $run.profile $name
   if(Test-Path $path){Copy-Item -LiteralPath $path -Destination $out -Recurse -Force}
  }

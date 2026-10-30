@@ -8,9 +8,9 @@ title: Opções de cirurgia
 A **estratégia de progressão** define a ordem de entrega. A prioridade na Visão geral sempre determina quem vem primeiro.
 
 <!-- l10n:b-cae0082f85d5 -->
-- **Lotes por nível**: todos recebem o melhor nível antes de avançar aos inferiores. O colono vai para cirurgia quando seu nível inteiro está reservado. Cada pessoa precisa de mais cirurgias, mas todos se beneficiam antes.
-- **Conjuntos completos**: termina todo o plano de um colono antes do próximo. A cirurgia espera a reserva completa. Cada pessoa precisa de menos cirurgias, mas a última espera mais.
-- **Assim que possível**: cada implante disponível é agendado para quem mais precisa segundo a prioridade. Em empate, pernas vão ao mais lento; braços primeiro a quem carrega arma corpo a corpo, depois à maior soma de Fabricação e Intelectual. Nada espera lote: uma perna é agendada assim que estiver reservada e no local, mesmo que seja uma cirurgia por implante.
+- **Lotes por nível**: cada colono recebe primeiro os implantes do seu melhor nível; depois, o trabalho avança para os níveis inferiores. O colono vai para cirurgia quando todos os implantes daquele nível estão reservados. Os colonos podem receber implantes mais cedo, mas podem precisar de períodos separados sob anestesia para os níveis seguintes.
+- **Conjuntos completos**: conclui todo o plano de um colono antes de começar o próximo. A cirurgia espera até que todos os implantes do plano estejam reservados. Cada implante ainda exige sua própria operação, mas o agrupamento pode reduzir os períodos separados sob anestesia. O último colono na ordem de prioridade espera mais.
+- **Assim que possível**: cada implante em estoque é agendado imediatamente para o colono de maior prioridade que ainda precisa dele. Em caso de empate na prioridade, pernas vão para o colono mais lento; braços vão primeiro para quem tem uma arma corpo a corpo equipada e, depois, para quem tem a maior soma de Fabricação e Intelectual. Nada espera a formação de um lote: uma única perna biônica é agendada assim que estiver reservada e no local, mesmo que isso exija períodos separados sob anestesia conforme mais itens chegam.
 
 <!-- l10n:b-be821f0459ef -->
 **Cirurgias simultâneas** limita os colonos com operações agendadas por colônia. Começa com um a cada dez. Com **Contar pacientes atuais**, colonos e escravos em camas médicas ou incapacitados aguardando tratamento também ocupam vagas. Novas cirurgias esperam espaço. Prisioneiros, hóspedes e pacientes visitantes de outras facções nunca ocupam vagas.

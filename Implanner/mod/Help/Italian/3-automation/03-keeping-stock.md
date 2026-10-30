@@ -11,7 +11,7 @@ Due impostazioni impediscono all'automazione di svuotare i magazzini.
 ![Le quantità minime da conservare in magazzino](keep-in-stock.png)
 
 <!-- l10n:b-5864119cb6f1 -->
-**Scorte di impianti accantonate** trattengono impianti finiti per l'uso manuale. Accantonando un braccio bionico, l'automazione assegna solo quelli oltre il primo, lasciandone uno libero per interventi urgenti o commercio. La produzione considera comunque mancante un oggetto accantonato, così le scorte vengono reintegrate.
+**Scorte di impianti accantonate** trattiene per l’uso manuale impianti già esistenti, fino al numero configurato. Accantonando un braccio bionico, l’automazione assegna solo i bracci aggiuntivi e lascia quello libero per interventi urgenti o commercio. La produzione automatica fabbrica altri impianti finché i piani assegnati ne hanno bisogno. Per reintegrare le scorte di emergenza quando nessun piano richiede l’impianto, aggiungi tu un ordine di produzione.
 Anche gli ordini di potenziamento lasciano intatti gli impianti accantonati e quelli necessari agli interventi pianificati. Solo gli impianti in eccesso possono essere usati come ingredienti di produzione.
 
 <!-- l10n:b-04d4c3acbddc -->

@@ -12,7 +12,7 @@
   <IMP_BenchNoNewBills>追加するには「Implanner専用作業台」をオフにしてください</IMP_BenchNoNewBills>
   <IMP_BenchToggle>Implanner専用作業台</IMP_BenchToggle>
   <IMP_BenchToggleTip>Implannerはこの台を優先して加工指示を置き、既存の指示を中断します。オンの間、この台では指示の追加、貼り付け、中断、再開ができません。\n\nオフにすると通常の管理に戻ります。指定前から中断中だった指示はそのまま、残りは再開します。</IMP_BenchToggleTip>
-  <IMP_CleanupBody>以下はImplannerが作成した指示です。「OK」で自動化を停止し、チェックした指示を削除します。未チェックの指示は残り、自動化を再開すると再び管理します。どちらの場合もインプラントの割り当ては解除します。「キャンセル」なら自動化を続けます。</IMP_CleanupBody>
+  <IMP_CleanupBody>以下はImplannerが作成した指示です。「OK」で自動化を停止し、チェックした指示を削除します。未チェックの指示は有効なままなので、入植者は引き続き製作や手術を行えます。自動化を再開すると、Implannerは残した指示の管理を再開します。どちらの場合もインプラントの割り当ては解除します。「キャンセル」なら自動化を続けます。</IMP_CleanupBody>
   <IMP_CleanupTitle>自動化を停止しますか？</IMP_CleanupTitle>
   <IMP_ColColonist>入植者</IMP_ColColonist>
   <IMP_ColMelee>格</IMP_ColMelee>
@@ -38,7 +38,7 @@
   <IMP_ExtendsNothing>なし</IMP_ExtendsNothing>
   <IMP_ExtendsPlan>継承元</IMP_ExtendsPlan>
   <IMP_FromClipboard>クリップボードから</IMP_FromClipboard>
-  <IMP_GoalBlockedFloor>医術レベル不足（{0}）</IMP_GoalBlockedFloor>
+  <IMP_GoalBlockedFloor>医術{0}以上の医者を待機中</IMP_GoalBlockedFloor>
   <IMP_GoalBlockedLoss>{0}を失うため保留</IMP_GoalBlockedLoss>
   <IMP_GoalComplete>完了</IMP_GoalComplete>
   <IMP_GoalMissing>不足</IMP_GoalMissing>
@@ -96,11 +96,11 @@
   <IMP_OptDesignatedBenches>Implanner専用作業台のみ使用</IMP_OptDesignatedBenches>
   <IMP_OptDesignatedBenchesTip>「加工」タブの「Implanner専用作業台」がオンの台だけに指示を追加します。専用台のないコロニーでは製作しません。オフなら専用台を優先し、全ての専用台に2件ずつ指示があると他の台も使います。どちらも「加工指示を置ける作業台数」の上限に従います。</IMP_OptDesignatedBenchesTip>
   <IMP_OptEnable>自動化を有効にする</IMP_OptEnable>
-  <IMP_OptEnableTip>インプラントの割り当て、手術の予約、加工指示の作成など、Implannerが自動で行う全ての動作を切り替えます。オフでもプランと進捗は追跡しますが、自動の処理は行いません。オフにする際は、既存の指示をどれだけ残すか確認します。</IMP_OptEnableTip>
+  <IMP_OptEnableTip>インプラントの割り当て、手術の予約、加工指示の作成など、Implannerが自動で行う全ての動作を切り替えます。オフでもプランと進捗は追跡します。オフにする際は、既存の指示のうち、どれを残すか確認します。残した指示は有効なままなので、入植者は引き続き製作や手術を行えます。</IMP_OptEnableTip>
   <IMP_OptIdleBenches>空いている作業台にのみ追加</IMP_OptIdleBenches>
   <IMP_OptIdleBenchesTip>待機中の仕事がない作業台にだけImplannerの指示を追加します。自分で設定した生産を優先し、空き時間にインプラントを製作します。オフなら既存の指示の後ろに追加できます。</IMP_OptIdleBenchesTip>
   <IMP_OptImplantReserves>手動用インプラントの確保</IMP_OptImplantReserves>
-  <IMP_OptImplantReservesTip>手動使用のために取り置くインプラントです。自動化はこの数を超える在庫だけを割り当て、緊急手術や交易に使う品を残します。生産では取り置き分を利用可能な在庫に数えず、それを使わず自動化を進められるまで製作します。</IMP_OptImplantReservesTip>
+  <IMP_OptImplantReservesTip>既存在庫からこの数を上限として、手動使用のために取り置きます。Implannerは取り置き分を予定手術や製作材料に使いません。自動製作で追加の品を作るのは、割り当て済みのプランに不足がある間だけです。どのプランでも必要としていない品を緊急用に補充したい場合は、自分で加工指示を追加してください。</IMP_OptImplantReservesTip>
   <IMP_OptIntermediaries>不足する中間材料の製作を許可</IMP_OptIntermediaries>
   <IMP_OptIntermediariesTip>コンポーネントなどの材料不足で製作できない場合、その材料が製作可能な加工品なら加工指示も追加できます。生産工程をさかのぼって不足分を補います。スチールなどの原資源は製作せず、自分で集める必要があります。</IMP_OptIntermediariesTip>
   <IMP_OptIteration>進行方式</IMP_OptIteration>
@@ -121,7 +121,7 @@
   <IMP_OptSurgeryConcurrency>同時手術人数</IMP_OptSurgeryConcurrency>
   <IMP_OptSurgeryConcurrencyTip>各コロニーで同時に手術を予定できる入植者数です。多いほど並行して進み、少ないほど病院と医者に余裕を残せます。初期値は入植者10人につき1人です。+/-のクリック時にShiftで10、Ctrlで5ずつ変更します。</IMP_OptSurgeryConcurrencyTip>
   <IMP_OptUpgradeByPriority>高優先の入植者に最良のインプラントを回す</IMP_OptUpgradeByPriority>
-  <IMP_OptUpgradeByPriorityTip>概要タブで優先度の高い入植者に高品質のインプラントを回します。新規の手術にはプランが許す最低品質を使い、より良い品を残します。\n\nより良い品が使えるようになると、同種の低品質品を持つ最も優先度の高い入植者に回します。古い品を先に取り外し、次の入植者へ渡します。低優先の入植者に割り当て済みの品も、その手術が未予約なら回します。\n\n交換のたびに追加の手術が必要です。オフの場合は、順番が来た時点で在庫にある最良の品を使います。</IMP_OptUpgradeByPriorityTip>
+  <IMP_OptUpgradeByPriorityTip>概要タブで優先度の高い入植者に高品質のインプラントを回します。新規の手術にはプランが許す最低品質を使い、より良い品を残します。\n\nより良い品が使えるようになると、同種の低品質品を持つ最も優先度の高い入植者に回します。古い品を先に取り外し、次の入植者へ渡します。低優先の入植者に割り当て済みの品も、その手術が未予約なら回します。\n\n装着済みのインプラントを高品質品に交換するには、取り外しと取り付けの2回の手術が必要です。オフの場合は、順番が来た時点で在庫にある最良の品を使います。</IMP_OptUpgradeByPriorityTip>
   <IMP_Overrides>{0}を置換</IMP_Overrides>
   <IMP_PlanColonists>入植者{0}人</IMP_PlanColonists>
   <IMP_PlanCounts>インプラント{0}個</IMP_PlanCounts>
@@ -129,7 +129,7 @@
   <IMP_PlanGoalCount>インプラント{0}個</IMP_PlanGoalCount>
   <IMP_PlanMinQuality>最低品質: {0}</IMP_PlanMinQuality>
   <IMP_PlanMinQualityNoQualityJobs>Quality Jobsが未導入のため、どの製作者でもインプラントを仕上げられます。完成品がこの品質未満なら再度製作します。</IMP_PlanMinQualityNoQualityJobs>
-  <IMP_PlanMinQualityTip>このプランのインプラントは、この品質以上で製作・取付します。品質のないインプラントには影響しません。\n\n健康な部位を、それより性能の低い部位に置き換えることはありません。低品質の義肢は、部位が欠損・損傷していない限り、より良い品を待ちます。</IMP_PlanMinQualityTip>
+  <IMP_PlanMinQualityTip>新たに取り付ける品に求める最低品質です。継承したプランの選択も含みます。計画した種類のインプラントが既に取り付けられていれば、この最低品質未満でも完了として数えます。「高優先の入植者に最良のインプラントを回す」を有効にすると、より高品質な品への交換を許可できます。品質のないインプラントには影響しません。\n\n健康な部位を、それより性能の低い部位に置き換えることはありません。低品質の義肢は、部位が欠損・損傷していない限り、より良い品を待ちます。</IMP_PlanMinQualityTip>
   <IMP_PlanNameTitle>プラン名</IMP_PlanNameTitle>
   <IMP_PlansHeader>プラン</IMP_PlansHeader>
   <IMP_Priority0>最優先</IMP_Priority0>
@@ -137,7 +137,7 @@
   <IMP_Priority2>通常</IMP_Priority2>
   <IMP_Priority3>低</IMP_Priority3>
   <IMP_Priority4>最後</IMP_Priority4>
-  <IMP_RankTiersHelp>インプラントを5つのティアに分けられます。配置は生産順と手術順（自動化設定による）に影響します。\n\nドラッグで並べ替えます。</IMP_RankTiersHelp>
+  <IMP_RankTiersHelp>インプラントの順位は、このセーブの全プランで共有されます。ここで移動すると、そのインプラントを含む全プランで優先順位が変わります。星が多いほど高優先です。\n\n星のティア間やティア内でドラッグして順番を設定します。この順位は、自動化の進行方式に応じて生産順と手術順に反映されます。</IMP_RankTiersHelp>
   <IMP_RankTiersTitle>インプラントのティア</IMP_RankTiersTitle>
   <IMP_ReadFailed>ファイルを読み込めませんでした: {0}</IMP_ReadFailed>
   <IMP_RegionHead>頭部</IMP_RegionHead>
@@ -168,7 +168,7 @@
   <IMP_StripMakingFor>{0}の材料を製作中</IMP_StripMakingFor>
   <IMP_StripNothingToCraft>製作不要</IMP_StripNothingToCraft>
   <IMP_StripProduction>生産: {0}%</IMP_StripProduction>
-  <IMP_StripStock>在庫{0}、待機{1}</IMP_StripStock>
+  <IMP_StripStock>在庫{0}、未製作{1}</IMP_StripStock>
   <IMP_StripSurgery>手術: {0}%</IMP_StripSurgery>
   <IMP_StripWaiting>{0}を待機中</IMP_StripWaiting>
   <IMP_StripWaitingBench>作業台待ち</IMP_StripWaitingBench>
@@ -184,7 +184,7 @@
   <IMP_TierNormal>通常</IMP_TierNormal>
   <IMP_TipBenchesInUse>Implannerの加工指示がある作業台: {0}</IMP_TipBenchesInUse>
   <IMP_TipCapacity>身体部位: {0}</IMP_TipCapacity>
-  <IMP_TipColCrafting>製作中</IMP_TipColCrafting>
+  <IMP_TipColCrafting>加工指示あり</IMP_TipColCrafting>
   <IMP_TipColFree>未割当</IMP_TipColFree>
   <IMP_TipColHeldBack>手動用</IMP_TipColHeldBack>
   <IMP_TipColImplant>インプラント</IMP_TipColImplant>
@@ -193,7 +193,7 @@
   <IMP_TipColMissing>不足</IMP_TipColMissing>
   <IMP_TipColNeeded>必要数</IMP_TipColNeeded>
   <IMP_TipColPlanned>計画数</IMP_TipColPlanned>
-  <IMP_TipColQueued>待機</IMP_TipColQueued>
+  <IMP_TipColQueued>未製作</IMP_TipColQueued>
   <IMP_TipColReserved>割当済み</IMP_TipColReserved>
   <IMP_TipColScheduled>手術予定</IMP_TipColScheduled>
   <IMP_TipColStatus>状態</IMP_TipColStatus>

@@ -17,7 +17,7 @@ Lorsqu'un finisseur remplit les critères, Quality Jobs crée un ordre temporair
 Le niveau de compétence maximal et l'affectation à un travailleur précis définis dans l'ordre d'origine s'appliquent jusqu'à ce que l'objet soit mis de côté pour la finition. Vous pouvez confier le travail à un apprenti tandis qu'un colon plus compétent, un méca de la colonie ou un robot compatible prend en charge l'ordre de finition dédié. Les finisseurs doivent toutefois être capables d'exécuter la recette et satisfaire aux exigences de Quality Jobs.
 
 <!-- l10n:status -->
-La section **{k:QJ_StatusHeader}** indique les travaux **Inachevés** partagés, les objets **En attente** d'un artisan qualifié pour les terminer et ceux déjà attribués pour **Finition**. Survolez l'état et la liste des artisans chargés de la finition pour en savoir plus. Consultez [les travaux en attente](topic:waiting) si rien ne progresse.
+La section **{k:QJ_StatusHeader}** compte les objets inachevés suivis pour ce produit sur cette carte, tous ordres et établis confondus : les travaux partagés **Inachevés**, les objets en **Attente** d'un finisseur et ceux déjà attribués pour la **Finition**. La liste des finisseurs et l'avertissement utilisent les exigences de l'ordre sélectionné ; les autres ordres fabriquant le même produit peuvent avoir des exigences différentes. Survolez l'état et la liste des finisseurs pour en savoir plus. Consultez [quand le travail attend](topic:waiting) si rien ne progresse.
 
 <!-- l10n:disable -->
 Décochez **{k:QJ_ManageBill}** pour permettre à nouveau son exécution normale. Si le partage est activé, d'autres travailleurs peuvent toujours poursuivre les travaux partagés de cet ordre.

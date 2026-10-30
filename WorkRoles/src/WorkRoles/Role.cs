@@ -63,6 +63,9 @@ namespace WorkRoles
         public bool hasCustomColor;
         public Color color = Color.white;
         public string? iconPath;
+        /// Portable setups retain jobs from temporarily unavailable mods.
+        /// Explicit RemoveEntry still removes authored entries normally.
+        public bool preserveUnavailableEntries;
         /// defName of the RoleDef this role was seeded from; null for player-created roles.
         public string? templateDefName;
         /// Stable name provenance for newly generated work-type roles; old/custom roles stay unnamed.
@@ -227,6 +230,7 @@ namespace WorkRoles
             Scribe_Values.Look(ref hasCustomColor, "hasCustomColor");
             Scribe_Values.Look(ref color, "color", Color.white);
             Scribe_Values.Look(ref iconPath, "iconPath");
+            Scribe_Values.Look(ref preserveUnavailableEntries, "preserveUnavailableEntries");
             Scribe_Values.Look(ref templateDefName, "templateDefName");
             Scribe_Values.Look(ref generatedWorkTypeDefName, "generatedWorkTypeDefName");
             Scribe_Values.Look(ref customName, "customName", false);
@@ -277,17 +281,17 @@ namespace WorkRoles
             }
             Scribe_Values.Look(ref groupId, "groupId", RoleGroup.DefaultId);
             Scribe_Values.Look(ref activeHours, "activeHours", AllHours);
-            // Location tokens scribe comma-joined (category words and game
-            // map/Thing identifiers cannot contain commas).
-            if (Scribe.mode == LoadSaveMode.Saving && locationTokens.Count > 0)
-                scribeLocations = string.Join(",", locationTokens);
-            Scribe_Values.Look(ref scribeLocations, "locations");
+            // Portable unresolved names can contain commas. New saves use a
+            // value list; the old comma field remains a read-only migration.
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                Scribe_Values.Look(ref scribeLocations, "locations");
+            Scribe_Collections.Look(ref locationTokens, "locationTokens", LookMode.Value);
             // Pre-1.1 saves carried a Home/Away enum instead.
             RoleLocation legacyLocation = RoleLocation.Any;
             Scribe_Values.Look(ref legacyLocation, "location", RoleLocation.Any);
             if (Scribe.mode == LoadSaveMode.LoadingVars)
             {
-                locationTokens = scribeLocations.NullOrEmpty()
+                locationTokens ??= scribeLocations.NullOrEmpty()
                     ? new List<string>()
                     : scribeLocations!.Split(',').ToList();
                 if (locationTokens.Count == 0 && legacyLocation != RoleLocation.Any)

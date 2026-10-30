@@ -49,7 +49,7 @@
   <IMP_StripProduction>Production: {0}%</IMP_StripProduction>
   <!-- {0}=needed implant items in stock and not reserved, {1}=items still
        to produce -->
-  <IMP_StripStock>{0} in stock, {1} queued</IMP_StripStock>
+  <IMP_StripStock>{0} in stock, {1} still to produce</IMP_StripStock>
   <!-- {0}=lowercase item label, sentence capitalized in code -->
   <IMP_StripMaking>Making {0}</IMP_StripMaking>
   <!-- Intermediary bills running for {0}=lowercase implant item label -->
@@ -82,8 +82,8 @@
   <IMP_TipColFree>Free</IMP_TipColFree>
   <IMP_TipColReserved>Reserved</IMP_TipColReserved>
   <IMP_TipColHeldBack>Held back</IMP_TipColHeldBack>
-  <IMP_TipColQueued>Queued</IMP_TipColQueued>
-  <IMP_TipColCrafting>Crafting</IMP_TipColCrafting>
+  <IMP_TipColQueued>Still to produce</IMP_TipColQueued>
+  <IMP_TipColCrafting>In crafting bills</IMP_TipColCrafting>
   <IMP_TipColStatus>Status</IMP_TipColStatus>
   <IMP_TipCovered>Covered</IMP_TipCovered>
   <IMP_TipMaking>Making</IMP_TipMaking>
@@ -133,7 +133,7 @@
   <!-- Surgery deferred until bleeding and untreated injuries are handled -->
   <IMP_GoalRecovering>Recovering</IMP_GoalRecovering>
   <!-- {0}=effective minimum Medical skill -->
-  <IMP_GoalBlockedFloor>Blocked by doctor floor ({0})</IMP_GoalBlockedFloor>
+  <IMP_GoalBlockedFloor>Waiting for a doctor with Medical {0}+</IMP_GoalBlockedFloor>
   <!-- {0}=label of the hediff the surgery would destroy -->
   <IMP_GoalBlockedLoss>Would destroy {0}</IMP_GoalBlockedLoss>
 
@@ -157,7 +157,7 @@
   <IMP_DeletePlan>Delete plan</IMP_DeletePlan>
   <!-- {0}=quality name, e.g. "good" -->
   <IMP_PlanMinQuality>Minimum quality: {0}</IMP_PlanMinQuality>
-  <IMP_PlanMinQualityTip>Implants for this plan are installed and crafted at this quality or better. Implants without a quality are not affected.\n\nAn implant never replaces a healthy body part with a worse one. A low-quality bionic waits for a better item unless the body part is missing or damaged.</IMP_PlanMinQualityTip>
+  <IMP_PlanMinQualityTip>Minimum quality accepted for new installations, including inherited plan choices. Already-installed implants of the planned kind still count as complete, even below this minimum. Enable Give the best implants to high-priority colonists to allow better-quality replacements. Implants without a quality are not affected.\n\nAn implant never replaces a healthy body part with a worse one. A low-quality bionic waits for a better item unless the body part is missing or damaged.</IMP_PlanMinQualityTip>
   <IMP_PlanMinQualityNoQualityJobs>Quality Jobs is not loaded, so any crafter may finish an implant. An implant that comes out below this quality is crafted again.</IMP_PlanMinQualityNoQualityJobs>
   <!-- {0}=plan name -->
   <IMP_DeletePlanConfirm>Delete plan "{0}"? Colonists assigned to it will lose their assignment, and plans extending it will stop inheriting.</IMP_DeletePlanConfirm>
@@ -187,7 +187,7 @@
   <!-- ===== Plan rankings panel ===== -->
   <IMP_RankTiersTitle>Implant tiers</IMP_RankTiersTitle>
   <IMP_Help>Help</IMP_Help>
-  <IMP_RankTiersHelp>Implants can be grouped into 5 different tiers. Placement affects production ordering and surgery (depending on automation options).\n\nDrag to re-arrange items.</IMP_RankTiersHelp>
+  <IMP_RankTiersHelp>Implant rankings are shared by every plan in this save. Moving an implant here changes its priority everywhere it appears. More stars mean higher priority.\n\nDrag between star tiers or within a tier to set the order. Rankings guide production and surgery according to your automation strategy.</IMP_RankTiersHelp>
   <!-- Right-aligned tier captions, five stars down to one -->
   <IMP_TierHighest>Highest priority</IMP_TierHighest>
   <IMP_TierHigh>High priority</IMP_TierHigh>
@@ -230,19 +230,19 @@
   <IMP_OptShowPurchaseOnly>Show purchase-only implants</IMP_OptShowPurchaseOnly>
   <!-- Hand-back dialog shown when the player clicks the master switch off -->
   <IMP_CleanupTitle>Turn off automation?</IMP_CleanupTitle>
-  <IMP_CleanupBody>Implanner created these bills. OK turns automation off and removes the checked bills. Unchecked bills stay in place and are picked up again when automation is switched back on. Reserved implant items are released either way. Cancel keeps automation on.</IMP_CleanupBody>
+  <IMP_CleanupBody>Implanner created these bills. OK turns automation off and removes checked bills. Unchecked bills remain active: colonists can still craft or perform those operations. Implanner resumes managing any remaining bills when automation is enabled again. Reserved implant items are released either way. Cancel keeps automation on.</IMP_CleanupBody>
   <IMP_AutomationOffTitle>Automation is switched off</IMP_AutomationOffTitle>
   <IMP_AutomationOffBody>{0} spreads this colony across several levels. Implanner cannot carry an implant or an operation across a level boundary, so it stops reserving items and scheduling surgeries rather than deliver half of every plan.\n\nEverything else still works. Keep building plans, assign them, and rank your implants. Add operations yourself and Implanner will track what is installed and what is still missing.</IMP_AutomationOffBody>
 
   <!-- ===== Automation tooltips ===== -->
-  <IMP_OptEnableTip>The master switch for everything Implanner does on its own: reserving implant items, scheduling operations, and creating crafting bills. Switched off, Implanner still tracks plans and progress; it just stops acting on them. Switching it off also asks which of its existing bills to keep.</IMP_OptEnableTip>
+  <IMP_OptEnableTip>The master switch for everything Implanner does on its own: reserving implant items, scheduling operations, and creating crafting bills. Switched off, Implanner still tracks plans and progress. Switching it off asks which of its existing bills to keep; retained bills remain active, so colonists can still craft or perform those operations.</IMP_OptEnableTip>
   <IMP_OptIterationTip>The order automation works through missing implants. Colonist priority on the Overview tab always decides who goes first.\n\nTier batching: everyone receives the highest-tier implants first, then work moves down the tier list. A colonist goes into surgery once their whole tier is reserved.\n\nFull sets: finish one colonist's whole plan before starting the next. Surgery waits until the whole plan is reserved.\n\nASAP: every implant in stock is scheduled right away for the highest-priority colonist missing it. At equal priority, legs go to the slowest colonist, and arms go first to colonists with an equipped melee weapon, then to the colonist with the highest sum of Crafting and Intellectual skill levels.</IMP_OptIterationTip>
   <IMP_OptAutoFloorTip>Surgery bills are restricted to your best available doctor, so a novice medic never fumbles a bionic installation just because they reached the operating table first. The restriction follows the best doctor at each colony as people come and go. Nobody can operate on themselves, so the best doctor's own surgeries go to the next best doctor.\n\nTurn this off to set a fixed minimum skill yourself.</IMP_OptAutoFloorTip>
   <IMP_OptSurgeryConcurrencyTip>How many colonists per colony may have surgeries planned at the same time. Higher values queue more colonists in parallel; lower values keep the hospital and your doctors free. Starts at one per ten colonists. Hold Shift while clicking +/- to change by 10, or Ctrl to change by 5.</IMP_OptSurgeryConcurrencyTip>
   <IMP_OptCountHospitalizedTip>Colonists and slaves lying in medical beds or downed and awaiting treatment also take up surgery slots. New Implanner surgeries wait until the hospital has room under the limit above. Prisoners, guests and visiting patients from other factions never take up a slot. Switch it off to schedule implant surgeries regardless of who is already being treated.</IMP_OptCountHospitalizedTip>
-  <IMP_OptUpgradeByPriorityTip>Implants of higher quality go to the colonists with the highest priority on the Overview tab. New surgeries use the lowest quality the plan accepts, which keeps the better implants free.\n\nWhen a better implant is available, the highest-priority colonist with a worse one of the same kind gets it. Their old implant is removed first and then goes to the next colonist in line. An implant already reserved for a lower-priority colonist is handed over too, as long as their surgery is not scheduled yet.\n\nEvery exchange is an extra surgery. Turned off, each colonist gets the best implant in stock when their turn comes.</IMP_OptUpgradeByPriorityTip>
+  <IMP_OptUpgradeByPriorityTip>Implants of higher quality go to the colonists with the highest priority on the Overview tab. New surgeries use the lowest quality the plan accepts, which keeps the better implants free.\n\nWhen a better implant is available, the highest-priority colonist with a worse one of the same kind gets it. Their old implant is removed first and then goes to the next colonist in line. An implant already reserved for a lower-priority colonist is handed over too, as long as their surgery is not scheduled yet.\n\nReplacing an installed implant with a better-quality one requires two operations: removal and installation. Turned off, each colonist gets the best implant in stock when their turn comes.</IMP_OptUpgradeByPriorityTip>
   <IMP_OptManualFloorTip>The minimum Medicine skill a doctor needs to perform Implanner surgeries. Bills wait until a doctor at or above this level is available. The value starts from your current best doctor when automatic assignment is switched off.</IMP_OptManualFloorTip>
-  <IMP_OptImplantReservesTip>Implants held back for manual use. Automation only reserves stock beyond these counts, so you always keep this many of each listed implant free for emergency surgery or trade. Production does not count held-back items as available, and keeps crafting until automation can proceed without them.</IMP_OptImplantReservesTip>
+  <IMP_OptImplantReservesTip>Keeps up to this many existing implants free for manual use. Implanner leaves them out of planned surgeries and crafting ingredients. Automatic production makes additional implants while assigned plans need them. To replenish emergency stock when no plan needs an implant, add a crafting bill yourself.</IMP_OptImplantReservesTip>
   <IMP_AddImplantReserveTip>Pick an implant to hold back from automation.</IMP_AddImplantReserveTip>
   <!-- ===== Options tooltips ===== -->
   <!-- {0}=newline-separated "implant (mod)" lines for the loaded implants of the group -->

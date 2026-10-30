@@ -31,6 +31,9 @@ Nhập đọc tệp đã lưu hoặc bộ nhớ tạm và hiện bản xem trư�
 <!-- l10n:b-1c0ab7a10c14 -->
 Mọi loại dữ liệu có trong tệp đều có thể được chọn. Bạn có thể thay đổi từng loại dữ liệu liên quan, ngay cả khi lựa chọn tạm thời chưa đầy đủ. Nút Nhập bị vô hiệu hóa cho đến khi cấu hình đã chọn có các tham chiếu hợp lệ đến tập tài nguyên và nhóm; trỏ chuột lên nút bị vô hiệu hóa để xem còn thiếu gì.
 
+<!-- l10n:import-dependency-recovery -->
+Nếu ngưỡng hoặc quy tắc đếm tài nguyên cần một tập tài nguyên còn thiếu, hãy nhập các thiết lập đó cùng với Tập tài nguyên tương ứng, hoặc giữ nguyên các loại dữ liệu đó. Nếu thiết lập người chơi cần một nhóm còn thiếu, hãy nhập đồng thời **Nhóm** và **Thiết lập người chơi và nhóm được bật**, hoặc giữ nguyên cả hai.
+
 <!-- l10n:b-3081ef3ab31d -->
 Các loại dữ liệu không có trong bản xuất cũ được giữ nguyên. Các mục cần nội dung mod không khả dụng sẽ được bỏ qua.
 
@@ -41,4 +44,4 @@ Trong chế độ nhiều người chơi, nhóm, tập tài nguyên, ngưỡng v
 ## Lưu hoặc khôi phục mặc định
 
 <!-- l10n:b-6181f2c14286 -->
-Đặt mặc định lưu cấu hình cá nhân cho các thuộc địa sau này (xem [Mặc định cho trò chơi mới](topic:new-game-defaults)). Khôi phục mặc định yêu cầu xác nhận, rồi thay cấu hình của thuộc địa hiện tại bằng cấu hình đi kèm Readouts. Trong chế độ nhiều người chơi, thao tác đặt lại này ảnh hưởng đến cấu hình chung của mọi người.
+Đặt mặc định lưu cấu hình cá nhân cho các thuộc địa sau này (xem [Mặc định cho trò chơi mới](topic:new-game-defaults)). Khôi phục mặc định yêu cầu xác nhận, rồi thay tất cả nhóm và tập tài nguyên bằng các giá trị mặc định đi kèm mod, đồng thời xóa mọi ngưỡng và cách đếm riêng. Trong chế độ nhiều người chơi, thao tác đặt lại này ảnh hưởng đến cấu hình chung của mọi người.

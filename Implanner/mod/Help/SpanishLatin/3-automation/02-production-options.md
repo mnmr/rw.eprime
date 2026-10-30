@@ -2,7 +2,7 @@
 title: Opciones de producción
 ---
 <!-- l10n:b-bdd2b459773e -->
-Con **Añadir proyectos para implantes faltantes**, Implanner encarga los implantes en bancos capaces y retira sus proyectos cuando dejan de ser necesarios. Nunca retira los tuyos. Cada proyecto realiza una fabricación, siguiendo el orden de instalación: con Conjuntos completos, las piernas de un colono se hacen antes que sus brazos si el plan las coloca primero.
+Con **Añadir proyectos para implantes faltantes** activado, Implanner encarga los implantes en bancos capaces de fabricarlos y retira sus propios proyectos cuando dejan de ser necesarios. Nunca retira los que creaste tú. Cada proyecto realiza una fabricación, siguiendo el orden de instalación: con Conjuntos completos, las piernas de un colono se hacen antes que sus brazos si tienen mayor prioridad en tu clasificación compartida de implantes.
 
 <!-- l10n:b-8effc9e9b828 -->
 Si varias recetas producen el mismo implante, se prefiere una ruta disponible que pueda pagarse ahora. Puede mejorarse un implante base libre o fabricar directamente el avanzado con materiales. Si solo está habilitada la mejora, la producción intermedia puede fabricar primero la base. Las recetas deben estar investigadas y disponer de un banco apto.

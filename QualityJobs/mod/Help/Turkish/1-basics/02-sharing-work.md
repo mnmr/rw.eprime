@@ -17,5 +17,5 @@ Seçeneklerde **{k:QJ_SettingsShareWork}** etkinleştirildiğinde, üzerinde ça
 **{k:QJ_SettingsAllowRobotPreparation}** kapalıyken, paylaşılan bitmemiş bir eşyanın asıl iş emri var olduğu ve yönetildiği sürece eşya kolonicilerin çalışması için ayrılmış kalır. Eşyanın yönetilmeyen bir iş emriyle devralınması, bir mekanizmanın veya robotun bu işi üstlenmesine izin vermez. Uygun mekanizmalar ve robotlar, Quality Jobs tarafından verilen tamamlama görevlerini yine de yapabilir.
 
 <!-- l10n:off -->
-Paylaşılan işlerin normal sahipliğine dönmesi için paylaşımı kapatın. Yönetilen üretim emirleri son dokunuşu yine de ayırabilir. **{k:QJ_ManageBill}** seçeneğini kapatmak, o emrin kalite için bekletilen işlerini serbest bırakır; kolonideki paylaşımı kapatmaz.
+Sıradan tamamlanmamış işlerin ilk üreticisinde kalması için paylaşımı kapatın. Yönetilen üretim emirleri son dokunuşu yine de ayırıp koşulları karşılayan bir tamamlayıcıya devredebilir. **{k:QJ_ManageBill}** seçeneğini kapatmak, o emrin tamamlama gereksinimlerini kaldırır ve kalite için bekletilen işlerini serbest bırakır; kolonideki paylaşımı kapatmaz.
 

@@ -17,4 +17,4 @@ Sharing early work is different from reserving the final touch. A managed item p
 When **{k:QJ_SettingsAllowRobotPreparation}** is off, a shared unfinished item remains reserved for colonist work while its original bill still exists and is managed. Picking it up through an unmanaged bill does not let a mech or robot take over that work. Eligible mechs and robots can still perform finishing assignments from Quality Jobs.
 
 <!-- l10n:off -->
-Turn sharing off to return shared work to ordinary ownership. Managed bills can still reserve their final touch. Turning off **{k:QJ_ManageBill}** releases that bill's quality-waiting work; it does not turn off sharing for the colony.
+Turn sharing off to keep ordinary unfinished work with its original crafter. Managed bills can still reserve the final touch and hand it to a qualifying finisher. Turning off **{k:QJ_ManageBill}** removes that bill's finishing requirements and releases its quality-waiting work; it does not turn off sharing for the colony.

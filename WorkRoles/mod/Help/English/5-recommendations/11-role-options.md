@@ -16,9 +16,10 @@ strength, opportunistic filler drops last.
 - **Repeat champion penalty**: discourages one overachiever (the
 engine's champion pick) from anchoring every role; switch it off for
 roles where that is fine.
-- **Assignment Scaling**: the colony minimum is how many holders the
-engine must find, coverage is the percentage of colonists it should aim
-for.
+- **Assignment Scaling**: Colony minimum sets a worker count, and Coverage
+sets a percentage of the colony, rounded to a whole worker. The engine
+uses whichever count is larger. Training roles may fill some places;
+a Colony minimum above zero reserves one place for the target role itself.
 - **Skills**: work types and used, trained, and gated skills are derived
 from the role's jobs. Add Skill adds a hard gate: a colonist with that
 skill disabled is never recommended the role.

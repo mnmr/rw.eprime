@@ -8,7 +8,7 @@ title: Opções e padrões
 Com uma partida carregada, Opções altera as configurações daquela colônia. No menu principal, as configurações do mod fornecem os padrões para novas partidas. **{k:QJ_SettingsShowToolbarButton}** é sua preferência pessoal de exibição; ocultá-lo não desativa o mod. Você ainda pode abrir as configurações do mod pelo menu Opções do jogo.
 
 <!-- l10n:bill-defaults -->
-As **{k:QJ_SettingsBillDefaults}** controlam as ordens que seguem os padrões. As configurações individuais de cada ordem têm precedência. Portanto, alterar um padrão pode afetar ordens existentes que não foram personalizadas. O limite de estoque de itens inacabados é compartilhado por produto, em vez de ser separado para cada ordem.
+As **{k:QJ_SettingsBillDefaults}** controlam as ordens que seguem os padrões. As configurações individuais de cada ordem têm precedência. **{k:QJ_SettingsManageNewBills}** afeta novas ordens e ordens existentes que ainda seguem esse padrão de gerenciamento. Desativar essa opção libera os itens em espera dessas ordens para que possam ser finalizados normalmente. Outros padrões de ordens também podem afetar ordens existentes sem uma configuração individual para aquele ajuste. O limite de estoque de itens inacabados é compartilhado por produto, com cada mapa contabilizado separadamente.
 
 <!-- l10n:construction-defaults -->
 As **{k:QJ_SettingsConstructionDefaults}** são aplicadas quando o gerenciamento de uma construção é ativado ou ocorre automaticamente. Construções já gerenciadas mantêm suas próprias configurações. A qualidade desejada para construção usa **{k:QJ_NoRetries}**; a de fabricação usa **{k:QJ_AnyQuality}**.

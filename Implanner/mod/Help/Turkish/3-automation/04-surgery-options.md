@@ -8,9 +8,9 @@ title: Ameliyat seçenekleri
 **İşleme stratejisi**, implantların teslim sırasını belirler. Kimin önce geleceğini her zaman Genel bakış sekmesindeki kolonici önceliği belirler.
 
 <!-- l10n:b-cae0082f85d5 -->
-- **Kademe grupları**: her kolonici önce en üst kademesindeki implantları alır, sonra alt kademelere geçilir. Kademenin tümü ayrılınca ameliyata girer. Her koloniciye daha çok ameliyat gerekir ama herkes daha erken fayda görür.
-- **Tam setler**: bir kolonicinin tüm planı bitmeden diğerine başlanmaz. Ameliyat bütün planın ayrılmasını bekler. Kişi başına daha az ameliyat gerekir ama öncelik sırasındaki son kolonici en uzun bekler.
-- **Hemen**: stoktaki her implant, onu eksik olan en yüksek öncelikli kolonici için hemen planlanır. Öncelik eşitse bacaklar en yavaş koloniciye; kollar önce yakın dövüş silahı taşıyanlara, sonra Zanaat ve Entelektüellik toplamı en yüksek olana gider. Hiçbir şey grup beklemez: tek biyonik bacak, implant başına bir ameliyat anlamına gelse bile ayrılıp yerinde olunca hemen planlanır.
+- **Kademe grupları**: her kolonici önce en üst kademesindeki implantları alır, sonra alt kademelere geçilir. Kademenin tümü ayrılınca ameliyata girer. Koloniciler implantlara daha erken kavuşabilir, ancak sonraki kademeler için ayrı ayrı anesteziye alınmaları gerekebilir.
+- **Tam setler**: bir kolonicinin tüm planı bitmeden diğerine başlanmaz. Ameliyat bütün planın ayrılmasını bekler. Her implant için yine ayrı bir ameliyat gerekir, ancak gruplama sayesinde anesteziye alınma sayısı azalabilir. Öncelik sırasındaki son kolonici en uzun bekler.
+- **Hemen**: stoktaki her implant, onu eksik olan en yüksek öncelikli kolonici için hemen planlanır. Öncelik eşitse bacaklar en yavaş koloniciye; kollar önce yakın dövüş silahı taşıyanlara, sonra Zanaat ve Entelektüellik toplamı en yüksek olana gider. Hiçbir şey grup beklemez: yeni implantlar geldikçe tekrar anesteziye alınmak gerekse bile tek bir biyonik bacak ayrılıp yerine ulaştığında hemen planlanır.
 
 <!-- l10n:b-be821f0459ef -->
 **Eşzamanlı ameliyatlar**, koloni başına aynı anda ameliyatı planlı kolonici sayısını sınırlar. Başlangıçta on koloniciye birdir. **Mevcut hastaları say** açıkken tıbbi yatakta yatan veya yere düşmüş ve tedavi bekleyen koloniciler ve köleler de kapasite kullanır; yeni implant ameliyatları hastanede yer açılmasını bekler. Mahkûmlar, konuklar ve başka fraksiyonlardan gelen hastalar kapasite kullanmaz.

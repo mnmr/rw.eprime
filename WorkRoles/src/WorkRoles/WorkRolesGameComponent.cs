@@ -41,6 +41,7 @@ namespace WorkRoles
         private static void WriteSettings()
         {
             settingsWritePending = false;
+            SetupDefaults.PlayerPreferencesWritten();
             WorkRolesMod.Settings?.Write();
         }
 
@@ -126,7 +127,10 @@ namespace WorkRoles
         }
 
         // Runs after both "new game started" and "save loaded".
-        public override void FinalizeInit()
+        private static readonly System.Action finishInit = FinishInit;
+        public override void FinalizeInit() => LongEventHandler.ExecuteWhenFinished(finishInit);
+
+        private static void FinishInit()
         {
             Seeding.SweepEmptyRoleSets();
             Seeding.SeedIfNeeded();

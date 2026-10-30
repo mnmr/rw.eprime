@@ -23,9 +23,22 @@ namespace WorkRoles.Core.Recs
 
     public static class MechanicalDutyPlan
     {
-        public static PawnFixTarget BuildFixTarget(ColonyView colony, MechanicalWorkerView worker)
+        public static PawnFixTarget BuildFixTarget(ColonyView colony, MechanicalWorkerView worker,
+            Dictionary<int, RoleRecommendationExplanation>? explanations = null,
+            Dictionary<int, SignalBucket>? suitability = null)
         {
-            var ids = new List<int>(Recommend(colony, worker, preservePrimary: true));
+            EngineContext facts = CapabilityFacts(colony, worker);
+            var ids = new List<int>();
+            if (worker.Facts.Incapacitated)
+            {
+                // Temporary incapacity changes staffing, not the player's
+                // standing duties. Only explicit exclusions remove them;
+                // protected assignments are merged back below as for humans.
+                foreach (AssignmentView assignment in worker.Facts.Existing)
+                    if (facts.RoleOf(assignment.RoleId) is RoleView role
+                        && !facts.IsRecommendationExcluded(role)) ids.Add(assignment.RoleId);
+            }
+            else ids.AddRange(Recommend(colony, worker, facts, preservePrimary: true));
             var roles = new Dictionary<int, RoleView>();
             foreach (RoleView role in colony.Roles) roles[role.Id] = role;
             foreach (AssignmentView assignment in worker.Facts.Existing)
@@ -36,13 +49,32 @@ namespace WorkRoles.Core.Recs
             bool changed = target.Length != worker.Facts.Existing.Count;
             for (int i = 0; i < target.Length && !changed; i++)
                 changed = target[i] != worker.Facts.Existing[i].RoleId;
+            Dictionary<int, SignalBucket>? verdicts = suitability != null || explanations != null
+                ? RoleSuitability.VerdictsForPawn(facts, 0) : null;
+            if (suitability != null)
+            {
+                suitability.Clear();
+                foreach (var pair in verdicts!)
+                    suitability.Add(pair.Key, pair.Value);
+            }
+            if (explanations != null)
+                ExplainTarget(colony, worker, facts, target, verdicts!, explanations);
             return new PawnFixTarget(-1, target, changed);
         }
 
         public static int[] Recommend(ColonyView colony, MechanicalWorkerView worker)
-            => Recommend(colony, worker, preservePrimary: false);
+            => Recommend(colony, worker, CapabilityFacts(colony, worker), preservePrimary: false);
 
-        private static int[] Recommend(ColonyView colony, MechanicalWorkerView worker, bool preservePrimary)
+        private static EngineContext CapabilityFacts(ColonyView colony, MechanicalWorkerView worker)
+        {
+            // Native effective skills, without human demand, learning or XP.
+            var capabilityColony = new ColonyView { Roles = colony.Roles, Paths = colony.Paths };
+            capabilityColony.Pawns.Add(worker.Facts);
+            return new EngineContext(capabilityColony);
+        }
+
+        private static int[] Recommend(ColonyView colony, MechanicalWorkerView worker,
+            EngineContext facts, bool preservePrimary)
         {
             var result = new List<int>();
             var seenWork = new HashSet<string>();
@@ -56,10 +88,6 @@ namespace WorkRoles.Core.Recs
                 foreach (string giver in accepted.Coverage)
                     if (worker.CommittedGivers.Contains(giver)) seenWork.Add(giver);
             }
-            // Native effective skills, without passions, XP, or training paths.
-            var capabilityColony = new ColonyView { Roles = colony.Roles, Paths = colony.Paths };
-            capabilityColony.Pawns.Add(worker.Facts);
-            var facts = new EngineContext(capabilityColony);
             var order = new List<int>(worker.ActiveRoleIds);
             foreach (int id in colony.OrderTemplate) if (!order.Contains(id)) order.Add(id);
             foreach (int id in order)
@@ -82,6 +110,63 @@ namespace WorkRoles.Core.Recs
                     if (worker.ExecutableGivers.Contains(giver)) seenWork.Add(giver);
             }
             return result.ToArray();
+        }
+
+        private static void ExplainTarget(ColonyView colony, MechanicalWorkerView worker,
+            EngineContext facts, int[] target, Dictionary<int, SignalBucket> suitability,
+            Dictionary<int, RoleRecommendationExplanation> explanations)
+        {
+            explanations.Clear();
+            var selected = new HashSet<int>(target);
+            var relevant = new HashSet<int>(target);
+            foreach (AssignmentView assignment in worker.Facts.Existing) relevant.Add(assignment.RoleId);
+            RoleView? primary = PrimaryDuty(colony, worker);
+            foreach (int id in relevant)
+            {
+                RoleView? role = facts.RoleOf(id);
+                if (role == null) continue;
+                SignalBucket bucket = facts.BestSignal(0, role, out string skill, out _);
+                var required = new List<string>();
+                foreach (RoleSkillFact fact in facts.RequiredSkills(role)) required.Add(fact.SkillDefName);
+                var explanation = new RoleRecommendationExplanation
+                {
+                    RoleId = id,
+                    Recommended = selected.Contains(id),
+                    SignalBucket = suitability[id],
+                    BaseSignalBucket = bucket,
+                    SignalSkillDefName = skill,
+                    SignalSkillLevel = facts.SkillLevel(0, skill),
+                    RequiredSkills = required.ToArray(),
+                };
+                if (explanation.Recommended)
+                {
+                    bool protectedAssignment = role.HasRules || role.Blocker;
+                    foreach (AssignmentView assignment in worker.Facts.Existing)
+                        if (assignment.RoleId == id && assignment.Pinned) protectedAssignment = true;
+                    explanation.SpecialPickReason = worker.Facts.Incapacitated
+                        ? SpecialPickReason.MechanicalIncapacitated
+                        : protectedAssignment ? SpecialPickReason.Protected
+                        : primary?.Id == id ? SpecialPickReason.MechanicalPrimary
+                        : SpecialPickReason.MechanicalWork;
+                }
+                else if (!facts.MeetsCapabilityRequirement(0, role))
+                    explanation.RejectReason = PickRejectReason.Incapable;
+                else if (!PathActivation.TargetBandContains(facts, 0, role))
+                    explanation.RejectReason = PickRejectReason.OutOfBand;
+                else if (Eligible(role) && !facts.IsRecommendationExcluded(role))
+                {
+                    bool any = false;
+                    bool complete = true;
+                    foreach (string giver in role.Coverage)
+                    {
+                        if (worker.ExecutableGivers.Contains(giver)) any = true;
+                        else complete = false;
+                    }
+                    explanation.RejectReason = !any || !complete && role.UsesSkills && !role.PartialCapability
+                        ? PickRejectReason.Incapable : PickRejectReason.Covered;
+                }
+                explanations.Add(id, explanation);
+            }
         }
 
         internal static Dictionary<int, int> BuildCoverage(ColonyView colony)
@@ -150,7 +235,6 @@ namespace WorkRoles.Core.Recs
 
         private static bool Eligible(RoleView role) => role.Enabled && role.Available
             && !role.ExcludedFromRecommendations && !role.Blocker && !role.HasRules
-            && role.MemberRoleIds == null && role.Coverage.Count > 0
-            && (!role.AutoAssign || role.TemplateDefName == "WS_Grunt");
+            && role.MemberRoleIds == null && role.Coverage.Count > 0;
     }
 }

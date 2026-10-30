@@ -38,6 +38,12 @@ namespace WorkRoles.Core.Recs
         /// The pawn is downed: every existing assignment is kept as-is and
         /// nothing they hold counts toward colony needs.
         Incapacitated,
+        /// Native work adds useful duties without human demand or training.
+        MechanicalWork,
+        /// Preserve the accepted first duty used for mechanical coverage.
+        MechanicalPrimary,
+        /// Temporary incapacity must not erase standing robot duties.
+        MechanicalIncapacitated,
     }
 
     /// Why a role a pawn holds was not recommended. Pick-outcome reasons are
