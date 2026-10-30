@@ -41,6 +41,13 @@ namespace EPrimeReadouts
                 options.PlannedWork.QualityRework
                     ? QualityJobsBridge.Current()
                     : QualityJobsPlannedWorkSnapshot.Empty;
+            List<Map>? strata = StrataLevels.LevelsOf(map);
+            if (strata != null)
+            {
+                for (int i = 0; i < strata.Count; i++)
+                    AccumulateMap(strata[i], accumulator, options, qualityJobs, rawStrataCounts: true);
+                return accumulator.ToSnapshot();
+            }
             Dictionary<int, Map>? levels = LevelStacks.LevelsOf(map);
             if (levels == null)
             {
@@ -69,14 +76,20 @@ namespace EPrimeReadouts
             Map map,
             CountAccumulator accumulator,
             CountSnapshotOptions options,
-            QualityJobsPlannedWorkSnapshot qualityJobs)
+            QualityJobsPlannedWorkSnapshot qualityJobs,
+            bool rawStrataCounts = false)
         {
             // Zero-valued entries are skipped: consumers resolve a missing
             // key as zero, and the search candidate universe comes from
             // GameResourceCatalog.SearchableDefNames rather than zero-seeded
             // snapshot entries. This keeps the published dictionary sized by
             // what actually exists, not by the loaded def database.
-            foreach (var pair in map.resourceCounter.AllCountedAmounts)
+            // Strata patches AllCountedAmounts to merge floors. We visit those
+            // floors ourselves to retain stored/forbidden/scattered breakdowns
+            // and their work debt, so read each unmerged counter exactly once.
+            var counted = rawStrataCounts ? StrataLevels.RawCounts(map.resourceCounter)
+                : map.resourceCounter.AllCountedAmounts;
+            foreach (var pair in counted)
                 if (pair.Value != 0)
                     accumulator.Add(pair.Key.defName, pair.Key.shortHash, pair.Value);
 

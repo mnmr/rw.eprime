@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework><LangVersion>latest</LangVersion>
+    <AssemblyName>Readouts.BugFixProbe</AssemblyName>
+    <OutputPath>mod/1.7/Assemblies/</OutputPath><AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile><DebugType>none</DebugType>
+  </PropertyGroup>
+  <Import Project="../../../../Shared/Build/RimWorld17.props" />
+  <ItemGroup>
+    <Reference Include="EPrimeReadouts" HintPath="../../../mod/1.7/Assemblies/EPrimeReadouts.dll" Private="false" />
+    <Reference Include="EPrimeReadouts.Core" HintPath="../../../mod/1.7/Assemblies/EPrimeReadouts.Core.dll" Private="false" />
+    <Reference Include="Strata" HintPath="$(InstalledGameRoot)/../../workshop/content/294100/3762844292/1.7/Assemblies/Strata.dll" Private="false" />
+  </ItemGroup>
+</Project>

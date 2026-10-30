@@ -123,11 +123,15 @@ namespace EPrimeReadouts.Core
         /// set of ingredients, and a below-target craft is kept rather than
         /// recycled, so nothing comes back.
         public static int BillDebt(
-            int perIterationCost, int iterations, float expectedAttempts)
+            int perIterationCost, int iterations, float expectedAttempts,
+            bool firstAttemptPaid = false)
         {
             if (perIterationCost <= 0 || iterations <= 0) return 0;
             double runs = iterations * CappedAttempts(expectedAttempts);
             if (runs > MaxRunsPerWork) runs = MaxRunsPerWork;
+            // An unfinished item owns a complete set of ingredients. Credit
+            // that one attempt, not an accepted iteration (quality may fail).
+            if (firstAttemptPaid) runs -= 1.0;
             return CeilToInt(perIterationCost * runs);
         }
 

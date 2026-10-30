@@ -61,13 +61,22 @@ namespace EPrimeReadouts.Core
                 ResourcePool? currentPool = FindPoolAfterEdits(Pools, beforePool);
                 poolNames[beforePool.Name] = currentPool?.Name;
             }
+            var reservedPoolNames = new HashSet<string>(PoolNameRules.Comparer);
+            foreach (var pool in Pools) reservedPoolNames.Add(pool.Name);
+            foreach (var pool in original.Pools) reservedPoolNames.Add(pool.Name);
             foreach (var source in original.Pools)
             {
                 ResourcePool? before = FindPool(availableBeforeEdits.Pools, source.Name);
                 ResourcePool? current = before == null ? FindPool(Pools, source.Name) : FindPoolAfterEdits(Pools, before);
                 if (before == null)
                 {
-                    if (current == null) Pools.Add(CopyPool(source, 0));
+                    // A fully dormant object has no live identity. A new object
+                    // with its name is independent; retain both, and redirect
+                    // only the dormant object's references and rules.
+                    var retained = CopyPool(source, 0);
+                    if (current != null) retained.Name = RetainedName(source.Name, reservedPoolNames);
+                    Pools.Add(retained);
+                    poolNames[source.Name] = retained.Name;
                     continue;
                 }
                 if (current == null) continue; // explicitly deleted
@@ -75,6 +84,9 @@ namespace EPrimeReadouts.Core
                     if (!before.Members.Contains(member) && !current.Members.Contains(member)) current.Members.Add(member);
                 if (before.IconDefName == null && current.IconDefName == null) current.IconDefName = source.IconDefName;
             }
+            var reservedGroupNames = new HashSet<string>(ReadoutGroupNames.Comparer);
+            foreach (var group in Groups) reservedGroupNames.Add(group.Name);
+            foreach (var group in original.Groups) reservedGroupNames.Add(group.Name);
             foreach (var source in original.Groups)
             {
                 var sourceTiers = RemapTiers(source.Tiers, poolNames);
@@ -82,10 +94,11 @@ namespace EPrimeReadouts.Core
                 ReadoutGroup? current = before == null ? FindGroup(Groups, source.Name) : FindGroupAfterEdits(Groups, before);
                 if (before == null)
                 {
-                    if (current == null) Groups.Insert(Math.Min(original.Groups.IndexOf(source), Groups.Count), new ReadoutGroup { Name = source.Name, SeedName = source.SeedName,
+                    string retainedName = current == null ? source.Name : RetainedName(source.Name, reservedGroupNames);
+                    Groups.Insert(Math.Min(original.Groups.IndexOf(source), Groups.Count), new ReadoutGroup { Name = retainedName, SeedName = source.SeedName,
                         DefaultEnabled = source.DefaultEnabled, Tiers = sourceTiers });
                     if (Player != null && original.Player != null && original.Player.EnabledGroups.TryGetValue(source.Name, out bool enabled))
-                        Player.EnabledGroups[source.Name] = enabled;
+                        Player.EnabledGroups[retainedName] = enabled;
                     continue;
                 }
                 if (current == null) continue;
@@ -95,14 +108,7 @@ namespace EPrimeReadouts.Core
                     current.Tiers = sourceTiers;
                     continue;
                 }
-                for (int t = 0; t < sourceTiers.Count; t++)
-                    foreach (string token in sourceTiers[t])
-                    {
-                        if (TierOps.Contains(beforeTiers, token) || TierOps.Contains(current.Tiers, token)) continue;
-                        if (ReadoutsXml.IsPortablePoolRef(token) && FindPool(Pools, ReadoutsXml.PortablePoolName(token)) == null) continue;
-                        while (current.Tiers.Count <= t) current.Tiers.Add(new List<string>());
-                        current.Tiers[t].Add(token);
-                    }
+                RestoreDormantSlots(sourceTiers, beforeTiers, current.Tiers);
             }
             foreach (var pair in original.Thresholds)
             {
@@ -116,6 +122,89 @@ namespace EPrimeReadouts.Core
                 if (key != null && !availableBeforeEdits.CountRules.ContainsKey(pair.Key) && !CountRules.ContainsKey(key))
                     CountRules.Add(key, pair.Value);
             }
+        }
+
+        private static string RetainedName(string name, HashSet<string> reserved)
+        {
+            for (int suffix = 2; ; suffix++)
+            {
+                string candidate = name + " (" + suffix.ToString(CultureInfo.InvariantCulture) + ")";
+                if (reserved.Add(candidate)) return candidate;
+            }
+        }
+
+        // Filtering compacts tiers. Original tier indexes therefore cannot be
+        // used as indexes into an edited, available-only layout. Surviving
+        // siblings anchor a mixed tier; the next/previous surviving tier anchors
+        // an entirely dormant tier. Canonical matching keeps show-zero edits.
+        private void RestoreDormantSlots(List<List<string>> source,
+            List<List<string>> before, List<List<string>> current)
+        {
+            for (int t = 0; t < source.Count; t++)
+            {
+                var dormant = new List<string>();
+                foreach (string token in source[t])
+                {
+                    if (TierOps.Contains(before, token) || TierOps.Contains(current, token)) continue;
+                    if (ReadoutsXml.IsPortablePoolRef(token) && FindPool(Pools, ReadoutsXml.PortablePoolName(token)) == null) continue;
+                    dormant.Add(token);
+                }
+                if (dormant.Count == 0) continue;
+                int target = MatchingTier(source[t], current);
+                int fallbackSlot = -1;
+                if (target < 0)
+                {
+                    int insertion = -1;
+                    for (int next = t + 1; next < source.Count && insertion < 0; next++)
+                        insertion = MatchingTier(source[next], current);
+                    for (int previous = t - 1; previous >= 0 && insertion < 0; previous--)
+                    {
+                        int anchor = MatchingTier(source[previous], current);
+                        if (anchor >= 0) insertion = anchor + 1;
+                    }
+                    target = insertion < 0 ? Math.Min(t, current.Count) : insertion;
+                    if (current.Count < TierOps.MaxTiers)
+                        current.Insert(target, new List<string>());
+                    else
+                    {
+                        // The player filled the available three tiers. A fourth
+                        // would be discarded by the portable reader; retain all
+                        // slots at the adjacent tier boundary instead.
+                        bool beforeNext = target < current.Count;
+                        target = Math.Min(target, current.Count - 1);
+                        fallbackSlot = beforeNext ? 0 : current[target].Count;
+                    }
+                }
+                var tier = current[target];
+                foreach (string token in dormant)
+                {
+                    int insertion = fallbackSlot >= 0 ? fallbackSlot : tier.Count;
+                    int sourceIndex = source[t].IndexOf(token);
+                    for (int next = sourceIndex + 1; next < source[t].Count; next++)
+                    {
+                        int anchor = CanonicalIndex(tier, source[t][next]);
+                        if (anchor >= 0) { insertion = anchor; break; }
+                    }
+                    tier.Insert(insertion, token);
+                    if (fallbackSlot >= 0) fallbackSlot = insertion + 1;
+                }
+            }
+        }
+
+        private static int MatchingTier(List<string> source, List<List<string>> current)
+        {
+            foreach (string token in source)
+                for (int t = 0; t < current.Count; t++)
+                    if (CanonicalIndex(current[t], token) >= 0) return t;
+            return -1;
+        }
+
+        private static int CanonicalIndex(List<string> tokens, string token)
+        {
+            string canonical = SlotToken.Canonical(token);
+            for (int i = 0; i < tokens.Count; i++)
+                if (SlotToken.Canonical(tokens[i]) == canonical) return i;
+            return -1;
         }
 
         private static string? RemapToken(string token, Dictionary<string, string?> names)

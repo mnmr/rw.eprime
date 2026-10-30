@@ -113,15 +113,7 @@ namespace EPrimeReadouts.Core
 
             if (current == TriState.On)
             {
-                // Off: remove the @ref and all individually listed cat defs
-                var result = new List<string>(members.Count);
-                foreach (var member in members)
-                {
-                    if (member == atRef) continue;
-                    if (!member.StartsWith("@") && catSet.Contains(member)) continue;
-                    result.Add(member);
-                }
-                return result;
+                return RemoveScope(members, catSet, atRef, catalog);
             }
             else
             {
@@ -155,7 +147,9 @@ namespace EPrimeReadouts.Core
             IReadOnlyList<string> scopedDefs, bool selected, IResourceCatalog catalog)
         {
             if (SameSet(scopedDefs, catalog.CountedDefsIn(categoryDefName)))
-                return (CategoryState(members, categoryDefName, catalog) == TriState.On) == selected
+                return !selected
+                    ? RemoveScope(members, new HashSet<string>(scopedDefs), "@" + categoryDefName, catalog)
+                    : CategoryState(members, categoryDefName, catalog) == TriState.On
                     ? new List<string>(members)
                     : ToggleCategory(members, categoryDefName, catalog);
 
@@ -166,6 +160,35 @@ namespace EPrimeReadouts.Core
         }
 
         // ── Helpers ───────────────────────────────────────────────────────
+
+        // A checked child may be covered by a parent reference, and a parent
+        // may contain several selected child references. Split only references
+        // that overlap the cleared scope; keep unrelated dynamic categories.
+        private static List<string> RemoveScope(List<string> members,
+            HashSet<string> removed, string atRef, IResourceCatalog catalog)
+        {
+            var result = new List<string>(members.Count);
+            var seen = new HashSet<string>();
+            foreach (string member in members)
+            {
+                if (member == atRef || removed.Contains(member)) continue;
+                if (member.StartsWith("@"))
+                {
+                    var defs = catalog.CountedDefsIn(member.Substring(1));
+                    bool overlaps = false;
+                    foreach (string def in defs)
+                        if (removed.Contains(def)) { overlaps = true; break; }
+                    if (overlaps)
+                    {
+                        foreach (string def in defs)
+                            if (!removed.Contains(def) && seen.Add(def)) result.Add(def);
+                        continue;
+                    }
+                }
+                if (seen.Add(member)) result.Add(member);
+            }
+            return result;
+        }
 
         /// Returns a new list where every @Category ref that covers
         /// <paramref name="defName"/> is replaced by its other members

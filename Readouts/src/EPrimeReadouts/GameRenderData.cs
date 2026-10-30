@@ -25,16 +25,16 @@ namespace EPrimeReadouts
 
         // Cache contract:
         // Owner: one ReadoutStore/world at a time.
-        // Key: Map identity; a MultiFloors floor map resolves to its stack's
-        //      canonical ground map so every floor shares one snapshot.
+        // Key: Map identity; MultiFloors uses the ground map and Strata combined
+        //      mode uses the lowest-id reachable map, sharing one snapshot.
         // Value: immutable shared pool/count render snapshot.
         // Dependencies: PoolsVersion immediately, 204 elapsed game ticks for
         //               counts, the derived collection needs (count-basis
         //               options unioned with the stored count rules) and
         //               planned-work options immediately (planned-work debt
         //               is read on the same pass as stock);
-        //               and (while MultiFloors is active) the map-set stamp so
-        //               stack membership changes rebuild entries.
+        //               external-level mode and its map-set stamp (map lifecycle,
+        //               Strata combined preference and graph epoch), immediately.
         // Refresh policy: immediate structure; tick-throttled counts, except
         //               that a count-collection option change rebuilds at
         //               once (a user-authored edit must be visible while
@@ -43,6 +43,7 @@ namespace EPrimeReadouts
         // Teardown: Remove on map removal; Reset on world teardown/owner change.
         private static ReadoutStore? cacheOwner;
         private static int cacheMapSetStamp = -1;
+        private static bool cacheExternalLevelsActive;
         private static CountSnapshotOptions cacheOptions;
 
         // Cache contract:
@@ -76,11 +77,13 @@ namespace EPrimeReadouts
                 cacheOwner = store;
                 unionRulesVersion = -1;
             }
-            if (LevelStacks.MultiFloorsActive
-                && cacheMapSetStamp != LevelStacks.MapSetStamp)
+            bool externalLevels = LevelStacks.ExternalLevelsActive;
+            if (cacheExternalLevelsActive != externalLevels
+                || externalLevels && cacheMapSetStamp != LevelStacks.MapSetStamp)
             {
                 cache.Clear();
                 cacheMapSetStamp = LevelStacks.MapSetStamp;
+                cacheExternalLevelsActive = externalLevels;
             }
 
             // Count-basis and reservation options change what the count pass
@@ -149,6 +152,7 @@ namespace EPrimeReadouts
             cache.Clear();
             cacheOwner = null;
             cacheMapSetStamp = -1;
+            cacheExternalLevelsActive = false;
             cacheOptions = default;
             unionRulesVersion = -1;
             unionForcesScattered = false;

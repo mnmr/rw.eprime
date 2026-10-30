@@ -8,11 +8,9 @@ namespace EPrimeReadouts
 {
     /// MultiFloors integration: resolves the level stack a map belongs to so
     /// resource counts can aggregate across floors and every floor shares the
-    /// ground map's render snapshot. This binds to MultiFloors only: Strata
-    /// and "As above, so below" merge counts inside their own ResourceCounter
-    /// patches (which our resourceCounter reads inherit), and "As above, so
-    /// below II" keeps all levels inside a single Map, so aggregating any of
-    /// them here would double-count.
+    /// ground map's render snapshot. Strata's combined mode shares the lowest-id
+    /// reachable map and counts its raw floors, keeping resource dispositions
+    /// and planned-work debt on the same basis as stock.
     internal static class LevelStacks
     {
         // One-time binding: the loaded mod set is fixed for the process, so a
@@ -33,7 +31,8 @@ namespace EPrimeReadouts
         // Key: Map identity.
         // Value: canonical ground map reference (the map itself when it has
         //        no stack); immutable by publication.
-        // Dependencies: the map-set stamp bumped on map add/remove/teardown.
+        // Dependencies: map-set stamp bumped on map add/remove/teardown, plus
+        // Strata's graph epoch and combined-resource preference (scalar reads).
         // Refresh policy: immediate; entries recompute lazily after a bump.
         // Equality policy: n/a (reference value).
         // Teardown: Reset clears entries so no removed map stays reachable.
@@ -41,10 +40,12 @@ namespace EPrimeReadouts
             new Dictionary<Map, Map>();
         private static int mapSetStamp;
         private static int cachedStamp = -1;
+        private static int strataEpoch = -1;
+        private static bool strataCombined;
 
-        internal static bool MultiFloorsActive
+        internal static bool ExternalLevelsActive
         {
-            get { Resolve(); return stackOf != null; }
+            get { Resolve(); return stackOf != null || StrataLevels.Combined; }
         }
 
         internal static int MapSetStamp => mapSetStamp;
@@ -58,6 +59,8 @@ namespace EPrimeReadouts
         {
             canonicalCache.Clear();
             cachedStamp = -1;
+            strataEpoch = -1;
+            strataCombined = false;
             BumpMapSet();
         }
 
@@ -67,13 +70,28 @@ namespace EPrimeReadouts
         {
             if (map == null) return null;
             Resolve();
-            if (stackOf == null) return map;
+            bool combined = StrataLevels.Combined;
+            int epoch = combined ? StrataLevels.Epoch : 0;
+            if (combined != strataCombined || epoch != strataEpoch)
+            {
+                strataCombined = combined;
+                strataEpoch = epoch;
+                BumpMapSet();
+            }
             if (cachedStamp != mapSetStamp)
             {
                 canonicalCache.Clear();
                 cachedStamp = mapSetStamp;
             }
+            if (stackOf == null && !combined) return map;
             if (canonicalCache.TryGetValue(map, out Map? canonical)) return canonical;
+            if (combined)
+            {
+                List<Map>? strata = StrataLevels.LevelsOf(map);
+                canonical = strata != null && strata.Count > 0 ? strata[0] : map;
+                canonicalCache[map] = canonical;
+                return canonical;
+            }
             Dictionary<int, Map>? levels = LevelsOf(map);
             canonical = levels != null
                 && levels.TryGetValue(0, out Map? ground)

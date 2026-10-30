@@ -90,7 +90,7 @@ namespace EPrimeReadouts
                 int unitCost = ingredient.CountRequiredOfFor(
                     resource, job.Recipe, job.Bill);
                 int drain = PlannedWorkMath.BillDebt(
-                    unitCost, queued, attempts);
+                    unitCost, queued, attempts, FirstAttemptPaid(job.Bill));
                 if (drain <= 0) continue;
                 accumulator.AddBillWork(resource.defName, resource.shortHash,
                     job.Product.defName, queued, unitCost, drain,
@@ -211,13 +211,19 @@ namespace EPrimeReadouts
                 if (def == null) continue;
                 int unitCost = ingredient.CountRequiredOfFor(def, recipe, bill);
                 int debt = PlannedWorkMath.BillDebt(
-                    unitCost, iterations, expectedAttempts: 1f);
+                    unitCost, iterations, expectedAttempts: 1f, FirstAttemptPaid(bill));
                 if (debt > 0)
                     accumulator.AddBillWork(def.defName, def.shortHash,
                         recipe.ProducedThingDef?.defName ?? recipe.defName,
                         iterations, unitCost, debt);
             }
         }
+
+        // Vanilla binds only after transferring the complete ingredient set
+        // into the unfinished item. Those stacks have already left loose stock.
+        private static bool FirstAttemptPaid(Bill bill) =>
+            bill is Bill_ProductionWithUft withUft
+            && withUft.BoundUft != null && !withUft.BoundUft.Destroyed;
 
         /// Iterations the bill still owes, per its repeat mode. Reads bill
         /// state without touching it: vanilla's own ShouldDoNow would re-evaluate
@@ -243,7 +249,7 @@ namespace EPrimeReadouts
                 return PlannedWorkMath.BillIterations(
                     BillRepeat.TargetCount, bill.repeatCount, bill.targetCount,
                     recipe.WorkerCounter.CountProducts(bill),
-                    YieldPerIteration(recipe));
+                    YieldPerIteration(recipe, bill));
             }
 
             // Vanilla's default for anything else, including a modded mode.
@@ -253,10 +259,33 @@ namespace EPrimeReadouts
 
         /// How many of the counted product one run yields, so a
         /// do-until-you-have bill does not reserve one run per missing unit.
-        private static int YieldPerIteration(RecipeDef recipe)
+        private static int YieldPerIteration(RecipeDef recipe, Bill_Production bill)
         {
             ThingDef product = recipe.ProducedThingDef;
-            if (product == null) return 1;
+            if (product == null)
+            {
+                // Generic stonecutting counts all stone blocks, but produces
+                // them through the ingredient's butcherProducts rather than
+                // recipe.products. Only a bill narrowed to known chunks gives
+                // an unambiguous yield, just as with ingredient reservations.
+                if (!(recipe.WorkerCounter is RecipeWorkerCounter_MakeStoneBlocks)
+                    || recipe.specialProducts == null
+                    || !recipe.specialProducts.Contains(SpecialProductType.StoneBlocks)) return 1;
+                int yield = 0;
+                for (int i = 0; i < recipe.ingredients.Count; i++)
+                {
+                    IngredientCount ingredient = recipe.ingredients[i];
+                    ThingDef? chunk = SoleAllowedDef(ingredient, recipe, bill);
+                    if (chunk?.butcherProducts == null) return 1;
+                    for (int p = 0; p < chunk.butcherProducts.Count; p++)
+                    {
+                        ThingDefCountClass blocks = chunk.butcherProducts[p];
+                        if (ThingCategoryDefOf.StoneBlocks.childThingDefs.Contains(blocks.thingDef))
+                            yield = SaturatingAdd(yield, blocks.count);
+                    }
+                }
+                return yield > 0 ? yield : 1;
+            }
             List<ThingDefCountClass> products = recipe.products;
             for (int i = 0; i < products.Count; i++)
                 if (products[i].thingDef == product)

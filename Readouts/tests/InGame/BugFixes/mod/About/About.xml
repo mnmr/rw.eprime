@@ -1,0 +1,1 @@
+<ModMetaData><name>Readouts bug fix verification</name><author>Local test</author><packageId>eprime.readouts.bugfixprobe</packageId><supportedVersions><li>1.7</li></supportedVersions><description>Isolated regression fixture; never ship.</description></ModMetaData>

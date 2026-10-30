@@ -1018,6 +1018,7 @@ namespace EPrimeReadouts.UI
                 CountRules = store.Model.CountRules,
                 SearchText = SearchText,
                 SearchCulture = UiLanguage.CaseCulture,
+                TranslateSeedName = SeededReadoutNames.Resolve,
                 SearchCounts = renderData.Counts.SearchCounts,
                 SearchHideZero = settings.searchHideZero,
                 SearchStorageOnly = settings.searchStorageOnly,

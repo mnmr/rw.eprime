@@ -53,6 +53,9 @@ namespace EPrimeReadouts.Core
         public CellMetrics Metrics;
         /// Pool snapshot built at rebuild time; null treated as empty.
         public PoolSnapshot? Pools;
+        /// Display-only translation of known seed names, applied only when
+        /// immutable pool provenance still matches its name. Build-time only.
+        public Func<string, string>? TranslateSeedName;
     }
 
     /// Builds the panel's complete draw plan from pure inputs. Runs only when
@@ -404,7 +407,7 @@ namespace EPrimeReadouts.Core
                 // First-class pool reference: #poolId
                 int poolId = SlotToken.PoolId(token);
                 var pools = input.Pools;
-                if (pools == null || !pools.TryGet(poolId, out var poolMembers, out var poolIcon, out var poolName))
+                if (pools == null || !pools.TryGetEntry(poolId, out var pool))
                 {
                     // Unknown pool: skip in normal mode; in editor mode return an empty slot
                     if (!editorMode) return false;
@@ -415,18 +418,20 @@ namespace EPrimeReadouts.Core
                     return true;
                 }
                 // Known pool
-                if (poolMembers!.Count == 0) // TryGet true => members populated.
+                string poolName = input.TranslateSeedName == null ? pool.Name
+                    : SeededName.Resolve(pool.Name, pool.SeedName, input.TranslateSeedName);
+                if (pool.Members.Count == 0)
                 {
                     // Zero members: skip in normal mode; in editor mode include with empty list
                     if (!editorMode) return false;
                     members = Array.Empty<string>();
-                    iconDefName = poolIcon; // may be null
+                    iconDefName = pool.IconDefName; // may be null
                     highlightName = poolName;
                     sum = 0;
                     return true;
                 }
-                members = poolMembers;
-                iconDefName = poolIcon;
+                members = pool.Members;
+                iconDefName = pool.IconDefName;
                 highlightName = poolName;
                 sum = EffectiveSum(input, members, storageOnly, hideForbidden);
                 return true;
