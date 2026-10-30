@@ -32,7 +32,9 @@ namespace QualityJobs.UI
             forcePause = true;
         }
 
-        public override Vector2 InitialSize => new Vector2(1180f, 760f);
+        public override Vector2 InitialSize => new Vector2(
+            Mathf.Min(1180f, Verse.UI.screenWidth - 16f),
+            Mathf.Min(760f, Verse.UI.screenHeight - 16f));
 
         public override void PreOpen()
         {

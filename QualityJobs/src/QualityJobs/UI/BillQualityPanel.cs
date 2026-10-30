@@ -695,7 +695,8 @@ namespace QualityJobs.UI
                 condition, autoBest,
                 statusPawnScratch);
 
-            bool sameIds = statusPawnScratch.Count == statusEligibleIds.Count;
+            bool sameIds = _statusFinishersLabel != null
+                && statusPawnScratch.Count == statusEligibleIds.Count;
             if (sameIds)
                 for (int i = 0; i < statusPawnScratch.Count; i++)
                     if (statusPawnScratch[i].thingIDNumber != statusEligibleIds[i])

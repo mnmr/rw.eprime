@@ -60,5 +60,30 @@ namespace QualityJobs
             sync.Bind(ref v.autoBest);
             sync.Bind(ref v.targetQuality);
         }
+
+        [SyncWorker(shouldConstruct = true)]
+        private static void SyncCopyPlacementValues(SyncWorker sync, ref CopyPlacementValues v)
+        {
+            sync.Bind(ref v.mapId);
+            sync.Bind(ref v.buildingDefName);
+            sync.Bind(ref v.stuffDefName);
+            sync.Bind(ref v.styleDefName);
+            // Native MP already serializes Precept_Building for build tools.
+            sync.Bind(ref v.sourcePrecept);
+            sync.Bind(ref v.rotation);
+            sync.Bind(ref v.styleOverridden);
+            sync.Bind(ref v.hasGlowerColor);
+            sync.Bind(ref v.glowerR);
+            sync.Bind(ref v.glowerG);
+            sync.Bind(ref v.glowerB);
+            sync.Bind(ref v.glowerA);
+            sync.Bind(ref v.cells);
+            sync.Bind(ref v.multiCell);
+            sync.Bind(ref v.minSkill);
+            sync.Bind(ref v.targetQuality);
+            sync.Bind(ref v.inspired);
+            sync.Bind(ref v.specialist);
+            sync.Bind(ref v.autoBest);
+        }
     }
 }

@@ -15,6 +15,13 @@ namespace QualityJobs.Core
     /// <summary>Deterministic bill lifecycle decisions for finisher completion.</summary>
     public static class BillLifecyclePolicy
     {
+        /// A preparation commits its whole ingredient batch up front. Outstanding
+        /// prepared items reserve fixed-count iterations until completed/cancelled;
+        /// finishing bills may only resume their existing item, never prepare one.
+        public static bool CanStartPreparation(bool managed, bool fixedCount,
+            int remaining, int prepared, bool isFinishBill)
+            => !isFinishBill && (!managed || !fixedCount || prepared < remaining);
+
         public static bool CanDeleteFinishBill(bool aliasesSource) => !aliasesSource;
 
         public static bool ShouldRunVanillaCompletion(bool isFinishBill, bool retry)

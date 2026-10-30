@@ -55,9 +55,9 @@ namespace QualityJobs.Patches
             if (plan.restoreOnly) return true;
 
             GateOutcome outcome = plan.autoBest
-                ? Dispatcher.DecideAutoConstructionGate(worker, plan.Condition)
+                ? Dispatcher.DecideAutoConstructionGate(worker, plan.Condition, __instance.def)
                 : GateDecision.Decide(billManaged: true, debugCompleted: false,
-                    Dispatcher.ConstructionFactsFor(worker), plan.Condition);
+                    Dispatcher.ConstructionFactsFor(worker, __instance.def), plan.Condition);
             if (outcome == GateOutcome.Complete) return true;
 
             // Pause: suppress completion. No job bookkeeping needed — the

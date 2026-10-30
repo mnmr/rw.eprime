@@ -1,0 +1,6 @@
+<ModMetaData>
+  <name>Quality Jobs review probe</name><author>Local review</author>
+  <packageId>eprime.qualityjobs.bugreviewprobe</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <modDependencies><li><packageId>eprime.qualityjobs</packageId><displayName>Quality Jobs</displayName></li></modDependencies>
+</ModMetaData>

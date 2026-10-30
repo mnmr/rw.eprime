@@ -42,10 +42,11 @@ namespace QualityJobs.Patches
 
         public static bool Prefix(Bill bill, List<ThingCount> chosen, ref bool __result)
         {
-            if (!(bill is Bill_ProductionWithUft)) return true;
+            if (!(bill is Bill_ProductionWithUft production)) return true;
             QualityJobsStore? store = QualityJobsStore.Active;
-            if (store == null || !store.shareUnfinishedWork) return true;
-            if (store.IsFinishBill(bill) || !store.HasPooledWorkFor(bill)) return true;
+            if (store == null) return true;
+            if (store.CanStartBillPreparation(production)
+                && (!store.shareUnfinishedWork || !store.HasPooledWorkFor(bill))) return true;
             chosen.Clear();
             JobFailReason.Is(WaitingLabel, bill.Label);
             __result = false;

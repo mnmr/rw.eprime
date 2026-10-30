@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using QualityJobs.Core;
 using RimWorld;
 using Verse;
+using Verse.AI;
 
 namespace QualityJobs
 {
@@ -31,13 +32,14 @@ namespace QualityJobs
         /// Capability (work type, recipe skill requirements) travels as facts
         /// flags and is filtered in Core. recipe == null builds construction
         /// facts.</summary>
-        private static void BuildAutoPool(RecipeDef? recipe, WorkTypeDef? workType)
+        private static void BuildAutoPool(RecipeDef? recipe, WorkTypeDef? workType,
+            ThingDef? constructionDef = null)
         {
             poolBuffer.Clear();
             WorkerCapabilities.CollectColonyWorkers(poolPawnBuffer);
             for (int i = 0; i < poolPawnBuffer.Count; i++)
                 poolBuffer.Add(recipe != null ? FactsFor(poolPawnBuffer[i], recipe, workType)
-                    : ConstructionFactsFor(poolPawnBuffer[i]));
+                    : ConstructionFactsFor(poolPawnBuffer[i], constructionDef));
         }
 
         private static void ClearAutoPool()
@@ -101,6 +103,7 @@ namespace QualityJobs
                 if (snap.ingredientFilter != null)
                     bill.ingredientFilter.CopyAllowancesFrom(snap.ingredientFilter);
                 ApplyStoreMode(bill, snap);
+                CraftWithColorStyle.Apply(bill, snap);
             }
             bill.repeatMode = BillRepeatModeDefOf.RepeatCount;
             bill.repeatCount = 1;
@@ -198,15 +201,20 @@ namespace QualityJobs
                 ? p.RaceProps.mechFixedSkillLevel
                 : (p.skills != null ? p.skills.GetSkill(SkillDefOf.Construction).Level : 0);
 
-        /// Construction candidate facts: Construction skill; frames have no
-        /// recipe skill requirements (vanilla CanConstruct gates separately).
-        public static CandidateFacts ConstructionFactsFor(Pawn p)
+        /// Intrinsic building requirements participate in ranking, including
+        /// the colony-wide auto pool. Temporary access remains a dispatch gate.
+        public static CandidateFacts ConstructionFactsFor(Pawn p, ThingDef? targetDef = null)
         {
             int skill = ConstructionSkillOf(p);
+            int art = p.RaceProps.IsMechanoid ? p.RaceProps.mechFixedSkillLevel
+                : p.skills?.GetSkill(SkillDefOf.Artistic).Level ?? 0;
+            bool requiredSkills = targetDef == null
+                || (skill >= targetDef.constructionSkillPrerequisite
+                    && art >= targetDef.artisticSkillPrerequisite);
             bool inspired = p.InspirationDef == InspirationDefOf.Inspired_Creativity;
             bool workEnabled = WorkerCapabilities.CanConstruct(p);
             return new CandidateFacts(p.thingIDNumber, skill, inspired, RoleOffsetOf(p),
-                workEnabled, meetsRecipeSkillRequirements: true,
+                workEnabled, meetsRecipeSkillRequirements: requiredSkills,
                 XpMilliOf(p, SkillDefOf.Construction),
                 QualityBonusStats.For(p, SkillDefOf.Construction));
         }
@@ -214,7 +222,8 @@ namespace QualityJobs
         /// Construction finisher (spec §10): same deterministic ranking as
         /// bills, Construction skill, no bench needed. Reuses the static
         /// buffers; clears them before returning (no world rooting).
-        public static Pawn? SelectConstructionFinisher(Map map, ResumeCondition condition)
+        public static Pawn? SelectConstructionFinisher(Map map, ResumeCondition condition,
+            Frame? target = null)
         {
             candidateBuffer.Clear();
             pawnBuffer.Clear();
@@ -223,8 +232,11 @@ namespace QualityJobs
             {
                 Pawn p = colonists[i];
                 if (!WorkerCapabilities.Available(p)) continue;
+                CandidateFacts facts = ConstructionFactsFor(p, target?.def);
+                if (!facts.WorkTypeEnabled || !facts.MeetsRecipeSkillRequirements) continue;
+                if (target != null && !CanAccessConstruction(p, target)) continue;
                 pawnBuffer.Add(p);
-                candidateBuffer.Add(ConstructionFactsFor(p));
+                candidateBuffer.Add(facts);
             }
             int bestId = FinisherSelector.SelectBest(candidateBuffer, condition);
             Pawn? result = null;
@@ -236,6 +248,15 @@ namespace QualityJobs
             return result;
         }
 
+        // Does not call GenConstruct.CanConstruct: QJ's lock on that method
+        // intentionally excludes candidates until this selection is published.
+        private static bool CanAccessConstruction(Pawn pawn, Thing target)
+            => target.Spawned && pawn.Map == target.Map && pawn.Faction == target.Faction
+                && !target.IsForbidden(pawn)
+                && pawn.CanReserveAndReach(target, PathEndMode.Touch, Danger.Deadly)
+                && GenConstruct.CanTouchTargetFromValidCell(target, pawn)
+                && (pawn.Ideo == null || pawn.Ideo.MembersCanBuild(target));
+
         /// Paused frame -> Dispatched (spec §10: no one-shot bill; the lock
         /// admits only the recorded finisher).
         public static void TryDispatchConstruction(QualityJobsStore store,
@@ -243,8 +264,8 @@ namespace QualityJobs
         {
             if (!(plan.target is Frame frame) || !frame.Spawned) return;
             Pawn? finisher = plan.autoBest
-                ? SelectAutoFinisher(frame.Map, null, plan.Condition)
-                : SelectConstructionFinisher(frame.Map, plan.Condition);
+                ? SelectAutoFinisher(frame.Map, null, plan.Condition, frame)
+                : SelectConstructionFinisher(frame.Map, plan.Condition, frame);
             if (finisher == null) return;
             store.DispatchPlan(plan, finisher);
         }
@@ -255,13 +276,14 @@ namespace QualityJobs
             if (!(plan.target is Frame frame) || !frame.Spawned) return true;
             Pawn? f = plan.finisher;
             if (f == null || !WorkerCapabilities.Available(f) || f.Map != frame.Map) return true;
-            CandidateFacts facts = ConstructionFactsFor(f);
-            if (!facts.WorkTypeEnabled) return true;
+            CandidateFacts facts = ConstructionFactsFor(f, frame.def);
+            if (!facts.WorkTypeEnabled || !facts.MeetsRecipeSkillRequirements
+                || !CanAccessConstruction(f, frame)) return true;
             if (plan.autoBest)
             {
                 // Auto spec §2.4: revert when the dispatched finisher is no
                 // longer colony-wide top (someone surpassed them mid-walk).
-                BuildAutoPool(null, null);
+                BuildAutoPool(null, null, frame.def);
                 bool stillBest = FinisherSelector.WorkerPassesAutoGate(facts, poolBuffer, plan.Condition);
                 ClearAutoPool();
                 if (!stillBest) return true;
@@ -369,10 +391,11 @@ namespace QualityJobs
         }
 
         /// <summary>Auto-best gate evaluation for the construction gate patch.</summary>
-        public static GateOutcome DecideAutoConstructionGate(Pawn worker, ResumeCondition condition)
+        public static GateOutcome DecideAutoConstructionGate(Pawn worker, ResumeCondition condition,
+            ThingDef? targetDef = null)
         {
-            CandidateFacts facts = ConstructionFactsFor(worker);
-            BuildAutoPool(null, null);
+            CandidateFacts facts = ConstructionFactsFor(worker, targetDef);
+            BuildAutoPool(null, null, targetDef);
             GateOutcome outcome = GateDecision.DecideAuto(billManaged: true,
                 debugCompleted: false, facts, poolBuffer, condition);
             ClearAutoPool();
@@ -382,10 +405,11 @@ namespace QualityJobs
         /// <summary>Auto-best dispatch (auto spec §2.4): the colony-wide best must
         /// itself be dispatchable on the item's map; otherwise returns null and
         /// the item waits. recipe == null selects a construction finisher.</summary>
-        public static Pawn? SelectAutoFinisher(Map map, RecipeDef? recipe, ResumeCondition condition)
+        public static Pawn? SelectAutoFinisher(Map map, RecipeDef? recipe, ResumeCondition condition,
+            Frame? constructionTarget = null)
         {
             WorkTypeDef? workType = recipe != null ? WorkTypeForRecipe(recipe) : null;
-            BuildAutoPool(recipe, workType);
+            BuildAutoPool(recipe, workType, constructionTarget?.def);
             candidateBuffer.Clear();
             pawnBuffer.Clear();
             var colonists = map.mapPawns.AllPawnsSpawned;
@@ -393,9 +417,12 @@ namespace QualityJobs
             {
                 Pawn p = colonists[i];
                 if (!WorkerCapabilities.Available(p)) continue;
+                CandidateFacts facts = recipe != null
+                    ? FactsFor(p, recipe, workType) : ConstructionFactsFor(p, constructionTarget?.def);
+                if (!facts.WorkTypeEnabled || !facts.MeetsRecipeSkillRequirements) continue;
+                if (constructionTarget != null && !CanAccessConstruction(p, constructionTarget)) continue;
                 pawnBuffer.Add(p);
-                candidateBuffer.Add(recipe != null
-                    ? FactsFor(p, recipe, workType) : ConstructionFactsFor(p));
+                candidateBuffer.Add(facts);
             }
             int bestId = FinisherSelector.SelectAutoBest(candidateBuffer, poolBuffer, condition);
             Pawn? result = null;
@@ -419,6 +446,11 @@ namespace QualityJobs
         /// builders, never on a steady render pass.</summary>
         public static void CollectEligibleFinishers(Map map, RecipeDef? recipe,
             ResumeCondition condition, bool autoBest, List<Pawn> results)
+            => CollectEligibleFinishers(map, recipe, condition, autoBest, results, null, null);
+
+        public static void CollectEligibleFinishers(Map map, RecipeDef? recipe,
+            ResumeCondition condition, bool autoBest, List<Pawn> results,
+            Thing? constructionTarget, ThingDef? constructionDef)
         {
             results.Clear();
             candidateBuffer.Clear();
@@ -430,13 +462,16 @@ namespace QualityJobs
             {
                 Pawn p = colonists[i];
                 if (!WorkerCapabilities.Available(p)) continue;
+                CandidateFacts facts = recipe != null
+                    ? FactsFor(p, recipe, workType) : ConstructionFactsFor(p, constructionDef);
+                if (!facts.WorkTypeEnabled || !facts.MeetsRecipeSkillRequirements) continue;
+                if (constructionTarget != null && !CanAccessConstruction(p, constructionTarget)) continue;
                 pawnBuffer.Add(p);
-                candidateBuffer.Add(recipe != null
-                    ? FactsFor(p, recipe, workType) : ConstructionFactsFor(p));
+                candidateBuffer.Add(facts);
             }
             if (autoBest)
             {
-                BuildAutoPool(recipe, workType);
+                BuildAutoPool(recipe, workType, constructionDef);
                 FinisherSelector.CollectAutoEligible(candidateBuffer, poolBuffer,
                     condition, eligibleBuffer);
                 ClearAutoPool();
@@ -465,9 +500,13 @@ namespace QualityJobs
         /// demands. recipe == null ranks by Construction skill. Call only from
         /// revision-gated dialog caches, never on a steady render pass.</summary>
         public static Pawn? AutoBestForDisplay(RecipeDef? recipe, ResumeCondition condition)
+            => AutoBestForDisplay(recipe, condition, null);
+
+        public static Pawn? AutoBestForDisplay(RecipeDef? recipe, ResumeCondition condition,
+            ThingDef? constructionDef)
         {
             WorkTypeDef? workType = recipe != null ? WorkTypeForRecipe(recipe) : null;
-            BuildAutoPool(recipe, workType);
+            BuildAutoPool(recipe, workType, constructionDef);
             int bestId = FinisherSelector.SelectBestOfPool(poolBuffer, condition);
             Pawn? result = null;
             if (bestId != FinisherSelector.None)
@@ -495,9 +534,16 @@ namespace QualityJobs
         public static Pawn? ResolveAutoBestFacts(RecipeDef? recipe,
             bool requireInspired, bool requireSpecialist,
             out int skill, out bool inspired, out int roleOffset, out int qualityBonusMilli)
+            => ResolveAutoBestFacts(recipe, requireInspired, requireSpecialist,
+                out skill, out inspired, out roleOffset, out qualityBonusMilli, null);
+
+        public static Pawn? ResolveAutoBestFacts(RecipeDef? recipe,
+            bool requireInspired, bool requireSpecialist,
+            out int skill, out bool inspired, out int roleOffset, out int qualityBonusMilli,
+            ThingDef? constructionDef)
         {
             var poolCondition = new ResumeCondition(0, requireInspired, requireSpecialist);
-            Pawn? best = AutoBestForDisplay(recipe, poolCondition);
+            Pawn? best = AutoBestForDisplay(recipe, poolCondition, constructionDef);
             if (best == null)
             {
                 skill = 0;
@@ -647,8 +693,9 @@ namespace QualityJobs
             e.uft.BoundBill = null;
             Pawn? owner = null;
             // Skip SelectFinisher when recipe is null to avoid NRE.
-            if (e.uft.Map != null && e.uft.Recipe != null)
-                owner = SelectFinisher(e.uft.Map, e.uft.Recipe, default, relaxed: true);
+            Map? map = e.uft.MapHeld;
+            if (map != null && e.uft.Recipe != null)
+                owner = SelectFinisher(map, e.uft.Recipe, default, relaxed: true);
             if (owner == null && e.originalCreator != null && !e.originalCreator.Dead)
                 owner = e.originalCreator;
             if (owner != null) UftAuthor.Assign(e.uft, owner);

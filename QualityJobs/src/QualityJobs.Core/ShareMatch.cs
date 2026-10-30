@@ -9,6 +9,8 @@ namespace QualityJobs.Core
         public readonly string? StyleDefName;  // ThingStyleDef defName, null if none
         public readonly bool GlobalStyle;
         public readonly int? GraphicIndex;
+        public readonly bool CustomStyle;
+        public readonly bool RandomStyle;
 
         /// <summary>True when this key was built from a live bill via the four-argument
         /// constructor. False only for default/Unknown instances (the sole constructor
@@ -16,11 +18,17 @@ namespace QualityJobs.Core
         public readonly bool Known;
 
         public StyleKey(string? preceptId, string? styleDefName, bool globalStyle, int? graphicIndex)
+            : this(preceptId, styleDefName, globalStyle, graphicIndex, false, false) { }
+
+        public StyleKey(string? preceptId, string? styleDefName, bool globalStyle, int? graphicIndex,
+            bool customStyle, bool randomStyle = false)
         {
             PreceptId = preceptId;
             StyleDefName = styleDefName;
             GlobalStyle = globalStyle;
             GraphicIndex = graphicIndex;
+            CustomStyle = customStyle;
+            RandomStyle = randomStyle;
             Known = true;
         }
 
@@ -39,11 +47,13 @@ namespace QualityJobs.Core
             if (!bill.Known) return false;
             if (!entrySnapshot.Known)
                 return bill.GlobalStyle && bill.StyleDefName == null && bill.PreceptId == null
-                       && bill.GraphicIndex == null;
+                       && bill.GraphicIndex == null && !bill.CustomStyle && !bill.RandomStyle;
             return entrySnapshot.PreceptId == bill.PreceptId
                    && entrySnapshot.StyleDefName == bill.StyleDefName
                    && entrySnapshot.GlobalStyle == bill.GlobalStyle
-                   && entrySnapshot.GraphicIndex == bill.GraphicIndex;
+                   && entrySnapshot.GraphicIndex == bill.GraphicIndex
+                   && entrySnapshot.CustomStyle == bill.CustomStyle
+                   && entrySnapshot.RandomStyle == bill.RandomStyle;
         }
     }
 }

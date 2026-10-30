@@ -5,6 +5,34 @@ using QualityJobs.Core;
 public class BillLifecyclePolicyTests
 {
     [Test]
+    public async Task PreparedWorkReservesTheLastRequestedIterationUntilCompletionOrCancellation()
+    {
+        // Recorded native QJ007 reproduction: Do 1 prepared two full-material
+        // tuques. Admission must close BEFORE the second ingredient collection.
+        await Assert.That(BillLifecyclePolicy.CanStartPreparation(true, true, 1, 0, false)).IsTrue();
+        await Assert.That(BillLifecyclePolicy.CanStartPreparation(true, true, 1, 1, false)).IsFalse();
+        // Raising Do 1 to Do 2 permits exactly one further preparation.
+        await Assert.That(BillLifecyclePolicy.CanStartPreparation(true, true, 2, 1, false)).IsTrue();
+        await Assert.That(BillLifecyclePolicy.CanStartPreparation(true, true, 2, 2, false)).IsFalse();
+        // Cancelling the prepared item releases the slot, without decrementing
+        // the bill. A successful completion consumes the requested iteration.
+        await Assert.That(BillLifecyclePolicy.CanStartPreparation(true, true, 1, 0, false)).IsTrue();
+        SourceBillCompletion completed = BillLifecyclePolicy.CompleteSource(1, true, true, false, false);
+        await Assert.That(BillLifecyclePolicy.CanStartPreparation(true, true, completed.RepeatCount, 0, false)).IsFalse();
+        await Assert.That(BillLifecyclePolicy.CanStartPreparation(true, false, 1, 2, false)).IsTrue();
+        await Assert.That(BillLifecyclePolicy.CanStartPreparation(false, true, 1, 2, false)).IsTrue();
+    }
+
+    [Test]
+    public async Task FinishingOrderNeverCollectsANewIngredientBatchAfterItsItemDisappears()
+    {
+        // QJ006: cancellation removes the bound UFT before native job selection.
+        // This invariant applies even if the inherited source is unmanaged.
+        await Assert.That(BillLifecyclePolicy.CanStartPreparation(true, true, 1, 0, true)).IsFalse();
+        await Assert.That(BillLifecyclePolicy.CanStartPreparation(false, true, 1, 0, true)).IsFalse();
+    }
+
+    [Test]
     public async Task AliasedFinishBillIsNotADeletionCandidate()
     {
         await Assert.That(BillLifecyclePolicy.CanDeleteFinishBill(aliasesSource: true)).IsFalse();

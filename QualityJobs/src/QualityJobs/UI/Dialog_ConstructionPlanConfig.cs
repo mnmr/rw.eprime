@@ -61,6 +61,11 @@ namespace QualityJobs.UI
     {
         private readonly TrackedTargetIds targetIds;
         private readonly Map? primaryMap;
+        // Input-time fallback for untracked targets and completed-building setup.
+        // Only identity/definition references are retained; live access is read
+        // by the existing status builder after its revision gate fires.
+        private readonly Thing? initialTarget;
+        private readonly ThingDef? initialConstructionDef;
         private readonly Rect _anchor;
         private QualityJobsStore? subscribedStore;
         private FloatMenu? qualityMenu;
@@ -234,11 +239,14 @@ namespace QualityJobs.UI
         // Auto current-best cache (auto spec §5) — same contract as the bill
         // dialog's: owner dialog (transient), key none, value resolved best
         // (id, skill, inspired, roleOffset) + built label string; dependencies
-        // colony pool contents + the dialog's filter fields; refresh at open,
-        // on filter edits, and when ExternalPawnFactsRevision advances;
+        // colony pool contents, target construction definition and the dialog's
+        // filter fields; refresh at open, on those key changes, and when
+        // ExternalPawnFactsRevision advances (also advanced on definition reload);
         // equality — same resolved
         // pawn+stats reuses the label; teardown — dies with the window.
         private int autoBestFactsRevision = int.MinValue;
+        private ThingDef? autoBestConstructionDef;
+        private bool autoBestInspiredFilter, autoBestSpecialistFilter;
         private int cachedAutoBestId = -1;
         private int cachedAutoSkill;
         private bool cachedAutoInspired;
@@ -251,11 +259,15 @@ namespace QualityJobs.UI
         // dialog's: owner dialog (transient); key none; value = the
         // eligible-finisher id list, built labels, and the stall flag;
         // dependencies = map colonist pool, the dialog's condition/autoBest
-        // edit fields, and the plan state; refresh gated by PlanStatusRevision
-        // and forced on Push edits that affect eligibility;
+        // edit fields, plan state, target identity/access and construction
+        // definition; refresh gated by PlanStatusRevision (including definition
+        // reload), target reference changes and Push edits. Access follows the existing
+        // 250-tick pawn-facts fallback; unchanged keys reuse the published text.
         // equality — element-wise id compare preserves label identity;
         // teardown — dies with the window (scratch cleared each refresh).
         private int statusRevision = int.MinValue;
+        private Thing? statusConstructionTarget;
+        private ThingDef? statusConstructionDef;
         private bool statusValid; // false = target off-map; status block hidden
         private bool statusStalled;
         private int statusEligibleCount = -1;
@@ -306,6 +318,8 @@ namespace QualityJobs.UI
             QualityJobsStore? store = QualityJobsStore.Active;
             PlanPresentationSnapshot? plan = null;
             store?.TryGetPlanPresentation(targetIds.Primary, out plan);
+            initialTarget = plan?.Target ?? QualityJobsStore.FindSpawnedThing(targetIds.Primary);
+            initialConstructionDef = plan?.ConstructionDef ?? initialTarget?.def;
             int planMinSkill = plan?.MinSkill ?? 0;
             bool planInspired = plan?.RequireInspired ?? false;
             bool planSpecialist = plan?.RequireSpecialist ?? false;
@@ -826,12 +840,22 @@ namespace QualityJobs.UI
         private void EnsureAutoBest()
         {
             QualityJobsStore? store = QualityJobsStore.Active;
+            PlanPresentationSnapshot? plan = null;
+            store?.TryGetPlanPresentation(targetIds.Primary, out plan);
+            ThingDef? constructionDef = plan?.ConstructionDef ?? initialConstructionDef;
             int revision = store?.ExternalPawnFactsRevision ?? 0;
-            if (autoBestFactsRevision == revision) return;
+            if (autoBestFactsRevision == revision
+                && ReferenceEquals(autoBestConstructionDef, constructionDef)
+                && autoBestInspiredFilter == requireInspired
+                && autoBestSpecialistFilter == requireSpecialist) return;
             autoBestFactsRevision = revision;
+            autoBestConstructionDef = constructionDef;
+            autoBestInspiredFilter = requireInspired;
+            autoBestSpecialistFilter = requireSpecialist;
             Pawn? best = Dispatcher.ResolveAutoBestFacts(null,
                 requireInspired, requireSpecialist,
-                out int skill, out bool inspired, out int roleOffset, out int qualityBonusMilli);
+                out int skill, out bool inspired, out int roleOffset, out int qualityBonusMilli,
+                constructionDef);
             if (best == null)
             {
                 cachedAutoValid = false;
@@ -861,8 +885,14 @@ namespace QualityJobs.UI
         {
             QualityJobsStore? store = QualityJobsStore.Active;
             int revision = store?.PlanStatusRevision ?? 0;
-            if (statusRevision == revision) return;
+            Thing? target = plan?.Target ?? initialTarget;
+            ThingDef? constructionDef = plan?.ConstructionDef ?? initialConstructionDef;
+            if (statusRevision == revision
+                && ReferenceEquals(statusConstructionTarget, target)
+                && ReferenceEquals(statusConstructionDef, constructionDef)) return;
             statusRevision = revision;
+            statusConstructionTarget = target;
+            statusConstructionDef = constructionDef;
 
             Map? map = plan?.Map ?? primaryMap;
             if (map == null)
@@ -879,7 +909,8 @@ namespace QualityJobs.UI
                 ? new ResumeCondition(0, requireInspired, requireSpecialist)
                 : new ResumeCondition(minSkill, requireInspired, requireSpecialist);
             Dispatcher.CollectEligibleFinishers(map, null, condition, autoBest,
-                statusPawnScratch);
+                statusPawnScratch, target is Blueprint_Build || target is Frame ? target : null,
+                constructionDef);
 
             bool sameIds = statusFinishersLabel != null
                 && statusPawnScratch.Count == statusEligibleIds.Count;

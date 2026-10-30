@@ -1,0 +1,7 @@
+<ModMetaData>
+  <name>Quality Jobs CWC bug review probe</name>
+  <author>Temporary review fixture</author>
+  <packageId>eprime.qualityjobs.cwcbugreview</packageId>
+  <supportedVersions><li>1.6</li></supportedVersions>
+  <loadAfter><li>eprime.qualityjobs</li><li>kathanon.CraftWithColor</li></loadAfter>
+</ModMetaData>

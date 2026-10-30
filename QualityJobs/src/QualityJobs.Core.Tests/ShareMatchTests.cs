@@ -5,6 +5,20 @@ using QualityJobs.Core;
 public class ShareMatchTests
 {
     [Test]
+    public async Task CustomBasicAndRandomWorkCannotBeAdoptedByDifferentStyleOrders()
+    {
+        var basic = new StyleKey(null, null, false, null, customStyle: true);
+        var random = new StyleKey(null, null, false, null, customStyle: true, randomStyle: true);
+        var native = new StyleKey(null, null, false, null);
+        await Assert.That(ShareMatch.StyleCompatible(basic, basic)).IsTrue();
+        await Assert.That(ShareMatch.StyleCompatible(random, random)).IsTrue();
+        await Assert.That(ShareMatch.StyleCompatible(basic, random)).IsFalse();
+        await Assert.That(ShareMatch.StyleCompatible(basic, native)).IsFalse();
+        await Assert.That(ShareMatch.StyleCompatible(StyleKey.Unknown, basic)).IsFalse();
+        await Assert.That(ShareMatch.StyleCompatible(StyleKey.Unknown, random)).IsFalse();
+    }
+
+    [Test]
     public async Task IdenticalStyleKeysMatch()
     {
         var a = new StyleKey("preceptA", "styleA", false, 2);

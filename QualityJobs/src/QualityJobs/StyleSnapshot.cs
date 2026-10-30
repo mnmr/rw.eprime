@@ -12,6 +12,8 @@ namespace QualityJobs
         public Precept_ThingStyle? precept;
         public ThingStyleDef? style;
         public bool globalStyle = true;
+        public bool customStyle;
+        public bool randomStyle;
         public int? graphicIndexOverride;
         public BillStoreModeDef? storeMode;
         public ISlotGroup? storeGroup;
@@ -20,11 +22,14 @@ namespace QualityJobs
 
         public static StyleSnapshot From(Bill_Production bill)
         {
+            bool customStyle = CraftWithColorStyle.TryGet(bill, out ThingStyleDef? selectedStyle, out bool randomStyle);
             var s = new StyleSnapshot
             {
-                precept = bill.precept,
-                style = bill.style,
-                globalStyle = bill.globalStyle,
+                precept = customStyle ? null : bill.precept,
+                style = customStyle ? selectedStyle : bill.style,
+                globalStyle = !customStyle && bill.globalStyle,
+                customStyle = customStyle,
+                randomStyle = randomStyle,
                 graphicIndexOverride = bill.graphicIndexOverride,
                 storeMode = bill.GetStoreMode(),
                 storeGroup = bill.GetSlotGroup(),
@@ -38,18 +43,24 @@ namespace QualityJobs
         public StyleKey ToStyleKey()
             => known
                 ? new StyleKey(precept != null ? PreceptIds.IdOf(precept) : null,
-                    style?.defName, globalStyle, graphicIndexOverride)
+                    style?.defName, globalStyle, graphicIndexOverride, customStyle, randomStyle)
                 : StyleKey.Unknown;
 
         public static StyleKey KeyOf(Bill_Production bill)
-            => new StyleKey(bill.precept != null ? PreceptIds.IdOf(bill.precept) : null,
+        {
+            if (CraftWithColorStyle.TryGet(bill, out ThingStyleDef? selectedStyle, out bool randomStyle))
+                return new StyleKey(null, selectedStyle?.defName, false, bill.graphicIndexOverride, true, randomStyle);
+            return new StyleKey(bill.precept != null ? PreceptIds.IdOf(bill.precept) : null,
                 bill.style?.defName, bill.globalStyle, bill.graphicIndexOverride);
+        }
 
         public void ExposeData()
         {
             Scribe_References.Look(ref precept, "precept");
             Scribe_Defs.Look(ref style, "style");
             Scribe_Values.Look(ref globalStyle, "globalStyle", true);
+            Scribe_Values.Look(ref customStyle, "customStyle");
+            Scribe_Values.Look(ref randomStyle, "randomStyle");
             Scribe_Values.Look(ref graphicIndexOverride, "graphicIndexOverride");
             Scribe_Defs.Look(ref storeMode, "storeMode");
             if (Scribe.mode == LoadSaveMode.Saving)

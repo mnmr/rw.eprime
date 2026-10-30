@@ -504,36 +504,12 @@ namespace QualityJobs
             Enable(SeedValues.FromSettings(QualityJobsMod.Settings));
         }
 
-        /// Fix 4: arms the synced pending-copy session state. Issued from the
-        /// initiator's copy-gizmo action; replicates to all clients so the
-        /// blueprint spawn hook reads identical settings everywhere.
-        [SyncMethod]
-        public static void SetPendingCopy(int minSkill, bool inspired, bool specialist,
-            int quality, bool autoBest)
-        {
-            minSkill = ConfigurationLimits.Skill(minSkill);
-            specialist = specialist && ModsConfig.IdeologyActive;
-            quality = ConfigurationLimits.Quality(quality);
-            QualityJobsStore? store = QualityJobsStore.Active;
-            if (store == null) return;
-            store.pendingCopyMinSkill   = minSkill;
-            store.pendingCopyInspired   = inspired;
-            store.pendingCopySpecialist = specialist;
-            store.pendingCopyQuality    = quality;
-            store.pendingCopyAutoBest   = autoBest;
-            store.pendingCopyActive     = true;
-        }
-
-        /// Fix 4: disarms the synced pending-copy session state. Best-effort UI
-        /// clearing; a stale pending value is desync-safe (all clients read the
-        /// same synced value), so imperfect clearing is only a minor UX issue.
-        [SyncMethod]
-        public static void ClearPendingCopy()
-        {
-            QualityJobsStore? store = QualityJobsStore.Active;
-            if (store == null || !store.pendingCopyActive) return;
-            store.pendingCopyActive = false;
-        }
+        /// A copy click is local input; only a concrete placement is synced.
+        /// CurrentMap is MP's serialized command context, checked by map ID in
+        /// the handler. Replay does not read the issuing player's selection.
+        [SyncMethod(SyncContext.CurrentMap)]
+        public static void PlaceCopiedConstruction(CopyPlacementValues values)
+            => CopyPlacement.Place(values);
 
         /// Removes the plan for the given thingId and any Deconstruct designation
         /// we placed. This is the explicit Clear command issued from the dialog.

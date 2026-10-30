@@ -12,6 +12,7 @@ namespace QualityJobs.Patches
     {
         public static void Prefix(Game __instance, Map map)
         {
+            CopyPlacement.ClearInput();
             WorkerCapabilities.ReleaseMap(map);
             __instance.GetComponent<QualityJobsStore>()?.ReleaseMap(map);
         }
@@ -22,11 +23,13 @@ namespace QualityJobs.Patches
     {
         public static void Prefix(Game __instance)
         {
+            CopyPlacement.ClearInput();
             MiscRobotSupport.ResetStations(__instance);
             QualityJobsStore? store = __instance.GetComponent<QualityJobsStore>();
             if (store != null)
                 store.ReleasePresentation();
             BillIds.Reset();
+            BillConfigTransfer.Reset();
             UftAuthor.ResetDisplay();
             PreceptIds.Reset();
             Patch_StockGate.ResetPresentation();

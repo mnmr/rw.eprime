@@ -5,26 +5,9 @@ using Verse;
 
 namespace QualityJobs.Patches
 {
-    /// Fix 3: auto-create and copy application moved to a deterministic spawn
-    /// hook. When a Blueprint_Build for a CompQuality thing spawns during play,
-    /// we apply either the synced pending-copy settings or the store's
-    /// construction defaults, reading ONLY synced store state.
-    ///
-    /// MP determinism argument:
-    ///   RimWorld-Multiplayer syncs build designators at the REPLAY model:
-    ///   Designator_Build.DesignateSingleCell and Blueprint_Build.SpawnSetup run
-    ///   on ALL clients during synced command replay. This hook therefore runs on
-    ///   every client with identical timing. It reads ONLY the synced store
-    ///   (pendingCopy* fields set via [SyncMethod], and the scribed construction
-    ///   defaults) and mutates the store directly through ApplyPlanSettings — which is
-    ///   deterministic, exactly like the gate/scan already mutate the store during
-    ///   synced replay. No client-local state is consulted, so no divergence is
-    ///   possible. (The old DesignateSingleCell postfix consulted a client-local
-    ///   static that only the initiator had armed, which desynced; that postfix
-    ///   and its static are removed.)
-    ///
-    /// SpawnSetup signature verified at Decompiled\Verse\Thing.cs line 803:
-    ///   public override void SpawnSetup(Map map, bool respawningAfterLoad)
+    /// Deterministic spawn lifecycle: apply this exact placement command's
+    /// copied settings, or the per-save defaults for every other blueprint.
+    /// Local selection/pending input is never consulted here.
     [HarmonyPatch(typeof(Thing), nameof(Thing.SpawnSetup))]
     public static class Patch_BlueprintSpawn
     {
@@ -64,20 +47,10 @@ namespace QualityJobs.Patches
             // pass) — nothing to do.
             if (store.FindPlan(bp) != null) return;
 
-            // Application order, both via store.ApplyPlanSettings (direct store
-            // mutation; deterministic in synced replay, reads only synced store).
-            // All-neutral values create no plan there.
-            if (store.pendingCopyActive)
-            {
-                // Copy path: apply the synced source plan settings.
-                store.ApplyPlanSettings(bp.thingIDNumber,
-                    store.pendingCopyMinSkill,
-                    store.pendingCopyInspired,
-                    store.pendingCopySpecialist,
-                    store.pendingCopyQuality,
-                    store.pendingCopyAutoBest);
-            }
-            else if (store.manageNewConstructionDefault)
+            // Copy scope exists only around its native synchronized placement.
+            // All-neutral copied settings deliberately suppress the defaults.
+            if (CopyPlacement.TryApply(store, bp)) return;
+            if (store.manageNewConstructionDefault)
             {
                 // Auto-create path: apply the store's construction defaults.
                 store.ApplyPlanSettings(bp.thingIDNumber,

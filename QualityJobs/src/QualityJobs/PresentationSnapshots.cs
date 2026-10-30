@@ -68,8 +68,10 @@ namespace QualityJobs
     }
 
     /// Immutable construction-plan values consumed by dialogs and gizmos.
-    /// Map is a stable externally owned identity; no mutable game collection is
-    /// exposed through this snapshot.
+    /// Map, target and construction definition are externally owned identities;
+    /// only gated builders inspect the target's current access state. Definition
+    /// reload and plan retargeting republish these dependencies. No mutable game
+    /// collection is exposed through this snapshot.
     internal sealed class PlanPresentationSnapshot
     {
         internal readonly int ThingId;
@@ -80,6 +82,8 @@ namespace QualityJobs
         internal readonly bool AutoBest;
         internal readonly ConstructionPlanState State;
         internal readonly Map? Map;
+        internal readonly Thing? Target;
+        internal readonly ThingDef? ConstructionDef;
 
         internal ResumeCondition Condition =>
             new ResumeCondition(MinSkill, RequireInspired, RequireSpecialist);
@@ -95,6 +99,8 @@ namespace QualityJobs
             AutoBest = plan.autoBest;
             State = plan.state;
             Map = target?.MapHeld;
+            Target = target;
+            ConstructionDef = target?.def;
         }
     }
 

@@ -4,6 +4,18 @@ using Verse;
 
 namespace QualityJobs.Patches
 {
+    [HarmonyPatch(typeof(UnfinishedThing), nameof(UnfinishedThing.Destroy))]
+    internal static class Patch_CancelUnfinishedWork
+    {
+        private static void Postfix(UnfinishedThing __instance, DestroyMode mode)
+        {
+            // Ordinary consumption must retain the entry until the native bill
+            // completion callback accounts for it. Cancellation has no callback.
+            if (mode == DestroyMode.Cancel)
+                QualityJobsStore.Active?.CancelUnfinishedWork(__instance);
+        }
+    }
+
     /// Keeps the stock-cap count cache current from narrow Thing lifecycle
     /// events, and invalidates bill/plan snapshots when their owning things move.
     /// The base-Thing patches perform only type tests for unrelated things and

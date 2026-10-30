@@ -1,0 +1,2 @@
+# Built diagnostic assemblies are deployed only into disposable managed runs.
+**/Mod/*/Assemblies/

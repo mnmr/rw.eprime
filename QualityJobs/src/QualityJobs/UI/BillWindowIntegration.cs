@@ -43,8 +43,9 @@ namespace QualityJobs.UI
         {
             if (!panels.TryGetValue(window, out _)) return;
             Rect rect = window.windowRect;
-            rect.x -= BillQualityPanel.PanelWidth / 2f;
-            rect.width += BillQualityPanel.PanelWidth;
+            float center = rect.center.x;
+            rect.width = Mathf.Min(rect.width + BillQualityPanel.PanelWidth, Verse.UI.screenWidth);
+            rect.x = Mathf.Clamp(center - rect.width / 2f, 0f, Verse.UI.screenWidth - rect.width);
             window.windowRect = rect.Rounded();
         }
 
@@ -53,7 +54,9 @@ namespace QualityJobs.UI
 
         // This replaces only Window's virtual contents CALL, not the contents
         // implementation. The original virtual dispatch and every other mod's
-        // patches still run on the same window with its original content width.
+        // patches still run on the same window. Vanilla's proportional columns
+        // share the available width on compact screens; the QJ column keeps its
+        // measured width. This geometry changes only on open/resolution events.
         internal static void DrawContents(Window window, Rect rect)
         {
             if (!panels.TryGetValue(window, out BillQualityPanel? panel))

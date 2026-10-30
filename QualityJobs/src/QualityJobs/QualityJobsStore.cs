@@ -130,21 +130,6 @@ namespace QualityJobs
         public int constructionTargetQualityDefault;
         public bool constructionAutoBestDefault;
 
-        // ---- pending-copy session state (Fix 4; NOT scribed) -------------------
-        //
-        // Synced runtime state for the vanilla build-copy command: when the
-        // player copies a managed thing, these carry the source plan's settings
-        // so the blueprint spawn hook (Fix 3) can apply them to placed copies on
-        // ALL clients from the SAME synced value. Deliberately not scribed:
-        // copy intent is transient session state and must load as inactive
-        // (pendingCopyActive = false) after any save/load.
-        public bool pendingCopyActive;
-        public int pendingCopyMinSkill;
-        public bool pendingCopyInspired;
-        public bool pendingCopySpecialist;
-        public int pendingCopyQuality;
-        public bool pendingCopyAutoBest;
-
         // Cache contract — Owner: this per-save store. Key: map identity plus
         // product defName. Value: spawned unfinished-item count. Dependencies:
         // UFT spawn/despawn and managed-recipe definition reload. Refresh:
@@ -517,7 +502,7 @@ namespace QualityJobs
             // artifacts immediately so a paused game cannot display stale recipe,
             // stock, overlay, eligibility, or expected-attempt data.
             RecountAndPool(publishStatusRevision: false);
-            PublishOverlayPresentations();
+            PublishPlanPresentations(rebuildOverlays: true);
             NotifyExternalPawnFactsChanged();
         }
 
@@ -828,6 +813,20 @@ namespace QualityJobs
             billAutoBest.Remove(billId);
             billPresentations.Remove(billId);
             billConfigRevisions.Remove(billId);
+        }
+
+        /// Deterministic AddBill lifecycle: attach the clipboard configuration
+        /// only after vanilla has assigned the new bill identity and stack.
+        internal void RestoreClonedBillConfig(Bill bill, BillConfigTransfer.Config config)
+        {
+            string id = BillIds.IdOf(bill);
+            billManaged[id] = config.Managed;
+            billAutoBest[id] = config.AutoBest;
+            billMinSkill[id] = ConfigurationLimits.Skill(config.MinSkill);
+            billRequireInspired[id] = config.Inspired;
+            billRequireSpecialist[id] = config.Specialist && ModsConfig.IdeologyActive;
+            billTargetQuality[id] = ConfigurationLimits.Quality(config.TargetQuality);
+            NotifyBillConfigurationChanged(id, affectsEligibility: true);
         }
 
         /// Removes every per-bill configuration key and presentation entry of
@@ -1305,7 +1304,7 @@ namespace QualityJobs
                 Map map = target.MapHeld;
                 QualityJobSettings settings = SettingsForApi(
                     plan.Condition, plan.autoBest, plan.minQuality,
-                    recipe: null, out double probability);
+                    recipe: null, out double probability, target.def);
 
                 ConstructionApiGroup? group = null;
                 for (int g = 0; g < groups.Count; g++)
@@ -1336,7 +1335,7 @@ namespace QualityJobs
 
         private QualityJobSettings SettingsForApi(in ResumeCondition condition,
             bool autoBest, int targetQuality, RecipeDef? recipe,
-            out double probability)
+            out double probability, ThingDef? constructionDef = null)
         {
             int skillGate = condition.MinSkill;
             targetQuality = ConfigurationLimits.Quality(targetQuality);
@@ -1344,7 +1343,7 @@ namespace QualityJobs
                 && Dispatcher.ResolveAutoBestFacts(recipe,
                     condition.RequireInspired, condition.RequireSpecialist,
                     out int resolvedSkill, out bool inspired, out int roleOffset,
-                    out int qualityBonusMilli) != null)
+                    out int qualityBonusMilli, constructionDef) != null)
             {
                 skillGate = resolvedSkill;
                 var finisher = new CandidateFacts(0, resolvedSkill, inspired,
@@ -1441,7 +1440,9 @@ namespace QualityJobs
                     && current.MinQuality == candidate.MinQuality
                     && current.AutoBest == candidate.AutoBest
                     && current.State == candidate.State
-                    && ReferenceEquals(current.Map, candidate.Map))
+                    && ReferenceEquals(current.Map, candidate.Map)
+                    && ReferenceEquals(current.Target, candidate.Target)
+                    && ReferenceEquals(current.ConstructionDef, candidate.ConstructionDef))
                     candidate = current;
                 next[thingId] = candidate;
             }
@@ -1616,45 +1617,35 @@ namespace QualityJobs
 
         private void QuarantineExistingBills()
         {
-            List<Map> maps = Find.Maps;
-            for (int m = 0; m < maps.Count; m++)
+            List<Bill_ProductionWithUft> bills = LiveBills.Collect();
+            for (int b = 0; b < bills.Count; b++)
             {
-                List<Thing> potentialGivers = maps[m].listerThings
-                    .ThingsInGroup(ThingRequestGroup.PotentialBillGiver);
-                for (int t = 0; t < potentialGivers.Count; t++)
-                {
-                    if (potentialGivers[t] is not IBillGiver giver) continue;
-                    List<Bill> bills = giver.BillStack.Bills;
-                    for (int b = 0; b < bills.Count; b++)
-                    {
-                        if (bills[b] is not Bill_ProductionWithUft bill) continue;
-                        string id = BillIds.IdOf(bill);
-                        bool hasExplicitOverride = billManaged.ContainsKey(id);
-                        if (!ExistingBillMigrationPolicy.ShouldQuarantine(
-                                firstInitialization: true,
-                                supportsQualityJobs: ManagedRecipes.IsManagedRecipe(bill.recipe),
-                                hasExplicitOverride,
-                                manageNewBillsDefault,
-                                targetQualityDefault))
-                            continue;
+                Bill_ProductionWithUft bill = bills[b];
+                string id = BillIds.IdOf(bill);
+                bool hasExplicitOverride = billManaged.ContainsKey(id);
+                if (!ExistingBillMigrationPolicy.ShouldQuarantine(
+                        firstInitialization: true,
+                        supportsQualityJobs: ManagedRecipes.IsManagedRecipe(bill.recipe),
+                        hasExplicitOverride,
+                        manageNewBillsDefault,
+                        targetQualityDefault))
+                    continue;
 
-                        // Install the safe override before any post-load tick can
-                        // reach the completion gate. The dialog later changes
-                        // only these recorded bills if the user opts in.
-                        ExistingBillMigrationConfig config =
-                            ExistingBillMigrationPolicy.ConfigurationFor(
-                                enableQualityJobs: false);
-                        billManaged[id] = config.Managed;
-                        billAutoBest[id] = config.AutoBest;
-                        billRequireInspired[id] = config.RequireInspired;
-                        billRequireSpecialist[id] = config.RequireSpecialist;
-                        billTargetQuality[id] = config.TargetQuality;
-                        BumpRevisionFor(billConfigRevisions, id);
-                        billPresentations.Remove(id);
-                        InvalidateManagedJobs();
-                        pendingExistingBillMigrationIds.Add(id);
-                    }
-                }
+                // Install the safe override before any post-load tick can
+                // reach the completion gate. The dialog later changes
+                // only these recorded bills if the user opts in.
+                ExistingBillMigrationConfig config =
+                    ExistingBillMigrationPolicy.ConfigurationFor(
+                        enableQualityJobs: false);
+                billManaged[id] = config.Managed;
+                billAutoBest[id] = config.AutoBest;
+                billRequireInspired[id] = config.RequireInspired;
+                billRequireSpecialist[id] = config.RequireSpecialist;
+                billTargetQuality[id] = config.TargetQuality;
+                BumpRevisionFor(billConfigRevisions, id);
+                billPresentations.Remove(id);
+                InvalidateManagedJobs();
+                pendingExistingBillMigrationIds.Add(id);
             }
         }
 
@@ -1786,10 +1777,38 @@ namespace QualityJobs
                 WorkItemEntry e = entries[i];
                 if (e.state == WorkItemState.Shared
                     && ReferenceEquals(e.sourceBill, bill)
-                    && e.uft != null && !e.uft.Destroyed)
+                    && SharedWorkCompatibility.Matches(e, bill))
                     return true;
             }
             return false;
+        }
+
+        internal bool CanStartBillPreparation(Bill_ProductionWithUft bill)
+        {
+            bool finish = IsFinishBill(bill);
+            bool managed = ConfigFor(bill).Managed && ManagedRecipes.IsManagedRecipe(bill.recipe);
+            bool fixedCount = bill.repeatMode == BillRepeatModeDefOf.RepeatCount;
+            int pending = 0;
+            if (managed && fixedCount && !finish)
+                for (int i = 0; i < entries.Count; i++)
+                {
+                    WorkItemEntry entry = entries[i];
+                    if (!ReferenceEquals(entry.sourceBill, bill)
+                        || entry.uft == null || entry.uft.Destroyed) continue;
+                    if (entry.state == WorkItemState.Shared
+                        && !SharedWorkCompatibility.Matches(entry, bill)) continue;
+                    pending++;
+                }
+            return BillLifecyclePolicy.CanStartPreparation(managed, fixedCount,
+                bill.repeatCount, pending, finish);
+        }
+
+        internal void CancelUnfinishedWork(UnfinishedThing item)
+        {
+            WorkItemEntry? entry = FindByUft(item);
+            if (entry == null || !item.Destroyed) return;
+            Dispatcher.DeleteFinishBill(this, entry);
+            RemoveEntry(entry);
         }
 
         public bool IsFinishBill(Bill? bill)
@@ -2148,22 +2167,9 @@ namespace QualityJobs
             if (removedPlans != 0) NotifyPlanStructureChanged();
 
             var liveBillIds = new HashSet<string>();
-            for (int m = 0; m < maps.Count; m++)
-            {
-                Map map = maps[m];
-                List<Thing> potentialGivers =
-                    map.listerThings.ThingsInGroup(ThingRequestGroup.PotentialBillGiver);
-                for (int t = 0; t < potentialGivers.Count; t++)
-                {
-                    if (potentialGivers[t] is not IBillGiver giver) continue;
-                    List<Bill> bills = giver.BillStack.Bills;
-                    for (int b = 0; b < bills.Count; b++)
-                    {
-                        if (bills[b] is Bill_ProductionWithUft bill)
-                            liveBillIds.Add(BillIds.IdOf(bill));
-                    }
-                }
-            }
+            List<Bill_ProductionWithUft> liveBills = LiveBills.Collect();
+            for (int i = 0; i < liveBills.Count; i++)
+                liveBillIds.Add(BillIds.IdOf(liveBills[i]));
 
             var deadKeys = new List<string>();
 
@@ -2264,7 +2270,6 @@ namespace QualityJobs
                     plans.RemoveAt(i);
                 }
             }
-            pendingCopyActive = false;
             RebuildEntryIndex();
             RecountDispatchedFinishers();
         }

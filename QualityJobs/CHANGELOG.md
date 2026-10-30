@@ -1,5 +1,27 @@
 ﻿# Changelog
 
+## 1.2.4 — 2026-10-30
+
+- Fixed: Some allocations were not disposed on exit to main menu.
+- Fixed: Build copy now preserves the original blueprint's Quality Jobs settings.
+- Fixed: Construction no longer gets stuck waiting for a finisher below the building's required skill.
+- Fixed: Manual construction finishing now skips workers whose allowed area excludes the building.
+- Fixed: Copying and pasting bills now preserves their Quality Jobs settings.
+- Fixed: Changing a bill's allowed materials no longer leaves it blocked by incompatible unfinished work.
+- Fixed: Cancelling unfinished work now removes its temporary finishing bill, preventing unwanted replacement work.
+- Fixed: Fixed-count bills no longer prepare more items than requested, committing only the needed ingredient batches when preparation starts.
+- Fixed: Saving with an uninstalled workbench now preserves its bills' Quality Jobs settings.
+- Fixed: Installing Quality Jobs no longer accidentally enables management for existing bills in uninstalled workbenches.
+- Fixed: Disabling Quality Jobs while unfinished work is being carried no longer leaves it impossible to finish.
+- Fixed: Bill and Options windows now fit smaller supported screens and resize correctly when UI scale changes.
+- Fixed: Newly opened bill panels now show when no eligible finishers are available.
+- Fixed: Finishing shared work now preserves styles selected through Craft with Color.
+- Fixed: Pasting a bill copied while Quality Jobs was disabled, or before disabling and re-enabling it, no longer fails.
+- Fixed: Construction status and quality estimates now respect building skill requirements, and eligible-finisher counts reflect who can reach the job.
+- Fixed: Build-copy settings no longer affect unrelated placements or automatic rebuilding.
+- Fixed: Craft with Color's Basic style now stays unstyled, even when the finisher's ideology supplies a style.
+- Fixed: Craft with Color's Random style now chooses a style when each item finishes instead of repeating a saved choice.
+
 ## 1.2.3 — 2026-10-30
 
 - Changed: Clarified some help texts and tooltips.

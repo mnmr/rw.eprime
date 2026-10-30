@@ -43,6 +43,9 @@ namespace QualityJobs.Patches
         {
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return;
+            // A one-shot finisher belongs only to its bound item. If that item
+            // vanished, it must not adopt another unfinished item of the recipe.
+            if (store.IsFinishBill(bill)) { __result = null; return; }
             if (__result != null
                 && !RobotPreparation.AllowsBillWork(store, pawn, bill, __result))
                 __result = null;
@@ -73,7 +76,7 @@ namespace QualityJobs.Patches
                 StyleKey entryKey = e.snapshot?.ToStyleKey() ?? StyleKey.Unknown;
                 if (!ShareMatch.StyleCompatible(entryKey, billKey)) continue;
                 if (t.IsForbidden(pawn) || !pawn.CanReserve(t)) continue;
-                if (!IngredientsAllowed(t, bill)) continue;
+                if (!SharedWorkCompatibility.IngredientsAllowed(t, bill)) continue;
                 if (!pawn.CanReach(t, PathEndMode.Touch, pawn.NormalMaxDanger())) continue;
                 float d = (t.Position - pawn.Position).LengthHorizontalSquared;
                 // Intentionally simpler than vanilla's GenClosest (straight-line
@@ -89,12 +92,6 @@ namespace QualityJobs.Patches
             if (best != null) __result = best;
         }
 
-        private static bool IngredientsAllowed(UnfinishedThing t, Bill bill)
-        {
-            for (int i = 0; i < t.ingredients.Count; i++)
-                if (!bill.IsFixedOrAllowedIngredient(t.ingredients[i].def)) return false;
-            return true;
-        }
     }
 
     /// FinishUftJob hard-errors when Creator != pawn (WorkGiver_DoBill.cs:170-174).
