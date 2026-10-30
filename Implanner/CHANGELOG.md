@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.2 — 2026-10-30
 
 - Fixed: Surgery holdbacks, concurrency, and doctor requirements now stay valid when options or patient conditions change.
 - Fixed: Quality upgrades avoid fatal intermediate removals, and healed limbs reject inferior reserved implants.

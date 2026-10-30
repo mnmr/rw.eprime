@@ -1,0 +1,7 @@
+<ModMetaData>
+  <name>Implanner implant safety regression probe</name>
+  <author>Implanner tests</author>
+  <packageId>eprime.implanner.implantsafety</packageId>
+  <supportedVersions><li>1.6</li></supportedVersions>
+  <modDependencies><li><packageId>eprime.implanner</packageId><displayName>Implanner</displayName></li></modDependencies>
+</ModMetaData>
