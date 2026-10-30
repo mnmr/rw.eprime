@@ -163,6 +163,7 @@ namespace Implanner
                 var work = new List<SurgeryWorkItem>();
                 var requiredItemDef = new Dictionary<(int, string), ThingDef>();
                 var minimumQuality = new Dictionary<(int, string), int>();
+                var acceptedQualities = new Dictionary<(int, string), int>();
                 for (int i = 0; i < colony.PawnIds.Count; i++)
                 {
                     int pawnId = colony.PawnIds[i];
@@ -209,6 +210,8 @@ namespace Implanner
                         }
                         requiredItemDef[(pawnId, key)] = item;
                         minimumQuality[(pawnId, key)] = minimum;
+                        acceptedQualities[(pawnId, key)] = PawnProjection.AcceptableQualities(
+                            pawn, entry!, part, evaluation.Plan.MinQuality);
                         work.Add(new SurgeryWorkItem(pawnId, priority,
                             StarRanking.TierOf(model.ImplantStarsOf(goal.ImplantDefName)),
                             key, goal.ImplantDefName, entry!.Limb, candidate,
@@ -249,7 +252,8 @@ namespace Implanner
                     List<int> stockQualities = qualitiesByDef[required];
                     int pick = ImplantQuality.Choose(stockQualities,
                         minimumQuality[(unit.PawnId, unit.GoalKey)],
-                        preferLowest: model.UpgradeByPriority);
+                        preferLowest: model.UpgradeByPriority,
+                        acceptableQualities: acceptedQualities[(unit.PawnId, unit.GoalKey)]);
                     if (pick < 0) continue;
                     Thing thing = stock[pick];
                     stock.RemoveAt(pick);
@@ -900,6 +904,13 @@ namespace Implanner
                 ? pass.FindBill(pawn.BillStack, recordedId)
                 : null;
             var change = PlannerChange.None;
+
+            if (entry.UpgradesFrom != null && recipe.addsHediff == entry.Def
+                && !ImplantSurgerySafety.AcceptsWithoutItem(pawn, entry.Def, part))
+            {
+                if (recorded != null) pawn.BillStack.Delete(recorded);
+                return recordedId != null ? model.RemoveOwnedBill(pawnId, goalKey) : PlannerChange.None;
+            }
 
             // Never a surgery that destroys something for good: our own
             // operation is withdrawn if such a hediff appeared since, and

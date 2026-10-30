@@ -50,6 +50,7 @@ namespace Implanner
         private List<string>? reinstallDefs;
         private List<int>? reinstallParts;
         private List<int>? reinstallQualities;
+        private List<float>? reinstallMinimumEfficiencies;
         private List<bool>? reinstallActive;
         private List<int>? designatedBenchIds;
         // Parallel pairs: each bill that was already suspended when its
@@ -324,6 +325,7 @@ namespace Implanner
                 reinstallDefs = new List<string>();
                 reinstallParts = new List<int>();
                 reinstallQualities = new List<int>();
+                reinstallMinimumEfficiencies = new List<float>();
                 reinstallActive = new List<bool>();
                 var reinstallPawns = new List<int>(Model.Reinstalls.Keys);
                 reinstallPawns.Sort();
@@ -337,6 +339,7 @@ namespace Implanner
                         reinstallDefs.Add(records[k].ImplantDefName);
                         reinstallParts.Add(records[k].PartIndex);
                         reinstallQualities.Add(records[k].Quality);
+                        reinstallMinimumEfficiencies.Add(records[k].MinimumEfficiency);
                         reinstallActive.Add(records[k].Active);
                     }
                 }
@@ -408,6 +411,7 @@ namespace Implanner
             Scribe_Collections.Look(ref reinstallDefs, "reinstallDefs", LookMode.Value);
             Scribe_Collections.Look(ref reinstallParts, "reinstallParts", LookMode.Value);
             Scribe_Collections.Look(ref reinstallQualities, "reinstallQualities", LookMode.Value);
+            Scribe_Collections.Look(ref reinstallMinimumEfficiencies, "reinstallMinimumEfficiencies", LookMode.Value);
             Scribe_Collections.Look(ref reinstallActive, "reinstallActive", LookMode.Value);
             Scribe_Collections.Look(ref designatedBenchIds, "designatedBenches", LookMode.Value);
             Scribe_Collections.Look(ref designatedBillBenches, "designatedBillBenches", LookMode.Value);
@@ -564,7 +568,9 @@ namespace Implanner
                             Model.AddLoadedReinstall(reinstallPawnIds[i],
                                 new ReinstallRecord(reinstallWiperKeys[i],
                                     reinstallDefs[i], reinstallParts[i],
-                                    reinstallQualities[i], reinstallActive[i]));
+                                    reinstallQualities[i], reinstallActive[i],
+                                    reinstallMinimumEfficiencies != null && i < reinstallMinimumEfficiencies.Count
+                                        ? reinstallMinimumEfficiencies[i] : 0f));
                 if (designatedBenchIds != null)
                 {
                     bool pairsValid = designatedBillBenches != null
@@ -625,6 +631,7 @@ namespace Implanner
                 reinstallDefs = null;
                 reinstallParts = null;
                 reinstallQualities = null;
+                reinstallMinimumEfficiencies = null;
                 reinstallActive = null;
                 designatedBenchIds = null;
                 designatedBillBenches = null;

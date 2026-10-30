@@ -151,12 +151,14 @@ namespace Implanner
         /// the part natural, 100% plus any quality stage offset. Equal at
         /// every quality for items without one.
         internal static float[] AfterInstall(ImplantCatalogEntry entry)
+            => AfterInstall(entry.Def, entry.IsReplacement);
+
+        internal static float[] AfterInstall(HediffDef def, bool replacement)
         {
             Resolve();
-            HediffDef def = entry.Def;
             var result = new float[Qualities];
             bool qbr = qbrIsQualityBionic != null && qbrIsQualityBionic(def);
-            float base_ = entry.IsReplacement ? def.addedPartProps?.partEfficiency ?? 1f : 1f;
+            float base_ = replacement ? def.addedPartProps?.partEfficiency ?? 1f : 1f;
             bool staged = HasComp(def, vgeCompProps);
             for (int q = 0; q < Qualities; q++)
             {
@@ -165,6 +167,20 @@ namespace Implanner
                 result[q] = value;
             }
             return result;
+        }
+
+        /// A recipe which creates a hediff without an implant ingredient
+        /// does not inherit the old hediff's quality. QBR constructs Normal
+        /// and only transfers quality from a matching ingredient. For other
+        /// quality mechanisms require the worst possible result to be safe.
+        internal static float AfterInstallWithoutItem(HediffDef def, bool replacement)
+        {
+            float[] values = AfterInstall(def, replacement);
+            if (qbrIsQualityBionic != null && qbrIsQualityBionic(def) && !HasComp(def, vgeCompProps))
+                return values[(int)QualityCategory.Normal];
+            float worst = values[0];
+            for (int i = 1; i < values.Length; i++) worst = Math.Min(worst, values[i]);
+            return worst;
         }
 
         /// The installed implant's efficiency as the game computes it,

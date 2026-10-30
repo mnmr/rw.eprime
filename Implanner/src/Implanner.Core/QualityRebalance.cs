@@ -9,7 +9,8 @@ namespace Implanner.Core
     public readonly struct QualityHolder
     {
         public QualityHolder(int priority, int pawnId, string key, int quality,
-            int itemId, int minimum, bool available)
+            int itemId, int minimum, bool available,
+            int acceptableQualities = ImplantQuality.AllQualities)
         {
             Priority = priority;
             PawnId = pawnId;
@@ -18,6 +19,7 @@ namespace Implanner.Core
             ItemId = itemId;
             Minimum = minimum;
             Available = available;
+            AcceptableQualities = acceptableQualities;
         }
 
         /// The colonist's priority level: 0 first … 4 last.
@@ -33,6 +35,7 @@ namespace Implanner.Core
 
         /// The lowest quality a reservation's slot accepts.
         public int Minimum { get; }
+        public int AcceptableQualities { get; }
 
         /// A reservation may swap or give up its item (no operation is
         /// scheduled for it yet); an installed implant may be replaced now
@@ -125,6 +128,7 @@ namespace Implanner.Core
                 int poolPick = -1;
                 for (int i = 0; i < pool.Count; i++)
                     if (pool[i].Quality >= floor
+                        && ImplantQuality.Accepts(holder.AcceptableQualities, pool[i].Quality)
                         && (poolPick < 0 || pool[i].Quality > pool[poolPick].Quality
                             || (pool[i].Quality == pool[poolPick].Quality
                                 && pool[i].ItemId < pool[poolPick].ItemId)))
@@ -137,7 +141,8 @@ namespace Implanner.Core
                     int v = order[r];
                     if (holders[v].Installed || !holders[v].Available
                         || holders[v].Priority <= holder.Priority
-                        || item[v] == NoItem || quality[v] < floor)
+                        || item[v] == NoItem || quality[v] < floor
+                        || !ImplantQuality.Accepts(holder.AcceptableQualities, quality[v]))
                         continue;
                     if (victim < 0 || quality[v] >= quality[victim]) victim = v;
                 }
@@ -151,7 +156,8 @@ namespace Implanner.Core
                     item[h] = item[victim];
                     quality[h] = quality[victim];
                     if (!holder.Installed && oldItem != NoItem
-                        && oldQuality >= holders[victim].Minimum)
+                        && oldQuality >= holders[victim].Minimum
+                        && ImplantQuality.Accepts(holders[victim].AcceptableQualities, oldQuality))
                     {
                         item[victim] = oldItem;
                         quality[victim] = oldQuality;

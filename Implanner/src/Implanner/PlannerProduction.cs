@@ -359,7 +359,9 @@ namespace Implanner
                         stock.Add(need.Item, things);
                     }
                     int pick = things.Count - 1;
-                    if (pick >= 0 && ImplantQualities.QualityOf(things[pick]) >= need.MinQuality)
+                    while (pick >= 0 && (ImplantQualities.QualityOf(things[pick]) < need.MinQuality
+                        || !ImplantQuality.Accepts(need.AcceptableQualities, ImplantQualities.QualityOf(things[pick])))) pick--;
+                    if (pick >= 0)
                     {
                         ProtectedItems.Add(things[pick].thingIDNumber);
                         things.RemoveAt(pick);
@@ -417,7 +419,7 @@ namespace Implanner
                 PruneDeleted();
                 var queue = new List<CraftNeed<ThingDef>>();
                 for (int i = 0; i < missing.Count; i++)
-                    if (supply.Take(missing[i].Item, 1, missing[i].MinQuality) > 0)
+                    if (supply.Take(missing[i].Item, 1, missing[i].MinQuality, missing[i].AcceptableQualities) > 0)
                         queue.Add(missing[i]);
 
                 var skipped = new List<ThingDef>();
@@ -425,9 +427,9 @@ namespace Implanner
                 {
                     // A newly placed multi-output bill may cover later slots.
                     var need = queue[i];
-                    if (supply.Take(need.Item, 1, need.MinQuality) == 0) continue;
+                    if (supply.Take(need.Item, 1, need.MinQuality, need.AcceptableQualities) == 0) continue;
                     Craft result = TryCraft(need.Item, 0, need.MinQuality);
-                    if (result == Craft.Created) supply.Take(need.Item, 1, need.MinQuality);
+                    if (result == Craft.Created) supply.Take(need.Item, 1, need.MinQuality, need.AcceptableQualities);
                     else if (result == Craft.Blocked) skipped.Add(need.Item);
                 }
                 BuildAhead(skipped);
@@ -548,7 +550,8 @@ namespace Implanner
                             candidate = PawnProjection.CandidateOf(pawn);
                             sampled = true;
                         }
-                        itemOf[(pawnId, missing[k])] = new CraftNeed<ThingDef>(item, minimum);
+                        itemOf[(pawnId, missing[k])] = new CraftNeed<ThingDef>(item, minimum,
+                            PawnProjection.AcceptableQualities(pawn, entry!, part, evaluation.Plan.MinQuality));
                         work.Add(new SurgeryWorkItem(pawnId, priority,
                             StarRanking.TierOf(model.ImplantStarsOf(goal.ImplantDefName)),
                             missing[k], goal.ImplantDefName, entry!.Limb, candidate,

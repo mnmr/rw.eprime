@@ -10,6 +10,30 @@ public class QualityRebalanceTests
 {
     const string Arm = "p1:BionicArm:0";
 
+    [Test]
+    public async Task AnUpgradeAndItsReturnedItemMustBothMeetTheirRecipientsEfficiencyFloor()
+    {
+        float[] efficiencies = { .625f, .9375f, 1.25f, .625f, 1.875f, 2.125f, 2.5f };
+        int safe = ImplantQuality.AcceptableQualities(efficiencies, 1.25f, 0);
+        var installed = new[] { new QualityHolder(0, 1, Arm, 2, -1, 0, true, safe) };
+        await Assert.That(QualityRebalance.Plan(installed,
+            new[] { new SpareItem(10, 3) }, 1).Count).IsEqualTo(0);
+        var moves = Moves(QualityRebalance.Plan(installed,
+            new[] { new SpareItem(10, 3), new SpareItem(11, 4) }, 1));
+        await Assert.That(moves[0]).IsEqualTo(11);
+
+        // Ann's Good arm is acceptable for her missing limb, but cannot be
+        // handed to Ben's intact arm when Ann takes Ben's Excellent one.
+        var holders = new[]
+        {
+            new QualityHolder(0, 1, Arm, 3, 10, 0, true),
+            new QualityHolder(3, 2, Arm, 4, 11, 2, true, safe),
+        };
+        moves = Moves(QualityRebalance.Plan(holders, new SpareItem[0], 0));
+        await Assert.That(moves[0]).IsEqualTo(11);
+        await Assert.That(moves[1]).IsEqualTo(-1);
+    }
+
     static QualityHolder Installed(int priority, int pawnId, int quality) =>
         new QualityHolder(priority, pawnId, Arm, quality, itemId: -1, minimum: 0, available: true);
 

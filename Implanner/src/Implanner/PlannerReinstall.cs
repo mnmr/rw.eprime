@@ -94,7 +94,17 @@ namespace Implanner
             }
             if (bill != null && def != null && part != null
                 && (bill.recipe != RecipeDefOf.RemoveBodyPart
-                    || PlannerUpgrades.SafeToRemovePart(pawn, part))) return change;
+                    || PlannerUpgrades.SafeToRemovePart(pawn, part)))
+            {
+                float floor = Math.Max(record.MinimumEfficiency, RecoverablePartEfficiency.Of(pawn, part));
+                if (floor != record.MinimumEfficiency)
+                {
+                    record = new ReinstallRecord(record.WiperKey, record.ImplantDefName,
+                        record.PartIndex, record.Quality, false, floor);
+                    change |= model.SetPendingReinstalls(pawnId, removalKey, new[] { record });
+                }
+                if (ImplantSurgerySafety.CanRemoveForUpgrade(model, pawn, record)) return change;
+            }
             if (bill != null) pawn.BillStack.Delete(bill);
             change |= model.RemoveOwnedBill(pawnId, removalKey);
             int itemId = ReservedItem(model, pawnId, record.Key);
@@ -122,12 +132,15 @@ namespace Implanner
             int itemId = ReservedItem(model, pawnId, key);
             if (itemId < 0)
             {
-                Thing? pick = PickItem(colony, index, item, record.Quality, reservedItems);
+                Thing? pick = PickItem(colony, index, item, record.Quality, reservedItems,
+                    pawn, def, part, record.MinimumEfficiency);
                 if (pick == null)
                 {
-                    // Nothing of the kind left at the colony at all (sold,
-                    // destroyed): there is nothing to put back.
-                    return colony.ItemIdsOf(item) == null && !AnyCarried(colony, item)
+                    // An upgrade's removed limb still sets the floor even
+                    // after all stock is lost. Forgetting it would let an
+                    // inferior item later qualify for the now-missing limb.
+                    return !GoalKeys.IsUpgrade(record.WiperKey) && record.MinimumEfficiency == 0f
+                        && colony.ItemIdsOf(item) == null && !AnyCarried(colony, item)
                         ? change | Finish(model, pass, pawn, pawnId, key)
                         : change;
                 }
@@ -137,7 +150,8 @@ namespace Implanner
             }
 
             if (!index.ItemsById.ContainsKey(itemId) || !index.SameColony(pawnId, itemId)
-                || !PlannerSurgery.Healthy(pawn))
+                || !PlannerSurgery.Healthy(pawn)
+                || !ImplantSurgerySafety.Accepts(pawn, def, part, index.ItemsById[itemId], 0, record.MinimumEfficiency))
                 return change;
             RecipeDef? recipe = RecipeFor(pawn, def, part, checkWorker: true);
             if (recipe == null) return change;
@@ -280,7 +294,8 @@ namespace Implanner
         /// A free, unforbidden item of the kind at the colony: the pushed-out
         /// quality first, else the best one, oldest among equals.
         private static Thing? PickItem(Colony colony, ColonyIndex index, ThingDef def,
-            int quality, HashSet<int> reservedItems)
+            int quality, HashSet<int> reservedItems, Pawn pawn, HediffDef implant,
+            BodyPartRecord part, float minimumEfficiency)
         {
             List<int>? ids = colony.ItemIdsOf(def);
             if (ids == null) return null;
@@ -291,6 +306,7 @@ namespace Implanner
                 if (reservedItems.Contains(ids[i])) continue;
                 Thing thing = index.ItemsById[ids[i]];
                 if (thing.IsForbidden(Faction.OfPlayer)) continue;
+                if (!ImplantSurgerySafety.Accepts(pawn, implant, part, thing, 0, minimumEfficiency)) continue;
                 int q = ImplantQualities.QualityOf(thing);
                 if (q == quality) return thing;
                 if (q > bestQuality)
@@ -300,6 +316,21 @@ namespace Implanner
                 }
             }
             return best;
+        }
+
+        internal static bool AcceptsReservedItem(PlannerModel model, Pawn pawn, string key, Thing item)
+        {
+            var records = model.ReinstallsFor(pawn.thingIDNumber);
+            for (int i = 0; records != null && i < records.Count; i++)
+            {
+                ReinstallRecord record = records[i];
+                if (record.Key != key) continue;
+                HediffDef? def = DefDatabase<HediffDef>.GetNamedSilentFail(record.ImplantDefName);
+                BodyPartRecord? part = PartAt(pawn, record.PartIndex);
+                return def != null && part != null
+                    && ImplantSurgerySafety.Accepts(pawn, def, part, item, 0, record.MinimumEfficiency);
+            }
+            return false;
         }
 
         private static bool AnyCarried(Colony colony, ThingDef def)

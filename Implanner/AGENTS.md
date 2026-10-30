@@ -34,23 +34,40 @@ any, synced `SetPlanMinQuality`, scribed `minQuality`, exported as
 `MinQuality="Good"`; a new extending plan starts with its base's value; the
 assigned plan's value covers every effective goal, inherited ones included;
 items without quality ignore it). The plan editor offers it only while a
-catalog item carries a quality. A slot accepts the lowest quality at or above
-that minimum whose implant leaves the part no worse than it is now
-(`ImplantQuality.MinimumAcceptable` over `ImplantQualities.AfterInstall`
-against `PawnCapacityUtility.CalculatePartEfficiency`): an implant worse than
-a healthy part never replaces it, but fills a missing or damaged one; a slot
-nothing satisfies waits. Allocation takes the HIGHEST acceptable item, oldest
+catalog item carries a quality. A slot accepts only actual qualities at or above
+that minimum whose implant leaves the part no worse than its recoverable efficiency
+(`RecoverablePartEfficiency`, owner 2026-10-30): nonpermanent injuries never lower
+the floor; permanent scars remain unless regeneration, a healing gene or a
+permanent-wound-healing comp can heal them. Negative stage effects are treated
+conservatively as recoverable. Existing implant efficiency and positive offsets
+are retained, and the floor is never below the game's current efficiency.
+Missing parts may take weaker replacements unless active regeneration can restore
+them. `ImplantQuality.AcceptableQualities` checks each quality independently;
+custom QBR multipliers need not increase with quality. A slot nothing satisfies
+waits. Allocation takes the HIGHEST acceptable item, oldest
 among equals, or the lowest with the "better implants to high-priority
 colonists" option (below). Evaluation reads each installed implant's
 efficiency per instance (`ImplantQualities.InstalledEfficiency`), and the
 substitution floor is the goal's implant at the plan minimum raised until it
 is no worse than a natural part. An installed exact kind below the minimum
 still counts as done. A reservation whose item
-falls below its plan's minimum or the current part-efficiency floor (including healing) is released.
+falls below its plan's minimum or recoverable efficiency floor is released.
 Operations install their reserved item: the implant is a fixed ingredient,
 accepted by `Bill.IsFixedOrAllowedIngredient` before the bill's filter, so
 `Patch_BoundSurgeryIngredient` refuses every other implant item for a bill in
 the published `SurgeryBindings` map (reservation plus owned-bill record).
+Owned medical jobs additionally check their actual placed implant before
+`Toils_Recipe.DoRecipeWork` and `FinishRecipeAndStartStoringProduct` init actions.
+These one-time job boundaries reject unsafe work before anesthesia or final
+ingredient consumption, including jobs already holding a stale selection.
+There is no render/tick polling and the patch does not mutate the shared model.
+Manual operations are outside this protection. Item-free upgrades use the
+worker's resulting quality (QBR defaults to Normal), never an assumed transfer.
+Two-step quality upgrades persist `ReinstallRecord.MinimumEfficiency` in the
+parallel `reinstallMinimumEfficiencies` list; removal requires a valid replacement
+and a captured floor at least as high as the current recoverable one. Reinstalls
+retain that floor after removal, save/load, item reselection and complete stock
+loss; an active quality-upgrade record waits until a safe implant is installed.
 
 Implant reservations (`PlannerModel.ImplantReserves`, Surgery domain) hold
 stock back for manual use: surgery allocation only reserves items while at

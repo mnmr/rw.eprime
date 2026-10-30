@@ -4,6 +4,19 @@ namespace Implanner.Core.Tests;
 
 public class ProductionSupplyTests
 {
+    [Test]
+    public async Task AnInferiorHigherQualityDoesNotCoverARecoverableLimbsDemand()
+    {
+        var supply = new ProductionSupply<string>();
+        supply.Add("Arm", "good-but-inferior", 1, 3);
+        int accepted = ImplantQuality.AcceptableQualities(
+            new[] { .625f, .9375f, 1.25f, .625f, 1.875f, 2.125f, 2.5f }, 1f, 0);
+        await Assert.That(supply.Take("Arm", 1, 2, accepted)).IsEqualTo(1);
+        supply.Add("Arm", "normal-and-safe", 1, 2);
+        await Assert.That(supply.Take("Arm", 1, 2, accepted)).IsEqualTo(0);
+        await Assert.That(supply.Uses("good-but-inferior")).IsFalse();
+        await Assert.That(supply.Uses("normal-and-safe")).IsTrue();
+    }
     // One arm is a colonist's final goal; two more are ingredients for upgrades.
     // Treating pending crafts separately for those uses double-spends the arm,
     // or cancels the ingredient bill merely because the arm is also a goal.

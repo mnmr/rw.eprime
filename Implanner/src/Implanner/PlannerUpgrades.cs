@@ -92,7 +92,8 @@ namespace Implanner
                     bool movable = model.OwnedBill(pawnId, reservation.GoalKey) == null;
                     int quality = ImplantQualities.QualityOf(thing);
                     kind.Reservations.Add(new QualityHolder(model.PriorityOf(pawnId), pawnId,
-                        reservation.GoalKey, quality, itemId, minimum, movable));
+                        reservation.GoalKey, quality, itemId, minimum, movable,
+                        PawnProjection.AcceptableQualities(pawn, entry!, part, evaluation.Plan.MinQuality)));
                     if (movable && quality > kind.BestOffer) kind.BestOffer = quality;
                 }
 
@@ -130,7 +131,9 @@ namespace Implanner
                                 continue;
                             kind.Installed.Add(new QualityHolder(model.PriorityOf(pawnId),
                                 pawnId, GoalKeys.ImplantSlot(goals[g], ordinals[o]),
-                                quality, -1, 0, available: true));
+                                quality, -1, 0, available: true,
+                                acceptableQualities: PawnProjection.AcceptableQualities(
+                                    pawn, entry, part!, evaluation.Plan.MinQuality)));
                             kind.Targets.Add(new Target(pawn, part!, entry.Def, quality));
                         }
                     }
@@ -192,7 +195,7 @@ namespace Implanner
             string removalKey = GoalKeys.Upgrade(target.Def.defName, partIndex);
             int quality = ImplantQualities.QualityOf(pass.Index.ItemsById[itemId]);
             var record = new ReinstallRecord(removalKey, target.Def.defName, partIndex,
-                quality, active: false);
+                quality, active: false, minimumEfficiency: RecoverablePartEfficiency.Of(pawn, target.Part));
             Hediff hediff = HediffOn(pawn, target.Def, target.Part)!;
             RecipeDef recipe = RemovalFor(pawn, Catalogs.ImplantByDefName(target.Def.defName)!,
                 hediff, target.Part)!;

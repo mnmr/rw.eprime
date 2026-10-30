@@ -31,7 +31,8 @@ namespace Implanner.Core
             list.Add(new Output { Bill = bill, Count = count, Quality = quality });
         }
         /// Returns the shortfall after spending pending output exactly once.
-        public int Take(T item, int count, int minimum = 0)
+        public int Take(T item, int count, int minimum = 0,
+            int acceptableQualities = ImplantQuality.AllQualities)
         {
             if (!outputs.TryGetValue(item, out var list)) return count;
             while (count > 0)
@@ -41,7 +42,8 @@ namespace Implanner.Core
                 {
                     Output output = list[i];
                     if (output.Count <= 0 || (output.Quality != ProductionQueue.UnknownQuality
-                        && output.Quality < minimum)) continue;
+                        && (output.Quality < minimum
+                            || !ImplantQuality.Accepts(acceptableQualities, output.Quality)))) continue;
                     if (chosen == null || (output.Quality != ProductionQueue.UnknownQuality
                         && (chosen.Quality == ProductionQueue.UnknownQuality
                             || output.Quality < chosen.Quality))) chosen = output;

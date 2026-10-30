@@ -1482,7 +1482,8 @@ namespace Implanner.Core
             var added = new List<ReinstallRecord>(records.Count);
             for (int i = 0; i < records.Count; i++)
                 added.Add(new ReinstallRecord(wiperKey, records[i].ImplantDefName,
-                    records[i].PartIndex, records[i].Quality, active: false));
+                    records[i].PartIndex, records[i].Quality, active: false,
+                    minimumEfficiency: records[i].MinimumEfficiency));
             if (SameRecords(previous, added)) return PlannerChange.None;
             kept.AddRange(added);
             StoreReinstalls(pawnId, kept);
@@ -1559,7 +1560,7 @@ namespace Implanner.Core
                 if (activate)
                     result.Add(new ReinstallRecord(record.WiperKey,
                         record.ImplantDefName, record.PartIndex, record.Quality,
-                        active: true));
+                        active: true, minimumEfficiency: record.MinimumEfficiency));
             }
             if (!changed) return PlannerChange.None;
             StoreReinstalls(pawnId, result);
@@ -1577,7 +1578,8 @@ namespace Implanner.Core
             if (a.Count != b.Count) return false;
             for (int i = 0; i < a.Count; i++)
                 if (!string.Equals(a[i].Key, b[i].Key, StringComparison.Ordinal)
-                    || a[i].Quality != b[i].Quality)
+                    || a[i].Quality != b[i].Quality
+                    || a[i].MinimumEfficiency != b[i].MinimumEfficiency)
                     return false;
             return true;
         }
@@ -1588,13 +1590,15 @@ namespace Implanner.Core
     public readonly struct ReinstallRecord
     {
         public ReinstallRecord(string wiperKey, string implantDefName, int partIndex,
-            int quality, bool active)
+            int quality, bool active, float minimumEfficiency = 0f)
         {
             WiperKey = wiperKey;
             ImplantDefName = implantDefName;
             PartIndex = partIndex;
             Quality = quality;
             Active = active;
+            MinimumEfficiency = float.IsNaN(minimumEfficiency) || minimumEfficiency < 0f
+                ? 0f : minimumEfficiency;
         }
 
         /// The key of the operation that takes the implant out: a part
@@ -1611,6 +1615,11 @@ namespace Implanner.Core
 
         /// False until the wiper is installed.
         public bool Active { get; }
+
+        /// The part's recoverable efficiency before a two-step upgrade
+        /// removes it. Persisted so the missing-part interval cannot lower
+        /// the floor, including after save/load or losing the chosen item.
+        public float MinimumEfficiency { get; }
 
         /// The key reservations and operation bills use for this record.
         public string Key => GoalKeys.Reinstall(ImplantDefName, PartIndex);

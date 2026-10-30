@@ -3,7 +3,8 @@
 ## 1.2.2 — 2026-10-30
 
 - Fixed: Surgery holdbacks, concurrency, and doctor requirements now stay valid when options or patient conditions change.
-- Fixed: Quality upgrades avoid fatal intermediate removals, and healed limbs reject inferior reserved implants.
+- Fixed: Quality upgrades avoid fatal intermediate removals.
+- Fixed: Healing limbs are protected from permanently weaker implants, including surgeries already underway and custom implant quality settings.
 - Fixed: Production respects updated bench and skill limits, budgets variable ingredients and prerequisites, and reports coverage per required quality.
 - Fixed: Aborted ranking drags preserve order, shared XML merges duplicate implant slots, and new adults appear in the overview immediately.
 

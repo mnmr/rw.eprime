@@ -117,9 +117,9 @@ namespace Implanner
             BodyPartRecord? part = entry != null
                 ? PawnProjection.ResolveSlotPart(pawn, entry, ordinal) : null;
             if (entry == null || part == null) return false;
-            int minimum = PawnProjection.MinimumAcceptableQuality(
+            int accepted = PawnProjection.AcceptableQualities(
                 pawn, entry, part, evaluation.Plan.MinQuality);
-            return minimum != ImplantQuality.None && ImplantQualities.QualityOf(item) >= minimum;
+            return ImplantQuality.Accepts(accepted, ImplantQualities.QualityOf(item));
         }
 
         private static void Reconcile(ImplannerStore store, bool boundaryHit)
@@ -178,8 +178,9 @@ namespace Implanner
                     && index.ItemsById.TryGetValue(itemId, out Thing? item)
                     && !item.IsForbidden(Faction.OfPlayer)
                     && index.PawnMayCollect(reservation.PawnId, itemId)
-                    && (reinstall || MeetsPlanMinimum(index.PawnsById[reservation.PawnId],
-                        evaluation!, reservation.GoalKey, item));
+                    && (reinstall
+                        ? PlannerReinstall.AcceptsReservedItem(model, index.PawnsById[reservation.PawnId], reservation.GoalKey, item)
+                        : MeetsPlanMinimum(index.PawnsById[reservation.PawnId], evaluation!, reservation.GoalKey, item));
                 if (!valid)
                     change |= model.ReleaseReservation(itemId);
             }

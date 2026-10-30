@@ -66,19 +66,25 @@ namespace Implanner
 
         /// The lowest item quality this slot takes (ImplantQuality
         /// .MinimumAcceptable): the plan's minimum, raised until the
-        /// implant leaves the part no worse than it is now, so an implant
+        /// implant leaves the part no worse than it can recover to, so an implant
         /// worse than a healthy part never replaces it but may replace a
         /// missing or damaged one. ImplantQuality.None when no quality
         /// qualifies. Reconcile passes and snapshot builders only.
         internal static int MinimumAcceptableQuality(Pawn pawn,
             ImplantCatalogEntry entry, BodyPartRecord part, int planMinQuality)
         {
-            float current = entry.IsReplacement
-                ? PawnCapacityUtility.CalculatePartEfficiency(pawn.health.hediffSet, part)
-                : 1f;
             return ImplantQuality.MinimumAcceptable(ImplantQualities.AfterInstall(entry),
-                current, PlanMinimumFor(entry, planMinQuality));
+                EfficiencyFloor(pawn, entry, part), PlanMinimumFor(entry, planMinQuality));
         }
+
+        internal static float EfficiencyFloor(Pawn pawn, ImplantCatalogEntry entry, BodyPartRecord part) =>
+            entry.IsReplacement || entry.WipesPart ? RecoverablePartEfficiency.Of(pawn, part) : 1f;
+
+        internal static int AcceptableQualities(Pawn pawn, ImplantCatalogEntry entry,
+            BodyPartRecord part, int planMinQuality, float retainedFloor = 0f) =>
+            ImplantQuality.AcceptableQualities(ImplantQualities.AfterInstall(entry),
+                Math.Max(retainedFloor, EfficiencyFloor(pawn, entry, part)),
+                PlanMinimumFor(entry, planMinQuality));
 
         /// The pawn facts the ASAP candidate ranking reads: move speed,
         /// whether the equipped weapon is a melee weapon, and Intellectual

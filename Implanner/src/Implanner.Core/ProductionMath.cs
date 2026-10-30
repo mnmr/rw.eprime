@@ -27,14 +27,16 @@ namespace Implanner.Core
     /// lowest quality the slot accepts (0 for items without quality).
     public readonly struct CraftNeed<TKey>
     {
-        public CraftNeed(TKey item, int minQuality)
+        public CraftNeed(TKey item, int minQuality, int acceptableQualities = ImplantQuality.AllQualities)
         {
             Item = item;
             MinQuality = minQuality;
+            AcceptableQualities = acceptableQualities;
         }
 
         public TKey Item { get; }
         public int MinQuality { get; }
+        public int AcceptableQualities { get; }
     }
 
     /// The crafting queue one colony still needs, in surgery rollout order.
@@ -76,13 +78,13 @@ namespace Implanner.Core
                 TKey item = rollout[i].Item;
                 int minimum = rollout[i].MinQuality;
                 if (available.TryGetValue(item, out List<int> have)
-                    && Take(have, minimum, preferLowest: false))
+                    && Take(have, minimum, rollout[i].AcceptableQualities, preferLowest: false))
                     continue;
                 itemsPerCraft.TryGetValue(item, out int output);
                 if (output <= 0) continue;
                 int promise;
                 if (pending.TryGetValue(item, out List<int> queued)
-                    && TakePromise(queued, minimum, out promise))
+                    && TakePromise(queued, minimum, rollout[i].AcceptableQualities, out promise))
                 {
                     if (!usedPendingCrafts.TryGetValue(item, out List<int> used))
                         usedPendingCrafts[item] = used = new List<int>();
@@ -105,9 +107,9 @@ namespace Implanner.Core
 
         /// Removes the best entry at or above minimum (the lowest acceptable
         /// one when preferLowest).
-        static bool Take(List<int> qualities, int minimum, bool preferLowest)
+        static bool Take(List<int> qualities, int minimum, int accepted, bool preferLowest)
         {
-            int pick = ImplantQuality.Choose(qualities, minimum, preferLowest);
+            int pick = ImplantQuality.Choose(qualities, minimum, preferLowest, accepted);
             if (pick < 0) return false;
             qualities.RemoveAt(pick);
             return true;
@@ -116,13 +118,13 @@ namespace Implanner.Core
         /// Removes the pending craft whose promise meets minimum most
         /// narrowly (an unknown promise last), leaving better promises for
         /// stricter slots.
-        static bool TakePromise(List<int> promises, int minimum, out int promise)
+        static bool TakePromise(List<int> promises, int minimum, int accepted, out int promise)
         {
             int pick = -1;
             for (int i = 0; i < promises.Count; i++)
             {
                 int p = promises[i];
-                if (p != UnknownQuality && p < minimum) continue;
+                if (p != UnknownQuality && (p < minimum || !ImplantQuality.Accepts(accepted, p))) continue;
                 if (pick < 0 || Narrower(p, promises[pick])) pick = i;
             }
             promise = pick >= 0 ? promises[pick] : UnknownQuality;

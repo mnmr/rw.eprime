@@ -56,6 +56,21 @@ public class ImplantQualityTests
         await Assert.That(ImplantQuality.Choose(qualities, 5, preferLowest: false)).IsEqualTo(-1);
     }
 
+    // QBR lets the player configure each quality independently. A higher
+    // label must not bypass a hole in the actual efficiency requirements.
+    [Test]
+    public async Task CustomQualityMultipliersCannotTurnAnAcceptedLabelIntoADowngrade()
+    {
+        float[] efficiencies = { .625f, .9375f, 1.25f, .625f, 1.875f, 2.125f, 2.5f };
+        int minimum = ImplantQuality.MinimumAcceptable(efficiencies, 1f, 0);
+        int accepted = ImplantQuality.AcceptableQualities(efficiencies, 1f, 0);
+        await Assert.That(ImplantQuality.Choose(new[] { 3 }, minimum, false, accepted)).IsEqualTo(-1);
+        await Assert.That(ImplantQuality.Choose(new[] { 3, 2, 4 }, minimum, true, accepted)).IsEqualTo(1);
+        await Assert.That(ImplantQuality.Choose(new[] { 3, 2, 4 }, minimum, false, accepted)).IsEqualTo(2);
+        await Assert.That(ImplantQuality.Accepts(accepted, 3)).IsFalse();
+        await Assert.That(ImplantQuality.Accepts(accepted, 2)).IsTrue();
+    }
+
     /// The minimum quality is plan content: clamped to Awful..Legendary,
     /// no-op safe, copied from the base plan when an extending plan is
     /// created, and carried through export and import by quality name.

@@ -10,6 +10,22 @@ namespace Implanner.Core.Tests;
 /// installed and each lasts until its implant is back.
 public class ReinstallTests
 {
+    // This persistent invariant cannot be inferred from a temporarily
+    // missing limb: removal must never erase the original efficiency floor.
+    [Test]
+    public async Task AnUpgradePreservesItsOriginalFloorThroughActivationAndHydration()
+    {
+        var model = new PlannerModel();
+        string removal = GoalKeys.Upgrade("BionicArm", 12);
+        var record = new ReinstallRecord(removal, "BionicArm", 12, 4, false, 1.5625f);
+        model.SetPendingReinstalls(7, removal, new[] { record });
+        await Assert.That(model.SetPendingReinstalls(7, removal, new[] { record })).IsEqualTo(PlannerChange.None);
+        model.ActivateReinstalls(7, removal);
+        var loaded = new PlannerModel();
+        loaded.AddLoadedReinstall(7, model.ReinstallsFor(7)![0]);
+        await Assert.That(loaded.ReinstallsFor(7)![0].MinimumEfficiency).IsEqualTo(1.5625f);
+        await Assert.That(loaded.IsActiveReinstall(7, record.Key)).IsTrue();
+    }
     const string Wiper = "p1:GR_NeuronReinforcement:0";
 
     static List<ReinstallRecord> Brain(params string[] implants)

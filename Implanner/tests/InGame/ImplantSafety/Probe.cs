@@ -12,6 +12,14 @@ using Plan = Implanner.Core.Plan;
 
 namespace ImplantSafetyProbe;
 
+// Keep the patient at the native bed-rest toil while the test's drafted
+// doctor receives explicit jobs. Drafted doctors do not satisfy vanilla's
+// autonomous "available doctor" check, so ordinary rest would be overridden.
+public sealed class ScenarioRestDriver : JobDriver_LayDown
+{
+    public override bool LookForOtherJobs => false;
+}
+
 // Real game objects, QBR's live settings, ordinary medical bills and native
 // doctor jobs. A rejected job must preserve both the limb and its ingredient.
 [StaticConstructorOnStartup]
@@ -27,6 +35,7 @@ public static class Probe
     static DateTime deadline;
     static Dictionary<QualityCategory, float> multipliers;
     static string legacyKey;
+    static Hediff_Injury legacyWound;
     static string Root => GenFilePaths.SaveDataFolderPath;
 
     static Probe() => new Harmony("eprime.implanner.implantsafety").Patch(
@@ -60,20 +69,34 @@ public static class Probe
             foreach (Window window in Find.WindowStack.Windows.ToArray())
                 if (!(window is MainTabWindow)) window.Close(false);
             if (phase == 0) { Setup(); return; }
-            if (DateTime.UtcNow > deadline) throw new Exception("Native job timed out: " + doctor.CurJob);
+            if (DateTime.UtcNow > deadline) throw new Exception("Native job timed out: phase=" + phase + "; doctor=" + doctor.CurJob
+                + "; toil=" + doctor.jobs.curDriver?.CurToilString
+                + "; patient=" + patient.CurJob + "; bed=" + patient.CurrentBed() + "; bill=" + active?.DeletedOrDereferenced);
             Find.TickManager.CurTimeSpeed = TimeSpeed.Ultrafast;
             if (phase == 10)
             {
+                PutPatientInBed();
                 if (patient.CurrentBed() != bed) return;
+                if (doctor.CurJob?.bill == active) { phase = 11; return; }
+                if (doctor.CurJob != null && doctor.CurJob.def != JobDefOf.Wait_Combat) return;
                 Job selected = FindDoctorJob(active);
                 if (selected == null) return;
+                doctor.jobs.TryTakeOrderedJob(selected);
+                if (doctor.CurJob?.bill == active) phase = 11;
+                return;
+            }
+            if (phase == 11)
+            {
+                Require(doctor.CurJob?.bill == active, "legacy native operation remains active before intervention");
+                var driver = (JobDriver_DoBill)doctor.jobs.curDriver;
+                if (driver.ticksSpentDoingRecipeWork == 0) return;
                 var model = ImplannerStore.Current.Model;
                 model.Reserve(poor.thingIDNumber, patient.thingIDNumber, legacyKey);
                 model.SetOwnedBill(patient.thingIDNumber, legacyKey, active.GetUniqueLoadID());
                 ImplannerStore.Current.Bump(PlannerChange.All);
-                doctor.jobs.TryTakeOrderedJob(selected);
-                Require(doctor.CurJob?.bill == active, "legacy doctor job really started");
-                Write("Legacy job started with an unsafe real implant already selected");
+                legacyWound.Heal(legacyWound.Severity + 1f);
+                driver.workLeft = 1f;
+                Write("Native surgery is operating; wound healed and legacy ownership restored before its final work tick");
                 phase = 1;
                 return;
             }
@@ -99,6 +122,25 @@ public static class Probe
                 Check(PawnCapacityUtility.CalculatePartEfficiency(patient.health.hediffSet, shoulder) >= 1.249f,
                     "Safe surgery: the actual installed arm supplies 125% efficiency");
                 Finish();
+                return;
+            }
+            if (phase == 3)
+            {
+                if (doctor.CurJob?.bill != active) { StartDoctor(active); return; }
+                var driver = (JobDriver_DoBill)doctor.jobs.curDriver;
+                if (driver.ticksSpentDoingRecipeWork == 0) return;
+                multipliers[QualityCategory.Normal] = .5f;
+                driver.workLeft = 1f;
+                phase = 4;
+                return;
+            }
+            if (phase == 4)
+            {
+                if (doctor.CurJob?.bill == active) return;
+                Check(!normal.Destroyed && !patient.health.hediffSet.HasHediff(HediffDef.Named("BionicArm"), shoulder),
+                    "IR3: changing the actual implant's multiplier during surgery aborts before consumption");
+                Defaults();
+                Finish();
             }
         }
         catch (Exception ex)
@@ -114,6 +156,17 @@ public static class Probe
         Find.TickManager.Pause();
         map = Find.CurrentMap;
         IntVec3 near = map.mapPawns.FreeColonistsSpawned.First().Position;
+        // Keep the real saved map, resources, paths and surgery workers, but
+        // remove unrelated colonists/mechs from this disposable test scene.
+        // They must not reserve our patient or steal our ingredients.
+        foreach (Pawn occupant in map.mapPawns.AllPawnsSpawned.ToArray())
+        {
+            // This compatibility baseline drops mods from the player save;
+            // some unrelated saved jobs have missing defs/drivers. Clear
+            // those jobs before despawn instead of trying to execute them.
+            if (occupant.jobs != null) occupant.jobs.curJob = null;
+            occupant.DeSpawn();
+        }
         do { doctor = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer); }
         while (doctor.skills.GetSkill(SkillDefOf.Medicine).TotallyDisabled);
         patient = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
@@ -125,15 +178,30 @@ public static class Probe
         }
         doctor.skills.GetSkill(SkillDefOf.Medicine).Level = 20;
         doctor.workSettings.SetPriority(WorkTypeDefOf.Doctor, 1);
-        patient.playerSettings.medCare = MedicalCareCategory.Best;
+        doctor.drafter.Drafted = true; // Native ordered jobs only; no autonomous wardrobe/doctor interference.
+        patient.playerSettings.medCare = MedicalCareCategory.NormalOrWorse;
         shoulder = patient.RaceProps.body.GetPartsWithDef(DefDatabase<BodyPartDef>.GetNamed("Shoulder"))[0];
         bed = SpawnBed();
         doctor.Position = CellFinder.RandomClosewalkCellNear(bed.Position, map, 2);
         doctor.Notify_Teleported(true, false);
         foreach (Thing item in map.listerThings.ThingsOfDef(ThingDef.Named("BionicArm")).ToArray()) item.Destroy();
+        // Native doctors prefer stronger medicine even when it is on the
+        // other side of the saved colony. Limit this scene to nearby stock.
+        foreach (Thing item in map.listerThings.AllThings)
+            if (item.def.IsMedicine) item.SetForbidden(true, false);
         multipliers = (Dictionary<QualityCategory, float>)AccessTools.Field(
             GenTypes.GetTypeInAnyAssembly("QualityBionicsRemastered.Settings"), "qualityMultipliers").GetValue(null);
         Defaults();
+        string scenarioFile = Path.Combine(LoadedModManager.RunningModsListForReading.Single(
+            m => m.PackageIdPlayerFacing == "eprime.implanner.implantsafety").RootDir, "scenario.txt");
+        if (File.Exists(scenarioFile) && File.ReadAllText(scenarioFile).Trim() == "settings")
+        {
+            Spawn("MedicineIndustrial", QualityCategory.Normal).stackCount = 25;
+            startedTick = Find.TickManager.TicksGame;
+            BeginChangedSettingsSurgery();
+            Find.TickManager.CurTimeSpeed = TimeSpeed.Ultrafast;
+            return;
+        }
         poor = Spawn("BionicArm", QualityCategory.Poor);
         Spawn("MedicineIndustrial", QualityCategory.Normal).stackCount = 25;
         var injury = (Hediff_Injury)patient.health.AddHediff(HediffDefOf.Cut, shoulder);
@@ -148,7 +216,30 @@ public static class Probe
             "IR1: a tended healing arm rejects the 93.75% Poor bionic before scheduling");
 
         ClearBills();
-        injury.Heal(injury.Severity + 1f);
+        var scar = (Hediff_Injury)patient.health.AddHediff(HediffDefOf.Cut, shoulder);
+        scar.Severity = 1f;
+        scar.TryGetComp<HediffComp_GetsPermanent>().IsPermanent = true;
+        model = ResetModel();
+        AddPlan(model);
+        Reconcile();
+        Check(!model.Reservations.ContainsKey(poor.thingIDNumber) && patient.BillStack.Count == 0,
+            "IR1: a small permanent scar plus a healing wound still rejects a permanent downgrade");
+        scar.Severity = 6f;
+        Reconcile();
+        Check(model.Reservations.ContainsKey(poor.thingIDNumber) && patient.BillStack.Count > 0,
+            "Permanent damage: Poor is allowed when better than the arm can recover to");
+
+        ClearBills();
+        patient.health.RestorePart(shoulder);
+        patient.health.AddHediff(HediffDefOf.MissingBodyPart, shoulder);
+        model = ResetModel();
+        AddPlan(model);
+        Reconcile();
+        Check(model.Reservations.ContainsKey(poor.thingIDNumber) && patient.BillStack.Count > 0,
+            "Missing limb: a weaker replacement remains allowed");
+
+        ClearBills();
+        patient.health.RestorePart(shoulder);
         poor.Destroy();
         Thing good = Spawn("BionicArm", QualityCategory.Good);
         multipliers[QualityCategory.Good] = 0.5f;
@@ -174,15 +265,20 @@ public static class Probe
         good.Destroy();
         Defaults();
 
+        CheckUpgradeStockLoss();
+
         // A pre-existing save/job can already hold unsafe ingredients. Let
         // vanilla select the manual bill, then restore Implanner ownership
         // before continuing it; this does not bypass the finish boundary.
         poor = Spawn("BionicArm", QualityCategory.Poor);
+        legacyWound = (Hediff_Injury)patient.health.AddHediff(HediffDefOf.Cut, shoulder);
+        legacyWound.Severity = 6f;
+        legacyWound.Tended(1f, 1f);
         model = ResetModel();
         Plan plan = AddPlan(model);
         RecipeDef recipe = DefDatabase<RecipeDef>.AllDefsListForReading.First(r => r.addsHediff == HediffDef.Named("BionicArm")
             && r.appliedOnFixedBodyParts != null && r.appliedOnFixedBodyParts.Contains(shoulder.def));
-        recipe.workAmount = 60f;
+        recipe.workAmount = 60000f; // Leave a deterministic interval to intervene after work has started.
         recipe.surgerySuccessChanceFactor = 100f;
         active = new Bill_Medical(recipe, null);
         patient.BillStack.AddBill(active);
@@ -201,7 +297,7 @@ public static class Probe
     {
         ClearBills();
         patient.health.RestorePart(shoulder);
-        if (!poor.Destroyed) poor.Destroy();
+        if (poor != null && !poor.Destroyed) poor.Destroy();
         normal = Spawn("BionicArm", QualityCategory.Normal);
         var wound = (Hediff_Injury)patient.health.AddHediff(HediffDefOf.Cut, shoulder);
         wound.Severity = 6f;
@@ -214,7 +310,42 @@ public static class Probe
         active.recipe.workAmount = 60f;
         active.recipe.surgerySuccessChanceFactor = 100f;
         phase = 2;
+        deadline = DateTime.UtcNow.AddSeconds(60);
         StartDoctor(active);
+    }
+
+    static void BeginChangedSettingsSurgery()
+    {
+        BeginSafeSurgery();
+        active.recipe.workAmount = 60000f;
+        phase = 3;
+    }
+
+    static void CheckUpgradeStockLoss()
+    {
+        var worn = patient.health.AddHediff(HediffDef.Named("BionicArm"), shoulder);
+        var comp = ((HediffWithComps)worn).comps.Single(c => c.GetType().Name == "HediffCompQualityBionics");
+        AccessTools.Field(comp.GetType(), "quality").SetValue(comp, QualityCategory.Normal);
+        Thing upgrade = Spawn("BionicArm", QualityCategory.Excellent);
+        var model = ResetModel();
+        AddPlan(model);
+        model.SetUpgradeByPriority(true);
+        Reconcile();
+        Require(model.ReinstallsFor(patient.thingIDNumber)?.Count == 1, "safe upgrade captures a reinstall record");
+        // Model the game between removal and reinstallation, with all stock
+        // lost. Ordinary reconciliation must retain the original limb floor.
+        ClearBills();
+        patient.health.RestorePart(shoulder);
+        patient.health.AddHediff(HediffDefOf.MissingBodyPart, shoulder);
+        upgrade.Destroy();
+        Reconcile();
+        Thing inferior = Spawn("BionicArm", QualityCategory.Poor);
+        Reconcile();
+        Check(!model.Reservations.ContainsKey(inferior.thingIDNumber) && patient.BillStack.Count == 0,
+            "IR2 upgrade: losing all replacement stock cannot erase the removed limb's efficiency floor");
+        ClearBills();
+        inferior.Destroy();
+        patient.health.RestorePart(shoulder);
     }
 
     static PlannerModel ResetModel()
@@ -261,7 +392,12 @@ public static class Probe
     {
         Thing item = ThingMaker.MakeThing(ThingDef.Named(defName));
         item.TryGetComp<CompQuality>()?.SetQuality(quality, ArtGenerationContext.Colony);
-        GenPlace.TryPlaceThing(item, bed.Position, map, ThingPlaceMode.Near);
+        IntVec3 cell = GenRadial.RadialCellsAround(bed.Position, 8, false).First(c =>
+            c.InBounds(map) && c.Standable(map) && c.GetEdifice(map) == null
+            && c.GetFirstItem(map) == null && c.GetFirstPawn(map) == null
+            && c != patient.InteractionCell && c.DistanceToSquared(bed.Position) >= 4
+            && doctor.CanReach(c, PathEndMode.OnCell, Danger.Deadly));
+        GenSpawn.Spawn(item, cell, map);
         item.SetForbidden(false, false);
         return item;
     }
@@ -288,11 +424,14 @@ public static class Probe
     static void PutPatientInBed()
     {
         if (patient.CurrentBed() == bed) return;
+        if (patient.CurJob?.def.defName == "ImplantSafety_Rest" && patient.CurJob.targetA.Thing == bed) return;
         patient.jobs.StopAll();
         patient.Position = bed.GetSleepingSlotPos(0);
         patient.Notify_Teleported(true, false);
-        Job rest = JobMaker.MakeJob(JobDefOf.LayDown, bed);
+        Job rest = JobMaker.MakeJob(DefDatabase<JobDef>.GetNamed("ImplantSafety_Rest"), bed);
         rest.playerForced = true;
+        rest.forceSleep = true;
+        rest.restUntilHealed = true;
         rest.expiryInterval = 60000;
         patient.jobs.StartJob(rest, JobCondition.InterruptForced);
     }
@@ -304,7 +443,8 @@ public static class Probe
         {
             if (!def.billGiversAllHumanlikes || !(def.Worker is WorkGiver_DoBill giver)) continue;
             Job job = giver.JobOnThing(doctor, patient, true);
-            if (job?.bill == bill) return job;
+            // Vanilla may first need to haul an obstruction off the bed.
+            if (job != null) return job;
         }
         return null;
     }
@@ -314,6 +454,7 @@ public static class Probe
         PutPatientInBed();
         if (patient.CurrentBed() != bed) return;
         if (doctor.CurJob?.bill == bill) return;
+        if (doctor.CurJob != null && doctor.CurJob.def != JobDefOf.Wait_Combat) return;
         doctor.jobs.StopAll();
         Job job = FindDoctorJob(bill);
         if (job == null) return;

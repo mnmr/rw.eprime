@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <JobDef>
+    <defName>ImplantSafety_Rest</defName>
+    <driverClass>ImplantSafetyProbe.ScenarioRestDriver</driverClass>
+    <reportString>Resting for implant safety verification.</reportString>
+    <casualInterruptible>false</casualInterruptible>
+  </JobDef>
+</Defs>
