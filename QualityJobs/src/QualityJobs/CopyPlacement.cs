@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using HarmonyLib;
 using Multiplayer.API;
 using RimShared.Common;
+using RimShared.GameLib;
 using RimWorld;
 using Verse;
 
@@ -49,7 +50,8 @@ namespace QualityJobs
         // source settings at the copy click. Refresh: explicit input only.
         // Equality: reuse until another copy click. Teardown: deselection, map
         // removal and game disposal clear the table; owner changes reject it.
-        // This is local input state, never consulted during synchronized replay.
+        // This is local input state, never consulted during synchronized replay;
+        // replay resolves the map from the payload's map id (Place).
         private static readonly OwnerScopedTransferTable<Designator_Build, QualityJobsStore, Settings> pending =
             new OwnerScopedTransferTable<Designator_Build, QualityJobsStore, Settings>();
 
@@ -72,7 +74,7 @@ namespace QualityJobs
         {
             // Native MP replay may run while this client has another copy tool
             // selected. Only the issuing interface may turn input into a command.
-            if (applying != null || (MP.IsInMultiplayer && !MP.InInterface)) return false;
+            if (applying != null || (MP.IsInMultiplayer && MpSyncState.IsExecutingSyncCommand)) return false;
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || !pending.TryGet(designator, store, out Settings? settings)
                 || settings == null || designator.Map.uniqueID != settings.MapId
@@ -103,11 +105,13 @@ namespace QualityJobs
             return true;
         }
 
+        /// Synced replay. The map comes from the payload, never from this
+        /// client's current map: a replaying client may be viewing another
+        /// map, and the placement must happen everywhere or nowhere.
         internal static void Place(CopyPlacementValues values)
         {
-            Map? map = Find.CurrentMap;
-            if (map == null || map.uniqueID != values.mapId
-                || QualityJobsStore.Active == null || values.cells.Length == 0) return;
+            Map? map = MapById(values.mapId);
+            if (map == null || QualityJobsStore.Active == null || values.cells.Length == 0) return;
             ThingDef? building = DefDatabase<ThingDef>.GetNamedSilentFail(values.buildingDefName);
             ThingDef? stuff = values.stuffDefName == null ? null
                 : DefDatabase<ThingDef>.GetNamedSilentFail(values.stuffDefName);
@@ -128,10 +132,18 @@ namespace QualityJobs
             Rotation(designator) = new Rot4(values.rotation);
             CopyPlacementValues? previous = applying;
             Map? previousMap = applyingMap;
+            // Designator.Map is Find.CurrentMap (Verse/Designator.cs), so
+            // vanilla placement works on the game's current map. Make the
+            // target map current for this command only, through the same
+            // field write Multiplayer's own command executor uses (the
+            // CurrentMap setter would also switch the camera and map UI).
+            Game game = Current.Game;
+            sbyte previousIndex = game.currentMapIndex;
             try
             {
                 applying = values;
                 applyingMap = map;
+                game.currentMapIndex = (sbyte)map.Index;
                 // Preserve vanilla validation, replacement, style, color,
                 // place-worker callbacks and multi-cell finalization.
                 if (values.multiCell) designator.DesignateMultiCell(values.cells);
@@ -140,9 +152,18 @@ namespace QualityJobs
             }
             finally
             {
+                game.currentMapIndex = previousIndex;
                 applying = previous;
                 applyingMap = previousMap;
             }
+        }
+
+        private static Map? MapById(int mapId)
+        {
+            List<Map> maps = Find.Maps;
+            for (int i = 0; i < maps.Count; i++)
+                if (maps[i].uniqueID == mapId) return maps[i];
+            return null;
         }
 
         internal static bool TryApply(QualityJobsStore store, Blueprint_Build blueprint)

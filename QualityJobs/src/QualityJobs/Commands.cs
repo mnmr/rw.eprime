@@ -505,8 +505,10 @@ namespace QualityJobs
         }
 
         /// A copy click is local input; only a concrete placement is synced.
-        /// CurrentMap is MP's serialized command context, checked by map ID in
-        /// the handler. Replay does not read the issuing player's selection.
+        /// CurrentMap is MP's serialized command context; the handler resolves
+        /// the map from the payload's map id itself and runs vanilla placement
+        /// in that map's context, so a client viewing another map places the
+        /// same blueprint. Replay does not read the issuing player's selection.
         [SyncMethod(SyncContext.CurrentMap)]
         public static void PlaceCopiedConstruction(CopyPlacementValues values)
             => CopyPlacement.Place(values);

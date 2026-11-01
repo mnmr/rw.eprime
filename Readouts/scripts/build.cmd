@@ -1,4 +1,3 @@
 @echo off
-setlocal
-dotnet build -c Release "%~dp0..\src\EPrimeReadouts.slnx"
+call "%~dp0..\..\Scripts\build-deploy-mod.cmd" Readouts EPrimeReadouts.slnx
 exit /b %errorlevel%

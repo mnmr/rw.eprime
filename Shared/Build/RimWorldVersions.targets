@@ -1,0 +1,16 @@
+<Project>
+  <!-- Imported last by each mod's game project. A build without an explicit
+       RimWorldVersion (build.cmd, build-deploy-all.cmd, the canonical
+       dotnet build) also builds mod/1.7 after mod/1.6. Core projects are
+       version-independent, so the 1.7 pass reuses their 1.6 build. -->
+  <ItemDefinitionGroup>
+    <ProjectReference>
+      <GlobalPropertiesToRemove>RimWorldVersion</GlobalPropertiesToRemove>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <Target Name="BuildRimWorld17" AfterTargets="Build" Condition="'$(RimWorldVersionRequested)' == ''">
+    <!-- The unique property forces a fresh evaluation for restore, as NuGet requires. -->
+    <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="Restore" Properties="Configuration=$(Configuration);RimWorldVersion=1.7;RimWorldRestoreSession=$([System.Guid]::NewGuid())" />
+    <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="Build" Properties="Configuration=$(Configuration);RimWorldVersion=1.7" />
+  </Target>
+</Project>

@@ -1,9 +1,13 @@
 <Project>
   <!-- Compile against the exact APIs loaded by the installed 1.7 game.
        Harmony 3 is not binary-compatible with the 1.6 Harmony 2 reference. -->
+  <!-- Prefer the persistent local 1.7 copy (GameInstalls/1.7, see the automation
+       README), so 1.7 builds work whichever version Steam currently holds. -->
   <PropertyGroup>
+    <LocalRimWorld17Root>$(MSBuildThisFileDirectory)../../GameInstalls/1.7</LocalRimWorld17Root>
+    <InstalledGameRoot Condition="'$(InstalledGameRoot)' == '' and Exists('$(LocalRimWorld17Root)/UnityStubs.dll')">$(LocalRimWorld17Root)</InstalledGameRoot>
     <InstalledGameRoot Condition="'$(InstalledGameRoot)' == ''">C:/Program Files (x86)/Steam/steamapps/common/RimWorld</InstalledGameRoot>
-    <InstalledHarmonyPath Condition="'$(InstalledHarmonyPath)' == ''">$(InstalledGameRoot)/../../workshop/content/294100/2009463077/1.7/Assemblies/0Harmony.dll</InstalledHarmonyPath>
+    <InstalledHarmonyPath Condition="'$(InstalledHarmonyPath)' == ''">C:/Program Files (x86)/Steam/steamapps/workshop/content/294100/2009463077/1.7/Assemblies/0Harmony.dll</InstalledHarmonyPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp" HintPath="$(InstalledGameRoot)/Assembly-CSharp.dll" Private="false" />

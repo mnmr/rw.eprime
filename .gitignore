@@ -12,6 +12,7 @@
 /Game/
 /Saves/
 /Automation/
+/GameInstalls/
 
 # Automation profile: commit the curated Config baseline, ignore runtime artifacts
 /AutomationProfiles/Shared/Saves/
@@ -20,6 +21,7 @@
 /AutomationProfiles/Shared/profile-state.json
 /AutomationProfiles/Shared/Player.log*
 /AutomationProfiles/Shared/Runs/
+/AutomationProfiles/Shared/Slots/
 /Shared/Automation/mod/1.6/Assemblies/
 /Shared/Automation/mod/1.7/Assemblies/
 /Shared/Automation/temp/

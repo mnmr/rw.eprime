@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 1.2.6 — 2026-11-01
+
+- Fixed: Multiplayer desyncs when a player joined a game with unfinished items waiting for a finisher or with robot recharge stations.
+- Fixed: Placing a copied construction in multiplayer could be skipped for players viewing a different map.
+
+## 1.2.5 — 2026-10-31
+
+- Fixed: Buildings, floors and furniture could not be placed when another mod bundled an older Multiplayer API.
+- Fixed: Fixed label that was wrapping in the construction pop-out.
+
 ## 1.2.4 — 2026-10-30
 
 - Fixed: Some allocations were not disposed on exit to main menu.

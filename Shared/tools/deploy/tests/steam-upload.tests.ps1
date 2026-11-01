@@ -18,6 +18,7 @@ if (-not $FixtureRoot) {
     return
 }
 $fixture = $FixtureRoot
+. "$deployRoot\publish-release.ps1"
 function Check([bool]$Condition, [string]$Message) { if (-not $Condition) { throw $Message } }
 function Failure([scriptblock]$Action) {
     try { & $Action | Out-Null } catch { return $_.Exception.Message }
@@ -51,17 +52,22 @@ try {
 
     # The real loader still runs, but this harmless OS DLL has no Steam entrypoints.
     Copy-Item -LiteralPath "$env:SystemRoot\System32\version.dll" -Destination "$fixture\game\steam_api64.dll"
-    $about = '<ModMetaData><name>Example</name><supportedVersions><li>1.6</li><li>1.7</li></supportedVersions></ModMetaData>'
+    $about = '<ModMetaData><name>Example</name><modVersion>1.0.0</modVersion><supportedVersions><li>1.6</li><li>1.7</li></supportedVersions></ModMetaData>'
     foreach ($dir in @("$fixture\repo\mod\About", "$fixture\game\Mods\Example\About")) {
         Set-Content -LiteralPath "$dir\About.xml" -Value $about
         Set-Content -LiteralPath "$dir\PublishedFileId.txt" -Value '1234567890'
         Set-Content -LiteralPath "$dir\Preview.png" -Value 'preview fixture'
     }
     Set-Content -LiteralPath "$fixture\repo\workshop-description.bbcode" -Value 'Example description'
+    Set-Content -LiteralPath "$fixture\repo\CHANGELOG.md" -Value @(
+        '# Changelog', '', '## 1.0.0 — 2026-11-01', '', '- Fixed: A "quoted" **bold** fix.', '- Added: Something new.', '',
+        '## 0.9.0 — 2026-10-01', '', '- Added: Older entry.')
     $syncArgs = @{ ModPath = "$fixture\game\Mods\Example"; RimWorldDir = "$fixture\game" }
+    # Each case republishes the same fixture version; the release record and
+    # its skip rule have their own cases below.
     $publishArgs = @{
         ModRoot = "$fixture\repo"; DeployName = 'Example'; RimWorldMods = "$fixture\game\Mods"
-        SteamCmd = 'Invoke-TestSteamCmd'; Username = 'fixture'; ChangeNote = 'Version support'
+        SteamCmd = 'Invoke-TestSteamCmd'; Username = 'fixture'; ChangeNote = 'Version support'; AllowRepublish = $true
     }
     function Read-Host { 'yes' }
     function Invoke-RestMethod { @{ response = @{ publishedfiledetails = @(@{ preview_url = 'https://example.invalid/preview.png' }) } } }
@@ -107,24 +113,60 @@ try {
     Check ((Read-Fixture).Published.Description -ceq $quotedDescription -and (Read-Fixture).Published.ChangeNote -ceq $expectedNote) 'Change-note quotes must become apostrophes while description quotes, multiline text and literal expressions remain intact.'
     Check (@($preview | ForEach-Object { $_.ToString() }) -ccontains $expectedNote) 'The confirmation preview must show the normalized note that will be submitted.'
 
+    # Without an explicit note, the change note is the changelog section for
+    # About.xml's modVersion as BBCode, shown before the single confirmation.
     Reset-Fixture
-    $interactiveArgs = $publishArgs.Clone()
-    $interactiveArgs.Remove('ChangeNote')
-    $noteLines = [Collections.Generic.Queue[string]]::new()
-    foreach ($line in @('First "quoted" line', 'Second line', '')) { $noteLines.Enqueue($line) }
+    $changelogArgs = $publishArgs.Clone()
+    $changelogArgs.Remove('ChangeNote')
+    $global:publishPrompts = 0
     function Read-Host {
         param([string]$Prompt)
-        if ($Prompt) {
-            Check ($noteLines.Count -eq 0) 'Confirmation must follow the complete change note.'
-            Check (-not (Test-Path -LiteralPath $env:WORKSHOP_TEST_OUTPUT)) 'Steam must not start before confirmation.'
-            return 'yes'
-        }
-        Check ($noteLines.Count -gt 0) 'Change-note entry must finish after one empty line (two Enter presses after the final text).'
-        $noteLines.Dequeue()
+        $global:publishPrompts++
+        $global:publishPrompt = $Prompt
+        $global:publishStartedEarly = Test-Path -LiteralPath $env:WORKSHOP_TEST_OUTPUT
+        return 'y'
     }
-    $preview = @(& "$deployRoot\publish-mod.ps1" @interactiveArgs 6>&1)
-    $expectedNote = "First 'quoted' line`nSecond line"
-    Check ((Read-Fixture).Published.ChangeNote -ceq $expectedNote -and @($preview | ForEach-Object { $_.ToString() }) -ccontains $expectedNote) 'Interactive input must preview and submit the same normalized multiline note without including the confirmation answer.'
+    $preview = @(& "$deployRoot\publish-mod.ps1" @changelogArgs 6>&1 | ForEach-Object { $_.ToString() })
+    $expectedNote = "v1.0.0`n[list]`n[*]Added: Something new.`n[*]Fixed: A 'quoted' [b]bold[/b] fix.`n[/list]"
+    Check ((Read-Fixture).Published.ChangeNote -ceq $expectedNote) "The changelog section must become the BBCode change note, Added before Fixed: $((Read-Fixture).Published.ChangeNote)"
+    Check ($preview -ccontains $expectedNote -and $global:publishPrompts -eq 1) 'The plan must show the generated note and ask once.'
+    Check ($global:publishPrompt -match 'y or yes' -and -not $global:publishStartedEarly) 'The prompt must ask for y/yes before Steam starts.'
+    Check (@($preview | Where-Object { $_ -match '^Tags:\s' }).Count -eq 1 -and @($preview | Where-Object { $_ -match 'Publish Example 1\.0\.0' }).Count -eq 1) 'The plan must name the version and the tag changes.'
+    Check (@($preview | Where-Object { $_ -match '^Record:.*RELEASES\.md.*\| 1\.0\.0 \|' }).Count -eq 1) 'The plan must show the release record line.'
+    $record = Get-Content -LiteralPath "$fixture\repo\RELEASES.md" -Raw
+    Check ($record -match '\| 1\.0\.0 \| \d{4}-\d\d-\d\d \d\d:\d\d UTC \| 1234567890 \|') "A successful publish must record the version, time and item: $record"
+    function Read-Host { 'yes' }
+
+    # A recorded version is skipped before any prompt or upload; declining
+    # leaves no record.
+    Reset-Fixture
+    $skipArgs = $changelogArgs.Clone()
+    $skipArgs.Remove('AllowRepublish')
+    function Read-Host { throw 'An already published version must not prompt.' }
+    $preview = @(& "$deployRoot\publish-mod.ps1" @skipArgs 6>&1 | ForEach-Object { $_.ToString() })
+    Check (-not (Test-Path -LiteralPath $env:WORKSHOP_TEST_OUTPUT) -and @($preview | Where-Object { $_ -match 'already published' }).Count -eq 1) 'An already published version must be skipped without uploading.'
+    Remove-Item -LiteralPath "$fixture\repo\RELEASES.md"
+    Reset-Fixture
+    function Read-Host { 'n' }
+    & "$deployRoot\publish-mod.ps1" @skipArgs | Out-Null
+    Check ($LASTEXITCODE -eq 2 -and -not (Test-Path -LiteralPath $env:WORKSHOP_TEST_OUTPUT) -and -not (Test-Path -LiteralPath "$fixture\repo\RELEASES.md")) 'A declined publish must exit 2 and neither upload nor record a release.'
+    # Without a record, a version that is already the latest Workshop change
+    # note is recorded with that note's time and skipped; an older one is not.
+    $changelogPage = { param($Latest) "<div class=`"changelog headline`">Update: 31 Oct @ 8:19pm</div><div><p id=`"1761941940`">$Latest<br><ul class=`"bb_ul`"><li>Fixed: x</li></ul></p></div>" }
+    $global:workshopLatest = 'v1.0.0'
+    function Invoke-WebRequest { param($Uri, $OutFile, [switch]$UseBasicParsing, $TimeoutSec) if ($Uri -match '/changelog/1234567890$') { [pscustomobject]@{ Content = (& $changelogPage $global:workshopLatest) } } else { Set-Content -LiteralPath $OutFile -Value 'older preview' } }
+    function Read-Host { throw 'A version already live on the Workshop must not prompt.' }
+    $preview = @(& "$deployRoot\publish-mod.ps1" @skipArgs 6>&1 | ForEach-Object { $_.ToString() })
+    $record = Get-ReleaseRecord -ModRoot "$fixture\repo" -Version '1.0.0'
+    Check (-not (Test-Path -LiteralPath $env:WORKSHOP_TEST_OUTPUT) -and $record.Published -eq '2025-10-31 20:19 UTC' -and $record.Item -eq '1234567890') "A version live on the Workshop must be recorded and skipped: $($preview -join ' | ')"
+    Remove-Item -LiteralPath "$fixture\repo\RELEASES.md"
+    $global:workshopLatest = 'v1.0.0.1'
+    function Read-Host { 'n' }
+    & "$deployRoot\publish-mod.ps1" @skipArgs | Out-Null
+    Check ($LASTEXITCODE -eq 2 -and -not (Test-Path -LiteralPath "$fixture\repo\RELEASES.md")) 'Another version on the Workshop must not count as this release.'
+    Set-Content -LiteralPath "$fixture\repo\CHANGELOG.md" -Value @('# Changelog', '', '## 0.9.0 — 2026-10-01', '', '- Added: Older entry.')
+    $failure = Failure { & "$deployRoot\publish-mod.ps1" @skipArgs }
+    Check ($failure -match "no '## 1\.0\.0' section" -and -not (Test-Path -LiteralPath $env:WORKSHOP_TEST_OUTPUT)) 'A version without a changelog section must be rejected before prompting.'
     function Read-Host { 'yes' }
 
     Reset-Fixture

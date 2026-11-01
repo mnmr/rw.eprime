@@ -17,6 +17,13 @@ namespace Implanner
                 AndroidTiers.FollowPending = false;
                 AndroidTiers.FollowSetting();
             }
+            // Synced commands must be issued from the frame path: Multiplayer
+            // syncs only what the interface issues, never a tick.
+            if (ImplantQualities.FollowPending && Current.ProgramState == ProgramState.Playing)
+            {
+                ImplantQualities.FollowPending = false;
+                ImplantQualities.Follow();
+            }
         }
 
         /// The synchronized tick path: reconciliation (reservations,
@@ -41,12 +48,14 @@ namespace Implanner
         public override void StartedNewGame()
         {
             AndroidTiers.FollowPending = true;
+            ImplantQualities.FollowPending = true;
             LongEventHandler.ExecuteWhenFinished(queueWelcome);
         }
 
         public override void LoadedGame()
         {
             AndroidTiers.FollowPending = true;
+            ImplantQualities.FollowPending = true;
             LongEventHandler.ExecuteWhenFinished(queueWelcome);
         }
 

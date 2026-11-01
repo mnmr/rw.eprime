@@ -164,6 +164,11 @@ namespace QualityJobs
             new FixedTickBoundaryGate(PeriodicAuditInterval);
         private readonly FixedTickBoundaryGate responsivenessGate =
             new FixedTickBoundaryGate(ResponsivenessInterval);
+        // The reconcile trigger travels with the save so a late-joining or
+        // resynced multiplayer client (which loads the host's state) runs
+        // exactly the passes the host runs. Set only while playing (synced
+        // commands and in-play events), never by load paths; cleared by the
+        // pass. Absent in older saves reads as false.
         private bool reconcileRequested;
 
         // Presentation revisions are exact consumer domains, not a catch-all.
@@ -606,7 +611,16 @@ namespace QualityJobs
             if (requestReconcile) RequestReconcile();
         }
 
-        internal void RequestReconcile() => reconcileRequested = true;
+        /// Ignored outside play. Load paths (Scribe PostLoadInit, map
+        /// FinalizeLoading spawns such as Misc. Robots stations registering)
+        /// run on a joiner's copy of the host's state but not on the host, so
+        /// a request raised there would make the joiner run a reconcile pass
+        /// the host never ran. The host's own pending request is scribed.
+        internal void RequestReconcile()
+        {
+            if (Current.ProgramState != ProgramState.Playing) return;
+            reconcileRequested = true;
+        }
 
         internal void NotifyUftSpawned(UnfinishedThing uft, Map map)
         {
@@ -1525,11 +1539,18 @@ namespace QualityJobs
             int tick = Find.TickManager.TicksGame;
             periodicAuditGate.Observe(tick);
             responsivenessGate.Observe(tick);
-            // Before pooling, so released items can join the sharing pool.
+            // Everything here runs on a multiplayer joiner's copy of the
+            // host's state but not on the host, so it must be a no-op on a
+            // snapshot the host already processed: the hand-back and the job
+            // recheck below find nothing to do on such a snapshot, and
+            // pooling is left to the next synced boundary.
             ReleaseUnmanagedRecipeWork();
-            // Sharing is independent from bill management. Adopt existing idle
-            // unfinished items immediately so paused-on-load games do not wait.
-            RecountAndPool();
+            // Rebuild the UFT indexes and counts only. Pooling idle unfinished
+            // items mutates simulation state (entries, BoundBill) and happens
+            // on the host at its 250/2500-tick boundaries, so a load-time pool
+            // would diverge from the host; the first boundary after load
+            // adopts them identically everywhere.
+            RecountAndPool(pool: false);
             InitializeExistingBillMigration();
             PublishAllPresentation();
             // Loaded job drivers restore their current toil without executing
@@ -1940,11 +1961,13 @@ namespace QualityJobs
             }
         }
 
-        private bool RecountAndPool(bool publishStatusRevision = true)
+        /// pool: false rebuilds the indexes and counts without touching
+        /// entries or unfinished items (the load path).
+        private bool RecountAndPool(bool publishStatusRevision = true, bool pool = true)
         {
             RebuildEntryIndex();
             rebuiltUftCounts.Clear();
-            bool entriesChanged = !shareUnfinishedWork && RemoveSharedEntries();
+            bool entriesChanged = pool && !shareUnfinishedWork && RemoveSharedEntries();
             foreach (List<UnfinishedThing> spawned in spawnedUftsByMap.Values)
                 spawned.Clear();
             List<Map> maps = Find.Maps;
@@ -1972,7 +1995,7 @@ namespace QualityJobs
                             rebuiltUftCounts.TryGetValue(key, out int n);
                             rebuiltUftCounts[key] = n + 1;
                         }
-                        if (TryPool(map, uft)) entriesChanged = true;
+                        if (pool && TryPool(map, uft)) entriesChanged = true;
                     }
                 }
             }
@@ -2325,6 +2348,7 @@ namespace QualityJobs
                 "existingBillMigrationVersion", 0);
             Scribe_Collections.Look(ref pendingExistingBillMigrationIds,
                 "pendingExistingBillMigrationIds", LookMode.Value);
+            Scribe_Values.Look(ref reconcileRequested, "reconcileRequested", false);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 // Null-harden collections FIRST: absent XML nodes leave them

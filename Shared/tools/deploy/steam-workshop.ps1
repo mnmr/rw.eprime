@@ -69,8 +69,12 @@ function Invoke-SteamWorkshopProcess {
 # Called inside the worker only; owns the native binding and Steam lifecycle.
 function Invoke-SteamWorkshopSession {
     param([string]$RimWorldDir, [scriptblock]$Action, [hashtable]$Parameters = @{})
-    $binding = Join-Path $RimWorldDir 'com.rlabrecque.steamworks.net.dll'
-    $nativePath = Join-Path $RimWorldDir 'steam_api64.dll'
+    # Some builds ship these at the game root, others under RimWorldWin64_Data.
+    $binding = @((Join-Path $RimWorldDir 'com.rlabrecque.steamworks.net.dll'), (Join-Path $RimWorldDir 'RimWorldWin64_Data\Managed\com.rlabrecque.steamworks.net.dll')) |
+        Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+    $nativePath = @((Join-Path $RimWorldDir 'steam_api64.dll'), (Join-Path $RimWorldDir 'RimWorldWin64_Data\Plugins\x86_64\steam_api64.dll')) |
+        Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+    if (-not $binding -or -not $nativePath) { throw "Steamworks libraries not found under $RimWorldDir (root or RimWorldWin64_Data)." }
     $nativeHandle = [Runtime.InteropServices.NativeLibrary]::Load((Resolve-Path -LiteralPath $nativePath).Path)
     $oldAppId = $env:SteamAppId
     $oldGameId = $env:SteamGameId

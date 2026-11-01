@@ -6,9 +6,11 @@
 # final state when Pickle quits the game instead of failing the launch.
 # At game-ready a detached run-guard.ps1 takes over: it fails the run fast on a
 # stall (10 s without input/ticks, a silent driving script, a frozen game) and
-# stops it -HardCapSeconds (at most 60, the owner's cap) after ready. Load time
-# before readiness is bounded by -TimeoutMinutes.
-param([string]$RunId = $env:RIMWORLD_AUTOMATION_RUN_ID, [int]$TimeoutMinutes = 12, [string[]]$GameArguments = @(), [ValidateRange(1, 60)][int]$HardCapSeconds = 60, [switch]$AllowRecoverableSaveErrors)
+# stops it -HardCapSeconds (default 60, the owner's cap) after ready. Load time
+# before readiness is bounded by -TimeoutMinutes. The owner approved up to 300 s
+# only for real Multiplayer host/arbiter tests (2026-11-01); everything else
+# stays at 60 s or less.
+param([string]$RunId = $env:RIMWORLD_AUTOMATION_RUN_ID, [int]$TimeoutMinutes = 12, [string[]]$GameArguments = @(), [ValidateRange(1, 300)][int]$HardCapSeconds = 60, [switch]$AllowRecoverableSaveErrors)
 $pickle = $GameArguments.Count -gt 0
 . (Join-Path $PSScriptRoot 'automation-common.ps1') -RunId $RunId
 $record = Get-SelectedRun
@@ -24,7 +26,7 @@ try {
     # builds must prepare another run, rather than mutate an existing snapshot.
     foreach ($mod in $record.snapshots.mods.PSObject.Properties) {
         foreach ($file in $mod.Value.files) {
-            $path = Join-Path $record.profile ('Game\Mods\' + $mod.Name + '\' + $file.path)
+            $path = Join-Path (Get-RunGameFolder $record) ('Mods\' + $mod.Name + '\' + $file.path)
             if ((Get-FileHash -LiteralPath $path).Hash -cne $file.sha256) { throw "Run snapshot changed: $path" }
         }
     }
@@ -104,7 +106,7 @@ try {
                     if ($state.audioVolume -ne 0) { throw 'Run audio listener is not muted.' }
                     # Prepatcher loads assemblies from bytes, so Assembly.Location
                     # can be empty. Validate the actual game's ModContentPack root.
-                    $expectedRoot = Join-Path $record.profile 'Game\Mods\SharedAutomation'
+                    $expectedRoot = Join-Path (Get-RunGameFolder $record) 'Mods\SharedAutomation'
                     if ($record.backend -ceq 'wsl') { $expectedRoot = (Get-WslRunPath $record) + '/Game/Mods/SharedAutomation' }
                     $actualRoot = if ($record.backend -ceq 'wsl') { $state.runtimeModRoot } else { [IO.Path]::GetFullPath($state.runtimeModRoot) }
                     if ($actualRoot -ine $expectedRoot) { throw "Game runtime mod root '$($state.runtimeModRoot)' differs from '$expectedRoot'." }

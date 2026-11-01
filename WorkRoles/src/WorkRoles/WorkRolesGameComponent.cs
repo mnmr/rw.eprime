@@ -128,7 +128,23 @@ namespace WorkRoles
 
         // Runs after both "new game started" and "save loaded".
         private static readonly System.Action finishInit = FinishInit;
-        public override void FinalizeInit() => LongEventHandler.ExecuteWhenFinished(finishInit);
+        public override void FinalizeInit()
+        {
+            // Job baselines and the first-tick reconcile stay at this
+            // deterministic point: a deferred callback could land after a
+            // multiplayer joiner has started simulating. The saved rank of a
+            // resumed job is restored; legacy saves stamp the loaded rank.
+            // The reconcile sweeps revocations left by saves from versions
+            // without interruption.
+            var store = RoleStore.Current;
+            if (store != null)
+            {
+                store.RestoreJobRankBaselines();
+                foreach (var pawn in store.pawnSets.Keys)
+                    CompiledJobOrders.EnqueueReconcile(pawn);
+            }
+            LongEventHandler.ExecuteWhenFinished(finishInit);
+        }
 
         private static void FinishInit()
         {
@@ -157,18 +173,6 @@ namespace WorkRoles
             // facade, signal builders, recs engine) warm while the loading
             // screen still owns the frame instead of on the first click.
             FirstOpenWarmup.Queue();
-
-            // Jobs resumed from the save predate the in-memory rank baselines.
-            // A job that survived until the save was never demoted below its
-            // issue rank, so the loaded rank is a valid stand-in: re-stamp it,
-            // and queue a first-tick reconcile to sweep revocations left by
-            // saves from versions without interruption.
-            if (store != null)
-                foreach (var pawn in store.pawnSets.Keys)
-                {
-                    JobRankBaseline.NotifyJobStarted(pawn);
-                    CompiledJobOrders.EnqueueReconcile(pawn);
-                }
         }
 
         public override void GameComponentTick()

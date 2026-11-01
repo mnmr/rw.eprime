@@ -81,6 +81,7 @@ namespace WorkRoles
         {
             if (cache.Remove(pawn) || pawn.IsColonist || pawn.IsSlaveOfColony)
                 UiVersion.RuntimeChanged(pawn);
+            EnqueueManagedReconcile(pawn);
         }
 
         internal static void InvalidateAssignments(Pawn pawn, bool planChanged)
@@ -89,6 +90,17 @@ namespace WorkRoles
             using var batch = RoleStore.Current?.Revisions.Batch();
             UiVersion.PawnChanged(pawn, planChanged);
             UiVersion.RuntimeChanged(pawn);
+            EnqueueManagedReconcile(pawn);
+        }
+
+        // Every rebuild of a managed pawn's order reconciles its running work
+        // on the next synced tick. Otherwise a revoked job keeps running here
+        // and only a freshly loaded peer (a multiplayer joiner) ends it.
+        // All callers are simulation or command paths, never UI.
+        private static void EnqueueManagedReconcile(Pawn pawn)
+        {
+            if (pawn != null && !pawn.Destroyed && RoleStore.Current?.IsManaged(pawn) == true)
+                pendingReconciles.Enqueue(pawn);
         }
 
         internal static void InvalidateBatch(IEnumerable<Pawn> pawns)

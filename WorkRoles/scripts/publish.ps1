@@ -1,4 +1,4 @@
-[CmdletBinding()] param([string]$ChangeNote, [string]$RimWorldMods, [string]$SteamCmd, [string]$Username)
+[CmdletBinding()] param([string]$ChangeNote, [switch]$AllowRepublish, [string]$RimWorldMods, [string]$SteamCmd, [string]$Username)
 $ErrorActionPreference = 'Stop'
 & "$PSScriptRoot\..\..\Shared\tools\deploy\publish-mod.ps1" -ModRoot (Split-Path -Parent $PSScriptRoot) -DeployName WorkRoles @PSBoundParameters
 exit $LASTEXITCODE

@@ -1,0 +1,9 @@
+# Multiplayer desync bisection on the clean fixture without our four mods.
+remove brrainz.rimbridgeserver
+remove mnmr.workroles
+remove mnmr.eprimereadouts
+remove eprime.qualityjobs
+remove eprime.implanner
+
+after ludeon.rimworld.odyssey
+rwmt.multiplayer

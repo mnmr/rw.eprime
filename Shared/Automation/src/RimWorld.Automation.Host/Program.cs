@@ -50,6 +50,28 @@ internal static class Program
     [DllImport("kernel32.dll")] private static extern bool GetExitCodeProcess(IntPtr process, out uint code);
     [DllImport("kernel32.dll", SetLastError = true)] private static extern bool SetHandleInformation(IntPtr handle, uint mask, uint flags);
 
+    // The run's own Game folder, or the persistent slot recorded in run.json
+    // (AutomationProfiles/Shared/Slots/slot-N/Game) while that slot's lease
+    // names this run.
+    private static string RunGameFolder(string profile, string token)
+    {
+        string own = Path.Combine(profile, "Game");
+        string recordPath = Path.Combine(profile, "run.json");
+        if (!File.Exists(recordPath) || token.Length <= 16) return own;
+        using JsonDocument record = JsonDocument.Parse(File.ReadAllText(recordPath));
+        if (!record.RootElement.TryGetProperty("snapshots", out JsonElement snapshots)
+            || !snapshots.TryGetProperty("slot", out JsonElement slotElement)
+            || slotElement.ValueKind != JsonValueKind.String) return own;
+        string slot = slotElement.GetString()!;
+        if (!System.Text.RegularExpressions.Regex.IsMatch(slot, "^slot-[1-9][0-9]*$"))
+            throw new InvalidOperationException("Invalid run slot.");
+        string slotRoot = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(Path.GetFullPath(profile)))!, "Slots", slot);
+        using JsonDocument lease = JsonDocument.Parse(File.ReadAllText(Path.Combine(slotRoot, "lease.json")));
+        if (lease.RootElement.GetProperty("runId").GetString() != token[16..])
+            throw new InvalidOperationException("The run's slot is leased to another run.");
+        return Path.Combine(slotRoot, "Game");
+    }
+
     private static void Main(string[] arguments)
     {
         if (arguments.Length < 4) return;
@@ -78,10 +100,11 @@ internal static class Program
         }
         try
         {
+            string game = RunGameFolder(profile, token);
             if (!RunIdentity.Matches(profile, token)
-                || !(string.Equals(Path.GetFullPath(executable), Path.Combine(profile, "Game", "RimWorldWin64.exe"), StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(Path.GetFullPath(executable), Path.Combine(profile, "Game", "RimWorld.exe"), StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(Path.GetFullPath(executable), Path.Combine(profile, "Game", "RimWorldLinux"), StringComparison.OrdinalIgnoreCase))
+                || !(string.Equals(Path.GetFullPath(executable), Path.Combine(game, "RimWorldWin64.exe"), StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(Path.GetFullPath(executable), Path.Combine(game, "RimWorld.exe"), StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(Path.GetFullPath(executable), Path.Combine(game, "RimWorldLinux"), StringComparison.OrdinalIgnoreCase))
                 || !string.Equals(Path.GetFullPath(log), Path.Combine(profile, "Player.log"), StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("The host requires a managed run and its matching session token/executable/log.");
             // Only test-runner flags may ride along; they cannot redirect the

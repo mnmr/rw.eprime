@@ -138,7 +138,7 @@ namespace WorkRoles
         {
             if (Store == null || selection == null || selection.xml.NullOrEmpty()) return;
             var doc = RoleIO.Parse(selection.xml);
-            bool local = !MP.IsInMultiplayer || MP.IsExecutingSyncCommandIssuedBySelf;
+            bool local = !MP.IsInMultiplayer || RimShared.GameLib.MpSyncState.IsExecutingSyncCommandIssuedBySelf;
             string? error = RoleIO.ValidateSelection(Store, doc, selection);
             if (error != null)
             {

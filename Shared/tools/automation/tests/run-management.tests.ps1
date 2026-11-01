@@ -26,6 +26,33 @@ try {
         $runs += $id
         Write-RunJson (Join-Path $path 'run.json') @{runId=$id;owner=(Get-AutomationOwner);profile=$path;purpose="management fixture $index"}
     }
+    # Persistent slots: a live lease is never shared or taken over; removal
+    # releases it; a lease whose run folder is gone is reclaimed.
+    $slotsRoot = $script:AutomationSlotsRoot
+    $script:AutomationSlotsRoot = Join-Path $fixture 'Slots'
+    try {
+        $first = Request-RunSlot $runs[0] (Get-AutomationOwner)
+        $second = Request-RunSlot $runs[1] (Get-AutomationOwner)
+        Check ($first -ceq 'slot-1' -and $second -ceq 'slot-2') 'Concurrent runs must claim distinct slots.'
+        $slotGame = Join-Path $script:AutomationSlotsRoot 'slot-1\Game'
+        New-Item -ItemType Directory -Path (Join-Path $slotGame 'Mods\Old') -Force | Out-Null
+        Set-Content (Join-Path $slotGame 'RimWorldWin64.exe') 'old'
+        $assets = Join-Path $fixture 'installed-assets'
+        New-Item -ItemType Directory -Path $assets | Out-Null
+        Set-Content (Join-Path $assets 'keep.txt') 'installed'
+        New-Item -ItemType Junction -Path (Join-Path $slotGame 'Data') -Target $assets | Out-Null
+        $record = [pscustomobject]@{runId=$runs[0]; profile=(Assert-RunPath $runs[0]); snapshots=[pscustomobject]@{slot=$first; executable='RimWorldWin64.exe'}}
+        Check ((Get-RunExecutable $record) -ieq (Join-Path $slotGame 'RimWorldWin64.exe')) 'A slotted run must launch from its slot.'
+        Clear-RunSlotLease ([pscustomobject]@{runId=$runs[1]; snapshots=[pscustomobject]@{slot=$first}})
+        Check ((Request-RunSlot $runs[2] (Get-AutomationOwner)) -ceq 'slot-3') 'Another run must not release a foreign lease.'
+        Clear-RunSlotLease $record
+        Check ((Request-RunSlot $runs[3] (Get-AutomationOwner)) -ceq 'slot-1') 'A released slot must be reused.'
+        Check (@(Get-ChildItem -LiteralPath $slotGame -Force).Count -eq 0) 'A claimed slot must start empty.'
+        Check (Test-Path -LiteralPath (Join-Path $assets 'keep.txt')) 'Emptying a slot must never delete through its asset junctions.'
+        Write-RunJson (Join-Path $script:AutomationSlotsRoot 'slot-2\lease.json') @{runId=('0' * 32); owner='gone'}
+        Check ((Request-RunSlot $runs[4] (Get-AutomationOwner)) -ceq 'slot-2') 'A lease whose run no longer exists must be reclaimed.'
+        Rejects { Get-RunGameFolder ([pscustomobject]@{profile=$fixture; snapshots=[pscustomobject]@{slot='..\escape'}}) } 'Slot names cannot escape the slots root.'
+    } finally { $script:AutomationSlotsRoot = $slotsRoot }
     . (Join-Path $toolsRoot 'automation-common.ps1')
     Rejects { Get-ExactlyOneSharedRimWorldProcessInfo } 'An omitted run must never select any game.'
     Set-AutomationRun $runs[0]

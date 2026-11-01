@@ -42,6 +42,17 @@ namespace Implanner.Core
         /// part still counts as not worse.
         const float Epsilon = 0.0001f;
 
+        /// A replacement's part efficiency at each quality: its base times
+        /// the (synced) multiplier for that quality, as Quality Bionics
+        /// Remastered computes it.
+        public static float[] Scaled(float baseEfficiency, IReadOnlyList<float> multipliers)
+        {
+            var result = new float[Highest + 1];
+            for (int q = 0; q < result.Length; q++)
+                result[q] = baseEfficiency * multipliers[q];
+            return result;
+        }
+
         public static bool AtLeast(float efficiency, float floor) =>
             !float.IsNaN(efficiency) && !float.IsInfinity(efficiency)
             && efficiency >= floor - Epsilon;

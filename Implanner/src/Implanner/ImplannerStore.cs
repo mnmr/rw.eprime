@@ -86,6 +86,10 @@ namespace Implanner
         private bool showPurchaseOnly;
         private bool upgradeByPriority;
         private bool androidSurgeryByCrafters;
+        // Quality Bionics Remastered's efficiency multipliers as the
+        // simulation uses them (QualityMultipliers.Encode); empty or
+        // unparsable (older saves) keeps the model's default table.
+        private string qualityMultipliers = "";
 
         private readonly PlannerRevisions revisions = new PlannerRevisions();
 
@@ -105,6 +109,7 @@ namespace Implanner
             BenchDesignations.Publish(Model);
             SurgeryBindings.Publish(Model);
             SurgeryBindings.PublishProductionProtection(Model);
+            ImplantQualities.PublishTable(Model.QualityMultipliers);
         }
 
         public static ImplannerStore? Current => Find.World?.GetComponent<ImplannerStore>();
@@ -148,6 +153,8 @@ namespace Implanner
                 SurgeryBindings.Publish(Model, change);
             if ((change & PlannerChange.ProductionProtection) != 0)
                 SurgeryBindings.PublishProductionProtection(Model);
+            if ((change & PlannerChange.Options) != 0)
+                ImplantQualities.PublishTable(Model.QualityMultipliers);
         }
 
         internal void ClearPendingReconcile() => pendingReconcile = false;
@@ -381,6 +388,7 @@ namespace Implanner
                 showPurchaseOnly = Model.ShowPurchaseOnly;
                 upgradeByPriority = Model.UpgradeByPriority;
                 androidSurgeryByCrafters = Model.AndroidSurgeryByCrafters;
+                qualityMultipliers = QualityMultipliers.Encode(Model.QualityMultipliers);
             }
 
             Scribe_Collections.Look(ref planRecords, "plans", LookMode.Deep);
@@ -439,6 +447,7 @@ namespace Implanner
             Scribe_Values.Look(ref showPurchaseOnly, "showPurchaseOnly", false);
             Scribe_Values.Look(ref upgradeByPriority, "upgradeByPriority", false);
             Scribe_Values.Look(ref androidSurgeryByCrafters, "androidSurgeryByCrafters", false);
+            Scribe_Values.Look(ref qualityMultipliers, "qualityMultipliers", "");
             Scribe_Values.Look(ref pendingReconcile, "pendingReconcile", false);
             Scribe_Values.Look(ref pendingProductionPass, "pendingProductionPass", false);
 
@@ -605,6 +614,8 @@ namespace Implanner
                     allowMultipleBladders, allowMultipleHygieneEnhancers,
                     showPurchaseOnly, onlyDesignatedBenches, upgradeByPriority,
                     androidSurgeryByCrafters);
+                if (QualityMultipliers.TryParse(qualityMultipliers, out float[] multipliers))
+                    Model.SetQualityMultipliers(multipliers);
                 // Deferred so maps and pawns are fully loaded when existence
                 // checks run; executes before play begins on every client.
                 LongEventHandler.ExecuteWhenFinished(FinishInit);

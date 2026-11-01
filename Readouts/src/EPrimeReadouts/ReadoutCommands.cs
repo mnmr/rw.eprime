@@ -25,7 +25,7 @@ namespace EPrimeReadouts
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            bool local = !MP.IsInMultiplayer || MP.IsExecutingSyncCommandIssuedBySelf;
+            bool local = !MP.IsInMultiplayer || RimShared.GameLib.MpSyncState.IsExecutingSyncCommandIssuedBySelf;
             if (!SetupDocument.TryRead(xml, out var setup, out string? error, ModRequirements.IsModActive, SetupDefaults.MemberExists)
                 || !setup!.TryApply(store.Model, sections, store.TakePoolId, store.TakeGroupId, out var change, out error))
             {

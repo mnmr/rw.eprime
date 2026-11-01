@@ -17,6 +17,7 @@
   <ItemGroup>
     <Compile Include="$(RimSharedRoot)\UiLib\**\*.cs" LinkBase="Shared" />
     <Compile Include="$(RimSharedRoot)\GameLib\Localization\**\*.cs" LinkBase="Shared" />
+    <Compile Include="$(RimSharedRoot)\GameLib\Multiplayer\**\*.cs" LinkBase="Shared" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" Condition="'$(RimWorldVersion)' == '1.6'" />
@@ -30,4 +31,5 @@
   </ItemGroup>
   <Import Project="$(RimSharedRoot)/Build/RimWorld17.props" Condition="'$(RimWorldVersion)' == '1.7'" />
   <Import Project="$(RimSharedRoot)/Translations/Translations.props" />
+  <Import Project="$(RimSharedRoot)/Build/RimWorldVersions.targets" />
 </Project>

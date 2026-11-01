@@ -24,9 +24,11 @@ function Copy-RunSnapshot {
     [pscustomobject]@{source=$sourceRoot; files=$hashes}
 }
 function New-RunGameSnapshot {
-    param([Parameter(Mandatory)][string]$Profile, [Parameter(Mandatory)][string]$ModSourceRoot, [string[]]$AdditionalModSource = @())
+    param([Parameter(Mandatory)][string]$Profile, [Parameter(Mandatory)][string]$ModSourceRoot, [string[]]$AdditionalModSource = @(),
+        [string]$GameFolder = '')
     $additionalSources = @(Get-AdditionalModSources -ModSourceRoot $ModSourceRoot -AdditionalModSource $AdditionalModSource)
-    $game = Join-Path $Profile 'Game'
+    # A claimed slot (empty) or the run's own Game folder.
+    $game = if ($GameFolder) { $GameFolder } else { Join-Path $Profile 'Game' }
     $layout = Get-GameLayout $script:InstalledGameRoot
     $sources = [ordered]@{}
     foreach ($installed in Get-ChildItem -LiteralPath (Join-Path $script:InstalledGameRoot 'Mods') -Directory) {
@@ -62,7 +64,7 @@ function New-RunGameSnapshot {
             }
         }
     }
-    New-Item -ItemType Directory -Path $game | Out-Null
+    New-Item -ItemType Directory -Path $game -Force | Out-Null
     # Vanilla locates local mods beside its executable. Copy launch binaries;
     # only large immutable game assets use junctions. Resolve all mod source
     # collisions above before publishing any part of the game snapshot.
@@ -80,8 +82,10 @@ function New-RunGameSnapshot {
     }
     $hostSource = Join-Path $ModSourceRoot 'Shared\Automation\src\RimWorld.Automation.Host\bin\Release\net10.0-windows'
     $hostSnapshot = Copy-RunSnapshot $hostSource (Join-Path $Profile 'Host')
-    foreach ($required in @(('Game\' + $layout.executable),('Game\Mods\SharedAutomation\' + $layout.gameVersion + '\Assemblies\RimWorld.Automation.dll'),'Host\RimWorld.Automation.Host.exe')) {
-        if (-not (Test-Path -LiteralPath (Join-Path $Profile $required) -PathType Leaf)) { throw "Build before creating the run; missing $required" }
+    foreach ($required in @((Join-Path $game $layout.executable),
+        (Join-Path $game ('Mods\SharedAutomation\' + $layout.gameVersion + '\Assemblies\RimWorld.Automation.dll')),
+        (Join-Path $Profile 'Host\RimWorld.Automation.Host.exe'))) {
+        if (-not (Test-Path -LiteralPath $required -PathType Leaf)) { throw "Build before creating the run; missing $required" }
     }
     [pscustomobject]@{executable=$layout.executable; gameVersion=$layout.gameVersion; nativeFiles=$nativeFiles; mods=$mods; host=$hostSnapshot}
 }

@@ -3,4 +3,5 @@
     <RimSharedRoot>$(MSBuildThisFileDirectory)..\..\Shared</RimSharedRoot>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  <Import Project="$(RimSharedRoot)\Build\RimWorldVersions.props" />
 </Project>

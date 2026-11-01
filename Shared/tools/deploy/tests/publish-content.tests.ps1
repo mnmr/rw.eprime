@@ -26,7 +26,7 @@ function Invoke-SteamWorkshopProcess {
     $source = "$fixture\repo\mod"
     $deployed = "$fixture\installed\Example"
     $files = @{
-        'About\About.xml' = '<ModMetaData><name>Example</name><supportedVersions><li>1.6</li><li>1.7</li></supportedVersions></ModMetaData>'
+        'About\About.xml' = '<ModMetaData><name>Example</name><modVersion>1.0.0</modVersion><supportedVersions><li>1.6</li><li>1.7</li></supportedVersions></ModMetaData>'
         'About\PublishedFileId.txt' = '1234567890'
         'About\Preview.png' = 'preview fixture'
         'FallbackLanguages\German\Keyed\Example.xml' = '<LanguageData><Example>Aktuell</Example></LanguageData>'
@@ -57,7 +57,7 @@ function Invoke-SteamWorkshopProcess {
     }
     $publishArgs = @{
         ModRoot = "$fixture\repo"; DeployName = 'Example'; RimWorldMods = "$fixture\installed"
-        ChangeNote = 'Localization retirement'
+        ChangeNote = 'Localization retirement'; AllowRepublish = $true
     }
     # Removing/weakening the preflight lets any of these deployments reach the
     # network, prompt and upload boundary despite unchanged About/Preview files.

@@ -1,0 +1,13 @@
+<Project>
+  <!-- Imported from each mod's Directory.Build.props, before the SDK picks its
+       intermediate paths. An explicit -p:RimWorldVersion builds that version
+       only; otherwise the game project builds 1.6 and then 1.7
+       (RimWorldVersions.targets). Each version restores into its own obj
+       folder so the two package graphs never overwrite each other. -->
+  <PropertyGroup>
+    <RimWorldVersionRequested>$(RimWorldVersion)</RimWorldVersionRequested>
+    <BaseIntermediateOutputPath Condition="'$(RimWorldVersion)' == '1.7'">obj\1.7\</BaseIntermediateOutputPath>
+    <!-- The 1.7 folder sits inside obj, so keep 1.6's generated sources out of 1.7. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj\**</DefaultItemExcludes>
+  </PropertyGroup>
+</Project>

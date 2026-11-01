@@ -72,15 +72,30 @@ namespace QualityJobs.UI
         private readonly bool setupCompleted;
         private string? startRebuildLabel, rebuildNote;
 
-        // Cache — Owner/key: this fixed-width window. Value: measured Small and
-        // Medium line bounds and wrapped draft note height. Dependencies: text,
-        // font, 484 logical-pixel content width, UiRevision (scale/tiny/language).
+        // Cache — Owner/key: this window. Value: measured Small and Medium line
+        // bounds, window width, wrapped draft note height and wrapped checkbox
+        // row heights. Dependencies: text, font, UiRevision (scale/tiny/language).
         // Refresh: immediate revision gate; unchanged dependencies reuse metrics.
         // Equality: equal measurements retain the same scalar geometry.
         // Teardown: released with window. No game/model data is invalidated.
         private int layoutRevision = int.MinValue;
         private int labelsRevision = int.MinValue;
         private float smallLineH = 22f, mediumLineH, rebuildNoteHeight;
+        private float windowW = MinWindowW;
+        private float inspiredRowH = 22f, specialistRowH = 22f, autoBestRowH = 22f;
+
+        // The window widens (both columns equally) until the longest checkbox
+        // label fits on one line, up to MaxWindowW; longer translations wrap
+        // and their rows grow to the measured height.
+        private const float MinWindowW = 520f;
+        private const float MaxWindowW = 720f;
+        // Widgets.CheckboxLabeled reserves 24f at the right edge for the box.
+        private const float CheckboxW = 24f;
+
+        private static float ColumnW(float windowWidth) => (windowWidth - 3f * WinMargin) / 2f;
+
+        private float CheckRowH(string label, float labelW) =>
+            Mathf.Max(smallLineH, Mathf.Ceil(Text.CalcHeight(label, labelW)));
 
         private void EnsureLayout()
         {
@@ -102,8 +117,17 @@ namespace QualityJobs.UI
                 Text.Font = GameFont.Small;
                 Text.WordWrap = true;
                 smallLineH = Mathf.Ceil(Text.LineHeight);
+                float labelNeed = Mathf.Max(WrText.FitWidth(requireInspiredLabel!),
+                    Mathf.Max(WrText.FitWidth(autoBestLabel!),
+                        ModsConfig.IdeologyActive ? WrText.FitWidth(requireSpecialistLabel!) : 0f));
+                float columnNeed = Mathf.Ceil(labelNeed) + CheckboxW + 2f * PanelPad;
+                windowW = Mathf.Clamp(2f * columnNeed + 3f * WinMargin, MinWindowW, MaxWindowW);
+                float labelW = ColumnW(windowW) - 2f * PanelPad - CheckboxW;
+                inspiredRowH = CheckRowH(requireInspiredLabel!, labelW);
+                specialistRowH = CheckRowH(requireSpecialistLabel!, labelW);
+                autoBestRowH = CheckRowH(autoBestLabel!, labelW);
                 rebuildNoteHeight = setupCompleted
-                    ? Mathf.Ceil(Text.CalcHeight(rebuildNote!, 520f - 2f * WinMargin)) : 0f;
+                    ? Mathf.Ceil(Text.CalcHeight(rebuildNote!, windowW - 2f * WinMargin)) : 0f;
                 Text.Font = GameFont.Medium;
                 mediumLineH = Mathf.Ceil(Text.LineHeight);
             }
@@ -155,30 +179,27 @@ namespace QualityJobs.UI
         // (5 rows) is shorter than the options block.
         private float LeftPanelH()
         {
-            float options = SmallLineH + GapH   // inspired
-                + SmallLineH + GapH             // auto-best
+            float options = inspiredRowH + GapH // inspired
+                + autoBestRowH + GapH           // auto-best
                 + SliderH + GapH                // manual skill slider (tallest)
                 + SmallLineH;                   // target-quality row
-            if (ModsConfig.IdeologyActive) options += SmallLineH + GapH;
+            if (ModsConfig.IdeologyActive) options += specialistRowH + GapH;
             return 2f * PanelPad + ClearRowH + GapH + options;
         }
 
         // Left options block heights (no trailing gap on the last element):
-        //   inspired(22) + gap + [specialist(22) + gap] + auto(22) + gap
+        //   inspired + gap + [specialist + gap] + auto + gap
         //   + skillRow(30 slider, or 22 current-best label) + gap + qualityRow(22)
-        // All four combos (Ideology × autoBest):
-        //   no Ideology, manual: 22+2 + 22+2 + 30+2 + 22 = 102f
-        //   no Ideology, auto:   22+2 + 22+2 + 22+2 + 22 =  94f
-        //   Ideology, manual:    22+2 + 22+2 + 22+2 + 30+2 + 22 = 126f
-        //   Ideology, auto:      22+2 + 22+2 + 22+2 + 22+2 + 22 = 118f
+        // Checkbox rows are one Small line unless a translation still wraps at
+        // MaxWindowW, in which case they take their measured wrapped height.
         private float OptionsBlockH()
         {
             float skillRowH = autoBest ? SmallLineH : SliderH;
-            float h = SmallLineH + GapH        // inspired
-                    + SmallLineH + GapH        // auto-best checkbox
+            float h = inspiredRowH + GapH      // inspired
+                    + autoBestRowH + GapH      // auto-best checkbox
                     + skillRowH + GapH         // slider or current-best label
                     + SmallLineH;              // target-quality row
-            if (ModsConfig.IdeologyActive) h += SmallLineH + GapH;
+            if (ModsConfig.IdeologyActive) h += specialistRowH + GapH;
             return h;
         }
 
@@ -294,7 +315,7 @@ namespace QualityJobs.UI
                 float headerH  = medLineH - TitleLift + TitleGap;
                 float leftH    = headerH + LeftPanelH();
                 float rightH   = RightContentH + StatusGapH + StatusContentH - TitleLift;
-                return new Vector2(520f, Mathf.Max(leftH, rightH) + 2f * WinMargin
+                return new Vector2(windowW, Mathf.Max(leftH, rightH) + 2f * WinMargin
                     + (setupCompleted ? rebuildNoteHeight + StatusGapH : 0f));
             }
         }
@@ -406,6 +427,7 @@ namespace QualityJobs.UI
             if (previousLayoutRevision != layoutRevision)
             {
                 SetInitialSizeAndPosition();
+                inRect.width = windowRect.width - 2f * WinMargin;
                 inRect.height = windowRect.height - 2f * WinMargin;
             }
             QualityJobsStore? store = QualityJobsStore.Active;
@@ -666,25 +688,25 @@ namespace QualityJobs.UI
 
                 // (1) Require inspired checkbox.
                 bool newInspired = requireInspired;
-                Rect inspiredRect = new Rect(x, y, width, SmallLineH);
+                Rect inspiredRect = new Rect(x, y, width, inspiredRowH);
                 Widgets.CheckboxLabeled(inspiredRect, requireInspiredLabel!, ref newInspired);
-                y += SmallLineH + GapH;
+                y += inspiredRowH + GapH;
 
                 // (2) Require specialist checkbox (Ideology-gated).
                 bool newSpecialist = requireSpecialist;
                 if (ModsConfig.IdeologyActive)
                 {
-                    Rect specialistRect = new Rect(x, y, width, SmallLineH);
+                    Rect specialistRect = new Rect(x, y, width, specialistRowH);
                     Widgets.CheckboxLabeled(specialistRect, requireSpecialistLabel!, ref newSpecialist);
-                    y += SmallLineH + GapH;
+                    y += specialistRowH + GapH;
                 }
 
                 // (2b) Auto-best checkbox.
                 bool newAutoBest = autoBest;
-                Rect autoRect = new Rect(x, y, width, SmallLineH);
+                Rect autoRect = new Rect(x, y, width, autoBestRowH);
                 Widgets.CheckboxLabeled(autoRect, autoBestLabel!, ref newAutoBest);
                 WrTips.Key("QJ_AutoBestTip").Region(autoRect);
-                y += SmallLineH + GapH;
+                y += autoBestRowH + GapH;
 
                 // (3) Finisher-skill slider — or current-best label in auto mode.
                 // EnsureAutoBest is NOT called here: the single per-pass call

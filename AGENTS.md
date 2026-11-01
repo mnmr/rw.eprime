@@ -481,6 +481,18 @@ for a human to review. Source-text tests are not allowed.
 - Run functional tests concurrently as needed. Performance/FPS/timing benchmarks
   require an otherwise idle game workload; coordinate an exclusive measurement
   window because independent files do not isolate CPU, GPU or memory contention.
+- Read `Shared/tools/automation/README.md` before writing or running an
+  in-game test. Default to the local 1.7 copy (`create-run.ps1 -GameVersion
+  1.7`, from `GameInstalls\1.7`) with tick stepping and a fixed budget of 60 s
+  after game-ready. Windows runs execute from reserved persistent slots
+  (`AutomationProfiles\Shared\Slots\slot-N`) so the executable path, and its
+  firewall rule, stay stable.
+- Multiplayer tests run only on the local 1.6 copy (the Multiplayer mod
+  supports 1.6 only), through `WorkRoles/tests/InGame/MultiplayerArbiter`
+  (host + Arbiter + a fresh client joining from the main menu), on the clean
+  fixture with no third-party mods beyond Harmony, Prepatcher and Multiplayer,
+  with a 5-minute budget per run. Follow the README's "Multiplayer tests"
+  section, including the pitfalls that produce fake desyncs.
 - Prefer condition-based startup detection: poll the isolated run's
   `Player.log` for save-load completion, mod errors, or an explicit test marker.
   Fixed sleeps may be a bounded fallback but must not be the only readiness

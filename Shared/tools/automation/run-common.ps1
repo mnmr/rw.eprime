@@ -4,6 +4,10 @@ $script:AutomationSharedRoot = Join-Path $script:AutomationRepositoryRoot 'Autom
 $script:AutomationRunsRoot = Join-Path $script:AutomationSharedRoot 'Runs'
 $script:InstalledGameRoot = 'C:\Program Files (x86)\Steam\steamapps\common\RimWorld'
 $script:InstalledWorkshopRoot = 'C:\Program Files (x86)\Steam\steamapps\workshop\content\294100'
+# Persistent per-version game copies (create-run -GameVersion) and the reusable
+# slots Windows runs execute from (stable executable paths, see Request-RunSlot).
+$script:GameInstallsRoot = Join-Path $script:AutomationRepositoryRoot 'GameInstalls'
+$script:AutomationSlotsRoot = Join-Path $script:AutomationSharedRoot 'Slots'
 
 function Get-AutomationOwner {
     if ($env:RIMWORLD_AUTOMATION_OWNER) { return $env:RIMWORLD_AUTOMATION_OWNER }
@@ -104,7 +108,50 @@ function Get-RunExecutable {
     $name = $Record.snapshots.executable
     if (-not $name) { $name = 'RimWorldWin64.exe' } # Existing 1.6 manifests.
     if ($name -cnotin @('RimWorldWin64.exe','RimWorld.exe','RimWorldLinux')) { throw 'Invalid run executable.' }
-    Join-Path $Record.profile ('Game\' + $name)
+    Join-Path (Get-RunGameFolder $Record) $name
+}
+# Windows runs execute from a persistent slot so the game executable keeps a
+# stable path across runs (one firewall rule per slot). WSL runs and manifests
+# from before slots use the run's own Game folder.
+function Get-RunGameFolder {
+    param([Parameter(Mandatory)]$Record)
+    $slot = $Record.snapshots.slot
+    if (-not $slot) { return Join-Path $Record.profile 'Game' }
+    if ($slot -cnotmatch '^slot-[1-9][0-9]*$') { throw 'Invalid run slot.' }
+    Join-Path (Join-Path $script:AutomationSlotsRoot $slot) 'Game'
+}
+# Claims the lowest slot without a live lease and empties its Game folder. A
+# lease belongs to its run until remove-run releases it; a lease whose run no
+# longer exists is reclaimed. Never by age. Callers hold the preparation mutex.
+function Request-RunSlot {
+    param([Parameter(Mandatory)][string]$RunId, [Parameter(Mandatory)][string]$Owner)
+    for ($n = 1; ; $n++) {
+        $name = "slot-$n"
+        $slot = Join-Path $script:AutomationSlotsRoot $name
+        $lease = Read-RunJson (Join-Path $slot 'lease.json')
+        if ($lease -and $lease.runId -cmatch '^[a-f0-9]{32}$' -and
+            (Test-Path -LiteralPath (Join-Path $script:AutomationRunsRoot $lease.runId))) { continue }
+        New-Item -ItemType Directory -Path $slot -Force | Out-Null
+        Clear-RunSlotGame (Join-Path $slot 'Game')
+        Write-RunJson (Join-Path $slot 'lease.json') ([ordered]@{runId=$RunId; owner=$Owner; utc=[DateTime]::UtcNow.ToString('o')})
+        return $name
+    }
+}
+function Clear-RunSlotGame {
+    param([Parameter(Mandatory)][string]$Game)
+    if (-not (Test-Path -LiteralPath $Game)) { return }
+    foreach ($item in Get-ChildItem -LiteralPath $Game -Force) {
+        # Asset folders are junctions into the installation: remove the link only.
+        if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { [IO.Directory]::Delete($item.FullName, $false) }
+        else { Remove-Item -LiteralPath $item.FullName -Recurse -Force }
+    }
+}
+function Clear-RunSlotLease {
+    param([Parameter(Mandatory)]$Record)
+    if (-not $Record.snapshots.slot) { return }
+    $path = Join-Path (Split-Path -Parent (Get-RunGameFolder $Record)) 'lease.json'
+    $lease = Read-RunJson $path
+    if ($lease -and $lease.runId -ceq $Record.runId) { Remove-Item -LiteralPath $path }
 }
 function Get-AllRimWorldProcessInfo { @(Get-CimInstance Win32_Process -Filter "name = 'RimWorldWin64.exe' OR name = 'RimWorld.exe'") }
 function Get-RunProcesses {

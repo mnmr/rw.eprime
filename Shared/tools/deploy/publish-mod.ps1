@@ -1,11 +1,18 @@
 # Uploads the deployed Mods\<DeployName> folder to the Steam Workshop. Each
-# mod's scripts/publish.ps1 calls this with its own names. Content and tags use
-# one desktop Steam session; SteamCMD would replace that session's server login.
+# mod's scripts/publish.ps1 calls this with its own names; Scripts/publish-all.cmd
+# calls those. Content and tags use one desktop Steam session; SteamCMD would
+# replace that session's server login.
+# The change note is the CHANGELOG.md section for About.xml's modVersion, as
+# BBCode. The plan (version, change note, tag/description/preview changes) is
+# shown and must be approved with y/yes. A successful upload is recorded in the
+# mod's RELEASES.md; an already-recorded version is skipped (-AllowRepublish).
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][string]$ModRoot,
     [Parameter(Mandatory)][string]$DeployName,
+    # Overrides the change note generated from CHANGELOG.md.
     [string]$ChangeNote = "",
+    [switch]$AllowRepublish,
     [string]$RimWorldMods = "C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods",
     # Retained for existing wrappers/callers; neither starts a second session.
     [string]$SteamCmd = "",
@@ -38,8 +45,20 @@ if ($repoAbout -ne $deployedAbout) {
     throw "About.xml in the game's Mods folder ($content) is older than the repo's; the upload sends the deployed folder, so run dotnet build + scripts/deploy.ps1 first"
 }
 . "$PSScriptRoot\publish-content.ps1"
+. "$PSScriptRoot\publish-release.ps1"
+$version = [string]([xml]$deployedAbout).ModMetaData.modVersion
+if ([string]::IsNullOrWhiteSpace($version)) { throw 'About.xml has no modVersion; set the version being released.' }
+$version = $version.Trim()
+$released = Get-ReleaseRecord -ModRoot $repo -Version $version
+if ($released -and -not $AllowRepublish) {
+    Write-Host "$DeployName $version was already published ($($released.Published)); nothing to publish. Bump modVersion and add its changelog section to release changes."
+    exit 0
+}
 Assert-WorkshopDeploymentContent -Source (Join-Path $repo 'mod') -Deployed $content
 $tags = [string[]]@(Get-WorkshopTags -About ([xml]$deployedAbout) -Source (Join-Path $content 'About\About.xml'))
+if (-not $ChangeNote) {
+    $ChangeNote = ConvertTo-WorkshopChangeNote -Version $version -Entries (Get-ChangelogRelease -Path (Join-Path $repo 'CHANGELOG.md') -Version $version)
+}
 
 # Existing item -> update; missing id file -> first publish (Steam assigns the
 # id, which is written back to both the deployed and repo About folders).
@@ -63,6 +82,18 @@ $publishedFileId = if ($pendingItemId -ne 0) { $pendingItemId.ToString() } elsei
 if (-not $firstPublish -and (-not [ulong]::TryParse($publishedFileId, [ref]$itemId) -or $itemId -eq 0)) {
     throw "Invalid existing Workshop item ID in $idFile"
 }
+# No local record: the Workshop's latest change note shows whether this
+# version is already live (published by hand or before RELEASES.md existed).
+if (-not $firstPublish -and -not $released -and -not $AllowRepublish) {
+    $latestNote = Get-WorkshopLatestChangeNote $publishedFileId
+    if ($null -eq $latestNote) {
+        Write-Warning "Could not read the Workshop changelog for item $publishedFileId; cannot tell whether $version is already live."
+    } elseif (Test-ChangeNoteVersion $latestNote.Text $version) {
+        Add-ReleaseRecord -ModRoot $repo -Line (Format-ReleaseRecordLine $version $latestNote.PublishedUtc $publishedFileId)
+        Write-Host "$DeployName $version is already the latest Workshop update ($($latestNote.PublishedUtc.ToString('yyyy-MM-dd HH:mm')) UTC); recorded it in RELEASES.md, nothing to publish."
+        exit 0
+    }
+}
 $initializeListing = $firstPublish -or $pendingItemId -ne 0
 $title = ([xml]$deployedAbout).ModMetaData.name
 if ($initializeListing -and [string]::IsNullOrWhiteSpace($title)) { throw 'A new Workshop item requires an About.xml name.' }
@@ -82,12 +113,25 @@ if ((Get-Item -LiteralPath $previewFile).Length -gt 1MB) {
     throw "Preview.png is $((Get-Item -LiteralPath $previewFile).Length) bytes; Steam caps workshop previews at 1MB"
 }
 $sendPreview = $initializeListing
+# The listing as Steam currently has it, for the preview, tag and description
+# comparisons shown before approval (null when unavailable).
+$remoteTags = $null
+$remoteDescription = $null
 if (-not $initializeListing) {
     try {
         $details = Invoke-RestMethod -Method Post `
             -Uri "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/" `
             -Body @{ itemcount = "1"; "publishedfileids[0]" = $publishedFileId }
-        $previewUrl = $details.response.publishedfiledetails[0].preview_url
+        $remote = $details.response.publishedfiledetails[0]
+        function Get-RemoteField($Name) {
+            if ($remote -is [Collections.IDictionary]) { return $remote[$Name] }
+            $property = $remote.PSObject.Properties[$Name]
+            if ($property) { return $property.Value } else { return $null }
+        }
+        $remoteTagList = Get-RemoteField 'tags'
+        if ($null -ne $remoteTagList) { $remoteTags = [string[]]@($remoteTagList | ForEach-Object { if ($_ -is [string]) { $_ } else { $_.tag } }) }
+        $remoteDescription = Get-RemoteField 'file_description'
+        $previewUrl = $remote.preview_url
         if (-not $previewUrl) { throw "no preview_url in API response" }
         $remotePreview = Join-Path ([System.IO.Path]::GetTempPath()) ("workshop-preview-" + [guid]::NewGuid().ToString('N') + '.png')
         try {
@@ -113,27 +157,39 @@ if ($descriptionBytes -gt 8000) {
     throw "workshop-description.bbcode is $descriptionBytes bytes; Steam caps descriptions at ~8000"
 }
 
-# Change notes are write-once on Steam: collect deliberately, then confirm.
-if (-not $ChangeNote) {
-    Write-Host "Enter the change note (BBCode allowed)."
-    Write-Host "Finish by pressing Enter twice after the last text (one empty line)."
-    $lines = @()
-    while ($true) {
-        $line = Read-Host
-        if ($line -eq "") { break }
-        $lines += $line
-    }
-    $ChangeNote = ($lines -join "`n").TrimEnd()
-}
+# Change notes are write-once on Steam: show the complete plan, then confirm.
 $ChangeNote = $ChangeNote.Replace('"', "'")
+$tagPlan = if ($null -eq $remoteTags) {
+    if ($initializeListing) { "set to $($tags -join ', ')" } else { "set to $($tags -join ', ') (current Workshop tags unavailable)" }
+} else {
+    $added = @($tags | Where-Object { $remoteTags -notcontains $_ })
+    $removed = @($remoteTags | Where-Object { $tags -notcontains $_ })
+    if ($added.Count -eq 0 -and $removed.Count -eq 0) { "unchanged ($($tags -join ', '))" }
+    else {
+        $changes = (@($added | ForEach-Object { "+$_" }) + @($removed | ForEach-Object { "-$_" })) -join ' '
+        "$changes (result: $($tags -join ', '))"
+    }
+}
+$descriptionPlan = if ($null -eq $remoteDescription) { "set from workshop-description.bbcode ($descriptionBytes bytes)" }
+    elseif ($remoteDescription.Replace("`r`n", "`n").TrimEnd() -ceq $description) { 'unchanged' }
+    else { "updated from workshop-description.bbcode ($descriptionBytes bytes)" }
+$recordLine = Format-ReleaseRecordLine $version ([DateTime]::UtcNow) $(if ($firstPublish) { '<assigned item id>' } else { $publishedFileId })
 Write-Host ""
+Write-Host "==== Publish $DeployName $version to the Steam Workshop ===="
+Write-Host "Item:        $(if ($firstPublish) { 'new Workshop item (title: ' + $title + ')' } else { "$publishedFileId (https://steamcommunity.com/sharedfiles/filedetails/?id=$publishedFileId)" })"
+if ($released) { Write-Host "Republish:   $version was already published ($($released.Published))" }
+Write-Host "Content:     $content"
+Write-Host "Tags:        $tagPlan"
+Write-Host "Description: $descriptionPlan"
+Write-Host "Preview:     $(if ($sendPreview) { 'upload Preview.png' } else { 'unchanged, not sent' })"
+Write-Host "Record:      append to $(Join-Path $repo 'RELEASES.md'): $recordLine"
 Write-Host "---- Change note (published immediately, can never be edited) ----"
 if ($ChangeNote) { Write-Host $ChangeNote } else { Write-Host "(none: the changelog entry will be blank)" }
 Write-Host "-------------------------------------------------------------------"
-$answer = Read-Host "Upload to the Steam Workshop now? Type yes to confirm"
+$answer = Read-Host "Publish $DeployName $version now? Type y or yes to confirm"
 if ($answer -notin @('y', 'yes')) {
     Write-Host "Aborted, nothing uploaded."
-    exit 1
+    exit 2
 }
 
 $contentPath = (Resolve-Path -LiteralPath $content).Path
@@ -184,6 +240,8 @@ $published = Invoke-SteamWorkshopProcess -RimWorldDir (Split-Path -Parent $RimWo
     $item.m_PublishedFileId
 }
 
+Add-ReleaseRecord -ModRoot $repo -Line (Format-ReleaseRecordLine $version ([DateTime]::UtcNow) ([string]$published))
+Write-Host "Recorded $DeployName $version in $(Join-Path $repo 'RELEASES.md')."
 if ($initializeListing) {
     Write-Host "First publish complete: item $published; Workshop tags synchronized."
 } else {

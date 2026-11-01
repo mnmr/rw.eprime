@@ -34,6 +34,7 @@ namespace Implanner.Patches
             SurgeryBindings.Reset();
             BenchLock.Reset();
             AndroidTiers.FollowPending = false;
+            ImplantQualities.Reset();
         }
     }
 }

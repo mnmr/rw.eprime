@@ -1,0 +1,6 @@
+# Multiplayer check on the clean fixture: vanilla, DLCs, Harmony, Prepatcher,
+# our four mods and the probe (from the fixture's mod list), plus Multiplayer.
+remove brrainz.rimbridgeserver
+
+after ludeon.rimworld.odyssey
+rwmt.multiplayer

@@ -222,6 +222,26 @@ namespace Implanner.Core
             return PlannerChange.Options;
         }
 
+        /// Mod compatibility (Quality Bionics Remastered): the per-quality
+        /// part efficiency multipliers automation evaluates implants with.
+        /// That mod keeps them as per-player settings, so the synced copy
+        /// lives here (QualityMultipliers.Default until a client follows its
+        /// local settings through the synced command); presentation may read
+        /// the local settings, the simulation only ever reads this.
+        public IReadOnlyList<float> QualityMultipliers { get; private set; } =
+            Core.QualityMultipliers.Default;
+
+        public PlannerChange SetQualityMultipliers(IReadOnlyList<float> table)
+        {
+            if (table.Count != Core.QualityMultipliers.Count
+                || Core.QualityMultipliers.Same(QualityMultipliers, table))
+                return PlannerChange.None;
+            var copy = new float[table.Count];
+            for (int q = 0; q < copy.Length; q++) copy[q] = table[q];
+            QualityMultipliers = copy;
+            return PlannerChange.Options;
+        }
+
         /// Mod compatibility: whether bladder implants from different mods
         /// (ImplantCompatibility.BladderImplants) may be planned and
         /// installed side by side, as the game allows. Off treats them as

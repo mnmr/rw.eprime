@@ -79,6 +79,19 @@ namespace Implanner
             store.Bump(store.Model.SetAndroidSurgeryByCrafters(enabled));
         }
 
+        /// Mod compatibility (Quality Bionics Remastered): the efficiency
+        /// multiplier table automation evaluates implants with, as one
+        /// plain string (QualityMultipliers.Encode); an unparsable payload
+        /// changes nothing. Issued by ImplantQualities.Follow when this
+        /// client's local settings differ from the synced table.
+        [SyncMethod]
+        public static void SetQualityMultipliers(string encoded)
+        {
+            ImplannerStore? store = ImplannerStore.Current;
+            if (store == null || !QualityMultipliers.TryParse(encoded, out float[] table)) return;
+            store.Bump(store.Model.SetQualityMultipliers(table));
+        }
+
         /// Drops an implant kind into a star tier at an exact position:
         /// before the anchor kind, or at the tier's end when the anchor is
         /// empty. The target tier's complete sequence is materialized here

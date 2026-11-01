@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 1.7.7 — 2026-11-01
+
+- Fixed: Multiplayer desyncs when a player joined while colonists were working.
+- Fixed: Colonists kept doing a job after losing the ability to do it (for example from a new trait or ideology role).
+
+## 1.7.6 — 2026-10-31
+
+- Fixed: Importing roles could fail when another mod bundled an older Multiplayer API.
+
 ## 1.7.5 — 2026-10-30
 
 - Changed: Mech and robot recommendations now prefer the closest fit, so single-duty bots get Hauler or Cleaner instead of Grunt.

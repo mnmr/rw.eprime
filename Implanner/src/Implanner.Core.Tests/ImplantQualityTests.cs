@@ -71,6 +71,36 @@ public class ImplantQualityTests
         await Assert.That(ImplantQuality.Accepts(accepted, 2)).IsTrue();
     }
 
+    /// Quality Bionics Remastered's efficiency multipliers are per-player
+    /// mod settings, so the simulation reads a synced copy held by the model
+    /// (Options domain): it starts at that mod's defaults, travels as one
+    /// plain string, a no-op write preserves revisions, and a malformed or
+    /// short payload is rejected rather than half-applied.
+    [Test]
+    public async Task EfficiencyMultipliersAreSharedOptionsState()
+    {
+        var model = new PlannerModel();
+        await Assert.That(ImplantQuality.Scaled(1.25f, model.QualityMultipliers))
+            .IsEquivalentTo(BionicArm);
+
+        string encoded = QualityMultipliers.Encode(model.QualityMultipliers);
+        await Assert.That(QualityMultipliers.TryParse(encoded, out float[] same)).IsTrue();
+        await Assert.That(model.SetQualityMultipliers(same)).IsEqualTo(PlannerChange.None);
+
+        await Assert.That(QualityMultipliers.TryParse("0.5;0.75;1;0.5;1.5;1.7;2", out float[] custom)).IsTrue();
+        await Assert.That(model.SetQualityMultipliers(custom)).IsEqualTo(PlannerChange.Options);
+        await Assert.That(model.SetQualityMultipliers(custom)).IsEqualTo(PlannerChange.None);
+        await Assert.That(ImplantQuality.Scaled(1.25f, model.QualityMultipliers)[3]).IsEqualTo(0.625f);
+        // Culture-independent on both sides.
+        await Assert.That(QualityMultipliers.Encode(custom)).IsEqualTo("0.5;0.75;1;0.5;1.5;1.7;2");
+
+        await Assert.That(QualityMultipliers.TryParse("0.5;0.75;1", out _)).IsFalse();
+        await Assert.That(QualityMultipliers.TryParse("a;b;c;d;e;f;g", out _)).IsFalse();
+        await Assert.That(QualityMultipliers.TryParse(null, out _)).IsFalse();
+        await Assert.That(QualityMultipliers.Same(custom, model.QualityMultipliers)).IsTrue();
+        await Assert.That(QualityMultipliers.Same(custom, QualityMultipliers.Default)).IsFalse();
+    }
+
     /// The minimum quality is plan content: clamped to Awful..Legendary,
     /// no-op safe, copied from the base plan when an extending plan is
     /// created, and carried through export and import by quality name.

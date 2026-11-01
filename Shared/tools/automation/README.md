@@ -69,6 +69,89 @@ try {
 & Shared/tools/automation/remove-run.ps1 -RunId $run.runId
 ```
 
+### Local game copies and persistent slots
+
+`create-run.ps1 -GameVersion 1.6` (or `1.7`) runs against the persistent local
+copy `GameInstalls\<version>` instead of the Steam install, so Steam can update
+independently. Make a copy while Steam holds that version, for example:
+
+```powershell
+robocopy 'C:\Program Files (x86)\Steam\steamapps\common\RimWorld' D:\Code\RimWorld\GameInstalls\1.7 /E
+```
+
+Windows runs execute from a reserved persistent slot,
+`AutomationProfiles\Shared\Slots\slot-N\Game`, instead of a per-run folder.
+Creation claims the lowest free slot (`lease.json` names the run), empties it
+(asset junctions are unlinked, never traversed) and copies that run's game
+files and mods into it. `remove-run.ps1` releases the lease; a lease whose run
+no longer exists is reclaimed; a live or stopped-but-unremoved run keeps its
+slot. Concurrent runs therefore never share a slot, and the game executable
+keeps the same path across runs. WSL runs keep their own `Game` folder.
+
+Multiplayer tests listen on sockets, which makes Windows Firewall prompt once
+per new executable path. To allow the slot executables permanently, the owner
+runs this in an elevated PowerShell (repeat with more slot numbers if runs
+ever need them):
+
+```powershell
+foreach ($n in 1..4) { foreach ($exe in 'RimWorldWin64.exe','RimWorld.exe') {
+  New-NetFirewallRule -DisplayName "RimWorld automation slot-$n $exe" -Direction Inbound -Action Allow `
+    -Program "D:\Code\RimWorld\AutomationProfiles\Shared\Slots\slot-$n\Game\$exe" } }
+```
+
+### Multiplayer tests
+
+The Multiplayer mod supports RimWorld 1.6 only, so Multiplayer tests always
+run on `GameInstalls\1.6` (`-GameVersion 1.6`). Ordinary in-game tests use
+1.7. The harness is
+`WorkRoles\tests\InGame\MultiplayerArbiter` and covers all four mods:
+
+```powershell
+# Once, or after the player's save or our mods' save data change:
+pwsh WorkRoles/tests/InGame/MultiplayerArbiter/prepare-fixture.ps1
+# One test: host + Arbiter + a second player joining over 127.0.0.1.
+pwsh WorkRoles/tests/InGame/MultiplayerArbiter/run.ps1 -Label <scenario>
+```
+
+- **Fixture:** `prepare-fixture.ps1` loads the player's Fisso save with only
+  vanilla, the official DLCs, Harmony, Prepatcher (a Multiplayer dependency)
+  and our four mods (mod set `workroles-mp-clean-prep`). It clears jobs left
+  by the removed mods and saves `WorkRoles\temp\mp-desync\clean-fixture`,
+  which is git-ignored and local. Never test Multiplayer with other
+  third-party mods.
+- **Run:** `run.ps1` (mod set `workroles-mp-clean`, which adds Multiplayer)
+  starts the host run. Its probe (`Probe.cs`) hosts by reflection with the
+  Arbiter on, a direct `127.0.0.1:<port>` connection, `autoJoinPoint=Desync`
+  and `pauseOnJoin` off.
+  - Once the server is up, the script starts a second managed run as the
+    client. It joins straight from the main menu.
+  - The host runs at 1x until the Arbiter and client have caught up, then at
+    3x, unpaused. Host and client both exercise each mod's UI commands (for
+    WorkRoles: assign a role, toggle it globally).
+- **Budget:** 5 minutes after game-ready per run (owner-approved for
+  Multiplayer; `launch.ps1 -HardCapSeconds 300`).
+- **Result:** the last line is `RESULT host <SUCCESS|DESYNC|FAILED...> <out>`.
+  Evidence goes to `WorkRoles\temp\mp-desync\mp-<label>-<time>\`:
+  - `Player.log` per run and `arbiter_log.txt`;
+  - `arbiter-status.txt` and `world-rand.txt`;
+  - on a desync, Multiplayer's `MpDesyncs` report with stack traces.
+- **Control:** mod set `workroles-mp-clean-noours` (pass `-ModSet`) runs the
+  same fixture without our mods. Use it to check whether a desync is ours.
+
+Pitfalls that produce fake desyncs (2026-11-01: a reproduced desync turned
+out to be vanilla quest caching, without any of our mods):
+
+- A client that simulated the save in single player before joining is left
+  one world random draw behind. Clients must be fresh processes that go
+  straight from the main menu to joining.
+- Joining from inside a loaded game breaks Multiplayer's loop patches.
+- An Arbiter sharing the save folder autostarts `autostart.rws`; the harness
+  moves it aside.
+- Act only after the client has caught up (`TickPatch.Simulating` false,
+  player status `Playing`).
+- Locate a divergence by diffing host and client world-level random draws
+  (`world-rand.txt`), not by guessing.
+
 Independent runs have no configured instance limit. Each has its own writable
 profile, mod copies, logs, captures, private desktop, token and process-tree job.
 Large installed game assets and Workshop content are shared; leave them unchanged.

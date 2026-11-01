@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.4 — 2026-11-01
+
+- Fixed: Multiplayer desyncs with Quality Bionics Remastered when players had different quality multiplier settings. All players now use one shared set of multipliers, taken from the most recent player whose settings changed.
+
 ## 1.2.3 — 2026-10-31
 
 - Added: Support for Android Tiers Continued. Android implants can be planned for each side separately, and android operations go to the colonist with the best Crafting skill.

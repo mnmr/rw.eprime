@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>WorkRoles multiplayer arbiter verification</name>
+  <author>WorkRoles</author>
+  <packageId>eprime.workroles.arbiterprobe</packageId>
+  <supportedVersions><li>1.6</li></supportedVersions>
+  <loadAfter><li>mnmr.workroles</li><li>rwmt.multiplayer</li></loadAfter>
+</ModMetaData>

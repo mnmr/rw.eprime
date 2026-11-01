@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.5.4 — 2026-10-31
+
+- Fixed: Importing a setup could fail when another mod bundled an older Multiplayer API.
+
 ## 1.5.3 — 2026-10-30
 
 - Fixed: Materials already used in unfinished items are no longer deducted twice from available resources.

@@ -32,6 +32,8 @@ try {
     Write-RunJson $intentPath $intent
     Write-RunJson (Join-Path $path 'removing.json') $intent
 } finally { if ($lease) { $lease.Dispose() }; $control.Dispose() }
+# Release the persistent slot; its files are replaced by the next claim.
+if ($record.snapshots) { Clear-RunSlotLease $record }
 Remove-RunTree $RunId
 Remove-Item -LiteralPath $intentPath
 Write-Host "removed run $RunId"

@@ -87,6 +87,11 @@ namespace WorkRoles
         /// Legacy stand-alone training paths: read from old saves only and
         /// folded into their target role at load (roles own training now).
         private List<TrainingPath>? legacyTrainingPaths;
+        /// Issue-time job ranks (JobRankBaseline) as parallel scribe lists:
+        /// filled only while saving, held after loading until FinalizeInit
+        /// restores them (RestoreJobRankBaselines), then released.
+        private List<Pawn>? savedJobRankPawns;
+        private List<int>? savedJobRankJobIds, savedJobRankValues;
         private int nextRoleId = 1;
         private int nextGroupId = 1; // 0 reserved for the Default group
         internal const int CurrentLocationTokenSchemaVersion = 1;
@@ -134,6 +139,15 @@ namespace WorkRoles
         }
 
         internal bool IsNewWorld { get; private set; }
+
+        /// Restores saved issue-time job ranks once and releases the lists.
+        internal void RestoreJobRankBaselines()
+        {
+            JobRankBaseline.RestoreAfterLoad(this, savedJobRankPawns, savedJobRankJobIds, savedJobRankValues);
+            savedJobRankPawns = null;
+            savedJobRankJobIds = null;
+            savedJobRankValues = null;
+        }
         public override void FinalizeInit(bool fromLoad)
         {
             base.FinalizeInit(fromLoad);
@@ -635,6 +649,23 @@ namespace WorkRoles
                 ref locationKeysWorkingList, ref locationValuesWorkingList);
             if (Scribe.mode != LoadSaveMode.Saving)
                 lastLocationIds = locationIdsToExpose;
+            if (Scribe.mode == LoadSaveMode.Saving)
+            {
+                savedJobRankPawns = new List<Pawn>();
+                savedJobRankJobIds = new List<int>();
+                savedJobRankValues = new List<int>();
+                JobRankBaseline.CaptureForSave(pawnSetsToExpose.Keys,
+                    savedJobRankPawns, savedJobRankJobIds, savedJobRankValues);
+            }
+            Scribe_Collections.Look(ref savedJobRankPawns, "jobRankPawns", LookMode.Reference);
+            Scribe_Collections.Look(ref savedJobRankJobIds, "jobRankJobIds", LookMode.Value);
+            Scribe_Collections.Look(ref savedJobRankValues, "jobRankValues", LookMode.Value);
+            if (Scribe.mode == LoadSaveMode.Saving)
+            {
+                savedJobRankPawns = null;
+                savedJobRankJobIds = null;
+                savedJobRankValues = null;
+            }
             // Versions before stable ship identity stored numeric map ids.
             // Read that node only while loading; new saves write the opaque map.
             if (Scribe.mode != LoadSaveMode.Saving)
