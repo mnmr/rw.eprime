@@ -27,8 +27,12 @@ public class PlanEvaluatorTests
             away);
     }
 
-    static readonly int[] BothSlots = { 0, 1 };
-    static readonly int[] FirstSlot = { 0 };
+    static PartAddress[] Slots(string part, params int[] occurrences)
+    {
+        var slots = new PartAddress[occurrences.Length];
+        for (int i = 0; i < slots.Length; i++) slots[i] = new PartAddress(part, occurrences[i]);
+        return slots;
+    }
 
     static bool BladdersExclusive(string a, string b) =>
         a != b && a.EndsWith("Bladder") && b.EndsWith("Bladder");
@@ -42,7 +46,7 @@ public class PlanEvaluatorTests
     [Test]
     public async Task OptionDrivenExclusiveKindSatisfiesTheGoalSlot()
     {
-        var plan = ImplantPlan(new ImplantGoal(1, "BionicBladder", FirstSlot));
+        var plan = ImplantPlan(new ImplantGoal(1, "BionicBladder", Slots("Torso", 0)));
         var torso = new[] { "Torso" };
         var contexts = new[] { new ImplantContext(torso, 1f) };
         var advancedOnly = new[]
@@ -79,18 +83,17 @@ public class PlanEvaluatorTests
         // bionic goal on the right slot matches exactly and the archotech
         // goal consumes the archotech arm, not the reverse.
         var plan = ImplantPlan(
-            new ImplantGoal(1, "BionicArm", new[] { 1 }),
-            new ImplantGoal(2, "ArchotechArm", FirstSlot));
+            new ImplantGoal(1, "BionicArm", Slots("Shoulder", 1)),
+            new ImplantGoal(2, "ArchotechArm", Slots("Shoulder", 0)));
         var installed = new[]
         {
             new InstalledImplant("ArchotechArm", "Shoulder/Left", 1.5f),
             new InstalledImplant("BionicArm", "Shoulder/Right", 1.25f),
         };
-        var arms = new[] { "Shoulder/Left", "Shoulder/Right" };
         var contexts = new[]
         {
-            new ImplantContext(arms, 1.25f),
-            new ImplantContext(arms, 1.5f),
+            new ImplantContext(new[] { "Shoulder/Right" }, 1.25f),
+            new ImplantContext(new[] { "Shoulder/Left" }, 1.5f),
         };
 
         var result = Evaluate(plan, installed, contexts);
@@ -106,17 +109,17 @@ public class PlanEvaluatorTests
         // Both goals select the left shoulder; the single archotech arm there
         // can substitute for only one of them.
         var plan = ImplantPlan(
-            new ImplantGoal(1, "BionicArm", FirstSlot),
-            new ImplantGoal(2, "PowerClaw", FirstSlot));
+            new ImplantGoal(1, "BionicArm", Slots("Shoulder", 0)),
+            new ImplantGoal(2, "PowerClaw", Slots("Shoulder", 0)));
         var installed = new[]
         {
             new InstalledImplant("ArchotechArm", "Shoulder/Left", 1.5f),
         };
-        var arms = new[] { "Shoulder/Left", "Shoulder/Right" };
+        var left = new[] { "Shoulder/Left" };
         var contexts = new[]
         {
-            new ImplantContext(arms, 1.25f),
-            new ImplantContext(arms, 1.1f),
+            new ImplantContext(left, 1.25f),
+            new ImplantContext(left, 1.1f),
         };
 
         var result = Evaluate(plan, installed, contexts);
@@ -128,7 +131,7 @@ public class PlanEvaluatorTests
     [Test]
     public async Task SubstituteRequiresSelectedSlotAndSufficientEfficiency()
     {
-        var plan = ImplantPlan(new ImplantGoal(1, "BionicEye", BothSlots));
+        var plan = ImplantPlan(new ImplantGoal(1, "BionicEye", Slots("Eye", 0, 1)));
         var installed = new[]
         {
             // Superior efficiency but a different slot: must not count.
@@ -157,14 +160,14 @@ public class PlanEvaluatorTests
     {
         // The goal selects only the left leg; a bionic in the right leg does
         // not count.
-        var plan = ImplantPlan(new ImplantGoal(1, "BionicLeg", FirstSlot));
+        var plan = ImplantPlan(new ImplantGoal(1, "BionicLeg", Slots("Leg", 0)));
         var installed = new[]
         {
             new InstalledImplant("BionicLeg", "Leg/Right", 1.25f),
         };
         var contexts = new[]
         {
-            new ImplantContext(new[] { "Leg/Left", "Leg/Right" }, 1.25f),
+            new ImplantContext(new[] { "Leg/Left" }, 1.25f),
         };
 
         var result = Evaluate(plan, installed, contexts);
@@ -178,10 +181,10 @@ public class PlanEvaluatorTests
     {
         // The body has one shoulder; the second selected slot can never be
         // installed, so it neither completes nor counts as missing.
-        var plan = ImplantPlan(new ImplantGoal(1, "BionicArm", BothSlots));
+        var plan = ImplantPlan(new ImplantGoal(1, "BionicArm", Slots("Shoulder", 0, 1)));
         var contexts = new[]
         {
-            new ImplantContext(new[] { "Shoulder/Left" }, 1.25f),
+            new ImplantContext(new[] { "Shoulder/Left", null }, 1.25f),
         };
 
         var result = Evaluate(plan, implantContexts: contexts);
@@ -197,10 +200,10 @@ public class PlanEvaluatorTests
     {
         // No applicable anatomy at all: zero target, full progress, and the
         // colonist never shows as having outstanding work.
-        var plan = ImplantPlan(new ImplantGoal(1, "BionicArm", FirstSlot));
+        var plan = ImplantPlan(new ImplantGoal(1, "BionicArm", Slots("Shoulder", 0)));
         var contexts = new[]
         {
-            new ImplantContext(System.Array.Empty<string>(), 1.25f),
+            new ImplantContext(new string?[] { null }, 1.25f),
         };
 
         var result = Evaluate(plan, implantContexts: contexts);
@@ -216,7 +219,7 @@ public class PlanEvaluatorTests
     {
         // One installed leg covers exactly one of the two selected slots:
         // the other stays demanded.
-        var plan = ImplantPlan(new ImplantGoal(3, "BionicLeg", BothSlots));
+        var plan = ImplantPlan(new ImplantGoal(3, "BionicLeg", Slots("Leg", 0, 1)));
         var installed = new[]
         {
             new InstalledImplant("BionicLeg", "Leg/Left", 1.25f),
@@ -229,7 +232,7 @@ public class PlanEvaluatorTests
         var missing = PlanEvaluator.MissingImplantSlotKeys(
             plan.Implants, installed, contexts);
 
-        await Assert.That(missing).IsEquivalentTo(new[] { "p3:BionicLeg:1" });
+        await Assert.That(missing).IsEquivalentTo(new[] { "p3:BionicLeg:Leg#1" });
     }
 
     // Same-slot exclusivity stand-ins for the game-side conflict facts:
@@ -247,8 +250,8 @@ public class PlanEvaluatorTests
         // efficiency-floor check alone cannot tell them apart.)
         var goals = new[]
         {
-            new ImplantGoal(1, "Neurocalculator", FirstSlot),
-            new ImplantGoal(1, "CircadianAssistant", FirstSlot),
+            new ImplantGoal(1, "Neurocalculator", Slots("Brain", 0)),
+            new ImplantGoal(1, "CircadianAssistant", Slots("Brain", 0)),
         };
         var installed = new[]
         {
@@ -269,7 +272,7 @@ public class PlanEvaluatorTests
         var missing = PlanEvaluator.MissingImplantSlotKeys(goals, installed,
             contexts, sameSlotExclusive: Coexisting);
         await Assert.That(missing).IsEquivalentTo(
-            new[] { "p1:CircadianAssistant:0" });
+            new[] { "p1:CircadianAssistant:Brain#0" });
     }
 
     [Test]
@@ -279,7 +282,7 @@ public class PlanEvaluatorTests
         // wants a bionic leg. The archotech part occupies the slot and is
         // at least as efficient, so the goal is satisfied — automation must
         // never schedule a replacement of the better part.
-        var goals = new[] { new ImplantGoal(1, "BionicLeg", FirstSlot) };
+        var goals = new[] { new ImplantGoal(1, "BionicLeg", Slots("Leg", 0)) };
         var installed = new[]
         {
             new InstalledImplant("ArchotechLeg", "Leg/Left", 1.5f),
@@ -303,7 +306,7 @@ public class PlanEvaluatorTests
     {
         // A peg leg occupies the slot but sits far below the bionic goal's
         // efficiency floor: the slot stays missing so surgery replaces it.
-        var goals = new[] { new ImplantGoal(1, "BionicLeg", FirstSlot) };
+        var goals = new[] { new ImplantGoal(1, "BionicLeg", Slots("Leg", 0)) };
         var installed = new[]
         {
             new InstalledImplant("PegLeg", "Leg/Left", 0.6f),
@@ -315,7 +318,7 @@ public class PlanEvaluatorTests
 
         var missing = PlanEvaluator.MissingImplantSlotKeys(goals, installed,
             contexts, sameSlotExclusive: Occupying);
-        await Assert.That(missing).IsEquivalentTo(new[] { "p1:BionicLeg:0" });
+        await Assert.That(missing).IsEquivalentTo(new[] { "p1:BionicLeg:Leg#0" });
     }
 
     /// An inherited goal evaluates exactly like an own goal but keeps its
@@ -327,10 +330,10 @@ public class PlanEvaluatorTests
         var model = new PlannerModel();
         int next = 1;
         var basePlan = model.CreatePlan("Base", () => next++)!;
-        model.SetImplantSlot(basePlan.Id, "BionicLeg", 0, true);
-        model.SetImplantSlot(basePlan.Id, "BionicLeg", 1, true);
+        model.SetImplantSlot(basePlan.Id, "BionicLeg", new PartAddress("Leg", 0), true);
+        model.SetImplantSlot(basePlan.Id, "BionicLeg", new PartAddress("Leg", 1), true);
         var derived = model.CreatePlan("Derived", () => next++, basePlan.Id)!;
-        model.SetImplantSlot(derived.Id, "BionicArm", 0, true);
+        model.SetImplantSlot(derived.Id, "BionicArm", new PartAddress("Shoulder", 0), true);
         IReadOnlyList<ImplantGoal> goals = model.EffectiveImplants(derived);
         var installed = new[]
         {
@@ -338,7 +341,7 @@ public class PlanEvaluatorTests
         };
         var contexts = new[]
         {
-            new ImplantContext(new[] { "Shoulder/Left", "Shoulder/Right" }, 1.25f),
+            new ImplantContext(new[] { "Shoulder/Left" }, 1.25f),
             new ImplantContext(new[] { "Leg/Left", "Leg/Right" }, 1.25f),
         };
 
@@ -351,13 +354,13 @@ public class PlanEvaluatorTests
         await Assert.That(result.Implants[1].Satisfied).IsEqualTo(1);
         await Assert.That(result.Implants[1].Missing).IsEqualTo(1);
         await Assert.That(missing).IsEquivalentTo(
-            new[] { "p2:BionicArm:0", "p1:BionicLeg:1" });
+            new[] { "p2:BionicArm:Shoulder#0", "p1:BionicLeg:Leg#1" });
     }
 
     [Test]
     public async Task AwayOverridesEvaluationState()
     {
-        var plan = ImplantPlan(new ImplantGoal(1, "BionicLeg", FirstSlot));
+        var plan = ImplantPlan(new ImplantGoal(1, "BionicLeg", Slots("Leg", 0)));
         var contexts = new[]
         {
             new ImplantContext(new[] { "Leg/Left" }, 1.25f),

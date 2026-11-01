@@ -21,14 +21,14 @@ public class SurgeryPlannerTests
         model.SetImplantStars("PowerClaw", 1);
         goals = new List<ImplantGoal>
         {
-            new ImplantGoal(1, "BionicEye", new[] { 0 }),
-            new ImplantGoal(1, "BionicLeg", new[] { 0, 1 }),
-            new ImplantGoal(1, "PowerClaw", new[] { 0 }),
+            new ImplantGoal(1, "BionicEye", Parts(0)),
+            new ImplantGoal(1, "BionicLeg", Parts(0, 1)),
+            new ImplantGoal(1, "PowerClaw", Parts(0)),
         };
         missing = new[]
         {
-            "p1:PowerClaw:0", "p1:BionicEye:0", "p9:Unknown:0",
-            "p1:BionicLeg:1", "p1:BionicLeg:0",
+            "p1:PowerClaw:Part#0", "p1:BionicEye:Part#0", "p9:Unknown:Part#0",
+            "p1:BionicLeg:Part#1", "p1:BionicLeg:Part#0",
         };
         return model;
     }
@@ -46,14 +46,14 @@ public class SurgeryPlannerTests
         model.SetImplantStars("CircadianAssistant", 5);
         var goals = new List<ImplantGoal>
         {
-            new ImplantGoal(1, "CircadianAssistant", new[] { 0 }),
-            new ImplantGoal(1, "BionicEye", new[] { 0 }),
-            new ImplantGoal(1, "GR_NeuronReinforcement", new[] { 0 }),
+            new ImplantGoal(1, "CircadianAssistant", Parts(0)),
+            new ImplantGoal(1, "BionicEye", Parts(0)),
+            new ImplantGoal(1, "GR_NeuronReinforcement", Parts(0)),
         };
         model.SetImplantStars("BionicEye", 5);
         var missing = new[]
         {
-            "p1:CircadianAssistant:0", "p1:BionicEye:0", "p1:GR_NeuronReinforcement:0",
+            "p1:CircadianAssistant:Part#0", "p1:BionicEye:Part#0", "p1:GR_NeuronReinforcement:Part#0",
         };
         // The circadian assistant (index 0) must follow the reinforcement
         // (index 2); nothing else depends on it.
@@ -68,11 +68,11 @@ public class SurgeryPlannerTests
         var ready = new[] { true, true, true };
         var held = new bool[batch.Count];
         for (int i = 0; i < batch.Count; i++)
-            held[i] = batch[i] == "p1:CircadianAssistant:0";
+            held[i] = batch[i] == "p1:CircadianAssistant:Part#0";
         List<string> released = SurgeryPlanner.Releasable(batch, ready,
             IterationStrategy.ImplantTier, optional: null, held: held);
         await Assert.That(released).IsEquivalentTo(
-            new[] { "p1:BionicEye:0", "p1:GR_NeuronReinforcement:0" });
+            new[] { "p1:BionicEye:Part#0", "p1:GR_NeuronReinforcement:Part#0" });
     }
 
     [Test]
@@ -105,10 +105,10 @@ public class SurgeryPlannerTests
         }
 
         await Assert.That(dispatched.Count).IsEqualTo(4);
-        await Assert.That(dispatched[0]).IsEquivalentTo(new[] { "p1:BionicLeg:1", "p1:BionicLeg:0" });
-        await Assert.That(dispatched[1]).IsEquivalentTo(new[] { "p1:BionicEye:0" });
-        await Assert.That(dispatched[2]).IsEquivalentTo(new[] { "p1:PowerClaw:0" });
-        await Assert.That(dispatched[3]).IsEquivalentTo(new[] { "p9:Unknown:0" });
+        await Assert.That(dispatched[0]).IsEquivalentTo(new[] { "p1:BionicLeg:Part#1", "p1:BionicLeg:Part#0" });
+        await Assert.That(dispatched[1]).IsEquivalentTo(new[] { "p1:BionicEye:Part#0" });
+        await Assert.That(dispatched[2]).IsEquivalentTo(new[] { "p1:PowerClaw:Part#0" });
+        await Assert.That(dispatched[3]).IsEquivalentTo(new[] { "p9:Unknown:Part#0" });
     }
 
     [Test]
@@ -119,22 +119,22 @@ public class SurgeryPlannerTests
         // (pawn 2) first.
         var items = new List<SurgeryWorkItem>
         {
-            new SurgeryWorkItem(2, PlannerModel.PriorityNormal, 0, "p1:BionicLeg:0"),
-            new SurgeryWorkItem(1, PlannerModel.PriorityNormal, 1, "p1:BionicEye:0"),
-            new SurgeryWorkItem(1, PlannerModel.PriorityNormal, 0, "p1:BionicArm:0"),
+            new SurgeryWorkItem(2, PlannerModel.PriorityNormal, 0, "p1:BionicLeg:Part#0"),
+            new SurgeryWorkItem(1, PlannerModel.PriorityNormal, 1, "p1:BionicEye:Part#0"),
+            new SurgeryWorkItem(1, PlannerModel.PriorityNormal, 0, "p1:BionicArm:Part#0"),
         };
 
         var colonist = new List<SurgeryWorkItem>(items);
         SurgeryPlanner.Order(colonist, IterationStrategy.Colonist);
-        await Assert.That(colonist[0].GoalKey).IsEqualTo("p1:BionicArm:0");
-        await Assert.That(colonist[1].GoalKey).IsEqualTo("p1:BionicEye:0");
-        await Assert.That(colonist[2].GoalKey).IsEqualTo("p1:BionicLeg:0");
+        await Assert.That(colonist[0].GoalKey).IsEqualTo("p1:BionicArm:Part#0");
+        await Assert.That(colonist[1].GoalKey).IsEqualTo("p1:BionicEye:Part#0");
+        await Assert.That(colonist[2].GoalKey).IsEqualTo("p1:BionicLeg:Part#0");
 
         var tier = new List<SurgeryWorkItem>(items);
         SurgeryPlanner.Order(tier, IterationStrategy.ImplantTier);
-        await Assert.That(tier[0].GoalKey).IsEqualTo("p1:BionicArm:0");
-        await Assert.That(tier[1].GoalKey).IsEqualTo("p1:BionicLeg:0");
-        await Assert.That(tier[2].GoalKey).IsEqualTo("p1:BionicEye:0");
+        await Assert.That(tier[0].GoalKey).IsEqualTo("p1:BionicArm:Part#0");
+        await Assert.That(tier[1].GoalKey).IsEqualTo("p1:BionicLeg:Part#0");
+        await Assert.That(tier[2].GoalKey).IsEqualTo("p1:BionicEye:Part#0");
     }
 
     /// Within one star tier the player's arranged position decides, not
@@ -173,7 +173,7 @@ public class SurgeryPlannerTests
 
     static SurgeryWorkItem Placed(int pawnId, string kind, int position) =>
         new SurgeryWorkItem(pawnId, PlannerModel.PriorityNormal, StarRanking.TierOf(3),
-            "p1:" + kind + ":0", kind, LimbKind.None, default, position);
+            "p1:" + kind + ":Part#0", kind, LimbKind.None, default, position);
 
     static string Keys(List<SurgeryWorkItem> items)
     {
@@ -188,8 +188,8 @@ public class SurgeryPlannerTests
     {
         var items = new List<SurgeryWorkItem>
         {
-            new SurgeryWorkItem(1, PlannerModel.PriorityNormal, 0, "p1:BionicLeg:0"),
-            new SurgeryWorkItem(9, PlannerModel.PriorityFirst, 0, "p1:BionicArm:0"),
+            new SurgeryWorkItem(1, PlannerModel.PriorityNormal, 0, "p1:BionicLeg:Part#0"),
+            new SurgeryWorkItem(9, PlannerModel.PriorityFirst, 0, "p1:BionicArm:Part#0"),
         };
 
         SurgeryPlanner.Order(items, IterationStrategy.Colonist);
@@ -243,7 +243,7 @@ public class SurgeryPlannerTests
     [Test]
     public async Task AsapReleasesReadyKeysWhileBatchStrategiesWaitForTheWholeBatch()
     {
-        var batch = new List<string> { "p1:BionicLeg:0", "p1:BionicLeg:1", "p1:BionicArm:0" };
+        var batch = new List<string> { "p1:BionicLeg:Part#0", "p1:BionicLeg:Part#1", "p1:BionicArm:Part#0" };
         var ready = new[] { true, false, true };
 
         await Assert.That(SurgeryPlanner.Releasable(batch, ready, IterationStrategy.ImplantTier))
@@ -251,7 +251,7 @@ public class SurgeryPlannerTests
         await Assert.That(SurgeryPlanner.Releasable(batch, ready, IterationStrategy.Colonist))
             .IsEmpty();
         await Assert.That(SurgeryPlanner.Releasable(batch, ready, IterationStrategy.Asap))
-            .IsEquivalentTo(new[] { "p1:BionicLeg:0", "p1:BionicArm:0" });
+            .IsEquivalentTo(new[] { "p1:BionicLeg:Part#0", "p1:BionicArm:Part#0" });
 
         var allReady = new[] { true, true, true };
         await Assert.That(SurgeryPlanner.Releasable(batch, allReady, IterationStrategy.ImplantTier))
@@ -272,20 +272,20 @@ public class SurgeryPlannerTests
         model.SetImplantStars("ArchotechLeg", 5);
         var goals = new List<ImplantGoal>
         {
-            new ImplantGoal(1, "ArchotechLeg", new[] { 0 }),
-            new ImplantGoal(1, "BionicLeg", new[] { 1 }),
-            new ImplantGoal(1, "BionicEye", new[] { 0 }),
+            new ImplantGoal(1, "ArchotechLeg", Parts(0)),
+            new ImplantGoal(1, "BionicLeg", Parts(1)),
+            new ImplantGoal(1, "BionicEye", Parts(0)),
         };
-        string[] missing = { "p1:ArchotechLeg:0", "p1:BionicLeg:1", "p1:BionicEye:0" };
+        string[] missing = { "p1:ArchotechLeg:Part#0", "p1:BionicLeg:Part#1", "p1:BionicEye:Part#0" };
         bool[] optional = { true, false, false };
 
         List<string> batch = SurgeryPlanner.ComputeBatch(
             missing, model, goals, IterationStrategy.ImplantTier, optional);
-        await Assert.That(batch).IsEquivalentTo(new[] { "p1:ArchotechLeg:0", "p1:BionicLeg:1" });
+        await Assert.That(batch).IsEquivalentTo(new[] { "p1:ArchotechLeg:Part#0", "p1:BionicLeg:Part#1" });
 
         bool[] batchOptional = { true, false };
         await Assert.That(SurgeryPlanner.Releasable(batch, new[] { false, true },
-            IterationStrategy.ImplantTier, batchOptional)).IsEquivalentTo(new[] { "p1:BionicLeg:1" });
+            IterationStrategy.ImplantTier, batchOptional)).IsEquivalentTo(new[] { "p1:BionicLeg:Part#1" });
         await Assert.That(SurgeryPlanner.Releasable(batch, new[] { true, true },
             IterationStrategy.ImplantTier, batchOptional)).IsEquivalentTo(batch);
         await Assert.That(SurgeryPlanner.Releasable(batch, new[] { true, false },
@@ -293,14 +293,14 @@ public class SurgeryPlannerTests
 
         // The bionic leg delivered: the active tier moves down to the eye
         // while the archotech leg still rides along.
-        string[] later = { "p1:ArchotechLeg:0", "p1:BionicEye:0" };
+        string[] later = { "p1:ArchotechLeg:Part#0", "p1:BionicEye:Part#0" };
         await Assert.That(SurgeryPlanner.ComputeBatch(later, model, goals,
             IterationStrategy.ImplantTier, new[] { true, false }))
             .IsEquivalentTo(later);
 
         // Only the purchase-only key left: it is the batch, and it is
         // released as soon as stock makes it ready.
-        string[] last = { "p1:ArchotechLeg:0" };
+        string[] last = { "p1:ArchotechLeg:Part#0" };
         List<string> lastBatch = SurgeryPlanner.ComputeBatch(last, model, goals,
             IterationStrategy.ImplantTier, new[] { true });
         await Assert.That(lastBatch).IsEquivalentTo(last);
@@ -313,7 +313,7 @@ public class SurgeryPlannerTests
     static SurgeryWorkItem Item(int pawnId, int priority, string kind,
         LimbKind limb, SurgeryCandidate candidate) =>
         new SurgeryWorkItem(pawnId, priority, StarRanking.TierOf(3),
-            "p1:" + kind + ":0", kind, limb, candidate);
+            "p1:" + kind + ":Part#0", kind, limb, candidate);
 
     static List<int> PawnsFor(List<SurgeryWorkItem> items, string kind)
     {
@@ -328,13 +328,13 @@ public class SurgeryPlannerTests
     {
         var plan = new Plan(1, "Test", 0, new List<ImplantGoal>
         {
-            new ImplantGoal(1, "BionicLeg", new[] { 0, 1, 2 }),
-            new ImplantGoal(1, "BionicEye", new[] { 0 }),
+            new ImplantGoal(1, "BionicLeg", Parts(0, 1, 2)),
+            new ImplantGoal(1, "BionicEye", Parts(0)),
         });
         var contexts = new[]
         {
-            // Ordinal 2 does not exist on this body: blocked, never demanded.
-            new ImplantContext(new[] { "Leg/Left", "Leg/Right" }, 1.25f),
+            // Part#2 does not exist on this body: blocked, never demanded.
+            new ImplantContext(new[] { "Leg/Left", "Leg/Right", null }, 1.25f),
             new ImplantContext(new[] { "Eye/Left" }, 1.25f),
         };
         // Left leg already holds a sufficient (superior) part; the eye and
@@ -349,6 +349,6 @@ public class SurgeryPlannerTests
             plan.Implants, installed, contexts);
 
         await Assert.That(missing).IsEquivalentTo(
-            new[] { "p1:BionicLeg:1", "p1:BionicEye:0" });
+            new[] { "p1:BionicLeg:Part#1", "p1:BionicEye:Part#0" });
     }
 }

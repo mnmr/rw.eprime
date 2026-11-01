@@ -25,6 +25,9 @@ Thẻ Tùy chọn chứa tương thích kế hoạch và phạm vi hiển thị 
 <!-- l10n:b-924ed49fe876 -->
 Mỗi chú giải liệt kê cấy ghép bị ảnh hưởng đang được tải và mod nguồn.
 
+<!-- l10n:android-surgeons -->
+**Phẫu thuật cho android** chỉ xuất hiện khi Android Tiers Continued được tải. Mục này cho biết ai thực hiện phẫu thuật cho android; Implanner lấy thông tin từ thiết lập "Androids can only be healed by crafters" của Android Tiers: khi tắt (mặc định) là bác sĩ, khi bật là thợ chế tạo đã bật "Repair androids". Hãy đổi trong phần thiết lập mod Android Tiers, Implanner sẽ tự theo. Phẫu thuật android dùng kỹ năng Chế tạo. Khi bật chọn bác sĩ tự động, Implanner giới hạn mỗi ca phẫu thuật android cho cư dân đủ điều kiện có kỹ năng Chế tạo cao nhất.
+
 <!-- l10n:b-119eac06340c -->
 ![Trỏ vào tùy chọn để xem cấy ghép bị ảnh hưởng](options-purchase-tip.png)
 

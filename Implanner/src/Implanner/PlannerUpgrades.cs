@@ -76,12 +76,12 @@ namespace Implanner
                         continue;
                     PawnEvaluation? evaluation = pass.Evaluate(pawnId);
                     if (evaluation == null || !GoalKeys.TryResolveImplantSlot(evaluation.Goals,
-                            reservation.GoalKey, out ImplantGoal goal, out int ordinal))
+                            reservation.GoalKey, out ImplantGoal goal, out PartAddress slot))
                         continue;
                     ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(goal.ImplantDefName);
                     Pawn pawn = index.PawnsById[pawnId];
                     BodyPartRecord? part = entry != null
-                        ? PawnProjection.ResolveSlotPart(pawn, entry, ordinal)
+                        ? PawnProjection.ResolveSlotPart(pawn, entry, slot)
                         : null;
                     if (part == null) continue;
                     int minimum = PawnProjection.MinimumAcceptableQuality(
@@ -118,11 +118,11 @@ namespace Implanner
                         if (entry == null || !ImplantQualities.HasQuality(item)) continue;
                         Kind kind = KindOf(kinds, order, colony, index, item!,
                             playerReserves, model);
-                        IReadOnlyList<int> ordinals = goals[g].SlotOrdinals;
-                        for (int o = 0; o < ordinals.Count; o++)
+                        IReadOnlyList<PartAddress> goalSlots = goals[g].Slots;
+                        for (int o = 0; o < goalSlots.Count; o++)
                         {
                             BodyPartRecord? part =
-                                PawnProjection.ResolveSlotPart(pawn, entry, ordinals[o]);
+                                PawnProjection.ResolveSlotPart(pawn, entry, goalSlots[o]);
                             Hediff? hediff = part != null ? HediffOn(pawn, entry.Def, part) : null;
                             if (hediff == null) continue;
                             int quality = ImplantQualities.InstalledQuality(hediff);
@@ -130,7 +130,7 @@ namespace Implanner
                                 || RemovalFor(pawn, entry, hediff, part!) == null)
                                 continue;
                             kind.Installed.Add(new QualityHolder(model.PriorityOf(pawnId),
-                                pawnId, GoalKeys.ImplantSlot(goals[g], ordinals[o]),
+                                pawnId, GoalKeys.ImplantSlot(goals[g], goalSlots[o]),
                                 quality, -1, 0, available: true,
                                 acceptableQualities: PawnProjection.AcceptableQualities(
                                     pawn, entry, part!, evaluation.Plan.MinQuality)));
@@ -199,7 +199,7 @@ namespace Implanner
             Hediff hediff = HediffOn(pawn, target.Def, target.Part)!;
             RecipeDef recipe = RemovalFor(pawn, Catalogs.ImplantByDefName(target.Def.defName)!,
                 hediff, target.Part)!;
-            int floor = PlannerSurgery.FloorFor(model, pass.Index, colony, pawn);
+            int floor = PlannerSurgery.FloorFor(model, pass.Index, colony, pawn, recipe);
             var change = model.SetOwnedBill(pawnId, removalKey, pass.BillId(
                 PlannerSurgery.CreateOperation(pawn, recipe, target.Part, floor)));
             change |= model.SetPendingReinstalls(pawnId, removalKey, new[] { record });

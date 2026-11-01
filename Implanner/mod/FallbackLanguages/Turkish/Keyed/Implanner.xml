@@ -60,7 +60,6 @@
   <IMP_HelpChapterPlans>Planlar</IMP_HelpChapterPlans>
   <IMP_HelpChapterSharing>Paylaşım</IMP_HelpChapterSharing>
   <IMP_HelpReload>Yeniden yükle</IMP_HelpReload>
-  <IMP_ImplantGroupOther>Diğer</IMP_ImplantGroupOther>
   <IMP_Import>İçe aktar</IMP_Import>
   <IMP_ImportAddNote>İçe aktarılan planlar mevcut planların yanına eklenir; hiçbirinin üzerine yazılmaz. Kullanılan bir ada numara eklenir.</IMP_ImportAddNote>
   <IMP_ImportInvalid>Geçerli bir Implanner plan dışa aktarımı değil: {0}</IMP_ImportInvalid>
@@ -213,4 +212,7 @@
   <IMP_WelcomeFind>Implanner'ı ekranın sağ altındaki araç çubuğunda, görünüm düğmelerinin yanındaki bu düğmeyle açın.</IMP_WelcomeFind>
   <IMP_WelcomeTakeMeThere>Şimdi aç</IMP_WelcomeTakeMeThere>
   <IMP_WelcomeTitle>EPrime's Implanner</IMP_WelcomeTitle>
+  <IMP_OptAndroidSurgeonsCrafters>Android ameliyatları: "Androidleri onar" açık zanaatçılar (Android Tiers'ı izler)</IMP_OptAndroidSurgeonsCrafters>
+  <IMP_OptAndroidSurgeonsDoctors>Android ameliyatları: doktorlar (Android Tiers'ı izler)</IMP_OptAndroidSurgeonsDoctors>
+  <IMP_OptAndroidSurgeonsTip>Implanner, Android Tiers mod ayarlarından değiştirdiğiniz "Androidler yalnızca zanaatçılar tarafından onarılabilir" ayarını izler. Açıkken android ameliyatlarını "Androidleri onar" seçeneği açık zanaatçılar yapar. Kapalıyken doktorlar yapar. Android ameliyatları Zanaat becerisini kullanır. Otomatik doktor seçimi açıkken Implanner, her android ameliyatını Zanaat becerisine göre uygun en iyi koloniciyle sınırlar.</IMP_OptAndroidSurgeonsTip>
 </LanguageData>

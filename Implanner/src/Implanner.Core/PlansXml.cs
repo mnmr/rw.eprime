@@ -17,8 +17,8 @@ namespace Implanner.Core
     /// &lt;ImplannerPlans&gt;
     ///   &lt;Plan Name="Full bionics" Extends="Essentials" MinQuality="Good"&gt;
     ///     &lt;Implant Def="BionicArm" MayRequire="pkg.id"&gt;
-    ///       &lt;Slot&gt;0&lt;/Slot&gt;
-    ///       &lt;Slot&gt;1&lt;/Slot&gt;
+    ///       &lt;Slot&gt;Shoulder#0&lt;/Slot&gt;
+    ///       &lt;Slot&gt;Shoulder#1&lt;/Slot&gt;
     ///     &lt;/Implant&gt;
     ///   &lt;/Plan&gt;
     /// &lt;/ImplannerPlans&gt;
@@ -91,9 +91,8 @@ namespace Implanner.Core
                         string? packageId = packageIdOf?.Invoke(goal.ImplantDefName);
                         if (!string.IsNullOrEmpty(packageId))
                             implantEl.SetAttributeValue("MayRequire", packageId);
-                        for (int i = 0; i < goal.SlotOrdinals.Count; i++)
-                            implantEl.Add(new XElement("Slot",
-                                goal.SlotOrdinals[i].ToString(CultureInfo.InvariantCulture)));
+                        for (int i = 0; i < goal.Slots.Count; i++)
+                            implantEl.Add(new XElement("Slot", goal.Slots[i].Key));
                         planEl.Add(implantEl);
                     }
 
@@ -122,13 +121,21 @@ namespace Implanner.Core
         /// malformed XML, a missing &lt;ImplannerPlans&gt; root, a blank or
         /// duplicate plan name (trimmed, ordinal-ignore-case), an unknown
         /// <c>Extends</c> target, an <c>Extends</c> chain that cycles
-        /// (including a plan extending itself), or a negative/non-numeric
-        /// slot ordinal; failure is atomic (<paramref name="plans"/> comes
-        /// back empty).
+        /// (including a plan extending itself), or a slot that is neither a
+        /// part address ("Part#n") nor a legacy ordinal; failure is atomic
+        /// (<paramref name="plans"/> comes back empty).
         /// Unknown elements and attributes are ignored for forward
-        /// compatibility. Slot ordinals are deduplicated and sorted; an
-        /// Implant without valid slots is dropped; a Plan without implants is
-        /// still valid.
+        /// compatibility. Slots are deduplicated and sorted; an Implant
+        /// without valid slots is dropped; a Plan without implants is still
+        /// valid.
+        /// <para>
+        /// Exports written before slots were part addresses carry bare
+        /// ordinals (<c>&lt;Slot&gt;1&lt;/Slot&gt;</c>). Each becomes the
+        /// addresses <paramref name="legacySlots"/> maps it to (implant
+        /// defName, ordinal → addresses; game data, identical on every
+        /// client): none drops the slot, a legacy address keeps it
+        /// unresolved. Without a mapper every ordinal stays unresolved.
+        /// </para>
         /// <para>
         /// When <paramref name="isModActive"/> is provided, Plan and Implant
         /// elements honor <c>MayRequire</c> (comma-separated packageIds, ALL
@@ -148,7 +155,8 @@ namespace Implanner.Core
             string? xml,
             out List<Plan> plans,
             out string? error,
-            Func<string, bool>? isModActive = null)
+            Func<string, bool>? isModActive = null,
+            Func<string, int, IReadOnlyList<PartAddress>>? legacySlots = null)
         {
             plans = new List<Plan>();
             error = null;
@@ -208,32 +216,47 @@ namespace Implanner.Core
                     string def = ((string)implantEl.Attribute("Def") ?? "").Trim();
                     if (def.Length == 0) continue;
 
-                    List<int>? ordinals = null;
+                    var slots = new List<PartAddress>();
                     foreach (var slotEl in implantEl.Elements("Slot"))
                     {
                         string text = slotEl.Value.Trim();
-                        if (!int.TryParse(text, NumberStyles.Integer,
-                                CultureInfo.InvariantCulture, out int ordinal)
-                            || ordinal < 0)
+                        if (!int.TryParse(text, NumberStyles.None,
+                                CultureInfo.InvariantCulture, out int ordinal))
                         {
-                            error = "Invalid slot ordinal \"" + text
-                                + "\" in plan \"" + name + "\".";
-                            plans.Clear();
-                            return false;
+                            if (!PartAddress.TryParse(text, out PartAddress slot))
+                            {
+                                error = "Invalid slot \"" + text
+                                    + "\" in plan \"" + name + "\".";
+                                plans.Clear();
+                                return false;
+                            }
+                            if (!slot.IsLegacy)
+                            {
+                                if (!slots.Contains(slot)) slots.Add(slot);
+                                continue;
+                            }
+                            ordinal = slot.Occurrence;
                         }
-                        ordinals ??= new List<int>();
-                        if (!ordinals.Contains(ordinal)) ordinals.Add(ordinal);
+                        if (legacySlots == null)
+                        {
+                            PartAddress unresolved = PartAddress.Legacy(ordinal);
+                            if (!slots.Contains(unresolved)) slots.Add(unresolved);
+                            continue;
+                        }
+                        IReadOnlyList<PartAddress> mapped = legacySlots(def, ordinal);
+                        for (int i = 0; i < mapped.Count; i++)
+                            if (!slots.Contains(mapped[i])) slots.Add(mapped[i]);
                     }
-                    if (ordinals == null) continue; // no valid slots → drop implant
-                    ordinals.Sort();
+                    if (slots.Count == 0) continue; // no valid slots → drop implant
+                    slots.Sort();
                     int existing = goals.FindIndex(g => g.ImplantDefName == def);
                     if (existing < 0)
-                        goals.Add(new ImplantGoal(0, def, ordinals));
+                        goals.Add(new ImplantGoal(0, def, slots));
                     else
                     {
-                        var merged = new List<int>(goals[existing].SlotOrdinals);
-                        for (int i = 0; i < ordinals.Count; i++)
-                            if (!merged.Contains(ordinals[i])) merged.Add(ordinals[i]);
+                        var merged = new List<PartAddress>(goals[existing].Slots);
+                        for (int i = 0; i < slots.Count; i++)
+                            if (!merged.Contains(slots[i])) merged.Add(slots[i]);
                         merged.Sort();
                         goals[existing] = new ImplantGoal(0, def, merged);
                     }

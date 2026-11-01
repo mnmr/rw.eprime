@@ -29,19 +29,23 @@ namespace Implanner.Core
         public float Efficiency { get; }
     }
 
-    /// Pawn-specific context for one implant goal: the anatomy instances the
-    /// requested implant could occupy on this pawn, and the requested
-    /// implant's own efficiency (the substitution floor).
+    /// Pawn-specific context for one implant goal: the anatomy instance each
+    /// selected slot denotes on this pawn, parallel to the goal's Slots
+    /// (null where the body lacks that part — the slot is impossible here),
+    /// and the requested implant's own efficiency (the substitution floor).
     public sealed class ImplantContext
     {
-        public ImplantContext(IReadOnlyList<string> applicableSlotKeys, float efficiency)
+        public ImplantContext(IReadOnlyList<string?> slotKeys, float efficiency)
         {
-            ApplicableSlotKeys = applicableSlotKeys;
+            SlotKeys = slotKeys;
             Efficiency = efficiency;
         }
 
-        public IReadOnlyList<string> ApplicableSlotKeys { get; }
+        public IReadOnlyList<string?> SlotKeys { get; }
         public float Efficiency { get; }
+
+        /// The pawn's anatomy instance for goal slot j, or null.
+        public string? SlotKey(int j) => j < SlotKeys.Count ? SlotKeys[j] : null;
     }
 
     /// Evaluation result for one goal, parallel to the evaluated goal list

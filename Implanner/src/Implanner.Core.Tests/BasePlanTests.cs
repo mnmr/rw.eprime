@@ -17,13 +17,13 @@ public class BasePlanTests
     {
         var model = new PlannerModel();
         var basePlan = model.CreatePlan("Base", TakePlanId)!;
-        model.SetImplantSlot(basePlan.Id, "BionicLeg", 0, true);
-        model.SetImplantSlot(basePlan.Id, "BionicLeg", 1, true);
-        model.SetImplantSlot(basePlan.Id, "BionicEye", 0, true);
+        model.SetImplantSlot(basePlan.Id, "BionicLeg", Part(0), true);
+        model.SetImplantSlot(basePlan.Id, "BionicLeg", Part(1), true);
+        model.SetImplantSlot(basePlan.Id, "BionicEye", Part(0), true);
         var derived = model.CreatePlan("Derived", TakePlanId, basePlan.Id)!;
         // Re-include the left leg (ordinal 0) as an own goal.
-        model.SetImplantSlot(derived.Id, "BionicLeg", 0, true);
-        model.SetImplantSlot(derived.Id, "BionicArm", 0, true);
+        model.SetImplantSlot(derived.Id, "BionicLeg", Part(0), true);
+        model.SetImplantSlot(derived.Id, "BionicArm", Part(0), true);
 
         IReadOnlyList<ImplantGoal> effective = model.EffectiveImplants(derived);
 
@@ -31,12 +31,12 @@ public class BasePlanTests
         // the overridden slot removed, then the untouched base eye goal.
         await Assert.That(effective.Count).IsEqualTo(4);
         await Assert.That(effective[0].ImplantDefName).IsEqualTo("BionicLeg");
-        await Assert.That(effective[0].SlotOrdinals).IsEquivalentTo(new[] { 0 });
+        await Assert.That(effective[0].Slots).IsEquivalentTo(Parts(0));
         await Assert.That(effective[1].ImplantDefName).IsEqualTo("BionicArm");
         // The inherited leg goal keeps its base plan identity but loses
         // ordinal 0.
         await Assert.That(effective[2].PlanId).IsEqualTo(basePlan.Id);
-        await Assert.That(effective[2].SlotOrdinals).IsEquivalentTo(new[] { 1 });
+        await Assert.That(effective[2].Slots).IsEquivalentTo(Parts(1));
         await Assert.That(effective[3].ImplantDefName).IsEqualTo("BionicEye");
 
         // The base plan's own effective set is untouched by the derivation.
@@ -48,9 +48,9 @@ public class BasePlanTests
     {
         var model = new PlannerModel();
         var basePlan = model.CreatePlan("Base", TakePlanId)!;
-        model.SetImplantSlot(basePlan.Id, "BionicEye", 0, true);
+        model.SetImplantSlot(basePlan.Id, "BionicEye", Part(0), true);
         var derived = model.CreatePlan("Derived", TakePlanId, basePlan.Id)!;
-        model.SetImplantSlot(derived.Id, "BionicEye", 0, true);
+        model.SetImplantSlot(derived.Id, "BionicEye", Part(0), true);
 
         IReadOnlyList<ImplantGoal> effective = model.EffectiveImplants(derived);
 
@@ -63,9 +63,9 @@ public class BasePlanTests
     {
         var model = new PlannerModel();
         var grandBase = model.CreatePlan("A", TakePlanId)!;
-        model.SetImplantSlot(grandBase.Id, "BionicEye", 0, true);
+        model.SetImplantSlot(grandBase.Id, "BionicEye", Part(0), true);
         var middle = model.CreatePlan("B", TakePlanId, grandBase.Id)!;
-        model.SetImplantSlot(middle.Id, "BionicArm", 0, true);
+        model.SetImplantSlot(middle.Id, "BionicArm", Part(0), true);
         var leaf = model.CreatePlan("C", TakePlanId, middle.Id)!;
 
         IReadOnlyList<ImplantGoal> effective = model.EffectiveImplants(leaf);
@@ -76,7 +76,7 @@ public class BasePlanTests
     }
 
     /// Same-record stand-in: both stomach kinds target ordinal 0.
-    static bool StomachResolver(ImplantGoal a, int ordA, ImplantGoal b, int ordB) =>
+    static bool StomachResolver(ImplantGoal a, PartAddress ordA, ImplantGoal b, PartAddress ordB) =>
         (a.ImplantDefName == "NuclearStomach" || a.ImplantDefName == "DetoxifierStomach")
         && (b.ImplantDefName == "NuclearStomach" || b.ImplantDefName == "DetoxifierStomach");
 
@@ -90,12 +90,12 @@ public class BasePlanTests
         var model = new PlannerModel();
         model.SetSlotConflictResolver(StomachResolver);
         var grandBase = model.CreatePlan("A", TakePlanId)!;
-        model.SetImplantSlot(grandBase.Id, "NuclearStomach", 0, true);
-        model.SetImplantSlot(grandBase.Id, "BionicEye", 0, true);
+        model.SetImplantSlot(grandBase.Id, "NuclearStomach", Part(0), true);
+        model.SetImplantSlot(grandBase.Id, "BionicEye", Part(0), true);
         var middle = model.CreatePlan("B", TakePlanId, grandBase.Id)!;
-        model.SetImplantSlot(middle.Id, "DetoxifierStomach", 0, true);
+        model.SetImplantSlot(middle.Id, "DetoxifierStomach", Part(0), true);
         var leaf = model.CreatePlan("C", TakePlanId, middle.Id)!;
-        model.SetImplantSlot(leaf.Id, "BionicArm", 0, true);
+        model.SetImplantSlot(leaf.Id, "BionicArm", Part(0), true);
 
         IReadOnlyList<ImplantGoal> effective = model.EffectiveImplants(leaf);
 
@@ -116,11 +116,11 @@ public class BasePlanTests
         var model = new PlannerModel();
         model.AddLoadedPlan(new Plan(1, "X", basePlanId: 2, new List<ImplantGoal>
         {
-            new ImplantGoal(1, "BionicEye", new[] { 0 }),
+            new ImplantGoal(1, "BionicEye", Parts(0)),
         }));
         model.AddLoadedPlan(new Plan(2, "Y", basePlanId: 1, new List<ImplantGoal>
         {
-            new ImplantGoal(2, "BionicArm", new[] { 0 }),
+            new ImplantGoal(2, "BionicArm", Parts(0)),
         }));
 
         IReadOnlyList<ImplantGoal> x = model.EffectiveImplants(model.Plans[0]);
@@ -149,9 +149,9 @@ public class BasePlanTests
     {
         var model = new PlannerModel();
         var basePlan = model.CreatePlan("Base", TakePlanId)!;
-        model.SetImplantSlot(basePlan.Id, "BionicEye", 0, true);
+        model.SetImplantSlot(basePlan.Id, "BionicEye", Part(0), true);
         var derived = model.CreatePlan("Derived", TakePlanId, basePlan.Id)!;
-        model.SetImplantSlot(derived.Id, "BionicArm", 0, true);
+        model.SetImplantSlot(derived.Id, "BionicArm", Part(0), true);
 
         model.DeletePlan(basePlan.Id);
 

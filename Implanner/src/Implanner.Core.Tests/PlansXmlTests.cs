@@ -15,8 +15,8 @@ public class PlansXmlTests
     public async Task RepeatedImplantElementsDoNotCreateImpossibleDuplicateSlots()
     {
         const string xml = "<ImplannerPlans><Plan Name=\"Both arms\">"
-            + "<Implant Def=\"BionicArm\"><Slot>0</Slot></Implant>"
-            + "<Implant Def=\"BionicArm\"><Slot>0</Slot><Slot>1</Slot></Implant>"
+            + "<Implant Def=\"BionicArm\"><Slot>Shoulder#0</Slot></Implant>"
+            + "<Implant Def=\"BionicArm\"><Slot>Shoulder#0</Slot><Slot>Shoulder#1</Slot></Implant>"
             + "</Plan></ImplannerPlans>";
         await Assert.That(PlansXml.TryImport(xml, out var parsed, out _)).IsTrue();
         var model = new PlannerModel();
@@ -26,7 +26,7 @@ public class PlansXmlTests
         var goals = model.EffectiveImplants(model.AssignedPlan(1)!);
         var contexts = new List<ImplantContext>();
         for (int i = 0; i < goals.Count; i++)
-            contexts.Add(new ImplantContext(new[] { "LeftArm", "RightArm" }, 1.25f));
+            contexts.Add(new ImplantContext(new[] { "LeftArm", "RightArm" }, 1.25f)); // Shoulder#0, Shoulder#1
         var installed = new[] {
             new InstalledImplant("BionicArm", "LeftArm", 1.25f),
             new InstalledImplant("BionicArm", "RightArm", 1.25f)
@@ -43,17 +43,17 @@ public class PlansXmlTests
 
     int TakePlanId() => nextPlanId++;
 
-    /// Builds the canonical two-plan fixture: "Essentials" (BionicEye slot 0)
-    /// and "Full bionics" extending it (BionicArm slots 0+1, BionicLeg slot 1).
+    /// Builds the canonical two-plan fixture: "Essentials" (BionicEye Part#0)
+    /// and "Full bionics" extending it (BionicArm Part#0+1, BionicLeg Part#1).
     PlannerModel SourceModel()
     {
         var model = new PlannerModel();
         var essentials = model.CreatePlan("Essentials", TakePlanId)!;
-        model.SetImplantSlot(essentials.Id, "BionicEye", 0, true);
+        model.SetImplantSlot(essentials.Id, "BionicEye", Part(0), true);
         var full = model.CreatePlan("Full bionics", TakePlanId, essentials.Id)!;
-        model.SetImplantSlot(full.Id, "BionicArm", 0, true);
-        model.SetImplantSlot(full.Id, "BionicArm", 1, true);
-        model.SetImplantSlot(full.Id, "BionicLeg", 1, true);
+        model.SetImplantSlot(full.Id, "BionicArm", Part(0), true);
+        model.SetImplantSlot(full.Id, "BionicArm", Part(1), true);
+        model.SetImplantSlot(full.Id, "BionicLeg", Part(1), true);
         return model;
     }
 
@@ -96,12 +96,12 @@ public class PlansXmlTests
 
         await Assert.That(essentials.Implants.Count).IsEqualTo(1);
         await Assert.That(essentials.Implants[0].ImplantDefName).IsEqualTo("BionicEye");
-        await Assert.That(essentials.Implants[0].SlotOrdinals).IsEquivalentTo(new[] { 0 });
+        await Assert.That(essentials.Implants[0].Slots).IsEquivalentTo(Parts(0));
         await Assert.That(full.Implants.Count).IsEqualTo(2);
         await Assert.That(full.Implants[0].ImplantDefName).IsEqualTo("BionicArm");
-        await Assert.That(full.Implants[0].SlotOrdinals).IsEquivalentTo(new[] { 0, 1 });
+        await Assert.That(full.Implants[0].Slots).IsEquivalentTo(Parts(0, 1));
         await Assert.That(full.Implants[1].ImplantDefName).IsEqualTo("BionicLeg");
-        await Assert.That(full.Implants[1].SlotOrdinals).IsEquivalentTo(new[] { 1 });
+        await Assert.That(full.Implants[1].Slots).IsEquivalentTo(Parts(1));
 
         // The base link and effective goals actually work in the new model.
         await Assert.That(target.EffectiveImplants(full).Count).IsEqualTo(3);
@@ -208,12 +208,12 @@ public class PlansXmlTests
         string xml =
             "<ImplannerPlans>"
             + "<Plan Name=\"Royalty stuff\" MayRequire=\"ludeon.rimworld.royalty\">"
-            + "<Implant Def=\"Coagulator\"><Slot>0</Slot></Implant></Plan>"
+            + "<Implant Def=\"Coagulator\"><Slot>Part#0</Slot></Implant></Plan>"
             + "<Plan Name=\"Mixed\" Extends=\"Royalty stuff\">"
-            + "<Implant Def=\"BionicArm\"><Slot>0</Slot></Implant>"
-            + "<Implant Def=\"ArchoEye\" MayRequire=\"some.mod\"><Slot>0</Slot></Implant>"
+            + "<Implant Def=\"BionicArm\"><Slot>Part#0</Slot></Implant>"
+            + "<Implant Def=\"ArchoEye\" MayRequire=\"some.mod\"><Slot>Part#0</Slot></Implant>"
             + "<Implant Def=\"AnyOfEye\" MayRequireAnyOf=\"some.mod, other.mod\">"
-            + "<Slot>1</Slot></Implant>"
+            + "<Slot>Part#1</Slot></Implant>"
             + "</Plan></ImplannerPlans>";
         Func<string, bool> isModActive = id => id == "other.mod";
 
@@ -242,8 +242,8 @@ public class PlansXmlTests
     {
         string xml =
             "<ImplannerPlans><Plan Name=\"Modded\">"
-            + "<Implant Def=\"ArchoEye\" MayRequire=\"mod.a, mod.b\"><Slot>0</Slot></Implant>"
-            + "<Implant Def=\"ArchoArm\" MayRequire=\"mod.a\"><Slot>0</Slot></Implant>"
+            + "<Implant Def=\"ArchoEye\" MayRequire=\"mod.a, mod.b\"><Slot>Part#0</Slot></Implant>"
+            + "<Implant Def=\"ArchoArm\" MayRequire=\"mod.a\"><Slot>Part#0</Slot></Implant>"
             + "</Plan></ImplannerPlans>";
 
         await Assert.That(PlansXml.TryImport(xml, out var onlyA, out _,
@@ -268,8 +268,8 @@ public class PlansXmlTests
     {
         var model = new PlannerModel();
         var plan = model.CreatePlan("Mixed", TakePlanId)!;
-        model.SetImplantSlot(plan.Id, "BionicArm", 0, true);
-        model.SetImplantSlot(plan.Id, "ArchoEye", 0, true);
+        model.SetImplantSlot(plan.Id, "BionicArm", Part(0), true);
+        model.SetImplantSlot(plan.Id, "ArchoEye", Part(0), true);
 
         string xml = PlansXml.Export(model.Plans,
             def => def == "ArchoEye" ? "some.mod" : null);
@@ -289,7 +289,7 @@ public class PlansXmlTests
     {
         var model = new PlannerModel();
         var existing = model.CreatePlan("Essentials", TakePlanId)!;
-        model.SetImplantSlot(existing.Id, "PowerClaw", 0, true);
+        model.SetImplantSlot(existing.Id, "PowerClaw", Part(0), true);
 
         string xml = PlansXml.Export(SourceModel().Plans);
         await Assert.That(PlansXml.TryImport(xml, out var parsed, out _)).IsTrue();
@@ -310,19 +310,59 @@ public class PlansXmlTests
     }
 
     [Test]
-    public async Task SlotOrdinalsAreDeduplicatedSortedAndEmptyImplantsDropped()
+    public async Task SlotsAreDeduplicatedSortedAndEmptyImplantsDropped()
     {
         string xml =
             "<ImplannerPlans><Plan Name=\"A\">"
             + "<Implant Def=\"BionicArm\">"
-            + "<Slot>2</Slot><Slot>0</Slot><Slot>2</Slot><Slot> 1 </Slot></Implant>"
+            + "<Slot>Part#2</Slot><Slot>Part#0</Slot><Slot>Part#2</Slot><Slot> Part#1 </Slot></Implant>"
             + "<Implant Def=\"BionicLeg\"/>"
             + "<Unknown/>"
             + "</Plan></ImplannerPlans>";
 
         await Assert.That(PlansXml.TryImport(xml, out var parsed, out _)).IsTrue();
         await Assert.That(parsed[0].Implants.Count).IsEqualTo(1);
-        await Assert.That(parsed[0].Implants[0].SlotOrdinals)
-            .IsEquivalentTo(new[] { 0, 1, 2 });
+        await Assert.That(parsed[0].Implants[0].Slots).IsEquivalentTo(Parts(0, 1, 2));
+    }
+
+    /// Exports written before part addresses carry bare ordinals into each
+    /// pawn's own list of the implant's parts. The game supplies the
+    /// mapping: an ordinal becomes every address it denoted (a VX chip's
+    /// ordinal 0 was the brain on humans and the artificial brain on
+    /// androids), one it rejects is dropped, and an implant whose content
+    /// is missing keeps an unresolved legacy slot for a later load.
+    [Test]
+    public async Task LegacyOrdinalSlotsImportThroughTheSlotMapper()
+    {
+        string xml =
+            "<ImplannerPlans><Plan Name=\"Old\">"
+            + "<Implant Def=\"BionicEye\"><Slot>1</Slot><Slot>7</Slot></Implant>"
+            + "<Implant Def=\"VX0Chip\"><Slot>0</Slot></Implant>"
+            + "<Implant Def=\"MissingMod\"><Slot>0</Slot></Implant>"
+            + "</Plan></ImplannerPlans>";
+        Func<string, int, IReadOnlyList<PartAddress>> legacySlots = (def, ordinal) =>
+            def == "MissingMod" ? new[] { PartAddress.Legacy(ordinal) }
+            : def == "VX0Chip" ? new[] { new PartAddress("Brain", 0), new PartAddress("ArtificialBrain", 0) }
+            : ordinal < 2 ? new[] { new PartAddress("Eye", ordinal) }
+            : Array.Empty<PartAddress>();
+
+        await Assert.That(PlansXml.TryImport(xml, out var parsed, out string? error,
+            legacySlots: legacySlots)).IsTrue();
+        await Assert.That(error).IsNull();
+        await Assert.That(parsed[0].Implants[0].Slots)
+            .IsEquivalentTo(new[] { new PartAddress("Eye", 1) });
+        await Assert.That(parsed[0].Implants[1].Slots).IsEquivalentTo(
+            new[] { new PartAddress("ArtificialBrain", 0), new PartAddress("Brain", 0) });
+        await Assert.That(parsed[0].Implants[2].Slots)
+            .IsEquivalentTo(new[] { PartAddress.Legacy(0) });
+
+        // Unresolved slots export in their own form and resolve on a later
+        // import once the content exists.
+        string again = PlansXml.Export(parsed);
+        await Assert.That(again).Contains("<Slot>#0</Slot>");
+        await Assert.That(PlansXml.TryImport(again, out var later, out _,
+            legacySlots: (_, ordinal) => new[] { new PartAddress("Heart", ordinal) })).IsTrue();
+        await Assert.That(later[0].Implants[2].Slots)
+            .IsEquivalentTo(new[] { new PartAddress("Heart", 0) });
     }
 }

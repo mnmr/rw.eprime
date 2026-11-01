@@ -12,6 +12,11 @@ namespace Implanner
         public override void GameComponentUpdate()
         {
             GearIconMetrics.ProcessPending();
+            if (AndroidTiers.FollowPending && Current.ProgramState == ProgramState.Playing)
+            {
+                AndroidTiers.FollowPending = false;
+                AndroidTiers.FollowSetting();
+            }
         }
 
         /// The synchronized tick path: reconciliation (reservations,
@@ -33,11 +38,17 @@ namespace Implanner
         /// thread; adding a window (whose PreOpen measures text and loads a
         /// texture) there crashes the player natively. Everything defers to
         /// the main thread after the load event completes.
-        public override void StartedNewGame() =>
+        public override void StartedNewGame()
+        {
+            AndroidTiers.FollowPending = true;
             LongEventHandler.ExecuteWhenFinished(queueWelcome);
+        }
 
-        public override void LoadedGame() =>
+        public override void LoadedGame()
+        {
+            AndroidTiers.FollowPending = true;
             LongEventHandler.ExecuteWhenFinished(queueWelcome);
+        }
 
         /// The welcome appears once per player per save, and once again for
         /// each newly encountered automation conflict (`WelcomeDialog.ClaimSave`).

@@ -104,7 +104,6 @@
   <IMP_PlanMinQualityTip>新安裝可接受的最低品質，也適用於從基礎方案繼承的選擇項。已經安裝的植入體只要是方案指定的類型，即使低於此最低品質也仍計為完成。啟用「將最佳植入體分配給高優先級殖民者」即可允許換裝品質更好的植入體。無品質的植入體不受影響。\n\n不會用更差的植入體替換健康身體部位。低品質仿生體會等待更好的物品，除非該部位已缺失或受損。</IMP_PlanMinQualityTip>
   <IMP_PlanMinQualityNoQualityJobs>未載入 Quality Jobs，因此任何工匠都可完成植入體。成品低於此品質時，會再次製作。</IMP_PlanMinQualityNoQualityJobs>
   <IMP_DeletePlanConfirm>刪除方案“{0}”？分配了此方案的殖民者將失去分配，繼承此方案的其他方案也將停止繼承。</IMP_DeletePlanConfirm>
-  <IMP_ImplantGroupOther>其他</IMP_ImplantGroupOther>
   <IMP_ReqTitle>前置要求</IMP_ReqTitle>
   <IMP_ReqBody>{0} 只能安裝在人工{1}上。請選擇要一同加入方案的替換部件：</IMP_ReqBody>
   <IMP_ReqConfirm>加入方案</IMP_ReqConfirm>
@@ -213,4 +212,7 @@
   <IMP_ShipFallback>重力船</IMP_ShipFallback>
   <IMP_SettingsShowToolbarButton>顯示工具欄按鈕</IMP_SettingsShowToolbarButton>
   <IMP_CompatibilityLevelMod>{0}：使用此多樓層模組時，Implanner 的自動化功能會停用。規劃與追蹤功能仍可正常使用。</IMP_CompatibilityLevelMod>
+  <IMP_OptAndroidSurgeonsCrafters>機械人手術：由已開啟「修復機械人」的工匠執行（跟隨 Android Tiers）</IMP_OptAndroidSurgeonsCrafters>
+  <IMP_OptAndroidSurgeonsDoctors>機械人手術：由醫生執行（跟隨 Android Tiers）</IMP_OptAndroidSurgeonsDoctors>
+  <IMP_OptAndroidSurgeonsTip>Implanner 會跟隨 Android Tiers 的「機械人只能由工匠治療」設定，該設定須在 Android Tiers 的模組設定中更改。開啟時，由已開啟「修復機械人」的工匠執行機械人手術；關閉時由醫生執行。機械人手術使用手工技能。開啟醫生自動選擇後，Implanner 會將每項機械人手術限定給手工技能最高的合資格殖民者。</IMP_OptAndroidSurgeonsTip>
 </LanguageData>

@@ -2,4 +2,5 @@
   <PropertyGroup>
     <RimSharedRoot>$(MSBuildThisFileDirectory)..\..\Shared</RimSharedRoot>
   </PropertyGroup>
+  <Import Project="$(RimSharedRoot)\Build\RimWorldVersions.props" />
 </Project>

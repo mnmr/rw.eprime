@@ -155,7 +155,7 @@ namespace Implanner
                 return change;
             RecipeDef? recipe = RecipeFor(pawn, def, part, checkWorker: true);
             if (recipe == null) return change;
-            int floor = PlannerSurgery.FloorFor(model, index, colony, pawn);
+            int floor = PlannerSurgery.FloorFor(model, index, colony, pawn, recipe);
 
             string? recordedId = model.OwnedBill(pawnId, key);
             Bill? recorded = recordedId != null ? pass.FindBill(pawn.BillStack, recordedId) : null;
@@ -259,11 +259,11 @@ namespace Implanner
         private static bool WiperInstalled(Pawn pawn, string wiperKey)
         {
             if (!GoalKeys.TryParseImplantSlot(wiperKey, out _, out string defName,
-                    out int ordinal))
+                    out PartAddress slot))
                 return false;
             ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(defName);
             if (entry == null) return false;
-            BodyPartRecord? part = PawnProjection.ResolveSlotPart(pawn, entry, ordinal);
+            BodyPartRecord? part = PawnProjection.ResolveSlotPart(pawn, entry, slot);
             return part != null && HasHediffOn(pawn, entry.Def, part);
         }
 

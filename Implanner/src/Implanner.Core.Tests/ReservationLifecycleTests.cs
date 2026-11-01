@@ -12,9 +12,9 @@ public class ReservationLifecycleTests
     {
         var model = new PlannerModel();
 
-        await Assert.That(model.Reserve(100, 7, "p1:BionicLeg:0")).IsEqualTo(PlannerChange.Reservations);
-        await Assert.That(model.Reserve(100, 7, "p1:BionicLeg:0")).IsEqualTo(PlannerChange.None);
-        await Assert.That(model.Reserve(100, 8, "p1:BionicLeg:0")).IsEqualTo(PlannerChange.Reservations);
+        await Assert.That(model.Reserve(100, 7, "p1:BionicLeg:Part#0")).IsEqualTo(PlannerChange.Reservations);
+        await Assert.That(model.Reserve(100, 7, "p1:BionicLeg:Part#0")).IsEqualTo(PlannerChange.None);
+        await Assert.That(model.Reserve(100, 8, "p1:BionicLeg:Part#0")).IsEqualTo(PlannerChange.Reservations);
         await Assert.That(model.ReleaseReservation(100)).IsEqualTo(PlannerChange.Reservations);
         await Assert.That(model.ReleaseReservation(100)).IsEqualTo(PlannerChange.None);
     }
@@ -29,8 +29,8 @@ public class ReservationLifecycleTests
         int next = 1;
         var plan = model.CreatePlan("Test", () => next++)!;
         model.AssignPlan(7, plan.Id);
-        model.Reserve(100, 7, "p1:BionicLeg:0");
-        model.Reserve(101, 9, "p1:BionicLeg:0");     // pawn 9 has no assignment
+        model.Reserve(100, 7, "p1:BionicLeg:Part#0");
+        model.Reserve(101, 9, "p1:BionicLeg:Part#0");     // pawn 9 has no assignment
 
         var change = model.CleanupMissing(pawnExists: _ => true);
 

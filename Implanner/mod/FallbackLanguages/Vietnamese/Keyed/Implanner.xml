@@ -60,7 +60,6 @@
   <IMP_HelpChapterPlans>Kế hoạch</IMP_HelpChapterPlans>
   <IMP_HelpChapterSharing>Chia sẻ</IMP_HelpChapterSharing>
   <IMP_HelpReload>Tải lại</IMP_HelpReload>
-  <IMP_ImplantGroupOther>Khác</IMP_ImplantGroupOther>
   <IMP_Import>Nhập</IMP_Import>
   <IMP_ImportAddNote>Kế hoạch nhập được thêm bên cạnh kế hoạch hiện có; không thay thế gì. Tên bị trùng sẽ được thêm số.</IMP_ImportAddNote>
   <IMP_ImportInvalid>Dữ liệu xuất kế hoạch Implanner không hợp lệ: {0}</IMP_ImportInvalid>
@@ -213,4 +212,7 @@
   <IMP_WelcomeFind>Mở Implanner bằng nút này trên thanh công cụ ở góc dưới bên phải màn hình, cạnh các nút hiển thị.</IMP_WelcomeFind>
   <IMP_WelcomeTakeMeThere>Mở ngay</IMP_WelcomeTakeMeThere>
   <IMP_WelcomeTitle>EPrime's Implanner</IMP_WelcomeTitle>
+  <IMP_OptAndroidSurgeonsCrafters>Phẫu thuật android: thợ chế tạo có "Repair androids" (theo Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
+  <IMP_OptAndroidSurgeonsDoctors>Phẫu thuật android: bác sĩ (theo Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
+  <IMP_OptAndroidSurgeonsTip>Implanner theo thiết lập "Androids can only be healed by crafters" của Android Tiers, bạn đổi thiết lập này trong phần thiết lập mod Android Tiers. Khi bật, thợ chế tạo đã bật "Repair androids" sẽ thực hiện phẫu thuật android. Khi tắt, bác sĩ thực hiện. Phẫu thuật android dùng kỹ năng Chế tạo. Khi bật chọn bác sĩ tự động, Implanner giới hạn mỗi ca phẫu thuật android cho cư dân đủ điều kiện có kỹ năng Chế tạo cao nhất.</IMP_OptAndroidSurgeonsTip>
 </LanguageData>

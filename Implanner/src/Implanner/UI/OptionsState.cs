@@ -72,6 +72,14 @@ namespace Implanner.UI
 
         /// Catalog: purchase-only implants listed in the picker.
         internal bool ShowPurchaseOnly;
+
+        /// Mod compatibility: Android Tiers is loaded (static per session),
+        /// so the line naming who operates on androids shows.
+        internal bool AndroidTiersLoaded;
+
+        /// Mod compatibility: crafters, not doctors, operate on androids
+        /// (the synced option, which follows Android Tiers' setting).
+        internal bool AndroidSurgeryByCrafters;
     }
 
     /// Options tab presentation state. Owned by the dialog; dies with it.
@@ -84,7 +92,7 @@ namespace Implanner.UI
         // Value: an immutable snapshot of the mod compatibility and catalog
         //   flags so the tab never reads the live model.
         // Dependencies: the mod compatibility and catalog options (Options
-        //   domain).
+        //   domain); whether Android Tiers is loaded (static per session).
         // Refresh policy: immediate on the next Current read (from the
         //   dialog's WindowUpdate) after any key component moves.
         // Equality policy: rebuilds replace the snapshot.
@@ -117,6 +125,8 @@ namespace Implanner.UI
                     AllowMultipleBladders = model.AllowMultipleBladders,
                     AllowMultipleHygieneEnhancers = model.AllowMultipleHygieneEnhancers,
                     ShowPurchaseOnly = model.ShowPurchaseOnly,
+                    AndroidTiersLoaded = AndroidTiers.Loaded,
+                    AndroidSurgeryByCrafters = model.AndroidSurgeryByCrafters,
                 };
                 uiStamp = UiRevision.Current;
                 owner = store;
@@ -149,6 +159,7 @@ namespace Implanner.UI
         internal WrTip AllowMultipleHygieneEnhancers = null!;
         internal WrTip ShowPurchaseOnly = null!;
         internal WrTip SkillSliderMaximum = null!;
+        internal WrTip AndroidSurgeons = null!;
 
         /// Called after the window observed the current UI metrics.
         internal void Ensure()
@@ -164,6 +175,7 @@ namespace Implanner.UI
             ShowPurchaseOnly = WrTips.Key("IMP_OptShowPurchaseOnlyTip",
                 ModCompatibility.PurchaseOnlyTipLines());
             SkillSliderMaximum = WrTips.Key("IMP_OptSkillSliderMaximumTip");
+            AndroidSurgeons = WrTips.Key("IMP_OptAndroidSurgeonsTip");
         }
 
         internal void Release()
@@ -171,6 +183,7 @@ namespace Implanner.UI
             stamp = -1;
             AllowMultipleBladders = AllowMultipleHygieneEnhancers = null!;
             ShowPurchaseOnly = SkillSliderMaximum = null!;
+            AndroidSurgeons = null!;
         }
     }
 }

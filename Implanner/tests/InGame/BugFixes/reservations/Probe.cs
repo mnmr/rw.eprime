@@ -67,7 +67,7 @@ public static class Probe
   bed=SpawnBed(map);
   arm=ThingMaker.MakeThing(ThingDef.Named("BionicArm")); GenPlace.TryPlaceThing(arm,bed.Position,map,ThingPlaceMode.Near); arm.SetForbidden(false,false);
   Thing medicine=ThingMaker.MakeThing(ThingDefOf.MedicineIndustrial); medicine.stackCount=20; GenPlace.TryPlaceThing(medicine,bed.Position,map,ThingPlaceMode.Near); medicine.SetForbidden(false,false);
-  var plan=model.CreatePlan("Reservation review",store.TakePlanId); model.SetImplantSlot(plan.Id,"BionicArm",0,true); model.AssignPlan(patient.thingIDNumber,plan.Id); store.Bump(PlannerChange.All); Reconcile();
+  var plan=model.CreatePlan("Reservation review",store.TakePlanId); model.SetImplantSlot(plan.Id,"BionicArm",new PartAddress("Shoulder",0),true); model.AssignPlan(patient.thingIDNumber,plan.Id); store.Bump(PlannerChange.All); Reconcile();
   Assert(model.Reservations.ContainsKey(arm.thingIDNumber),"Implanner reserves arm before surgery");
   bill=patient.BillStack.Bills.OfType<Bill_Medical>().Single();
   Assert(bill.IsFixedOrAllowedIngredient(arm),"initial bound medical bill accepts its reserved arm");

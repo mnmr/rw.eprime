@@ -1,4 +1,3 @@
 @echo off
-setlocal
-dotnet build -c Release "%~dp0..\src\Implanner.slnx"
+call "%~dp0..\..\Scripts\build-deploy-mod.cmd" Implanner Implanner.slnx
 exit /b %errorlevel%

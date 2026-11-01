@@ -530,17 +530,17 @@ namespace Implanner
                     for (int k = 0; k < missing.Count; k++)
                     {
                         if (!GoalKeys.TryResolveImplantSlot(evaluation.Goals,
-                                missing[k], out ImplantGoal goal, out int ordinal))
+                                missing[k], out ImplantGoal goal, out PartAddress slot))
                             continue;
                         ImplantCatalogEntry? entry =
                             Catalogs.ImplantByDefName(goal.ImplantDefName);
                         // An upgrade over its installed base wants no item.
                         ThingDef? item = entry != null
-                            ? PawnProjection.RequiredItem(pawn, entry, ordinal)
+                            ? PawnProjection.RequiredItem(pawn, entry, slot)
                             : null;
                         if (item == null || ProductionRecipeFor(item) == null) continue;
                         BodyPartRecord? part =
-                            PawnProjection.ResolveSlotPart(pawn, entry!, ordinal);
+                            PawnProjection.ResolveSlotPart(pawn, entry!, slot);
                         if (part == null) continue;
                         int minimum = PawnProjection.MinimumAcceptableQuality(
                             pawn, entry!, part, evaluation.Plan.MinQuality);

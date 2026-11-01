@@ -6,16 +6,17 @@ using Verse;
 
 namespace Implanner
 {
-    /// Game-side adapter for the Core implant-conflict rules: extracts one
-    /// PlannedSlotFacts per catalog slot (reference-body record identity and
-    /// ancestry, hediff tags, recipe incompatibility tags, hediff removal
-    /// tags) and answers whether two planned slots can never coexist.
-    /// Builder path only.
+    /// Game-side adapter for the Core implant-conflict rules: extracts
+    /// PlannedSlotFacts per catalog slot and plannable body (that body's
+    /// record identity and ancestry, hediff tags, recipe incompatibility
+    /// tags, hediff removal tags) and answers whether two planned slots can
+    /// never coexist on any body carrying both. Builder path only.
     // Cache contract:
     // Owner: process.
-    // Key: implant defName (facts array indexed by slot ordinal).
-    // Value: immutable per-slot conflict facts; observed defs and records
-    //   are never mutated.
+    // Key: implant defName (facts indexed by catalog slot, then by
+    //   Catalogs.PlannableBodies position).
+    // Value: immutable per-slot, per-body conflict facts (null where the
+    //   body lacks the slot); observed defs and records are never mutated.
     // Dependencies: the loaded definition set (static per session; labels
     //   are not inputs, so the cache does not follow the language revision).
     // Refresh policy: built lazily per def on first query.
@@ -23,14 +24,14 @@ namespace Implanner
     // Teardown: Release clears the map (called from Catalogs.Release).
     internal static class ImplantConflicts
     {
-        private static readonly Dictionary<string, PlannedSlotFacts?[]> facts =
-            new Dictionary<string, PlannedSlotFacts?[]>(StringComparer.Ordinal);
+        private static readonly Dictionary<string, PlannedSlotFacts?[][]> facts =
+            new Dictionary<string, PlannedSlotFacts?[][]>(StringComparer.Ordinal);
 
         /// The resolver injected into PlannerModel.SlotConflictResolver;
         /// cached so injection never allocates.
-        internal static readonly Func<ImplantGoal, int, ImplantGoal, int, bool>
-            Resolver = (a, ordA, b, ordB) =>
-                Conflicts(a.ImplantDefName, ordA, b.ImplantDefName, ordB);
+        internal static readonly Func<ImplantGoal, PartAddress, ImplantGoal, PartAddress, bool>
+            Resolver = (a, slotA, b, slotB) =>
+                Conflicts(a.ImplantDefName, slotA, b.ImplantDefName, slotB);
 
         internal static void Release()
         {
@@ -131,33 +132,43 @@ namespace Implanner
             return result;
         }
 
+        /// Whether the two planned slots can never coexist on a colonist:
+        /// on some plannable body carrying both, the Core rules exclude the
+        /// pair. Slots no single body carries (a human's eye and an
+        /// android's sight sensor) never meet on one pawn.
         internal static bool Conflicts(
-            string defA, int ordinalA, string defB, int ordinalB)
+            string defA, PartAddress slotA, string defB, PartAddress slotB)
         {
-            PlannedSlotFacts? a = FactsOf(defA, ordinalA);
-            PlannedSlotFacts? b = FactsOf(defB, ordinalB);
+            PlannedSlotFacts?[]? a = FactsOf(defA, slotA);
+            PlannedSlotFacts?[]? b = FactsOf(defB, slotB);
             if (a == null || b == null) return false;
-            return ImplantConflictRules.Conflicts(a, b);
+            for (int body = 0; body < a.Length; body++)
+                if (a[body] != null && b[body] != null
+                    && ImplantConflictRules.Conflicts(a[body]!, b[body]!))
+                    return true;
+            return false;
         }
 
-        private static PlannedSlotFacts? FactsOf(string defName, int ordinal)
+        private static PlannedSlotFacts?[]? FactsOf(string defName, PartAddress slot)
         {
-            if (!facts.TryGetValue(defName, out PlannedSlotFacts?[]? slots))
+            if (!facts.TryGetValue(defName, out PlannedSlotFacts?[][]? slots))
             {
                 slots = Build(defName);
                 facts.Add(defName, slots);
             }
-            return ordinal >= 0 && ordinal < slots.Length ? slots[ordinal] : null;
+            ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(defName);
+            int index = entry?.SlotIndexOf(slot) ?? -1;
+            return index >= 0 && index < slots.Length ? slots[index] : null;
         }
 
         private static readonly string[] NoTags = Array.Empty<string>();
 
-        private static PlannedSlotFacts?[] Build(string defName)
+        private static PlannedSlotFacts?[][] Build(string defName)
         {
             ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(defName);
-            if (entry == null) return Array.Empty<PlannedSlotFacts?>();
+            if (entry == null) return Array.Empty<PlannedSlotFacts?[]>();
 
-            BodyDef body = BodyDefOf.Human;
+            List<BodyDef> bodies = Catalogs.PlannableBodies();
             List<string>? defTags = entry.Def.tags;
             IReadOnlyList<string> tags = defTags != null && defTags.Count > 0
                 ? defTags
@@ -167,19 +178,26 @@ namespace Implanner
                 defRemoveWith != null && defRemoveWith.Count > 0
                     ? defRemoveWith
                     : NoTags;
-            var slots = new PlannedSlotFacts?[entry.SlotRecords.Count];
-            for (int i = 0; i < entry.SlotRecords.Count; i++)
+            var slots = new PlannedSlotFacts?[entry.Slots.Count][];
+            for (int i = 0; i < entry.Slots.Count; i++)
             {
-                BodyPartRecord record = entry.SlotRecords[i];
-                if (record == null) continue; // placeholder slot: no anatomy
-                var ancestors = new List<int>();
-                for (BodyPartRecord parent = record.parent; parent != null;
-                    parent = parent.parent)
-                    ancestors.Add(body.GetIndexOfPart(parent));
-                slots[i] = new PlannedSlotFacts(defName, entry.IsReplacement,
-                    body.GetIndexOfPart(record), ancestors,
-                    tags, entry.IncompatibleTags, removeWith,
-                    entry.MountsOnArtificialParts, entry.WipesPart);
+                CatalogSlot slot = entry.Slots[i];
+                slots[i] = new PlannedSlotFacts?[bodies.Count];
+                for (int b = 0; b < bodies.Count; b++)
+                {
+                    BodyDef body = bodies[b];
+                    List<BodyPartRecord> records = body.GetPartsWithDef(slot.Part);
+                    if (slot.Address.Occurrence >= records.Count) continue;
+                    BodyPartRecord record = records[slot.Address.Occurrence];
+                    var ancestors = new List<int>();
+                    for (BodyPartRecord parent = record.parent; parent != null;
+                        parent = parent.parent)
+                        ancestors.Add(body.GetIndexOfPart(parent));
+                    slots[i][b] = new PlannedSlotFacts(defName, entry.IsReplacement,
+                        body.GetIndexOfPart(record), ancestors,
+                        tags, entry.IncompatibleTags, removeWith,
+                        entry.MountsOnArtificialParts, entry.WipesPart);
+                }
             }
             return slots;
         }

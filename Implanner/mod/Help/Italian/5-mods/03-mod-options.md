@@ -25,6 +25,9 @@ La scheda Opzioni contiene le impostazioni di compatibilità dei piani e l'inter
 <!-- l10n:b-924ed49fe876 -->
 Ogni suggerimento elenca gli impianti interessati caricati e la mod da cui provengono.
 
+<!-- l10n:android-surgeons -->
+**Operazioni sugli androidi** compare solo quando Android Tiers Continued è caricata. Indica chi esegue le operazioni sugli androidi, che Implanner ricava dall'impostazione di Android Tiers "Gli androidi possono essere curati solo dagli artigiani": i medici se è disattivata, come per impostazione predefinita, gli artigiani con "Ripara androidi" attivo se è attivata. Cambiala nelle impostazioni della mod Android Tiers e Implanner si adegua. Le operazioni sugli androidi usano l'abilità Artigianato. Con la selezione automatica del medico attiva, Implanner limita ogni operazione su un androide al miglior colono idoneo per abilità Artigianato.
+
 <!-- l10n:b-119eac06340c -->
 ![Il suggerimento dell'opzione mostra gli impianti interessati](options-purchase-tip.png)
 

@@ -112,7 +112,7 @@ namespace ImplannerProductionSteps
    foreach (string name in new[] { "Steel", "Plasteel", "Gold", "ComponentIndustrial", "ComponentSpacer" }) model.SetResourceReserve(name,0);
    if (availability == "reserved") { model.SetImplantReserve("BionicArm",1); s.ProtectedArm=true; }
    var plan=model.CreatePlan("EPOE production proof",store.TakePlanId);
-   model.SetImplantSlot(plan.Id,"AdvancedBionicArm",0,true);
+   model.SetImplantSlot(plan.Id,"AdvancedBionicArm",new PartAddress("Shoulder",0),true);
    model.AssignPlan(s.Patient.thingIDNumber,plan.Id);
    store.Bump(PlannerChange.All);
    DebugSettings.fastCrafting=true;

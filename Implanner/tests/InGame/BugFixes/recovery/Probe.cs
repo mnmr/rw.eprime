@@ -58,7 +58,7 @@ public static class Probe
   var parts=patient.RaceProps.body.GetPartsWithDef(DefDatabase<BodyPartDef>.GetNamed("Shoulder"));shoulder=parts[0];
   var injury=(Hediff_Injury)HediffMaker.MakeHediff(HediffDefOf.Cut,patient,shoulder);injury.Severity=shoulder.def.GetMaxHealth(patient)*0.75f;patient.health.AddHediff(injury,shoulder);
   float injured=PawnCapacityUtility.CalculatePartEfficiency(patient.health.hediffSet,shoulder);Write("injured shoulder efficiency="+injured);
-  var m=Model();var s=ImplannerStore.Current;var plan=m.CreatePlan("Both arms recovery review",s.TakePlanId);m.SetImplantSlot(plan.Id,"BionicArm",0,true);m.SetImplantSlot(plan.Id,"BionicArm",1,true);m.AssignPlan(patient.thingIDNumber,plan.Id);s.Bump(PlannerChange.All);Reconcile();
+  var m=Model();var s=ImplannerStore.Current;var plan=m.CreatePlan("Both arms recovery review",s.TakePlanId);m.SetImplantSlot(plan.Id,"BionicArm",new PartAddress("Shoulder",0),true);m.SetImplantSlot(plan.Id,"BionicArm",new PartAddress("Shoulder",1),true);m.AssignPlan(patient.thingIDNumber,plan.Id);s.Bump(PlannerChange.All);Reconcile();
   Assert(m.Reservations.ContainsKey(arm.thingIDNumber),"Awful arm reserved while real injury makes it acceptable");Assert(patient.BillStack.Count==0,"missing other arm and current injury hold the initial batch");
   injury.Heal(injury.Severity+1);float healed=PawnCapacityUtility.CalculatePartEfficiency(patient.health.hediffSet,shoulder);Assert(healed>0.99f,"native Hediff_Injury.Heal restores shoulder efficiency to1");
   Reconcile();Assert(!m.Reservations.ContainsKey(arm.thingIDNumber),"IMP014: healed shoulder releases now-inferior Awful reservation");
@@ -79,7 +79,7 @@ public static class Probe
   var m=Model();var s=ImplannerStore.Current;heartPart=patient.RaceProps.body.GetPartsWithDef(DefDatabase<BodyPartDef>.GetNamed("Heart"))[0];
   var worn=(HediffWithComps)patient.health.AddHediff(HediffDef.Named("BionicHeart"),heartPart);var comp=worn.comps.Single(c=>c.GetType().Name=="HediffCompQualityBionics");AccessTools.Field(comp.GetType(),"quality").SetValue(comp,QualityCategory.Normal);
   foreach(Thing t in map.listerThings.ThingsOfDef(ThingDef.Named("BionicHeart")).ToArray())t.Destroy();heart=Spawn("BionicHeart",QualityCategory.Excellent);
-  var plan=m.CreatePlan("Heart upgrade review",s.TakePlanId);m.SetImplantSlot(plan.Id,"BionicHeart",0,true);m.AssignPlan(patient.thingIDNumber,plan.Id);m.SetPawnPriority(patient.thingIDNumber,1);s.Bump(PlannerChange.All);Reconcile();Assert(patient.BillStack.Count==0,"quality-upgrade option OFF keeps satisfied Normal heart untouched");
+  var plan=m.CreatePlan("Heart upgrade review",s.TakePlanId);m.SetImplantSlot(plan.Id,"BionicHeart",new PartAddress("Heart",0),true);m.AssignPlan(patient.thingIDNumber,plan.Id);m.SetPawnPriority(patient.thingIDNumber,1);s.Bump(PlannerChange.All);Reconcile();Assert(patient.BillStack.Count==0,"quality-upgrade option OFF keeps satisfied Normal heart untouched");
   m.SetUpgradeByPriority(true);s.Bump(PlannerChange.Options);Reconcile();
   Assert(patient.BillStack.Count==0,"IMP008: enabling quality upgrades never schedules vital heart removal");
   Reconcile();Assert(!patient.Dead&&patient.health.hediffSet.HasHediff(HediffDef.Named("BionicHeart"),heartPart),"IMP008: healthy patient retains functioning heart after repeated dispatch");

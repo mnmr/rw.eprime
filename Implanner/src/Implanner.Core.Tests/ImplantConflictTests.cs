@@ -211,7 +211,7 @@ public class ImplantConflictTests
 
     /// Same-record slot map for the suppression test: both stomach kinds
     /// target ordinal 0 = record 12.
-    static bool StomachResolver(ImplantGoal a, int ordA, ImplantGoal b, int ordB) =>
+    static bool StomachResolver(ImplantGoal a, PartAddress ordA, ImplantGoal b, PartAddress ordB) =>
         (a.ImplantDefName == "NuclearStomach" || a.ImplantDefName == "DetoxifierStomach")
         && (b.ImplantDefName == "NuclearStomach" || b.ImplantDefName == "DetoxifierStomach");
 
@@ -225,11 +225,11 @@ public class ImplantConflictTests
         model.SetSlotConflictResolver(StomachResolver);
         int nextPlan = 1;
         var plan = model.CreatePlan("Test", () => nextPlan++)!;
-        model.SetImplantSlot(plan.Id, "NuclearStomach", 0, true);
-        model.SetImplantSlot(plan.Id, "BionicEye", 0, true);
+        model.SetImplantSlot(plan.Id, "NuclearStomach", Part(0), true);
+        model.SetImplantSlot(plan.Id, "BionicEye", Part(0), true);
 
         var change = model.SetImplantSlot(
-            plan.Id, "DetoxifierStomach", 0, true);
+            plan.Id, "DetoxifierStomach", Part(0), true);
 
         await Assert.That(change).IsEqualTo(PlannerChange.Plans);
         await Assert.That(plan.Implants.Count).IsEqualTo(2);
@@ -239,7 +239,7 @@ public class ImplantConflictTests
 
     /// Per-leg stand-in: a bionic leg replaces the leg a knee spike mounts
     /// on, so the two kinds conflict only at the same ordinal.
-    static bool LegResolver(ImplantGoal a, int ordA, ImplantGoal b, int ordB) =>
+    static bool LegResolver(ImplantGoal a, PartAddress ordA, ImplantGoal b, PartAddress ordB) =>
         ordA == ordB
         && ((a.ImplantDefName == "BionicLeg" && b.ImplantDefName == "KneeSpike")
             || (a.ImplantDefName == "KneeSpike" && b.ImplantDefName == "BionicLeg"));
@@ -255,24 +255,24 @@ public class ImplantConflictTests
         model.SetSlotConflictResolver(LegResolver);
         int nextPlan = 1;
         var plan = model.CreatePlan("Test", () => nextPlan++)!;
-        model.SetImplantSlot(plan.Id, "KneeSpike", 0, true);
-        model.SetImplantSlot(plan.Id, "KneeSpike", 1, true);
-        model.SetImplantSlot(plan.Id, "BionicEye", 0, true);
+        model.SetImplantSlot(plan.Id, "KneeSpike", Part(0), true);
+        model.SetImplantSlot(plan.Id, "KneeSpike", Part(1), true);
+        model.SetImplantSlot(plan.Id, "BionicEye", Part(0), true);
 
-        model.SetImplantSlot(plan.Id, "BionicLeg", 0, true);
+        model.SetImplantSlot(plan.Id, "BionicLeg", Part(0), true);
 
         await Assert.That(plan.Implants.Count).IsEqualTo(3);
         await Assert.That(plan.Implants[0].ImplantDefName).IsEqualTo("KneeSpike");
-        await Assert.That(plan.Implants[0].SlotOrdinals).IsEquivalentTo(new[] { 1 });
+        await Assert.That(plan.Implants[0].Slots).IsEquivalentTo(Parts(1));
         await Assert.That(plan.Implants[2].ImplantDefName).IsEqualTo("BionicLeg");
 
-        model.SetImplantSlot(plan.Id, "BionicLeg", 1, true);
+        model.SetImplantSlot(plan.Id, "BionicLeg", Part(1), true);
 
         await Assert.That(plan.Implants.Count).IsEqualTo(2);
         await Assert.That(plan.Implants[0].ImplantDefName).IsEqualTo("BionicEye");
-        await Assert.That(plan.Implants[0].SlotOrdinals).IsEquivalentTo(new[] { 0 });
+        await Assert.That(plan.Implants[0].Slots).IsEquivalentTo(Parts(0));
         await Assert.That(plan.Implants[1].ImplantDefName).IsEqualTo("BionicLeg");
-        await Assert.That(plan.Implants[1].SlotOrdinals).IsEquivalentTo(new[] { 0, 1 });
+        await Assert.That(plan.Implants[1].Slots).IsEquivalentTo(Parts(0, 1));
     }
 
     /// Bladder implants from different mods are separate torso implants to
@@ -287,15 +287,15 @@ public class ImplantConflictTests
         var model = new PlannerModel();
         int nextPlan = 1;
         var basePlan = model.CreatePlan("Base", () => nextPlan++)!;
-        model.SetImplantSlot(basePlan.Id, "BionicBladder", 0, true);
+        model.SetImplantSlot(basePlan.Id, "BionicBladder", Part(0), true);
         var derived = model.CreatePlan("Derived", () => nextPlan++, basePlan.Id)!;
-        model.SetImplantSlot(derived.Id, "BionicBladder", 0, true);
-        model.SetImplantSlot(derived.Id, "BionicEye", 0, true);
+        model.SetImplantSlot(derived.Id, "BionicBladder", Part(0), true);
+        model.SetImplantSlot(derived.Id, "BionicEye", Part(0), true);
 
         // Default: both bladders stay selected side by side.
         await Assert.That(model.AllowMultipleBladders).IsTrue();
         await Assert.That(model.SetImplantSlot(
-            derived.Id, "FSFAdvBionicBladder", 0, true)).IsEqualTo(PlannerChange.Plans);
+            derived.Id, "FSFAdvBionicBladder", Part(0), true)).IsEqualTo(PlannerChange.Plans);
         await Assert.That(derived.Implants.Count).IsEqualTo(3);
         await Assert.That(model.KindsExclusive("BionicBladder", "FSFAdvBionicBladder"))
             .IsFalse();
@@ -321,8 +321,8 @@ public class ImplantConflictTests
         model.SetAllowMultipleBladders(false);
 
         // Re-picking the advanced bladder now overrides the bionic one.
-        model.SetImplantSlot(derived.Id, "FSFAdvBionicBladder", 0, false);
-        model.SetImplantSlot(derived.Id, "FSFAdvBionicBladder", 0, true);
+        model.SetImplantSlot(derived.Id, "FSFAdvBionicBladder", Part(0), false);
+        model.SetImplantSlot(derived.Id, "FSFAdvBionicBladder", Part(0), true);
         await Assert.That(derived.Implants.Count).IsEqualTo(2);
         await Assert.That(derived.Implants[0].ImplantDefName).IsEqualTo("BionicEye");
         await Assert.That(derived.Implants[1].ImplantDefName).IsEqualTo("FSFAdvBionicBladder");
@@ -351,10 +351,10 @@ public class ImplantConflictTests
         model.SetSlotConflictResolver(StomachResolver);
         int nextPlan = 1;
         var basePlan = model.CreatePlan("Base", () => nextPlan++)!;
-        model.SetImplantSlot(basePlan.Id, "NuclearStomach", 0, true);
-        model.SetImplantSlot(basePlan.Id, "BionicEye", 0, true);
+        model.SetImplantSlot(basePlan.Id, "NuclearStomach", Part(0), true);
+        model.SetImplantSlot(basePlan.Id, "BionicEye", Part(0), true);
         var derived = model.CreatePlan("Derived", () => nextPlan++, basePlan.Id)!;
-        model.SetImplantSlot(derived.Id, "DetoxifierStomach", 0, true);
+        model.SetImplantSlot(derived.Id, "DetoxifierStomach", Part(0), true);
 
         IReadOnlyList<ImplantGoal> effective = model.EffectiveImplants(derived);
 

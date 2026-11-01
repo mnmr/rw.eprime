@@ -53,3 +53,7 @@ Hybridimplantate erhalten ihre Qualität vom verwendeten Genorahmen (siehe [Mind
 
 <!-- l10n:b-1a485abf9e8c -->
 **Bionic modularity**: Jedes Modul belegt einen Platz auf seinem Körperteil. Ein Kampf- und ein Arbeitsmodul passen auf denselben Arm, zwei Kampfmodule nicht. Gliedmaßenmodule werden auf Bionik montiert und teilen deren Körperteil. Geplanter bionischer Arm und Armmodul können daher zusammen bestehen. Bei Auswahl ohne passende Bionik zeigt eine Abfrage mögliche Träger, standardmäßig den am wenigsten fortgeschrittenen. **Zum Plan hinzufügen** ergänzt Auswahl und Modul gemeinsam; **Abbrechen** fügt nichts hinzu.
+
+<!-- l10n:android-tiers -->
+**Android Tiers Continued**: Androiden haben eigene Körperteile, etwa einen linken und einen rechten Sehsensor anstelle von Augen. Die Auswahl listet jedes dieser Teile mit seiner Seite als eigene Zeile auf, sodass du beide Seiten oder nur eine planen kannst. Ein Implantat, das sowohl für Menschen als auch für Androiden passt, etwa die VX-Chips, erscheint mit dem Gehirn und dem künstlichen Gehirn als getrennten Zeilen: Hake die Zeilen für die Kolonisten an, für die der Plan gedacht ist. Androidenoperationen verwenden die Fertigkeit Handwerk. Ist die automatische Arztwahl aktiviert, beschränkt Implanner jede Androidenoperation auf den nach Handwerksfertigkeit besten geeigneten Kolonisten (siehe [Mod-Optionen](topic:mod-options)).
+

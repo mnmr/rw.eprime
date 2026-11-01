@@ -104,7 +104,6 @@
   <IMP_PlanMinQualityTip>新安装可接受的最低品质，也适用于从基础方案继承的选择项。已经安装的植入体只要是方案指定的类型，即使低于此最低品质也仍计为完成。启用“将最佳植入体分配给高优先级殖民者”即可允许换装品质更好的植入体。无品质的植入体不受影响。\n\n不会用更差的植入体替换健康身体部位。低品质仿生体会等待更好的物品，除非该部位已缺失或受损。</IMP_PlanMinQualityTip>
   <IMP_PlanMinQualityNoQualityJobs>未加载 Quality Jobs，因此任何工匠都可完成植入体。成品低于此品质时，会再次制作。</IMP_PlanMinQualityNoQualityJobs>
   <IMP_DeletePlanConfirm>删除方案“{0}”？分配了此方案的殖民者将失去分配，继承此方案的其他方案也将停止继承。</IMP_DeletePlanConfirm>
-  <IMP_ImplantGroupOther>其他</IMP_ImplantGroupOther>
   <IMP_ReqTitle>前置要求</IMP_ReqTitle>
   <IMP_ReqBody>{0} 只能安装在人工{1}上。请选择要一同加入方案的替换部件：</IMP_ReqBody>
   <IMP_ReqConfirm>加入方案</IMP_ReqConfirm>
@@ -213,4 +212,7 @@
   <IMP_ShipFallback>逆重飞船</IMP_ShipFallback>
   <IMP_SettingsShowToolbarButton>显示工具栏按钮</IMP_SettingsShowToolbarButton>
   <IMP_CompatibilityLevelMod>{0}：使用此多层地图模组时，Implanner 的自动化功能将被禁用。规划和追踪功能仍可正常使用。</IMP_CompatibilityLevelMod>
+  <IMP_OptAndroidSurgeonsCrafters>机器人手术：已开启“修复机器人”的工匠（跟随 Android Tiers）</IMP_OptAndroidSurgeonsCrafters>
+  <IMP_OptAndroidSurgeonsDoctors>机器人手术：医生（跟随 Android Tiers）</IMP_OptAndroidSurgeonsDoctors>
+  <IMP_OptAndroidSurgeonsTip>Implanner 会跟随 Android Tiers 的“机器人只能由工匠修复”设置，该设置需在 Android Tiers 的模组设置中更改。开启时，由已开启“修复机器人”的工匠执行机器人手术；关闭时由医生执行。机器人手术使用手工技能。开启医生自动选择后，Implanner 会将每项机器人手术限定给手工技能最高的合格殖民者。</IMP_OptAndroidSurgeonsTip>
 </LanguageData>

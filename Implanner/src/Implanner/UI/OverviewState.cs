@@ -962,16 +962,16 @@ namespace Implanner.UI
                 for (int k = 0; k < missing.Count; k++)
                 {
                     if (!GoalKeys.TryResolveImplantSlot(
-                            row.Goals, missing[k], out ImplantGoal goal, out int ordinal))
+                            row.Goals, missing[k], out ImplantGoal goal, out PartAddress slot))
                         continue;
                     ImplantCatalogEntry? entry =
                         Catalogs.ImplantByDefName(goal.ImplantDefName);
                     ThingDef? item = entry != null
-                        ? PawnProjection.RequiredItem(row.Pawn, entry, ordinal)
+                        ? PawnProjection.RequiredItem(row.Pawn, entry, slot)
                         : null;
                     if (item == null) continue;
                     BodyPartRecord? part = PawnProjection.ResolveSlotPart(
-                        row.Pawn, entry!, ordinal);
+                        row.Pawn, entry!, slot);
                     int minimum = part != null
                         ? PawnProjection.MinimumAcceptableQuality(
                             row.Pawn, entry!, part, row.MinQuality)
@@ -1476,9 +1476,9 @@ namespace Implanner.UI
                 ImplantGoal implantGoal = goals[g];
                 var pipeline = PlannerSurgery.SlotStatus.None;
                 string? reservedKey = null;
-                for (int j = 0; j < implantGoal.SlotOrdinals.Count; j++)
+                for (int j = 0; j < implantGoal.Slots.Count; j++)
                 {
-                    string key = GoalKeys.ImplantSlot(implantGoal, implantGoal.SlotOrdinals[j]);
+                    string key = GoalKeys.ImplantSlot(implantGoal, implantGoal.Slots[j]);
                     if (reservedKey == null && reservedByGoal.ContainsKey(key))
                         reservedKey = key;
                     if (surgery != null

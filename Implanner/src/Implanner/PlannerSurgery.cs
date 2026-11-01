@@ -43,41 +43,44 @@ namespace Implanner
         }
 
         /// The pawn's Medical skill when they are an active doctor; -1 when
-        /// they are not. The single eligibility rule shared by the automatic
-        /// floor, the floor-blocker display, and manual-floor seeding.
+        /// they are not: the ordinary surgeon pool's rule (SurgeonPool),
+        /// also used to seed the manual floor.
         internal static int EligibleDoctorSkill(Pawn pawn) =>
-            pawn.workSettings != null
-                && pawn.workSettings.WorkIsActive(WorkTypeDefOf.Doctor)
-                ? pawn.skills?.GetSkill(SkillDefOf.Medicine)?.Level ?? 0
-                : -1;
+            SurgeonPool.Doctors.SkillOf(pawn);
 
         /// Automatic doctor floor: on the approved 1020-tick boundary
         /// (PlannerReconciler.BoundaryTicks, pure tick arithmetic), publish
-        /// each colony's CURRENT best eligible Medical skill — up, down, or
-        /// cleared when the colony has no eligible doctor left.
+        /// each colony's CURRENT best eligible skill per surgeon pool — up,
+        /// down, or cleared when the colony has no eligible surgeon left.
+        /// The pools are every skill a catalog surgery works, done by
+        /// doctors, plus the Android Tiers crafter pool while androids are
+        /// operated on by crafters.
         private static PlannerChange EvaluateDoctorFloors(
             PlannerModel model, ReconcilePass pass)
         {
             if (!model.AutoDoctorFloor || !pass.BoundaryHit)
                 return PlannerChange.None;
             ColonyIndex index = pass.Index;
+            List<SurgeonPool> pools = SurgeonPool.All(model);
 
             var change = PlannerChange.None;
             var best = new Dictionary<string, int>(StringComparer.Ordinal);
             for (int c = 0; c < index.Colonies.Count; c++)
             {
                 Colony colony = index.Colonies[c];
-                for (int i = 0; i < colony.PawnIds.Count; i++)
+                for (int p = 0; p < pools.Count; p++)
                 {
-                    int skill = EligibleDoctorSkill(
-                        index.PawnsById[colony.PawnIds[i]]);
-                    if (skill < 0) continue;
-                    if (!best.TryGetValue(colony.LocationId, out int current)
-                        || skill > current)
-                        best[colony.LocationId] = skill;
+                    string key = pools[p].FloorKey(colony.LocationId);
+                    for (int i = 0; i < colony.PawnIds.Count; i++)
+                    {
+                        int skill = pools[p].SkillOf(index.PawnsById[colony.PawnIds[i]]);
+                        if (skill < 0) continue;
+                        if (!best.TryGetValue(key, out int current) || skill > current)
+                            best[key] = skill;
+                    }
                 }
             }
-            // Colonies that lost every eligible doctor clear their entry.
+            // Pools that lost every eligible surgeon clear their entry.
             var stale = new List<string>();
             foreach (KeyValuePair<string, int> pair in model.DoctorFloors)
                 if (!best.ContainsKey(pair.Key))
@@ -180,18 +183,18 @@ namespace Implanner
                         string key = batch[k];
                         if (reservedGoals.Contains((pawnId, key))) continue;
                         if (!GoalKeys.TryResolveImplantSlot(
-                                goals, key, out ImplantGoal goal, out int ordinal))
+                                goals, key, out ImplantGoal goal, out PartAddress slot))
                             continue;
                         ImplantCatalogEntry? entry =
                             Catalogs.ImplantByDefName(goal.ImplantDefName);
                         // A slot needing no item (an upgrade over its
                         // installed base) is ready without a reservation.
                         ThingDef? item = entry != null
-                            ? PawnProjection.RequiredItem(pawn, entry, ordinal)
+                            ? PawnProjection.RequiredItem(pawn, entry, slot)
                             : null;
                         if (item == null) continue;
                         BodyPartRecord? part =
-                            PawnProjection.ResolveSlotPart(pawn, entry!, ordinal);
+                            PawnProjection.ResolveSlotPart(pawn, entry!, slot);
                         if (part == null) continue;
                         // The same implant is already on its way back to
                         // this part (a reinstall or the install half of an
@@ -364,13 +367,9 @@ namespace Implanner
             out int effectiveFloor, out string lossLabel)
         {
             lossLabel = "";
+            effectiveFloor = 0;
             var statuses = new Dictionary<string, SlotStatus>(StringComparer.Ordinal);
             PawnPlace place = ColonyScope.PlaceOf(pawn);
-            // The patient never operates on themselves: the floor and the
-            // blocked check both look at the OTHER doctors on the map.
-            int bestOther = BestMedicalSkill(pawn.MapHeld, pawn);
-            effectiveFloor = model.PatientDoctorFloor(place.LocationId ?? "",
-                EligibleDoctorSkill(pawn), bestOther);
             IReadOnlyList<ImplantGoal> goals = model.EffectiveImplants(plan);
             if (goals.Count == 0) return statuses;
 
@@ -391,7 +390,6 @@ namespace Implanner
                 batch, ready, model.Iteration, OptionalFlags(pawn, goals, batch),
                 HeldFlags(pawn, goals, batch, ready));
             bool gated = releasable.Count > 0 && !HealthGate(pawn);
-            bool floorBlocked = effectiveFloor > bestOther;
 
             for (int i = 0; i < missing.Count; i++)
             {
@@ -403,9 +401,24 @@ namespace Implanner
                     if (lossLabel.Length == 0) lossLabel = loss.LabelCap;
                     continue;
                 }
-                if (model.OwnedBill(pawn.thingIDNumber, key) != null)
+                string? billId = model.OwnedBill(pawn.thingIDNumber, key);
+                if (billId != null)
                 {
-                    statuses[key] = floorBlocked
+                    // The patient never operates on themselves: the floor
+                    // and the blocked check both look at the OTHER surgeons
+                    // on the map, in the pool the bill's recipe needs.
+                    RecipeDef? recipe = RecipeOfBill(pawn, billId);
+                    bool blocked = false;
+                    if (recipe != null)
+                    {
+                        SurgeonPool pool = SurgeonPool.For(model, pawn, recipe);
+                        int bestOther = BestSkill(pawn.MapHeld, pawn, pool);
+                        int floor = pool.Skill == null ? 0 : model.PatientDoctorFloor(
+                            pool.FloorKey(place.LocationId ?? ""), pool.SkillOf(pawn), bestOther);
+                        blocked = floor > bestOther;
+                        if (blocked && effectiveFloor == 0) effectiveFloor = floor;
+                    }
+                    statuses[key] = blocked
                         ? SlotStatus.BlockedByFloor
                         : SlotStatus.Scheduled;
                     continue;
@@ -432,11 +445,11 @@ namespace Implanner
             for (int i = 0; i < keys.Count; i++)
             {
                 if (!GoalKeys.TryResolveImplantSlot(
-                        goals, keys[i], out ImplantGoal goal, out int ordinal))
+                        goals, keys[i], out ImplantGoal goal, out PartAddress slot))
                     continue;
                 ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(goal.ImplantDefName);
                 if (entry == null) continue;
-                ThingDef? item = PawnProjection.RequiredItem(pawn, entry, ordinal);
+                ThingDef? item = PawnProjection.RequiredItem(pawn, entry, slot);
                 flags[i] = item != null
                     && PlannerProduction.ProductionRecipeFor(item) == null;
             }
@@ -510,12 +523,12 @@ namespace Implanner
             for (int i = 0; i < keys.Count; i++)
             {
                 if (!GoalKeys.TryResolveImplantSlot(
-                        goals, keys[i], out ImplantGoal goal, out int ordinal))
+                        goals, keys[i], out ImplantGoal goal, out PartAddress slot))
                     continue;
                 ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(goal.ImplantDefName);
                 if (entry == null) continue;
                 wipes[i] = entry.WipesPart;
-                parts[i] = PawnProjection.ResolveSlotPart(pawn, entry, ordinal);
+                parts[i] = PawnProjection.ResolveSlotPart(pawn, entry, slot);
             }
         }
 
@@ -531,11 +544,11 @@ namespace Implanner
         /// null: surgeries that restore the part only.
         private static Hediff? LossOf(Pawn pawn, IReadOnlyList<ImplantGoal> goals, string key)
         {
-            if (!GoalKeys.TryResolveImplantSlot(goals, key, out ImplantGoal goal, out int ordinal))
+            if (!GoalKeys.TryResolveImplantSlot(goals, key, out ImplantGoal goal, out PartAddress slot))
                 return null;
             ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(goal.ImplantDefName);
             if (entry == null) return null;
-            BodyPartRecord? part = PawnProjection.ResolveSlotPart(pawn, entry, ordinal);
+            BodyPartRecord? part = PawnProjection.ResolveSlotPart(pawn, entry, slot);
             return part != null ? WouldDestroy(pawn, entry, part) : null;
         }
 
@@ -577,18 +590,28 @@ namespace Implanner
             Pawn pawn, IReadOnlyList<ImplantGoal> goals, string key)
         {
             if (!GoalKeys.TryResolveImplantSlot(
-                    goals, key, out ImplantGoal goal, out int ordinal))
+                    goals, key, out ImplantGoal goal, out PartAddress slot))
                 return false;
             ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(goal.ImplantDefName);
             return entry != null
-                && PawnProjection.RequiredItem(pawn, entry, ordinal) == null;
+                && PawnProjection.RequiredItem(pawn, entry, slot) == null;
         }
 
-        /// The best Medical skill among doctors on the pawn's map; what the
-        /// effective floor is compared against when naming a floor blocker.
-        /// The best eligible doctor's skill on the map, leaving out the
-        /// patient (nobody operates on themselves); 0 with no other doctor.
-        private static int BestMedicalSkill(Map? map, Pawn patient)
+        /// The recipe of a pawn's bill by load id, or null. Presentation path.
+        private static RecipeDef? RecipeOfBill(Pawn pawn, string billId)
+        {
+            BillStack bills = pawn.BillStack;
+            for (int i = 0; i < bills.Count; i++)
+                if (bills[i].GetUniqueLoadID() == billId)
+                    return bills[i].recipe;
+            return null;
+        }
+
+        /// The best eligible surgeon's skill in the pool on the pawn's map,
+        /// leaving out the patient (nobody operates on themselves); 0 with
+        /// no other surgeon. What the effective floor is compared against
+        /// when naming a floor blocker.
+        private static int BestSkill(Map? map, Pawn patient, SurgeonPool pool)
         {
             map = FloorMaps.Canonical(map);
             if (map == null) return 0;
@@ -599,7 +622,7 @@ namespace Implanner
             for (int i = 0; i < colonists.Count; i++)
             {
                 if (ReferenceEquals(colonists[i], patient)) continue;
-                int skill = EligibleDoctorSkill(colonists[i]);
+                int skill = pool.SkillOf(colonists[i]);
                 if (skill > best) best = skill;
             }
             return best;
@@ -627,12 +650,12 @@ namespace Implanner
             {
                 Colony? colony = index.ColonyOfPawn(owner.Key);
                 if (colony == null || !index.PawnsById.TryGetValue(owner.Key, out Pawn? patient)) continue;
-                int floor = PatientFloor(model, index, colony, patient, owner.Key);
                 foreach (string billId in owner.Value.Values)
                     if (pass.FindBill(patient.BillStack, billId) is Bill_Medical bill)
                     {
                         ModCompatibility.RepairBillSkillMaximum(bill);
-                        bill.allowedSkillRange.min = floor;
+                        bill.allowedSkillRange.min = PatientFloor(model, index, colony,
+                            patient, owner.Key, SurgeonPool.For(model, patient, bill.recipe));
                     }
             }
 
@@ -730,7 +753,6 @@ namespace Implanner
                 // never pulled back because the pawn got wounded or the
                 // batch grew.
                 if (releasable.Count == 0 || !HealthGate(pawn)) continue;
-                int floor = PatientFloor(model, index, colony, pawn, pawnId);
 
                 // The cap gates only colonists without scheduled operations.
                 IReadOnlyDictionary<string, string>? owned = model.OwnedBillsFor(pawnId);
@@ -744,8 +766,8 @@ namespace Implanner
                 }
 
                 for (int k = 0; k < releasable.Count; k++)
-                    change |= EnsureOperation(model, pass, pawn, pawnId,
-                        evaluation.Goals, releasable[k], floor);
+                    change |= EnsureOperation(model, pass, colony, pawn, pawnId,
+                        evaluation.Goals, releasable[k]);
                 if (needsSlot && model.OwnedBillsFor(pawnId)?.Count > 0)
                 {
                     plannedByColony.TryGetValue(colony.LocationId, out int planned);
@@ -845,25 +867,28 @@ namespace Implanner
             }
         }
 
-        /// The floor this patient's operations enforce: the colony floor,
-        /// or the runner-up doctor's skill when the patient is the colony's
-        /// best doctor, since nobody operates on themselves
-        /// (PlannerModel.PatientDoctorFloor). The colony's pawns are the
-        /// index's operable colonists, the same set the automatic floor is
-        /// derived from, so the two never disagree about who can operate.
+        /// The floor one of this patient's operations enforces, in the
+        /// operation's surgeon pool: the colony's pool floor, or the
+        /// runner-up's skill when the patient is the pool's best, since
+        /// nobody operates on themselves (PlannerModel.PatientDoctorFloor).
+        /// A recipe that checks no skill gets no floor. The colony's pawns
+        /// are the index's operable colonists, the same set the automatic
+        /// floor is derived from, so the two never disagree about who can
+        /// operate.
         private static int PatientFloor(PlannerModel model, ColonyIndex index,
-            Colony colony, Pawn patient, int patientId)
+            Colony colony, Pawn patient, int patientId, SurgeonPool pool)
         {
+            if (pool.Skill == null) return 0;
             int bestOther = -1;
             for (int i = 0; i < colony.PawnIds.Count; i++)
             {
                 int otherId = colony.PawnIds[i];
                 if (otherId == patientId) continue;
-                int skill = EligibleDoctorSkill(index.PawnsById[otherId]);
+                int skill = pool.SkillOf(index.PawnsById[otherId]);
                 if (skill > bestOther) bestOther = skill;
             }
-            return model.PatientDoctorFloor(colony.LocationId,
-                EligibleDoctorSkill(patient), bestOther);
+            return model.PatientDoctorFloor(pool.FloorKey(colony.LocationId),
+                pool.SkillOf(patient), bestOther);
         }
 
         /// Lying in a medical bed, or downed and needing medical rest: the
@@ -876,15 +901,15 @@ namespace Implanner
         }
 
         private static PlannerChange EnsureOperation(PlannerModel model,
-            ReconcilePass pass, Pawn pawn, int pawnId,
-            IReadOnlyList<ImplantGoal> goals, string goalKey, int floor)
+            ReconcilePass pass, Colony colony, Pawn pawn, int pawnId,
+            IReadOnlyList<ImplantGoal> goals, string goalKey)
         {
             if (!GoalKeys.TryResolveImplantSlot(
-                    goals, goalKey, out ImplantGoal goal, out int ordinal))
+                    goals, goalKey, out ImplantGoal goal, out PartAddress slot))
                 return PlannerChange.None;
             ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(goal.ImplantDefName);
             if (entry == null) return PlannerChange.None;
-            BodyPartRecord? part = PawnProjection.ResolveSlotPart(pawn, entry, ordinal);
+            BodyPartRecord? part = PawnProjection.ResolveSlotPart(pawn, entry, slot);
             if (part == null) return PlannerChange.None;
             RecipeDef? recipe = SelectRecipe(entry, pawn, part);
             // An in-place upgrade is offered only over its base: while the
@@ -898,6 +923,8 @@ namespace Implanner
                 if (step != null) recipe = SelectRecipe(step, pawn, part);
             }
             if (recipe == null) return PlannerChange.None;
+            int floor = PatientFloor(model, pass.Index, colony, pawn, pawnId,
+                SurgeonPool.For(model, pawn, recipe));
 
             string? recordedId = model.OwnedBill(pawnId, goalKey);
             Bill? recorded = recordedId != null
@@ -978,11 +1005,12 @@ namespace Implanner
             return bill;
         }
 
-        /// The floor a patient's operations enforce at their colony, for
-        /// callers outside this class.
+        /// The floor a patient's operation with this recipe enforces at
+        /// their colony, for callers outside this class.
         internal static int FloorFor(PlannerModel model, ColonyIndex index,
-            Colony colony, Pawn pawn) =>
-            PatientFloor(model, index, colony, pawn, pawn.thingIDNumber);
+            Colony colony, Pawn pawn, RecipeDef recipe) =>
+            PatientFloor(model, index, colony, pawn, pawn.thingIDNumber,
+                SurgeonPool.For(model, pawn, recipe));
 
         /// The surgery health gate, for callers outside this class.
         internal static bool Healthy(Pawn pawn) => HealthGate(pawn);

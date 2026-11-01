@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <JobDef>
+    <defName>AndroidTiers_Rest</defName>
+    <driverClass>AndroidTiersProbe.ScenarioRestDriver</driverClass>
+    <reportString>Resting for Android Tiers verification.</reportString>
+    <casualInterruptible>false</casualInterruptible>
+  </JobDef>
+</Defs>

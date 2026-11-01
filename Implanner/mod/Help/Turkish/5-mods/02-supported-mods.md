@@ -53,3 +53,7 @@ Melez implantlar, yapıldıkları gen iskeletinin kalitesini alır ([asgari kali
 
 <!-- l10n:b-1a485abf9e8c -->
 **Bionic modularity**: her modül parçasında bir yuva kaplar; aynı kola bir savaş ve bir iş modülü sığar, iki savaş modülü sığmaz. Uzuv modülleri biyonik uzva takılıp parçayı paylaşır; planlanan biyonik kol ve kol modülü birlikte bulunabilir. Planda o parçada biyonik yokken uzuv modülü seçmek, onu taşıyabilecek biyonikleri gösteren pencere açar; varsayılan en az gelişmiş taşıyıcıdır. **Plana ekle** seçiminizi modülle birlikte ekler. **İptal** hiçbir şey eklemez.
+
+<!-- l10n:android-tiers -->
+**Android Tiers Continued**: androidlerin kendilerine ait vücut parçaları vardır; örneğin gözler yerine sol ve sağ görüş sensörü bulunur. Seçici bu parçaların her birini yönüyle birlikte ayrı bir satır olarak listeler; böylece iki yanı da ya da yalnızca birini planlayabilirsiniz. VX çipleri gibi hem insanlara hem androidlere uyan bir implant, beyni ve yapay beyni ayrı satırlar olarak listeler: planın hedeflediği kolonicilere uygun satırları işaretleyin. Android ameliyatları Zanaat becerisini kullanır. Otomatik doktor seçimi açıkken Implanner her android ameliyatını Zanaat becerisine göre uygun olan en iyi kolonici ile sınırlar ([mod seçenekleri](topic:mod-options) konusuna bakın).
+

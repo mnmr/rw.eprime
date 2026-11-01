@@ -283,7 +283,7 @@ public static class Probe
         active = new Bill_Medical(recipe, null);
         patient.BillStack.AddBill(active);
         active.Part = shoulder;
-        legacyKey = GoalKeys.ImplantSlot(plan.Implants[0], 0);
+        legacyKey = GoalKeys.ImplantSlot(plan.Implants[0], new PartAddress("Shoulder", 0));
         model.SetAutomationPaused(true);
         ImplannerStore.Current.Bump(PlannerChange.All);
         PutPatientInBed();
@@ -366,7 +366,7 @@ public static class Probe
     {
         var store = ImplannerStore.Current;
         Plan plan = model.CreatePlan("Healing limb safety", store.TakePlanId);
-        model.SetImplantSlot(plan.Id, "BionicArm", 0, true);
+        model.SetImplantSlot(plan.Id,"BionicArm",new PartAddress("Shoulder",0),true);
         model.AssignPlan(patient.thingIDNumber, plan.Id);
         store.Bump(PlannerChange.All);
         return plan;

@@ -64,8 +64,8 @@ public class StripBreakdownTests
     {
         var model = new PlannerModel();
         model.SetImplantStars("BionicLeg", 5);
-        var arm = new ImplantGoal(1, "BionicArm", new[] { 0, 1 });
-        var leg = new ImplantGoal(1, "BionicLeg", new[] { 0 });
+        var arm = new ImplantGoal(1, "BionicArm", Parts(0, 1));
+        var leg = new ImplantGoal(1, "BionicLeg", Parts(0));
         var goals = new List<ImplantGoal> { arm, leg };
 
         var pawns = new List<SurgeryPawnInput>
@@ -74,8 +74,8 @@ public class StripBreakdownTests
             // and scheduled.
             new SurgeryPawnInput(goals,
                 new[] { new GoalResult(2, 1, 1), new GoalResult(1, 0, 1) },
-                reservedKeys: new[] { "p1:BionicArm:1", "p1:BionicLeg:0", "p9:Gone:0" },
-                scheduledKeys: new[] { "p1:BionicLeg:0" }),
+                reservedKeys: new[] { "p1:BionicArm:Part#1", "p1:BionicLeg:Part#0", "p9:Gone:Part#0" },
+                scheduledKeys: new[] { "p1:BionicLeg:Part#0" }),
             // Nothing reserved: both arm slots wait; the leg is installed.
             new SurgeryPawnInput(goals,
                 new[] { new GoalResult(2, 0, 2), new GoalResult(1, 1, 0) },
@@ -117,12 +117,12 @@ public class StripBreakdownTests
         model.ApplyTierOrder(5, new[] { "BionicLeg", "BionicArm" });
         var goals = new List<ImplantGoal>
         {
-            new ImplantGoal(1, "BionicArm", new[] { 0 }),
-            new ImplantGoal(1, "BionicLeg", new[] { 0 }),
+            new ImplantGoal(1, "BionicArm", Parts(0)),
+            new ImplantGoal(1, "BionicLeg", Parts(0)),
         };
         var stale = new SurgeryPawnInput(goals,
             new[] { new GoalResult(1, 1, 0), new GoalResult(1, 1, 0) },
-            reservedKeys: new[] { "p1:BionicArm:0", "p1:BionicArm:0" },
+            reservedKeys: new[] { "p1:BionicArm:Part#0", "p1:BionicArm:Part#0" },
             scheduledKeys: new string[0]);
         var missing = new SurgeryPawnInput(goals,
             new[] { new GoalResult(1, 0, 1), new GoalResult(1, 0, 1) },
@@ -156,14 +156,14 @@ public class StripBreakdownTests
         var model = new PlannerModel();
         var goals = new List<ImplantGoal>
         {
-            new ImplantGoal(1, "BionicEye", new[] { 0 }),
-            new ImplantGoal(1, "BionicArm", new[] { 0 }),
+            new ImplantGoal(1, "BionicEye", Parts(0)),
+            new ImplantGoal(1, "BionicArm", Parts(0)),
         };
         var pawns = new List<SurgeryPawnInput>
         {
             new SurgeryPawnInput(goals,
                 new[] { new GoalResult(0, 0, 0), new GoalResult(1, 1, 0) },
-                reservedKeys: new[] { "p1:BionicArm:0" },
+                reservedKeys: new[] { "p1:BionicArm:Part#0" },
                 scheduledKeys: new string[0]),
         };
 

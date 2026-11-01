@@ -94,3 +94,14 @@ coexist. Ticking a limb module while the plan has no bionic on that part
 opens a prompt that lists the bionics able to host it, with the least
 advanced host selected by default. **Add to plan** adds your choice and
 the module together. **Cancel** adds nothing.
+
+<!-- l10n:android-tiers -->
+**Android Tiers Continued**: androids have body parts of their own, such as
+a left and a right sight sensor in place of eyes. The picker lists each of
+these parts as its own row with its side, so you can plan both sides or
+just one. An implant that fits both humans and androids, such as the VX
+chips, lists the brain and the artificial brain as separate rows: tick the
+rows for the colonists the plan is meant for. Android operations use the
+Crafting skill. With automatic doctor selection on, Implanner restricts each
+android operation to the best eligible colonist by Crafting skill (see
+[mod options](topic:mod-options)).

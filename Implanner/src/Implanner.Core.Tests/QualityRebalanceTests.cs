@@ -8,7 +8,7 @@ namespace Implanner.Core.Tests;
 /// 5 Masterwork. Priorities: 0 First, 1 High, 2 Normal, 3 Low.
 public class QualityRebalanceTests
 {
-    const string Arm = "p1:BionicArm:0";
+    const string Arm = "p1:BionicArm:Part#0";
 
     [Test]
     public async Task AnUpgradeAndItsReturnedItemMustBothMeetTheirRecipientsEfficiencyFloor()

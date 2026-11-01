@@ -2,17 +2,18 @@ using System.Collections.Generic;
 
 namespace Implanner.Core
 {
-    /// One implant goal: an implant kind plus the selected anatomy slots.
-    /// Slot ordinals index the implant's canonical applicable-slot
-    /// enumeration (catalog part order, then body record order), so "left
-    /// leg" is ordinal 0 and "right leg" ordinal 1 on any body that has both.
+    /// One implant goal: an implant kind plus the selected anatomy slots,
+    /// each a PartAddress (part kind + occurrence), so a slot names the
+    /// same part on every body that has it and nothing on one that does
+    /// not ("Leg#1" is the second leg, "RightSightSensor#0" an android's
+    /// right sight sensor).
     public sealed class ImplantGoal
     {
-        public ImplantGoal(int planId, string implantDefName, IReadOnlyList<int> slotOrdinals)
+        public ImplantGoal(int planId, string implantDefName, IReadOnlyList<PartAddress> slots)
         {
             PlanId = planId;
             ImplantDefName = implantDefName;
-            SlotOrdinals = slotOrdinals;
+            Slots = slots;
         }
 
         /// The owning plan. A goal's identity is natural — (PlanId,
@@ -24,10 +25,18 @@ namespace Implanner.Core
         public int PlanId { get; }
         public string ImplantDefName { get; }
 
-        /// Sorted, deduplicated, never empty (a goal with no slots is removed).
-        public IReadOnlyList<int> SlotOrdinals { get; }
+        /// Sorted (PartAddress order), deduplicated, never empty (a goal
+        /// with no slots is removed).
+        public IReadOnlyList<PartAddress> Slots { get; }
 
-        public int Count => SlotOrdinals.Count;
+        public int Count => Slots.Count;
+
+        public bool HasSlot(PartAddress slot)
+        {
+            for (int i = 0; i < Slots.Count; i++)
+                if (Slots[i].Equals(slot)) return true;
+            return false;
+        }
     }
 
     /// A named end-state implant configuration assignable to colonists. A

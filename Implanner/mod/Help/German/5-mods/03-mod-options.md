@@ -25,6 +25,9 @@ Der Optionsreiter enthält Plankompatibilität und Anzeigebereich der Fertigkeit
 <!-- l10n:b-924ed49fe876 -->
 Jeder Tooltip zeigt die geladenen betroffenen Implantate und ihre Ursprungsmods.
 
+<!-- l10n:android-surgeons -->
+**Android-Operationen** erscheint nur, solange Android Tiers Continued geladen ist. Die Option zeigt, wer Android-Operationen durchführt, und Implanner übernimmt sie aus der Android-Tiers-Einstellung „Androids can only be healed by crafters“: Ärzte, solange sie ausgeschaltet ist (Standard), und Handwerker, bei denen „Repair androids“ aktiviert ist, solange sie eingeschaltet ist. Ändere sie in den Mod-Einstellungen von Android Tiers, Implanner folgt automatisch. Android-Operationen nutzen die Fertigkeit Handwerk. Bei aktiver automatischer Arztwahl beschränkt Implanner jede Android-Operation auf den geeigneten Kolonisten mit der höchsten Handwerksfertigkeit.
+
 <!-- l10n:b-119eac06340c -->
 ![Der Tooltip zeigt betroffene Implantate](options-purchase-tip.png)
 

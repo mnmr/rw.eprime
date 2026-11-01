@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.3 — 2026-10-31
+
+- Added: Support for Android Tiers Continued. Android implants can be planned for each side separately, and android operations go to the colonist with the best Crafting skill.
+- Added: Implanner follows the Android Tiers setting that lets crafters operate on androids.
+- Fixed: Implants for races with their own body parts now list every part with its side, instead of only the left one.
+
 ## 1.2.2 — 2026-10-30
 
 - Fixed: Surgery holdbacks, concurrency, and doctor requirements now stay valid when options or patient conditions change.

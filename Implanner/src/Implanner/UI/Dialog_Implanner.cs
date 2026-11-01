@@ -1467,7 +1467,7 @@ namespace Implanner.UI
                         Find.WindowStack.Add(new Dialog_ImplantRequirements(
                             planId, row, row.Requirement));
                     else
-                        PlannerCommands.SetImplantSlot(planId, row.DefName, row.Ordinal, now);
+                        PlannerCommands.SetImplantSlot(planId, row.DefName, row.Slot.Key, now);
                 }
                 y += TreeLine;
             }
@@ -2055,6 +2055,23 @@ namespace Implanner.UI
                 PlannerLabels.OptAllowMultipleHygieneEnhancers,
                 snapshot.AllowMultipleHygieneEnhancers, tips.AllowMultipleHygieneEnhancers,
                 SetAllowMultipleHygieneEnhancers);
+            if (snapshot.AndroidTiersLoaded)
+            {
+                // Read-only: Implanner follows Android Tiers' own setting.
+                bool crafters = snapshot.AndroidSurgeryByCrafters;
+                float height = ToggleHeights[crafters
+                    ? ToggleRow.AndroidSurgeonsCrafters : ToggleRow.AndroidSurgeonsDoctors];
+                var line = new Rect(rect.x, y, width, height);
+                tips.AndroidSurgeons.Region(line);
+                using (GuiStateScope.Capture())
+                {
+                    Text.Anchor = TextAnchor.MiddleLeft;
+                    Widgets.Label(line, crafters
+                        ? PlannerLabels.OptAndroidSurgeonsCrafters
+                        : PlannerLabels.OptAndroidSurgeonsDoctors);
+                }
+                y += height + 2f;
+            }
             int maximum = DrawSkillSliderRow(rect.x, ref y, width,
                 PlannerLabels.OptSkillSliderMaximum, slider.MaximumText,
                 slider.Maximum, 20, 100, 10, tips.SkillSliderMaximum);

@@ -59,13 +59,24 @@ namespace Implanner
             store.Bump(store.Model.RemoveImplant(planId, implantDefName));
         }
 
+        /// slot travels as its PartAddress key ("Part#n"), a plain string;
+        /// an unparsable key changes nothing.
         [SyncMethod]
-        public static void SetImplantSlot(int planId, string implantDefName, int slotOrdinal, bool wanted)
+        public static void SetImplantSlot(int planId, string implantDefName, string slot, bool wanted)
+        {
+            ImplannerStore? store = ImplannerStore.Current;
+            if (store == null || !PartAddress.TryParse(slot, out PartAddress address)) return;
+            store.Bump(store.Model.SetImplantSlot(
+                planId, implantDefName, address, wanted));
+        }
+
+        /// Mod compatibility (Android Tiers): who operates on androids.
+        [SyncMethod]
+        public static void SetAndroidSurgeryByCrafters(bool enabled)
         {
             ImplannerStore? store = ImplannerStore.Current;
             if (store == null) return;
-            store.Bump(store.Model.SetImplantSlot(
-                planId, implantDefName, slotOrdinal, wanted));
+            store.Bump(store.Model.SetAndroidSurgeryByCrafters(enabled));
         }
 
         /// Drops an implant kind into a star tier at an exact position:
@@ -465,7 +476,7 @@ namespace Implanner
             ImplannerStore? store = ImplannerStore.Current;
             if (store == null) return;
             if (!Core.PlansXml.TryImport(xml, out var parsed, out _,
-                    ModRequirements.IsModActive))
+                    ModRequirements.IsModActive, Catalogs.LegacySlotMapper))
                 return;
             store.Bump(store.Model.ImportPlans(
                 parsed, store.TakePlanId));

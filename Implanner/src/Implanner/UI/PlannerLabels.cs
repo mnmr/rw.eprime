@@ -77,6 +77,8 @@ namespace Implanner.UI
         internal static string OptSkillSliderMaximum = "";
         internal static string OptAllowMultipleBladders = "";
         internal static string OptAllowMultipleHygieneEnhancers = "";
+        internal static string OptAndroidSurgeonsDoctors = "";
+        internal static string OptAndroidSurgeonsCrafters = "";
         internal static string OptCatalog = "";
         internal static string OptShowPurchaseOnly = "";
         internal static string DragItemsHere = "";
@@ -163,6 +165,8 @@ namespace Implanner.UI
             OptAllowMultipleBladders = "IMP_OptAllowMultipleBladders".Translate();
             OptAllowMultipleHygieneEnhancers =
                 "IMP_OptAllowMultipleHygieneEnhancers".Translate();
+            OptAndroidSurgeonsDoctors = "IMP_OptAndroidSurgeonsDoctors".Translate();
+            OptAndroidSurgeonsCrafters = "IMP_OptAndroidSurgeonsCrafters".Translate();
             OptCatalog = "IMP_OptCatalog".Translate();
             OptShowPurchaseOnly = "IMP_OptShowPurchaseOnly".Translate();
             DragItemsHere = "IMP_DragItemsHere".Translate();

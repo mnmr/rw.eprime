@@ -104,7 +104,6 @@
   <IMP_PlanMinQualityTip>Mindestqualität für neu eingesetzte Implantate, einschließlich geerbter Planauswahlen. Bereits eingesetzte Implantate der geplanten Art zählen weiterhin als vollständig, auch unter dieser Mindestqualität. Aktiviere Beste Implantate an Kolonisten mit hoher Priorität geben, um einen Austausch gegen bessere Exemplare zu erlauben. Implantate ohne Qualitätsstufe sind nicht betroffen.\n\nEin gesundes Körperteil wird niemals durch ein schlechteres Implantat ersetzt. Bei einem bionischen Implantat von niedriger Qualität wird auf ein besseres Exemplar gewartet, sofern das Körperteil nicht fehlt oder beschädigt ist.</IMP_PlanMinQualityTip>
   <IMP_PlanMinQualityNoQualityJobs>Quality Jobs ist nicht geladen, daher darf jeder Handwerker ein Implantat fertigstellen. Ein Implantat unter dieser Qualität wird erneut hergestellt.</IMP_PlanMinQualityNoQualityJobs>
   <IMP_DeletePlanConfirm>Plan „{0}“ löschen? Zugewiesene Kolonisten verlieren ihre Zuweisung; erweiternde Pläne erben nicht mehr davon.</IMP_DeletePlanConfirm>
-  <IMP_ImplantGroupOther>Sonstige</IMP_ImplantGroupOther>
   <IMP_ReqTitle>Anforderungen</IMP_ReqTitle>
   <IMP_ReqBody>{0} kann nur an einem künstlichen Körperteil ({1}) eingesetzt werden. Wähle den Ersatz, der zusammen damit zum Plan hinzugefügt wird:</IMP_ReqBody>
   <IMP_ReqConfirm>Zum Plan hinzufügen</IMP_ReqConfirm>
@@ -213,4 +212,7 @@
   <IMP_ShipFallback>Gravschiff</IMP_ShipFallback>
   <IMP_SettingsShowToolbarButton>Werkzeugleistenschaltfläche anzeigen</IMP_SettingsShowToolbarButton>
   <IMP_CompatibilityLevelMod>{0}: Die Automatisierung von EPrime's Implanner ist mit dieser Mod für mehrere Ebenen deaktiviert. Planung und Nachverfolgung funktionieren weiterhin.</IMP_CompatibilityLevelMod>
+  <IMP_OptAndroidSurgeonsCrafters>Android-Operationen: Handwerker mit „Repair androids“ (folgt Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
+  <IMP_OptAndroidSurgeonsDoctors>Android-Operationen: Ärzte (folgt Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
+  <IMP_OptAndroidSurgeonsTip>Implanner folgt der Android-Tiers-Einstellung „Androids can only be healed by crafters“, die du in den Mod-Einstellungen von Android Tiers änderst. Eingeschaltet führen Handwerker, bei denen „Repair androids“ aktiviert ist, Android-Operationen durch. Ausgeschaltet übernehmen das Ärzte. Android-Operationen nutzen die Fertigkeit Handwerk. Bei aktiver automatischer Arztwahl beschränkt Implanner jede Android-Operation auf den geeigneten Kolonisten mit der höchsten Handwerksfertigkeit.</IMP_OptAndroidSurgeonsTip>
 </LanguageData>

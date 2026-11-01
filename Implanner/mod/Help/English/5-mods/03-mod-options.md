@@ -40,6 +40,16 @@ off to treat that pair as one slot:
 Each tooltip lists the affected implants that are loaded and the mod each
 one comes from.
 
+<!-- l10n:android-surgeons -->
+**Android operations** only appears while Android Tiers Continued is
+loaded. It shows who performs android operations, which Implanner takes
+from the Android Tiers setting "Androids can only be healed by crafters":
+doctors while it is off, the default, and crafters with "Repair androids"
+turned on while it is on. Change it in the Android Tiers mod settings, and
+Implanner follows. Android operations use the Crafting skill. With
+automatic doctor selection on, Implanner restricts each android operation
+to the best eligible colonist by Crafting skill.
+
 <!-- l10n:b-119eac06340c -->
 ![Hovering the option shows the affected implants](options-purchase-tip.png)
 

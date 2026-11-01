@@ -3,6 +3,7 @@ using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using PartAddress = Implanner.Core.PartAddress;
 using Plan = Implanner.Core.Plan;
 
 namespace Implanner.UI
@@ -85,7 +86,7 @@ namespace Implanner.UI
 
         private readonly int planId;
         private readonly string defName;
-        private readonly int ordinal;
+        private readonly PartAddress slot;
         private readonly List<RequirementCandidate> candidates;
         private readonly string title;
         private readonly string body;
@@ -103,7 +104,7 @@ namespace Implanner.UI
         {
             this.planId = planId;
             defName = row.DefName;
-            ordinal = row.Ordinal;
+            slot = row.Slot;
             this.candidates = candidates;
             forcePause = true;
             absorbInputAroundWindow = true;
@@ -156,8 +157,8 @@ namespace Implanner.UI
         private void Apply()
         {
             RequirementCandidate host = candidates[picked];
-            PlannerCommands.SetImplantSlot(planId, host.DefName, host.Ordinal, true);
-            PlannerCommands.SetImplantSlot(planId, defName, ordinal, true);
+            PlannerCommands.SetImplantSlot(planId, host.DefName, host.Slot.Key, true);
+            PlannerCommands.SetImplantSlot(planId, defName, slot.Key, true);
             Close();
         }
     }

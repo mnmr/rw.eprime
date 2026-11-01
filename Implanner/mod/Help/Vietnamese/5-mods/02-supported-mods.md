@@ -53,3 +53,7 @@ Cấy ghép lai lấy chất lượng từ genoframe dùng chế tạo (xem [ch�
 
 <!-- l10n:b-1a485abf9e8c -->
 **Bionic modularity**: mỗi mô-đun chiếm một vị trí trên bộ phận, nên một mô-đun chiến đấu và một mô-đun công việc vừa cùng tay, nhưng hai mô-đun chiến đấu thì không. Mô-đun chi lắp trên chi sinh học và dùng chung bộ phận; tay sinh học và mô-đun tay trong kế hoạch cùng tồn tại. Chọn mô-đun khi chưa có chi sinh học phù hợp mở danh sách loại có thể gắn, mặc định chọn loại cơ bản nhất. **Thêm vào kế hoạch** thêm cả lựa chọn và mô-đun. **Hủy** không thêm gì.
+
+<!-- l10n:android-tiers -->
+**Android Tiers Continued**: android có các bộ phận cơ thể riêng, chẳng hạn một cảm biến thị giác trái và một phải thay cho đôi mắt. Bộ chọn liệt kê từng bộ phận này thành một hàng riêng kèm bên trái/phải, nên bạn có thể lập kế hoạch cho cả hai bên hoặc chỉ một bên. Một cấy ghép phù hợp với cả người lẫn android, như các chip VX, sẽ liệt kê não và não nhân tạo thành các hàng riêng: hãy đánh dấu các hàng dành cho những cư dân mà kế hoạch hướng tới. Phẫu thuật android dùng kỹ năng Chế tạo. Khi bật tự động chọn bác sĩ, Implanner giới hạn mỗi ca phẫu thuật android cho cư dân đủ điều kiện có kỹ năng Chế tạo cao nhất (xem [tùy chọn mod](topic:mod-options)).
+

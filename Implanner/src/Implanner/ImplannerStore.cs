@@ -85,6 +85,7 @@ namespace Implanner
         private bool allowMultipleHygieneEnhancers = true;
         private bool showPurchaseOnly;
         private bool upgradeByPriority;
+        private bool androidSurgeryByCrafters;
 
         private readonly PlannerRevisions revisions = new PlannerRevisions();
 
@@ -379,6 +380,7 @@ namespace Implanner
                 allowMultipleHygieneEnhancers = Model.AllowMultipleHygieneEnhancers;
                 showPurchaseOnly = Model.ShowPurchaseOnly;
                 upgradeByPriority = Model.UpgradeByPriority;
+                androidSurgeryByCrafters = Model.AndroidSurgeryByCrafters;
             }
 
             Scribe_Collections.Look(ref planRecords, "plans", LookMode.Deep);
@@ -436,6 +438,7 @@ namespace Implanner
                 "allowMultipleHygieneEnhancers", true);
             Scribe_Values.Look(ref showPurchaseOnly, "showPurchaseOnly", false);
             Scribe_Values.Look(ref upgradeByPriority, "upgradeByPriority", false);
+            Scribe_Values.Look(ref androidSurgeryByCrafters, "androidSurgeryByCrafters", false);
             Scribe_Values.Look(ref pendingReconcile, "pendingReconcile", false);
             Scribe_Values.Look(ref pendingProductionPass, "pendingProductionPass", false);
 
@@ -490,7 +493,7 @@ namespace Implanner
                         if (!reservationGoalKeys[i].NullOrEmpty())
                         {
                             string? key = GoalKeys.MigrateLegacy(
-                                reservationGoalKeys[i], legacyGoals);
+                                reservationGoalKeys[i], legacyGoals, Catalogs.LegacySlotMapper);
                             if (key != null)
                                 Model.AddLoadedReservation(reservationItemIds[i],
                                     reservationPawnIds[i], key);
@@ -529,7 +532,7 @@ namespace Implanner
                             && !ownedBillIds[i].NullOrEmpty())
                         {
                             string? key = GoalKeys.MigrateLegacy(
-                                ownedBillGoalKeys[i], legacyGoals);
+                                ownedBillGoalKeys[i], legacyGoals, Catalogs.LegacySlotMapper);
                             if (key != null)
                                 Model.AddLoadedOwnedBill(ownedBillPawnIds[i],
                                     key, ownedBillIds[i]);
@@ -563,14 +566,22 @@ namespace Implanner
                     && reinstallPawnIds.Count == reinstallQualities.Count
                     && reinstallPawnIds.Count == reinstallActive.Count)
                     for (int i = 0; i < reinstallPawnIds.Count; i++)
-                        if (!reinstallWiperKeys[i].NullOrEmpty()
-                            && !reinstallDefs[i].NullOrEmpty())
-                            Model.AddLoadedReinstall(reinstallPawnIds[i],
-                                new ReinstallRecord(reinstallWiperKeys[i],
+                    {
+                        if (reinstallWiperKeys[i].NullOrEmpty()
+                            || reinstallDefs[i].NullOrEmpty())
+                            continue;
+                        // A wiper key is a plan slot key (or an upgrade's
+                        // removal key, which passes through unchanged).
+                        string? wiperKey = GoalKeys.MigrateLegacy(
+                            reinstallWiperKeys[i], legacyGoals, Catalogs.LegacySlotMapper);
+                        if (wiperKey == null) continue;
+                        Model.AddLoadedReinstall(reinstallPawnIds[i],
+                                new ReinstallRecord(wiperKey,
                                     reinstallDefs[i], reinstallParts[i],
                                     reinstallQualities[i], reinstallActive[i],
                                     reinstallMinimumEfficiencies != null && i < reinstallMinimumEfficiencies.Count
                                         ? reinstallMinimumEfficiencies[i] : 0f));
+                    }
                 if (designatedBenchIds != null)
                 {
                     bool pairsValid = designatedBillBenches != null
@@ -592,7 +603,8 @@ namespace Implanner
                     autoProduction, productionConcurrency,
                     onlyIdleBenches, productionSkill, allowIntermediaries,
                     allowMultipleBladders, allowMultipleHygieneEnhancers,
-                    showPurchaseOnly, onlyDesignatedBenches, upgradeByPriority);
+                    showPurchaseOnly, onlyDesignatedBenches, upgradeByPriority,
+                    androidSurgeryByCrafters);
                 // Deferred so maps and pawns are fully loaded when existence
                 // checks run; executes before play begins on every client.
                 LongEventHandler.ExecuteWhenFinished(FinishInit);
@@ -732,6 +744,10 @@ namespace Implanner
         // carry natural identities and no longer persist an id).
         private int id;
         private string implantDef = "";
+        // Part address keys ("Part#n"). Saves written before part addresses
+        // carry bare ordinals in "slots" instead (read only, migrated
+        // through Catalogs.LegacySlots).
+        private List<string>? parts;
         private List<int>? slots;
 
         public ImplantRecord() { }
@@ -739,7 +755,9 @@ namespace Implanner
         public ImplantRecord(ImplantGoal goal)
         {
             implantDef = goal.ImplantDefName;
-            slots = new List<int>(goal.SlotOrdinals);
+            parts = new List<string>(goal.Slots.Count);
+            for (int i = 0; i < goal.Slots.Count; i++)
+                parts.Add(goal.Slots[i].Key);
         }
 
         internal int LegacyId => id;
@@ -747,17 +765,36 @@ namespace Implanner
         public ImplantGoal? ToGoal(int planId)
         {
             if (string.IsNullOrEmpty(implantDef)) return null;
-            List<int>? ordinals = slots;
-            if (ordinals == null || ordinals.Count == 0) return null;
-            ordinals.Sort();
-            return new ImplantGoal(planId, implantDef, ordinals);
+            var addresses = new List<PartAddress>();
+            if (parts != null)
+                for (int i = 0; i < parts.Count; i++)
+                    if (PartAddress.TryParse(parts[i], out PartAddress address))
+                    {
+                        if (address.IsLegacy) Migrate(addresses, address.Occurrence);
+                        else if (!addresses.Contains(address)) addresses.Add(address);
+                    }
+            if (slots != null)
+                for (int i = 0; i < slots.Count; i++)
+                    Migrate(addresses, slots[i]);
+            if (addresses.Count == 0) return null;
+            addresses.Sort();
+            return new ImplantGoal(planId, implantDef, addresses);
+        }
+
+        private void Migrate(List<PartAddress> addresses, int ordinal)
+        {
+            IReadOnlyList<PartAddress> mapped = Catalogs.LegacySlots(implantDef, ordinal);
+            for (int i = 0; i < mapped.Count; i++)
+                if (!addresses.Contains(mapped[i])) addresses.Add(mapped[i]);
         }
 
         public void ExposeData()
         {
             Scribe_Values.Look(ref id, "id", 0);
             Scribe_Values.Look(ref implantDef, "implantDef", "");
-            Scribe_Collections.Look(ref slots, "slots", LookMode.Value);
+            Scribe_Collections.Look(ref parts, "parts", LookMode.Value);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                Scribe_Collections.Look(ref slots, "slots", LookMode.Value);
         }
     }
 }

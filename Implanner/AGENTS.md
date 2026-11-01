@@ -80,38 +80,76 @@ effective goals are its own plus the base chain's, with own selections
 overriding overlapping slots and suppressing conflicting inherited slots
 (`PlannerModel.EffectiveImplants`). Goal identity is natural — the owning
 plan id plus the implant kind (one goal per kind per plan by
-construction), key format `p{planId}:{defName}:{ordinal}` — so goal keys
-need no allocation, cannot collide, and removing and re-adding the same
-pick reproduces the same identity; an inherited goal keeps its base
-plan's id. Loading migrates retired `i{goalId}:{ordinal}` keys via the
-legacy per-goal ids still present in old saves. Deleting a base plan
-detaches its children.
+construction), key format `p{planId}:{defName}:{Part#n}` (the slot's part
+address, see Anatomy slots) — so goal keys cannot collide, and removing and
+re-adding the same pick reproduces the same identity; an inherited goal
+keeps its base plan's id. Loading migrates retired `i{goalId}:{ordinal}`
+keys via the legacy per-goal ids still present in old saves, and their
+ordinals like every other legacy ordinal. Deleting a base plan detaches its
+children.
+
+Anatomy slots (owner, 2026-10-31; Android Tiers Continued report): a goal
+slot is a `Implanner.Core.PartAddress`, a body part kind (BodyPartDef
+defName) plus its occurrence among that kind's records in the body's record
+order, persisted and keyed as `Part#n` (`Eye#1`, `RightSightSensor#0`). That
+is how the game itself tells twin parts apart (RimWorld has no side field;
+vanilla twins are occurrences of one kind, Android Tiers' sides are separate
+kinds), so an address names the same part on every body that has it and
+nothing on one that does not. The catalog gathers each implant's slots over
+the plannable bodies (`Catalogs.PlannableBodies`: the distinct bodies of
+humanlike races, the human body first, then by defName), one `CatalogSlot`
+per address, labelled and located on the first body carrying it, in body
+then record order; an implant no humanlike body can take is not in the
+catalog. Goal keys are `p{planId}:{defName}:{Part#n}`; the evaluator receives
+the pawn's anatomy instance per goal slot (null where the body lacks it).
+Saves, reservation/bill/reinstall keys and plan exports from before
+addresses carry bare ordinals into each pawn's own enumeration of the
+implant's part kinds (defName order, then record order); they migrate on
+load/import through `Catalogs.LegacySlots` to every plannable body's part at
+that position, so a migrated goal keeps acting where it acted (a VX chip's
+ordinal 0 becomes the brain and the artificial brain; an Android Tiers light
+sensor's ordinal 0 the left side). A key names one slot and takes the first;
+the reconciler retires it as stale if the pawn's body differs. An ordinal
+whose implant is not loaded stays an unresolved legacy address (`#n`) until
+a later load resolves it.
 
 Implant-combination validity is derived from definition data only, mirroring
 the game's surgery workers (verified in RimWorld source): one part per slot
 (replacements occupy it and implants cannot mount on added parts, except
-kinds whose surgery worker inherits neither vanilla install worker and so
-never had that refusal: `ImplantCatalogEntry.MountsOnArtificialParts`,
-verified for Bionic modularity's `Recipe_InstallModule : Recipe_Surgery`,
-which mounts modules ON a bionic limb; such a pair coexists and the bionic
-never stands in for the module goal), replacements clear their subtree
-(again except mounts-on-artificial kinds), `incompatibleWithHediffTags` versus
+kinds whose surgery worker carries no such refusal:
+`ImplantCatalogEntry.MountsOnArtificialParts`, verified for Bionic
+modularity's `Recipe_InstallModule : Recipe_Surgery`, which mounts modules ON
+a bionic limb; such a pair coexists and the bionic never stands in for the
+module goal), replacements clear their subtree (again except
+mounts-on-artificial kinds), `incompatibleWithHediffTags` versus
 `HediffDef.tags` excludes same-part implants (skin glands), and mutual
 `HediffDef.removeWithTags` versus `tags` excludes a pair anywhere on the
 body (`Hediff.PostAdd` removes the tagged hediff pawn-wide, exact-match;
 modded mechanite strains). One-sided removal is not a conflict: installing
 the remover first leaves both in place. The pure rules
 live in `Implanner.Core.ImplantConflictRules`; `ImplantConflicts` extracts
-the facts from the catalog and injects `PlannerModel.SlotConflictResolver`.
+the facts per catalog slot and plannable body and injects
+`PlannerModel.SlotConflictResolver`: two slots conflict when the rules
+exclude them on some plannable body carrying both (a human's eye and an
+android's sight sensor never meet on one pawn).
+A surgery worker's behaviour (`SurgeryWorkerDef.BehaviorOf`) comes from its
+class hierarchy (vanilla's artificial-part worker clears the part, vanilla's
+implant worker installs an implant) or, for modded workers deriving from
+neither, from a `SurgeryWorkerDef` in `mod/Defs/SurgeryWorkers.xml` (full
+type name on the worker or a base type, each verified in the mod's source:
+Vanilla Genetics Expanded's worker clears the part; Android Tiers'
+`Recipe_InstallImplantAndroid` installs an implant and
+`Recipe_InstallArtificialBodyPartAndroid` clears the part); any other worker
+is assumed to mount on artificial parts.
 A replacement (`ImplantCatalogEntry.IsReplacement`) is a hediff whose class
 is `Hediff_AddedPart`, the class every game check for an artificial part
 tests (`HediffSet.HasDirectlyAddedPartFor`), whatever its worker or
 `addedPartProps`. A part wiper (`ImplantCatalogEntry.WipesPart`, owner
 2026-09-26) is an implant-class hediff whose surgery restores the part and
-its subtree first (`ModCompatibility.ClearsPart`: the artificial-part worker
-or the curated `GeneticRim.Recipe_InstallGeneticBodyPart`, Vanilla Genetics
-Expanded's worker, which derives straight from `Recipe_Surgery` and would
-otherwise read as a module worker). The part stays natural, so implants
+its subtree first (a part-clearing `SurgeryWorkerDef.BehaviorOf`: the
+artificial-part worker or a declared one such as Vanilla Genetics Expanded's
+`GeneticRim.Recipe_InstallGeneticBodyPart`, which derives straight from
+`Recipe_Surgery` and would otherwise read as a module worker). The part stays natural, so implants
 installed after a wiper stay: a wiper and a same-part or subtree implant are
 no conflict (order decides), two wipers or a wiper and a replacement on one
 part are (`ImplantConflictRules.CompeteForSlot`, also the evaluator's
@@ -226,13 +264,16 @@ are excluded from the catalog: only ordinary humanlikes are plannable.
 | Map classifications (shared `RimShared.GameLib.MapClassifications`) | Grav-engine spawn/despawn/holder transfer, settlement ownership flips, map settle, map add/remove (the shared `Patch_LocationTransitions` events; Implanner implements none of the optional `LocationTransitions` hooks), plus the map-count guard on location reads; publishes `MapClassifications.LocationRevision`; teardown via `MapClassifications.ReleaseSnapshot` on world teardown |
 | Location snapshots (`ColonyScope.locationSnapshots`) | `MapClassifications.LocationRevision`, map-set membership, faction identity, language; cleared through the required `MapClassifications.InvalidateLocationSnapshots` hook on every classification or map-set invalidation and on teardown; equal rebuilds preserve snapshot identity |
 | Floor-map canonicalization (shared `RimShared.GameLib.FloorMaps.cache`) | Hash of live map ids; `ReleaseForTeardown` on map-set invalidation and world teardown |
-| Implant catalog (`Catalogs.implants`) | Loaded definition set (static per session) + `UiRevision.LanguageCurrent`; `Release` on world teardown |
+| Implant catalog (`Catalogs.implants`) | Loaded definition set (static per session) + `UiRevision.LanguageCurrent` (slot labels and group labels; slot addresses are label-free); `Release` on world teardown |
+| Plannable bodies (`Catalogs.plannableBodies`) | Loaded definition set (static per session): the distinct bodies of humanlike races, human first then by defName; `Release` via `Catalogs.Release` |
+| Surgery worker behaviours (`SurgeryWorkerDef.BehaviorOf`) | Loaded assembly and definition set (static per session); read only while the catalog builds, never cached on its own |
+| Android Tiers bridge (`AndroidTiers`) | Loaded assembly and definition set (static per session): android flesh type, Smithing work type, `CompSurrogateOwner.repairAndroids` field accessor and the mod's settings field, resolved once by name; facts only, never results; no teardown (process-lifetime, retains no game object) |
 | Modular-host extension type (`ModCompatibility.modularExtension`) | Loaded assembly set (static per session); resolved once by type name; no teardown (process-lifetime immutable fact) |
 | Quality mod handles (`ImplantQualities`) | Loaded assembly set (static per session): Quality Bionics Remastered's API delegates and hediff comp field, Vanilla Genetics Expanded's comp types, Elite Bionics Framework's comp props fields, resolved once by type name; never a result (Quality Bionics Remastered's multipliers are player settings, read through its API on every call); the last observed efficiency multiplier table is compared on the approved 1020-tick boundary (`ImplantQualities.CheckSettings`, no-op without the mod; the mod has no change notification) and a change advances `ImplantQualities.SettingsRevision` and `ExternalPawnFacts.Revision`; no teardown |
 | Quality Jobs bridge (`QualityJobsBridge.manageBill`) | Active mod list + loaded assemblies (static per session); `QualityJobsApi.ManageBill` bound once when `ApiVersion` >= 2; a thrown call disables it for the process (one warning); no teardown |
 | Surgery ingredient bindings (`SurgeryBindings`) | The model's reservations (Reservations domain) and owned operation bills (Surgery domain): bill loadID to reserved item id (or -1 for owned unbound operations, preventing new ingredient searches), also publishes reserved item IDs and owned production-bill IDs (Production domain); republished by the store on changes of these domains, on construction and after load; read only by `Patch_BoundSurgeryIngredient`; `Reset` on world teardown |
 | Endless Growth bill-limit callable (`ModCompatibility.endlessGrowthBillMaximum`) | Loaded assembly set (static per session); resolves the same provider used by the mod's bill constructors, only when repairing an owned bill with the legacy maximum of 20; caches the delegate, never its result; retains no world or game object |
-| Implant conflict facts (`ImplantConflicts.facts`) | Loaded definition set (static per session; label-free, so deliberately not language-gated); `Release` via `Catalogs.Release` |
+| Implant conflict facts (`ImplantConflicts.facts`) | Loaded definition set (static per session; label-free, so deliberately not language-gated): per catalog slot and plannable body; `Release` via `Catalogs.Release` |
 | Production recipes (`PlannerProduction.productionRecipes`) | Loaded definition set (static per session): all non-surgery candidates with a worktable user, ordered by ordinal defName; availability is evaluated per dispatch, never cached; entries never change; `Reset` on world teardown |
 | Production route decisions (`PlannerProduction.decisions`) | Store identity + map identity; rollout/goals, reservations, implant/resource reserves, sampled stock, actual pending/started bills, recipe availability, eligible benches and production options. Published on the approved 1020-tick production boundary or pending production pass. Equal per-colony and complete-map publications preserve identity; Overview observes `DecisionIdentity`; `Reset` or store change replaces the snapshot; publication drops removed maps |
 | Production ingredient exclusions (`SurgeryBindings.productionProtectedItems`) | Authoritative `PlannerModel.ProductionProtectedItems` (ProductionProtection domain), stored as sorted IDs in the save. Recomputed from the existing gated reconciliation pass before production cadence/paused exits, so holdback/plan edits apply on the next simulated tick. Published on that exact domain, store construction and load; equal sets preserve identity; `Reset` on world teardown |
@@ -245,7 +286,7 @@ are excluded from the catalog: only ordinary humanlikes are plannable.
 | Strip column tooltips (`StripTipSource`, one per column) | Overview data identity (the data carries the per-item production rows and per-kind surgery rows, built by `OverviewState` from the same stock, bill, reservation, and evaluation scans as the strip texts; `Implanner.Core.StripBreakdown` does the pipeline partition and dispatch ordering); the tip model is assembled only when a hover session opens and frozen for that session by `StructuredTipPresenter`; window-owned, released on close |
 | Automation snapshot (`AutomationState`) | `UiRevision.Current`, store identity + `OptionsVersion` + `SurgeryVersion` (implant reserves live in the Surgery domain) + `ProductionVersion`; carries the master switch, iteration, doctor-floor/hospitalized, upgrade-by-priority (plus whether any catalog item carries a quality, static per session) and production flags so the tab never reads the live model; reserve-row set derives from the baseline-reserve table and the implant catalog; reserve edit buffers are arrays parallel to the rows, reseeded on rebuild from the durable per-key dictionary; window-owned, released on close |
 | Automation tooltip holder (`AutomationTips`) | `UiRevision.Current` (the `WrTips` registry clears on it); window-owned, released on close |
-| Options snapshot (`OptionsState`) | `UiRevision.Current`, store identity + `OptionsVersion`; carries the mod compatibility and catalog flags so the tab never reads the live model; rebuilt from `WindowUpdate`; window-owned, released on close |
+| Options snapshot (`OptionsState`) | `UiRevision.Current`, store identity + `OptionsVersion`; carries the mod compatibility and catalog flags so the tab never reads the live model; whether Android Tiers is loaded (static per session) for the read-only "Android operations" line; rebuilt from `WindowUpdate`; window-owned, released on close |
 | Automation and Options control geometry (`ToggleRowState`) | `UiRevision.Current` including language and the narrowest checkbox label width derived from window/column width with the scrollbar and indent reserved. Immutable Small-font wrapped checkbox and iteration-segment heights also determine tooltip bounds, following rows and scroll extent. Segment width includes the shared control's physical-pixel frame/dividers. Equal rebuilt heights retain snapshot identity; window close releases the snapshot. No model or automation invalidation. |
 | Options tooltip holder (`OptionsTips`) | `UiRevision.Current` (the `WrTips` registry clears on it); each tip's argument (the affected loaded implants with their mod names, `ModCompatibility.TipLines` / `PurchaseOnlyTipLines`) is resolved here since the definition set is static per session and the language sits inside the revision; window-owned, released on close |
 | Skill slider presentation (`SkillSliderState`, shared by Options and both skill controls) | `UiRevision.Current`, local `ImplannerSettings.skillSliderMaximum` and narrowest label width derived from window/column width with the scrolling gutter and manual-row indent reserved; immutable maximum/value text and measured wrapped Small-font bounds for the three translated captions; equal rebuilt values preserve snapshot identity. Window-owned, released on close; geometry/preference changes preserve automation/model snapshot identities |
@@ -355,6 +396,7 @@ Changes to these dependencies require updated behavioral tests in the same chang
 - **Implanner benches** (owner, 2026-09-26; `Benches` domain, `PlannerModel.DesignatedBenches`, scribed `designatedBenches` + parallel `designatedBillBenches`/`designatedBillIds`): the Bills-tab toggle issues the synced `SetBenchDesignated(benchId, designated)`. Designating suspends every bill without an owned-production record and records the load ids of the bills that were ALREADY suspended; releasing resumes every bill except those. While designated the UI cannot add (Add bill shows one disabled entry), paste, or suspend/resume bills on the bench: the patches in `Patch_BenchDesignation` only swallow the click before the vanilla control (`ITab_Bills.FillTab`, `BillStack.DoListing`, `Bill.DoInterface`, `Dialog_BillConfig.DoWindowContents`) and read only `BenchDesignations`; they never mutate state. Every reconcile pass (paused automation included) suspends any unsuspended non-owned bill that reached a designated bench another way and prunes designations of benches no longer on any map (never while a gravship is in flight) — `PlannerBenches`. No game object carries Implanner data, so removing the mod leaves working benches with their bills still suspended. The toggle is offered only on benches able to craft an implant item, and on any designated bench so it can always be released.
 - **Iteration** defaults to one star tier at a time (`IterationStrategy.ImplantTier`, "Tier batching"), matching the plan editor's tier panel; the automation UI lists it first and maps display order onto the persisted enum values (`AutomationSnapshot.IterationByDisplay`). "Full sets" (`Colonist`) batches the whole plan per colonist. "ASAP" (`Asap`) has no batch gate: the batch is every missing key, `SurgeryPlanner.Releasable` schedules whatever is reserved on site instead of waiting for the whole batch, and stock of each implant kind is allocated by priority and then the candidate ranking (`SurgeryCandidate`, sampled once per pawn per pass by `PawnProjection.CandidateOf` inside the synchronized tick pass): legs to the slowest colonist by MoveSpeed, arms to a melee-weapon holder first and then the higher Intellectual plus Crafting sum, anything else by pawn id. The ranking applies to ASAP only: under a batch strategy it would split a scarce tier's stock across colonists and stall every batch. Limb family comes from the targeted part's Moving/Manipulation body part tags (`ImplantCatalogEntry.Limb`). **SurgeryConcurrency** (1–20, Options domain) caps how many colonists per colony hold Implanner-scheduled operations at once; only colonists without scheduled operations are gated, ids in deterministic order take the free slots, and the value seeds once per save on the first reconcile pass that observes an authoritative colonist (old saves that already have colonists seed at load) to max(1, colonist count / 10); an explicit player edit ends seeding (scribed 0 = unseeded sentinel, preserved across saves until seeded). With **CountHospitalized** (on by default, Options domain) humanlike pawns of the authoritative faction (colonists and slaves; never prisoners, guests, or other factions' patients such as the Hospital mod's visitors, owner 2026-09-06) lying in a medical bed or downed and needing medical rest occupy cap slots too (deduplicated against owned-bill holders); the check reads live map state inside the synchronized tick pass, which is deterministic across clients.
 - **Doctor floor** modes are exclusive: while `AutoDoctorFloor` is on (the default) each colony's floor tracks its CURRENT best eligible doctor — published up, down, or cleared at the 1020-tick boundary, with no player-facing per-colony state; the manual minimum applies only while auto is off and is seeded from the best currently eligible doctor inside the synced disable command. Nobody operates on themselves (the game's `WorkGiver_DoBill` skips a pawn's own bill stack), so a bill's enforced floor is per patient (`PlannerModel.PatientDoctorFloor`, owner 2026-09-06): while auto is on and the patient is the colony's best doctor, the bill's minimum is the best OTHER eligible doctor's skill at that colony (a peer of equal skill keeps the floor; the only doctor gets no floor), evaluated from the pass index every pass so the bill never waits on a floor only the patient meets; the manual minimum is never lowered. The details panel's floor and Blocked-by-floor status use the same patient-excluded rule.
+  Floors are kept per surgeon pool (`SurgeonPool`, owner 2026-10-31): the game gates a bill on its recipe's own work skill (`Bill.PawnAllowedToStartAnew` reads `recipe.workSkill`; Android Tiers' android operations work Crafting), so a pool is that skill plus who performs the operation: doctors (Doctor work active), or, for Android Tiers androids while `PlannerModel.AndroidSurgeryByCrafters` is on (Options domain, default off, scribed `androidSurgeryByCrafters`, synced `SetAndroidSurgeryByCrafters`; it mirrors that mod's local "androids can only be healed by crafters" setting, which `WorkGiver_DoBill_Patch.JobOnThing` enforces), crafters with Smithing work active and the saved per-pawn `CompSurrogateOwner.repairAndroids` toggle. Doctors judged by Medical skill keep the bare colony floor key older saves carry; every other pool is `PlannerModel.FloorKey(colony, "<Skill>/Doctors|Crafters")`, pruned with its colony. The boundary publishes every skill a catalog surgery works for doctors, plus the crafter pools while the option is on with Android Tiers loaded. A recipe that checks no skill gets no floor. Implanner follows the Android Tiers setting (owner, 2026-10-31): `AndroidTiers.FollowSetting` issues the synced command when the setting differs from the option, on the first frame update while playing after a load or new game (`AndroidTiers.FollowPending`, set in `LoadedGame`/`StartedNewGame`, cleared on world teardown) and after Android Tiers writes its settings (`Patch_AndroidTiersSettings`, a postfix on `Mod.WriteSettings` filtered to `MOARANDROIDS.AndroidTiersPP`, which the game calls when that mod's settings window closes; the setting changes nowhere else). Automation reads only the synced option. In multiplayer, players whose settings differ leave the last write in effect for everyone; Android Tiers is not multiplayer compatible itself. The Options tab shows a read-only "Android operations" line with Android Tiers loaded.
 - **Extended skills** (owner, 2026-09-13): doctor floors and manual/production thresholds preserve nonnegative skill values above 20, including on load. New bills set only the minimum, preserving the game's/mods' constructor-provided maximum. Reconciliation repairs legacy Implanner-owned bills whose maximum is 20 through Endless Growth's existing bill-limit provider. The Options-tab `skillSliderMaximum` preference (20–100, steps of 10, default 20) controls only the Medical/Crafting slider bounds; it is local presentation state and never clamps existing thresholds, changes bill eligibility, enters synchronized commands, or invalidates automation snapshots.
 - **Master-switch hand-back** (`PlannerCommands.CleanupAutomation` + `Dialog_AutomationCleanup`): clicking `Enable automation` off opens a local dialog on the clicking client listing every live Implanner-owned bill with a remove toggle (checked by default); automation stays ON until the dialog resolves. OK issues the pause command followed by the synced cleanup command (payload: newline-joined bill load ids, a plain string for serialization safety): listed bills are deleted from the game and their records dropped (stale records drop even without a bill object), every item reservation is released, and unlisted bills keep both bill and record so re-enabling automation resumes managing them without duplicating operations. Cancel/ESC aborts the switch entirely and changes nothing. With no owned bills automation pauses directly, no dialog.
 - **Level mods stand automation down** (`PlannerAutomation`). With Strata, MultiFloors, or either As above So below active, Implanner runs as a planning tool only: `PlannerReconciler.Tick` releases every reservation and drops every owned-bill record once, then returns immediately on all later ticks. Plans, assignments, priorities, rankings, progress and the stored doctor floor all keep working. The gate resolves once per session from the active mod list, so every multiplayer client derives it identically.

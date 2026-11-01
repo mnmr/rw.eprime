@@ -104,7 +104,6 @@
   <IMP_PlanMinQualityTip>Qualité minimale acceptée pour les nouvelles poses, y compris les choix hérités du plan. Les implants déjà posés du type prévu comptent toujours comme terminés, même sous ce minimum. Activez Donner les meilleurs implants aux colons prioritaires pour autoriser leur remplacement par des exemplaires de meilleure qualité. Les implants sans qualité ne sont pas concernés.\n\nUn implant ne remplace jamais une partie du corps saine par une moins bonne. Pour un implant bionique de faible qualité, le plan attend un meilleur exemplaire, sauf si la partie du corps manque ou est endommagée.</IMP_PlanMinQualityTip>
   <IMP_PlanMinQualityNoQualityJobs>Quality Jobs n'est pas chargé ; n'importe quel artisan peut donc terminer un implant. Si sa qualité est insuffisante, un nouvel exemplaire est fabriqué.</IMP_PlanMinQualityNoQualityJobs>
   <IMP_DeletePlanConfirm>Supprimer le plan « {0} » ? Les colons qui y sont affectés perdront cette affectation et les plans qui le complètent cesseront d'en hériter.</IMP_DeletePlanConfirm>
-  <IMP_ImplantGroupOther>Autres</IMP_ImplantGroupOther>
   <IMP_ReqTitle>Prérequis</IMP_ReqTitle>
   <IMP_ReqBody>{0} ne peut être posé que sur une partie artificielle de type {1}. Choisissez le remplacement à ajouter au plan avec cet implant :</IMP_ReqBody>
   <IMP_ReqConfirm>Ajouter au plan</IMP_ReqConfirm>
@@ -213,4 +212,7 @@
   <IMP_ShipFallback>Vaisseau gravitationnel</IMP_ShipFallback>
   <IMP_SettingsShowToolbarButton>Afficher le bouton de la barre d'outils</IMP_SettingsShowToolbarButton>
   <IMP_CompatibilityLevelMod>{0} : l'automatisation d'Implanner est désactivée avec ce mod à plusieurs niveaux. La planification et le suivi restent disponibles.</IMP_CompatibilityLevelMod>
+  <IMP_OptAndroidSurgeonsCrafters>Opérations sur les androïdes : artisans avec « Réparer les androïdes » (suit Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
+  <IMP_OptAndroidSurgeonsDoctors>Opérations sur les androïdes : médecins (suit Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
+  <IMP_OptAndroidSurgeonsTip>Implanner suit le réglage d'Android Tiers « Androids can only be healed by crafters », que vous modifiez dans les réglages du mod Android Tiers. Activé, les artisans pour lesquels « Réparer les androïdes » est activé effectuent les opérations sur les androïdes. Désactivé, ce sont les médecins. Ces opérations utilisent la compétence Artisanat. Lorsque le choix automatique du médecin est activé, Implanner limite chaque opération sur androïde au meilleur colon admissible selon la compétence Artisanat.</IMP_OptAndroidSurgeonsTip>
 </LanguageData>

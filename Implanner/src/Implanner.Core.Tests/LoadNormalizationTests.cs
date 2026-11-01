@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Implanner.Core;
 
@@ -17,7 +18,7 @@ public class LoadNormalizationTests
     {
         var model = new PlannerModel();
         model.AddLoadedPlan(LoadedPlan(7, "Full", 0,
-            new ImplantGoal(7, "BionicLeg", new[] { 0, 1 })));
+            new ImplantGoal(7, "BionicLeg", Parts(0, 1))));
         int nextPlanId = 1;   // pre-counter save default
 
         model.NormalizeLoadedIds(ref nextPlanId);
@@ -35,11 +36,11 @@ public class LoadNormalizationTests
     {
         var model = new PlannerModel();
         model.AddLoadedPlan(LoadedPlan(3, "A", 0,
-            new ImplantGoal(3, "BionicEye", new[] { 0 })));
+            new ImplantGoal(3, "BionicEye", Parts(0))));
         model.AddLoadedPlan(LoadedPlan(3, "B", basePlanId: 3,
-            new ImplantGoal(3, "BionicArm", new[] { 0 })));
+            new ImplantGoal(3, "BionicArm", Parts(0))));
         model.AddLoadedPlan(LoadedPlan(3, "C", 0,
-            new ImplantGoal(3, "BionicLeg", new[] { 0, 1 })));
+            new ImplantGoal(3, "BionicLeg", Parts(0, 1))));
         model.AddLoadedPlan(LoadedPlan(5, "D", basePlanId: 3));
         model.AddLoadedAssignment(1, 3);
         int nextPlanId = 1;
@@ -74,9 +75,9 @@ public class LoadNormalizationTests
     {
         var model = new PlannerModel();
         model.AddLoadedPlan(LoadedPlan(3, "First", 0,
-            new ImplantGoal(3, "BionicEye", new[] { 0 })));
+            new ImplantGoal(3, "BionicEye", Parts(0))));
         model.AddLoadedPlan(LoadedPlan(3, "Second", 0,
-            new ImplantGoal(3, "BionicLeg", new[] { 0, 1 })));
+            new ImplantGoal(3, "BionicLeg", Parts(0, 1))));
         int nextPlanId = 4;
         model.NormalizeLoadedIds(ref nextPlanId);
         // Legacy goal 17 was the second plan's leg goal (registered by list
@@ -86,14 +87,16 @@ public class LoadNormalizationTests
             { 17, new LegacyGoalRef(model.Plans[1].Id, "BionicLeg") },
         };
 
-        string? migrated = GoalKeys.MigrateLegacy("i17:1", legacy);
-        string natural = "p3:BionicEye:0";
+        // The slot mapper stands in for the catalog's former slot list.
+        Func<string, int, IReadOnlyList<PartAddress>> slots = (_, ordinal) => new[] { Part(ordinal) };
+        string? migrated = GoalKeys.MigrateLegacy("i17:1", legacy, slots);
+        string natural = "p3:BionicEye:Part#0";
 
         await Assert.That(model.Plans[1].Id).IsEqualTo(4);
-        await Assert.That(migrated).IsEqualTo("p4:BionicLeg:1");
+        await Assert.That(migrated).IsEqualTo("p4:BionicLeg:Part#1");
         await Assert.That(GoalKeys.Contains(model.Plans[1].Implants, migrated!)).IsTrue();
-        await Assert.That(GoalKeys.MigrateLegacy(natural, legacy)).IsSameReferenceAs(natural);
-        await Assert.That(GoalKeys.MigrateLegacy("i99:0", legacy)).IsNull();
-        await Assert.That(GoalKeys.MigrateLegacy("i17:1", null)).IsNull();
+        await Assert.That(GoalKeys.MigrateLegacy(natural, legacy, slots)).IsSameReferenceAs(natural);
+        await Assert.That(GoalKeys.MigrateLegacy("i99:0", legacy, slots)).IsNull();
+        await Assert.That(GoalKeys.MigrateLegacy("i17:1", null, slots)).IsNull();
     }
 }

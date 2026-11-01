@@ -33,6 +33,7 @@ namespace Implanner.Patches
             BenchDesignations.Reset();
             SurgeryBindings.Reset();
             BenchLock.Reset();
+            AndroidTiers.FollowPending = false;
         }
     }
 }

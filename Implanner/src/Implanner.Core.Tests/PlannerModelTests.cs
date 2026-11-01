@@ -68,12 +68,12 @@ public class PlannerModelTests
     {
         var model = NewModel();
         var plan = model.CreatePlan("Marines", TakeId)!;
-        model.SetImplantSlot(plan.Id, "BionicLeg", 0, true);
-        string before = GoalKeys.ImplantSlot(plan.Implants[0], 0);
-        model.SetImplantSlot(plan.Id, "BionicLeg", 0, false);
-        model.SetImplantSlot(plan.Id, "BionicLeg", 0, true);
+        model.SetImplantSlot(plan.Id, "BionicLeg", Part(0), true);
+        string before = GoalKeys.ImplantSlot(plan.Implants[0], Part(0));
+        model.SetImplantSlot(plan.Id, "BionicLeg", Part(0), false);
+        model.SetImplantSlot(plan.Id, "BionicLeg", Part(0), true);
 
-        await Assert.That(GoalKeys.ImplantSlot(plan.Implants[0], 0))
+        await Assert.That(GoalKeys.ImplantSlot(plan.Implants[0], Part(0)))
             .IsEqualTo(before);
         await Assert.That(plan.Implants[0].PlanId).IsEqualTo(plan.Id);
     }
@@ -84,20 +84,20 @@ public class PlannerModelTests
         var model = NewModel();
         var plan = model.CreatePlan("Marines", TakeId)!;
 
-        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 1, true)).IsEqualTo(PlannerChange.Plans);
-        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 1, true)).IsEqualTo(PlannerChange.None);
-        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 0, true)).IsEqualTo(PlannerChange.Plans);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", Part(1), true)).IsEqualTo(PlannerChange.Plans);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", Part(1), true)).IsEqualTo(PlannerChange.None);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", Part(0), true)).IsEqualTo(PlannerChange.Plans);
 
         // Ordinals stay sorted regardless of toggle order.
-        await Assert.That(plan.Implants[0].SlotOrdinals).IsEquivalentTo(new[] { 0, 1 });
+        await Assert.That(plan.Implants[0].Slots).IsEquivalentTo(Parts(0, 1));
 
-        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 1, false)).IsEqualTo(PlannerChange.Plans);
-        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 1, false)).IsEqualTo(PlannerChange.None);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", Part(1), false)).IsEqualTo(PlannerChange.Plans);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", Part(1), false)).IsEqualTo(PlannerChange.None);
 
         // Removing the last selected slot removes the goal entirely.
-        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 0, false)).IsEqualTo(PlannerChange.Plans);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", Part(0), false)).IsEqualTo(PlannerChange.Plans);
         await Assert.That(plan.Implants.Count).IsEqualTo(0);
-        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 0, false)).IsEqualTo(PlannerChange.None);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", Part(0), false)).IsEqualTo(PlannerChange.None);
     }
 
     [Test]
@@ -105,8 +105,8 @@ public class PlannerModelTests
     {
         var model = NewModel();
         var plan = model.CreatePlan("Marines", TakeId)!;
-        model.SetImplantSlot(plan.Id, "BionicLeg", 0, true);
-        model.SetImplantSlot(plan.Id, "BionicLeg", 1, true);
+        model.SetImplantSlot(plan.Id, "BionicLeg", Part(0), true);
+        model.SetImplantSlot(plan.Id, "BionicLeg", Part(1), true);
 
         await Assert.That(model.RemoveImplant(plan.Id, "BionicLeg")).IsEqualTo(PlannerChange.Plans);
         await Assert.That(plan.Implants.Count).IsEqualTo(0);

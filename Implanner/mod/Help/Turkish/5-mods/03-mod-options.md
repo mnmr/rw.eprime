@@ -25,6 +25,9 @@ Seçenekler sekmesinde plan uyumluluğu ve beceri sürgüsünün görünüm aral
 <!-- l10n:b-924ed49fe876 -->
 Her ipucu yüklenmiş etkilenen implantları ve geldikleri modları listeler.
 
+<!-- l10n:android-surgeons -->
+**Android ameliyatları** yalnızca Android Tiers Continued yüklüyken görünür. Android ameliyatlarını kimin yapacağını gösterir; Implanner bunu Android Tiers'taki "Androidler yalnızca zanaatçılar tarafından onarılabilir" ayarından alır: ayar kapalıyken (varsayılan) doktorlar, açıkken "Androidleri onar" seçeneği açık olan zanaatçılar yapar. Ayarı Android Tiers mod ayarlarından değiştirin, Implanner buna uyar. Android ameliyatları Zanaat becerisini kullanır. Otomatik doktor seçimi açıkken Implanner, her android ameliyatını Zanaat becerisine göre uygun en iyi koloniciyle sınırlar.
+
 <!-- l10n:b-119eac06340c -->
 ![Seçeneğin ipucunda etkilenen implantlar](options-purchase-tip.png)
 

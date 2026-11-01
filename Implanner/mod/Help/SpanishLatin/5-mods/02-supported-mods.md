@@ -53,3 +53,7 @@ La calidad del híbrido procede de la estructura genética utilizada (consulta [
 
 <!-- l10n:b-1a485abf9e8c -->
 **Bionic modularity**: cada módulo ocupa una casilla de su parte; un módulo de combate y otro laboral caben en el mismo brazo, pero dos de combate no. Los módulos de extremidades se instalan sobre una parte biónica y la comparten, así que el brazo y su módulo pueden coexistir en el plan. Marcar un módulo sin la parte biónica abre un diálogo con las bases compatibles, seleccionando por defecto la menos avanzada. **Añadir al plan** añade ambos; **Cancelar** no añade nada.
+
+<!-- l10n:android-tiers -->
+**Android Tiers Continued**: los androides tienen partes del cuerpo propias, como un sensor de visión izquierdo y otro derecho en lugar de ojos. El selector muestra cada una de estas partes como una fila independiente con su lado, así que puedes planificar ambos lados o solo uno. Un implante que sirve tanto para humanos como para androides, como los chips VX, muestra el cerebro y el cerebro artificial como filas separadas: marca las filas de los colonos a los que va dirigido el plan. Las operaciones de androides usan la habilidad de Fabricación. Con la selección automática de médico activada, Implanner restringe cada operación de androide al mejor colono elegible según su habilidad de Fabricación (consulta [opciones del mod](topic:mod-options)).
+

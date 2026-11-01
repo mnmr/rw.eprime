@@ -58,7 +58,7 @@ namespace Implanner.UI
         /// one — the click IS the choice.
         internal string OverridesLabel = "";
         internal string OverridesTarget = "";
-        internal int Ordinal;            // leaves: slot ordinal
+        internal PartAddress Slot;       // leaves: slot part address
 
         /// Small-font fit width of Label, measured at build: the caption
         /// slot takes whatever room the label leaves on the row.
@@ -80,7 +80,7 @@ namespace Implanner.UI
     internal sealed class RequirementCandidate
     {
         internal string DefName = "";
-        internal int Ordinal;
+        internal PartAddress Slot;
         internal string Label = "";
     }
 
@@ -574,16 +574,16 @@ namespace Implanner.UI
             // inherited slots get their marker, and any effective slot a
             // candidate conflicts with names the choice the click replaces.
             IReadOnlyList<ImplantGoal> effective = model.EffectiveImplants(selected);
-            var inherited = new HashSet<(string, int)>();
-            var planned = new HashSet<(string, int)>();
-            var plannedSlots = new List<(string Def, int Ordinal)>();
+            var inherited = new HashSet<(string, PartAddress)>();
+            var planned = new HashSet<(string, PartAddress)>();
+            var plannedSlots = new List<(string Def, PartAddress Slot)>();
             for (int i = 0; i < effective.Count; i++)
             {
                 ImplantGoal goal = effective[i];
                 bool own = goal.PlanId == selected.Id;
-                for (int j = 0; j < goal.SlotOrdinals.Count; j++)
+                for (int j = 0; j < goal.Slots.Count; j++)
                 {
-                    var slot = (goal.ImplantDefName, goal.SlotOrdinals[j]);
+                    var slot = (goal.ImplantDefName, goal.Slots[j]);
                     plannedSlots.Add(slot);
                     planned.Add(slot);
                     if (!own) inherited.Add(slot);
@@ -592,9 +592,9 @@ namespace Implanner.UI
 
             IReadOnlyList<ImplantCatalogEntry> implants = Catalogs.Implants();
             List<PickerRow> tree = result.Tree;
-            // Host replacements per anatomy instance, resolved once per
-            // build for the module rows that need them.
-            var hosts = new Dictionary<BodyPartRecord, List<RequirementCandidate>>();
+            // Host replacements per part address, resolved once per build
+            // for the module rows that need them.
+            var hosts = new Dictionary<PartAddress, List<RequirementCandidate>>();
             string? lastGroup = null;
             bool showPurchaseOnly = model.ShowPurchaseOnly;
             // Leaf labels are measured here (Small font established first)
@@ -624,32 +624,33 @@ namespace Implanner.UI
                     bool groupMatches = searching
                         && SearchMatcher.Matches(entry.GroupLabel, query, UiLanguage.CaseCulture);
                     ImplantGoal? goal = FindGoal(selected, entry.Def.defName);
-                    for (int ordinal = 0; ordinal < entry.SlotLabels.Count; ordinal++)
+                    for (int s = 0; s < entry.Slots.Count; s++)
                     {
-                        string slotLabel = entry.SlotLabels[ordinal];
-                        string label = entry.SlotLabels.Count > 1 && slotLabel.Length > 0
+                        PartAddress slot = entry.Slots[s].Address;
+                        string slotLabel = entry.Slots[s].Label;
+                        string label = entry.Slots.Count > 1 && slotLabel.Length > 0
                             ? entry.Label + " (" + slotLabel + ")"
                             : entry.Label;
                         if (searching && !groupMatches
                             && !SearchMatcher.Matches(label, query, UiLanguage.CaseCulture))
                             continue;
-                        bool own = goal != null && HasOrdinal(goal, ordinal);
+                        bool own = goal != null && goal.HasSlot(slot);
                         var row = new PickerRow
                         {
                             Depth = searching ? 0 : 1,
                             DefName = entry.Def.defName,
-                            Ordinal = ordinal,
+                            Slot = slot,
                             IconDef = entry.Def.spawnThingOnRemoved,
                             Label = label,
                             Selected = own,
                             Inherited = !own
-                                && inherited.Contains((entry.Def.defName, ordinal)),
+                                && inherited.Contains((entry.Def.defName, slot)),
                         };
                         row.LabelWidth = WrText.FitWidth(row.Label);
                         if (!own)
                         {
                             string overridden = FirstConflictLabel(
-                                model, plannedSlots, entry.Def.defName, ordinal);
+                                model, plannedSlots, entry.Def.defName, slot);
                             if (overridden.Length > 0)
                             {
                                 row.OverridesTarget = overridden;
@@ -658,11 +659,9 @@ namespace Implanner.UI
                             }
                             if (entry.RequiresArtificialPart)
                             {
-                                BodyPartRecord? record = entry.SlotRecords[ordinal];
-                                List<RequirementCandidate>? candidates = record != null
-                                    ? HostsOf(implants, hosts, record, showPurchaseOnly)
-                                    : null;
-                                if (candidates != null && candidates.Count > 0
+                                List<RequirementCandidate> candidates =
+                                    HostsOf(implants, hosts, slot, showPurchaseOnly);
+                                if (candidates.Count > 0
                                     && !AnyPlanned(planned, candidates))
                                 {
                                     row.Requirement = candidates;
@@ -681,17 +680,17 @@ namespace Implanner.UI
         }
 
         /// The replacements able to host a module on the given anatomy
-        /// instance: catalog replacements targeting that record which carry
-        /// the modular mark (ModCompatibility.IsModularReplacement), under
-        /// the same purchase-only filter as the picker rows, cheapest
+        /// instance: catalog replacements targeting that part address which
+        /// carry the modular mark (ModCompatibility.IsModularReplacement),
+        /// under the same purchase-only filter as the picker rows, cheapest
         /// efficiency first so the dialog's default is the plain bionic.
-        /// Shared per record within one build; immutable once built.
+        /// Shared per address within one build; immutable once built.
         private static List<RequirementCandidate> HostsOf(
             IReadOnlyList<ImplantCatalogEntry> implants,
-            Dictionary<BodyPartRecord, List<RequirementCandidate>> hosts,
-            BodyPartRecord record, bool showPurchaseOnly)
+            Dictionary<PartAddress, List<RequirementCandidate>> hosts,
+            PartAddress slot, bool showPurchaseOnly)
         {
-            if (hosts.TryGetValue(record, out List<RequirementCandidate>? known))
+            if (hosts.TryGetValue(slot, out List<RequirementCandidate>? known))
                 return known;
             var candidates = new List<RequirementCandidate>();
             var efficiencies = new List<float>();
@@ -701,9 +700,8 @@ namespace Implanner.UI
                 if (!entry.IsReplacement || !ModCompatibility.IsModularReplacement(entry.Def))
                     continue;
                 if (entry.PurchaseOnly && !showPurchaseOnly) continue;
-                for (int ordinal = 0; ordinal < entry.SlotRecords.Count; ordinal++)
+                if (entry.SlotIndexOf(slot) >= 0)
                 {
-                    if (entry.SlotRecords[ordinal] != record) continue;
                     // Insertion keeps efficiency ascending, then label order
                     // (the catalog list is already label-sorted).
                     int at = candidates.Count;
@@ -711,21 +709,21 @@ namespace Implanner.UI
                     candidates.Insert(at, new RequirementCandidate
                     {
                         DefName = entry.Def.defName,
-                        Ordinal = ordinal,
+                        Slot = slot,
                         Label = entry.Label,
                     });
                     efficiencies.Insert(at, entry.Efficiency);
                 }
             }
-            hosts.Add(record, candidates);
+            hosts.Add(slot, candidates);
             return candidates;
         }
 
         private static bool AnyPlanned(
-            HashSet<(string, int)> planned, List<RequirementCandidate> candidates)
+            HashSet<(string, PartAddress)> planned, List<RequirementCandidate> candidates)
         {
             for (int i = 0; i < candidates.Count; i++)
-                if (planned.Contains((candidates[i].DefName, candidates[i].Ordinal)))
+                if (planned.Contains((candidates[i].DefName, candidates[i].Slot)))
                     return true;
             return false;
         }
@@ -736,14 +734,14 @@ namespace Implanner.UI
         /// Definition-derived conflicts plus the model's option-driven kind
         /// exclusivity: the same rule the synced command applies.
         private static string FirstConflictLabel(PlannerModel model,
-            List<(string Def, int Ordinal)> slots, string defName, int ordinal)
+            List<(string Def, PartAddress Slot)> slots, string defName, PartAddress slot)
         {
             for (int i = 0; i < slots.Count; i++)
             {
-                (string otherDef, int otherOrdinal) = slots[i];
+                (string otherDef, PartAddress otherSlot) = slots[i];
                 if (string.Equals(otherDef, defName, StringComparison.Ordinal))
                     continue;
-                if (!ImplantConflicts.Conflicts(otherDef, otherOrdinal, defName, ordinal)
+                if (!ImplantConflicts.Conflicts(otherDef, otherSlot, defName, slot)
                     && !model.KindsExclusive(otherDef, defName))
                     continue;
                 ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(otherDef);
@@ -805,12 +803,5 @@ namespace Implanner.UI
             return null;
         }
 
-        private static bool HasOrdinal(ImplantGoal goal, int ordinal)
-        {
-            for (int i = 0; i < goal.SlotOrdinals.Count; i++)
-                if (goal.SlotOrdinals[i] == ordinal)
-                    return true;
-            return false;
-        }
     }
 }

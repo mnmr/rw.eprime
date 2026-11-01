@@ -25,6 +25,9 @@ Opciones contiene la compatibilidad de planes y el intervalo visual de habilidad
 <!-- l10n:b-924ed49fe876 -->
 Cada descripción enumera los implantes afectados cargados y su mod de origen.
 
+<!-- l10n:android-surgeons -->
+**Operaciones de androides** solo aparece mientras Android Tiers Continued está cargado. Muestra quién realiza las operaciones de androides, algo que Implanner toma del ajuste de Android Tiers "Los androides solo pueden ser curados por artesanos": los médicos cuando está desactivado, el valor por defecto, y los artesanos con "Reparar androides" activado cuando está activado. Cámbialo en los ajustes del mod Android Tiers e Implanner lo seguirá. Las operaciones de androides usan la habilidad de Fabricación. Con la selección automática de médicos activada, Implanner limita cada operación de androide al mejor colono elegible según su habilidad de Fabricación.
+
 <!-- l10n:b-119eac06340c -->
 ![Descripción de los implantes afectados](options-purchase-tip.png)
 

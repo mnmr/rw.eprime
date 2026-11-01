@@ -8,7 +8,8 @@ namespace Implanner.UI
     {
         Enable, AutoProduction, IdleBenches, DesignatedBenches, Intermediaries,
         CountHospitalized, UpgradeByPriority, AutoFloor,
-        MultipleBladders, MultipleHygiene, PurchaseOnly
+        MultipleBladders, MultipleHygiene, PurchaseOnly,
+        AndroidSurgeonsDoctors, AndroidSurgeonsCrafters
     }
 
     internal sealed class ToggleRowSnapshot
@@ -49,7 +50,8 @@ namespace Implanner.UI
                 PlannerLabels.OptIntermediaries, PlannerLabels.OptCountHospitalized,
                 PlannerLabels.OptUpgradeByPriority, PlannerLabels.OptAutoFloor,
                 PlannerLabels.OptAllowMultipleBladders, PlannerLabels.OptAllowMultipleHygieneEnhancers,
-                PlannerLabels.OptShowPurchaseOnly };
+                PlannerLabels.OptShowPurchaseOnly, PlannerLabels.OptAndroidSurgeonsDoctors,
+                PlannerLabels.OptAndroidSurgeonsCrafters };
             float[] heights = new float[labels.Length];
             float iterationHeight;
             using (GuiStateScope.Capture())

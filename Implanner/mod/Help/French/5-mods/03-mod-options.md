@@ -25,6 +25,9 @@ L'onglet Options contient les réglages de compatibilité des plans et la plage 
 <!-- l10n:b-924ed49fe876 -->
 Chaque infobulle liste les implants concernés actuellement chargés et leur mod d'origine.
 
+<!-- l10n:android-surgeons -->
+**Opérations sur les androïdes** n'apparaît que lorsque Android Tiers Continued est chargé. Cette option indique qui effectue les opérations sur les androïdes ; Implanner la déduit du réglage d'Android Tiers « Androids can only be healed by crafters » : les médecins lorsqu'il est désactivé (par défaut), et les artisans pour lesquels « Réparer les androïdes » est activé lorsqu'il est activé. Modifiez-le dans les réglages du mod Android Tiers, et Implanner suivra. Ces opérations utilisent la compétence Artisanat. Lorsque le choix automatique du médecin est activé, Implanner limite chaque opération sur androïde au meilleur colon admissible selon la compétence Artisanat.
+
 <!-- l10n:b-119eac06340c -->
 ![Survol de l'option montrant les implants concernés](options-purchase-tip.png)
 

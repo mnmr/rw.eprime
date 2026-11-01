@@ -206,6 +206,22 @@ namespace Implanner.Core
             return PlannerChange.Options;
         }
 
+        /// Mod compatibility (Android Tiers): who operates on androids, as
+        /// that mod's "androids can only be healed by crafters" setting
+        /// decides — doctors (off, its default) or crafters with the
+        /// "repair androids" toggle (on). The setting itself is a local mod
+        /// setting, so the synced copy lives here; the Options tab offers
+        /// to match it. Picks the surgeon pool android operation floors are
+        /// computed from. Off by default.
+        public bool AndroidSurgeryByCrafters { get; private set; }
+
+        public PlannerChange SetAndroidSurgeryByCrafters(bool enabled)
+        {
+            if (AndroidSurgeryByCrafters == enabled) return PlannerChange.None;
+            AndroidSurgeryByCrafters = enabled;
+            return PlannerChange.Options;
+        }
+
         /// Mod compatibility: whether bladder implants from different mods
         /// (ImplantCompatibility.BladderImplants) may be planned and
         /// installed side by side, as the game allows. Off treats them as
@@ -346,7 +362,7 @@ namespace Implanner.Core
                 {
                     ImplantGoal goal = plan.Implants[i];
                     goals.Add(new ImplantGoal(
-                        newId, goal.ImplantDefName, goal.SlotOrdinals));
+                        newId, goal.ImplantDefName, goal.Slots));
                 }
                 plans[p] = new Plan(newId, plan.Name, plan.BasePlanId, goals,
                     plan.MinQuality);
@@ -427,8 +443,9 @@ namespace Implanner.Core
             bool onlyIdleBenches, int productionSkill, bool allowIntermediaries,
             bool allowMultipleBladders, bool allowMultipleHygieneEnhancers,
             bool showPurchaseOnly, bool onlyDesignatedBenches,
-            bool upgradeByPriority = false)
+            bool upgradeByPriority = false, bool androidSurgeryByCrafters = false)
         {
+            AndroidSurgeryByCrafters = androidSurgeryByCrafters;
             UpgradeByPriority = upgradeByPriority;
             OnlyDesignatedBenches = onlyDesignatedBenches;
             AutomationPaused = automationPaused;
@@ -522,10 +539,28 @@ namespace Implanner.Core
 
         // ------------------------------------------------- Doctor floors
 
-        /// The current best eligible Medical skill per colony identity
-        /// (serviceable location id: settlement map or gravship), refreshed
-        /// by automation; entries exist only while a colony has one.
+        /// The current best eligible surgeon skill per floor key, refreshed
+        /// by automation; entries exist only while a colony has one. A floor
+        /// key is the colony identity (serviceable location id: settlement
+        /// map or gravship) for the ordinary surgeon pool — doctors judged
+        /// by Medical skill — or FloorKey(colony, pool) for any other pool
+        /// (operations whose recipe works another skill, or that other
+        /// workers perform, such as Android Tiers' android repairs).
         public IReadOnlyDictionary<string, int> DoctorFloors => doctorFloors;
+
+        public const char FloorPoolSeparator = '|';
+
+        /// The floor key of a colony's surgeon pool; the ordinary pool (null
+        /// or empty) is the bare colony id, which keeps older saves valid.
+        public static string FloorKey(string colonyId, string? pool) =>
+            string.IsNullOrEmpty(pool) ? colonyId : colonyId + FloorPoolSeparator + pool;
+
+        /// The colony identity a floor key belongs to.
+        public static string ColonyOfFloorKey(string floorKey)
+        {
+            int separator = floorKey.IndexOf(FloorPoolSeparator);
+            return separator < 0 ? floorKey : floorKey.Substring(0, separator);
+        }
 
         public int DoctorFloorOf(string colonyId) =>
             doctorFloors.TryGetValue(colonyId, out int floor) ? floor : 0;
@@ -565,13 +600,15 @@ namespace Implanner.Core
             return PlannerChange.Surgery;
         }
 
-        /// Drops floors of colonies not in the live set. Deterministic; takes
-        /// the set directly so the tick path allocates no delegate.
+        /// Drops floors (every pool) of colonies not in the live set.
+        /// Deterministic; takes the set directly so the tick path allocates
+        /// no delegate.
         public PlannerChange PruneDoctorFloors(HashSet<string> liveColonies)
         {
             List<string>? dead = null;
             foreach (KeyValuePair<string, int> pair in doctorFloors)
-                if (!liveColonies.Contains(pair.Key))
+                if (!liveColonies.Contains(pair.Key.IndexOf(FloorPoolSeparator) < 0
+                        ? pair.Key : ColonyOfFloorKey(pair.Key)))
                     (dead ??= new List<string>()).Add(pair.Key);
             if (dead == null) return PlannerChange.None;
             dead.Sort(StringComparer.Ordinal);
@@ -1049,7 +1086,7 @@ namespace Implanner.Core
         /// Injected by the game layer from definition data, so it is
         /// identical on every multiplayer client; null disables conflict
         /// suppression (Core tests exercise it explicitly).
-        public Func<ImplantGoal, int, ImplantGoal, int, bool>? SlotConflictResolver
+        public Func<ImplantGoal, PartAddress, ImplantGoal, PartAddress, bool>? SlotConflictResolver
         {
             get;
             private set;
@@ -1058,7 +1095,7 @@ namespace Implanner.Core
         /// Wiring, not a mutation: the resolver is definition-derived and
         /// set once when the store is constructed or hydrated.
         public void SetSlotConflictResolver(
-            Func<ImplantGoal, int, ImplantGoal, int, bool>? resolver) =>
+            Func<ImplantGoal, PartAddress, ImplantGoal, PartAddress, bool>? resolver) =>
             SlotConflictResolver = resolver;
 
         /// The plan's effective implant goals: its own goals first, then the
@@ -1077,7 +1114,7 @@ namespace Implanner.Core
             IReadOnlyList<ImplantGoal> own = OwnEffective(plan);
             if (plan.BasePlanId == 0) return own;
             var result = new List<ImplantGoal>(own);
-            var covered = new Dictionary<string, HashSet<int>>(StringComparer.Ordinal);
+            var covered = new Dictionary<string, HashSet<PartAddress>>(StringComparer.Ordinal);
             for (int i = 0; i < own.Count; i++)
                 CoverSlots(covered, own[i]);
 
@@ -1090,19 +1127,19 @@ namespace Implanner.Core
                 for (int i = 0; i < basePlan.Implants.Count; i++)
                 {
                     ImplantGoal goal = basePlan.Implants[i];
-                    List<int>? remaining = null;
+                    List<PartAddress>? remaining = null;
                     bool allRemain = true;
-                    for (int j = 0; j < goal.SlotOrdinals.Count; j++)
+                    for (int j = 0; j < goal.Slots.Count; j++)
                     {
-                        int ordinal = goal.SlotOrdinals[j];
+                        PartAddress slot = goal.Slots[j];
                         if ((covered.TryGetValue(goal.ImplantDefName, out var taken)
-                                && taken.Contains(ordinal))
-                            || ConflictsWithAccepted(result, goal, ordinal))
+                                && taken.Contains(slot))
+                            || ConflictsWithAccepted(result, goal, slot))
                         {
                             allRemain = false;
                             continue;
                         }
-                        (remaining ??= new List<int>()).Add(ordinal);
+                        (remaining ??= new List<PartAddress>()).Add(slot);
                     }
                     if (remaining == null) continue;
                     ImplantGoal effective = allRemain
@@ -1156,13 +1193,13 @@ namespace Implanner.Core
         }
 
         bool ConflictsWithAccepted(
-            List<ImplantGoal> accepted, ImplantGoal goal, int ordinal)
+            List<ImplantGoal> accepted, ImplantGoal goal, PartAddress slot)
         {
             for (int i = 0; i < accepted.Count; i++)
             {
                 ImplantGoal other = accepted[i];
-                for (int j = 0; j < other.SlotOrdinals.Count; j++)
-                    if (SlotsConflict(other, other.SlotOrdinals[j], goal, ordinal))
+                for (int j = 0; j < other.Slots.Count; j++)
+                    if (SlotsConflict(other, other.Slots[j], goal, slot))
                         return true;
             }
             return false;
@@ -1171,23 +1208,23 @@ namespace Implanner.Core
         /// The complete planned-slot conflict rule: the definition-derived
         /// resolver (when injected) plus the option-driven kind
         /// exclusivity, so every conflict consumer agrees.
-        bool SlotsConflict(ImplantGoal a, int ordinalA, ImplantGoal b, int ordinalB)
+        bool SlotsConflict(ImplantGoal a, PartAddress slotA, ImplantGoal b, PartAddress slotB)
         {
             var resolver = SlotConflictResolver;
-            return (resolver != null && resolver(a, ordinalA, b, ordinalB))
+            return (resolver != null && resolver(a, slotA, b, slotB))
                 || KindsExclusive(a.ImplantDefName, b.ImplantDefName);
         }
 
         static void CoverSlots(
-            Dictionary<string, HashSet<int>> covered, ImplantGoal goal)
+            Dictionary<string, HashSet<PartAddress>> covered, ImplantGoal goal)
         {
             if (!covered.TryGetValue(goal.ImplantDefName, out var set))
             {
-                set = new HashSet<int>();
+                set = new HashSet<PartAddress>();
                 covered.Add(goal.ImplantDefName, set);
             }
-            for (int i = 0; i < goal.SlotOrdinals.Count; i++)
-                set.Add(goal.SlotOrdinals[i]);
+            for (int i = 0; i < goal.Slots.Count; i++)
+                set.Add(goal.Slots[i]);
         }
 
         /// Removes an implant goal with all its selected slots.
@@ -1212,66 +1249,66 @@ namespace Implanner.Core
         /// of the plan's own slots it can never coexist with (the click IS
         /// the choice — the previous pick is not kept as a dead goal).
         public PlannerChange SetImplantSlot(int planId, string implantDefName,
-            int slotOrdinal, bool wanted)
+            PartAddress slot, bool wanted)
         {
             var plan = PlanById(planId);
-            if (plan == null || string.IsNullOrEmpty(implantDefName) || slotOrdinal < 0)
+            if (plan == null || string.IsNullOrEmpty(implantDefName)
+                || slot.IsLegacy || slot.Occurrence < 0)
                 return PlannerChange.None;
             for (int i = 0; i < plan.Implants.Count; i++)
             {
                 var existing = plan.Implants[i];
                 if (!string.Equals(existing.ImplantDefName, implantDefName, StringComparison.Ordinal))
                     continue;
-                bool has = ContainsOrdinal(existing.SlotOrdinals, slotOrdinal);
-                if (has == wanted) return PlannerChange.None;
-                var ordinals = new List<int>(existing.SlotOrdinals);
+                if (existing.HasSlot(slot) == wanted) return PlannerChange.None;
+                var slots = new List<PartAddress>(existing.Slots);
                 if (wanted)
                 {
-                    ordinals.Add(slotOrdinal);
-                    ordinals.Sort();
+                    slots.Add(slot);
+                    slots.Sort();
                 }
                 else
                 {
-                    ordinals.Remove(slotOrdinal);
+                    slots.Remove(slot);
                 }
-                if (ordinals.Count == 0)
+                if (slots.Count == 0)
                     plan.MutableImplants.RemoveAt(i);
                 else
-                    plan.MutableImplants[i] = new ImplantGoal(plan.Id, implantDefName, ordinals);
+                    plan.MutableImplants[i] = new ImplantGoal(plan.Id, implantDefName, slots);
                 if (wanted)
-                    RemoveConflictingSlots(plan, implantDefName, slotOrdinal);
+                    RemoveConflictingSlots(plan, implantDefName, slot);
                 return PlannerChange.Plans;
             }
             if (!wanted) return PlannerChange.None;
             plan.MutableImplants.Add(new ImplantGoal(
-                plan.Id, implantDefName, new List<int> { slotOrdinal }));
-            RemoveConflictingSlots(plan, implantDefName, slotOrdinal);
+                plan.Id, implantDefName, new List<PartAddress> { slot }));
+            RemoveConflictingSlots(plan, implantDefName, slot);
             return PlannerChange.Plans;
         }
 
         /// Deselects every own slot of another implant kind that can never
         /// coexist with the newly selected slot; a goal losing its last slot
         /// disappears. Reverse iteration keeps removal order-safe.
-        void RemoveConflictingSlots(Plan plan, string implantDefName, int slotOrdinal)
+        void RemoveConflictingSlots(Plan plan, string implantDefName, PartAddress slot)
         {
-            var added = new ImplantGoal(plan.Id, implantDefName, new[] { slotOrdinal });
+            var added = new ImplantGoal(plan.Id, implantDefName, new[] { slot });
             for (int i = plan.Implants.Count - 1; i >= 0; i--)
             {
                 ImplantGoal other = plan.Implants[i];
                 if (string.Equals(other.ImplantDefName, implantDefName,
                         StringComparison.Ordinal))
                     continue;
-                List<int>? surviving = null;
+                List<PartAddress>? surviving = null;
                 bool anyRemoved = false;
-                for (int j = 0; j < other.SlotOrdinals.Count; j++)
+                for (int j = 0; j < other.Slots.Count; j++)
                 {
-                    int ordinal = other.SlotOrdinals[j];
-                    if (SlotsConflict(added, slotOrdinal, other, ordinal))
+                    PartAddress otherSlot = other.Slots[j];
+                    if (SlotsConflict(added, slot, other, otherSlot))
                     {
                         anyRemoved = true;
                         continue;
                     }
-                    (surviving ??= new List<int>()).Add(ordinal);
+                    (surviving ??= new List<PartAddress>()).Add(otherSlot);
                 }
                 if (!anyRemoved) continue;
                 if (surviving == null)
@@ -1280,14 +1317,6 @@ namespace Implanner.Core
                     plan.MutableImplants[i] = new ImplantGoal(
                         other.PlanId, other.ImplantDefName, surviving);
             }
-        }
-
-        static bool ContainsOrdinal(IReadOnlyList<int> ordinals, int ordinal)
-        {
-            for (int i = 0; i < ordinals.Count; i++)
-                if (ordinals[i] == ordinal)
-                    return true;
-            return false;
         }
 
         /// Assigns or clears (planId 0) a pawn's Plan.
@@ -1420,7 +1449,7 @@ namespace Implanner.Core
                     ImplantGoal goal = source.Implants[g];
                     goals.Add(new ImplantGoal(
                         planId, goal.ImplantDefName,
-                        new List<int>(goal.SlotOrdinals)));
+                        new List<PartAddress>(goal.Slots)));
                 }
                 var plan = new Plan(planId, name, 0, goals, source.MinQuality);
                 plans.Add(plan);

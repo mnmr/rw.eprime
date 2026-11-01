@@ -107,11 +107,11 @@ namespace Implanner
         /// release, production demand, and the strip so they never
         /// disagree. Allocation-free: reached from the reconcile tick path.
         internal static ThingDef? RequiredItem(
-            Pawn pawn, ImplantCatalogEntry entry, int ordinal)
+            Pawn pawn, ImplantCatalogEntry entry, PartAddress slot)
         {
             ThingDef? item = entry.Def.spawnThingOnRemoved;
             if (item == null || entry.UpgradesFrom == null) return item;
-            BodyPartRecord? part = ResolveSlotPart(pawn, entry, ordinal);
+            BodyPartRecord? part = ResolveSlotPart(pawn, entry, slot);
             if (part == null) return item;
             List<Hediff> hediffs = pawn.health.hediffSet.hediffs;
             for (int i = 0; i < hediffs.Count; i++)
@@ -124,25 +124,17 @@ namespace Implanner
             return item;
         }
 
-        /// The pawn body part a goal slot ordinal denotes, following the same
-        /// canonical enumeration as BuildImplantContext; null when the pawn's
-        /// body lacks that slot.
+        /// The pawn body part a goal slot's address denotes: the address's
+        /// occurrence among the pawn body's records of that part kind; null
+        /// when the body lacks it (or the address is not one of the
+        /// implant's slots). Allocation-free: tick path.
         internal static BodyPartRecord? ResolveSlotPart(
-            Pawn pawn, ImplantCatalogEntry entry, int ordinal)
+            Pawn pawn, ImplantCatalogEntry entry, PartAddress slot)
         {
-            BodyDef body = pawn.RaceProps.body;
-            int index = 0;
-            for (int p = 0; p < entry.FixedParts.Count; p++)
-            {
-                List<BodyPartRecord> records = body.GetPartsWithDef(entry.FixedParts[p]);
-                if (records == null) continue;
-                for (int r = 0; r < records.Count; r++)
-                {
-                    if (index == ordinal) return records[r];
-                    index++;
-                }
-            }
-            return null;
+            CatalogSlot? known = entry.SlotOf(slot);
+            if (known == null) return null;
+            List<BodyPartRecord> records = pawn.RaceProps.body.GetPartsWithDef(known.Part);
+            return slot.Occurrence < records.Count ? records[slot.Occurrence] : null;
         }
 
         /// Whether an installed hediff kind is an implant Implanner tracks:
@@ -175,28 +167,26 @@ namespace Implanner
             return result;
         }
 
-        /// The canonical slot enumeration: FixedParts order, then body record
-        /// order. Goal slot ordinals index this list; it must stay in
-        /// lockstep with Catalogs.BuildSlotLabels, which enumerates the same
-        /// way on the reference body for the editor.
+        /// The pawn's anatomy instance for each goal slot, parallel to the
+        /// goal's slots: the record its part address denotes on this body
+        /// (ResolveSlotPart), keyed like InstalledImplant.SlotKey; null
+        /// where the body lacks it.
         private static ImplantContext BuildImplantContext(Pawn pawn, ImplantGoal goal,
             int minQuality)
         {
+            var slots = new string?[goal.Slots.Count];
             ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(goal.ImplantDefName);
             if (entry == null)
             {
                 // Temporarily missing mod content: no applicable anatomy, so
                 // the whole request surfaces as blocked.
-                return new ImplantContext(Array.Empty<string>(), 1f);
+                return new ImplantContext(slots, 1f);
             }
-            var slots = new List<string>();
             BodyDef body = pawn.RaceProps.body;
-            for (int p = 0; p < entry.FixedParts.Count; p++)
+            for (int j = 0; j < slots.Length; j++)
             {
-                List<BodyPartRecord> records = body.GetPartsWithDef(entry.FixedParts[p]);
-                if (records == null) continue;
-                for (int r = 0; r < records.Count; r++)
-                    slots.Add(body.GetIndexOfPart(records[r]).ToStringCached());
+                BodyPartRecord? part = ResolveSlotPart(pawn, entry, goal.Slots[j]);
+                if (part != null) slots[j] = body.GetIndexOfPart(part).ToStringCached();
             }
             // The substitution floor is the goal's implant as automation
             // would install it on a healthy part: the plan's minimum

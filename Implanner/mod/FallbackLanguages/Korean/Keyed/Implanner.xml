@@ -60,7 +60,6 @@
   <IMP_HelpChapterPlans>계획</IMP_HelpChapterPlans>
   <IMP_HelpChapterSharing>공유</IMP_HelpChapterSharing>
   <IMP_HelpReload>다시 불러오기</IMP_HelpReload>
-  <IMP_ImplantGroupOther>기타</IMP_ImplantGroupOther>
   <IMP_Import>가져오기</IMP_Import>
   <IMP_ImportAddNote>가져온 계획은 기존 계획 옆에 추가되며 아무것도 대체하지 않습니다. 같은 이름이 있으면 번호가 붙습니다.</IMP_ImportAddNote>
   <IMP_ImportInvalid>올바른 Implanner 계획 내보내기 파일이 아닙니다: {0}</IMP_ImportInvalid>
@@ -213,4 +212,7 @@
   <IMP_WelcomeFind>화면 오른쪽 아래의 표시 전환 버튼 옆에 있는 이 버튼으로 Implanner를 여세요.</IMP_WelcomeFind>
   <IMP_WelcomeTakeMeThere>지금 열기</IMP_WelcomeTakeMeThere>
   <IMP_WelcomeTitle>EPrime's Implanner</IMP_WelcomeTitle>
+  <IMP_OptAndroidSurgeonsCrafters>안드로이드 수술: "안드로이드 수리"가 켜진 제작자 (Android Tiers 설정을 따름)</IMP_OptAndroidSurgeonsCrafters>
+  <IMP_OptAndroidSurgeonsDoctors>안드로이드 수술: 의사 (Android Tiers 설정을 따름)</IMP_OptAndroidSurgeonsDoctors>
+  <IMP_OptAndroidSurgeonsTip>Implanner는 Android Tiers의 "안드로이드는 제작자만 치료할 수 있음" 설정을 따르며, 이 설정은 Android Tiers 모드 설정에서 바꿉니다. 켜면 "안드로이드 수리"가 켜진 제작자가 안드로이드 수술을 합니다. 끄면 의사가 합니다. 안드로이드 수술에는 제작 기술을 사용합니다. 자동 의사 선택이 켜져 있으면 Implanner는 각 안드로이드 수술을 제작 기술이 가장 높은 적격 정착민에게 맡깁니다.</IMP_OptAndroidSurgeonsTip>
 </LanguageData>

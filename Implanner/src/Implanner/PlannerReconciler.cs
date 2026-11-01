@@ -111,11 +111,11 @@ namespace Implanner
             string goalKey, Thing item)
         {
             if (!GoalKeys.TryResolveImplantSlot(evaluation.Goals, goalKey,
-                    out ImplantGoal goal, out int ordinal))
+                    out ImplantGoal goal, out PartAddress slot))
                 return true;
             ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(goal.ImplantDefName);
             BodyPartRecord? part = entry != null
-                ? PawnProjection.ResolveSlotPart(pawn, entry, ordinal) : null;
+                ? PawnProjection.ResolveSlotPart(pawn, entry, slot) : null;
             if (entry == null || part == null) return false;
             int accepted = PawnProjection.AcceptableQualities(
                 pawn, entry, part, evaluation.Plan.MinQuality);

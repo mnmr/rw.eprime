@@ -173,7 +173,7 @@ namespace Implanner.UI
                     names[i] = plan.Name;
                     int count = 0;
                     for (int g = 0; g < plan.Implants.Count; g++)
-                        count += plan.Implants[g].SlotOrdinals.Count;
+                        count += plan.Implants[g].Slots.Count;
                     counts[i] = count;
                     total += count;
                 }

@@ -60,7 +60,6 @@
   <IMP_HelpChapterPlans>Плани</IMP_HelpChapterPlans>
   <IMP_HelpChapterSharing>Обмін</IMP_HelpChapterSharing>
   <IMP_HelpReload>Перезавантажити</IMP_HelpReload>
-  <IMP_ImplantGroupOther>Інше</IMP_ImplantGroupOther>
   <IMP_Import>Імпорт</IMP_Import>
   <IMP_ImportAddNote>Імпортовані плани додаються поряд із наявними; нічого не замінюється. До зайнятої назви додається число.</IMP_ImportAddNote>
   <IMP_ImportInvalid>Некоректний експорт планів Implanner: {0}</IMP_ImportInvalid>
@@ -213,4 +212,7 @@
   <IMP_WelcomeFind>Відкрийте Implanner цією кнопкою на панелі в правому нижньому куті екрана, поряд із перемикачами відображення.</IMP_WelcomeFind>
   <IMP_WelcomeTakeMeThere>Відкрити зараз</IMP_WelcomeTakeMeThere>
   <IMP_WelcomeTitle>EPrime's Implanner</IMP_WelcomeTitle>
+  <IMP_OptAndroidSurgeonsCrafters>Операції на андроїдах: майстри з «Ремонтом андроїдів» (за Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
+  <IMP_OptAndroidSurgeonsDoctors>Операції на андроїдах: лікарі (за Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
+  <IMP_OptAndroidSurgeonsTip>Implanner дотримується налаштування Android Tiers «Андроїдів можуть лікувати лише майстри», яке змінюється в налаштуваннях мода Android Tiers. Коли воно ввімкнене, операції на андроїдах виконують майстри з увімкненим «Ремонтом андроїдів». Коли вимкнене, їх виконують лікарі. Операції на андроїдах використовують навичку ремесла. Якщо ввімкнено автоматичний вибір лікаря, Implanner обмежує кожну операцію на андроїді найкращим придатним колоністом за навичкою ремесла.</IMP_OptAndroidSurgeonsTip>
 </LanguageData>

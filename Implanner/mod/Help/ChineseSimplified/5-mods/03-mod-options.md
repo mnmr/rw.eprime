@@ -25,6 +25,9 @@ title: 模组选项
 <!-- l10n:b-924ed49fe876 -->
 每项提示列出已加载的受影响植入体及其来源模组。
 
+<!-- l10n:android-surgeons -->
+**机器人手术** 仅在加载 Android Tiers Continued 时显示。它显示由谁执行机器人手术，Implanner 会读取 Android Tiers 的“机器人只能由工匠修复”设置：关闭（默认）时由医生执行；开启时由已开启“修复机器人”的工匠执行。请在 Android Tiers 的模组设置中更改，Implanner 会随之调整。机器人手术使用手工技能。开启医生自动选择后，Implanner 会将每项机器人手术限定给手工技能最高的合格殖民者。
+
 <!-- l10n:b-119eac06340c -->
 ![悬停显示受影响植入体](options-purchase-tip.png)
 

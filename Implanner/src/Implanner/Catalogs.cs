@@ -19,13 +19,37 @@ namespace Implanner
         Head = 2,
     }
 
+    /// One plannable anatomy instance of a catalog implant: its part
+    /// address, and the first plannable body carrying it (Catalogs
+    /// .PlannableBodies order) with that body's record and label ("left
+    /// eye", "right sight sensor"). Observed defs and records, never
+    /// mutated.
+    internal sealed class CatalogSlot
+    {
+        internal CatalogSlot(PartAddress address, BodyPartDef part, BodyDef body,
+            BodyPartRecord record)
+        {
+            Address = address;
+            Part = part;
+            Body = body;
+            Record = record;
+            Label = record.Label;
+        }
+
+        internal PartAddress Address { get; }
+        internal BodyPartDef Part { get; }
+        internal BodyDef Body { get; }
+        internal BodyPartRecord Record { get; }
+        internal string Label { get; }
+    }
+
     /// One selectable implant kind: a hediff added by a surgery recipe,
     /// with the anatomy it can target.
     internal sealed class ImplantCatalogEntry
     {
         internal ImplantCatalogEntry(HediffDef def, string label, float efficiency,
-            List<BodyPartDef> fixedParts, string groupLabel, List<string> slotLabels,
-            List<BodyPartRecord> slotRecords, List<RecipeDef> surgeryRecipes,
+            List<BodyPartDef> fixedParts, string groupLabel, List<CatalogSlot> slots,
+            List<RecipeDef> surgeryRecipes,
             bool isReplacement, ImplantRegion region, LimbKind limb,
             List<string> incompatibleTags, bool mountsOnArtificialParts,
             bool requiresArtificialPart, string? upgradesFrom, bool purchaseOnly,
@@ -40,8 +64,7 @@ namespace Implanner
             Efficiency = efficiency;
             FixedParts = fixedParts;
             GroupLabel = groupLabel;
-            SlotLabels = slotLabels;
-            SlotRecords = slotRecords;
+            Slots = slots;
             SurgeryRecipes = surgeryRecipes;
             IsReplacement = isReplacement;
             Region = region;
@@ -107,7 +130,7 @@ namespace Implanner
         internal bool PurchaseOnly { get; }
 
         /// The anatomy region of the entry's targeted parts (classified on
-        /// the reference body).
+        /// its first slot's body).
         internal ImplantRegion Region { get; }
 
         /// The limb family of the targeted parts (leg or arm by the body
@@ -120,22 +143,30 @@ namespace Implanner
         /// skin-gland exclusivity mechanism).
         internal List<string> IncompatibleTags { get; }
 
-        /// Reference-body anatomy instances, parallel to SlotLabels: ordinal
-        /// i targets SlotRecords[i] (null only for the placeholder slot of a
-        /// part missing from the reference body). Observed records, never
-        /// mutated; used to derive conflict facts.
-        internal List<BodyPartRecord> SlotRecords { get; }
+        /// Every anatomy instance the implant can target on any plannable
+        /// body (Catalogs.PlannableBodies), in body order then record
+        /// order: the human body's left eye before its right, an android's
+        /// sensors after them. One entry per part address, never empty.
+        internal List<CatalogSlot> Slots { get; }
 
         /// Surgery recipes adding this implant, sorted by defName for
         /// deterministic recipe selection when scheduling operations.
         internal List<RecipeDef> SurgeryRecipes { get; }
 
-        /// Editor labels for the canonical slot enumeration on the reference
-        /// human body (FixedParts order, then body record order): ordinal i is
-        /// SlotLabels[i]. Never empty; bodies without the part get one
-        /// unlabeled slot so the goal stays selectable (evaluation excludes
-        /// impossible slots from the colonist's target).
-        internal List<string> SlotLabels { get; }
+        /// Index of the slot with this address, or -1 (a stale or
+        /// unresolved goal slot). Allocation-free: tick path.
+        internal int SlotIndexOf(PartAddress address)
+        {
+            for (int i = 0; i < Slots.Count; i++)
+                if (Slots[i].Address.Equals(address)) return i;
+            return -1;
+        }
+
+        internal CatalogSlot? SlotOf(PartAddress address)
+        {
+            int index = SlotIndexOf(address);
+            return index >= 0 ? Slots[index] : null;
+        }
     }
 
     /// The implant catalog discovered dynamically from vanilla, DLC, and
@@ -161,6 +192,7 @@ namespace Implanner
 
         internal static void Release()
         {
+            plannableBodies = null;
             implants = null;
             implantsByDefName = null;
             languageStamp = -1;
@@ -262,7 +294,7 @@ namespace Implanner
             }
 
             HashSet<ThingDef> producible = BuildProducibleSet();
-            BodyDef referenceBody = BodyDefOf.Human;
+            List<BodyDef> bodies = PlannableBodies();
             var result = new List<ImplantCatalogEntry>();
             foreach (KeyValuePair<HediffDef, HashSet<BodyPartDef>> pair in parts)
             {
@@ -275,24 +307,23 @@ namespace Implanner
                 float efficiency = replacement
                     ? pair.Key.addedPartProps?.partEfficiency ?? 1f
                     : 1f;
-                string groupLabel = fixedParts.Count > 0
-                    ? fixedParts[0].LabelCap.ToString()
-                    : "IMP_ImplantGroupOther".Translate().ToString();
                 List<RecipeDef> surgeryRecipes = surgeries[pair.Key];
                 surgeryRecipes.Sort(ByRecipeDefName);
                 // Mutant-only implants (ghoul barbs and kin) are not plan
                 // goals: only ordinary humanlikes are plannable.
                 if (!AnyHumanRecipe(surgeryRecipes)) continue;
-                BuildSlots(referenceBody, fixedParts,
-                    out List<string> slotLabels, out List<BodyPartRecord> slotRecords);
+                List<CatalogSlot> slots = BuildSlots(bodies, pair.Value);
+                // Parts no humanlike body has (an animal jaw) can never be
+                // installed on a colonist.
+                if (slots.Count == 0) continue;
                 bool wipes = !replacement && ClearsPart(surgeryRecipes);
                 bool mounts = !replacement && !wipes
                     && MountsOnArtificialParts(surgeryRecipes);
                 result.Add(new ImplantCatalogEntry(
                     pair.Key, pair.Key.LabelCap.ToString(), efficiency,
-                    fixedParts, groupLabel, slotLabels, slotRecords,
+                    fixedParts, GroupLabelOf(slots), slots,
                     surgeryRecipes, replacement,
-                    ClassifyRegion(slotRecords), ClassifyLimb(slotRecords),
+                    ClassifyRegion(slots[0].Record), ClassifyLimb(slots[0].Record),
                     IncompatibleTagsOf(surgeryRecipes), mounts,
                     mounts && !AnyVanillaImplantRecipe(surgeryRecipes), null,
                     purchaseOnly, wipes));
@@ -334,8 +365,7 @@ namespace Implanner
                 float efficiency = def.addedPartProps?.partEfficiency ?? 1f;
                 result.Add(new ImplantCatalogEntry(
                     def, def.LabelCap.ToString(), efficiency,
-                    baseEntry.FixedParts, baseEntry.GroupLabel,
-                    baseEntry.SlotLabels, baseEntry.SlotRecords,
+                    baseEntry.FixedParts, baseEntry.GroupLabel, baseEntry.Slots,
                     surgeryRecipes, isReplacement: true,
                     baseEntry.Region, baseEntry.Limb,
                     IncompatibleTagsOf(surgeryRecipes),
@@ -354,41 +384,29 @@ namespace Implanner
             typeof(Hediff_AddedPart).IsAssignableFrom(def.hediffClass);
 
         /// Whether any surgery recipe's worker restores the part before
-        /// adding its hediff (ModCompatibility.ClearsPart).
-        private static bool ClearsPart(List<RecipeDef> surgeryRecipes)
-        {
-            for (int i = 0; i < surgeryRecipes.Count; i++)
-                if (ModCompatibility.ClearsPart(surgeryRecipes[i].workerClass))
-                    return true;
-            return false;
-        }
+        /// adding its hediff (SurgeryWorkerDef.BehaviorOf).
+        private static bool ClearsPart(List<RecipeDef> surgeryRecipes) =>
+            AnyWorker(surgeryRecipes, SurgeryWorkerBehavior.ClearsPart);
 
-        /// Whether any surgery recipe's worker sits outside both vanilla
-        /// install workers and the known part-clearing workers: such a
-        /// worker never inherited Recipe_InstallImplant's added-part
-        /// refusal, so the game lets it target an artificial part (verified
-        /// for Bionic modularity's Recipe_InstallModule : Recipe_Surgery).
-        private static bool MountsOnArtificialParts(List<RecipeDef> surgeryRecipes)
+        /// Whether any surgery recipe's worker carries no refusal of
+        /// artificial parts, so the game lets it target one (verified for
+        /// Bionic modularity's Recipe_InstallModule : Recipe_Surgery; any
+        /// worker neither vanilla ancestry nor a SurgeryWorkerDef explains).
+        private static bool MountsOnArtificialParts(List<RecipeDef> surgeryRecipes) =>
+            AnyWorker(surgeryRecipes, SurgeryWorkerBehavior.MountsOnArtificialParts);
+
+        /// Whether any surgery recipe's worker installs like vanilla's
+        /// implant worker, which accepts natural parts.
+        private static bool AnyVanillaImplantRecipe(List<RecipeDef> surgeryRecipes) =>
+            AnyWorker(surgeryRecipes, SurgeryWorkerBehavior.InstallsImplant);
+
+        private static bool AnyWorker(List<RecipeDef> surgeryRecipes,
+            SurgeryWorkerBehavior behavior)
         {
             for (int i = 0; i < surgeryRecipes.Count; i++)
             {
                 Type? worker = surgeryRecipes[i].workerClass;
-                if (worker != null
-                    && !typeof(Recipe_InstallImplant).IsAssignableFrom(worker)
-                    && !ModCompatibility.ClearsPart(worker))
-                    return true;
-            }
-            return false;
-        }
-
-        /// Whether any surgery recipe uses vanilla's implant worker (or a
-        /// derivative), which accepts natural parts.
-        private static bool AnyVanillaImplantRecipe(List<RecipeDef> surgeryRecipes)
-        {
-            for (int i = 0; i < surgeryRecipes.Count; i++)
-            {
-                Type? worker = surgeryRecipes[i].workerClass;
-                if (worker != null && typeof(Recipe_InstallImplant).IsAssignableFrom(worker))
+                if (worker != null && SurgeryWorkerDef.BehaviorOf(worker) == behavior)
                     return true;
             }
             return false;
@@ -479,31 +497,134 @@ namespace Implanner
             return true;
         }
 
-        /// The canonical slot enumeration on the reference body: FixedParts
-        /// order, then body record order. Must stay in lockstep with
-        /// PawnProjection.BuildImplantContext, which enumerates the same way
-        /// on the evaluated pawn's body.
-        private static void BuildSlots(BodyDef body, List<BodyPartDef> fixedParts,
-            out List<string> labels, out List<BodyPartRecord> records)
+        // Cache contract:
+        // Owner: process.
+        // Key: none (single list).
+        // Value: immutable list of the distinct BodyDefs of humanlike races,
+        //   the human body first, then by defName.
+        // Dependencies: the loaded definition set (static per session).
+        // Refresh policy: built on first query.
+        // Equality policy: never changes within a session.
+        // Teardown: Release clears it with the catalog.
+        private static List<BodyDef>? plannableBodies;
+
+        /// Every body a colonist can have: the distinct bodies of humanlike
+        /// races (vanilla's human body, Humanoid Alien Races bodies such as
+        /// Android Tiers' Android4Tier). Human first, then by defName, so
+        /// slot order, labels and legacy migration are deterministic.
+        internal static List<BodyDef> PlannableBodies()
         {
-            labels = new List<string>();
-            records = new List<BodyPartRecord>();
-            for (int p = 0; p < fixedParts.Count; p++)
+            if (plannableBodies != null) return plannableBodies;
+            var bodies = new List<BodyDef>();
+            List<ThingDef> things = DefDatabase<ThingDef>.AllDefsListForReading;
+            for (int i = 0; i < things.Count; i++)
             {
-                List<BodyPartRecord> found = body.GetPartsWithDef(fixedParts[p]);
-                if (found == null) continue;
-                for (int r = 0; r < found.Count; r++)
+                RaceProperties? race = things[i].race;
+                if (race == null || !race.Humanlike || race.body == null) continue;
+                if (!bodies.Contains(race.body)) bodies.Add(race.body);
+            }
+            bodies.Sort((a, b) => a == BodyDefOf.Human ? (b == BodyDefOf.Human ? 0 : -1)
+                : b == BodyDefOf.Human ? 1
+                : string.CompareOrdinal(a.defName, b.defName));
+            return plannableBodies = bodies;
+        }
+
+        /// Every anatomy instance of the given part kinds across the
+        /// plannable bodies: one slot per part address (part kind +
+        /// occurrence in that body's record order), labelled and located on
+        /// the first body carrying it. Body order, then record order.
+        private static List<CatalogSlot> BuildSlots(List<BodyDef> bodies,
+            HashSet<BodyPartDef> fixedParts)
+        {
+            var slots = new List<CatalogSlot>();
+            for (int b = 0; b < bodies.Count; b++)
+            {
+                List<BodyPartRecord> records = bodies[b].AllParts;
+                for (int r = 0; r < records.Count; r++)
                 {
-                    labels.Add(found[r].Label);
-                    records.Add(found[r]);
+                    BodyPartDef part = records[r].def;
+                    if (!fixedParts.Contains(part)) continue;
+                    var address = new PartAddress(part.defName,
+                        bodies[b].GetPartsWithDef(part).IndexOf(records[r]));
+                    bool known = false;
+                    for (int s = 0; s < slots.Count && !known; s++)
+                        known = slots[s].Address.Equals(address);
+                    if (!known) slots.Add(new CatalogSlot(address, part, bodies[b], records[r]));
                 }
             }
-            if (labels.Count == 0)
-            {
-                labels.Add("");
-                records.Add(null!);
-            }
+            return slots;
         }
+
+        /// The picker group: the part kind when every slot is one kind
+        /// ("Eye"); otherwise the most specific body part group every slot
+        /// belongs to (Android Tiers' left and right sight sensors are both
+        /// "Eyes"), else the first slot's part kind.
+        private static string GroupLabelOf(List<CatalogSlot> slots)
+        {
+            BodyPartDef first = slots[0].Part;
+            bool single = true;
+            for (int i = 1; i < slots.Count && single; i++)
+                single = slots[i].Part == first;
+            if (single) return first.LabelCap.ToString();
+            BodyPartGroupDef? best = null;
+            int bestSize = int.MaxValue;
+            List<BodyPartGroupDef> groups = slots[0].Record.groups;
+            for (int g = 0; g < groups.Count; g++)
+            {
+                bool shared = true;
+                for (int i = 1; i < slots.Count && shared; i++)
+                    shared = slots[i].Record.groups.Contains(groups[g]);
+                if (!shared) continue;
+                int size = 0;
+                List<BodyPartRecord> records = slots[0].Body.AllParts;
+                for (int r = 0; r < records.Count; r++)
+                    if (records[r].groups.Contains(groups[g])) size++;
+                if (size < bestSize)
+                {
+                    best = groups[g];
+                    bestSize = size;
+                }
+            }
+            return best != null ? best.LabelCap.ToString() : first.LabelCap.ToString();
+        }
+
+        /// The part addresses a goal slot persisted as a bare ordinal
+        /// (before part addresses) denotes. The ordinal indexed each pawn's
+        /// OWN enumeration of the implant's part kinds (defName order, then
+        /// record order), so it meant one part per body: ordinal 0 of a VX
+        /// chip was the brain on a human and the artificial brain on an
+        /// android, and ordinal 0 of an android light sensor the left one.
+        /// Every plannable body's part at that position, in body order, so
+        /// a migrated goal keeps acting where it acted before. A legacy
+        /// address when the implant is not loaded (resolved on a later
+        /// load); empty when the ordinal denotes nothing. Load and import
+        /// paths only.
+        internal static IReadOnlyList<PartAddress> LegacySlots(string defName, int ordinal)
+        {
+            ImplantCatalogEntry? entry = ImplantByDefName(defName);
+            if (entry == null) return new[] { PartAddress.Legacy(ordinal) };
+            var result = new List<PartAddress>();
+            List<BodyDef> bodies = PlannableBodies();
+            for (int b = 0; b < bodies.Count; b++)
+            {
+                int index = 0;
+                for (int p = 0; p < entry.FixedParts.Count; p++)
+                {
+                    List<BodyPartRecord> records = bodies[b].GetPartsWithDef(entry.FixedParts[p]);
+                    for (int r = 0; r < records.Count; r++, index++)
+                    {
+                        if (index != ordinal) continue;
+                        var address = new PartAddress(entry.FixedParts[p].defName, r);
+                        if (!result.Contains(address)) result.Add(address);
+                    }
+                }
+            }
+            return result;
+        }
+
+        /// LegacySlots as a cached delegate for the load and import paths.
+        internal static readonly Func<string, int, IReadOnlyList<PartAddress>> LegacySlotMapper =
+            LegacySlots;
 
         /// Region tags: limb parts carry the moving/manipulation limb tags,
         /// and everything hanging under the Head record (brain included) is
@@ -516,10 +637,8 @@ namespace Implanner
             "ManipulationLimbDigit",
         };
 
-        private static ImplantRegion ClassifyRegion(List<BodyPartRecord> slotRecords)
+        private static ImplantRegion ClassifyRegion(BodyPartRecord record)
         {
-            BodyPartRecord? record = slotRecords.Count > 0 ? slotRecords[0] : null;
-            if (record == null) return ImplantRegion.Torso;
             for (BodyPartRecord? walk = record; walk != null; walk = walk.parent)
                 if (HasAnyLimbTag(walk.def))
                     return ImplantRegion.Limbs;
@@ -540,9 +659,8 @@ namespace Implanner
         /// Leg when the targeted part or an ancestor carries a Moving limb
         /// tag, arm for a Manipulation limb tag (the first three and last
         /// three entries of LimbTags); anything else has no limb family.
-        private static LimbKind ClassifyLimb(List<BodyPartRecord> slotRecords)
+        private static LimbKind ClassifyLimb(BodyPartRecord record)
         {
-            BodyPartRecord? record = slotRecords.Count > 0 ? slotRecords[0] : null;
             for (BodyPartRecord? walk = record; walk != null; walk = walk.parent)
             {
                 for (int i = 0; i < LimbTags.Length; i++)

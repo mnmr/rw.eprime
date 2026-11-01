@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Modded install-surgery workers that derive from neither vanilla install
+  worker. Implanner cannot infer their behaviour from the class hierarchy,
+  so each is declared here after checking the mod's source. workerClass is
+  matched by full type name on the worker or any base type.
+
+  behavior:
+    InstallsImplant          mounts on a natural part, refuses artificial parts
+    ClearsPart               restores the part and its subtree first
+    MountsOnArtificialParts  mounts on a replacement (the default for
+                             any worker not listed here)
+-->
+<Defs>
+
+  <!-- Vanilla Genetics Expanded: Recipe_InstallGeneticBodyPart derives from
+       Recipe_Surgery and restores the part before adding even its
+       implant-class hediffs (neuron reinforcement, animal skins). -->
+  <Implanner.SurgeryWorkerDef>
+    <defName>Implanner_VGE_InstallGeneticBodyPart</defName>
+    <workerClass>GeneticRim.Recipe_InstallGeneticBodyPart</workerClass>
+    <behavior>ClearsPart</behavior>
+  </Implanner.SurgeryWorkerDef>
+
+  <!-- Android Tiers Continued: both workers derive from RecipeWorker.
+       Recipe_InstallImplantAndroid refuses parts with an artificial part on
+       or above them, exactly like vanilla's implant worker;
+       Recipe_InstallArtificialBodyPartAndroid restores the part
+       (MedicalRecipesUtility.RestorePartAndSpawnAllPreviousParts). -->
+  <Implanner.SurgeryWorkerDef>
+    <defName>Implanner_ATC_InstallImplantAndroid</defName>
+    <workerClass>MOARANDROIDS.Recipe_InstallImplantAndroid</workerClass>
+    <behavior>InstallsImplant</behavior>
+  </Implanner.SurgeryWorkerDef>
+
+  <Implanner.SurgeryWorkerDef>
+    <defName>Implanner_ATC_InstallArtificialBodyPartAndroid</defName>
+    <workerClass>MOARANDROIDS.Recipe_InstallArtificialBodyPartAndroid</workerClass>
+    <behavior>ClearsPart</behavior>
+  </Implanner.SurgeryWorkerDef>
+
+</Defs>

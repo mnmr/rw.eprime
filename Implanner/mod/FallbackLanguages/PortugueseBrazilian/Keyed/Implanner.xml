@@ -104,7 +104,6 @@
   <IMP_PlanMinQualityTip>Qualidade mínima aceita para novas instalações, incluindo as escolhas herdadas do plano. Implantes já instalados do tipo planejado continuam contando como concluídos, mesmo abaixo desse mínimo. Ative Dar os melhores implantes aos colonos mais prioritários para permitir a substituição por exemplares de qualidade superior. Implantes sem qualidade não são afetados.\n\nUm implante nunca substitui uma parte saudável do corpo por outra pior. Um biônico de baixa qualidade aguarda um item melhor, a menos que a parte do corpo esteja ausente ou danificada.</IMP_PlanMinQualityTip>
   <IMP_PlanMinQualityNoQualityJobs>Quality Jobs não está carregado, pelo que qualquer artesão pode terminar um implante. Se ficar abaixo desta qualidade, será fabricado novamente.</IMP_PlanMinQualityNoQualityJobs>
   <IMP_DeletePlanConfirm>Excluir o plano “{0}”? Os colonos que o usam perderão a atribuição, e os planos que herdam dele deixarão de herdar.</IMP_DeletePlanConfirm>
-  <IMP_ImplantGroupOther>Outros</IMP_ImplantGroupOther>
   <IMP_ReqTitle>Requisitos</IMP_ReqTitle>
   <IMP_ReqBody>{0} só pode ser instalado em uma parte artificial do tipo {1}. Escolha a substituição a adicionar ao plano juntamente com este implante:</IMP_ReqBody>
   <IMP_ReqConfirm>Adicionar ao plano</IMP_ReqConfirm>
@@ -213,4 +212,7 @@
   <IMP_ShipFallback>Gravinave</IMP_ShipFallback>
   <IMP_SettingsShowToolbarButton>Mostrar botão na barra de ferramentas</IMP_SettingsShowToolbarButton>
   <IMP_CompatibilityLevelMod>{0}: A automação do Implanner é desativada com este mod de múltiplos níveis. O planejamento e o acompanhamento continuam funcionando.</IMP_CompatibilityLevelMod>
+  <IMP_OptAndroidSurgeonsCrafters>Operações em androides: artesãos com "Reparar androides" (segue o Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
+  <IMP_OptAndroidSurgeonsDoctors>Operações em androides: médicos (segue o Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
+  <IMP_OptAndroidSurgeonsTip>O Implanner segue a configuração do Android Tiers "Androides só podem ser curados por artesãos", que você altera nas configurações do mod Android Tiers. Ligada, os artesãos com "Reparar androides" ativado realizam as operações em androides. Desligada, os médicos as realizam. As operações em androides usam a habilidade de Fabricação. Com a escolha automática de médicos ligada, o Implanner restringe cada operação em androide ao melhor colono elegível pela habilidade de Fabricação.</IMP_OptAndroidSurgeonsTip>
 </LanguageData>

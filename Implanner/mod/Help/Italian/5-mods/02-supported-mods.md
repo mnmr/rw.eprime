@@ -53,3 +53,7 @@ Gli ibridi ereditano la qualità dal genotelaio usato per produrli; vedi [qualit
 
 <!-- l10n:b-1a485abf9e8c -->
 **Bionic modularity**: ogni modulo occupa un alloggiamento sulla propria parte del corpo. Un modulo da combattimento e uno da lavoro possono condividere un braccio, ma due da combattimento no. I moduli per arti si installano su un arto bionico e ne condividono la parte, quindi un braccio bionico e un modulo pianificati possono convivere. Se selezioni un modulo senza un bionico previsto su quella parte, una finestra elenca i bionici capaci di ospitarlo, scegliendo per impostazione predefinita quello meno avanzato. **Aggiungi al piano** aggiunge insieme la scelta e il modulo. **Annulla** non aggiunge nulla.
+
+<!-- l10n:android-tiers -->
+**Android Tiers Continued**: gli androidi hanno parti del corpo proprie, come un sensore visivo sinistro e uno destro al posto degli occhi. Il selettore elenca ciascuna di queste parti in una riga a sé, con il suo lato, così puoi pianificare entrambi i lati o uno solo. Un impianto adatto sia agli umani sia agli androidi, come i chip VX, elenca il cervello e il cervello artificiale come righe separate: seleziona le righe per i coloni a cui è destinato il piano. Le operazioni sugli androidi usano l'abilità Artigianato. Con la selezione automatica del medico attiva, Implanner limita ogni operazione sugli androidi al miglior colono idoneo per abilità Artigianato (vedi [opzioni della mod](topic:mod-options)).
+

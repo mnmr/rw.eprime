@@ -25,6 +25,16 @@ A aba Opções contém compatibilidade dos planos e intervalo visual dos control
 <!-- l10n:b-924ed49fe876 -->
 Cada dica lista os implantes afetados carregados e seus mods.
 
+<!-- l10n:android-surgeons -->
+**Operações em androides** só aparece enquanto o Android Tiers Continued
+estiver carregado. Mostra quem realiza as operações em androides, algo que o Implanner
+obtém da configuração do Android Tiers "Androides só podem ser curados por artesãos":
+os médicos, enquanto ela estiver desligada (o padrão), e os artesãos com "Reparar androides"
+ativado, enquanto ela estiver ligada. Altere-a nas configurações do mod Android Tiers,
+e o Implanner a acompanha. As operações em androides usam a habilidade de Fabricação.
+Com a escolha automática de médicos ligada, o Implanner restringe cada operação em androide
+ao melhor colono elegível pela habilidade de Fabricação.
+
 <!-- l10n:b-119eac06340c -->
 ![Dica com implantes afetados](options-purchase-tip.png)
 

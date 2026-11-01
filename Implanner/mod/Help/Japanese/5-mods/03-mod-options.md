@@ -25,6 +25,9 @@ title: Mod設定
 <!-- l10n:b-924ed49fe876 -->
 ツールチップには、読み込み済みの対象品と出典Modを表示します。
 
+<!-- l10n:android-surgeons -->
+**アンドロイドの手術担当**は、Android Tiers Continuedの読み込み中のみ表示されます。アンドロイドの手術を誰が行うかを示し、ImplannerはAndroid Tiersの設定「Androids can only be healed by crafters」から取得します。オフ（初期状態）なら医者、オンなら「Repair androids」をオンにした製作担当が行います。変更はAndroid TiersのMod設定で行い、Implannerがそれに従います。アンドロイドの手術には工芸スキルを使います。医者の自動選択がオンの場合、Implannerはアンドロイドの手術ごとに、工芸スキルが最も高い対象入植者だけに限定します。
+
 <!-- l10n:b-119eac06340c -->
 ![対象品を示すツールチップ](options-purchase-tip.png)
 

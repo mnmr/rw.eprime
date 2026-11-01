@@ -60,7 +60,6 @@
   <IMP_HelpChapterPlans>プラン</IMP_HelpChapterPlans>
   <IMP_HelpChapterSharing>共有</IMP_HelpChapterSharing>
   <IMP_HelpReload>再読込</IMP_HelpReload>
-  <IMP_ImplantGroupOther>その他</IMP_ImplantGroupOther>
   <IMP_Import>インポート</IMP_Import>
   <IMP_ImportAddNote>既存のプランを置き換えず、追加します。同名のプランがある場合は番号を付けます。</IMP_ImportAddNote>
   <IMP_ImportInvalid>有効なImplannerのプランファイルではありません: {0}</IMP_ImportInvalid>
@@ -213,4 +212,7 @@
   <IMP_WelcomeFind>画面右下のツールバーにある、表示切替ボタン横のこのボタンでImplannerを開けます。</IMP_WelcomeFind>
   <IMP_WelcomeTakeMeThere>今すぐ開く</IMP_WelcomeTakeMeThere>
   <IMP_WelcomeTitle>EPrime's Implanner</IMP_WelcomeTitle>
+  <IMP_OptAndroidSurgeonsCrafters>アンドロイドの手術：「Repair androids」をオンにした製作担当（Android Tiersに従う）</IMP_OptAndroidSurgeonsCrafters>
+  <IMP_OptAndroidSurgeonsDoctors>アンドロイドの手術：医者（Android Tiersに従う）</IMP_OptAndroidSurgeonsDoctors>
+  <IMP_OptAndroidSurgeonsTip>ImplannerはAndroid Tiersの設定「Androids can only be healed by crafters」に従います。変更はAndroid TiersのMod設定で行ってください。オンの場合、「Repair androids」をオンにした製作担当がアンドロイドの手術を行います。オフの場合は医者が行います。アンドロイドの手術には工芸スキルを使います。医者の自動選択がオンの場合、Implannerはアンドロイドの手術ごとに、工芸スキルが最も高い対象入植者だけに限定します。</IMP_OptAndroidSurgeonsTip>
 </LanguageData>

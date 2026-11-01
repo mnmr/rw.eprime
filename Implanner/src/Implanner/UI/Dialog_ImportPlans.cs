@@ -160,7 +160,7 @@ namespace Implanner.UI
         private bool TryEnterPreview(string xml)
         {
             if (!PlansXml.TryImport(xml, out List<Plan> parsed, out string? parseError,
-                ModRequirements.IsModActive))
+                ModRequirements.IsModActive, Catalogs.LegacySlotMapper))
             {
                 Messages.Message("IMP_ImportInvalid".Translate(parseError),
                     MessageTypeDefOf.RejectInput, historical: false);

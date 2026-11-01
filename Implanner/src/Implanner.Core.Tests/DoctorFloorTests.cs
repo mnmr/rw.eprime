@@ -125,4 +125,29 @@ public class DoctorFloorTests
         await Assert.That(model.PruneDoctorFloors(live))
             .IsEqualTo(PlannerChange.None);
     }
+
+    /// Android Tiers' operations work Crafting, so their floor is a
+    /// separate surgeon pool of the same colony: independent of the doctors'
+    /// Medical floor, and dropped with its colony. The ordinary pool keeps
+    /// the bare colony key older saves already carry.
+    [Test]
+    public async Task SurgeonPoolsKeepIndependentFloorsPerColony()
+    {
+        var model = new PlannerModel();
+        string androids = PlannerModel.FloorKey("home", "Crafting/Doctor");
+        await Assert.That(PlannerModel.FloorKey("home", null)).IsEqualTo("home");
+        await Assert.That(PlannerModel.ColonyOfFloorKey(androids)).IsEqualTo("home");
+
+        model.SetDoctorFloor("home", 14);
+        model.SetDoctorFloor(androids, 6);
+        model.SetDoctorFloor(PlannerModel.FloorKey("ship", "Crafting/Doctor"), 9);
+        await Assert.That(model.PatientDoctorFloor("home", -1, 14)).IsEqualTo(14);
+        await Assert.That(model.PatientDoctorFloor(androids, -1, 6)).IsEqualTo(6);
+
+        var live = new System.Collections.Generic.HashSet<string>(
+            System.StringComparer.Ordinal) { "home" };
+        await Assert.That(model.PruneDoctorFloors(live)).IsEqualTo(PlannerChange.Surgery);
+        await Assert.That(model.DoctorFloors.Count).IsEqualTo(2);
+        await Assert.That(model.DoctorFloorOf(androids)).IsEqualTo(6);
+    }
 }

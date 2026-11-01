@@ -25,6 +25,9 @@ title: 模組選項
 <!-- l10n:b-924ed49fe876 -->
 每項提示列出已載入的受影響植入體及其來源模組。
 
+<!-- l10n:android-surgeons -->
+**機械人手術**僅在載入 Android Tiers Continued 時出現。它會顯示由誰執行機械人手術，Implanner 依據 Android Tiers 的「機械人只能由工匠治療」設定判斷：關閉（預設）時由醫生執行，開啟時由已開啟「修復機械人」的工匠執行。請在 Android Tiers 的模組設定中更改，Implanner 會隨之調整。機械人手術使用手工技能。開啟醫生自動選擇後，Implanner 會將每項機械人手術限定給手工技能最高的合資格殖民者。
+
 <!-- l10n:b-119eac06340c -->
 ![懸停顯示受影響植入體](options-purchase-tip.png)
 

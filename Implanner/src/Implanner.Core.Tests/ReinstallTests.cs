@@ -26,7 +26,7 @@ public class ReinstallTests
         await Assert.That(loaded.ReinstallsFor(7)![0].MinimumEfficiency).IsEqualTo(1.5625f);
         await Assert.That(loaded.IsActiveReinstall(7, record.Key)).IsTrue();
     }
-    const string Wiper = "p1:GR_NeuronReinforcement:0";
+    const string Wiper = "p1:GR_NeuronReinforcement:Part#0";
 
     static List<ReinstallRecord> Brain(params string[] implants)
     {
