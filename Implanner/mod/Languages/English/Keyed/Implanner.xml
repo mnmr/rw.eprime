@@ -97,8 +97,9 @@
   <IMP_TipColInstalled>Installed</IMP_TipColInstalled>
   <IMP_TipColMissing>Missing</IMP_TipColMissing>
   <IMP_TipColScheduled>Scheduled</IMP_TipColScheduled>
-  <!-- {0}..{4}=colonists per state -->
-  <IMP_TipColonistStates>Colonists: {0} waiting, {1} preparing, {2} operating, {3} done, {4} away</IMP_TipColonistStates>
+  <!-- {0}..{5}=colonists per state; {5} are enlisted in a plan made for
+       another body -->
+  <IMP_TipColonistStates>Colonists: {0} waiting, {1} preparing, {2} operating, {3} done, {4} away, {5} other body</IMP_TipColonistStates>
   <!-- {0}=lowercase implant list, sentence capitalized in code -->
   <IMP_NextScheduled>Surgery scheduled for {0}</IMP_NextScheduled>
   <IMP_ColonistDetails>Colonist details</IMP_ColonistDetails>
@@ -119,6 +120,8 @@
   <IMP_StateOperating>Operating</IMP_StateOperating>
   <IMP_StateDone>Done</IMP_StateDone>
   <IMP_StateAway>Away</IMP_StateAway>
+  <!-- Enlisted in a plan made for another body, so nothing applies -->
+  <IMP_StateNotForBody>Not for this body</IMP_StateNotForBody>
 
   <!-- ===== Goal statuses ===== -->
   <IMP_GoalComplete>Complete</IMP_GoalComplete>
@@ -136,6 +139,12 @@
   <IMP_GoalBlockedFloor>Waiting for a doctor with Medical {0}+</IMP_GoalBlockedFloor>
   <!-- {0}=label of the hediff the surgery would destroy -->
   <IMP_GoalBlockedLoss>Would destroy {0}</IMP_GoalBlockedLoss>
+  <!-- {0}=implant on a part above the planned slot (installed, or planned
+       by the same plan), which keeps the surgery from reaching the slot on
+       this colonist's body. Short: it shares a narrow column with the
+       implant name; IMP_GoalBlocked is used when the name does not fit -->
+  <IMP_GoalBlockedBy>Under {0}</IMP_GoalBlockedBy>
+  <IMP_GoalBlocked>Blocked</IMP_GoalBlocked>
 
   <!-- ===== Plans tab ===== -->
   <IMP_PlansHeader>Plans</IMP_PlansHeader>
@@ -143,6 +152,17 @@
   <IMP_PlanNameTitle>Plan name</IMP_PlanNameTitle>
   <IMP_ExtendsPlan>Extends</IMP_ExtendsPlan>
   <IMP_ExtendsNothing>Nothing</IMP_ExtendsNothing>
+  <!-- New-plan dialog: the body the plan is made for (shown only when a mod
+       adds a humanlike race with its own body); "Any body" = every colonist -->
+  <IMP_PlanBody>Body</IMP_PlanBody>
+  <IMP_PlanBodyAny>Any body</IMP_PlanBodyAny>
+  <IMP_PlanBodyTip>A plan made for one body lists only that body's parts and can enlist only colonists with that body.\n\nA plan for any body applies to every colonist. Parts a colonist's body does not have are skipped for that colonist.\n\nA plan can extend a plan for any body, or a plan for the same body.</IMP_PlanBodyTip>
+  <!-- {0}=body label; plan card caption and the plan editor's fixed body label -->
+  <IMP_PlanForBody>for {0}</IMP_PlanForBody>
+  <!-- {0}=BodyDef name of a race mod that is not loaded -->
+  <IMP_PlanBodyNotLoaded>{0} (not loaded)</IMP_PlanBodyNotLoaded>
+  <!-- Greyed plan in a colonist's plan menu: {0}=plan name, {1}=body label -->
+  <IMP_PlanMenuOnlyFor>{0} ({1} only)</IMP_PlanMenuOnlyFor>
   <!-- {0}=base plan name -->
   <IMP_PlanExtends>extends {0}</IMP_PlanExtends>
   <!-- Slot covered by a base plan but not re-selected in this plan -->
@@ -182,6 +202,11 @@
   <IMP_RegionHead>Head</IMP_RegionHead>
   <!-- Shown in the picker while a search matches nothing -->
   <IMP_NoMatchingImplants>No implants match the search.</IMP_NoMatchingImplants>
+  <!-- Body filter button beside the region segments, shown only when a mod
+       adds a humanlike race with its own body; the menu lists this entry
+       and then each body by its game label -->
+  <IMP_BodyAll>All bodies</IMP_BodyAll>
+  <IMP_BodyFilterTip>Show only the parts this body has.\n\nA plan applies to every colonist. Parts a colonist's body does not have are skipped for that colonist.</IMP_BodyFilterTip>
 
   <!-- ===== Plan rankings panel ===== -->
   <IMP_RankTiersTitle>Implant tiers</IMP_RankTiersTitle>

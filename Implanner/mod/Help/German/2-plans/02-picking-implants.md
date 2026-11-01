@@ -17,6 +17,12 @@ Die mittlere Spalte zeigt Implantate aus Grundspiel, Erweiterungen und allen Mod
 <!-- l10n:b-5fcc0a9d197e -->
 ![Die Suche zeigt alle Beinimplantate in einer flachen Liste](picker-search.png)
 
+<!-- l10n:picker-body-filter-image -->
+![Die Körper-Schaltfläche zwischen der Regionenzeile und dem Suchfeld, auf Android eingestellt](picker-body-filter.png)
+
+<!-- l10n:picker-body-filter -->
+Ist eine Mod-Rasse geladen, sitzt zwischen der Regionenzeile und dem Suchfeld eine **Körper**-Schaltfläche. **Alle Körper** listet jedes Körperteil auf, das irgendeine Rasse hat. Wähle einen Körper, um nur dessen Körperteile zu sehen. Das ändert nur die Ansicht: Ein Plan für einen beliebigen Körper gilt weiterhin für jeden Kolonisten. Ein Plan, der für einen bestimmten Körper erstellt wurde, zeigt diesen Körper anstelle der Schaltfläche und listet nur dessen Körperteile (siehe [Pläne erstellen](topic:creating-plans)).
+
 <!-- l10n:b-4c96d69447df -->
 Verschlechterungen wie Holzbeine lassen sich nicht planen. Implantate mit Nachteilen oder engem Einsatzzweck fehlen ebenfalls: Freudendraht, Schmerzblocker, Energieklaue und Pilotenassistent. Reine Ghulimplantate erscheinen nie. Nicht herstellbare Teile wie Archotech-Implantate, die keine Werkbank herstellen kann, bleiben bis zur Aktivierung von **Nicht herstellbare Implantate anzeigen** im Optionsreiter verborgen. Ein manuell eingesetztes Archotech-Teil zählt unabhängig davon für seinen Platz. Ein geplantes nicht herstellbares Implantat hält andere Implantate einer Gruppe nie auf und wird mit der nächsten Gruppe eingesetzt, sobald es vorrätig ist. Fügt eine Mod ein Rezept hinzu, gilt es als gewöhnliches Implantat.
 

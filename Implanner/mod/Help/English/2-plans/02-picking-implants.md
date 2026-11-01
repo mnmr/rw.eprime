@@ -22,6 +22,17 @@ and every mod, grouped by the body part they target.
 <!-- l10n:b-5fcc0a9d197e -->
 ![The picker search showing every leg implant in one flat list](picker-search.png)
 
+<!-- l10n:picker-body-filter-image -->
+![The body button between the region row and the search field, set to Android](picker-body-filter.png)
+
+<!-- l10n:picker-body-filter -->
+With a modded race loaded, a **body** button sits between the region row
+and the search field. **All bodies** lists every part any race has. Pick
+a body to see only the parts that body has. This changes the view only:
+a plan for any body still applies to every colonist. A plan made for one
+body shows that body in place of the button and lists only its parts
+(see [creating plans](topic:creating-plans)).
+
 <!-- l10n:b-4c96d69447df -->
 Downgrades such as peg legs cannot be planned. Implants with a drawback
 or a narrow use are also left out: joywire, painstopper, power claw and

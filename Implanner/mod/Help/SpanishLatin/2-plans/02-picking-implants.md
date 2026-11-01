@@ -17,6 +17,12 @@ La columna central enumera implantes del juego, expansiones y todos los mods, ag
 <!-- l10n:b-5fcc0a9d197e -->
 ![Búsqueda con todos los implantes de pierna en una lista](picker-search.png)
 
+<!-- l10n:picker-body-filter-image -->
+![El botón de cuerpo entre la fila de regiones y el campo de búsqueda, configurado en Androide](picker-body-filter.png)
+
+<!-- l10n:picker-body-filter -->
+Si hay una raza de mod cargada, aparece un botón de **cuerpo** entre la fila de regiones y el campo de búsqueda. **Todos los cuerpos** enumera todas las partes de cualquier raza. Elige un cuerpo para ver solo las partes que tiene. Esto solo cambia la vista: un plan para cualquier cuerpo se sigue aplicando a todos los colonos. Un plan creado para un cuerpo concreto muestra ese cuerpo en lugar del botón y enumera solo sus partes (consulta [crear planes](topic:creating-plans)).
+
 <!-- l10n:b-4c96d69447df -->
 No se pueden planificar degradaciones, como patas de palo. También se excluyen implantes con desventajas o usos muy específicos: alegrialambre, chip analgésico, garra hidráulica y asistente de piloto. Nunca se muestran los exclusivos de necrófagos. Los que solo pueden adquirirse, como las partes arcontecnológicas sin receta de fabricación, permanecen ocultos hasta activar **Mostrar implantes que solo pueden adquirirse** en Opciones. Una parte arcontecnológica instalada manualmente siempre cuenta para su casilla, independientemente de esa opción. Un implante de adquisición exclusiva nunca detiene el resto del lote y se instala con el siguiente cuando esté disponible. Si un mod añade una receta, pasa a ser ordinario.
 

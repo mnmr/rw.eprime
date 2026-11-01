@@ -31,7 +31,16 @@ namespace ImplannerSurgeryGateReview
     var early=NewPawn(map,0);var later=NewPawn(map,2);Check(early.thingIDNumber<later.thingIDNumber,"fixture lower id "+early.LabelShort+" precedes "+later.LabelShort);
     var arm=early.RaceProps.body.GetPartsWithDef(BodyPartDefOf.Shoulder)[0];early.health.AddHediff(HediffDef.Named("BionicArm"),arm);
     var model=Model(store);var plan=model.CreatePlan("Elbow blade patients",store.TakePlanId);model.SetImplantSlot(plan.Id,"ElbowBlade",new PartAddress("Arm",0),true);model.AssignPlan(early.thingIDNumber,plan.Id);model.AssignPlan(later.thingIDNumber,plan.Id);Stock(map,"ElbowBlade");Stock(map,"ElbowBlade");store.Bump(PlannerChange.All);Pass(store);
-    Check(model.Reservations.Count>=2,"both patients receive physical elbow-blade reservations");
+    // Per-pawn applicability (2026-11-01): the elbow blade sits under the
+    // installed bionic arm, which vanilla's implant worker refuses, so the
+    // slot is outside the arm patient's target: no reservation held for
+    // it, the plan reads complete for them, and the blocker is named.
+    var projection=typeof(ImplannerStore).Assembly.GetType("Implanner.PawnProjection");
+    var evaluation=(PlanEvaluation)AccessTools.Method(projection,"Evaluate").Invoke(null,new object[]{model,early,model.EffectiveImplants(plan),false,0,""});
+    Check(evaluation.State==PawnPlanState.Complete&&evaluation.TotalUnits==0,"IMP-R1: elbow blade under the installed bionic arm is outside the arm patient's target");
+    Check(evaluation.Contexts[0].Block(0)==SlotBlock.UnderArtificialPart&&evaluation.Contexts[0].Blocker(0)=="BionicArm","IMP-R1: the slot is reported as blocked by the bionic arm");
+    int earlyHeld=0;foreach(var r in model.Reservations)if(r.Value.PawnId==early.thingIDNumber)earlyHeld++;
+    Check(earlyHeld==0&&model.Reservations.Count==1,"IMP-R1: no elbow blade is held for the arm patient; the natural-arm patient holds the only reservation");
     Check(early.BillStack.Count==0,"artificial arm patient correctly gets no impossible elbow blade operation");
     Check(later.BillStack.Count==1,"IMP002: valid natural arm patient schedules at cap 1 despite earlier impossible surgery");
     Pass(store);Check(later.BillStack.Count==1,"IMP002: repeated reconciliation preserves valid scheduled operation");

@@ -197,7 +197,7 @@
   <IMP_TipColScheduled>지정</IMP_TipColScheduled>
   <IMP_TipColStatus>상태</IMP_TipColStatus>
   <IMP_TipColTier>등급</IMP_TipColTier>
-  <IMP_TipColonistStates>정착민: 대기 {0}, 준비 {1}, 수술 {2}, 완료 {3}, 외출 {4}</IMP_TipColonistStates>
+  <IMP_TipColonistStates>정착민: 대기 {0}, 준비 {1}, 수술 {2}, 완료 {3}, 외출 {4}, 다른 신체 {5}</IMP_TipColonistStates>
   <IMP_TipCovered>확보됨</IMP_TipCovered>
   <IMP_TipMaking>제작 중</IMP_TipMaking>
   <IMP_TipMakingMaterials>재료 제작 중</IMP_TipMakingMaterials>
@@ -215,4 +215,15 @@
   <IMP_OptAndroidSurgeonsCrafters>안드로이드 수술: "안드로이드 수리"가 켜진 제작자 (Android Tiers 설정을 따름)</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>안드로이드 수술: 의사 (Android Tiers 설정을 따름)</IMP_OptAndroidSurgeonsDoctors>
   <IMP_OptAndroidSurgeonsTip>Implanner는 Android Tiers의 "안드로이드는 제작자만 치료할 수 있음" 설정을 따르며, 이 설정은 Android Tiers 모드 설정에서 바꿉니다. 켜면 "안드로이드 수리"가 켜진 제작자가 안드로이드 수술을 합니다. 끄면 의사가 합니다. 안드로이드 수술에는 제작 기술을 사용합니다. 자동 의사 선택이 켜져 있으면 Implanner는 각 안드로이드 수술을 제작 기술이 가장 높은 적격 정착민에게 맡깁니다.</IMP_OptAndroidSurgeonsTip>
+  <IMP_BodyAll>모든 신체</IMP_BodyAll>
+  <IMP_BodyFilterTip>이 신체에 있는 부위만 표시합니다.\n\n계획은 모든 정착민에게 적용됩니다. 정착민의 신체에 없는 부위는 해당 정착민에게서 건너뜁니다.</IMP_BodyFilterTip>
+  <IMP_GoalBlockedBy>{0} 적용 중</IMP_GoalBlockedBy>
+  <IMP_GoalBlocked>막힘</IMP_GoalBlocked>
+  <IMP_PlanBody>신체</IMP_PlanBody>
+  <IMP_PlanBodyAny>모든 신체</IMP_PlanBodyAny>
+  <IMP_PlanBodyNotLoaded>{0} (불러오지 않음)</IMP_PlanBodyNotLoaded>
+  <IMP_PlanBodyTip>특정 신체용으로 만든 계획은 해당 신체의 부위만 나열하며, 그 신체를 가진 정착민만 지정할 수 있습니다.\n\n모든 신체용 계획은 모든 정착민에게 적용됩니다. 정착민의 신체에 없는 부위는 그 정착민에게서 건너뜁니다.\n\n계획은 모든 신체용 계획이나 같은 신체용 계획을 확장할 수 있습니다.</IMP_PlanBodyTip>
+  <IMP_PlanForBody>{0}용</IMP_PlanForBody>
+  <IMP_PlanMenuOnlyFor>{0} ({1} 전용)</IMP_PlanMenuOnlyFor>
+  <IMP_StateNotForBody>이 신체용 아님</IMP_StateNotForBody>
 </LanguageData>

@@ -15,6 +15,7 @@ Sélectionnez un colon dans la table : le panneau de détails présente chaque i
 - **En convalescence** : l'opération attend si le colon saigne, a des blessures non traitées ou est à terre. Le sommeil anesthésique ne compte pas.
 - **En attente d'un médecin avec Médecine ...+** : aucun médecin admissible n'atteint le niveau de compétence requis pour cette opération. Vérifiez la disponibilité des médecins ou ajustez le minimum dans l'onglet Automatisation (voir [Options de chirurgie](topic:surgery-options)).
 - **Terminé** : l'implant est posé.
+- **Sous ...** : la partie se trouve sous une partie artificielle déjà posée, ou que ce plan posera, et l'opération ne peut donc pas l'atteindre. L'implant est ignoré pour ce colon et ne compte pas contre lui.
 
 <!-- l10n:b-7d5d4531ac6c -->
 Un plan décrit un état final : les implants déjà présents comptent comme terminés.

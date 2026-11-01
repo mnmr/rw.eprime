@@ -702,6 +702,9 @@ namespace Implanner
         private string name = "";
         private int basePlanId;
         private int minQuality;
+        // BodyDef name the plan is pinned to; absent (saves before 1.2.6)
+        // or empty = any body.
+        private string body = "";
         private List<ImplantRecord>? implants;
 
         public PlanRecord() { }
@@ -712,6 +715,7 @@ namespace Implanner
             name = plan.Name;
             basePlanId = plan.BasePlanId;
             minQuality = plan.MinQuality;
+            body = plan.Body;
             implants = new List<ImplantRecord>();
             foreach (ImplantGoal goal in plan.Implants)
                 implants.Add(new ImplantRecord(goal));
@@ -736,7 +740,7 @@ namespace Implanner
                         (legacyGoals ??= new Dictionary<int, (int, string)>())
                             [record.LegacyId] = (planIndex, goal.ImplantDefName);
                 }
-            return new Plan(id, name, basePlanId, goals, minQuality);
+            return new Plan(id, name, basePlanId, goals, minQuality, body);
         }
 
         public void ExposeData()
@@ -745,6 +749,8 @@ namespace Implanner
             Scribe_Values.Look(ref name, "name", "");
             Scribe_Values.Look(ref basePlanId, "basePlanId");
             Scribe_Values.Look(ref minQuality, "minQuality", 0);
+            Scribe_Values.Look(ref body, "body", "");
+            if (body == null) body = "";
             Scribe_Collections.Look(ref implants, "implants", LookMode.Deep);
         }
     }

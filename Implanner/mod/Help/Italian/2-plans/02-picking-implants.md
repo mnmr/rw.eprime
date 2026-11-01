@@ -17,6 +17,12 @@ La colonna centrale elenca gli impianti rilevati nel gioco base, nelle espansion
 <!-- l10n:b-5fcc0a9d197e -->
 ![La ricerca mostra tutti gli impianti delle gambe in un unico elenco piatto](picker-search.png)
 
+<!-- l10n:picker-body-filter-image -->
+![Il pulsante del corpo tra la riga delle regioni e il campo di ricerca, impostato su Android](picker-body-filter.png)
+
+<!-- l10n:picker-body-filter -->
+Quando è caricata una razza delle mod, tra la riga delle regioni e il campo di ricerca compare un pulsante del **corpo**. **Tutti i corpi** elenca ogni parte presente in qualsiasi razza. Scegli un corpo per vedere solo le parti di quel corpo. Cambia soltanto la vista: un piano per qualsiasi corpo si applica comunque a ogni colono. Un piano creato per un corpo specifico mostra quel corpo al posto del pulsante ed elenca solo le sue parti (vedi [creare i piani](topic:creating-plans)).
+
 <!-- l10n:b-4c96d69447df -->
 Non puoi pianificare peggioramenti come le gambe di legno. Sono esclusi anche gli impianti con svantaggi o usi molto specifici: joywire, painstopper, artigli potenziati e assistente di pilotaggio. Gli impianti riservati ai ghoul non vengono mai elencati. Le parti non fabbricabili, come gli impianti arcotecnologici che nessun banco può produrre, restano nascoste finché attivi **Mostra gli impianti non fabbricabili** nella scheda Opzioni. Una parte arcotecnologica installata manualmente conta comunque per il proprio alloggiamento, con l'opzione attiva o disattiva. Un impianto non fabbricabile pianificato non blocca mai gli altri impianti del gruppo; viene installato con il gruppo successivo quando l'oggetto è disponibile. Una mod che aggiunge una ricetta di produzione lo rende un impianto ordinario.
 

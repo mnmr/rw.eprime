@@ -194,6 +194,46 @@ public class ImplantConflictTests
         await Assert.That(ImplantConflictRules.Conflicts(moddedGland, armorskin)).IsTrue();
     }
 
+    /// Plans are body-agnostic, so a pair is judged on the first plannable
+    /// body carrying both slots (the human body first). A modded race whose
+    /// body nests the liver under the first kidney must not make an
+    /// archotech kidney and an archotech liver exclusive for everyone
+    /// (reported 2026-11-01: "any left kidney slot is the same as the
+    /// liver"). Slots only a later body carries are judged there; slots no
+    /// body shares never meet.
+    [Test]
+    public async Task FirstBodyCarryingBothSlotsDecidesAConflict()
+    {
+        // Human: kidney 9 and liver 11 are siblings under the torso (0).
+        var humanKidney = Facts("ArchotechKidney", replacement: true, record: 9,
+            ancestors: new[] { 0 });
+        var humanLiver = Facts("ArchotechLiver", replacement: true, record: 11,
+            ancestors: new[] { 0 });
+        // Modded race: the liver record sits under the first kidney.
+        var oddKidney = Facts("ArchotechKidney", replacement: true, record: 9,
+            ancestors: new[] { 0 });
+        var oddLiver = Facts("ArchotechLiver", replacement: true, record: 10,
+            ancestors: new[] { 9, 0 });
+        var kidneyByBody = new PlannedSlotFacts?[] { humanKidney, oddKidney };
+        var liverByBody = new PlannedSlotFacts?[] { humanLiver, oddLiver };
+
+        await Assert.That(ImplantConflictRules.Conflicts(kidneyByBody, liverByBody)).IsFalse();
+        await Assert.That(ImplantConflictRules.Conflicts(liverByBody, kidneyByBody)).IsFalse();
+
+        // Android-only slots (no human record) are judged on the android
+        // body: two replacements on one sensor record exclude each other.
+        var sensorByBody = new PlannedSlotFacts?[]
+            { null, Facts("SightSensor", replacement: true, record: 4) };
+        var lensByBody = new PlannedSlotFacts?[]
+            { null, Facts("SensorLens", replacement: true, record: 4) };
+        await Assert.That(ImplantConflictRules.Conflicts(sensorByBody, lensByBody)).IsTrue();
+
+        // A human eye and an android sensor never meet on one pawn.
+        var eyeByBody = new PlannedSlotFacts?[]
+            { Facts("BionicEye", replacement: true, record: 4), null };
+        await Assert.That(ImplantConflictRules.Conflicts(eyeByBody, sensorByBody)).IsFalse();
+    }
+
     [Test]
     public async Task ReplacementConflictsWithGoalsInItsSubtree()
     {
@@ -211,7 +251,7 @@ public class ImplantConflictTests
 
     /// Same-record slot map for the suppression test: both stomach kinds
     /// target ordinal 0 = record 12.
-    static bool StomachResolver(ImplantGoal a, PartAddress ordA, ImplantGoal b, PartAddress ordB) =>
+    static bool StomachResolver(string body, ImplantGoal a, PartAddress ordA, ImplantGoal b, PartAddress ordB) =>
         (a.ImplantDefName == "NuclearStomach" || a.ImplantDefName == "DetoxifierStomach")
         && (b.ImplantDefName == "NuclearStomach" || b.ImplantDefName == "DetoxifierStomach");
 
@@ -239,7 +279,7 @@ public class ImplantConflictTests
 
     /// Per-leg stand-in: a bionic leg replaces the leg a knee spike mounts
     /// on, so the two kinds conflict only at the same ordinal.
-    static bool LegResolver(ImplantGoal a, PartAddress ordA, ImplantGoal b, PartAddress ordB) =>
+    static bool LegResolver(string body, ImplantGoal a, PartAddress ordA, ImplantGoal b, PartAddress ordB) =>
         ordA == ordB
         && ((a.ImplantDefName == "BionicLeg" && b.ImplantDefName == "KneeSpike")
             || (a.ImplantDefName == "KneeSpike" && b.ImplantDefName == "BionicLeg"));

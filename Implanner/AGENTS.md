@@ -132,8 +132,66 @@ the remover first leaves both in place. The pure rules
 live in `Implanner.Core.ImplantConflictRules`; `ImplantConflicts` extracts
 the facts per catalog slot and plannable body and injects
 `PlannerModel.SlotConflictResolver`: two slots conflict when the rules
-exclude them on some plannable body carrying both (a human's eye and an
-android's sight sensor never meet on one pawn).
+exclude them on the FIRST plannable body carrying both, the human body
+first (player report 2026-11-01: one modded race whose body nests a liver
+under the first kidney must not make the archotech kidney and liver
+exclusive for human plans); slots only a later body carries are judged
+there, and a human's eye and an android's sight sensor never meet on one
+pawn.
+Plan model (owner, 2026-11-01): a plan applies to colonists of every race
+("one plan, per-pawn applicability") unless it is PINNED to one body
+(`Plan.Body`, a BodyDef name, "" = any; fixed at creation, scribed `body`,
+absent in older saves = any; exported as `Body="Android4Tier"` and imported
+as-is, loaded or not). Body-typed plans (owner, 2026-11-01) sit on top of
+per-pawn applicability, never replace it: an unpinned plan behaves exactly
+as before. The unpinned picker lists the union of every plannable body's
+slots, with a presentation-only body filter (`PlansState.Body`, a
+`Catalogs.PlannableBodies` position or -1 for all, shown only with more
+than one plannable body) that hides slots the chosen body lacks; a pinned
+plan fixes that filter to its body and draws it as a label ("for Android"),
+shows "for Android" as its card's name-row caption (or on the counts line
+when the caption already holds a base link), counts only the slots its body
+carries, and validates picks and
+inherited goals on that body (`PlannerModel.SlotConflictRule` receives the
+plan's body; `ImplantConflicts.Conflicts(body, ...)` answers on that body's
+facts, or with the human-first reference rule for "" and for a body that is
+not loaded). Extension rule: a plan may extend an unpinned plan or a plan
+of its own body (`Plan.IsCompatibleBase`: base unpinned, or same body),
+enforced by `CreatePlan` (refuses), the new-plan dialog (offers only
+compatible bases; a pinned base fixes the body; a body choice drops an
+incompatible base), import (`PlansXml.TryImport` and `ImportPlans` degrade
+an incompatible `Extends` to no base, like a mod-skipped one) and load
+(`CleanupMissing` detaches an incompatible child; hand-edited data only).
+No restriction on unpinned plans is needed for this: compatibility is one
+structural comparison, every pre-1.2.6 plan loads unpinned, and an
+unpinned-base chain is always compatible, so no migration exists.
+Enlisting: a pinned plan accepts only colonists with that body
+(`PlanBodies.Accepts`): the synced `AssignPlan` refuses a mismatch (the
+colonist set is identical on every client), the overview plan menu lists
+such plans greyed as "X (Android only)", and a colonist left on a
+mismatched plan (import, a race mod removed) evaluates with every slot as
+missing anatomy and shows the `ColonistStatus.NotForBody` state ("Not for
+this body"; counted as "other body" in the strip's colonist-state tip),
+with nothing reserved or scheduled. A pinned plan whose body is not loaded
+accepts nobody and reads "(not loaded)" until its race mod returns; its
+children stay attached since bodies compare by name. Each pawn on an
+accepting plan is then judged on its OWN body when evaluated
+(`Implanner.Core.SlotApplicability`, fed by `PawnProjection.Project` from
+`ImplantConflicts.FactsOn` and the pawn's `Hediff_AddedPart` records): a
+slot the body lacks, a slot under an installed artificial part whose kind
+does not mount on artificial parts (vanilla's `Recipe_InstallImplant` /
+`Recipe_InstallArtificialBodyPart` refusal: an elbow blade under a bionic
+arm), or a slot under a part another goal of the same plan replaces on
+this body (the nested-organ race) is outside that pawn's target
+(`ImplantContext.Block`): neither satisfied nor missing, no item reserved,
+no operation, the plan can read Complete. The colonist details list a goal
+blocked by an implant as "Under X" (`IMP_GoalBlockedBy`, measured at build
+against the status column and replaced by the bare `IMP_GoalBlocked` when
+the name does not fit); a goal the body simply lacks stays unlisted. An owned operation whose part no recipe
+applies to any more is retracted with its record (`EnsureOperation`).
+Before this (through 1.2.4) such a slot counted as missing forever: an item
+was held for it and the plan never completed (the `surgery-gates` in-game
+probe's own fixture).
 A surgery worker's behaviour (`SurgeryWorkerDef.BehaviorOf`) comes from its
 class hierarchy (vanilla's artificial-part worker clears the part, vanilla's
 implant worker installs an implant) or, for modded workers deriving from
@@ -295,7 +353,7 @@ are excluded from the catalog: only ordinary humanlikes are plannable.
 | Colonist detail rows (`OverviewState.detailRows`) | Overview data identity + selected pawn id + panel body width (the header sentence wraps, so its height is measured at rebuild and the width is part of the key); grouping follows the iteration strategy (tier headers with player-arranged order, or anatomy-region headers A-Z), and the header carries the pipeline status plus a Collecting/Implanting summary derived from reservations and owned operation bills — all inputs (options, rankings, reservations, surgery) already inside the data's `Version` dependency; live map state is sampled at rebuild by design (reserved-item readiness, best eligible doctor behind the floor gate, the Recovering health gate); the facts revision moves only for implant hediffs, so Recovering refreshes on the next store `Version` or facts bump |
 | Fold and read flags (`OverviewState.CollapsedFlags`, `PlansState.FoldedFlags`, `HelpTabView` topic flags) | Owning snapshot/topic-array identity + fold/read revision; parallel `bool[]` so draw loops never hash; window-owned |
 | Store reference (`Dialog_Implanner`) | `Find.World` identity, resolved in `WindowUpdate`; window-owned, cleared on close |
-| Plans snapshot (`PlansState`) | `UiRevision.Current`, store identity + `PlansVersion` (structure, goals, base links, minimum quality; the minimum-quality button shows while a catalog item carries a quality and its tip names a missing Quality Jobs, both static per session, its Small-font text width measured at rebuild) + `RankingsVersion` (tier placement) + `AssignmentsVersion` (card colonist counts) + `OptionsVersion` (the mod compatibility option feeds override captions) + `ExternalPawnFacts.Revision` (card progress aggregates over installed implants and roster), selected plan id, the anatomy-region filter segment, and the active search query (the vanilla `QuickSearchWidget` text normalized by `RimShared.Common.SearchMatcher`: trimmed, inactive only when blank; while active the tree is one flat region-free list of the slots whose label or body-part group matches, owner 2026-09-06); conflict facts folded in (def-derived, static per session); plan-name (Medium), extends-caption (Tiny) and picker leaf-label (Small) widths measured at rebuild; rebuilt from `WindowUpdate`; window-owned, released on close |
+| Plans snapshot (`PlansState`) | `UiRevision.Current`, store identity + `PlansVersion` (structure, goals, base links, minimum quality; the minimum-quality button shows while a catalog item carries a quality and its tip names a missing Quality Jobs, both static per session, its Small-font text width measured at rebuild) + `RankingsVersion` (tier placement) + `AssignmentsVersion` (card colonist counts) + `OptionsVersion` (the mod compatibility option feeds override captions) + `ExternalPawnFacts.Revision` (card progress aggregates over installed implants and roster), selected plan id, the anatomy-region filter segment, the body filter selection (`PlansState.Body`; its menu labels come from the static plannable-body set and the language inside the UI revision; a pinned selected plan overrides it with its own body, part of the plan structure under `PlansVersion`), and the active search query (the vanilla `QuickSearchWidget` text normalized by `RimShared.Common.SearchMatcher`: trimmed, inactive only when blank; while active the tree is one flat region-free list of the slots whose label or body-part group matches, owner 2026-09-06); conflict facts folded in (def-derived, static per session); plan-name (Medium), extends-caption (Tiny) and picker leaf-label (Small) widths measured at rebuild; rebuilt from `WindowUpdate`; window-owned, released on close |
 | Picker captions (`PlansState.Captions`) | Plans snapshot identity + the tree row width the picker draws at (window size, scroll gutter); one "overrides X" / "inherited" caption per row fitted to exactly the room its label leaves (the caption reserves nothing; omitted when not even an ellipsis fits), tail-truncated behind an ellipsis via `RimShared.Common.TailTruncation` when it cannot fit, carrying the full text for the hover tooltip; Tiny measurements happen only inside this gate; window-owned, released on close |
 | Text fit widths (shared `RimShared.UiLib.WrText.FitWidth`, per-assembly static; `MeasureFitWidth` is the same rule unmemoized for snapshot builders) | `(font, text)` key; cleared when `UiRevision.Current` (shared `RimShared.UiLib.UiRevision`: UI scale, tiny-font preference, language) moves; `WrText.Reset` on world teardown |
 | Help foldout caption heights (shared `RimShared.UiLib.HelpFoldout`, per-assembly static) | Caption text, effective Tiny font (`TinyText.Metrics.Font`), wrap width, and the caller-supplied `UiRevision.Current`; `HelpFoldout.Reset` on world teardown |
@@ -428,3 +486,10 @@ dotnet test src/Implanner.Core.Tests --no-restore
 Building never deploys. Automated verification requires creating a fresh managed
 run after building, following the root contract; creation deploys its copies.
 Player installation deployment uses `pwsh scripts/deploy.ps1` and a game restart.
+
+Help screenshots (owner, 2026-11-01) are captured at 1920x1080 with UI scale
+1.0 and cropped tightly to the control. The 1.7 runtime clamps UI scale to
+its design floor (0.9375 at that resolution), so they are taken on the local
+1.6 copy: `tests/InGame/HelpShots` (`Probe16.csproj`, `run.ps1` sets
+`uiScale` to 1 in the run's `Config\Prefs.xml` before launch) with the
+`implanner-help-shots` mod set; crops come from the full frames.

@@ -20,9 +20,9 @@ namespace Implanner
         /// for a goal only when it is at least as good as the goal's implant
         /// at that quality.
         internal static PlanEvaluation Evaluate(PlannerModel model, Pawn pawn,
-            IReadOnlyList<ImplantGoal> goals, bool away, int minQuality)
+            IReadOnlyList<ImplantGoal> goals, bool away, int minQuality, string planBody)
         {
-            Project(pawn, goals, minQuality,
+            Project(pawn, goals, minQuality, planBody,
                 out List<InstalledImplant> installed,
                 out ImplantContext[] implantContexts);
             return PlanEvaluator.Evaluate(
@@ -35,9 +35,9 @@ namespace Implanner
         /// matching).
         internal static List<string> MissingImplantSlotKeys(
             PlannerModel model, Pawn pawn, IReadOnlyList<ImplantGoal> goals,
-            int minQuality)
+            int minQuality, string planBody)
         {
-            Project(pawn, goals, minQuality,
+            Project(pawn, goals, minQuality, planBody,
                 out List<InstalledImplant> installed,
                 out ImplantContext[] implantContexts);
             return PlanEvaluator.MissingImplantSlotKeys(
@@ -48,13 +48,67 @@ namespace Implanner
         /// The shared projection prologue: both evaluation entry points must
         /// feed PlanEvaluator identical inputs.
         private static void Project(Pawn pawn, IReadOnlyList<ImplantGoal> goals,
-            int minQuality,
+            int minQuality, string planBody,
             out List<InstalledImplant> installed, out ImplantContext[] contexts)
         {
             installed = BuildInstalledImplants(pawn);
+            // A plan pinned to another body (or to one that is not loaded)
+            // has no target on this pawn: every slot reads as missing
+            // anatomy, so nothing is counted, reserved or scheduled.
+            if (!PlanBodies.Accepts(planBody, pawn))
+            {
+                contexts = new ImplantContext[goals.Count];
+                for (int i = 0; i < goals.Count; i++)
+                    contexts[i] = new ImplantContext(new string?[goals[i].Slots.Count], 1f);
+                return;
+            }
+            // Each slot judged on THIS pawn's body (SlotApplicability): a
+            // slot under an installed artificial part, or under a part
+            // another goal of the plan replaces on this body, is outside
+            // the pawn's target. The facts are the conflict cache's
+            // per-body records, so record indices agree with the slot keys.
+            int body = Catalogs.PlannableBodies().IndexOf(pawn.RaceProps.body);
+            SlotBlock[][]? blocks = null;
+            string?[][]? blockers = null;
+            if (body >= 0)
+            {
+                var facts = new PlannedSlotFacts?[goals.Count][];
+                blocks = new SlotBlock[goals.Count][];
+                blockers = new string?[goals.Count][];
+                for (int i = 0; i < goals.Count; i++)
+                {
+                    ImplantGoal goal = goals[i];
+                    facts[i] = new PlannedSlotFacts?[goal.Slots.Count];
+                    blocks[i] = new SlotBlock[goal.Slots.Count];
+                    blockers[i] = new string?[goal.Slots.Count];
+                    for (int j = 0; j < goal.Slots.Count; j++)
+                        facts[i][j] = ImplantConflicts.FactsOn(
+                            goal.ImplantDefName, goal.Slots[j], body);
+                }
+                SlotApplicability.Resolve(facts, ArtificialParts(pawn), blocks, blockers);
+            }
             contexts = new ImplantContext[goals.Count];
             for (int i = 0; i < goals.Count; i++)
-                contexts[i] = BuildImplantContext(pawn, goals[i], minQuality);
+                contexts[i] = BuildImplantContext(pawn, goals[i], minQuality,
+                    blocks?[i], blockers?[i]);
+        }
+
+        /// The pawn's installed artificial parts (the game's own test,
+        /// HediffSet.HasDirectlyAddedPartFor: a Hediff_AddedPart on the
+        /// record), as anatomy record index plus implant kind.
+        private static List<ArtificialPart> ArtificialParts(Pawn pawn)
+        {
+            var result = new List<ArtificialPart>();
+            List<Hediff> hediffs = pawn.health.hediffSet.hediffs;
+            BodyDef body = pawn.RaceProps.body;
+            for (int i = 0; i < hediffs.Count; i++)
+            {
+                Hediff hediff = hediffs[i];
+                if (hediff.Part == null || !(hediff is Hediff_AddedPart)) continue;
+                result.Add(new ArtificialPart(
+                    body.GetIndexOfPart(hediff.Part), hediff.def.defName));
+            }
+            return result;
         }
 
         /// The lowest item quality this plan accepts for the entry: the
@@ -170,9 +224,10 @@ namespace Implanner
         /// The pawn's anatomy instance for each goal slot, parallel to the
         /// goal's slots: the record its part address denotes on this body
         /// (ResolveSlotPart), keyed like InstalledImplant.SlotKey; null
-        /// where the body lacks it.
+        /// where the body lacks it. blocks/blockers carry the per-pawn
+        /// applicability verdicts (null = anatomy only).
         private static ImplantContext BuildImplantContext(Pawn pawn, ImplantGoal goal,
-            int minQuality)
+            int minQuality, SlotBlock[]? blocks, string?[]? blockers)
         {
             var slots = new string?[goal.Slots.Count];
             ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(goal.ImplantDefName);
@@ -196,7 +251,8 @@ namespace Implanner
             int floorMinimum = PlanMinimumFor(entry, minQuality);
             int floorQuality = ImplantQuality.MinimumAcceptable(byQuality, 1f, floorMinimum);
             return new ImplantContext(slots, byQuality[
-                floorQuality != ImplantQuality.None ? floorQuality : floorMinimum]);
+                floorQuality != ImplantQuality.None ? floorQuality : floorMinimum],
+                blocks, blockers);
         }
     }
 }

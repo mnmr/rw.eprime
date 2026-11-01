@@ -65,7 +65,7 @@
   <IMP_TipColInstalled>Instalados</IMP_TipColInstalled>
   <IMP_TipColMissing>Ausentes</IMP_TipColMissing>
   <IMP_TipColScheduled>Agendados</IMP_TipColScheduled>
-  <IMP_TipColonistStates>Colonos: {0} aguardando, {1} preparando, {2} em cirurgia, {3} concluídos, {4} ausentes</IMP_TipColonistStates>
+  <IMP_TipColonistStates>Colonos: {0} aguardando, {1} preparando, {2} em cirurgia, {3} concluídos, {4} ausentes, {5} com outro corpo</IMP_TipColonistStates>
   <IMP_NextScheduled>Cirurgia agendada para {0}</IMP_NextScheduled>
   <IMP_ColonistDetails>Detalhes do colono</IMP_ColonistDetails>
   <IMP_DetailCollecting>Reunindo {0}</IMP_DetailCollecting>
@@ -215,4 +215,15 @@
   <IMP_OptAndroidSurgeonsCrafters>Operações em androides: artesãos com "Reparar androides" (segue o Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>Operações em androides: médicos (segue o Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
   <IMP_OptAndroidSurgeonsTip>O Implanner segue a configuração do Android Tiers "Androides só podem ser curados por artesãos", que você altera nas configurações do mod Android Tiers. Ligada, os artesãos com "Reparar androides" ativado realizam as operações em androides. Desligada, os médicos as realizam. As operações em androides usam a habilidade de Fabricação. Com a escolha automática de médicos ligada, o Implanner restringe cada operação em androide ao melhor colono elegível pela habilidade de Fabricação.</IMP_OptAndroidSurgeonsTip>
+  <IMP_BodyAll>Todos os corpos</IMP_BodyAll>
+  <IMP_BodyFilterTip>Mostra apenas as partes que este corpo tem.\n\nUm plano se aplica a todos os colonos. Partes que o corpo de um colono não tem são ignoradas para esse colono.</IMP_BodyFilterTip>
+  <IMP_GoalBlockedBy>Abaixo de {0}</IMP_GoalBlockedBy>
+  <IMP_GoalBlocked>Bloqueado</IMP_GoalBlocked>
+  <IMP_PlanBody>Corpo</IMP_PlanBody>
+  <IMP_PlanBodyAny>Qualquer corpo</IMP_PlanBodyAny>
+  <IMP_PlanBodyNotLoaded>{0} (não carregado)</IMP_PlanBodyNotLoaded>
+  <IMP_PlanBodyTip>Um plano feito para um corpo lista apenas as partes desse corpo e só pode convocar colonos com esse corpo.\n\nUm plano para qualquer corpo vale para todos os colonos. As partes que o corpo de um colono não tem são ignoradas para ele.\n\nUm plano pode estender um plano para qualquer corpo ou um plano para o mesmo corpo.</IMP_PlanBodyTip>
+  <IMP_PlanForBody>para {0}</IMP_PlanForBody>
+  <IMP_PlanMenuOnlyFor>{0} (somente {1})</IMP_PlanMenuOnlyFor>
+  <IMP_StateNotForBody>Não serve para este corpo</IMP_StateNotForBody>
 </LanguageData>

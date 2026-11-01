@@ -374,7 +374,7 @@ namespace Implanner
             if (goals.Count == 0) return statuses;
 
             List<string> missing = PawnProjection.MissingImplantSlotKeys(
-                model, pawn, goals, plan.MinQuality);
+                model, pawn, goals, plan.MinQuality, plan.Body);
             if (missing.Count == 0) return statuses;
             List<string> batch = SurgeryPlanner.ComputeBatch(
                 missing, model, goals, model.Iteration,
@@ -922,15 +922,24 @@ namespace Implanner
                 step = Catalogs.ImplantByDefName(step.UpgradesFrom);
                 if (step != null) recipe = SelectRecipe(step, pawn, part);
             }
-            if (recipe == null) return PlannerChange.None;
-            int floor = PatientFloor(model, pass.Index, colony, pawn, pawnId,
-                SurgeonPool.For(model, pawn, recipe));
-
             string? recordedId = model.OwnedBill(pawnId, goalKey);
             Bill? recorded = recordedId != null
                 ? pass.FindBill(pawn.BillStack, recordedId)
                 : null;
             var change = PlannerChange.None;
+            if (recipe == null)
+            {
+                // No surgery applies to the part any more (it came to sit
+                // under an artificial part, content changed): a recorded
+                // operation can never complete, so it goes with its record
+                // and anything it would have pushed out.
+                if (recorded != null) pawn.BillStack.Delete(recorded);
+                if (recordedId != null) change |= model.RemoveOwnedBill(pawnId, goalKey);
+                return change | model.DropReinstalls(pawnId, goalKey);
+            }
+            int floor = PatientFloor(model, pass.Index, colony, pawn, pawnId,
+                SurgeonPool.For(model, pawn, recipe));
+
 
             if (entry.UpgradesFrom != null && recipe.addsHediff == entry.Def
                 && !ImplantSurgerySafety.AcceptsWithoutItem(pawn, entry.Def, part))

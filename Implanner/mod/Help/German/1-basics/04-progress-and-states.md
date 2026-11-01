@@ -5,14 +5,15 @@ title: Fortschritt und Zustände
 Die Zustandsspalte fasst jeden Kolonisten in einem Wort zusammen:
 
 <!-- l10n:b-03986aa19f4e -->
-- **Wartend**: Implantate fehlen, aber noch kein Gegenstand ist reserviert.
-- **In Vorbereitung**: Reservierte Gegenstände werden für die nächste Operation gesammelt.
-- **In Operation**: Eine Operation steht in der Auftragsliste.
+- **Wartend**: Implantate fehlen, aber noch kein Gegenstand ist für diesen Kolonisten reserviert.
+- **In Vorbereitung**: Reservierte Gegenstände werden für die nächste Operation des Kolonisten gesammelt.
+- **In Operation**: Eine Operation steht in der Auftragsliste des Kolonisten.
 - **Fertig**: Alle geplanten Implantate sind eingesetzt.
 - **Abwesend**: Der Kolonist ist auf Reisen; die Automatik wartet.
+- **Nicht für diesen Körper**: Der Kolonist hat einen Plan, der für einen anderen Körper erstellt wurde, daher greift nichts davon. Weise ihn einem Plan für beliebige Körper oder für seinen eigenen Körper zu.
 
 <!-- l10n:b-1d48ea8e126e -->
-Fortschritt zeigt stets den aktuellen Einbauzustand. Ein Implantat, das der Körper überhaupt nicht aufnehmen kann, weil das erforderliche Körperteil fehlt, wird aus dem Ziel ausgelassen und zählt weder als eingesetzt noch als fehlend. Entnommene oder zerstörte Implantate fehlen wieder; die Automatik beschafft Ersatz. Möchtest du ein Implantat zum Verkauf oder zur Weitergabe entnehmen, schalte zuerst **Automatisierung aktivieren** aus. Sonst wird es sofort wieder reserviert und zum Einbau eingeplant.
+Fortschritt zeigt stets den aktuellen Einbauzustand. Ein geplantes Implantat, das der Körper des Kolonisten überhaupt nicht aufnehmen kann, wird aus dem Ziel ausgelassen und zählt weder als eingesetzt noch als fehlend: Entweder existiert das erforderliche Körperteil an seinem Körper nicht, oder es liegt unter einem künstlichen Körperteil, das die Operation nicht erreichen kann, etwa eine Ellbogenklinge unter einem bionischen Arm. Entnommene oder zerstörte Implantate fehlen wieder; die Automatik beschafft Ersatz. Möchtest du ein Implantat zum Verkauf oder zur Weitergabe entnehmen, schalte zuerst **Automatisierung aktivieren** aus. Sonst wird es sofort wieder reserviert und zum Einbau eingeplant.
 
 <!-- l10n:b-c804648dcb55 -->
 Manuell eingesetzte Implantate zählen ebenfalls. Ein besseres Körperteil erfüllt auch ein schwächeres Planziel: Ein Archotech-Bein deckt ein bionisches Bein ab. Implanner plant nie eine Verschlechterung. Implantate, die ein Körperteil teilen können, etwa Gehirnimplantate, bleiben getrennte Ziele.

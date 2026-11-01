@@ -15,7 +15,7 @@ namespace Implanner.Core
     /// Format:
     /// <code>
     /// &lt;ImplannerPlans&gt;
-    ///   &lt;Plan Name="Full bionics" Extends="Essentials" MinQuality="Good"&gt;
+    ///   &lt;Plan Name="Full bionics" Extends="Essentials" MinQuality="Good" Body="Human"&gt;
     ///     &lt;Implant Def="BionicArm" MayRequire="pkg.id"&gt;
     ///       &lt;Slot&gt;Shoulder#0&lt;/Slot&gt;
     ///       &lt;Slot&gt;Shoulder#1&lt;/Slot&gt;
@@ -81,6 +81,8 @@ namespace Implanner.Core
                     if (plan.MinQuality > ImplantQuality.Lowest)
                         planEl.SetAttributeValue("MinQuality",
                             ImplantQuality.NameOf(plan.MinQuality));
+                    if (plan.IsPinned)
+                        planEl.SetAttributeValue("Body", plan.Body);
 
                     foreach (var goal in plan.Implants)
                     {
@@ -267,19 +269,25 @@ namespace Implanner.Core
                 // An unknown quality name reads as "any quality".
                 ImplantQuality.TryParse((string)planEl.Attribute("MinQuality"),
                     out int minQuality);
-                plans.Add(new Plan(tempId, name, 0, goals, minQuality));
+                // The body travels as its def name; whether it is loaded is
+                // the game's concern (an unloaded body leaves the plan inert
+                // until its mod returns).
+                plans.Add(new Plan(tempId, name, 0, goals, minQuality,
+                    (string)planEl.Attribute("Body")));
             }
 
             // Second pass: resolve Extends names onto temp ids. A target
-            // skipped for mods degrades to no base; a name in neither set is
-            // an error.
+            // skipped for mods, or one of an incompatible body
+            // (Plan.IsCompatibleBase), degrades to no base; a name in
+            // neither set is an error.
             for (int i = 0; i < plans.Count; i++)
             {
                 string? extendsName = extendsNames[i];
                 if (extendsName == null || extendsName.Length == 0) continue;
                 if (keptNames.TryGetValue(extendsName, out int baseTempId))
                 {
-                    plans[i].BasePlanId = baseTempId;
+                    if (Plan.IsCompatibleBase(plans[baseTempId - 1].Body, plans[i].Body))
+                        plans[i].BasePlanId = baseTempId;
                 }
                 else if (!skippedNames.Contains(extendsName))
                 {

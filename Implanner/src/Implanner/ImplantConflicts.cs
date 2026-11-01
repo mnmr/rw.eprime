@@ -10,7 +10,7 @@ namespace Implanner
     /// PlannedSlotFacts per catalog slot and plannable body (that body's
     /// record identity and ancestry, hediff tags, recipe incompatibility
     /// tags, hediff removal tags) and answers whether two planned slots can
-    /// never coexist on any body carrying both. Builder path only.
+    /// never coexist on the first body carrying both. Builder path only.
     // Cache contract:
     // Owner: process.
     // Key: implant defName (facts indexed by catalog slot, then by
@@ -29,9 +29,9 @@ namespace Implanner
 
         /// The resolver injected into PlannerModel.SlotConflictResolver;
         /// cached so injection never allocates.
-        internal static readonly Func<ImplantGoal, PartAddress, ImplantGoal, PartAddress, bool>
-            Resolver = (a, slotA, b, slotB) =>
-                Conflicts(a.ImplantDefName, slotA, b.ImplantDefName, slotB);
+        internal static readonly PlannerModel.SlotConflictRule
+            Resolver = (body, a, slotA, b, slotB) =>
+                Conflicts(body, a.ImplantDefName, slotA, b.ImplantDefName, slotB);
 
         internal static void Release()
         {
@@ -132,21 +132,37 @@ namespace Implanner
             return result;
         }
 
-        /// Whether the two planned slots can never coexist on a colonist:
-        /// on some plannable body carrying both, the Core rules exclude the
-        /// pair. Slots no single body carries (a human's eye and an
-        /// android's sight sensor) never meet on one pawn.
-        internal static bool Conflicts(
+        /// Whether the two planned slots can never coexist on a colonist of
+        /// the plan's body (Plan.Body). A pinned plan is judged on exactly
+        /// that body: the pair conflicts when the body carries both and
+        /// the Core rules exclude them there. An unpinned plan ("" or a
+        /// body that is not loaded) uses the reference rule: the first
+        /// plannable body carrying both, the human body first, so one
+        /// modded race body never decides for human plans. Slots no single
+        /// body carries (a human's eye and an android's sight sensor) never
+        /// meet on one pawn.
+        internal static bool Conflicts(string body,
             string defA, PartAddress slotA, string defB, PartAddress slotB)
         {
             PlannedSlotFacts?[]? a = FactsOf(defA, slotA);
             PlannedSlotFacts?[]? b = FactsOf(defB, slotB);
             if (a == null || b == null) return false;
-            for (int body = 0; body < a.Length; body++)
-                if (a[body] != null && b[body] != null
-                    && ImplantConflictRules.Conflicts(a[body]!, b[body]!))
-                    return true;
-            return false;
+            int pinned = PlanBodies.IndexOf(body);
+            if (pinned < 0) return ImplantConflictRules.Conflicts(a, b);
+            PlannedSlotFacts? onA = pinned < a.Length ? a[pinned] : null;
+            PlannedSlotFacts? onB = pinned < b.Length ? b[pinned] : null;
+            return onA != null && onB != null && ImplantConflictRules.Conflicts(onA, onB);
+        }
+
+        /// The slot's facts on one plannable body (Catalogs.PlannableBodies
+        /// position), or null where that body lacks the part or the address
+        /// is not one of the implant's slots. The per-pawn applicability
+        /// input (SlotApplicability): the same record indices PawnProjection
+        /// keys installed implants by. Allocation-free on cache hits.
+        internal static PlannedSlotFacts? FactsOn(string defName, PartAddress slot, int body)
+        {
+            PlannedSlotFacts?[]? byBody = FactsOf(defName, slot);
+            return byBody != null && body >= 0 && body < byBody.Length ? byBody[body] : null;
         }
 
         private static PlannedSlotFacts?[]? FactsOf(string defName, PartAddress slot)

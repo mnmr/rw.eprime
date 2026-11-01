@@ -44,8 +44,11 @@ namespace Implanner.Core
     /// own plus the base chain's, with its own selections overriding
     /// overlapping slots (PlannerModel.EffectiveImplants). The base link is
     /// chosen at creation and only cleared when the base plan disappears, so
-    /// the chain can never form a cycle. Only the model (same assembly)
-    /// mutates a plan; everything outside Core sees read-only state.
+    /// the chain can never form a cycle. A plan may be pinned to one body
+    /// (Body): it then lists and validates that body's parts only and
+    /// enlists only colonists with that body; an unpinned plan applies to
+    /// every colonist. Only the model (same assembly) mutates a plan;
+    /// everything outside Core sees read-only state.
     public sealed class Plan
     {
         readonly List<ImplantGoal> implants;
@@ -59,13 +62,14 @@ namespace Implanner.Core
         /// plan in one step. Takes ownership of <paramref name="goals"/>:
         /// the caller must not retain or mutate the list afterwards.
         public Plan(int id, string name, int basePlanId, List<ImplantGoal> goals,
-            int minQuality = 0)
+            int minQuality = 0, string? body = null)
         {
             Id = id;
             Name = name;
             BasePlanId = basePlanId;
             implants = goals;
             MinQuality = ImplantQuality.Clamp(minQuality);
+            Body = NormalizeBody(body);
         }
 
         public int Id { get; }
@@ -73,6 +77,21 @@ namespace Implanner.Core
 
         /// The plan this plan extends; 0 = none.
         public int BasePlanId { get; internal set; }
+
+        /// The body this plan is pinned to (a BodyDef name), or "" for any
+        /// body. Fixed at creation; a child plan's body must be at least as
+        /// specific as its base's (IsCompatibleBase).
+        public string Body { get; internal set; } = "";
+
+        public bool IsPinned => Body.Length > 0;
+
+        /// Whether a plan of <paramref name="body"/> may extend a plan of
+        /// <paramref name="baseBody"/>: an unpinned base takes any child, a
+        /// pinned base only children of the same body.
+        public static bool IsCompatibleBase(string baseBody, string body) =>
+            baseBody.Length == 0 || string.Equals(baseBody, body, System.StringComparison.Ordinal);
+
+        internal static string NormalizeBody(string? body) => body?.Trim() ?? "";
 
         /// The lowest item quality automation installs for this plan's
         /// goals, inherited ones included (0 Awful = any). Applies only to

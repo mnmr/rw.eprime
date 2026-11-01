@@ -65,7 +65,7 @@
   <IMP_TipColInstalled>已安裝</IMP_TipColInstalled>
   <IMP_TipColMissing>缺少</IMP_TipColMissing>
   <IMP_TipColScheduled>已安排</IMP_TipColScheduled>
-  <IMP_TipColonistStates>殖民者：{0} 人等待，{1} 人準備，{2} 人手術中，{3} 人完成，{4} 人外出</IMP_TipColonistStates>
+  <IMP_TipColonistStates>殖民者：{0} 人等待，{1} 人準備，{2} 人手術中，{3} 人完成，{4} 人外出，{5} 人為其他身體</IMP_TipColonistStates>
   <IMP_NextScheduled>已安排安裝 {0} 的手術</IMP_NextScheduled>
   <IMP_ColonistDetails>殖民者詳情</IMP_ColonistDetails>
   <IMP_DetailCollecting>正在收集 {0}</IMP_DetailCollecting>
@@ -215,4 +215,15 @@
   <IMP_OptAndroidSurgeonsCrafters>機械人手術：由已開啟「修復機械人」的工匠執行（跟隨 Android Tiers）</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>機械人手術：由醫生執行（跟隨 Android Tiers）</IMP_OptAndroidSurgeonsDoctors>
   <IMP_OptAndroidSurgeonsTip>Implanner 會跟隨 Android Tiers 的「機械人只能由工匠治療」設定，該設定須在 Android Tiers 的模組設定中更改。開啟時，由已開啟「修復機械人」的工匠執行機械人手術；關閉時由醫生執行。機械人手術使用手工技能。開啟醫生自動選擇後，Implanner 會將每項機械人手術限定給手工技能最高的合資格殖民者。</IMP_OptAndroidSurgeonsTip>
+  <IMP_BodyAll>所有身體</IMP_BodyAll>
+  <IMP_BodyFilterTip>只顯示此身體擁有的部位。\n\n計畫適用於所有殖民者。殖民者身體上沒有的部位，會對該殖民者略過。</IMP_BodyFilterTip>
+  <IMP_GoalBlockedBy>受 {0} 阻擋</IMP_GoalBlockedBy>
+  <IMP_GoalBlocked>受阻</IMP_GoalBlocked>
+  <IMP_PlanBody>身體</IMP_PlanBody>
+  <IMP_PlanBodyAny>任意身體</IMP_PlanBodyAny>
+  <IMP_PlanBodyNotLoaded>{0}（未載入）</IMP_PlanBodyNotLoaded>
+  <IMP_PlanBodyTip>為單一身體類型制定的計畫只會列出該身體的部位，也只能徵召擁有該身體的殖民者。\n\n適用於任意身體的計畫會套用到每位殖民者。殖民者身體上沒有的部位會對該殖民者略過。\n\n計畫可以延伸自適用於任意身體的計畫，或同一身體類型的計畫。</IMP_PlanBodyTip>
+  <IMP_PlanForBody>適用於{0}</IMP_PlanForBody>
+  <IMP_PlanMenuOnlyFor>{0}（僅限{1}）</IMP_PlanMenuOnlyFor>
+  <IMP_StateNotForBody>不適用於此身體</IMP_StateNotForBody>
 </LanguageData>

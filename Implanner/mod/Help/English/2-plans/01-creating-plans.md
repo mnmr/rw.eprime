@@ -14,6 +14,27 @@ A plan that **extends** another inherits all of its selections. Build an
 into "Miner" or "Farmer" plans that add their own picks or override
 inherited ones. Edit the base plan and every extending plan follows.
 
+<!-- l10n:newplan-body-image -->
+![The new plan prompt with the Body selector set to Android](newplan-body.png)
+
+<!-- l10n:plan-body -->
+When a mod adds a race with its own body, such as Android Tiers, the
+prompt also asks which **Body** the plan is for. **Any body** is the
+default: the plan applies to every colonist, and parts a colonist's body
+does not have are skipped for that colonist. A plan made for one body
+lists only that body's parts, checks conflicts on that body, and can
+enlist only colonists with that body. Its card and the picker show the
+body it is made for.
+
+<!-- l10n:plan-cards-body-image -->
+![A plan for any body beside a plan made for androids, marked "for Android"](plan-cards-body.png)
+
+<!-- l10n:plan-body-extends -->
+A plan for any body can be extended by a plan for any body or for one
+body. A plan made for one body can only be extended by a plan for the
+same body. Choosing the plan to extend first narrows the Body choices to
+match, and choosing a body first lists only the plans it may extend.
+
 <!-- l10n:b-515b3ee4d180 -->
 Each card in the plan list shows the plan's implant count, how many
 colonists are enlisted, and their combined progress.

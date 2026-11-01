@@ -17,6 +17,12 @@ La colonne centrale liste les implants du jeu de base, des extensions et de tous
 <!-- l10n:b-5fcc0a9d197e -->
 ![Recherche listant tous les implants de jambes à plat](picker-search.png)
 
+<!-- l10n:picker-body-filter-image -->
+![Le bouton de corps entre la ligne des régions et le champ de recherche, réglé sur Androïde](picker-body-filter.png)
+
+<!-- l10n:picker-body-filter -->
+Lorsqu'une race moddée est chargée, un bouton **corps** apparaît entre la ligne des régions et le champ de recherche. **Tous les corps** liste toutes les parties de toutes les races. Choisissez un corps pour ne voir que les parties qu'il possède. Cela ne change que l'affichage : un plan fait pour un corps donné s'applique toujours à tous les colons. Un plan créé pour un seul corps affiche ce corps à la place du bouton et ne liste que ses parties (voir [création de plans](topic:creating-plans)).
+
 <!-- l10n:b-4c96d69447df -->
 Les dégradations comme les jambes de bois ne peuvent pas être planifiées. Les implants à contrepartie ou à usage étroit sont aussi exclus : implant du bonheur, implant analgésique, griffe énergétique et assistant de pilotage. Ceux réservés aux goules ne sont jamais listés. Les parties uniquement disponibles à l'achat, comme les implants archotech qu'aucun établi ne peut fabriquer, restent masquées jusqu'à l'activation d'**Afficher les implants uniquement disponibles à l'achat** dans Options. Une partie archotech posée manuellement compte toujours pour son emplacement, quel que soit ce réglage. Un implant de ce type prévu ne bloque jamais les autres implants du lot ; il est posé avec le lot suivant une fois en stock. Un mod ajoutant une recette le transforme en implant ordinaire.
 

@@ -872,11 +872,18 @@ namespace Implanner.UI
             IReadOnlyList<Plan> allPlans = store.Model.Plans;
             for (int i = 0; i < allPlans.Count; i++)
             {
-                int planId = allPlans[i].Id;
+                Plan plan = allPlans[i];
+                int planId = plan.Id;
+                // A plan pinned to another body cannot take this colonist:
+                // listed greyed with its body, so the player sees why.
+                bool accepts = PlanBodies.Accepts(plan.Body, row.Pawn);
                 yield return new Widgets.DropdownMenuElement<PlanChoice>
                 {
-                    option = new FloatMenuOption(allPlans[i].Name,
-                        () => PlannerCommands.AssignPlan(pawnId, planId)),
+                    option = accepts
+                        ? new FloatMenuOption(plan.Name,
+                            () => PlannerCommands.AssignPlan(pawnId, planId))
+                        : new FloatMenuOption("IMP_PlanMenuOnlyFor".Translate(
+                            plan.Name, PlanBodies.Label(plan.Body)), null),
                     payload = new PlanChoice(planId),
                 };
             }
@@ -1251,8 +1258,14 @@ namespace Implanner.UI
             // and clicking one ends the search and shows that region.
             bool searching = snapshot.Searching;
             float searchWidth = Mathf.Floor(rect.width * SearchShare);
+            // The body filter button (only with more than one plannable
+            // body) sits between the region segments and the search field;
+            // its menu lists every body. It applies in both views.
+            float bodyWidth = snapshot.BodyLabels.Length > 0 || snapshot.PinnedBody
+                ? Mathf.Min(snapshot.BodyFilterWidth + BodyFilterPadding, BodyFilterMaxWidth)
+                : 0f;
             var segmentRect = new Rect(rect.x, y,
-                rect.width - searchWidth - Pad, 28f);
+                rect.width - searchWidth - Pad - (bodyWidth > 0f ? bodyWidth + Pad : 0f), 28f);
             int clickedRegion = SegmentedControl.Row(segmentRect,
                 PlannerLabels.ImplantRegions, searching ? -1 : plans.Region);
             if (clickedRegion >= 0 && (searching || clickedRegion != plans.Region))
@@ -1260,8 +1273,27 @@ namespace Implanner.UI
                 plans.Region = clickedRegion;
                 plans.Search.Reset();
             }
+            float searchX = segmentRect.xMax + Pad;
+            if (bodyWidth > 0f)
+            {
+                var bodyRect = new Rect(searchX, y, bodyWidth, 28f);
+                if (snapshot.PinnedBody)
+                {
+                    // A pinned plan: the body is a fact, not a filter.
+                    using (GuiStateScope.Capture())
+                    {
+                        Text.Anchor = TextAnchor.MiddleCenter;
+                        GUI.color = PlannerStyle.CaptionText;
+                        Widgets.Label(bodyRect, snapshot.BodyFilterText);
+                    }
+                }
+                else if (Widgets.ButtonText(bodyRect, snapshot.BodyFilterText))
+                    Find.WindowStack.Add(new FloatMenu(BodyFilterOptions(snapshot.BodyLabels)));
+                TooltipHandler.TipRegion(bodyRect, snapshot.BodyFilterTip);
+                searchX = bodyRect.xMax + Pad;
+            }
             plans.Search.noResultsMatched = searching && snapshot.Tree.Count == 0;
-            plans.Search.OnGUI(new Rect(segmentRect.xMax + Pad,
+            plans.Search.OnGUI(new Rect(searchX,
                 y + (28f - QuickSearchWidget.WidgetHeight) / 2f,
                 searchWidth, QuickSearchWidget.WidgetHeight));
             y += 28f + 6f;
@@ -1316,6 +1348,21 @@ namespace Implanner.UI
 
         /// Room around the minimum-quality button's measured text.
         private const float MinQualityPadding = 20f;
+        private const float BodyFilterPadding = 24f;
+        private const float BodyFilterMaxWidth = 160f;
+
+        /// The body filter's menu: every body, the current plannable-body
+        /// order (labels[0] is "All bodies"). Click path only.
+        private List<FloatMenuOption> BodyFilterOptions(string[] labels)
+        {
+            var options = new List<FloatMenuOption>(labels.Length);
+            for (int i = 0; i < labels.Length; i++)
+            {
+                int body = i - 1;
+                options.Add(new FloatMenuOption(labels[i], () => plans.Body = body));
+            }
+            return options;
+        }
 
         /// The quality choices, built on click only (an input event, never
         /// a steady draw).

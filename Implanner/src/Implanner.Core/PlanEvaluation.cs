@@ -32,20 +32,42 @@ namespace Implanner.Core
     /// Pawn-specific context for one implant goal: the anatomy instance each
     /// selected slot denotes on this pawn, parallel to the goal's Slots
     /// (null where the body lacks that part — the slot is impossible here),
-    /// and the requested implant's own efficiency (the substitution floor).
+    /// why a slot is outside this pawn's target (SlotApplicability; absent
+    /// means a null key is missing anatomy), and the requested implant's
+    /// own efficiency (the substitution floor).
     public sealed class ImplantContext
     {
-        public ImplantContext(IReadOnlyList<string?> slotKeys, float efficiency)
+        public ImplantContext(IReadOnlyList<string?> slotKeys, float efficiency,
+            IReadOnlyList<SlotBlock>? blocks = null, IReadOnlyList<string?>? blockers = null)
         {
             SlotKeys = slotKeys;
             Efficiency = efficiency;
+            Blocks = blocks;
+            Blockers = blockers;
         }
 
         public IReadOnlyList<string?> SlotKeys { get; }
         public float Efficiency { get; }
+        public IReadOnlyList<SlotBlock>? Blocks { get; }
+        public IReadOnlyList<string?>? Blockers { get; }
 
-        /// The pawn's anatomy instance for goal slot j, or null.
-        public string? SlotKey(int j) => j < SlotKeys.Count ? SlotKeys[j] : null;
+        /// The pawn's anatomy instance for goal slot j, or null when the
+        /// slot is outside this pawn's target (no such part, or blocked).
+        public string? SlotKey(int j) =>
+            j < SlotKeys.Count && Block(j) == SlotBlock.None ? SlotKeys[j] : null;
+
+        public SlotBlock Block(int j)
+        {
+            if (Blocks != null && j < Blocks.Count) return Blocks[j];
+            return j < SlotKeys.Count && SlotKeys[j] != null
+                ? SlotBlock.None
+                : SlotBlock.NoAnatomy;
+        }
+
+        /// The implant kind blocking slot j (installed above it, or planned
+        /// to replace a part above it), or null.
+        public string? Blocker(int j) =>
+            Blockers != null && j < Blockers.Count ? Blockers[j] : null;
     }
 
     /// Evaluation result for one goal, parallel to the evaluated goal list
@@ -73,18 +95,25 @@ namespace Implanner.Core
     public sealed class PlanEvaluation
     {
         public PlanEvaluation(GoalResult[] implants, PawnPlanState state,
-            int satisfiedUnits, int totalUnits)
+            int satisfiedUnits, int totalUnits,
+            IReadOnlyList<ImplantContext>? contexts = null)
         {
             Implants = implants;
             State = state;
             SatisfiedUnits = satisfiedUnits;
             TotalUnits = totalUnits;
+            Contexts = contexts;
         }
 
         public GoalResult[] Implants { get; }
         public PawnPlanState State { get; }
         public int SatisfiedUnits { get; }
         public int TotalUnits { get; }
+
+        /// The per-goal contexts the evaluation ran on (parallel to
+        /// Implants), so presentation can name why a slot is outside this
+        /// pawn's target without re-projecting the pawn.
+        public IReadOnlyList<ImplantContext>? Contexts { get; }
 
         /// 0..1; an empty Plan counts as complete.
         public float Progress => TotalUnits == 0 ? 1f : (float)SatisfiedUnits / TotalUnits;

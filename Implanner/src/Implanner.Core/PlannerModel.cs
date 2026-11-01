@@ -1033,16 +1033,21 @@ namespace Implanner.Core
         public Plan? AssignedPlan(int pawnId) =>
             assignments.TryGetValue(pawnId, out int planId) ? PlanById(planId) : null;
 
-        /// Creates a plan, optionally extending an existing one, whose
-        /// minimum quality it starts with. A missing base id is dropped
-        /// rather than failing the creation.
+        /// Creates a plan, optionally pinned to one body and optionally
+        /// extending an existing one, whose minimum quality it starts with.
+        /// A missing base id is dropped rather than failing the creation; a
+        /// base of an incompatible body (Plan.IsCompatibleBase) refuses the
+        /// creation, since the UI never offers that pair.
         public Plan? CreatePlan(string? preferredName, Func<int> takePlanId,
-            int basePlanId = 0)
+            int basePlanId = 0, string? body = null)
         {
             string? name = CatalogNameRules.Unique(preferredName, plans, PlanNameOf);
             if (name == null) return null;
-            var plan = new Plan(takePlanId(), name);
+            string planBody = Plan.NormalizeBody(body);
             Plan? basePlan = basePlanId != 0 ? PlanById(basePlanId) : null;
+            if (basePlan != null && !Plan.IsCompatibleBase(basePlan.Body, planBody))
+                return null;
+            var plan = new Plan(takePlanId(), name) { Body = planBody };
             if (basePlan != null)
             {
                 plan.BasePlanId = basePlanId;
@@ -1102,20 +1107,20 @@ namespace Implanner.Core
         }
 
         /// Answers whether two planned slots can never coexist on a pawn
-        /// (same part, replacement subtrees, incompatible hediff tags).
-        /// Injected by the game layer from definition data, so it is
-        /// identical on every multiplayer client; null disables conflict
-        /// suppression (Core tests exercise it explicitly).
-        public Func<ImplantGoal, PartAddress, ImplantGoal, PartAddress, bool>? SlotConflictResolver
-        {
-            get;
-            private set;
-        }
+        /// (same part, replacement subtrees, incompatible hediff tags),
+        /// judged on the plan's body (Plan.Body; "" = the reference rule
+        /// for a plan that applies to every body). Injected by the game
+        /// layer from definition data, so it is identical on every
+        /// multiplayer client; null disables conflict suppression (Core
+        /// tests exercise it explicitly).
+        public delegate bool SlotConflictRule(string body,
+            ImplantGoal a, PartAddress slotA, ImplantGoal b, PartAddress slotB);
+
+        public SlotConflictRule? SlotConflictResolver { get; private set; }
 
         /// Wiring, not a mutation: the resolver is definition-derived and
         /// set once when the store is constructed or hydrated.
-        public void SetSlotConflictResolver(
-            Func<ImplantGoal, PartAddress, ImplantGoal, PartAddress, bool>? resolver) =>
+        public void SetSlotConflictResolver(SlotConflictRule? resolver) =>
             SlotConflictResolver = resolver;
 
         /// The plan's effective implant goals: its own goals first, then the
@@ -1154,7 +1159,7 @@ namespace Implanner.Core
                         PartAddress slot = goal.Slots[j];
                         if ((covered.TryGetValue(goal.ImplantDefName, out var taken)
                                 && taken.Contains(slot))
-                            || ConflictsWithAccepted(result, goal, slot))
+                            || ConflictsWithAccepted(plan.Body, result, goal, slot))
                         {
                             allRemain = false;
                             continue;
@@ -1212,26 +1217,27 @@ namespace Implanner.Core
             return kept ?? own;
         }
 
-        bool ConflictsWithAccepted(
+        bool ConflictsWithAccepted(string body,
             List<ImplantGoal> accepted, ImplantGoal goal, PartAddress slot)
         {
             for (int i = 0; i < accepted.Count; i++)
             {
                 ImplantGoal other = accepted[i];
                 for (int j = 0; j < other.Slots.Count; j++)
-                    if (SlotsConflict(other, other.Slots[j], goal, slot))
+                    if (SlotsConflict(body, other, other.Slots[j], goal, slot))
                         return true;
             }
             return false;
         }
 
-        /// The complete planned-slot conflict rule: the definition-derived
-        /// resolver (when injected) plus the option-driven kind
-        /// exclusivity, so every conflict consumer agrees.
-        bool SlotsConflict(ImplantGoal a, PartAddress slotA, ImplantGoal b, PartAddress slotB)
+        /// The complete planned-slot conflict rule on the plan's body: the
+        /// definition-derived resolver (when injected) plus the
+        /// option-driven kind exclusivity, so every conflict consumer agrees.
+        bool SlotsConflict(string body,
+            ImplantGoal a, PartAddress slotA, ImplantGoal b, PartAddress slotB)
         {
             var resolver = SlotConflictResolver;
-            return (resolver != null && resolver(a, slotA, b, slotB))
+            return (resolver != null && resolver(body, a, slotA, b, slotB))
                 || KindsExclusive(a.ImplantDefName, b.ImplantDefName);
         }
 
@@ -1323,7 +1329,7 @@ namespace Implanner.Core
                 for (int j = 0; j < other.Slots.Count; j++)
                 {
                     PartAddress otherSlot = other.Slots[j];
-                    if (SlotsConflict(added, slot, other, otherSlot))
+                    if (SlotsConflict(plan.Body, added, slot, other, otherSlot))
                     {
                         anyRemoved = true;
                         continue;
@@ -1363,13 +1369,18 @@ namespace Implanner.Core
         public PlannerChange CleanupMissing(Func<int, bool> pawnExists)
         {
             var change = PlannerChange.None;
+            // A base that is gone, or (hand-edited data only: creation and
+            // import never produce it) one of an incompatible body, detaches
+            // the child; the chain invariant holds unconditionally.
             for (int i = 0; i < plans.Count; i++)
-                if (plans[i].BasePlanId != 0
-                    && PlanById(plans[i].BasePlanId) == null)
-                {
-                    plans[i].BasePlanId = 0;
-                    change |= PlannerChange.Plans;
-                }
+            {
+                if (plans[i].BasePlanId == 0) continue;
+                Plan? basePlan = PlanById(plans[i].BasePlanId);
+                if (basePlan != null && Plan.IsCompatibleBase(basePlan.Body, plans[i].Body))
+                    continue;
+                plans[i].BasePlanId = 0;
+                change |= PlannerChange.Plans;
+            }
 
             var dead = new List<int>();
             foreach (var pair in assignments)
@@ -1471,7 +1482,7 @@ namespace Implanner.Core
                         planId, goal.ImplantDefName,
                         new List<PartAddress>(goal.Slots)));
                 }
-                var plan = new Plan(planId, name, 0, goals, source.MinQuality);
+                var plan = new Plan(planId, name, 0, goals, source.MinQuality, source.Body);
                 plans.Add(plan);
                 added.Add(plan);
                 addedBaseTempIds.Add(source.BasePlanId);
@@ -1479,12 +1490,15 @@ namespace Implanner.Core
             }
 
             // Second pass: remap base links. A temp base id whose plan was
-            // skipped resolves to 0 (no base).
+            // skipped, or whose body is incompatible, resolves to 0 (no base).
             for (int i = 0; i < added.Count; i++)
             {
                 int baseTempId = addedBaseTempIds[i];
-                if (baseTempId != 0
-                    && tempToReal.TryGetValue(baseTempId, out int realBaseId))
+                if (baseTempId == 0
+                    || !tempToReal.TryGetValue(baseTempId, out int realBaseId))
+                    continue;
+                Plan? basePlan = PlanById(realBaseId);
+                if (basePlan != null && Plan.IsCompatibleBase(basePlan.Body, added[i].Body))
                     added[i].BasePlanId = realBaseId;
             }
 

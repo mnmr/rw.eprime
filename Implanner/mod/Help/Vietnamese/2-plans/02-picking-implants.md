@@ -17,6 +17,12 @@ Cột giữa liệt kê cấy ghép từ trò chơi gốc, bản mở rộng và
 <!-- l10n:b-5fcc0a9d197e -->
 ![Tìm kiếm hiện mọi cấy ghép chân trong danh sách phẳng](picker-search.png)
 
+<!-- l10n:picker-body-filter-image -->
+![Nút cơ thể nằm giữa hàng vùng và ô tìm kiếm, đặt là Android](picker-body-filter.png)
+
+<!-- l10n:picker-body-filter -->
+Khi có chủng tộc mod được tải, một nút **cơ thể** nằm giữa hàng vùng và ô tìm kiếm. **Mọi cơ thể** liệt kê mọi bộ phận của bất kỳ chủng tộc nào. Chọn một cơ thể để chỉ xem các bộ phận của cơ thể đó. Việc này chỉ đổi cách hiển thị: kế hoạch cho bất kỳ cơ thể nào vẫn áp dụng cho mọi người định cư. Kế hoạch lập riêng cho một cơ thể sẽ hiện cơ thể đó thay cho nút và chỉ liệt kê các bộ phận của nó (xem [tạo kế hoạch](topic:creating-plans)).
+
 <!-- l10n:b-4c96d69447df -->
 Không thể lập kế hoạch hạ cấp như chân gỗ. Cấy ghép có nhược điểm hoặc mục đích hẹp cũng bị bỏ: joywire, hệ thần kinh giảm đau, móng vuốt năng lượng và trợ lý phi công. Không liệt kê cấy ghép chỉ dành cho ngạ quỷ. Loại chỉ mua được như hồ quang, không bàn nào chế tạo được, bị ẩn đến khi bật **Hiện bộ phận chỉ mua được** ở thẻ Tùy chọn. Archotech lắp thủ công vẫn được tính bất kể tùy chọn này. Loại chỉ mua được không cản các cấy ghép khác trong đợt; nó được lắp vào đợt kế tiếp khi có hàng. Mod thêm công thức chế tạo sẽ biến nó thành loại thông thường.
 

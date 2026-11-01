@@ -65,7 +65,7 @@
   <IMP_TipColInstalled>Eingesetzt</IMP_TipColInstalled>
   <IMP_TipColMissing>Fehlend</IMP_TipColMissing>
   <IMP_TipColScheduled>Operation geplant</IMP_TipColScheduled>
-  <IMP_TipColonistStates>Kolonisten: {0} wartend, {1} in Vorbereitung, {2} in Operation, {3} fertig, {4} abwesend</IMP_TipColonistStates>
+  <IMP_TipColonistStates>Kolonisten: {0} wartend, {1} in Vorbereitung, {2} in Operation, {3} fertig, {4} abwesend, {5} anderer Körper</IMP_TipColonistStates>
   <IMP_NextScheduled>Operation für {0} geplant</IMP_NextScheduled>
   <IMP_ColonistDetails>Kolonistendetails</IMP_ColonistDetails>
   <IMP_DetailCollecting>Sammelt {0}</IMP_DetailCollecting>
@@ -215,4 +215,15 @@
   <IMP_OptAndroidSurgeonsCrafters>Android-Operationen: Handwerker mit „Repair androids“ (folgt Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>Android-Operationen: Ärzte (folgt Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
   <IMP_OptAndroidSurgeonsTip>Implanner folgt der Android-Tiers-Einstellung „Androids can only be healed by crafters“, die du in den Mod-Einstellungen von Android Tiers änderst. Eingeschaltet führen Handwerker, bei denen „Repair androids“ aktiviert ist, Android-Operationen durch. Ausgeschaltet übernehmen das Ärzte. Android-Operationen nutzen die Fertigkeit Handwerk. Bei aktiver automatischer Arztwahl beschränkt Implanner jede Android-Operation auf den geeigneten Kolonisten mit der höchsten Handwerksfertigkeit.</IMP_OptAndroidSurgeonsTip>
+  <IMP_BodyAll>Alle Körper</IMP_BodyAll>
+  <IMP_BodyFilterTip>Nur die Körperteile anzeigen, die dieser Körper hat.\n\nEin Plan gilt für alle Kolonisten. Körperteile, die der Körper eines Kolonisten nicht hat, werden für diesen Kolonisten übersprungen.</IMP_BodyFilterTip>
+  <IMP_GoalBlockedBy>Unter {0}</IMP_GoalBlockedBy>
+  <IMP_GoalBlocked>Blockiert</IMP_GoalBlocked>
+  <IMP_PlanBody>Körper</IMP_PlanBody>
+  <IMP_PlanBodyAny>Beliebiger Körper</IMP_PlanBodyAny>
+  <IMP_PlanBodyNotLoaded>{0} (nicht geladen)</IMP_PlanBodyNotLoaded>
+  <IMP_PlanBodyTip>Ein Plan für einen bestimmten Körper listet nur dessen Körperteile auf und kann nur Kolonisten mit diesem Körper einbeziehen.\n\nEin Plan für einen beliebigen Körper gilt für jeden Kolonisten. Körperteile, die der Körper eines Kolonisten nicht hat, werden für diesen Kolonisten übersprungen.\n\nEin Plan kann einen Plan für einen beliebigen Körper oder einen Plan für denselben Körper erweitern.</IMP_PlanBodyTip>
+  <IMP_PlanForBody>für {0}</IMP_PlanForBody>
+  <IMP_PlanMenuOnlyFor>{0} (nur {1})</IMP_PlanMenuOnlyFor>
+  <IMP_StateNotForBody>Nicht für diesen Körper</IMP_StateNotForBody>
 </LanguageData>

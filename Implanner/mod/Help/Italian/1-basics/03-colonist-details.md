@@ -15,6 +15,7 @@ Seleziona un colono nella tabella: il pannello dei dettagli mostra ogni impianto
 - **In convalescenza**: la chirurgia attende se il colono sanguina, ha ferite non curate o è a terra. Il sonno da anestesia non conta.
 - **In attesa di un medico con Medicina ...+**: nessun medico idoneo soddisfa il requisito di abilità di questo intervento. Controlla la disponibilità dei medici o modifica il minimo nella scheda Automazione; vedi [opzioni chirurgiche](topic:surgery-options).
 - **Completo**: installato.
+- **Sotto ...**: la parte si trova sotto una parte artificiale già installata, o che questo piano installerà, quindi l'intervento non può raggiungerla. L'impianto viene saltato per questo colono e non conta a suo sfavore.
 
 <!-- l10n:b-7d5d4531ac6c -->
 Un piano descrive lo stato finale: gli impianti già posseduti dal colono contano come completi.

@@ -12,12 +12,16 @@ The State column condenses each colonist into one word:
 - **Operating**: surgery is scheduled on the colonist's bill list.
 - **Done**: every planned implant is installed.
 - **Away**: the colonist is off traveling; automation waits.
+- **Not for this body**: the colonist is on a plan made for another body,
+  so nothing in it applies. Move them to a plan for any body or for their
+  own body.
 
 <!-- l10n:b-1d48ea8e126e -->
 Progress always reflects what is installed right now. A planned implant
-the colonist's body cannot take at all (the required part does not exist
-on it) is left out of their target and counts neither as installed nor as
-missing. A harvested or
+the colonist's body cannot take at all is left out of their target and
+counts neither as installed nor as missing: the required part does not
+exist on their body, or it sits under an artificial part the surgery
+cannot reach, like an elbow blade under a bionic arm. A harvested or
 destroyed implant counts as missing again, and automation pursues a
 replacement. If you want to harvest an implant to sell or pass along,
 switch **Enable automation** off first, or the part will be reserved and

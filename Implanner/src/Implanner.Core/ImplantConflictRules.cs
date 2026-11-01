@@ -86,6 +86,26 @@ namespace Implanner.Core
     /// present, whatever the surgery order.
     public static class ImplantConflictRules
     {
+        /// Two planned slots across the plannable bodies (facts parallel to
+        /// the body list, human first, null where a body lacks the slot):
+        /// the FIRST body carrying both decides. Plans are body-agnostic, so
+        /// one modded race whose body nests parts oddly (a liver under the
+        /// first kidney) must not make the pair exclusive for human plans;
+        /// slots only a later body carries are judged there, and slots no
+        /// body shares never meet on one pawn.
+        public static bool Conflicts(
+            IReadOnlyList<PlannedSlotFacts?> aByBody, IReadOnlyList<PlannedSlotFacts?> bByBody)
+        {
+            int count = Math.Min(aByBody.Count, bByBody.Count);
+            for (int body = 0; body < count; body++)
+            {
+                PlannedSlotFacts? a = aByBody[body];
+                PlannedSlotFacts? b = bByBody[body];
+                if (a != null && b != null) return Conflicts(a, b);
+            }
+            return false;
+        }
+
         public static bool Conflicts(PlannedSlotFacts a, PlannedSlotFacts b)
         {
             // Mutual removal: whichever is installed last destroys the other,

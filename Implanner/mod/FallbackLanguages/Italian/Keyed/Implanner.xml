@@ -65,7 +65,7 @@
   <IMP_TipColInstalled>Installati</IMP_TipColInstalled>
   <IMP_TipColMissing>Mancanti</IMP_TipColMissing>
   <IMP_TipColScheduled>Programmati</IMP_TipColScheduled>
-  <IMP_TipColonistStates>Coloni: {0} in attesa, {1} in preparazione, {2} sotto intervento, {3} completati, {4} assenti</IMP_TipColonistStates>
+  <IMP_TipColonistStates>Coloni: {0} in attesa, {1} in preparazione, {2} sotto intervento, {3} completati, {4} assenti, {5} con altro corpo</IMP_TipColonistStates>
   <IMP_NextScheduled>Intervento programmato per {0}</IMP_NextScheduled>
   <IMP_ColonistDetails>Dettagli del colono</IMP_ColonistDetails>
   <IMP_DetailCollecting>Raccolta di {0}</IMP_DetailCollecting>
@@ -215,4 +215,15 @@
   <IMP_OptAndroidSurgeonsCrafters>Operazioni sugli androidi: artigiani con "Ripara androidi" (segue Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>Operazioni sugli androidi: medici (segue Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
   <IMP_OptAndroidSurgeonsTip>Implanner segue l'impostazione di Android Tiers "Gli androidi possono essere curati solo dagli artigiani", che si cambia nelle impostazioni della mod Android Tiers. Se è attivata, le operazioni sugli androidi sono eseguite dagli artigiani con "Ripara androidi" attivo. Se è disattivata, dai medici. Le operazioni sugli androidi usano l'abilità Artigianato. Con la selezione automatica del medico attiva, Implanner limita ogni operazione su un androide al miglior colono idoneo per abilità Artigianato.</IMP_OptAndroidSurgeonsTip>
+  <IMP_BodyAll>Tutti i corpi</IMP_BodyAll>
+  <IMP_BodyFilterTip>Mostra solo le parti presenti in questo corpo.\n\nUn piano si applica a ogni colono. Le parti che il corpo di un colono non ha vengono saltate per quel colono.</IMP_BodyFilterTip>
+  <IMP_GoalBlockedBy>Sotto {0}</IMP_GoalBlockedBy>
+  <IMP_GoalBlocked>Bloccato</IMP_GoalBlocked>
+  <IMP_PlanBody>Corpo</IMP_PlanBody>
+  <IMP_PlanBodyAny>Qualsiasi corpo</IMP_PlanBodyAny>
+  <IMP_PlanBodyNotLoaded>{0} (non caricato)</IMP_PlanBodyNotLoaded>
+  <IMP_PlanBodyTip>Un piano creato per un solo corpo elenca soltanto le parti di quel corpo e può arruolare solo i coloni con quel corpo.\n\nUn piano per qualsiasi corpo si applica a tutti i coloni. Le parti che il corpo di un colono non possiede vengono saltate per quel colono.\n\nUn piano può estendere un piano per qualsiasi corpo oppure un piano per lo stesso corpo.</IMP_PlanBodyTip>
+  <IMP_PlanForBody>per {0}</IMP_PlanForBody>
+  <IMP_PlanMenuOnlyFor>{0} (solo {1})</IMP_PlanMenuOnlyFor>
+  <IMP_StateNotForBody>Non per questo corpo</IMP_StateNotForBody>
 </LanguageData>

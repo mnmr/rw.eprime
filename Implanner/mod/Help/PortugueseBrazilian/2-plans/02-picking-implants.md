@@ -17,6 +17,12 @@ A coluna central lista implantes do jogo original, expansões e todos os mods, a
 <!-- l10n:b-5fcc0a9d197e -->
 ![Busca mostrando todos os implantes de perna em uma lista](picker-search.png)
 
+<!-- l10n:picker-body-filter-image -->
+![O botão de corpo entre a linha de regiões e o campo de busca, definido como Android](picker-body-filter.png)
+
+<!-- l10n:picker-body-filter -->
+Com uma raça de mod carregada, um botão de **corpo** aparece entre a linha de regiões e o campo de busca. **Todos os corpos** lista todas as partes de qualquer raça. Escolha um corpo para ver apenas as partes que ele tem. Isso muda só a exibição: um plano feito para qualquer corpo continua valendo para todos os colonos. Um plano criado para um corpo específico mostra esse corpo no lugar do botão e lista apenas as partes dele (veja [criar planos](topic:creating-plans)).
+
 <!-- l10n:b-4c96d69447df -->
 Pioras, como pernas de pau, não podem ser planejadas. Implantes com desvantagens ou uso restrito também ficam de fora: fio da alegria, inibidor de dor, garra potente e assistente de piloto. Implantes exclusivos de carniçais nunca aparecem. Partes obtidas apenas por compra, como arquotecnológicas sem receita em bancada, ficam ocultas até ligar **Mostrar implantes não fabricáveis** em Opções. Uma parte arquotecnológica instalada manualmente sempre atende à posição ocupada, com a opção ligada ou desligada. Uma meta não fabricável nunca atrasa o restante do lote; quando o item chega ao estoque, entra no próximo lote. Se um mod acrescenta uma receita, o implante se torna comum.
 

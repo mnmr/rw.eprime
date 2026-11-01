@@ -197,7 +197,7 @@
   <IMP_TipColScheduled>Ameliyatı planlı</IMP_TipColScheduled>
   <IMP_TipColStatus>Durum</IMP_TipColStatus>
   <IMP_TipColTier>Kademe</IMP_TipColTier>
-  <IMP_TipColonistStates>Koloniciler: {0} bekliyor, {1} hazırlanıyor, {2} ameliyatta, {3} bitti, {4} uzakta</IMP_TipColonistStates>
+  <IMP_TipColonistStates>Koloniciler: {0} bekliyor, {1} hazırlanıyor, {2} ameliyatta, {3} bitti, {4} uzakta, {5} başka vücut</IMP_TipColonistStates>
   <IMP_TipCovered>Karşılandı</IMP_TipCovered>
   <IMP_TipMaking>Üretiliyor</IMP_TipMaking>
   <IMP_TipMakingMaterials>Malzeme üretiliyor</IMP_TipMakingMaterials>
@@ -215,4 +215,15 @@
   <IMP_OptAndroidSurgeonsCrafters>Android ameliyatları: "Androidleri onar" açık zanaatçılar (Android Tiers'ı izler)</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>Android ameliyatları: doktorlar (Android Tiers'ı izler)</IMP_OptAndroidSurgeonsDoctors>
   <IMP_OptAndroidSurgeonsTip>Implanner, Android Tiers mod ayarlarından değiştirdiğiniz "Androidler yalnızca zanaatçılar tarafından onarılabilir" ayarını izler. Açıkken android ameliyatlarını "Androidleri onar" seçeneği açık zanaatçılar yapar. Kapalıyken doktorlar yapar. Android ameliyatları Zanaat becerisini kullanır. Otomatik doktor seçimi açıkken Implanner, her android ameliyatını Zanaat becerisine göre uygun en iyi koloniciyle sınırlar.</IMP_OptAndroidSurgeonsTip>
+  <IMP_BodyAll>Tüm bedenler</IMP_BodyAll>
+  <IMP_BodyFilterTip>Yalnızca bu bedenin sahip olduğu parçaları göster.\n\nBir plan tüm sömürgecilere uygulanır. Bir sömürgecinin bedeninde bulunmayan parçalar o sömürgeci için atlanır.</IMP_BodyFilterTip>
+  <IMP_GoalBlockedBy>{0} altında</IMP_GoalBlockedBy>
+  <IMP_GoalBlocked>Engellendi</IMP_GoalBlocked>
+  <IMP_PlanBody>Vücut</IMP_PlanBody>
+  <IMP_PlanBodyAny>Herhangi bir vücut</IMP_PlanBodyAny>
+  <IMP_PlanBodyNotLoaded>{0} (yüklenmedi)</IMP_PlanBodyNotLoaded>
+  <IMP_PlanBodyTip>Tek bir vücut için hazırlanan plan yalnızca o vücudun parçalarını listeler ve yalnızca o vücuda sahip kolonicileri kapsayabilir.\n\nHerhangi bir vücut için hazırlanan plan tüm kolonicilere uygulanır. Bir koloniciin vücudunda bulunmayan parçalar o koloni için atlanır.\n\nBir plan, herhangi bir vücut için hazırlanmış bir planı veya aynı vücut için hazırlanmış bir planı genişletebilir.</IMP_PlanBodyTip>
+  <IMP_PlanForBody>{0} için</IMP_PlanForBody>
+  <IMP_PlanMenuOnlyFor>{0} (yalnızca {1})</IMP_PlanMenuOnlyFor>
+  <IMP_StateNotForBody>Bu vücut için değil</IMP_StateNotForBody>
 </LanguageData>

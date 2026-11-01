@@ -15,6 +15,7 @@ Wähle einen Kolonisten in der Tabelle. Das Detailpanel zeigt jedes Implantat se
 - **Erholt sich**: Die Operation wartet, während der Kolonist blutet, unbehandelte Wunden hat oder am Boden liegt. Narkoseschlaf zählt nicht.
 - **Wartet auf einen Arzt mit Medizin ...+**: Kein verfügbarer und geeigneter Arzt erfüllt die Fertigkeitsanforderung dieser Operation. Prüfe die Verfügbarkeit der Ärzte oder passe die Mindeststufe im Automatisierungsreiter an (siehe [Operationsoptionen](topic:surgery-options)).
 - **Abgeschlossen**: Eingesetzt.
+- **Darunter ...**: Das Körperteil liegt unter einem künstlichen Körperteil, das bereits eingesetzt ist oder von diesem Plan eingesetzt wird, sodass die Operation es nicht erreichen kann. Das Implantat wird für diesen Kolonisten übersprungen und zählt nicht gegen ihn.
 
 <!-- l10n:b-7d5d4531ac6c -->
 Ein Plan beschreibt einen Endzustand: Bereits vorhandene Implantate zählen als abgeschlossen.

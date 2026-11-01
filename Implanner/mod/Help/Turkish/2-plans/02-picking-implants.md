@@ -17,6 +17,12 @@ Orta sütun, temel oyun, genişleme paketleri ve tüm modlardan bulunan implantl
 <!-- l10n:b-5fcc0a9d197e -->
 ![Tüm bacak implantlarını düz listede gösteren arama](picker-search.png)
 
+<!-- l10n:picker-body-filter-image -->
+![Bölge satırı ile arama alanı arasındaki vücut düğmesi, Android olarak ayarlı](picker-body-filter.png)
+
+<!-- l10n:picker-body-filter -->
+Modlu bir ırk yüklüyse bölge satırı ile arama alanı arasında bir **vücut** düğmesi bulunur. **Tüm vücutlar**, herhangi bir ırkın sahip olduğu her parçayı listeler. Yalnızca o vücudun sahip olduğu parçaları görmek için bir vücut seçin. Bu yalnızca görünümü değiştirir: herhangi bir vücut için yapılmış plan yine de tüm koloncilere uygulanır. Tek bir vücut için yapılmış plan, düğme yerine o vücudu gösterir ve yalnızca onun parçalarını listeler (bkz. [plan oluşturma](topic:creating-plans)).
+
 <!-- l10n:b-4c96d69447df -->
 Tahta bacak gibi geriye gidişler planlanamaz. Dezavantajlı veya dar kullanımlı implantlar da dışlanır: neşe çipi, ağrı kesici implant, güç pençesi ve pilot asistanı. Yalnızca gûllara takılabilenler hiç listelenmez. Arkotek implantlar gibi hiçbir tezgahta üretilemeyen parçalar, Seçenekler sekmesinde **Üretilemeyen implantları göster** açılana kadar gizlidir. Oyuncunun elle taktığı arkotek parça, seçenek açık da kapalı da olsa bulunduğu yuvayı karşılar. Planlanmış üretilemeyen implant, gruptaki diğer implantları bekletmez; eşya stoğa girince sonraki grupla takılır. Üretim tarifi ekleyen bir mod onu sıradan bir implanta dönüştürür.
 

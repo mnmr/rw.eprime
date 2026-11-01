@@ -37,6 +37,9 @@ namespace Implanner.UI
         Done = 3,
         /// Off traveling; automation waits.
         Away = 4,
+        /// Enlisted in a plan pinned to another body (or to one that is not
+        /// loaded): nothing applies, nothing is done.
+        NotForBody = 5,
     }
 
     /// One colonist row (or grouping header) fully resolved for drawing. The
@@ -54,8 +57,10 @@ namespace Implanner.UI
         internal string Name = "";
         internal int PlanId;
         internal string PlanName = "";
-        /// The assigned plan's minimum item quality, sampled at rebuild.
+        /// The assigned plan's minimum item quality and pinned body ("" =
+        /// any), sampled at rebuild.
         internal int MinQuality;
+        internal string PlanBody = "";
         internal float Progress;
         internal string ProgressText = "";
         internal ColonistStatus State;
@@ -152,7 +157,7 @@ namespace Implanner.UI
         /// Benches in scope holding an Implanner bill.
         internal int BenchesInUse;
         /// Colonists with a plan per ColonistStatus, indexed by the enum.
-        internal readonly int[] StateCounts = new int[5];
+        internal readonly int[] StateCounts = new int[6];
 
         internal List<GroupingOption> GroupingOptions = new List<GroupingOption>();
         internal List<string> GroupingLabels = new List<string>();
@@ -619,15 +624,21 @@ namespace Implanner.UI
                         goalsByPlan.Add(plan.Id, goals);
                     }
                     PlanEvaluation evaluation = PawnProjection.Evaluate(
-                        store.Model, pawn, goals, away, plan.MinQuality);
+                        store.Model, pawn, goals, away, plan.MinQuality, plan.Body);
                     row.Goals = goals;
                     row.PlanId = plan.Id;
                     row.MinQuality = plan.MinQuality;
+                    row.PlanBody = plan.Body;
                     row.PlanName = plan.Name;
-                    row.Progress = evaluation.Progress;
+                    // A colonist left on a plan pinned to another body
+                    // (import, a race mod removed) is outside it entirely:
+                    // no progress to show, not "done".
+                    bool accepted = PlanBodies.Accepts(plan.Body, pawn);
+                    row.Progress = accepted ? evaluation.Progress : 0f;
                     row.ProgressText = evaluation.SatisfiedUnits + " / " + evaluation.TotalUnits;
-                    row.State = StatusOf(evaluation.State,
-                        pawn.thingIDNumber, store, reservedPawns);
+                    row.State = accepted
+                        ? StatusOf(evaluation.State, pawn.thingIDNumber, store, reservedPawns)
+                        : ColonistStatus.NotForBody;
                     row.StateText = StateText(row.State);
                     row.Evaluation = evaluation;
 
@@ -880,7 +891,7 @@ namespace Implanner.UI
             IReadOnlyList<ImplantGoal> goals = next.Goals!;
 
             List<string> missing = PawnProjection.MissingImplantSlotKeys(
-                store.Model, next.Pawn, goals, next.MinQuality);
+                store.Model, next.Pawn, goals, next.MinQuality, next.PlanBody);
             List<string> batch = SurgeryPlanner.ComputeBatch(
                 missing, store.Model, goals, store.Model.Iteration,
                 PlannerSurgery.OptionalFlags(next.Pawn, goals, missing),
@@ -956,7 +967,7 @@ namespace Implanner.UI
                 if (row.Evaluation == null || row.Goals == null) continue;
                 if (row.Evaluation.State == PawnPlanState.Complete) continue;
                 List<string> missing = PawnProjection.MissingImplantSlotKeys(
-                    model, row.Pawn, row.Goals, row.MinQuality);
+                    model, row.Pawn, row.Goals, row.MinQuality, row.PlanBody);
                 SurgeryCandidate candidate = model.Iteration == IterationStrategy.Asap
                     ? PawnProjection.CandidateOf(row.Pawn) : default;
                 for (int k = 0; k < missing.Count; k++)
@@ -1430,7 +1441,9 @@ namespace Implanner.UI
 
             PlanEvaluation evaluation = selected.Evaluation;
             DetailTitle = selected.Name;
-            DetailPercent = (int)(evaluation.Progress * 100f) + "%";
+            DetailPercent = selected.State == ColonistStatus.NotForBody
+                ? ""
+                : (int)(evaluation.Progress * 100f) + "%";
 
             // Reservations for this colonist, with readiness (item present on
             // the pawn's map and unforbidden → ready for surgery).
@@ -1470,10 +1483,43 @@ namespace Implanner.UI
             for (int g = 0; g < evaluation.Implants.Length; g++)
             {
                 GoalResult goal = evaluation.Implants[g];
-                // A wholly impossible pick (no applicable anatomy on this
-                // body) is outside the colonist's target: not listed.
-                if (goal.Requested == 0) continue;
                 ImplantGoal implantGoal = goals[g];
+                ImplantCatalogEntry? entry =
+                    Catalogs.ImplantByDefName(implantGoal.ImplantDefName);
+                // A pick outside the colonist's target is not listed when
+                // the body simply lacks the part; one an implant keeps the
+                // surgery from reaching (under an installed artificial part,
+                // or under a part this plan replaces on this body) is listed
+                // with its blocker, so the player sees why it is skipped.
+                if (goal.Requested == 0)
+                {
+                    string? blocker = ImplantBlocker(evaluation, g);
+                    if (blocker == null) continue;
+                    // The status shares the row with the implant name
+                    // (38% of the panel, Tiny): the blocker is named
+                    // only when it fits, else the plain word.
+                    string blockedText = "IMP_GoalBlockedBy".Translate(blocker);
+                    using (TinyText.UseFont())
+                        if (WrText.MeasureFitWidth(blockedText) > width * 0.38f)
+                            blockedText = "IMP_GoalBlocked".Translate();
+                    entries.Add(new DetailEntry
+                    {
+                        Row = new DetailRow
+                        {
+                            Label = ImplantLabel(implantGoal),
+                            StatusText = blockedText,
+                            Blocked = true,
+                        },
+                        Group = byTier
+                            ? StarRanking.TierOf(
+                                model.ImplantStarsOf(implantGoal.ImplantDefName))
+                            : (int)(entry?.Region ?? ImplantRegion.Torso),
+                        SortLabel = entry?.Label ?? implantGoal.ImplantDefName,
+                        DefName = implantGoal.ImplantDefName,
+                        Order = model.ImplantOrderOf(implantGoal.ImplantDefName),
+                    });
+                    continue;
+                }
                 var pipeline = PlannerSurgery.SlotStatus.None;
                 string? reservedKey = null;
                 for (int j = 0; j < implantGoal.Slots.Count; j++)
@@ -1490,8 +1536,6 @@ namespace Implanner.UI
                     goal.IsComplete || pipeline == PlannerSurgery.SlotStatus.None
                     ? GoalStatusText(goal, reservedByGoal, reservedKey)
                     : SurgeryStatusText(pipeline, effectiveFloor, lossLabel);
-                ImplantCatalogEntry? entry =
-                    Catalogs.ImplantByDefName(implantGoal.ImplantDefName);
                 entries.Add(new DetailEntry
                 {
                     Row = new DetailRow
@@ -1632,6 +1676,28 @@ namespace Implanner.UI
             return null;
         }
 
+        /// The label of the implant keeping goal g's slots from this pawn
+        /// (SlotApplicability: installed above them, or planned to replace
+        /// a part above them), or null when no slot is blocked that way.
+        /// Installed blockers may be off-catalog kinds, so the hediff def
+        /// is the fallback. Builder path.
+        private static string? ImplantBlocker(PlanEvaluation evaluation, int g)
+        {
+            ImplantContext? context = evaluation.Contexts != null
+                && g < evaluation.Contexts.Count ? evaluation.Contexts[g] : null;
+            if (context == null) return null;
+            for (int j = 0; j < context.SlotKeys.Count; j++)
+            {
+                string? blocker = context.Blocker(j);
+                if (blocker == null) continue;
+                ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(blocker);
+                if (entry != null) return entry.Label;
+                HediffDef? def = DefDatabase<HediffDef>.GetNamedSilentFail(blocker);
+                return def != null ? def.LabelCap.ToString() : blocker;
+            }
+            return null;
+        }
+
         private static string ImplantLabel(ImplantGoal goal)
         {
             ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(goal.ImplantDefName);
@@ -1696,6 +1762,7 @@ namespace Implanner.UI
                 case ColonistStatus.Operating: return "IMP_StateOperating".Translate();
                 case ColonistStatus.Done: return "IMP_StateDone".Translate();
                 case ColonistStatus.Away: return "IMP_StateAway".Translate();
+                case ColonistStatus.NotForBody: return "IMP_StateNotForBody".Translate();
                 default: return "IMP_StateWaiting".Translate();
             }
         }

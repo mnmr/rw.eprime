@@ -76,7 +76,7 @@ public class BasePlanTests
     }
 
     /// Same-record stand-in: both stomach kinds target ordinal 0.
-    static bool StomachResolver(ImplantGoal a, PartAddress ordA, ImplantGoal b, PartAddress ordB) =>
+    static bool StomachResolver(string body, ImplantGoal a, PartAddress ordA, ImplantGoal b, PartAddress ordB) =>
         (a.ImplantDefName == "NuclearStomach" || a.ImplantDefName == "DetoxifierStomach")
         && (b.ImplantDefName == "NuclearStomach" || b.ImplantDefName == "DetoxifierStomach");
 

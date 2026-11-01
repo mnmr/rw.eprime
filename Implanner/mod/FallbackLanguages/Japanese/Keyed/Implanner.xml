@@ -197,7 +197,7 @@
   <IMP_TipColScheduled>手術予定</IMP_TipColScheduled>
   <IMP_TipColStatus>状態</IMP_TipColStatus>
   <IMP_TipColTier>ティア</IMP_TipColTier>
-  <IMP_TipColonistStates>入植者: 待機{0}、準備{1}、手術{2}、完了{3}、不在{4}</IMP_TipColonistStates>
+  <IMP_TipColonistStates>入植者: 待機{0}、準備{1}、手術{2}、完了{3}、不在{4}、別の体型{5}</IMP_TipColonistStates>
   <IMP_TipCovered>充足</IMP_TipCovered>
   <IMP_TipMaking>製作中</IMP_TipMaking>
   <IMP_TipMakingMaterials>材料製作中</IMP_TipMakingMaterials>
@@ -215,4 +215,15 @@
   <IMP_OptAndroidSurgeonsCrafters>アンドロイドの手術：「Repair androids」をオンにした製作担当（Android Tiersに従う）</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>アンドロイドの手術：医者（Android Tiersに従う）</IMP_OptAndroidSurgeonsDoctors>
   <IMP_OptAndroidSurgeonsTip>ImplannerはAndroid Tiersの設定「Androids can only be healed by crafters」に従います。変更はAndroid TiersのMod設定で行ってください。オンの場合、「Repair androids」をオンにした製作担当がアンドロイドの手術を行います。オフの場合は医者が行います。アンドロイドの手術には工芸スキルを使います。医者の自動選択がオンの場合、Implannerはアンドロイドの手術ごとに、工芸スキルが最も高い対象入植者だけに限定します。</IMP_OptAndroidSurgeonsTip>
+  <IMP_BodyAll>すべての身体</IMP_BodyAll>
+  <IMP_BodyFilterTip>この身体にある部位のみを表示します。\n\n計画はすべての入植者に適用されます。入植者の身体にない部位は、その入植者については省略されます。</IMP_BodyFilterTip>
+  <IMP_GoalBlockedBy>{0}の影響下</IMP_GoalBlockedBy>
+  <IMP_GoalBlocked>阻害中</IMP_GoalBlocked>
+  <IMP_PlanBody>体型</IMP_PlanBody>
+  <IMP_PlanBodyAny>すべての体型</IMP_PlanBodyAny>
+  <IMP_PlanBodyNotLoaded>{0}(未読み込み)</IMP_PlanBodyNotLoaded>
+  <IMP_PlanBodyTip>特定の体型向けに作成したプランには、その体型の部位のみが表示され、その体型の入植者のみを対象にできます。\n\nすべての体型向けのプランは、全入植者に適用されます。入植者の体型にない部位は、その入植者については省略されます。\n\nプランは、すべての体型向けのプラン、または同じ体型のプランを継承できます。</IMP_PlanBodyTip>
+  <IMP_PlanForBody>{0}向け</IMP_PlanForBody>
+  <IMP_PlanMenuOnlyFor>{0}({1}専用)</IMP_PlanMenuOnlyFor>
+  <IMP_StateNotForBody>この体型は対象外</IMP_StateNotForBody>
 </LanguageData>

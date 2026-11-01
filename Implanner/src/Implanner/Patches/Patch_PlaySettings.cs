@@ -8,9 +8,13 @@ namespace Implanner.Patches
 {
     /// Toolbar button beside the vanilla view toggles, registered the
     /// standard mod-compatible way: a postfix on the same WidgetRow vanilla
-    /// fills, so toolbar-restyling mods compose with ours instead of hiding
-    /// it. The row does the actual painting; we contribute one button that
-    /// toggles the main Implanner dialog.
+    /// fills, drawn through the row's own button primitive
+    /// (WidgetRow.ButtonIcon / ButtonIconRect). Toolbar-restyling mods
+    /// relocate exactly those primitives (UI Rethemed - Main Bar runs this
+    /// method inside its own grid and prefixes ToggleableIcon, ButtonIcon
+    /// and ButtonIconRect; a bare row.Icon plus an invisible button was
+    /// never captured and the button vanished, reported 2026-11-01). The
+    /// button toggles the main Implanner dialog.
     [HarmonyPatch(typeof(PlaySettings), nameof(PlaySettings.DoPlaySettingsGlobalControls))]
     public static class Patch_PlaySettings
     {
@@ -22,17 +26,10 @@ namespace Implanner.Patches
         private static LoadedLanguage? tipLanguage;
         private static string? tip;
 
-        // Last drawn rect, used to pick the hover texture on the NEXT pass:
-        // Icon() only reveals its rect after drawing, and toolbar-restyling
-        // mods may relocate it, so predicting the rect up front is
-        // unreliable. One frame of hover lag is imperceptible.
-        private static Rect lastIconRect;
-
         internal static void ResetPresentation()
         {
             tipLanguage = null;
             tip = null;
-            lastIconRect = default;
         }
 
         public static void Postfix(WidgetRow row, bool worldView)
@@ -60,15 +57,19 @@ namespace Implanner.Patches
             if (phase > 0.01f && phase < CellPitch - 0.01f)
                 row.Gap(CellPitch - phase);
 
-            // Drawn through row.Icon, the same primitive the vanilla toggles
-            // use, consuming the standard cell (icon + gap). The hover
-            // texture is picked from the previous pass's rect.
-            Texture2D tex = Mouse.IsOver(lastIconRect)
+            // ButtonIconRect answers the cell ButtonIcon is about to use
+            // without advancing the row (restyling mods answer their own
+            // cell), so the hover texture is exact for this pass. The hover
+            // variant is a brightened render, so the button's own mouseover
+            // tint stays white. ButtonIcon advances by the icon only; the
+            // trailing gap keeps the vanilla 28-unit cell for the next mod.
+            Rect iconRect = row.ButtonIconRect();
+            Texture2D tex = Mouse.IsOver(iconRect)
                 ? ImplannerTex.ToolbarButtonHover
                 : ImplannerTex.ToolbarButton;
-            Rect iconRect = row.Icon(tex, tip);
-            lastIconRect = iconRect;
-            if (Widgets.ButtonInvisible(iconRect))
+            bool clicked = row.ButtonIcon(tex, tip, mouseoverColor: Color.white);
+            row.Gap(WidgetRow.DefaultGap);
+            if (clicked)
             {
                 Dialog_Implanner? open =
                     Find.WindowStack.WindowOfType<Dialog_Implanner>();

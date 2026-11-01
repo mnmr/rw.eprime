@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- RimWorld 1.6 build: the 1.7 runtime clamps UI scale to its design
+       floor (0.9375 at 1920x1080), so help screenshots at UI scale 1.0 are
+       taken on the local 1.6 copy. -->
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>10</LangVersion>
+    <AssemblyName>Implanner.HelpShotsProbe</AssemblyName>
+    <OutputPath>Probe/1.6/Assemblies/</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup><Compile Include="Probe.cs"/></ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4871" />
+    <PackageReference Include="Lib.Harmony" Version="2.4.3" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <Reference Include="Implanner" HintPath="../../../mod/1.6/Assemblies/Implanner.dll" Private="false" />
+    <Reference Include="Implanner.Core" HintPath="../../../mod/1.6/Assemblies/Implanner.Core.dll" Private="false" />
+  </ItemGroup>
+</Project>

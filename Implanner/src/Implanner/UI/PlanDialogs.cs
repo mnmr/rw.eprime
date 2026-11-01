@@ -10,32 +10,53 @@ namespace Implanner.UI
 {
     /// The new-plan prompt: the shared name dialog (Enter confirms, ESC
     /// cancels) plus an "Extends" selector so a plan can inherit an existing
-    /// plan's selections.
+    /// plan's selections and, with more than one plannable body, a "Body"
+    /// selector pinning the plan to one body. The two constrain each other
+    /// (Plan.IsCompatibleBase): a pinned base fixes the body, a chosen body
+    /// offers only unpinned bases and bases of that body. Labels resolve at
+    /// construction and on choice; the draw pass renders stored text.
     public class Dialog_NewPlan : NameDialog
     {
         private int basePlanId;
         private string basePlanLabel;
+        private string body = "";
+        private string bodyLabel;
+        private readonly bool offersBody;
+        private readonly string bodyTip;
 
         public Dialog_NewPlan()
             : base(PlannerLabels.PlanNameTitle, "")
         {
             basePlanLabel = PlannerLabels.ExtendsNothing;
+            bodyLabel = "IMP_PlanBodyAny".Translate();
+            bodyTip = "IMP_PlanBodyTip".Translate();
+            offersBody = Catalogs.PlannableBodies().Count > 1;
         }
 
-        protected override float ExtraHeight => 30f;
+        protected override float ExtraHeight => offersBody ? 60f : 30f;
 
         protected override void DrawExtra(Rect rect)
+        {
+            DrawRow(new Rect(rect.x, rect.y, rect.width, 30f),
+                PlannerLabels.ExtendsPlan, basePlanLabel, OpenBaseMenu, null);
+            if (offersBody)
+                DrawRow(new Rect(rect.x, rect.y + 30f, rect.width, 30f),
+                    "IMP_PlanBody".Translate(), bodyLabel, OpenBodyMenu, bodyTip);
+        }
+
+        private static void DrawRow(Rect rect, string label, string value,
+            System.Action open, string? tip)
         {
             TextAnchor oldAnchor = Text.Anchor;
             Text.Anchor = TextAnchor.MiddleLeft;
             float labelWidth = WrText.FitWidth(PlannerLabels.ExtendsPlan) + 8f;
-            Widgets.Label(new Rect(rect.x, rect.y, labelWidth, rect.height - 4f),
-                PlannerLabels.ExtendsPlan);
+            labelWidth = Mathf.Max(labelWidth, WrText.FitWidth(label) + 8f);
+            Widgets.Label(new Rect(rect.x, rect.y, labelWidth, rect.height - 4f), label);
             Text.Anchor = oldAnchor;
             var buttonRect = new Rect(rect.x + labelWidth, rect.y,
                 rect.width - labelWidth, rect.height - 4f);
-            if (Widgets.ButtonText(buttonRect, basePlanLabel))
-                OpenBaseMenu();
+            if (Widgets.ButtonText(buttonRect, value)) open();
+            if (tip != null) TooltipHandler.TipRegion(buttonRect, tip);
         }
 
         private void OpenBaseMenu()
@@ -54,17 +75,55 @@ namespace Implanner.UI
             for (int i = 0; i < plans.Count; i++)
             {
                 Plan plan = plans[i];
+                // Only a base this plan's body may extend; a pinned base
+                // pins the new plan to its body.
+                if (!Plan.IsCompatibleBase(plan.Body, body)) continue;
                 options.Add(new FloatMenuOption(plan.Name, () =>
                 {
                     basePlanId = plan.Id;
                     basePlanLabel = plan.Name;
+                    if (plan.IsPinned) SetBody(plan.Body);
                 }));
             }
             Find.WindowStack.Add(new FloatMenu(options));
         }
 
+        private void OpenBodyMenu()
+        {
+            var options = new List<FloatMenuOption>
+            {
+                new FloatMenuOption("IMP_PlanBodyAny".Translate(), () => SetBody("")),
+            };
+            List<BodyDef> bodies = Catalogs.PlannableBodies();
+            for (int i = 0; i < bodies.Count; i++)
+            {
+                BodyDef candidate = bodies[i];
+                options.Add(new FloatMenuOption(candidate.LabelCap,
+                    () => SetBody(candidate.defName)));
+            }
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+
+        /// Applies a body choice; a base the new body may no longer extend
+        /// is dropped so the pair stays compatible.
+        private void SetBody(string defName)
+        {
+            body = defName;
+            bodyLabel = defName.Length == 0
+                ? "IMP_PlanBodyAny".Translate().ToString()
+                : PlanBodies.Label(defName);
+            ImplannerStore? store = ImplannerStore.Current;
+            Plan? basePlan = store != null && basePlanId != 0
+                ? store.Model.PlanById(basePlanId) : null;
+            if (basePlan != null && !Plan.IsCompatibleBase(basePlan.Body, body))
+            {
+                basePlanId = 0;
+                basePlanLabel = PlannerLabels.ExtendsNothing;
+            }
+        }
+
         protected override void Confirm(string trimmedName) =>
-            PlannerCommands.CreatePlan(trimmedName, basePlanId);
+            PlannerCommands.CreatePlan(trimmedName, basePlanId, body);
     }
 
     /// The requirement prompt for a slot the game only offers on an

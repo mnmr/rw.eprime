@@ -197,7 +197,7 @@
   <IMP_TipColScheduled>Đã xếp lịch</IMP_TipColScheduled>
   <IMP_TipColStatus>Trạng thái</IMP_TipColStatus>
   <IMP_TipColTier>Bậc</IMP_TipColTier>
-  <IMP_TipColonistStates>Cư dân: {0} đang chờ, {1} chuẩn bị, {2} đang mổ, {3} xong, {4} vắng mặt</IMP_TipColonistStates>
+  <IMP_TipColonistStates>Cư dân: {0} đang chờ, {1} chuẩn bị, {2} đang mổ, {3} xong, {4} vắng mặt, {5} cơ thể khác</IMP_TipColonistStates>
   <IMP_TipCovered>Đã đáp ứng</IMP_TipCovered>
   <IMP_TipMaking>Đang chế tạo</IMP_TipMaking>
   <IMP_TipMakingMaterials>Đang làm nguyên liệu</IMP_TipMakingMaterials>
@@ -215,4 +215,15 @@
   <IMP_OptAndroidSurgeonsCrafters>Phẫu thuật android: thợ chế tạo có "Repair androids" (theo Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>Phẫu thuật android: bác sĩ (theo Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
   <IMP_OptAndroidSurgeonsTip>Implanner theo thiết lập "Androids can only be healed by crafters" của Android Tiers, bạn đổi thiết lập này trong phần thiết lập mod Android Tiers. Khi bật, thợ chế tạo đã bật "Repair androids" sẽ thực hiện phẫu thuật android. Khi tắt, bác sĩ thực hiện. Phẫu thuật android dùng kỹ năng Chế tạo. Khi bật chọn bác sĩ tự động, Implanner giới hạn mỗi ca phẫu thuật android cho cư dân đủ điều kiện có kỹ năng Chế tạo cao nhất.</IMP_OptAndroidSurgeonsTip>
+  <IMP_BodyAll>Mọi cơ thể</IMP_BodyAll>
+  <IMP_BodyFilterTip>Chỉ hiển thị các bộ phận mà cơ thể này có.\n\nKế hoạch áp dụng cho mọi dân thuộc địa. Những bộ phận mà cơ thể của một dân thuộc địa không có sẽ bị bỏ qua với người đó.</IMP_BodyFilterTip>
+  <IMP_GoalBlockedBy>Dưới {0}</IMP_GoalBlockedBy>
+  <IMP_GoalBlocked>Bị chặn</IMP_GoalBlocked>
+  <IMP_PlanBody>Cơ thể</IMP_PlanBody>
+  <IMP_PlanBodyAny>Mọi cơ thể</IMP_PlanBodyAny>
+  <IMP_PlanBodyNotLoaded>{0} (chưa tải)</IMP_PlanBodyNotLoaded>
+  <IMP_PlanBodyTip>Kế hoạch dành cho một cơ thể chỉ liệt kê các bộ phận của cơ thể đó và chỉ có thể tuyển cư dân có cơ thể đó.\n\nKế hoạch dành cho mọi cơ thể áp dụng cho mọi cư dân. Những bộ phận mà cơ thể của cư dân không có sẽ bị bỏ qua với cư dân đó.\n\nMột kế hoạch có thể mở rộng một kế hoạch dành cho mọi cơ thể, hoặc một kế hoạch cho cùng cơ thể.</IMP_PlanBodyTip>
+  <IMP_PlanForBody>cho {0}</IMP_PlanForBody>
+  <IMP_PlanMenuOnlyFor>{0} (chỉ {1})</IMP_PlanMenuOnlyFor>
+  <IMP_StateNotForBody>Không dành cho cơ thể này</IMP_StateNotForBody>
 </LanguageData>

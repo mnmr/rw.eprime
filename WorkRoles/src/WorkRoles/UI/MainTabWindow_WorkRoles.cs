@@ -9,7 +9,7 @@ using WorkRoles.Dev;
 
 namespace WorkRoles.UI
 {
-    public class MainTabWindow_WorkRoles : MainTabWindow
+    public class MainTabWindow_WorkRoles : ResizableMainTabWindow
     {
         private enum Tab { Colonists, Roles, Recommendations, Options, Help }
 
@@ -20,7 +20,6 @@ namespace WorkRoles.UI
         private readonly OptionsTabView optionsTab = new OptionsTabView();
         private readonly HelpTabView helpTab =
             new HelpTabView(WorkRolesHelpHost.Instance);
-        private readonly System.Action drawGrip;
         private int observedLanguageRevision;
 
         /// Top-right actions: the Roles tab groups Import, Export, Set defaults
@@ -34,10 +33,7 @@ namespace WorkRoles.UI
 
         public MainTabWindow_WorkRoles()
         {
-            drawGrip = DrawGripContents;
             observedLanguageRevision = LanguageChangeCoordinator.Revision;
-            resizeable = false;
-            draggable = false;   // main tab windows are not draggable
             // The Roles tab's holder list mirrors whatever the colonist table lists.
             rolesTab.listedPawns = () => colonistsTab.ListedPawns();
             rolesTab.pawnListRevision = () => colonistsTab.PawnListRevision;
@@ -47,20 +43,18 @@ namespace WorkRoles.UI
                 colonistsTab.ShowAutoOptimizeEnablePreview;
         }
 
-        public override Vector2 RequestedTabSize => TargetSize();
-
         /// Width floors at the design width and grows with the widest chip
         /// strip; whichever tab wants more height wins (small colonies would
         /// otherwise cramp the Roles tab). Both floored at the design minimum
         /// and capped at the screen.
-        private Vector2 TargetSize()
+        protected override Vector2 TargetSize()
         {
-            Vector2 min = MinManualSize;
+            Vector2 min = MinSize;
             float w = Mathf.Clamp(colonistsTab.DesiredWidth() + 200f,
                 min.x, Verse.UI.screenWidth);
             float h = Mathf.Clamp(
                 Mathf.Max(colonistsTab.DesiredHeight(), rolesTab.DesiredHeight()),
-                min.y, Verse.UI.screenHeight - 35f);
+                min.y, Verse.UI.screenHeight - BottomBarHeight);
             return new Vector2(w, h);
         }
 
@@ -71,8 +65,7 @@ namespace WorkRoles.UI
         /// dialog warns about it. Tab contents scroll internally.
         internal const float DesignScreenWidth = 1536f;
         internal const float DesignScreenHeight = 864f;
-        private const float BottomBarHeight = 35f;
-        private static Vector2 MinManualSize => new Vector2(
+        protected override Vector2 MinSize => new Vector2(
             Mathf.Min(DesignScreenWidth, Verse.UI.screenWidth),
             Mathf.Min(DesignScreenHeight, Verse.UI.screenHeight)
                 - BottomBarHeight);
@@ -81,127 +74,31 @@ namespace WorkRoles.UI
             Verse.UI.screenWidth < DesignScreenWidth
             || Verse.UI.screenHeight < DesignScreenHeight;
 
-        /// Re-applies the persisted size each open, clamped between the manual
-        /// minimums and the screen; bottom-left anchor holds.
-        protected override void SetInitialSizeAndPosition()
+        /// The player's remembered window size lives in the mod settings
+        /// (0 = automatic per axis); the write is deferred outside OnGUI.
+        private sealed class SizePreferenceAdapter : IWindowSizePreference
         {
-            resizing = false;
-            pendingWindowRect.Clear();
-            base.SetInitialSizeAndPosition();
-            var settings = WorkRolesMod.Settings;
-            if (settings == null || (settings.windowWidth <= 0f && settings.windowHeight <= 0f))
-                return;
-            var min = MinManualSize;
-            if (settings.windowWidth > 0f)
-                windowRect.width = Mathf.Clamp(settings.windowWidth, min.x, Verse.UI.screenWidth);
-            if (settings.windowHeight > 0f)
-                windowRect.height = Mathf.Clamp(settings.windowHeight, min.y, Verse.UI.screenHeight - 35f);
-            windowRect.x = 0f;
-            windowRect.y = Verse.UI.screenHeight - 35f - windowRect.height;
-        }
-
-        private Rect AutoSizeRect()
-        {
-            var size = TargetSize();
-            return new Rect(0f, Verse.UI.screenHeight - 35f - size.y, size.x, size.y);
-        }
-
-        private bool resizing;
-        private float resizeBottom;    // screen-space bottom edge, pinned while dragging
-        private Vector2 resizeGrab;    // grab point: (distance from right edge, distance from top)
-        private readonly PendingUpdate<Rect> pendingWindowRect = new PendingUpdate<Rect>();
-
-        /// Resize grip in its own immediate window (the contents group clips
-        /// the corner; plain ExtraOnGUI paints under GUI windows). Grows width
-        /// right and height UP — the bottom is pinned. Double-click = auto.
-        internal const float GripSize = 18f;
-        private const int GripWindowId = 147723001;
-        private Rect gripScreen;
-
-        public override void ExtraOnGUI()
-        {
-            base.ExtraOnGUI();
-            gripScreen = new Rect(windowRect.xMax - GripSize - 2f,
-                windowRect.y + 2f, GripSize, GripSize);
-            // Dialog layer: clicking our window refocuses it to the top of
-            // GameUI, which would bury a same-layer grip.
-            Find.WindowStack.ImmediateWindow(GripWindowId, gripScreen, WindowLayer.Dialog,
-                drawGrip, doBackground: false, absorbInputAroundWindow: false, 0f);
-        }
-
-        private void DrawGripContents()
-        {
-            var settings = WorkRolesMod.Settings;
-            var local = new Rect(0f, 0f, GripSize, GripSize);
-            WrTips.Key("WR_ResizeGripTip").Region(local);
-            // Reddish = player-sized. UV flip, not rotation: GUI matrix
-            // rotation misplaces draws inside GUI windows.
-            bool custom = settings != null && (settings.windowWidth > 0f || settings.windowHeight > 0f);
-            GUI.color = custom ? new Color(1f, 0.5f, 0.45f) : Color.white;
-            GUI.DrawTextureWithTexCoords(local, TexUI.WinExpandWidget, new Rect(0f, 1f, 1f, -1f));
-            GUI.color = Color.white;
-
-            var e = Event.current;
-            if (e.type == EventType.MouseDown && e.button == 0 && local.Contains(e.mousePosition))
+            public float Width
             {
-                if (e.clickCount == 2 && settings != null)
-                {
-                    settings.windowWidth = settings.windowHeight = 0f;
-                    WorkRolesGameComponent.RequestSettingsWrite();
-                    resizing = false;
-                    pendingWindowRect.QueueUser(AutoSizeRect());
-                }
-                else
-                {
-                    var screenMouse = gripScreen.position + e.mousePosition;
-                    resizing = true;
-                    resizeBottom = windowRect.yMax;
-                    resizeGrab = new Vector2(windowRect.xMax - screenMouse.x, screenMouse.y - windowRect.y);
-                    pendingWindowRect.QueueUser(windowRect);
-                }
-                e.Use();
+                get => WorkRolesMod.Settings?.windowWidth ?? 0f;
+                set { var s = WorkRolesMod.Settings; if (s != null) s.windowWidth = value; }
             }
 
-            if (!resizing) return;
-            if (e.type == EventType.Repaint)
+            public float Height
             {
-                // Real cursor in screen-UI coords (game-window origin, y down).
-                var gamePx = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y);
-                var mouseUI = gamePx / Prefs.UIScale;
-
-                var min = MinManualSize;
-                float width = Mathf.Clamp(mouseUI.x + resizeGrab.x, min.x, Verse.UI.screenWidth);
-                float top = mouseUI.y - resizeGrab.y;
-                float height = Mathf.Clamp(resizeBottom - top, min.y, Verse.UI.screenHeight - 35f);
-                var nextWindowRect = new Rect(0f, resizeBottom - height, width, height);
-                pendingWindowRect.QueueUser(nextWindowRect);
-
-                // Warp only when a clamp stops the window: the cursor rides the
-                // handle instead of drifting over other UI. Windows-only.
-                var grabUI = new Vector2(nextWindowRect.width - resizeGrab.x, nextWindowRect.y + resizeGrab.y);
-                if ((mouseUI - grabUI).sqrMagnitude > 4f && Win32Cursor.TryGetPos(out var desktopPx))
-                {
-                    var desktopOrigin = desktopPx - gamePx;
-                    Win32Cursor.SetPos(desktopOrigin + grabUI * Prefs.UIScale);
-                }
+                get => WorkRolesMod.Settings?.windowHeight ?? 0f;
+                set { var s = WorkRolesMod.Settings; if (s != null) s.windowHeight = value; }
             }
-            if (e.type == EventType.MouseUp || !Input.GetMouseButton(0))
-            {
-                resizing = false;
-                if (settings != null)
-                {
-                    var persistedRect = pendingWindowRect.TryGetUser(out var pendingUserRect)
-                        ? pendingUserRect : windowRect;
-                    settings.windowWidth = persistedRect.width;
-                    settings.windowHeight = persistedRect.height;
-                    WorkRolesGameComponent.RequestSettingsWrite();
-                }
-                if (e.type == EventType.MouseUp) e.Use();
-            }
+
+            public void RequestWrite() => WorkRolesGameComponent.RequestSettingsWrite();
         }
 
-        /// Pending size changes apply between frames: mid-event windowRect
-        /// changes desync Layout from later passes.
+        private static readonly SizePreferenceAdapter sizePreference = new SizePreferenceAdapter();
+        protected override IWindowSizePreference? SizePreference =>
+            WorkRolesMod.Settings != null ? sizePreference : null;
+        protected override string GripTipKey => "WR_ResizeGripTip";
+        protected override int GripWindowId => 147723001;
+
         public override void WindowUpdate()
         {
             base.WindowUpdate();
@@ -209,8 +106,6 @@ namespace WorkRoles.UI
             RoleIconPresentationCatalog.Refresh(RoleStore.Current);
             WrToast.Update();
             helpTab.FlushPendingWrites();
-            if (pendingWindowRect.TryConsume(out var nextWindowRect))
-                windowRect = nextWindowRect;
         }
 
         private void ObserveLanguageRevision()
@@ -278,8 +173,6 @@ namespace WorkRoles.UI
             base.PostClose();
             ActivityTracker.Disable();
             RoleDrag.Cancel();
-            resizing = false;
-            pendingWindowRect.Clear();
             rolesTab.CommitEdits();
             SetupDefaults.QueueFlush();
             KeyOverride.Restore();
@@ -395,7 +288,7 @@ namespace WorkRoles.UI
             }
         }
 
-        public override void DoWindowContents(Rect inRect)
+        protected override void DrawTabContents(Rect inRect)
         {
             if (WrEvent.SkipContentPass()) return;
             using var guiState = GuiStateScope.Capture();
@@ -422,36 +315,6 @@ namespace WorkRoles.UI
             if (curTab == Tab.Colonists && Event.current.type == EventType.KeyDown
                 && GUIUtility.keyboardControl == 0 && colonistsTab.HandleKey(Event.current))
                 Event.current.Use();
-
-            // Grow-only mid-session resize; manual geometry wins while
-            // dragging, if both kinds of update are waiting for WindowUpdate,
-            // and per axis the player has explicitly sized (auto-grow would
-            // otherwise undo every shrink each frame).
-            if (!resizing)
-            {
-                var sizeSettings = WorkRolesMod.Settings;
-                var target = TargetSize();
-                var nextWindowRect = windowRect;
-                bool grew = false;
-                if (target.x > nextWindowRect.width + 1f
-                    && !(sizeSettings != null && sizeSettings.windowWidth > 0f))
-                {
-                    nextWindowRect.width = target.x;
-                    grew = true;
-                }
-                if (target.y > nextWindowRect.height + 1f
-                    && !(sizeSettings != null && sizeSettings.windowHeight > 0f))
-                {
-                    nextWindowRect.height = target.y;
-                    grew = true;
-                }
-                if (grew)
-                {
-                    nextWindowRect.x = 0f;
-                    nextWindowRect.y = Verse.UI.screenHeight - 35f - nextWindowRect.height;
-                    pendingWindowRect.QueueAutomatic(nextWindowRect);
-                }
-            }
 
             Rect content = new Rect(inRect.x, inRect.y + TabStrip.TabHeight, inRect.width, inRect.height - TabStrip.TabHeight);
             Widgets.DrawMenuSection(content);
@@ -538,39 +401,6 @@ namespace WorkRoles.UI
 
             // Last on purpose: toasts paint over everything the window drew.
             WrToast.Draw(inRect);
-        }
-    }
-
-    /// Unity has no portable cursor-warp API: Windows-only, no-ops elsewhere.
-    internal static class Win32Cursor
-    {
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-        private struct Point { public int X, Y; }
-
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern bool GetCursorPos(out Point p);
-
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern bool SetCursorPos(int x, int y);
-
-        private static bool Available =>
-            Application.platform == RuntimePlatform.WindowsPlayer
-            || Application.platform == RuntimePlatform.WindowsEditor;
-
-        public static bool TryGetPos(out Vector2 px)
-        {
-            if (Available && GetCursorPos(out var p))
-            {
-                px = new Vector2(p.X, p.Y);
-                return true;
-            }
-            px = default;
-            return false;
-        }
-
-        public static void SetPos(Vector2 px)
-        {
-            if (Available) SetCursorPos((int)px.x, (int)px.y);
         }
     }
 }

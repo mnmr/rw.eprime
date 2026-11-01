@@ -65,7 +65,7 @@
   <IMP_TipColInstalled>已安装</IMP_TipColInstalled>
   <IMP_TipColMissing>缺少</IMP_TipColMissing>
   <IMP_TipColScheduled>已安排</IMP_TipColScheduled>
-  <IMP_TipColonistStates>殖民者：{0} 人等待，{1} 人准备，{2} 人手术中，{3} 人完成，{4} 人外出</IMP_TipColonistStates>
+  <IMP_TipColonistStates>殖民者:{0} 人等待,{1} 人准备,{2} 人手术中,{3} 人完成,{4} 人外出,{5} 人为其他身体</IMP_TipColonistStates>
   <IMP_NextScheduled>已安排安装 {0} 的手术</IMP_NextScheduled>
   <IMP_ColonistDetails>殖民者详情</IMP_ColonistDetails>
   <IMP_DetailCollecting>正在收集 {0}</IMP_DetailCollecting>
@@ -215,4 +215,15 @@
   <IMP_OptAndroidSurgeonsCrafters>机器人手术：已开启“修复机器人”的工匠（跟随 Android Tiers）</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>机器人手术：医生（跟随 Android Tiers）</IMP_OptAndroidSurgeonsDoctors>
   <IMP_OptAndroidSurgeonsTip>Implanner 会跟随 Android Tiers 的“机器人只能由工匠修复”设置，该设置需在 Android Tiers 的模组设置中更改。开启时，由已开启“修复机器人”的工匠执行机器人手术；关闭时由医生执行。机器人手术使用手工技能。开启医生自动选择后，Implanner 会将每项机器人手术限定给手工技能最高的合格殖民者。</IMP_OptAndroidSurgeonsTip>
+  <IMP_BodyAll>所有身体</IMP_BodyAll>
+  <IMP_BodyFilterTip>仅显示该身体拥有的部位。\n\n方案适用于所有殖民者。殖民者身体上没有的部位,会在该殖民者身上被跳过。</IMP_BodyFilterTip>
+  <IMP_GoalBlockedBy>受 {0} 限制</IMP_GoalBlockedBy>
+  <IMP_GoalBlocked>已受阻</IMP_GoalBlocked>
+  <IMP_PlanBody>身体</IMP_PlanBody>
+  <IMP_PlanBodyAny>任意身体</IMP_PlanBodyAny>
+  <IMP_PlanBodyNotLoaded>{0}(未加载)</IMP_PlanBodyNotLoaded>
+  <IMP_PlanBodyTip>针对某一种身体制定的方案只会列出该身体的部位,并且只能征召拥有该身体的殖民者。\n\n针对任意身体的方案适用于所有殖民者。殖民者身体上没有的部位会被跳过。\n\n方案可以继承针对任意身体的方案,也可以继承针对同一种身体的方案。</IMP_PlanBodyTip>
+  <IMP_PlanForBody>适用于{0}</IMP_PlanForBody>
+  <IMP_PlanMenuOnlyFor>{0}(仅限{1})</IMP_PlanMenuOnlyFor>
+  <IMP_StateNotForBody>不适用于此身体</IMP_StateNotForBody>
 </LanguageData>

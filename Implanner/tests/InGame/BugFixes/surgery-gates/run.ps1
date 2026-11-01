@@ -1,6 +1,6 @@
 $ErrorActionPreference='Stop'
 $tools='D:/Code/RimWorld/Shared/tools/automation'
-$run=& "$tools/create-run.ps1" -Purpose 'Implanner fix verification: blocked surgery cap starvation and existing bill doctor-floor update' -ModSet implanner-review-surgery-gates -AdditionalModSource @("$PSScriptRoot/Probe")
+$run=& "$tools/create-run.ps1" -Purpose 'Implanner fix verification: blocked surgery cap starvation and existing bill doctor-floor update' -ModSet implanner-review-surgery-gates -GameVersion 1.7 -SavePattern 'Fisso-NAM-1.7.rws' -AdditionalModSource @("$PSScriptRoot/Probe")
 $out=Join-Path 'D:/Code/RimWorld/Implanner/temp/fix-verification'  "evidence-$($run.runId)"
 New-Item -ItemType Directory -Force -Path $out|Out-Null
 try {

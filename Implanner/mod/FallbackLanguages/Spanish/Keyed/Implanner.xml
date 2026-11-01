@@ -65,7 +65,7 @@
   <IMP_TipColInstalled>Instalados</IMP_TipColInstalled>
   <IMP_TipColMissing>Faltan</IMP_TipColMissing>
   <IMP_TipColScheduled>Programados</IMP_TipColScheduled>
-  <IMP_TipColonistStates>Colonos: {0} esperando, {1} preparándose, {2} en cirugía, {3} completados, {4} ausentes</IMP_TipColonistStates>
+  <IMP_TipColonistStates>Colonos: {0} esperando, {1} preparándose, {2} en cirugía, {3} completados, {4} ausentes, {5} con otro cuerpo</IMP_TipColonistStates>
   <IMP_NextScheduled>Cirugía programada para {0}</IMP_NextScheduled>
   <IMP_ColonistDetails>Detalles del colono</IMP_ColonistDetails>
   <IMP_DetailCollecting>Reuniendo {0}</IMP_DetailCollecting>
@@ -215,4 +215,15 @@
   <IMP_OptAndroidSurgeonsCrafters>Operaciones de androides: artesanos con "Reparar androides" (sigue a Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>Operaciones de androides: médicos (sigue a Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
   <IMP_OptAndroidSurgeonsTip>Implanner sigue el ajuste de Android Tiers "Los androides solo pueden ser curados por artesanos", que se cambia en los ajustes del mod Android Tiers. Activado, los artesanos con "Reparar androides" activado realizan las operaciones de androides. Desactivado, las realizan los médicos. Las operaciones de androides usan la habilidad de Fabricación. Con la selección automática de médicos activada, Implanner limita cada operación de androide al mejor colono elegible según su habilidad de Fabricación.</IMP_OptAndroidSurgeonsTip>
+  <IMP_BodyAll>Todos los cuerpos</IMP_BodyAll>
+  <IMP_BodyFilterTip>Muestra solo las partes que tiene este cuerpo.\n\nUn plan se aplica a todos los colonos. Las partes que el cuerpo de un colono no tiene se omiten para ese colono.</IMP_BodyFilterTip>
+  <IMP_GoalBlockedBy>Bajo {0}</IMP_GoalBlockedBy>
+  <IMP_GoalBlocked>Bloqueado</IMP_GoalBlocked>
+  <IMP_PlanBody>Cuerpo</IMP_PlanBody>
+  <IMP_PlanBodyAny>Cualquier cuerpo</IMP_PlanBodyAny>
+  <IMP_PlanBodyNotLoaded>{0} (no cargado)</IMP_PlanBodyNotLoaded>
+  <IMP_PlanBodyTip>Un plan creado para un cuerpo solo muestra las partes de ese cuerpo y solo puede incluir a colonos con ese cuerpo.\n\nUn plan para cualquier cuerpo se aplica a todos los colonos. Las partes que el cuerpo de un colono no tenga se omiten para ese colono.\n\nUn plan puede ampliar un plan para cualquier cuerpo o un plan para el mismo cuerpo.</IMP_PlanBodyTip>
+  <IMP_PlanForBody>para {0}</IMP_PlanForBody>
+  <IMP_PlanMenuOnlyFor>{0} (solo {1})</IMP_PlanMenuOnlyFor>
+  <IMP_StateNotForBody>No es para este cuerpo</IMP_StateNotForBody>
 </LanguageData>

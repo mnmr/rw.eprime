@@ -40,7 +40,7 @@ namespace Implanner.Core
             ComputeUnits(implants, out int satisfiedUnits, out int totalUnits);
             var state = DeriveState(implants, away);
             return new PlanEvaluation(implants, state,
-                satisfiedUnits, totalUnits);
+                satisfiedUnits, totalUnits, implantContexts);
         }
 
         /// The implant slots surgery automation still has to deliver: selected

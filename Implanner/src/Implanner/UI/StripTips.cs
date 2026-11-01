@@ -238,7 +238,8 @@ namespace Implanner.UI
                 states[(int)ColonistStatus.Preparing],
                 states[(int)ColonistStatus.Operating],
                 states[(int)ColonistStatus.Done],
-                states[(int)ColonistStatus.Away]), dim: true);
+                states[(int)ColonistStatus.Away],
+                states[(int)ColonistStatus.NotForBody]), dim: true);
             return model;
         }
 

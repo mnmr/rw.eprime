@@ -24,6 +24,14 @@ commands. Where this file is silent, the root contract governs.
   (`MainTabWindow_WorkRoles.ScreenBelowDesignFloor`). Help topic
   `6-advanced/06-screen-size` documents the floor. Verify layout changes at
   1920x1080 @1.25 and above in a managed run; do not verify below the floor.
+- The main window is a shared `RimShared.UiLib.ResizableMainTabWindow`
+  (owner, 2026-11-01): the top-right grip, bottom-pinned grow-up/right
+  resize, per-axis auto-grow, double-click reset and the deferred
+  windowRect application live there; WorkRoles supplies `TargetSize`,
+  `MinSize` (the floor above), the `windowWidth`/`windowHeight` settings
+  adapter, the grip tip key and the grip's immediate-window id. Resizing
+  needs a run larger than the floor (2560x1440 @1.25 verified 2026-11-01,
+  `temp/resize`).
 
 ## Canonical refresh boundaries
 

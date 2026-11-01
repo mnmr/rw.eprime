@@ -8,9 +8,13 @@ namespace QualityJobs.Patches
 {
     /// Toolbar button beside the vanilla view toggles (show room beauty and
     /// friends). Registered the standard mod-compatible way: a postfix on the
-    /// same WidgetRow vanilla fills, so toolbar-restyling mods that patch this
-    /// method compose with ours instead of hiding it. The row does the actual
-    /// painting; we contribute one button.
+    /// same WidgetRow vanilla fills, drawn through the row's own button
+    /// primitive (WidgetRow.ButtonIcon / ButtonIconRect). Toolbar-restyling
+    /// mods relocate exactly those primitives (UI Rethemed - Main Bar runs
+    /// this method inside its own grid and prefixes ToggleableIcon,
+    /// ButtonIcon and ButtonIconRect; a bare row.Icon plus an invisible
+    /// button was never captured and painted over its first cell, found
+    /// 2026-11-01 beside the same Implanner report).
     ///
     /// The button opens the Options and Help window for this mod. A global
     /// settings toggle hides it for players who do not want the shortcut.
@@ -24,17 +28,10 @@ namespace QualityJobs.Patches
         private static LoadedLanguage? tipLanguage;
         private static string? tip;
 
-        // Last drawn rect, used to pick the hover texture on the NEXT pass:
-        // Icon() only reveals its rect after drawing, and toolbar-restyling
-        // mods may relocate it, so predicting the rect up front is unreliable.
-        // One frame of hover lag is imperceptible.
-        private static Rect lastIconRect;
-
         internal static void ResetPresentation()
         {
             tipLanguage = null;
             tip = null;
-            lastIconRect = default;
         }
 
         public static void Postfix(WidgetRow row, bool worldView)
@@ -62,17 +59,19 @@ namespace QualityJobs.Patches
             if (phase > 0.01f && phase < CellPitch - 0.01f)
                 row.Gap(CellPitch - phase);
 
-            // Drawn through row.Icon, the same primitive the vanilla toggles
-            // use, consuming the standard cell (icon + gap). Icon returns the
-            // rect it actually drew in; an invisible button over that rect
-            // supplies the click, and the hover texture is picked from the
-            // previous pass's rect (Icon only reveals its rect after drawing).
-            Texture2D tex = Mouse.IsOver(lastIconRect)
+            // ButtonIconRect answers the cell ButtonIcon is about to use
+            // without advancing the row (restyling mods answer their own
+            // cell), so the hover texture is exact for this pass. The hover
+            // variant is a brightened render, so the button's own mouseover
+            // tint stays white. ButtonIcon advances by the icon only; the
+            // trailing gap keeps the vanilla 28-unit cell for the next mod.
+            Rect iconRect = row.ButtonIconRect();
+            Texture2D tex = Mouse.IsOver(iconRect)
                 ? QualityJobsTex.ToolbarButtonHover
                 : QualityJobsTex.ToolbarButton;
-            Rect iconRect = row.Icon(tex, tip);
-            lastIconRect = iconRect;
-            if (Widgets.ButtonInvisible(iconRect))
+            bool clicked = row.ButtonIcon(tex, tip, mouseoverColor: Color.white);
+            row.Gap(WidgetRow.DefaultGap);
+            if (clicked)
                 Find.WindowStack.Add(new Dialog_QualityJobs());
         }
     }

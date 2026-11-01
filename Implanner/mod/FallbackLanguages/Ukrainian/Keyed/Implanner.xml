@@ -197,7 +197,7 @@
   <IMP_TipColScheduled>Призначено</IMP_TipColScheduled>
   <IMP_TipColStatus>Стан</IMP_TipColStatus>
   <IMP_TipColTier>Рівень</IMP_TipColTier>
-  <IMP_TipColonistStates>Колоністи: {0} очікують, {1} готуються, {2} оперуються, {3} завершили, {4} відсутні</IMP_TipColonistStates>
+  <IMP_TipColonistStates>Колоністи: {0} очікують, {1} готуються, {2} оперуються, {3} завершили, {4} відсутні, {5} з іншим тілом</IMP_TipColonistStates>
   <IMP_TipCovered>Забезпечено</IMP_TipCovered>
   <IMP_TipMaking>Виготовляється</IMP_TipMaking>
   <IMP_TipMakingMaterials>Виготовлення матеріалів</IMP_TipMakingMaterials>
@@ -215,4 +215,15 @@
   <IMP_OptAndroidSurgeonsCrafters>Операції на андроїдах: майстри з «Ремонтом андроїдів» (за Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>Операції на андроїдах: лікарі (за Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
   <IMP_OptAndroidSurgeonsTip>Implanner дотримується налаштування Android Tiers «Андроїдів можуть лікувати лише майстри», яке змінюється в налаштуваннях мода Android Tiers. Коли воно ввімкнене, операції на андроїдах виконують майстри з увімкненим «Ремонтом андроїдів». Коли вимкнене, їх виконують лікарі. Операції на андроїдах використовують навичку ремесла. Якщо ввімкнено автоматичний вибір лікаря, Implanner обмежує кожну операцію на андроїді найкращим придатним колоністом за навичкою ремесла.</IMP_OptAndroidSurgeonsTip>
+  <IMP_BodyAll>Усі тіла</IMP_BodyAll>
+  <IMP_BodyFilterTip>Показувати лише ті частини, які є в цьому тілі.\n\nПлан застосовується до кожного колоніста. Частини, яких немає в тілі колоніста, для нього пропускаються.</IMP_BodyFilterTip>
+  <IMP_GoalBlockedBy>Нижче {0}</IMP_GoalBlockedBy>
+  <IMP_GoalBlocked>Заблоковано</IMP_GoalBlocked>
+  <IMP_PlanBody>Тіло</IMP_PlanBody>
+  <IMP_PlanBodyAny>Будь-яке тіло</IMP_PlanBodyAny>
+  <IMP_PlanBodyNotLoaded>{0} (не завантажено)</IMP_PlanBodyNotLoaded>
+  <IMP_PlanBodyTip>План, створений для одного типу тіла, містить лише частини цього тіла та може залучати лише колоністів із таким тілом.\n\nПлан для будь-якого тіла застосовується до кожного колоніста. Частини, яких немає в тілі колоніста, для нього пропускаються.\n\nПлан може розширювати план для будь-якого тіла або план для того самого тіла.</IMP_PlanBodyTip>
+  <IMP_PlanForBody>для {0}</IMP_PlanForBody>
+  <IMP_PlanMenuOnlyFor>{0} (лише {1})</IMP_PlanMenuOnlyFor>
+  <IMP_StateNotForBody>Не для цього тіла</IMP_StateNotForBody>
 </LanguageData>

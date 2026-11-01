@@ -173,6 +173,21 @@ namespace Implanner.UI
         internal string Query = "";
         internal bool Searching => Query.Length > 0;
 
+        /// The body filter's menu labels ("All bodies", then each plannable
+        /// body), empty while only one body is plannable (vanilla races
+        /// only: no control) or while the selected plan is pinned (the
+        /// filter is then fixed to its body and drawn as a label).
+        /// Resolved at build so the draw pass hands the menu a stable array.
+        internal string[] BodyLabels = Array.Empty<string>();
+        /// The filter button's text (the active body label, or the pinned
+        /// plan's "for Android"), its Small-font fit width measured at
+        /// build, and the tooltip.
+        internal string BodyFilterText = "";
+        internal float BodyFilterWidth;
+        internal string BodyFilterTip = "";
+        /// The selected plan is pinned: BodyFilterText is a fixed label.
+        internal bool PinnedBody;
+
         /// One combined ranking list over the plan's own implants (inherited
         /// goals are not listed unless explicitly re-included). Index 0 =
         /// five stars … index 4 = one star.
@@ -222,6 +237,7 @@ namespace Implanner.UI
         private int factsStamp = -1;
         private int selectionStamp = -1;
         private int regionStamp = -1;
+        private int bodyStamp = -2;
         private string queryStamp = "";
 
         /// The vanilla search field (icon, clear button, Escape unfocuses
@@ -286,6 +302,13 @@ namespace Implanner.UI
         /// captions point at neighbours in the same view.
         internal int Region;
 
+        /// Body filter: a Catalogs.PlannableBodies position, or -1 for every
+        /// body. Presentation only (a plan applies to every colonist; slots
+        /// a colonist's body lacks are skipped for them): the picker shows
+        /// only the slots that body carries, in the grouped view and in
+        /// search results alike.
+        internal int Body = -1;
+
         /// Session view state: COLLAPSED tree node keys — every group starts
         /// expanded (the trees mostly fit on screen). Folding only skips
         /// drawing already-built rows; it is not a snapshot dependency.
@@ -310,6 +333,7 @@ namespace Implanner.UI
             factsStamp = -1;
             selectionStamp = -1;
             regionStamp = -1;
+            bodyStamp = -2;
             queryStamp = "";
             rawQuery = "";
             activeQuery = "";
@@ -416,6 +440,7 @@ namespace Implanner.UI
                 || factsStamp != ExternalPawnFacts.Revision
                 || selectionStamp != SelectedPlanId
                 || regionStamp != Region
+                || bodyStamp != Body
                 || !string.Equals(queryStamp, query, StringComparison.Ordinal))
             {
                 snapshot = Build(store, query);
@@ -428,6 +453,7 @@ namespace Implanner.UI
                 factsStamp = ExternalPawnFacts.Revision;
                 selectionStamp = SelectedPlanId;
                 regionStamp = Region;
+                bodyStamp = Body;
                 queryStamp = query;
             }
             return snapshot;
@@ -478,6 +504,43 @@ namespace Implanner.UI
                         + "IMP_PlanMinQualityNoQualityJobs".Translate();
             }
 
+            // The body filter exists only with more than one plannable body
+            // (a modded humanlike race beside the human). An out-of-range
+            // selection (none possible within a session) reads as every body.
+            // A pinned plan fixes the filter to its body: no menu, a label.
+            List<BodyDef> bodies = Catalogs.PlannableBodies();
+            if (selected != null && selected.IsPinned)
+            {
+                Body = PlanBodies.IndexOf(selected.Body);
+                result.PinnedBody = true;
+                result.BodyFilterText = "IMP_PlanForBody".Translate(
+                    PlanBodies.Label(selected.Body));
+                result.BodyFilterTip = "IMP_PlanBodyTip".Translate();
+            }
+            else if (bodies.Count > 1)
+            {
+                if (Body >= bodies.Count) Body = -1;
+                var labels = new string[bodies.Count + 1];
+                labels[0] = "IMP_BodyAll".Translate();
+                for (int b = 0; b < bodies.Count; b++)
+                    labels[b + 1] = bodies[b].LabelCap.ToString();
+                result.BodyLabels = labels;
+                result.BodyFilterText = labels[Body + 1];
+                result.BodyFilterTip = "IMP_BodyFilterTip".Translate();
+            }
+            if (result.BodyFilterText.Length > 0)
+            {
+                Text.Font = GameFont.Small;
+                try
+                {
+                    result.BodyFilterWidth = WrText.MeasureFitWidth(result.BodyFilterText);
+                }
+                finally
+                {
+                    Text.Font = font;
+                }
+            }
+
             // Enlisted colonists per plan: the same pawn set and evaluation
             // the overview uses, so the card counts and bars never disagree
             // with the table.
@@ -503,16 +566,29 @@ namespace Implanner.UI
                 // The counter is total selected slots (two bionic legs are
                 // two implants), not distinct implant kinds.
                 IReadOnlyList<ImplantGoal> planGoals = model.EffectiveImplants(plan);
+                // A pinned plan counts only the slots its body carries
+                // (inherited picks for other bodies never apply to it).
                 int slotCount = 0;
+                int pinnedBody = plan.IsPinned ? PlanBodies.IndexOf(plan.Body) : -1;
                 for (int g = 0; g < planGoals.Count; g++)
-                    slotCount += planGoals[g].Count;
+                {
+                    if (pinnedBody < 0)
+                    {
+                        slotCount += planGoals[g].Count;
+                        continue;
+                    }
+                    for (int s = 0; s < planGoals[g].Slots.Count; s++)
+                        if (ImplantConflicts.FactsOn(planGoals[g].ImplantDefName,
+                                planGoals[g].Slots[s], pinnedBody) != null)
+                            slotCount++;
+                }
 
                 enlisted.TryGetValue(plan.Id, out List<Pawn>? planPawns);
                 int satisfied = 0, total = 0;
                 for (int p = 0; planPawns != null && p < planPawns.Count; p++)
                 {
                     PlanEvaluation evaluation = PawnProjection.Evaluate(
-                        model, planPawns[p], planGoals, away: false, plan.MinQuality);
+                        model, planPawns[p], planGoals, away: false, plan.MinQuality, plan.Body);
                     satisfied += evaluation.SatisfiedUnits;
                     total += evaluation.TotalUnits;
                 }
@@ -522,6 +598,14 @@ namespace Implanner.UI
                 Plan? basePlan = plan.BasePlanId != 0
                     ? model.PlanById(plan.BasePlanId)
                     : null;
+                // The name row's caption holds one fact: the base link, or
+                // the pinned body ("for Android"). A pinned plan that also
+                // extends one shows its body on the counts line instead (the
+                // editor header shows it in full once selected).
+                string forBody = plan.IsPinned
+                    ? "IMP_PlanForBody".Translate(PlanBodies.Label(plan.Body)).ToString()
+                    : "";
+                if (plan.IsPinned && basePlan != null) counts += " · " + forBody;
                 var row = new PlanListRow
                 {
                     PlanId = plan.Id,
@@ -529,7 +613,7 @@ namespace Implanner.UI
                     CountsText = counts,
                     ExtendsText = basePlan != null
                         ? "IMP_PlanExtends".Translate(basePlan.Name).ToString()
-                        : "",
+                        : forBody,
                     Progress = total == 0 ? 0f : (float)satisfied / total,
                     PercentText = total == 0 ? "" : (satisfied * 100 / total) + "%",
                 };
@@ -597,6 +681,8 @@ namespace Implanner.UI
             var hosts = new Dictionary<PartAddress, List<RequirementCandidate>>();
             string? lastGroup = null;
             bool showPurchaseOnly = model.ShowPurchaseOnly;
+            List<BodyDef> bodies = Catalogs.PlannableBodies();
+            BodyDef? bodyFilter = Body >= 0 && Body < bodies.Count ? bodies[Body] : null;
             // Leaf labels are measured here (Small font established first)
             // so the caption fitting stage never measures them per width.
             GameFont font = Text.Font;
@@ -607,18 +693,6 @@ namespace Implanner.UI
                 {
                     ImplantCatalogEntry entry = implants[i];
                     if (!PassesFilters(entry, showPurchaseOnly, searching)) continue;
-                    if (!searching
-                        && !string.Equals(lastGroup, entry.GroupLabel, StringComparison.Ordinal))
-                    {
-                        lastGroup = entry.GroupLabel;
-                        tree.Add(new PickerRow
-                        {
-                            Depth = 0,
-                            Node = true,
-                            SectionKey = "t|" + entry.GroupLabel,
-                            Label = entry.GroupLabel,
-                        });
-                    }
                     // The body-part group matches for every slot of the
                     // entry; resolved once, before the per-slot labels.
                     bool groupMatches = searching
@@ -627,6 +701,26 @@ namespace Implanner.UI
                     for (int s = 0; s < entry.Slots.Count; s++)
                     {
                         PartAddress slot = entry.Slots[s].Address;
+                        // The body filter keeps only the slots that body
+                        // carries (the address's occurrence among its
+                        // records of the part kind).
+                        if (bodyFilter != null && slot.Occurrence
+                                >= bodyFilter.GetPartsWithDef(entry.Slots[s].Part).Count)
+                            continue;
+                        // The group node is emitted with its first visible
+                        // slot, so a filtered-out group leaves no empty node.
+                        if (!searching
+                            && !string.Equals(lastGroup, entry.GroupLabel, StringComparison.Ordinal))
+                        {
+                            lastGroup = entry.GroupLabel;
+                            tree.Add(new PickerRow
+                            {
+                                Depth = 0,
+                                Node = true,
+                                SectionKey = "t|" + entry.GroupLabel,
+                                Label = entry.GroupLabel,
+                            });
+                        }
                         string slotLabel = entry.Slots[s].Label;
                         string label = entry.Slots.Count > 1 && slotLabel.Length > 0
                             ? entry.Label + " (" + slotLabel + ")"
@@ -649,8 +743,8 @@ namespace Implanner.UI
                         row.LabelWidth = WrText.FitWidth(row.Label);
                         if (!own)
                         {
-                            string overridden = FirstConflictLabel(
-                                model, plannedSlots, entry.Def.defName, slot);
+                            string overridden = FirstConflictLabel(model, selected.Body,
+                                plannedSlots, entry.Def.defName, slot);
                             if (overridden.Length > 0)
                             {
                                 row.OverridesTarget = overridden;
@@ -733,7 +827,7 @@ namespace Implanner.UI
         /// the same goal's other slots or a re-include of an inherited one).
         /// Definition-derived conflicts plus the model's option-driven kind
         /// exclusivity: the same rule the synced command applies.
-        private static string FirstConflictLabel(PlannerModel model,
+        private static string FirstConflictLabel(PlannerModel model, string planBody,
             List<(string Def, PartAddress Slot)> slots, string defName, PartAddress slot)
         {
             for (int i = 0; i < slots.Count; i++)
@@ -741,7 +835,7 @@ namespace Implanner.UI
                 (string otherDef, PartAddress otherSlot) = slots[i];
                 if (string.Equals(otherDef, defName, StringComparison.Ordinal))
                     continue;
-                if (!ImplantConflicts.Conflicts(otherDef, otherSlot, defName, slot)
+                if (!ImplantConflicts.Conflicts(planBody, otherDef, otherSlot, defName, slot)
                     && !model.KindsExclusive(otherDef, defName))
                     continue;
                 ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(otherDef);

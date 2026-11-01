@@ -21,6 +21,9 @@ their plan with its current status:
   operation's skill requirement. Check doctor availability or adjust the
   minimum on the Automation tab (see [surgery options](topic:surgery-options)).
 - **Complete**: installed.
+- **Under ...**: the part sits under an artificial part that is installed,
+  or that this plan will install, so the surgery cannot reach it. The
+  implant is skipped for this colonist and does not count against them.
 
 <!-- l10n:b-7d5d4531ac6c -->
 A plan describes an end state: implants the colonist already has count

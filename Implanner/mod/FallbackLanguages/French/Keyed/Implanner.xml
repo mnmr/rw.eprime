@@ -65,7 +65,7 @@
   <IMP_TipColInstalled>Posés</IMP_TipColInstalled>
   <IMP_TipColMissing>Manquants</IMP_TipColMissing>
   <IMP_TipColScheduled>Programmés</IMP_TipColScheduled>
-  <IMP_TipColonistStates>Colons : {0} en attente, {1} en préparation, {2} en opération, {3} terminés, {4} absents</IMP_TipColonistStates>
+  <IMP_TipColonistStates>Colons : {0} en attente, {1} en préparation, {2} en opération, {3} terminés, {4} absents, {5} d'un autre corps</IMP_TipColonistStates>
   <IMP_NextScheduled>Opération programmée pour {0}</IMP_NextScheduled>
   <IMP_ColonistDetails>Détails du colon</IMP_ColonistDetails>
   <IMP_DetailCollecting>Collecte de {0}</IMP_DetailCollecting>
@@ -215,4 +215,15 @@
   <IMP_OptAndroidSurgeonsCrafters>Opérations sur les androïdes : artisans avec « Réparer les androïdes » (suit Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>Opérations sur les androïdes : médecins (suit Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
   <IMP_OptAndroidSurgeonsTip>Implanner suit le réglage d'Android Tiers « Androids can only be healed by crafters », que vous modifiez dans les réglages du mod Android Tiers. Activé, les artisans pour lesquels « Réparer les androïdes » est activé effectuent les opérations sur les androïdes. Désactivé, ce sont les médecins. Ces opérations utilisent la compétence Artisanat. Lorsque le choix automatique du médecin est activé, Implanner limite chaque opération sur androïde au meilleur colon admissible selon la compétence Artisanat.</IMP_OptAndroidSurgeonsTip>
+  <IMP_BodyAll>Tous les corps</IMP_BodyAll>
+  <IMP_BodyFilterTip>Affiche uniquement les parties que possède ce corps.\n\nUn plan s'applique à tous les colons. Les parties que le corps d'un colon n'a pas sont ignorées pour ce colon.</IMP_BodyFilterTip>
+  <IMP_GoalBlockedBy>Sous {0}</IMP_GoalBlockedBy>
+  <IMP_GoalBlocked>Bloqué</IMP_GoalBlocked>
+  <IMP_PlanBody>Corps</IMP_PlanBody>
+  <IMP_PlanBodyAny>Tout corps</IMP_PlanBodyAny>
+  <IMP_PlanBodyNotLoaded>{0} (non chargé)</IMP_PlanBodyNotLoaded>
+  <IMP_PlanBodyTip>Un plan conçu pour un seul corps ne liste que les parties de ce corps et ne peut mobiliser que les colons ayant ce corps.\n\nUn plan pour tout corps s'applique à tous les colons. Les parties que le corps d'un colon n'a pas sont ignorées pour ce colon.\n\nUn plan peut étendre un plan pour tout corps, ou un plan pour le même corps.</IMP_PlanBodyTip>
+  <IMP_PlanForBody>pour {0}</IMP_PlanForBody>
+  <IMP_PlanMenuOnlyFor>{0} ({1} uniquement)</IMP_PlanMenuOnlyFor>
+  <IMP_StateNotForBody>Pas pour ce corps</IMP_StateNotForBody>
 </LanguageData>
