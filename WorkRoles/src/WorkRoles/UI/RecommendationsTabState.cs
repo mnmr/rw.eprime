@@ -123,6 +123,10 @@ namespace WorkRoles.UI
             tuningWidth = panelsWidth = detailWidth = -1f;
         }
 
+        /// Height of a worded segmented picker line (matches the compact
+        /// control height).
+        internal const float SegmentRowHeight = 26f;
+
         internal void EnsureTuning(RoleStore store, float width)
         {
             ObserveMetrics();
@@ -140,6 +144,7 @@ namespace WorkRoles.UI
 
             RecommendationsTuningOptions options = store.recommendationTuning
                 ?? RecommendationsTuningOptions.Default;
+            var hunterMode = (HunterPlacementMode)options.Get(RecommendationTuningOption.HunterPlacement);
             const float rowGap = 6f;
             // Controls occupy 108px at the right edge; captions keep 20px clear.
             const float descriptionWidthReserve = 128f;
@@ -188,6 +193,11 @@ namespace WorkRoles.UI
                          RecommendationsTuningOptions.Descriptors)
                 {
                     if (descriptor.Hidden) continue;
+                    // A normal-role Hunter has no dynamic slot: its cutoffs
+                    // would be dead dials.
+                    if (hunterMode == HunterPlacementMode.NormalRole
+                        && GroupOf(descriptor.Option) == RecTuningTableGroup.HunterTiers)
+                        continue;
                     if (descriptor.SectionLabelKey != sectionKey)
                     {
                         CloseSection();
@@ -212,15 +222,37 @@ namespace WorkRoles.UI
                         CloseTable();
                         string label = descriptor.LabelKey.Translate();
                         string description = descriptor.DescriptionKey.Translate();
+                        // A worded picker takes its own line under a
+                        // full-width caption; compact controls share the row.
+                        bool segmentsBelow = descriptor.ValueKind
+                            == RecommendationTuningValueKind.HunterPlacement;
                         float descriptionHeight = TinyText.CalcHeight(
                             description,
-                            System.Math.Max(80f, width - descriptionWidthReserve));
-                        float rowHeight = System.Math.Max(
-                            44f, labelAdvance + descriptionHeight);
+                            segmentsBelow ? width : System.Math.Max(80f, width - descriptionWidthReserve));
+                        float rowHeight = segmentsBelow
+                            ? labelAdvance + descriptionHeight + 4f + SegmentRowHeight
+                            : System.Math.Max(44f, labelAdvance + descriptionHeight);
+                        Rect segmentRect = segmentsBelow
+                            ? new Rect(0f, labelAdvance + descriptionHeight + 4f, width, SegmentRowHeight)
+                            : default;
                         List<string>? enumOptions = null;
                         List<Color>? enumColors = null;
                         List<string>? enumTipKeys = null;
-                        if (descriptor.ValueKind
+                        if (segmentsBelow)
+                        {
+                            enumOptions = new List<string>();
+                            enumColors = new List<Color>();
+                            enumTipKeys = new List<string>();
+                            for (int mode = descriptor.MinimumValue;
+                                 mode <= descriptor.MaximumValue; mode++)
+                            {
+                                string modeKey = HunterPlacementKey((HunterPlacementMode)mode);
+                                enumOptions.Add(modeKey.Translate());
+                                enumColors.Add(Color.white);
+                                enumTipKeys.Add(modeKey + "Tip");
+                            }
+                        }
+                        else if (descriptor.ValueKind
                             == RecommendationTuningValueKind.SignalBucket)
                         {
                             enumOptions = new List<string>();
@@ -247,7 +279,8 @@ namespace WorkRoles.UI
                             "WR_Tune_" + descriptor.StableKey,
                             enumOptions!,  // null = non-enum row, by design
                             enumColors!,
-                            enumTipKeys!)));
+                            enumTipKeys!,
+                            segmentRect)));
                         y += rowHeight + rowGap;
                         continue;
                     }
@@ -256,7 +289,7 @@ namespace WorkRoles.UI
                     {
                         CloseTable();
                         tableGroup = group;
-                        (string labelKey, string descKey) = GroupKeys(group);
+                        (string labelKey, string descKey) = GroupKeys(group, hunterMode);
                         // Cells right-align like the single-row controls; the
                         // caption wraps in the space left of them.
                         int columns = GroupColumns(group);
@@ -297,7 +330,7 @@ namespace WorkRoles.UI
                     float cellX = tableCellsX + column
                         * (tableCellW + RecTuningTable.CellGap);
                     (string header, Color headerColor, string? headerTipKey) =
-                        HeaderFor(group, column);
+                        HeaderFor(group, column, hunterMode);
                     table.AddCell(new RecTuningTableCell(
                         descriptor, value, valueLabel,
                         header, headerColor, headerTipKey,
@@ -412,8 +445,20 @@ namespace WorkRoles.UI
             }
         }
 
+        /// Segment label key per Hunter placement mode; the tooltip key is the
+        /// label key plus "Tip".
+        private static string HunterPlacementKey(HunterPlacementMode mode)
+        {
+            switch (mode)
+            {
+                case HunterPlacementMode.BestShotsFirst: return "WR_RecTuneHunterPlacementBestShotsFirst";
+                case HunterPlacementMode.NormalRole: return "WR_RecTuneHunterPlacementNormalRole";
+                default: return "WR_RecTuneHunterPlacementPoorShotsFirst";
+            }
+        }
+
         private static (string labelKey, string descKey) GroupKeys(
-            RecTuningTableGroup group)
+            RecTuningTableGroup group, HunterPlacementMode hunterMode)
         {
             switch (group)
             {
@@ -436,8 +481,12 @@ namespace WorkRoles.UI
                     return ("WR_RecTuneTimePointsRow",
                         "WR_RecTuneTimePointsRowDesc");
                 default:
+                    // Best shots first reads the same cutoffs from the top
+                    // band down, so the caption and tier numbers flip.
                     return ("WR_RecTuneHunterTiersRow",
-                        "WR_RecTuneHunterTiersRowDesc");
+                        hunterMode == HunterPlacementMode.BestShotsFirst
+                            ? "WR_RecTuneHunterTiersRowDescReversed"
+                            : "WR_RecTuneHunterTiersRowDesc");
             }
         }
 
@@ -452,7 +501,7 @@ namespace WorkRoles.UI
         /// The multiplier row's Awful column carries the admits-Awful caveat
         /// in its tooltip.
         private static (string text, Color color, string? tipKey) HeaderFor(
-            RecTuningTableGroup group, int column)
+            RecTuningTableGroup group, int column, HunterPlacementMode hunterMode)
         {
             switch (group)
             {
@@ -475,7 +524,13 @@ namespace WorkRoles.UI
                 case RecTuningTableGroup.TimePoints:
                     return ((column == 0 ? "WR_RoleTimePartTime" : "WR_RoleTimeOpportunistic").Translate(), WrStyle.CaptionText, null);
                 default:
-                    return ((column + 1).ToString(), WrStyle.CaptionText, null);
+                    // Hunter tiers: the four cutoffs cap bands 1-4 (tier 5 is
+                    // above the last). Reversed, band 1 is tier 5 and the top
+                    // band tier 1, so the columns read 5, 4, 3, 2.
+                    int tier = hunterMode == HunterPlacementMode.BestShotsFirst
+                        ? 5 - column
+                        : column + 1;
+                    return (tier.ToString(), WrStyle.CaptionText, null);
             }
         }
 

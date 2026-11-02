@@ -11,7 +11,7 @@ title: Genel seçenekler
 - **Lider seçimi**, her rolü kimin üstleneceğini belirler.
 - **Eğitim yolu ve isteğe bağlı hedef**, yolların ne zaman etkinleşeceğini ve çok becerili isteğe bağlı rollerin ne zaman önerilmeye değer olduğunu belirler.
 - **Son rol sıralaması**, önerilen rollerin sırasını belirler.
-- **Avcı yerleşimi**, Avcının dinamik konumu için nişancılık eşiklerini belirler.
+- **Avcı yerleşimi**, kimin önce avlanacağını (kötü nişancılar, en iyi nişancılar veya normal rol olarak Avcı) seçer ve Avcının dinamik konumu için nişancılık eşiklerini belirler.
 
 <!-- l10n:b-ab5db2d3bdf3 -->
 Her ayar kendini bulunduğu yerde açıklar; her bölümün Sıfırla düğmesi denemelerden sonra varsayılanları geri getirir.

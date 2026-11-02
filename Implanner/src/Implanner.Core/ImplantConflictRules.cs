@@ -13,9 +13,10 @@ namespace Implanner.Core
             int slotRecord, IReadOnlyList<int> slotAncestors,
             IReadOnlyList<string> tags, IReadOnlyList<string> incompatibleTags,
             IReadOnlyList<string> removeWithTags, bool mountsOnArtificialParts,
-            bool wipesPart = false)
+            bool wipesPart = false, bool? mountsUnderArtificialParts = null)
         {
             WipesPart = wipesPart;
+            MountsUnderArtificialParts = mountsUnderArtificialParts ?? mountsOnArtificialParts;
             DefName = defName;
             IsReplacement = isReplacement;
             SlotRecord = slotRecord;
@@ -55,6 +56,15 @@ namespace Implanner.Core
         /// bionic limb. Always false for replacements.
         public bool MountsOnArtificialParts { get; }
 
+        /// The surgery also reaches a part UNDER an artificial part. The
+        /// game marks every part below an added part missing
+        /// (Hediff_AddedPart.PostAdd), so a worker that checks for missing
+        /// parts (Combat Bionics' Recipe_InstallImplantOverBionics) mounts
+        /// on the artificial part at its own record but never under one;
+        /// defaults to MountsOnArtificialParts for workers assumed to carry
+        /// no refusal at all. Always false for replacements.
+        public bool MountsUnderArtificialParts { get; }
+
         /// The surgery restores the part (and everything under it) before
         /// adding an implant that is NOT an artificial part, so the part
         /// stays natural afterwards: Vanilla Genetics Expanded's install
@@ -93,10 +103,9 @@ namespace Implanner.Core
         /// first kidney) must not make the pair exclusive for human plans;
         /// slots only a later body carries are judged there, and slots no
         /// body shares never meet on one pawn.
-        public static bool Conflicts(
-            IReadOnlyList<PlannedSlotFacts?> aByBody, IReadOnlyList<PlannedSlotFacts?> bByBody)
+        public static bool Conflicts(PlannedSlotFacts?[] aByBody, PlannedSlotFacts?[] bByBody)
         {
-            int count = Math.Min(aByBody.Count, bByBody.Count);
+            int count = Math.Min(aByBody.Length, bByBody.Length);
             for (int body = 0; body < count; body++)
             {
                 PlannedSlotFacts? a = aByBody[body];
@@ -126,12 +135,13 @@ namespace Implanner.Core
                     || TagsClash(b.IncompatibleTags, a.Tags);
             }
             // A replacement clears its whole subtree: anything planned on a
-            // descendant slot can never coexist with it, unless it mounts on
-            // artificial parts and simply goes in afterwards. A part wiper
-            // leaves the part natural, so the descendant goes in after it.
-            if (a.IsReplacement && !b.MountsOnArtificialParts
+            // descendant slot can never coexist with it, unless its surgery
+            // reaches parts under artificial ones and simply goes in
+            // afterwards. A part wiper leaves the part natural, so the
+            // descendant goes in after it.
+            if (a.IsReplacement && !b.MountsUnderArtificialParts
                 && IsAncestorOf(a.SlotRecord, b)) return true;
-            if (b.IsReplacement && !a.MountsOnArtificialParts
+            if (b.IsReplacement && !a.MountsUnderArtificialParts
                 && IsAncestorOf(b.SlotRecord, a)) return true;
             return false;
         }

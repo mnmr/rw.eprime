@@ -26,7 +26,9 @@ Có thể xem đánh giá khắp giao diện. Chú giải trong bảng vai trò 
 ![Người phù hợp nhất trong chú giải](palette-tooltip.png)
 
 <!-- l10n:b-f1a1a1196f55 -->
-Hai vai trò có xử lý riêng. Thợ săn được đề xuất cho người mang vũ khí tầm xa (săn rèn Bắn súng), đặt sớm cho người bắn kém và muộn cho người bắn giỏi có ích hơn ở việc khác. Ác cảm săn bắn cũng đẩy Thợ săn về sau. Mechanitor chỉ được đề xuất cho người có mechlink, dù thợ khác giỏi đến đâu; Phù hợp nhất theo cùng quy tắc.
+Hai vai trò có xử lý riêng. Thợ săn được đề xuất cho bất kỳ ai mang vũ khí tầm xa, và vì săn bắn rèn luyện Bắn súng nên vai trò này được đặt sớm hơn cho người bắn kém và muộn hơn cho người bắn giỏi. Tùy chọn vị trí Thợ săn trong [Tùy chọn chung](topic:global-tuning) có thể đặt người bắn giỏi nhất lên đầu khi khu định cư cần thịt, hoặc lên kế hoạch cho Thợ săn như một vai trò thông thường.
+Ác cảm với săn bắn cũng đẩy Thợ săn về sau trong hàng.
+Mechanitor chỉ được đề xuất cho cư dân có mechlink, dù các thợ chế tác khác giỏi đến đâu; danh sách Phù hợp nhất cũng theo cùng quy tắc.
 
 <!-- l10n:b-b241ec72dcda -->
 Bộ máy chỉ đề xuất; bạn áp dụng [từng vai trò](topic:cherry-picking) hoặc [cả khu định cư](topic:fix-my-colony). Ngoại lệ là [Tự tối ưu](topic:auto-optimize): bật để Tối ưu khu định cư tự chạy mỗi giờ trong trò chơi ở mọi khu định cư.

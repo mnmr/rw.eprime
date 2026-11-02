@@ -145,7 +145,7 @@ public static class Probe
 
     static object OverviewRowOf(Pawn pawn)
     {
-        object overview = Traverse.Create(dialog).Field("overview").GetValue();
+        object overview = Traverse.Create(dialog).Field("view").Field("overview").GetValue();
         object snapshot = Traverse.Create(overview).Method("Current", ImplannerStore.Current).GetValue();
         var rows = (IList)Traverse.Create(snapshot).Field("Rows").GetValue();
         foreach (object row in rows)
@@ -168,7 +168,7 @@ public static class Probe
     static void CheckPlanMenu()
     {
         object row = OverviewRowOf(patient);
-        Type type = typeof(ImplannerStore).Assembly.GetType("Implanner.UI.Dialog_Implanner");
+        Type type = typeof(ImplannerStore).Assembly.GetType("Implanner.UI.ImplannerView");
         var menu = (IEnumerable)AccessTools.Method(type, "GeneratePlanMenu").Invoke(null, new[] { row });
         bool androidGreyed = false, humanOffered = false;
         foreach (object element in menu)
@@ -185,7 +185,7 @@ public static class Probe
     static void ShowPinnedPicker()
     {
         OpenDialog("Plans");
-        object plans = Traverse.Create(dialog).Field("plans").GetValue();
+        object plans = Traverse.Create(dialog).Field("view").Field("plans").GetValue();
         Traverse.Create(plans).Field("SelectedPlanId").SetValue(androidOnly.Id);
         Traverse.Create(plans).Field("Body").SetValue(-1);
         Traverse.Create(plans).Field("Region").SetValue(0);
@@ -193,7 +193,7 @@ public static class Probe
 
     static void CheckPinnedTree()
     {
-        object plans = Traverse.Create(dialog).Field("plans").GetValue();
+        object plans = Traverse.Create(dialog).Field("view").Field("plans").GetValue();
         object snapshot = Traverse.Create(plans).Method("Current", ImplannerStore.Current).GetValue();
         bool pinned = Traverse.Create(snapshot).Field<bool>("PinnedBody").Value;
         string text = Traverse.Create(snapshot).Field<string>("BodyFilterText").Value;
@@ -274,13 +274,13 @@ public static class Probe
     static void ShowOverview()
     {
         OpenDialog("Overview");
-        object overview = Traverse.Create(dialog).Field("overview").GetValue();
+        object overview = Traverse.Create(dialog).Field("view").Field("overview").GetValue();
         Traverse.Create(overview).Field("SelectedPawnId").SetValue(patient.thingIDNumber);
     }
 
     static void CheckDetails()
     {
-        object overview = Traverse.Create(dialog).Field("overview").GetValue();
+        object overview = Traverse.Create(dialog).Field("view").Field("overview").GetValue();
         var rows = Traverse.Create(overview).Field("detailRows").GetValue() as IList;
         string found = "";
         bool blocked = false;
@@ -302,14 +302,14 @@ public static class Probe
     static void ShowPicker(int body)
     {
         OpenDialog("Plans");
-        object plans = Traverse.Create(dialog).Field("plans").GetValue();
+        object plans = Traverse.Create(dialog).Field("view").Field("plans").GetValue();
         Traverse.Create(plans).Field("SelectedPlanId").SetValue(plan.Id);
         Traverse.Create(plans).Field("Body").SetValue(body);
     }
 
     static void CheckTree(string expectedButton, bool expectElbow, bool expectSensor)
     {
-        object plans = Traverse.Create(dialog).Field("plans").GetValue();
+        object plans = Traverse.Create(dialog).Field("view").Field("plans").GetValue();
         object snapshot = Traverse.Create(plans).Method("Current", ImplannerStore.Current).GetValue();
         var tree = (IList)Traverse.Create(snapshot).Field("Tree").GetValue();
         var labels = Traverse.Create(snapshot).Field<string[]>("BodyLabels").Value;
@@ -340,8 +340,9 @@ public static class Probe
     static void OpenDialog(string tab)
     {
         Type type = typeof(ImplannerStore).Assembly.GetType("Implanner.UI.Dialog_Implanner");
-        Type tabs = type.GetNestedType("Tab", AccessTools.all);
-        AccessTools.Field(type, "curTab").SetValue(null, Enum.Parse(tabs, tab));
+        Type view = typeof(ImplannerStore).Assembly.GetType("Implanner.UI.ImplannerView");
+        Type tabs = view.GetNestedType("Tab", AccessTools.all);
+        AccessTools.Field(view, "curTab").SetValue(null, Enum.Parse(tabs, tab));
         if (dialog == null)
         {
             dialog = (Window)Activator.CreateInstance(type);

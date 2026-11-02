@@ -135,10 +135,15 @@ namespace WorkRoles.Core.Recs
             return basePositionsView;
         }
 
+        /// Hunting needs a ranged weapon whichever way the role is planned.
+        public static bool MeetsEquipmentRequirement(PawnView pawn, RoleView role)
+            => !role.Hunting || pawn.HasRangedWeapon;
+
         public bool Capable(int pawnIndex, RoleView role)
         {
             PawnView pawn = Colony.Pawns[pawnIndex];
             if (pawn.Incapacitated || !MeetsMechanitorRequirement(pawn, role)
+                || !MeetsEquipmentRequirement(pawn, role)
                 || !WithinAgeLimits(pawn, role)
                 || !MeetsExplicitRequiredSkills(pawnIndex, role)) return false;
             IReadOnlyList<string> workTypes = role.WorkTypes;
@@ -152,6 +157,7 @@ namespace WorkRoles.Core.Recs
         {
             PawnView pawn = Colony.Pawns[pawnIndex];
             if (pawn.Incapacitated || !MeetsMechanitorRequirement(pawn, role)
+                || !MeetsEquipmentRequirement(pawn, role)
                 || !WithinAgeLimits(pawn, role)
                 || !MeetsExplicitRequiredSkills(pawnIndex, role)) return false;
             IReadOnlyList<string> workTypes = role.WorkTypes;

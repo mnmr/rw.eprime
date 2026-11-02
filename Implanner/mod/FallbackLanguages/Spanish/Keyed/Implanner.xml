@@ -210,7 +210,6 @@
   <IMP_DeleteFileConfirm>¿Eliminar «{0}»?</IMP_DeleteFileConfirm>
   <IMP_NoFiles>Todavía no hay ficheros de planes exportados aquí.</IMP_NoFiles>
   <IMP_ShipFallback>Gravinave</IMP_ShipFallback>
-  <IMP_SettingsShowToolbarButton>Mostrar botón en la barra de herramientas</IMP_SettingsShowToolbarButton>
   <IMP_CompatibilityLevelMod>{0}: La automatización de Implanner está desactivada con este mod de varios niveles. La planificación y el seguimiento siguen funcionando.</IMP_CompatibilityLevelMod>
   <IMP_OptAndroidSurgeonsCrafters>Operaciones de androides: artesanos con "Reparar androides" (sigue a Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>Operaciones de androides: médicos (sigue a Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
@@ -222,8 +221,15 @@
   <IMP_PlanBody>Cuerpo</IMP_PlanBody>
   <IMP_PlanBodyAny>Cualquier cuerpo</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0} (no cargado)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>Un plan creado para un cuerpo solo muestra las partes de ese cuerpo y solo puede incluir a colonos con ese cuerpo.\n\nUn plan para cualquier cuerpo se aplica a todos los colonos. Las partes que el cuerpo de un colono no tenga se omiten para ese colono.\n\nUn plan puede ampliar un plan para cualquier cuerpo o un plan para el mismo cuerpo.</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>Un plan creado para un cuerpo solo muestra las partes de ese cuerpo y solo puede incluir a colonos con ese cuerpo. Un plan para el cuerpo humano también incluye a los colonos cuyo cuerpo tenga todas las partes humanas, como una raza con alas adicionales.\n\nUn plan para cualquier cuerpo se aplica a todos los colonos. Las partes que el cuerpo de un colono no tenga se omiten para ese colono.\n\nUn plan puede ampliar un plan para cualquier cuerpo o un plan para el mismo cuerpo.</IMP_PlanBodyTip>
   <IMP_PlanForBody>para {0}</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0} (solo {1})</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>No es para este cuerpo</IMP_StateNotForBody>
+  <IMP_EntryStyleBoth>Ambos</IMP_EntryStyleBoth>
+  <IMP_EntryStyleTab>Pestaña principal</IMP_EntryStyleTab>
+  <IMP_EntryStyleToolbar>Botón de la barra de herramientas</IMP_EntryStyleToolbar>
+  <IMP_OptEntryStyle>Abrir Implanner desde</IMP_OptEntryStyle>
+  <IMP_OptEntryStyleTip>El botón de la barra de herramientas está junto a los botones de vista, en la esquina inferior derecha, y abre esta ventana flotante. La pestaña principal está en la barra inferior, junto a Historial y Facciones, y abre Implanner encima de ella, en la esquina inferior derecha; arrastra la esquina superior izquierda de la ventana para cambiar su tamaño. "Ambos" mantiene las dos formas de acceso. Se puede asignar un atajo de teclado en Opciones, Teclado, Pestañas principales.</IMP_OptEntryStyleTip>
+  <IMP_OptInterface>Interfaz</IMP_OptInterface>
+  <IMP_ResizeGripTip>Arrastra para cambiar el tamaño de la ventana. Haz doble clic para volver al tamaño predeterminado.</IMP_ResizeGripTip>
 </LanguageData>

@@ -41,7 +41,7 @@
   <WR_RecGlobalPanel>全局选项</WR_RecGlobalPanel>
   <WR_RecGlobalPanelHelp>这些选项影响候选人的评分、排名及职责在最终推荐列表中的位置。若对修改不满意，可用“重置”恢复默认值。</WR_RecGlobalPanelHelp>
   <WR_RecRolePanel>职责选项</WR_RecRolePanel>
-  <WR_RecRolePanelHelp>此处列出除被排除职责以外的所有职责。展开职责可调整其推荐选项。每名殖民者的职责自动排序；“猎人”仍按射击技能决定位置。</WR_RecRolePanelHelp>
+  <WR_RecRolePanelHelp>此处列出除“排除的职责”以外的所有职责。展开职责可调整其推荐选项。每名殖民者的职责会自动排序；“猎人”的位置遵循全局选项中的“猎人位置”设置。</WR_RecRolePanelHelp>
   <WR_RecExcludedHeader>排除的职责</WR_RecExcludedHeader>
   <WR_RecExcludedHelp>此列表中的职责绝不推荐，包括通过训练路径或自动职责。现有固定分配仍受保护。使用“添加职责”排除一个职责；移除其标签即可重新允许推荐。</WR_RecExcludedHelp>
   <WR_RecExcludedTip>排除设置适用于此存档中所有殖民者的推荐，包括“调整殖民地”和自动优化。仍可手动分配被排除的职责。编辑此列表不会改变当前分配；应用推荐时会移除未固定的排除职责，并保留固定分配。</WR_RecExcludedTip>
@@ -65,7 +65,7 @@
   <WR_RecTuneOptionalSection>训练路径与可选目标选项</WR_RecTuneOptionalSection>
   <WR_RecTuneOptionalSectionIntro>决定何时为殖民者启用训练路径，以及何时值得推荐涉及多项技能的可选职责。</WR_RecTuneOptionalSectionIntro>
   <WR_RecTuneHunterSection>猎人排序选项</WR_RecTuneHunterSection>
-  <WR_RecTuneHunterSectionIntro>未固定的“猎人”按射击技能动态插入：射手越好，狩猎优先级越靠后，因为其时间在其他工作上更有价值。</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneHunterSectionIntro>狩猎会锻炼射击技能，因此默认情况下每个持有武器的殖民者都担任“猎人”，射击最弱的人最先狩猎。你可以在此更改谁优先狩猎，或将“猎人”作为普通职责来规划。</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneCandidateMinimumSignal>候选人最低信号</WR_RecTuneCandidateMinimumSignal>
   <WR_RecTuneCandidateMinimumSignalDesc>普通职责选择所接受的最低信号。提高后会在选择主力和填补最低人数之前排除较弱候选人。</WR_RecTuneCandidateMinimumSignalDesc>
   <WR_RecTuneChampionSkillDivisor>主力技能除数</WR_RecTuneChampionSkillDivisor>
@@ -655,4 +655,13 @@ WorkRoles 通过游戏标准方法为受管理殖民者提供工作列表。另�
   <WR_RoleCapCannotTakeJobs>{0}无法将{1}作为分配的工作来执行</WR_RoleCapCannotTakeJobs>
   <WR_WorkNativeFireNearby>闲暇时可扑灭附近的火焰，但不会执行分配的灭火工作</WR_WorkNativeFireNearby>
   <WR_WorkNotNative>此型号的工作分配不支持此类工作</WR_WorkNotNative>
+  <WR_RecTuneHunterPlacement>猎人位置</WR_RecTuneHunterPlacement>
+  <WR_RecTuneHunterPlacementBestShotsFirst>神射手优先</WR_RecTuneHunterPlacementBestShotsFirst>
+  <WR_RecTuneHunterPlacementBestShotsFirstTip>所有持有武器的殖民者都拥有猎人职责。射击最强的人成为猎人主力，在基础工作之后立即狩猎；其他人稍后狩猎，在主力忙碌时顶替。当殖民地急需肉或皮革，而脱靶或打伤动物的代价高于练习的价值时，请选择此项。</WR_RecTuneHunterPlacementBestShotsFirstTip>
+  <WR_RecTuneHunterPlacementDesc>“弱射手优先”让射击较弱的人获得练习。“神射手优先”适用于殖民地需要肉食、经不起脱靶的情况。“普通职责”则安排固定的狩猎小组，而不是每个有枪的人都参与。始终需要远程武器。</WR_RecTuneHunterPlacementDesc>
+  <WR_RecTuneHunterPlacementNormalRole>普通职责</WR_RecTuneHunterPlacementNormalRole>
+  <WR_RecTuneHunterPlacementNormalRoleTip>猎人像其他技能型职责一样进行规划，而不是分配给每个有枪的人：在职责选项中设置其殖民地最低人数和覆盖范围，由最佳射手填补这些名额。射击强的人仍可能作为富余人选获得该职责。想要固定的狩猎小组时，请选择此项。</WR_RecTuneHunterPlacementNormalRoleTip>
+  <WR_RecTuneHunterPlacementPoorShotsFirst>弱射手优先</WR_RecTuneHunterPlacementPoorShotsFirst>
+  <WR_RecTuneHunterPlacementPoorShotsFirstTip>所有持有武器的殖民者都拥有猎人职责。射击最弱的人最先狩猎，借此练习射击；神射手最后狩猎。当食物有保障、你希望有更多会射击的殖民者时，请选择此项。此为默认设置。</WR_RecTuneHunterPlacementPoorShotsFirstTip>
+  <WR_RecTuneHunterTiersRowDescReversed>动态“猎人”位置的射击等级分界线，从上往下读取。高于最后一个分界线的等级为第 1 档，将“猎人”放在基础工作之后；第 2、3 档依次位于中间和最后的工作职责之后；第 5 档将“猎人”放在最后。</WR_RecTuneHunterTiersRowDescReversed>
 </LanguageData>

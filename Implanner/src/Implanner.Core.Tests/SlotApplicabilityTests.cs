@@ -13,9 +13,9 @@ public class SlotApplicabilityTests
     static readonly string[] NoTags = Array.Empty<string>();
 
     static PlannedSlotFacts Facts(string defName, int record, int[] ancestors,
-        bool replacement = false, bool mounts = false)
+        bool replacement = false, bool mounts = false, bool? mountsUnder = null)
         => new PlannedSlotFacts(defName, replacement, record, ancestors,
-            NoTags, NoTags, NoTags, mounts);
+            NoTags, NoTags, NoTags, mounts, mountsUnderArtificialParts: mountsUnder);
 
     static ImplantContext Context(IReadOnlyList<PlannedSlotFacts?> facts,
         SlotBlock[] blocks, string?[] blockers)
@@ -48,9 +48,11 @@ public class SlotApplicabilityTests
     /// (the arm, record 21, under the shoulder). Vanilla's implant worker
     /// refuses a part under an artificial one, so the slot is blocked by the
     /// arm, excluded from the target, and never a missing key; a module
-    /// whose worker mounts on artificial parts stays deliverable. Sibling
-    /// organs on the human body (kidney 9, liver 11 under the torso) are
-    /// unaffected by each other's replacement.
+    /// whose worker mounts on artificial parts stays deliverable, while a
+    /// kind that mounts only on the artificial part itself (Combat Bionics'
+    /// swarm wrist implant) is blocked like the blade. Sibling organs on the
+    /// human body (kidney 9, liver 11 under the torso) are unaffected by
+    /// each other's replacement.
     [Test]
     public async Task SlotUnderAnInstalledArtificialPartIsOutsideTheTarget()
     {
@@ -60,6 +62,7 @@ public class SlotApplicabilityTests
             new ImplantGoal(1, "ArmModule", new[] { new PartAddress("Arm", 0) }),
             new ImplantGoal(1, "ArchotechKidney", new[] { new PartAddress("Kidney", 0) }),
             new ImplantGoal(1, "ArchotechLiver", new[] { new PartAddress("Liver", 0) }),
+            new ImplantGoal(1, "SwarmWrist", new[] { new PartAddress("Arm", 0) }),
         };
         var human = new PlannedSlotFacts?[][]
         {
@@ -67,6 +70,7 @@ public class SlotApplicabilityTests
             new[] { Facts("ArmModule", 21, new[] { 20, 0 }, mounts: true) },
             new[] { Facts("ArchotechKidney", 9, new[] { 0 }, replacement: true) },
             new[] { Facts("ArchotechLiver", 11, new[] { 0 }, replacement: true) },
+            new[] { Facts("SwarmWrist", 21, new[] { 20, 0 }, mounts: true, mountsUnder: false) },
         };
         var bionicArm = new ArtificialPart(20, "BionicArm");
 
@@ -76,6 +80,8 @@ public class SlotApplicabilityTests
         await Assert.That(blocks[1][0]).IsEqualTo(SlotBlock.None);
         await Assert.That(blocks[2][0]).IsEqualTo(SlotBlock.None);
         await Assert.That(blocks[3][0]).IsEqualTo(SlotBlock.None);
+        await Assert.That(blocks[4][0]).IsEqualTo(SlotBlock.UnderArtificialPart);
+        await Assert.That(blockers[4][0]).IsEqualTo("BionicArm");
 
         PlanEvaluation evaluation = PlanEvaluator.Evaluate(goals,
             Array.Empty<InstalledImplant>(), contexts, away: false);
@@ -94,7 +100,7 @@ public class SlotApplicabilityTests
         var (bare, _, bareContexts) = Resolve(human);
         await Assert.That(bare[0][0]).IsEqualTo(SlotBlock.None);
         await Assert.That(PlanEvaluator.Evaluate(goals, Array.Empty<InstalledImplant>(),
-            bareContexts, away: false).TotalUnits).IsEqualTo(4);
+            bareContexts, away: false).TotalUnits).IsEqualTo(5);
     }
 
     /// Plans are validated on the human body, where kidney and liver are

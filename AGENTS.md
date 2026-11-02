@@ -56,6 +56,31 @@ for commands, block boundaries and translation maintenance.
   mods. Resolve reported issues through the shared localization workflow and
   rerun the checker successfully before describing the help update as complete.
 
+## Changelog
+
+`<mod>/CHANGELOG.md` is edited only when the project owner says
+"update changelog". No other request, fix or feature authorizes an entry.
+`<mod>/RELEASES.md` (appended by the publish script) is the only record of
+what shipped; the changelog headings are not.
+
+On "update changelog":
+
+- Compare the top changelog version with the last row in `RELEASES.md`.
+  If the top version is newer than the last published one, it is the
+  unreleased section: add the entries there and set its date to today.
+  If it equals the last published one, start one new section for the next
+  patch version dated today and set `mod/About/About.xml` `modVersion` to
+  match. There is never more than one unreleased section.
+- Heading format is the existing `## <version> — <YYYY-MM-DD>`; entries use
+  the existing `- Added:` / `- Changed:` / `- Fixed:` prefixes.
+- Entries cover only what affects players, directly or indirectly.
+  Performance and bug fixes qualify; internal refactorings, test changes and
+  tooling do not.
+- Each entry is at most 100 characters, concise and user-oriented: state the
+  consequence for the player, not the mechanism.
+- The changelog is not help. No explanations of how a feature works, which
+  keys to press or where to click.
+
 ## Project boundaries
 
 The following uses a fictitious mod named RimMod to illustrate boundaries:

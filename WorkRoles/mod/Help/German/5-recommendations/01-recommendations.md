@@ -26,7 +26,7 @@ Die Einschätzung der Logik ist überall sichtbar. Die Tooltips der Palette zeig
 ![Beste Eignung im Tooltip der Palette](palette-tooltip.png)
 
 <!-- l10n:b-f1a1a1196f55 -->
-Zwei Rollen werden besonders behandelt. Jäger wird jedem empfohlen, der eine Fernkampfwaffe trägt, denn die Jagd trainiert Schießen. Schlechte Schützen erhalten die Rolle früher, hervorragende Schützen später, weil ihre Zeit anderswo wertvoller ist. Eine Abneigung gegen die Jagd verschiebt Jäger ebenfalls nach hinten. Mechanitor wird nur Kolonisten mit einem Mechlink empfohlen, unabhängig davon, wie gut andere Handwerker sind. Die Liste „Beste Eignung“ folgt derselben Regel.
+Zwei Rollen werden besonders behandelt. Jäger wird jedem empfohlen, der eine Fernkampfwaffe trägt, und weil die Jagd Schießen trainiert, steht die Rolle bei schlechten Schützen weiter vorn und bei hervorragenden Schützen weiter hinten. Die Option „Jäger-Platzierung“ in den [Globalen Optionen](topic:global-tuning) kann die besten Schützen zuerst setzen, wenn die Kolonie das Fleisch braucht, oder Jäger wie eine normale Rolle einplanen. Eine Abneigung gegen die Jagd verschiebt Jäger ebenfalls nach hinten. Mechanitor wird nur Kolonisten mit einem Mechlink empfohlen, unabhängig davon, wie gut andere Handwerker sind. Die Liste „Beste Eignung“ folgt derselben Regel.
 
 <!-- l10n:b-b241ec72dcda -->
 Die Logik schlägt vor; du entscheidest über die Anwendung – einzeln durch [gezielte Übernahme](topic:cherry-picking) oder insgesamt mit [Meine Kolonie verbessern](topic:fix-my-colony). Die Ausnahme ist [Automatisch optimieren](topic:auto-optimize): Ist es eingeschaltet, wird „Meine Kolonie verbessern“ zu jeder vollen Spielstunde in allen deinen Kolonien ausgeführt.

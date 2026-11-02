@@ -26,7 +26,7 @@ Você pode consultar o critério em vários lugares. Dicas da paleta listam os m
 ![Melhores candidatos em uma dica](palette-tooltip.png)
 
 <!-- l10n:b-f1a1a1196f55 -->
-Duas funções recebem tratamento especial. Caçador é recomendado a quem carrega arma de longo alcance, pois caça treina Tiro. Fica antes para atiradores ruins e depois para bons, cujo tempo vale mais em outros trabalhos. Aversão à caça também o atrasa. Mecanizador só é recomendado a quem tem uma meca-conexão, independentemente da qualidade dos outros fabricantes; Melhores candidatos segue a mesma regra.
+Duas funções recebem tratamento especial. Caçador é recomendado a quem carrega uma arma de longo alcance e, como caçar treina Tiro, fica mais cedo na linha para atiradores ruins e mais tarde para bons atiradores. A opção de posicionamento de Caçador em [Opções globais](topic:global-tuning) pode colocar os melhores atiradores primeiro quando a colônia precisa de carne, ou planejar Caçador como uma função normal. Aversão à caça também coloca Caçador mais tarde na linha. Mecanizador só é recomendado a quem tem uma meca-conexão, independentemente da qualidade dos outros fabricantes; a lista de Melhores candidatos segue a mesma regra.
 
 <!-- l10n:b-b241ec72dcda -->
 O mecanismo sugere, você aplica: [uma função por vez](topic:cherry-picking) ou [Ajustar minha colônia](topic:fix-my-colony). A exceção é [Otimização automática](topic:auto-optimize), que ajusta todas as colônias a cada hora do jogo.

@@ -160,6 +160,7 @@ OrderingImportantCategoryPoints=orderingImportantCategoryPoints=4
 OrderingOptionalCategoryPoints=orderingOptionalCategoryPoints=-4
 OrderingPartTimePoints=orderingPartTimePoints=2
 OrderingOpportunisticPoints=orderingOpportunisticPoints=-2
+HunterPlacement=hunterPlacement=0
 HunterFirstTierMaximum=hunterFirstTierMaximum=4
 HunterSecondTierMaximum=hunterSecondTierMaximum=8
 HunterThirdTierMaximum=hunterThirdTierMaximum=12

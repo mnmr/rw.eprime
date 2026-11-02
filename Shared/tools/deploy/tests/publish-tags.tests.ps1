@@ -52,6 +52,9 @@ try {
     & (Join-Path $PSHOME 'pwsh.exe') -NoProfile -File "$PSScriptRoot\steam-upload.tests.ps1"
     Check ($LASTEXITCODE -eq 0) 'Desktop Steam publishing regression failed.'
 
+    & (Join-Path $PSHOME 'pwsh.exe') -NoProfile -File "$PSScriptRoot\publish-version-guard.tests.ps1"
+    Check ($LASTEXITCODE -eq 0) 'Publish version guard regression failed.'
+
     # Dry-run the real tag synchronizer against metadata, without a Steam login.
     $preview = @(& "$deployRoot\sync-workshop-tags.ps1" -ModPath "$fixture\installed\Example" -WhatIf)
     Check (($preview[0].Tags -join ',') -ceq 'Mod,1.6,1.7') 'Both supported versions and the Mod category must be submitted.'

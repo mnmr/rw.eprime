@@ -170,12 +170,16 @@ namespace WorkRoles.Core.Recs
             minimumPickCount++;
             return bonus;
         }
+        /// <param name="requirementOverride">Replaces the colony's holder
+        /// requirement for this role; the best-shots-first Hunter uses it to
+        /// force one champion pick without authored demand.</param>
         internal static RolePlan Build(
             EngineContext facts,
             RoleView role,
             RecommendationFormulaEngine formulas,
             PawnDraft[]? drafts = null,
-            List<int>[]? priorChampionsByPawn = null)
+            List<int>[]? priorChampionsByPawn = null,
+            HolderRequirement? requirementOverride = null)
         {
             int colonySize = facts.Colony.Pawns.Count;
             int capacity = System.Math.Max(0, colonySize);
@@ -186,7 +190,7 @@ namespace WorkRoles.Core.Recs
                     protectedDirectHolders++;
             int selectionCapacity = System.Math.Max(
                 0, capacity - protectedDirectHolders);
-            HolderRequirement requirement = facts.RequirementOf(role.Id);
+            HolderRequirement requirement = requirementOverride ?? facts.RequirementOf(role.Id);
             int configuredRequiredTotal = System.Math.Min(
                 capacity, requirement.RequiredTotal);
             int directMinimum = System.Math.Min(

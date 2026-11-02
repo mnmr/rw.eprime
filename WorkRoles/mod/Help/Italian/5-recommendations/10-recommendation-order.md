@@ -7,7 +7,7 @@ I consigli sono ordinati automaticamente per ciascun colono. Il sistema usa l'or
 <!-- l10n:b-7c60ec8be352 -->
 - Un [ruolo formativo](topic:training-paths) va subito dopo l'obiettivo del percorso: Infermiere e Paramedico seguono quindi Medico.
 - Un ruolo interamente coperto da un altro si colloca subito dopo quello che lo copre, come Trasportatore dopo Tuttofare.
-- **Cacciatore mantiene la posizione basata su Tiro:** i tiratori meno abili cacciano prima e quelli migliori dopo, perché il loro tempo vale di più altrove. Un'assegnazione fissata singolarmente resta protetta.
+- **Cacciatore mantiene la posizione basata su Tiro:** la caccia allena Tiro, quindi per impostazione predefinita i tiratori meno abili cacciano prima e quelli migliori dopo. L'opzione Posizione del Cacciatore nelle [Opzioni globali](topic:global-tuning) può invertire l'ordine, così il miglior tiratore armato caccia per primo come campione del Cacciatore, oppure pianificare Cacciatore come un ruolo normale. Un'assegnazione fissata singolarmente resta protetta.
 
 <!-- l10n:b-ae303b9cef12 -->
 Il pannello **Ruoli esclusi** in cima alla scheda Consigli controlla quali ruoli non devono mai essere consigliati. Usa Aggiungi ruolo per escluderne uno o l'icona di rimozione sulla tessera per consentirlo di nuovo.

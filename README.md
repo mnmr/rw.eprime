@@ -116,6 +116,20 @@ logged in as the item owner. Publishing uses the installed RimWorld 1.7 Steamwor
 libraries and PowerShell 7.6 or newer; SteamCMD is no longer required. Legacy
 `-SteamCmd` and `-Username` arguments are accepted with a warning and ignored.
 
+The mod's `RELEASES.md` (written by the publisher after each upload) is the
+record of what shipped. The version guard stops before any network access
+(exit 3) unless About.xml's `modVersion` is exactly the next patch after the
+last row (1.2.6 to 1.2.7) or, with `-AllowRepublish`, that last row itself.
+Any other version (a skipped patch, a minor or major step, a republish of an
+older release) needs `-ApproveVersion <modVersion>`, and the plan then says so
+before the usual y/yes confirmation. Unreleased changes belong in one changelog
+section headed with that next version.
+
+Change notes are write-once and Steam posts one only when the uploaded content
+differs from the live item: a byte-identical `-AllowRepublish` uploads nothing
+and posts no note (seen 2026-11-01). To change a published note, edit it on the
+Workshop item's change notes page; a republish adds no RELEASES.md row.
+
 SteamCMD can disconnect the desktop client with "Session Replaced". A local API
 connection still initializes in that state, but Workshop requests can fail with
 `k_EResultFileNotFound`. If you used SteamCMD recently, reconnect or restart Steam

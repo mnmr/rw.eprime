@@ -237,7 +237,7 @@ namespace WorkRoles.Core.Recs
                 facts, pawnIndex, positions, scores, ordered);
             if (!ReferenceEquals(trimmed, result))
                 ordered = PlaceHunter(facts, pawnIndex, ordered);
-            SlideHunterPastConditionalRoles(facts, pawnIndex, ordered);
+            SlideHunterPastConditionalRoles(facts, pawnIndex, ordered, formulas);
             return ordered;
         }
 
@@ -264,10 +264,11 @@ namespace WorkRoles.Core.Recs
 
         // Prefer newly suggested conditional/blocker roles before Hunter,
         // within the boundaries of the player's protected assignment order.
-        private static void SlideHunterPastConditionalRoles(EngineContext facts, int pawnIndex, int[] ordered)
+        private static void SlideHunterPastConditionalRoles(
+            EngineContext facts, int pawnIndex, int[] ordered, RecommendationFormulaEngine formulas)
         {
             int hunterRoleId = facts.Colony.HunterRoleId;
-            if (hunterRoleId < 0) return;
+            if (hunterRoleId < 0 || formulas.HunterPlacement == HunterPlacementMode.NormalRole) return;
             // Placement conveniences cannot undo an authored pin or the
             // relative order protected by an existing rule/blocker assignment.
             if (facts.Colony.OrderTemplate.Contains(hunterRoleId)
@@ -744,22 +745,27 @@ namespace WorkRoles.Core.Recs
             for (int roleIndex = 0; roleIndex < roles.Count; roleIndex++)
             {
                 RoleView role = roles[roleIndex];
+                // Best shots first lets the specially placed Hunter through
+                // the champion pass with one forced pick: the champion is the
+                // primary hunter, every other armed pawn backs up (AddHunters).
+                bool hunterChampionPass = PlacesHunterSpecially(facts, role, formulas)
+                    && formulas.HunterPlacement == HunterPlacementMode.BestShotsFirst;
                 if (!role.Available
                     || facts.MechanicallyCovered(role.Id)
                     || !role.Enabled
                     || facts.IsRecommendationExcluded(role)
-                    || !role.PlannedByDemand
+                    || !PlannedByDemand(facts, role, formulas) && !hunterChampionPass
                     // Skill-less roles without demand are retained chores; with
                     // demand they fill every capable pawn (UnskilledFill).
                     || role.IsNever
                     // Composites never join the run: their members are planned
                     // individually and a composite is substituted back in only
                     // when a member run reproduces its exact job priorities.
-                    || role.MemberRoleIds != null
-                    || role.Id == colony.HunterRoleId)
+                    || role.MemberRoleIds != null)
                     continue;
                 RolePlan rolePlan = RolePlan.Build(
-                    facts, role, formulas, drafts, priorChampionsByPawn);
+                    facts, role, formulas, drafts, priorChampionsByPawn,
+                    hunterChampionPass ? OneDirectPick(facts.RequirementOf(role.Id)) : null);
                 rolePlans.Add(rolePlan);
                 for (int candidateIndex = 0;
                      candidateIndex < rolePlan.CandidateCount;
@@ -767,6 +773,9 @@ namespace WorkRoles.Core.Recs
                 {
                     if (!rolePlan.IsSelected(candidateIndex)) continue;
                     int pawnIndex = rolePlan.CandidateAt(candidateIndex).PawnIndex;
+                    // Only the champion publishes from the Hunter pass; every
+                    // other armed pawn receives Hunter as a backup later.
+                    if (hunterChampionPass && pawnIndex != rolePlan.ChampionPawnIndex) continue;
                     bool surplus = rolePlan.IsSurplus(candidateIndex);
                     byte minimumBonus =
                         rolePlan.MinimumBonusAt(candidateIndex);
@@ -868,6 +877,24 @@ namespace WorkRoles.Core.Recs
                 positions,
                 drafts,
                 compositePlacements);
+        }
+
+        /// The resolved Hunter is handed out by its placement mode rather than
+        /// by demand, unless the mode makes it a normal role.
+        internal static bool PlacesHunterSpecially(
+            EngineContext facts, RoleView role, RecommendationFormulaEngine formulas)
+            => role.Id == facts.Colony.HunterRoleId
+                && formulas.HunterPlacement != HunterPlacementMode.NormalRole;
+
+        internal static bool PlannedByDemand(
+            EngineContext facts, RoleView role, RecommendationFormulaEngine formulas)
+            => role.PlannedByDemand && !PlacesHunterSpecially(facts, role, formulas);
+
+        /// The authored requirement raised to at least one direct pick.
+        private static HolderRequirement OneDirectPick(HolderRequirement authored)
+        {
+            int total = System.Math.Max(1, authored.RequiredTotal);
+            return new HolderRequirement(total, System.Math.Min(authored.TrainingWaivers, total - 1));
         }
 
         /// An incapacitated pawn was no candidate and no holder during the

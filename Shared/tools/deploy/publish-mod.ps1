@@ -6,6 +6,11 @@
 # BBCode. The plan (version, change note, tag/description/preview changes) is
 # shown and must be approved with y/yes. A successful upload is recorded in the
 # mod's RELEASES.md; an already-recorded version is skipped (-AllowRepublish).
+# Version guard: modVersion must be exactly the next patch after the last row
+# of RELEASES.md (1.2.6 -> 1.2.7), or a republish of that last row. Any other
+# version (a skipped patch, a minor/major step, a republish of an older row)
+# stops before any network access unless -ApproveVersion names that exact
+# version.
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][string]$ModRoot,
@@ -13,6 +18,9 @@ param(
     # Overrides the change note generated from CHANGELOG.md.
     [string]$ChangeNote = "",
     [switch]$AllowRepublish,
+    # Manual approval of a version that is not the next patch (must equal
+    # About.xml's modVersion).
+    [string]$ApproveVersion = "",
     [string]$RimWorldMods = "C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods",
     # Retained for existing wrappers/callers; neither starts a second session.
     [string]$SteamCmd = "",
@@ -53,6 +61,37 @@ $released = Get-ReleaseRecord -ModRoot $repo -Version $version
 if ($released -and -not $AllowRepublish) {
     Write-Host "$DeployName $version was already published ($($released.Published)); nothing to publish. Bump modVersion and add its changelog section to release changes."
     exit 0
+}
+# Version guard (before any network access or prompt).
+$latestRelease = Get-LatestReleaseRecord -ModRoot $repo
+$versionApproved = $ApproveVersion -ceq $version
+if ($ApproveVersion -and -not $versionApproved) {
+    throw "-ApproveVersion $ApproveVersion does not match About.xml's modVersion $version; approve the exact version being published."
+}
+$versionPlan = 'first publish (no RELEASES.md record)'
+if ($latestRelease) {
+    $expected = Get-NextPatchVersion $latestRelease.Version
+    if ($released) {
+        $versionPlan = "republish of the last release $($latestRelease.Version)"
+        if ($released.Version -cne $latestRelease.Version) {
+            $versionPlan = "republish of $version, an OLDER release than the last ($($latestRelease.Version))"
+            if (-not $versionApproved) {
+                Write-Host "Version guard: $version is not the last published version ($($latestRelease.Version)). Republishing an older version needs -ApproveVersion $version."
+                exit 3
+            }
+            $versionPlan += ' (approved by -ApproveVersion)'
+        }
+    } elseif (Test-NextPatchVersion $latestRelease.Version $version) {
+        $versionPlan = "next patch after $($latestRelease.Version)"
+    } else {
+        if (-not $versionApproved) {
+            Write-Host "Version guard: $version is not the next patch after the last published version $($latestRelease.Version)$(if ($expected) { " (expected $expected)" }). Fix modVersion, or pass -ApproveVersion $version to publish this version deliberately."
+            exit 3
+        }
+        $versionPlan = "$version after $($latestRelease.Version), NOT the next patch$(if ($expected) { " ($expected)" }) (approved by -ApproveVersion)"
+    }
+} elseif ($versionApproved) {
+    $versionPlan += ' (approved by -ApproveVersion)'
 }
 Assert-WorkshopDeploymentContent -Source (Join-Path $repo 'mod') -Deployed $content
 $tags = [string[]]@(Get-WorkshopTags -About ([xml]$deployedAbout) -Source (Join-Path $content 'About\About.xml'))
@@ -173,16 +212,23 @@ $tagPlan = if ($null -eq $remoteTags) {
 $descriptionPlan = if ($null -eq $remoteDescription) { "set from workshop-description.bbcode ($descriptionBytes bytes)" }
     elseif ($remoteDescription.Replace("`r`n", "`n").TrimEnd() -ceq $description) { 'unchanged' }
     else { "updated from workshop-description.bbcode ($descriptionBytes bytes)" }
-$recordLine = Format-ReleaseRecordLine $version ([DateTime]::UtcNow) $(if ($firstPublish) { '<assigned item id>' } else { $publishedFileId })
+$recordLine = if ($released) { "none ($version is already recorded)" } else { "append to $(Join-Path $repo 'RELEASES.md'): " + (Format-ReleaseRecordLine $version ([DateTime]::UtcNow) $(if ($firstPublish) { '<assigned item id>' } else { $publishedFileId })) }
 Write-Host ""
 Write-Host "==== Publish $DeployName $version to the Steam Workshop ===="
 Write-Host "Item:        $(if ($firstPublish) { 'new Workshop item (title: ' + $title + ')' } else { "$publishedFileId (https://steamcommunity.com/sharedfiles/filedetails/?id=$publishedFileId)" })"
-if ($released) { Write-Host "Republish:   $version was already published ($($released.Published))" }
+if ($released) {
+    Write-Host "Republish:   $version was already published ($($released.Published))"
+    # Observed 2026-11-01 (Implanner 1.2.6): Steam accepted a republish of
+    # unchanged content but posted no changelog entry; the note had to be
+    # edited on the Workshop page by hand.
+    Write-Warning "Steam posts a change note only when the uploaded content differs from the live item. A byte-identical republish uploads nothing and posts no note; to change a published note, edit it on the Workshop item's change notes page."
+}
+Write-Host "Version:     $versionPlan"
 Write-Host "Content:     $content"
 Write-Host "Tags:        $tagPlan"
 Write-Host "Description: $descriptionPlan"
 Write-Host "Preview:     $(if ($sendPreview) { 'upload Preview.png' } else { 'unchanged, not sent' })"
-Write-Host "Record:      append to $(Join-Path $repo 'RELEASES.md'): $recordLine"
+Write-Host "Record:      $recordLine"
 Write-Host "---- Change note (published immediately, can never be edited) ----"
 if ($ChangeNote) { Write-Host $ChangeNote } else { Write-Host "(none: the changelog entry will be blank)" }
 Write-Host "-------------------------------------------------------------------"
@@ -240,8 +286,14 @@ $published = Invoke-SteamWorkshopProcess -RimWorldDir (Split-Path -Parent $RimWo
     $item.m_PublishedFileId
 }
 
-Add-ReleaseRecord -ModRoot $repo -Line (Format-ReleaseRecordLine $version ([DateTime]::UtcNow) ([string]$published))
-Write-Host "Recorded $DeployName $version in $(Join-Path $repo 'RELEASES.md')."
+# RELEASES.md records what shipped; a republish of a recorded version adds
+# no row (the version is already there, and an unchanged upload ships nothing).
+if ($released) {
+    Write-Host "$DeployName $version was already recorded in $(Join-Path $repo 'RELEASES.md') ($($released.Published)); no new row for the republish."
+} else {
+    Add-ReleaseRecord -ModRoot $repo -Line (Format-ReleaseRecordLine $version ([DateTime]::UtcNow) ([string]$published))
+    Write-Host "Recorded $DeployName $version in $(Join-Path $repo 'RELEASES.md')."
+}
 if ($initializeListing) {
     Write-Host "First publish complete: item $published; Workshop tags synchronized."
 } else {

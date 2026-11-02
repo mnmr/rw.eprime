@@ -128,7 +128,7 @@ public static class Probe
     static void ShowPicker(int planId, int body)
     {
         OpenDialog("Plans");
-        object plans = Traverse.Create(dialog).Field("plans").GetValue();
+        object plans = Traverse.Create(dialog).Field("view").Field("plans").GetValue();
         Traverse.Create(plans).Field("SelectedPlanId").SetValue(planId);
         Traverse.Create(plans).Field("Body").SetValue(body);
         Traverse.Create(plans).Field("Region").SetValue(0);
@@ -151,15 +151,16 @@ public static class Probe
     static void ShowOverview()
     {
         OpenDialog("Overview");
-        object overview = Traverse.Create(dialog).Field("overview").GetValue();
+        object overview = Traverse.Create(dialog).Field("view").Field("overview").GetValue();
         Traverse.Create(overview).Field("SelectedPawnId").SetValue(human.thingIDNumber);
     }
 
     static void OpenDialog(string tab)
     {
         Type type = typeof(ImplannerStore).Assembly.GetType("Implanner.UI.Dialog_Implanner");
-        Type tabs = type.GetNestedType("Tab", AccessTools.all);
-        AccessTools.Field(type, "curTab").SetValue(null, Enum.Parse(tabs, tab));
+        Type view = typeof(ImplannerStore).Assembly.GetType("Implanner.UI.ImplannerView");
+        Type tabs = view.GetNestedType("Tab", AccessTools.all);
+        AccessTools.Field(view, "curTab").SetValue(null, Enum.Parse(tabs, tab));
         if (dialog == null)
         {
             dialog = (Window)Activator.CreateInstance(type);

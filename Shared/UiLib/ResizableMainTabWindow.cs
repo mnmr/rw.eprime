@@ -18,12 +18,14 @@ namespace RimShared.UiLib
 
     /// A bottom-anchored main tab the player can resize, which vanilla main
     /// tabs cannot. Vanilla's own resizer is off; the grip sits in the
-    /// window's top-right corner in its own immediate window on the Dialog
-    /// layer (the contents group clips the corner, plain ExtraOnGUI paints
-    /// under GUI windows, and a same-layer grip gets buried when a click
-    /// refocuses the tab). Width grows to the right and height grows UP,
-    /// the bottom edge stays pinned to the bar. Double-click returns to
-    /// automatic sizing. Geometry changes are queued and applied between
+    /// window's top corner away from its anchored screen edge (top-right
+    /// for a left-anchored tab, top-left for a right-anchored one) in its
+    /// own immediate window on the Dialog layer (the contents group clips
+    /// the corner, plain ExtraOnGUI paints under GUI windows, and a
+    /// same-layer grip gets buried when a click refocuses the tab). Width
+    /// grows away from the anchored edge and height grows UP, the bottom
+    /// edge stays pinned to the bar. Double-click returns to automatic
+    /// sizing. Geometry changes are queued and applied between
     /// frames in WindowUpdate: a windowRect change mid-event desyncs
     /// Layout from the later passes of the same frame. While an axis is not
     /// player-sized the window grows (never shrinks) to TargetSize so a
@@ -91,14 +93,21 @@ namespace RimShared.UiLib
                 Mathf.Clamp(target.y, min.y, Verse.UI.screenHeight - BottomBarHeight));
         }
 
+        private bool RightAnchored => Anchor == MainTabWindowAnchor.Right;
+
+        /// The x of a window of this width on its anchored screen edge.
+        private float AnchoredX(float width) =>
+            RightAnchored ? Verse.UI.screenWidth - width : 0f;
+
         private Rect AutoSizeRect()
         {
             Vector2 size = ClampedTargetSize();
-            return new Rect(0f, Verse.UI.screenHeight - BottomBarHeight - size.y, size.x, size.y);
+            return new Rect(AnchoredX(size.x), Verse.UI.screenHeight - BottomBarHeight - size.y,
+                size.x, size.y);
         }
 
         /// Re-applies the persisted size each open, clamped between the
-        /// minimum and the screen; bottom-left anchor holds.
+        /// minimum and the screen; the bottom anchor holds.
         protected override void SetInitialSizeAndPosition()
         {
             resizing = false;
@@ -113,14 +122,15 @@ namespace RimShared.UiLib
             if (preference.Height > 0f)
                 windowRect.height = Mathf.Clamp(preference.Height, min.y,
                     Verse.UI.screenHeight - BottomBarHeight);
-            windowRect.x = 0f;
+            windowRect.x = AnchoredX(windowRect.width);
             windowRect.y = Verse.UI.screenHeight - BottomBarHeight - windowRect.height;
         }
 
         public override void ExtraOnGUI()
         {
             base.ExtraOnGUI();
-            gripScreen = new Rect(windowRect.xMax - GripSize - 2f,
+            gripScreen = new Rect(
+                RightAnchored ? windowRect.x + 2f : windowRect.xMax - GripSize - 2f,
                 windowRect.y + 2f, GripSize, GripSize);
             Find.WindowStack.ImmediateWindow(GripWindowId, gripScreen, WindowLayer.Dialog,
                 drawGrip, doBackground: false, absorbInputAroundWindow: false, 0f);
@@ -131,10 +141,12 @@ namespace RimShared.UiLib
             IWindowSizePreference? preference = SizePreference;
             var local = new Rect(0f, 0f, GripSize, GripSize);
             WrTips.Key(GripTipKey).Region(local);
-            // Reddish = player-sized. UV flip, not rotation: GUI matrix
-            // rotation misplaces draws inside GUI windows.
+            // Reddish = player-sized. UV flips, not rotation: GUI matrix
+            // rotation misplaces draws inside GUI windows. The widget art
+            // points bottom-right; flip it toward the grip's corner.
             GUI.color = PlayerSized ? new Color(1f, 0.5f, 0.45f) : Color.white;
-            GUI.DrawTextureWithTexCoords(local, TexUI.WinExpandWidget, new Rect(0f, 1f, 1f, -1f));
+            GUI.DrawTextureWithTexCoords(local, TexUI.WinExpandWidget,
+                RightAnchored ? new Rect(1f, 1f, -1f, -1f) : new Rect(0f, 1f, 1f, -1f));
             GUI.color = Color.white;
 
             Event e = Event.current;
@@ -152,7 +164,12 @@ namespace RimShared.UiLib
                     Vector2 screenMouse = gripScreen.position + e.mousePosition;
                     resizing = true;
                     resizeBottom = windowRect.yMax;
-                    resizeGrab = new Vector2(windowRect.xMax - screenMouse.x, screenMouse.y - windowRect.y);
+                    // Grab point: distance from the growing edge (right for a
+                    // left-anchored tab, left for a right-anchored one), and
+                    // from the top.
+                    resizeGrab = new Vector2(
+                        RightAnchored ? screenMouse.x - windowRect.x : windowRect.xMax - screenMouse.x,
+                        screenMouse.y - windowRect.y);
                     pendingWindowRect.QueueUser(windowRect);
                 }
                 e.Use();
@@ -166,16 +183,24 @@ namespace RimShared.UiLib
                 Vector2 mouseUI = gamePx / Prefs.UIScale;
 
                 Vector2 min = MinSize;
-                float width = Mathf.Clamp(mouseUI.x + resizeGrab.x, min.x, Verse.UI.screenWidth);
+                float width = Mathf.Clamp(
+                    RightAnchored
+                        ? Verse.UI.screenWidth - (mouseUI.x - resizeGrab.x)
+                        : mouseUI.x + resizeGrab.x,
+                    min.x, Verse.UI.screenWidth);
                 float top = mouseUI.y - resizeGrab.y;
                 float height = Mathf.Clamp(resizeBottom - top, min.y,
                     Verse.UI.screenHeight - BottomBarHeight);
-                var nextWindowRect = new Rect(0f, resizeBottom - height, width, height);
+                var nextWindowRect = new Rect(AnchoredX(width), resizeBottom - height, width, height);
                 pendingWindowRect.QueueUser(nextWindowRect);
 
                 // Warp only when a clamp stops the window: the cursor rides the
                 // handle instead of drifting over other UI. Windows-only.
-                var grabUI = new Vector2(nextWindowRect.width - resizeGrab.x, nextWindowRect.y + resizeGrab.y);
+                var grabUI = new Vector2(
+                    RightAnchored
+                        ? nextWindowRect.x + resizeGrab.x
+                        : nextWindowRect.width - resizeGrab.x,
+                    nextWindowRect.y + resizeGrab.y);
                 if ((mouseUI - grabUI).sqrMagnitude > 4f && Win32Cursor.TryGetPos(out Vector2 desktopPx))
                 {
                     Vector2 desktopOrigin = desktopPx - gamePx;
@@ -208,10 +233,13 @@ namespace RimShared.UiLib
         /// Grow-only mid-session resize before the contents draw; manual
         /// geometry wins while dragging, if both kinds of update are waiting
         /// for WindowUpdate, and per axis the player has explicitly sized
-        /// (auto-grow would otherwise undo every shrink each frame).
+        /// (auto-grow would otherwise undo every shrink each frame). Once
+        /// per frame, on the Repaint pass: TargetSize reads the subclass's
+        /// gated size caches, and the queued rect applies in WindowUpdate
+        /// whichever pass queued it.
         public override void DoWindowContents(Rect inRect)
         {
-            if (!resizing)
+            if (!resizing && Event.current.type == EventType.Repaint)
             {
                 IWindowSizePreference? preference = SizePreference;
                 Vector2 target = ClampedTargetSize();
@@ -231,7 +259,7 @@ namespace RimShared.UiLib
                 }
                 if (grew)
                 {
-                    nextWindowRect.x = 0f;
+                    nextWindowRect.x = AnchoredX(nextWindowRect.width);
                     nextWindowRect.y = Verse.UI.screenHeight - BottomBarHeight - nextWindowRect.height;
                     pendingWindowRect.QueueAutomatic(nextWindowRect);
                 }

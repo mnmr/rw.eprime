@@ -7,7 +7,7 @@ title: Sıralama ve hariç tutma
 <!-- l10n:b-7c60ec8be352 -->
 - [Eğitim rolü](topic:training-paths), yolunun hedefinin hemen arkasına gelir; Hemşire ve Sağlıkçı bu yüzden Doktoru izler.
 - Başkasınca tamamen kapsanan rol, onu kapsayanın hemen arkasına gelir; Taşıyıcının Beden işçisini izlemesi gibi.
-- **Avcı, nişancılığa göre konumunu korur:** kötü nişancılar önce, iyiler zamanları başka yerde daha değerli olduğu için sonra avlanır. Tek tek sabitlenen atama korunur.
+- **Avcı, nişancılığa göre konumunu korur:** avcılık Nişancılığı geliştirdiği için varsayılan olarak kötü nişancılar daha erken, iyi nişancılar daha geç avlanır. [Genel seçenekler](topic:global-tuning) içindeki Avcı yerleşimi seçeneği bunu tersine çevirebilir; böylece silahlı en iyi nişancı Avcının lideri olarak ilk avlanır. Avcı, normal bir rol olarak da planlanabilir. Tek tek sabitlenen atama korunur.
 
 <!-- l10n:b-ae303b9cef12 -->
 Öneriler sekmesinin üstündeki **Hariç tutulan roller**, hiç önerilmemesi gereken rolleri belirler. Hariç tutmak için Rol ekle'yi; yeniden izin vermek için etiketin kaldırma simgesini kullanın.

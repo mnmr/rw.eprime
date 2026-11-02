@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.2.7 — 2026-11-01
+
+- Fixed: The toolbar button is now drawn through the game's standard button widget, so toolbar-restyling mods no longer hide it.
+
 ## 1.2.6 — 2026-11-01
 
 - Fixed: Multiplayer desyncs when a player joined a game with unfinished items waiting for a finisher or with robot recharge stations.

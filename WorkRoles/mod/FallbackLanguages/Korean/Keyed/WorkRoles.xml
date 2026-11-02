@@ -341,7 +341,7 @@ WorkRoles는 기본 게임 방식으로 관리 대상의 작업 목록을 제공
   <WR_RecGlobalPanelHelp>후보의 점수·순위와 최종 추천 목록의 배치 위치를 조정합니다. 변경을 되돌리려면 초기화 버튼으로 기본값을 복원하세요.</WR_RecGlobalPanelHelp>
   <WR_RecMoreContentGates>외 {0}개</WR_RecMoreContentGates>
   <WR_RecRolePanel>역할 옵션</WR_RecRolePanel>
-  <WR_RecRolePanelHelp>추천 제외 역할을 뺀 모든 역할입니다. 펼쳐서 추천 옵션을 조정하세요. 순서는 정착민별로 자동 결정하며, 사냥꾼은 사격 수준에 따라 배치됩니다.</WR_RecRolePanelHelp>
+  <WR_RecRolePanelHelp>추천 제외 역할을 뺀 모든 역할이 여기에 표시됩니다. 역할을 펼쳐 추천 옵션을 조정하세요. 역할 순서는 정착민별로 자동 결정되며, 사냥꾼은 전역 옵션의 사냥꾼 배치 선택을 따릅니다.</WR_RecRolePanelHelp>
   <WR_RecScalingSection>배정 규모</WR_RecScalingSection>
   <WR_RecSkillsSection>기술</WR_RecSkillsSection>
   <WR_RecTipAssignmentsMany>배정 {0}명 필요</WR_RecTipAssignmentsMany>
@@ -370,7 +370,7 @@ WorkRoles는 기본 게임 방식으로 관리 대상의 작업 목록을 제공
   <WR_RecTuneChampionTieBreakRow>동점 판정 점수</WR_RecTuneChampionTieBreakRow>
   <WR_RecTuneChampionTieBreakRowDesc>대표 점수가 같을 때 비교하는 요인 점수입니다. 복수 기술 역할은 적격 요인의 점수를 합산합니다.</WR_RecTuneChampionTieBreakRowDesc>
   <WR_RecTuneHunterSection>사냥꾼 배치 옵션</WR_RecTuneHunterSection>
-  <WR_RecTuneHunterSectionIntro>고정되지 않은 사냥꾼 역할은 사격 수준에 따라 이동합니다. 사격이 뛰어날수록 다른 일에 쓸 시간이 가치 있으므로 더 뒤에 사냥합니다.</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneHunterSectionIntro>사냥은 사격 기술을 키워 주므로, 기본적으로 무장한 모든 정착민이 사냥꾼을 맡고 가장 서투른 사수가 먼저 사냥합니다. 여기서 누가 먼저 사냥할지 바꾸거나 사냥꾼을 일반 역할로 계획할 수 있습니다.</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneHunterTiersRow>구간별 최대 사격 수준</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>사냥꾼 위치를 정하는 사격 기준입니다. 1구간은 기본 작업 뒤, 2·3구간은 중간·마지막 작업 역할 뒤, 4구간 초과는 맨 끝입니다.</WR_RecTuneHunterTiersRowDesc>
   <WR_RecTuneMinimumPickRow>최소 인원 선발 보너스</WR_RecTuneMinimumPickRow>
@@ -655,4 +655,13 @@ WorkRoles는 기본 게임 방식으로 관리 대상의 작업 목록을 제공
   <WR_RoleCapCannotTakeJobs>{0}: {1} 작업을 배정받을 수 없음</WR_RoleCapCannotTakeJobs>
   <WR_WorkNativeFireNearby>대기 중 근처의 불을 끌 수 있지만 소방 작업을 배정받지는 않음</WR_WorkNativeFireNearby>
   <WR_WorkNotNative>이 모델의 작업 배정에서는 지원되지 않음</WR_WorkNotNative>
+  <WR_RecTuneHunterPlacement>사냥꾼 배치</WR_RecTuneHunterPlacement>
+  <WR_RecTuneHunterPlacementBestShotsFirst>사격이 뛰어난 순</WR_RecTuneHunterPlacementBestShotsFirst>
+  <WR_RecTuneHunterPlacementBestShotsFirstTip>무장한 모든 정착민이 사냥꾼 역할을 맡습니다. 최고의 사수가 사냥꾼의 대표가 되어 기본 작업 직후에 사냥하고, 나머지는 나중에 사냥하며 대표가 바쁠 때 대신합니다. 정착지에 당장 고기나 가죽이 필요하고, 빗맞히거나 다친 동물로 인한 손해가 훈련의 가치보다 클 때 선택하세요.</WR_RecTuneHunterPlacementBestShotsFirstTip>
+  <WR_RecTuneHunterPlacementDesc>사격이 서투른 순은 실력이 낮은 사수에게 연습 기회를 줍니다. 사격이 뛰어난 순은 정착지에 고기가 필요하고 빗맞힐 여유가 없을 때 적합합니다. 일반 역할은 총을 든 모든 사람 대신 고정된 사냥 인원을 두고 싶을 때 쓰입니다. 원거리 무기는 항상 필요합니다.</WR_RecTuneHunterPlacementDesc>
+  <WR_RecTuneHunterPlacementNormalRole>일반 역할</WR_RecTuneHunterPlacementNormalRole>
+  <WR_RecTuneHunterPlacementNormalRoleTip>사냥꾼을 총을 든 모든 사람에게 맡기지 않고 다른 기술 역할처럼 계획합니다. 역할 옵션에서 정착지 최소 인원과 커버리지를 설정하면 최고의 사수들이 그 자리를 채웁니다. 실력이 뛰어난 사수는 여분 인원으로 사냥꾼을 맡을 수도 있습니다. 고정된 사냥 인원을 원할 때 선택하세요.</WR_RecTuneHunterPlacementNormalRoleTip>
+  <WR_RecTuneHunterPlacementPoorShotsFirst>사격이 서투른 순</WR_RecTuneHunterPlacementPoorShotsFirst>
+  <WR_RecTuneHunterPlacementPoorShotsFirstTip>무장한 모든 정착민이 사냥꾼을 맡습니다. 가장 서투른 사수가 먼저 사냥하여 사격 숙련도를 쌓고, 명사수는 가장 나중에 사냥합니다. 식량이 안정적이고 사격할 수 있는 정착민을 더 늘리고 싶을 때 선택하세요. 기본값입니다.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
+  <WR_RecTuneHunterTiersRowDescReversed>사냥꾼 동적 슬롯의 사격 수준 기준값이며, 위에서 아래로 읽습니다. 마지막 기준값보다 높은 수준은 1단계로 사냥꾼을 기본 작업 직후에 배치하고, 2·3단계는 중간 및 마지막 작업 역할 뒤에 오며, 5단계는 사냥꾼을 맨 마지막에 배치합니다.</WR_RecTuneHunterTiersRowDescReversed>
 </LanguageData>

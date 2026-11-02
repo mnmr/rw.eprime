@@ -7,7 +7,7 @@ Les recommandations sont ordonnées automatiquement pour chaque colon. Le moteur
 <!-- l10n:b-7c60ec8be352 -->
 - Un [rôle de formation](topic:training-paths) se place juste après l'objectif de son parcours : Infirmier et Soignant suivent Médecin.
 - Un rôle entièrement couvert par un autre le suit immédiatement, comme Transporteur après Homme à tout faire.
-- **Chasseur conserve son placement selon le tir** : les mauvais tireurs chassent plus tôt, les meilleurs plus tard, car leur temps est plus utile ailleurs. Une affectation épinglée individuellement reste protégée.
+- **Chasseur conserve son placement selon le tir** : la chasse entraîne le Tir ; par défaut, les mauvais tireurs chassent donc plus tôt et les meilleurs plus tard. L'option de placement du Chasseur dans les [Options générales](topic:global-tuning) permet d'inverser cet ordre, afin que le meilleur tireur armé chasse en premier comme champion du Chasseur, ou de planifier Chasseur comme un rôle normal. Une affectation épinglée individuellement reste protégée.
 
 <!-- l10n:b-ae303b9cef12 -->
 Le panneau **Rôles exclus**, en haut de l'onglet Recommandations, indique les rôles qui ne doivent jamais être recommandés. Utilisez Ajouter un rôle pour en exclure un, ou l'icône de retrait de sa pastille pour l'autoriser à nouveau.

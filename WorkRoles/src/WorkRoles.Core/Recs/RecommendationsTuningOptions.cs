@@ -54,6 +54,7 @@ namespace WorkRoles.Core.Recs
         OrderingPartTimePoints,
         OrderingOpportunisticPoints,
 
+        HunterPlacement,
         HunterFirstTierMaximum,
         HunterSecondTierMaximum,
         HunterThirdTierMaximum,
@@ -69,6 +70,23 @@ namespace WorkRoles.Core.Recs
         Integer,
         QuarterMultiplier,
         SignalBucket,
+        HunterPlacement,
+    }
+
+    /// How the resolved Hunter role is handed out. The first two hand Hunter
+    /// to every armed colonist and place it by shooting tier; the last plans
+    /// it by its own demand like any skilled role.
+    public enum HunterPlacementMode
+    {
+        /// Poor shots hunt early, sharpshooters late (their time is worth
+        /// more elsewhere); the lowest shooter is promoted when nobody lands
+        /// in the first tier.
+        PoorShotsFirst,
+        /// The tier walk is reversed and the best armed shooter is Hunter's
+        /// champion through the ordinary champion pass.
+        BestShotsFirst,
+        /// No special placement: Hunter follows colony minimum and coverage.
+        NormalRole,
     }
 
     public sealed class RecommendationTuningDescriptor
@@ -235,6 +253,11 @@ namespace WorkRoles.Core.Recs
             Points(RecommendationTuningOption.OrderingOpportunisticPoints,
                 "orderingOpportunisticPoints", OrderingSection, "OrderingOpportunisticPoints", -2),
 
+            Descriptor(RecommendationTuningOption.HunterPlacement,
+                "hunterPlacement", HunterSection, "HunterPlacement",
+                (int)HunterPlacementMode.PoorShotsFirst,
+                (int)HunterPlacementMode.PoorShotsFirst, (int)HunterPlacementMode.NormalRole,
+                RecommendationTuningValueKind.HunterPlacement),
             Level(RecommendationTuningOption.HunterFirstTierMaximum,
                 "hunterFirstTierMaximum", HunterSection, "HunterFirstTierMaximum", 4),
             Level(RecommendationTuningOption.HunterSecondTierMaximum,
@@ -760,6 +783,10 @@ namespace WorkRoles.Core.Recs
             return Value(points) + skill + minimumBonus + categoryPoints + timePoints;
         }
 
+        internal HunterPlacementMode HunterPlacement =>
+            (HunterPlacementMode)Value(RecommendationTuningOption.HunterPlacement);
+
+        /// The pawn's shooting band, 1 (lowest) to 5 (above the last cutoff).
         internal int HunterTier(int shootingLevel)
         {
             if (shootingLevel <= Value(
@@ -773,6 +800,14 @@ namespace WorkRoles.Core.Recs
                 return 3;
             return shootingLevel <= Value(
                 RecommendationTuningOption.HunterFourthTierMaximum) ? 4 : 5;
+        }
+
+        /// The placement tier (1 = earliest slot) for the shooting band under
+        /// the active mode: best shots first walks the bands in reverse.
+        internal int HunterPlacementTier(int shootingLevel)
+        {
+            int band = HunterTier(shootingLevel);
+            return HunterPlacement == HunterPlacementMode.BestShotsFirst ? 6 - band : band;
         }
 
         private int Value(RecommendationTuningOption option) =>

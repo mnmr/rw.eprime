@@ -1,0 +1,68 @@
+# Every installed implant and humanlike-race mod (2026-11-01 survey) for
+# the conflict-rule audit. Frameworks first, implant mods, then the
+# Integrated Implants compatibility patches. WorkRoles removed so the probe
+# owns the colony.
+remove zetrith.prepatcher
+remove brrainz.rimbridgeserver
+remove mehni.pickupandhaul
+remove brrainz.rangefinder
+remove jaxe.rimhud
+remove com.bymarcin.architecticons
+remove mehni.numbers
+remove dubwise.dubsmintminimap
+remove rimworld.randomcoughdrop.geneassistant
+remove carnysenpai.traitraritycolors
+remove tac.genetrader
+remove mlie.haulminedchunks
+remove kota.inventorytab
+remove mlie.relevantstatsindescription
+remove bp.showbuildablematerialcount
+remove mlie.usethisinstead
+remove bodlosh.weaponstats
+remove mlie.smarterdeconstructionandmining
+remove defi.generipper
+remove avilmask.nonunopinata
+remove dubwise.dubsperformanceanalyzer.steam
+remove mnmr.workroles
+after ludeon.rimworld.odyssey
+oskarpotocki.vanillafactionsexpanded.core
+imranfish.xmlextensions
+ebsg.framework
+v1024.ebframework
+ferny.replacelib
+erdelf.humanoidalienraces
+carnysenpai.enableoversizedweapons
+ancot.ancotlibrary
+maiconneri.androidtierscontinued
+ancot.milirarace
+dubwise.dubsbadhygiene
+vanillaexpanded.vgeneticse
+assassinsbro.qualitybionicsremastered
+frozensnowfox.vanillabionicsexpansion
+frozensnowfox.advancedbionicsexpansion
+lts.i
+nighty.archotechbionics
+bambaryla.bor
+xrushha.notdemo.animagear
+seti.victor.animabodies
+anthonytherrien.astraltechbionics
+tot.celetech.mkiii
+axzero.celetech.integratedorgans
+mlie.combatbionics
+echotidefish.cryptobionicsforked
+det.epochspyrinth
+zwei2stein.pyrinthbionics
+feaurie.greyscythegenes
+feaurie.greyscythebionics
+vat.epoeforked
+zal.keptb
+marsflight247.lemplants
+ghostie.ghostiesprotogens
+rah.rbse
+akarthus.thecosmicodyssey.core
+akarthus.thecosmicodyssey.bionic
+ferny.progressionbionics
+asunib.epoeiicompat
+asunib.cbiicompat
+after eprime.implanner
+eprime.implanner.conflictaudit

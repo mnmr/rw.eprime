@@ -7,7 +7,7 @@ Recomendações são ordenadas por colono, combinando ordem interna, adequação
 <!-- l10n:b-7c60ec8be352 -->
 - Uma [função de formação](topic:training-paths) vem logo após a meta da rota; Enfermeiro e Socorrista seguem Médico.
 - Uma função totalmente coberta por outra vem logo depois dela, como Transportador após Ajudante.
-- **Caçador mantém sua posição por Tiro**: atiradores ruins caçam antes e bons depois, pois seu tempo vale mais em outros trabalhos. Atribuições fixadas individualmente continuam protegidas.
+- **Caçador mantém sua posição por Tiro:** caçar treina Tiro, então, por padrão, atiradores ruins caçam antes e bons atiradores depois. A opção de posição do Caçador em [Opções globais](topic:global-tuning) pode inverter isso, para que o melhor atirador armado cace primeiro como campeão do Caçador, ou tratar o Caçador como uma função normal. Atribuições fixadas individualmente continuam protegidas.
 
 <!-- l10n:b-ae303b9cef12 -->
 **Funções excluídas**, no topo de Recomendações, define o que nunca recomendar. Use Adicionar função para excluir, ou remova a ficha para permitir novamente.

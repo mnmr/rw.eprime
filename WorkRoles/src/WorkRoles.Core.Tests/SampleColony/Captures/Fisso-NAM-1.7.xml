@@ -35833,6 +35833,7 @@
     <option name="OrderingOptionalCategoryPoints" key="orderingOptionalCategoryPoints" value="-4" />
     <option name="OrderingPartTimePoints" key="orderingPartTimePoints" value="2" />
     <option name="OrderingOpportunisticPoints" key="orderingOpportunisticPoints" value="-2" />
+    <option name="HunterPlacement" key="hunterPlacement" value="0" />
     <option name="HunterFirstTierMaximum" key="hunterFirstTierMaximum" value="4" />
     <option name="HunterSecondTierMaximum" key="hunterSecondTierMaximum" value="8" />
     <option name="HunterThirdTierMaximum" key="hunterThirdTierMaximum" value="12" />

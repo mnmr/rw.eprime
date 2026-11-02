@@ -124,7 +124,11 @@ modularity's `Recipe_InstallModule : Recipe_Surgery`, which mounts modules ON
 a bionic limb; such a pair coexists and the bionic never stands in for the
 module goal), replacements clear their subtree (again except
 mounts-on-artificial kinds), `incompatibleWithHediffTags` versus
-`HediffDef.tags` excludes same-part implants (skin glands), and mutual
+`HediffDef.tags` excludes same-part implants (skin glands; a one-directional
+declaration such as The Cosmic Odyssey's skinweave, which names `ArmorGland`
+incompatible without carrying the tag, stays a hard exclusion by owner
+decision 2026-11-01 even though the game accepts that pair in one install
+order: the modder's intent is exclusivity), and mutual
 `HediffDef.removeWithTags` versus `tags` excludes a pair anywhere on the
 body (`Hediff.PostAdd` removes the tagged hediff pawn-wide, exact-match;
 modded mechanite strains). One-sided removal is not a conflict: installing
@@ -165,8 +169,23 @@ an incompatible `Extends` to no base, like a mod-skipped one) and load
 No restriction on unpinned plans is needed for this: compatibility is one
 structural comparison, every pre-1.2.6 plan loads unpinned, and an
 unpinned-base chain is always compatible, so no migration exists.
-Enlisting: a pinned plan accepts only colonists with that body
-(`PlanBodies.Accepts`): the synced `AssignPlan` refuses a mismatch (the
+Body kinship (owner, 2026-11-01; `Implanner.Core.BodyKinships`,
+`Catalogs.KinshipOf`): each plannable body is classified by the catalog
+slot keys it carries against the human body's. A body carrying exactly the
+human slots under another name (a race mod's copy of the human anatomy) is
+`HumanEquivalent` and folded under the human body: it is left out of the
+body filter and the new-plan dialog (`Catalogs.OfferedBodies`), and its
+colonists join plans for the human body. A body carrying every human slot
+and more (Milira: wings) is a `HumanSuperset`: it joins plans for the human
+body too and stays offered as a body of its own, since its extra slots can
+be planned. A body missing any human slot (Android Tiers) is `Distinct`.
+Nesting differences do not enter the classification; per-pawn applicability
+handles them. Proven in-game 2026-11-01 (`tests/InGame/BodyKinship`, a
+human-copy race plus Milira and Android Tiers).
+Enlisting: a pinned plan accepts colonists with that body, and a plan for
+the human body (or for a body folded under it) accepts the human family
+(`PlanBodies.Accepts`, `BodyKinships.Accepts`): the synced `AssignPlan`
+refuses a mismatch (the
 colonist set is identical on every client), the overview plan menu lists
 such plans greyed as "X (Android only)", and a colonist left on a
 mismatched plan (import, a race mod removed) evaluates with every slot as
@@ -200,7 +219,17 @@ type name on the worker or a base type, each verified in the mod's source:
 Vanilla Genetics Expanded's worker clears the part; Android Tiers'
 `Recipe_InstallImplantAndroid` installs an implant and
 `Recipe_InstallArtificialBodyPartAndroid` clears the part); any other worker
-is assumed to mount on artificial parts.
+is assumed to mount on artificial parts. A fourth behaviour,
+`MountsOnArtificialPart` (Combat Bionics' `Recipe_InstallImplantOverBionics`,
+which refuses only missing parts, duplicates and tag clashes), mounts on a
+replacement at its own record but never under one: the game marks every
+part below an added part missing (`Hediff_AddedPart.PostAdd`), so the
+catalog entry carries `MountsOnArtificialParts` without
+`MountsUnderArtificialParts`, the conflict rule's subtree exemption and the
+per-pawn `SlotApplicability` block read the latter, and such a kind never
+asks for a host replacement. Found by the conflict audit of 2026-11-01
+(`tests/InGame/ConflictAudit`): the swarm wrist implant was planned beside
+bionic arms the game never let it join.
 A replacement (`ImplantCatalogEntry.IsReplacement`) is a hediff whose class
 is `Hediff_AddedPart`, the class every game check for an artificial part
 tests (`HediffSet.HasDirectlyAddedPartFor`), whatever its worker or
@@ -326,6 +355,7 @@ are excluded from the catalog: only ordinary humanlikes are plannable.
 | Floor-map canonicalization (shared `RimShared.GameLib.FloorMaps.cache`) | Hash of live map ids; `ReleaseForTeardown` on map-set invalidation and world teardown |
 | Implant catalog (`Catalogs.implants`) | Loaded definition set (static per session) + `UiRevision.LanguageCurrent` (slot labels and group labels; slot addresses are label-free); `Release` on world teardown |
 | Plannable bodies (`Catalogs.plannableBodies`) | Loaded definition set (static per session): the distinct bodies of humanlike races, human first then by defName; `Release` via `Catalogs.Release` |
+| Body kinship and offered bodies (`Catalogs.bodyKinships`, `Catalogs.offeredBodies`) | Loaded definition set (static per session): per plannable-body position, `BodyKinships.Classify` over the catalog slot keys the body carries against the human body's (label-free, not language-gated), and the plannable bodies less the human equivalents; built on first query, read allocation-free on the reconcile tick per pawn (`PlanBodies.Accepts`); `Release` via `Catalogs.Release` |
 | Surgery worker behaviours (`SurgeryWorkerDef.BehaviorOf`) | Loaded assembly and definition set (static per session); read only while the catalog builds, never cached on its own |
 | Android Tiers bridge (`AndroidTiers`) | Loaded assembly and definition set (static per session): android flesh type, Smithing work type, `CompSurrogateOwner.repairAndroids` field accessor and the mod's settings field, resolved once by name; facts only, never results; no teardown (process-lifetime, retains no game object) |
 | Modular-host extension type (`ModCompatibility.modularExtension`) | Loaded assembly set (static per session); resolved once by type name; no teardown (process-lifetime immutable fact) |
@@ -352,7 +382,9 @@ are excluded from the catalog: only ordinary humanlikes are plannable.
 | Skill slider presentation (`SkillSliderState`, shared by Options and both skill controls) | `UiRevision.Current`, local `ImplannerSettings.skillSliderMaximum` and narrowest label width derived from window/column width with the scrolling gutter and manual-row indent reserved; immutable maximum/value text and measured wrapped Small-font bounds for the three translated captions; equal rebuilt values preserve snapshot identity. Window-owned, released on close; geometry/preference changes preserve automation/model snapshot identities |
 | Colonist detail rows (`OverviewState.detailRows`) | Overview data identity + selected pawn id + panel body width (the header sentence wraps, so its height is measured at rebuild and the width is part of the key); grouping follows the iteration strategy (tier headers with player-arranged order, or anatomy-region headers A-Z), and the header carries the pipeline status plus a Collecting/Implanting summary derived from reservations and owned operation bills — all inputs (options, rankings, reservations, surgery) already inside the data's `Version` dependency; live map state is sampled at rebuild by design (reserved-item readiness, best eligible doctor behind the floor gate, the Recovering health gate); the facts revision moves only for implant hediffs, so Recovering refreshes on the next store `Version` or facts bump |
 | Fold and read flags (`OverviewState.CollapsedFlags`, `PlansState.FoldedFlags`, `HelpTabView` topic flags) | Owning snapshot/topic-array identity + fold/read revision; parallel `bool[]` so draw loops never hash; window-owned |
-| Store reference (`Dialog_Implanner`) | `Find.World` identity, resolved in `WindowUpdate`; window-owned, cleared on close |
+| Store reference (`ImplannerView`) | `Find.World` identity, resolved in the host's `WindowUpdate` (`ImplannerView.Update`); view-owned (one view per host window: the floating `Dialog_Implanner` or the bottom-bar `MainTabWindow_Implanner`), cleared on close |
+| Entry style and bar button (`ImplannerEntry`, owner 2026-11-01) | The mod's `MainButtonDef` and its unbound `Implanner_MainTab` key binding, resolved once by defName after defs load (static per session). `ImplannerSettings.entryStyle` (Both default; Toolbar; Tab; legacy `showToolbarButton` files map hidden button to Tab) sets `buttonVisible` immediately and the toolbar patch reads `ShowToolbarButton` per draw; a style change made inside an open host swaps hosts on the next frame update (`DrainPending`, never inside the clicking OnGUI pass) under the same static selected tab; settings writes requested from OnGUI are flushed by `ImplannerGameComponent.RequestSettingsWrite` on the frame path. At most one host is open: each host's `PreOpen` closes the other |
+| Tab window size (`MainTabWindow_Implanner` on the shared `RimShared.UiLib.ResizableMainTabWindow`) | Default 1220x760 anchored bottom-right under its half-width icon button in the bar's right-hand group (order 110, grip top-left; the dialog's size, clamped to the screen); `ImplannerSettings.tabWindowWidth/Height` (0 = default per axis) applied at open and written on grip release; grip, auto-grow and double-click reset follow the shared base |
 | Plans snapshot (`PlansState`) | `UiRevision.Current`, store identity + `PlansVersion` (structure, goals, base links, minimum quality; the minimum-quality button shows while a catalog item carries a quality and its tip names a missing Quality Jobs, both static per session, its Small-font text width measured at rebuild) + `RankingsVersion` (tier placement) + `AssignmentsVersion` (card colonist counts) + `OptionsVersion` (the mod compatibility option feeds override captions) + `ExternalPawnFacts.Revision` (card progress aggregates over installed implants and roster), selected plan id, the anatomy-region filter segment, the body filter selection (`PlansState.Body`; its menu labels come from the static plannable-body set and the language inside the UI revision; a pinned selected plan overrides it with its own body, part of the plan structure under `PlansVersion`), and the active search query (the vanilla `QuickSearchWidget` text normalized by `RimShared.Common.SearchMatcher`: trimmed, inactive only when blank; while active the tree is one flat region-free list of the slots whose label or body-part group matches, owner 2026-09-06); conflict facts folded in (def-derived, static per session); plan-name (Medium), extends-caption (Tiny) and picker leaf-label (Small) widths measured at rebuild; rebuilt from `WindowUpdate`; window-owned, released on close |
 | Picker captions (`PlansState.Captions`) | Plans snapshot identity + the tree row width the picker draws at (window size, scroll gutter); one "overrides X" / "inherited" caption per row fitted to exactly the room its label leaves (the caption reserves nothing; omitted when not even an ellipsis fits), tail-truncated behind an ellipsis via `RimShared.Common.TailTruncation` when it cannot fit, carrying the full text for the hover tooltip; Tiny measurements happen only inside this gate; window-owned, released on close |
 | Text fit widths (shared `RimShared.UiLib.WrText.FitWidth`, per-assembly static; `MeasureFitWidth` is the same rule unmemoized for snapshot builders) | `(font, text)` key; cleared when `UiRevision.Current` (shared `RimShared.UiLib.UiRevision`: UI scale, tiny-font preference, language) moves; `WrText.Reset` on world teardown |
@@ -493,3 +525,20 @@ its design floor (0.9375 at that resolution), so they are taken on the local
 1.6 copy: `tests/InGame/HelpShots` (`Probe16.csproj`, `run.ps1` sets
 `uiScale` to 1 in the run's `Config\Prefs.xml` before launch) with the
 `implanner-help-shots` mod set; crops come from the full frames.
+
+Conflict rules against other mods are checked by two local-1.6 probes.
+`tests/InGame/Conflicts` asks the catalog and the plan command about the
+pairs a player reported (Archotech Bionics kidney/liver/skin, Integrated
+Implants' subdermal armour, Beyond Our Reach's tenebral kinds; mod sets
+`implanner-conflicts` and `implanner-conflicts-bor`). `tests/InGame/
+ConflictAudit` is the mod-agnostic oracle: for every pair of catalog kinds
+that can meet on one anatomy instance it installs one through its real
+surgery worker on a test pawn, checks whether the game still offers and
+keeps the other, in both orders, and reports where Implanner excludes a
+pair the game accepts (STRICT), allows one the game never keeps (LAX), or
+where only one order works (ORDER, informational); per body it also lists
+the catalog slots missing or extra versus human and the kinds a fresh pawn
+of that body is not offered. Run it per body and, for large catalogs, per
+pair shard (`run.ps1 -ModSet implanner-conflict-audit-all -Bodies Human
+-Shard k/6`); results stay under `temp/conflicts/audit`. The audit is the
+place to re-run after adding support for an implant or race mod.

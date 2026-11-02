@@ -1,0 +1,44 @@
+# Every installed implant and humanlike-race mod for the conflict-rule
+# audit: Vanilla Expanded Framework (for Beyond Our Reach and Vanilla
+# Genetics Expanded), Humanoid Alien Races with Milira (Ancot Library),
+# Android Tiers Continued, Dubs Bad Hygiene, FSF bionics, Integrated
+# Implants, Archotech Bionics, Beyond Our Reach. WorkRoles removed so the
+# probe owns the colony.
+remove zetrith.prepatcher
+remove brrainz.rimbridgeserver
+remove mehni.pickupandhaul
+remove brrainz.rangefinder
+remove jaxe.rimhud
+remove com.bymarcin.architecticons
+remove mehni.numbers
+remove dubwise.dubsmintminimap
+remove rimworld.randomcoughdrop.geneassistant
+remove carnysenpai.traitraritycolors
+remove tac.genetrader
+remove mlie.haulminedchunks
+remove kota.inventorytab
+remove mlie.relevantstatsindescription
+remove bp.showbuildablematerialcount
+remove mlie.usethisinstead
+remove bodlosh.weaponstats
+remove mlie.smarterdeconstructionandmining
+remove defi.generipper
+remove avilmask.nonunopinata
+remove dubwise.dubsperformanceanalyzer.steam
+remove mnmr.workroles
+after ludeon.rimworld.odyssey
+oskarpotocki.vanillafactionsexpanded.core
+erdelf.humanoidalienraces
+carnysenpai.enableoversizedweapons
+ancot.ancotlibrary
+maiconneri.androidtierscontinued
+ancot.milirarace
+dubwise.dubsbadhygiene
+vanillaexpanded.vgeneticse
+frozensnowfox.vanillabionicsexpansion
+frozensnowfox.advancedbionicsexpansion
+lts.i
+nighty.archotechbionics
+bambaryla.bor
+after eprime.implanner
+eprime.implanner.conflictaudit

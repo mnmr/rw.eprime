@@ -210,7 +210,6 @@
   <IMP_DeleteFileConfirm>Eliminare "{0}"?</IMP_DeleteFileConfirm>
   <IMP_NoFiles>Qui non ci sono ancora file di piani esportati.</IMP_NoFiles>
   <IMP_ShipFallback>Gravonave</IMP_ShipFallback>
-  <IMP_SettingsShowToolbarButton>Mostra il pulsante nella barra</IMP_SettingsShowToolbarButton>
   <IMP_CompatibilityLevelMod>{0}: l'automazione di Implanner è disattivata con questa mod multilivello. La pianificazione e il monitoraggio continuano a funzionare.</IMP_CompatibilityLevelMod>
   <IMP_OptAndroidSurgeonsCrafters>Operazioni sugli androidi: artigiani con "Ripara androidi" (segue Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>Operazioni sugli androidi: medici (segue Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
@@ -222,8 +221,15 @@
   <IMP_PlanBody>Corpo</IMP_PlanBody>
   <IMP_PlanBodyAny>Qualsiasi corpo</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0} (non caricato)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>Un piano creato per un solo corpo elenca soltanto le parti di quel corpo e può arruolare solo i coloni con quel corpo.\n\nUn piano per qualsiasi corpo si applica a tutti i coloni. Le parti che il corpo di un colono non possiede vengono saltate per quel colono.\n\nUn piano può estendere un piano per qualsiasi corpo oppure un piano per lo stesso corpo.</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>Un piano creato per un solo corpo elenca soltanto le parti di quel corpo e può arruolare solo i coloni con quel corpo. Un piano per il corpo umano accoglie anche i coloni il cui corpo ha tutte le parti umane, come una razza con ali aggiuntive.\n\nUn piano per qualsiasi corpo si applica a tutti i coloni. Le parti che il corpo di un colono non possiede vengono saltate per quel colono.\n\nUn piano può estendere un piano per qualsiasi corpo oppure un piano per lo stesso corpo.</IMP_PlanBodyTip>
   <IMP_PlanForBody>per {0}</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0} (solo {1})</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>Non per questo corpo</IMP_StateNotForBody>
+  <IMP_EntryStyleBoth>Entrambi</IMP_EntryStyleBoth>
+  <IMP_EntryStyleTab>Scheda principale</IMP_EntryStyleTab>
+  <IMP_EntryStyleToolbar>Pulsante della barra degli strumenti</IMP_EntryStyleToolbar>
+  <IMP_OptEntryStyle>Apri Implanner da</IMP_OptEntryStyle>
+  <IMP_OptEntryStyleTip>Il pulsante della barra degli strumenti si trova accanto agli interruttori di visualizzazione nell'angolo in basso a destra e apre questa finestra mobile. La scheda principale si trova nella barra inferiore, accanto a Storia e Fazioni, e apre Implanner sopra di essa nell'angolo in basso a destra; trascina l'angolo in alto a sinistra della finestra per ridimensionarla. "Entrambi" mantiene i due punti di accesso. È possibile assegnare una scorciatoia da tastiera in Opzioni, Tastiera, Schede principali.</IMP_OptEntryStyleTip>
+  <IMP_OptInterface>Interfaccia</IMP_OptInterface>
+  <IMP_ResizeGripTip>Trascina per ridimensionare la finestra. Fai doppio clic per tornare alla dimensione predefinita.</IMP_ResizeGripTip>
 </LanguageData>

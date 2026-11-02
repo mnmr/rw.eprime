@@ -210,7 +210,6 @@
   <IMP_DeleteFileConfirm>„{0}“ löschen?</IMP_DeleteFileConfirm>
   <IMP_NoFiles>Hier gibt es noch keine exportierten Plandateien.</IMP_NoFiles>
   <IMP_ShipFallback>Gravschiff</IMP_ShipFallback>
-  <IMP_SettingsShowToolbarButton>Werkzeugleistenschaltfläche anzeigen</IMP_SettingsShowToolbarButton>
   <IMP_CompatibilityLevelMod>{0}: Die Automatisierung von EPrime's Implanner ist mit dieser Mod für mehrere Ebenen deaktiviert. Planung und Nachverfolgung funktionieren weiterhin.</IMP_CompatibilityLevelMod>
   <IMP_OptAndroidSurgeonsCrafters>Android-Operationen: Handwerker mit „Repair androids“ (folgt Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>Android-Operationen: Ärzte (folgt Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
@@ -222,8 +221,15 @@
   <IMP_PlanBody>Körper</IMP_PlanBody>
   <IMP_PlanBodyAny>Beliebiger Körper</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0} (nicht geladen)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>Ein Plan für einen bestimmten Körper listet nur dessen Körperteile auf und kann nur Kolonisten mit diesem Körper einbeziehen.\n\nEin Plan für einen beliebigen Körper gilt für jeden Kolonisten. Körperteile, die der Körper eines Kolonisten nicht hat, werden für diesen Kolonisten übersprungen.\n\nEin Plan kann einen Plan für einen beliebigen Körper oder einen Plan für denselben Körper erweitern.</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>Ein Plan für einen bestimmten Körper listet nur dessen Körperteile auf und kann nur Kolonisten mit diesem Körper einbeziehen. Ein Plan für den menschlichen Körper erfasst auch Kolonisten, deren Körper alle menschlichen Körperteile hat, etwa eine Rasse mit zusätzlichen Flügeln.\n\nEin Plan für einen beliebigen Körper gilt für jeden Kolonisten. Körperteile, die der Körper eines Kolonisten nicht hat, werden für diesen Kolonisten übersprungen.\n\nEin Plan kann einen Plan für einen beliebigen Körper oder einen Plan für denselben Körper erweitern.</IMP_PlanBodyTip>
   <IMP_PlanForBody>für {0}</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0} (nur {1})</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>Nicht für diesen Körper</IMP_StateNotForBody>
+  <IMP_EntryStyleBoth>Beides</IMP_EntryStyleBoth>
+  <IMP_EntryStyleTab>Haupttab</IMP_EntryStyleTab>
+  <IMP_EntryStyleToolbar>Symbolleisten-Button</IMP_EntryStyleToolbar>
+  <IMP_OptEntryStyle>Implanner öffnen über</IMP_OptEntryStyle>
+  <IMP_OptEntryStyleTip>Der Symbolleisten-Button sitzt neben den Ansichtsumschaltern unten rechts und öffnet dieses schwebende Fenster. Der Haupttab sitzt in der unteren Leiste neben Geschichte und Fraktionen und öffnet Implanner darüber in der unteren rechten Ecke; zieh an der oberen linken Ecke des Fensters, um die Größe zu ändern. „Beides“ behält beide Zugänge bei. Unter Optionen, Tastatur, Haupttabs kann ein Tastenkürzel zugewiesen werden.</IMP_OptEntryStyleTip>
+  <IMP_OptInterface>Oberfläche</IMP_OptInterface>
+  <IMP_ResizeGripTip>Ziehen, um die Fenstergröße zu ändern. Doppelklicken, um die Standardgröße wiederherzustellen.</IMP_ResizeGripTip>
 </LanguageData>

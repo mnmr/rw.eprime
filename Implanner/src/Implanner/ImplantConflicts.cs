@@ -212,7 +212,8 @@ namespace Implanner
                     slots[i][b] = new PlannedSlotFacts(defName, entry.IsReplacement,
                         body.GetIndexOfPart(record), ancestors,
                         tags, entry.IncompatibleTags, removeWith,
-                        entry.MountsOnArtificialParts, entry.WipesPart);
+                        entry.MountsOnArtificialParts, entry.WipesPart,
+                        entry.MountsUnderArtificialParts);
                 }
             }
             return slots;

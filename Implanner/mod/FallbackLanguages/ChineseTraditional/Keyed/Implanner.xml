@@ -210,7 +210,6 @@
   <IMP_DeleteFileConfirm>刪除“{0}”？</IMP_DeleteFileConfirm>
   <IMP_NoFiles>此處尚無導出的方案檔案。</IMP_NoFiles>
   <IMP_ShipFallback>重力船</IMP_ShipFallback>
-  <IMP_SettingsShowToolbarButton>顯示工具欄按鈕</IMP_SettingsShowToolbarButton>
   <IMP_CompatibilityLevelMod>{0}：使用此多樓層模組時，Implanner 的自動化功能會停用。規劃與追蹤功能仍可正常使用。</IMP_CompatibilityLevelMod>
   <IMP_OptAndroidSurgeonsCrafters>機械人手術：由已開啟「修復機械人」的工匠執行（跟隨 Android Tiers）</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>機械人手術：由醫生執行（跟隨 Android Tiers）</IMP_OptAndroidSurgeonsDoctors>
@@ -222,8 +221,15 @@
   <IMP_PlanBody>身體</IMP_PlanBody>
   <IMP_PlanBodyAny>任意身體</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0}（未載入）</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>為單一身體類型制定的計畫只會列出該身體的部位，也只能徵召擁有該身體的殖民者。\n\n適用於任意身體的計畫會套用到每位殖民者。殖民者身體上沒有的部位會對該殖民者略過。\n\n計畫可以延伸自適用於任意身體的計畫，或同一身體類型的計畫。</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>為單一身體類型制定的計畫只會列出該身體的部位，也只能徵召擁有該身體的殖民者。人類身體的計畫也會納入身體具備所有人類部位的殖民者，例如多了翅膀的種族。\n\n適用於任意身體的計畫會套用到每位殖民者。殖民者身體上沒有的部位會對該殖民者略過。\n\n計畫可以延伸自適用於任意身體的計畫，或同一身體類型的計畫。</IMP_PlanBodyTip>
   <IMP_PlanForBody>適用於{0}</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0}（僅限{1}）</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>不適用於此身體</IMP_StateNotForBody>
+  <IMP_EntryStyleBoth>兩者皆用</IMP_EntryStyleBoth>
+  <IMP_EntryStyleTab>主分頁</IMP_EntryStyleTab>
+  <IMP_EntryStyleToolbar>工具列按鈕</IMP_EntryStyleToolbar>
+  <IMP_OptEntryStyle>開啟 Implanner 的方式</IMP_OptEntryStyle>
+  <IMP_OptEntryStyleTip>工具列按鈕位於右下角的檢視切換按鈕旁，會開啟此浮動視窗。主分頁位於底部列的「歷史」與「派系」旁，會在右下角其上方開啟 Implanner；拖曳視窗左上角即可調整大小。「兩者皆用」會同時保留這兩個入口。可在「選項」→「按鍵設定」→「主分頁」中指定鍵盤快速鍵。</IMP_OptEntryStyleTip>
+  <IMP_OptInterface>介面</IMP_OptInterface>
+  <IMP_ResizeGripTip>拖曳可調整視窗大小。按兩下可還原為預設大小。</IMP_ResizeGripTip>
 </LanguageData>

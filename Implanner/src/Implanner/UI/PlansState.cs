@@ -179,6 +179,9 @@ namespace Implanner.UI
         /// filter is then fixed to its body and drawn as a label).
         /// Resolved at build so the draw pass hands the menu a stable array.
         internal string[] BodyLabels = Array.Empty<string>();
+        /// Parallel to BodyLabels: the plannable-body position each label
+        /// selects (-1 for "All bodies").
+        internal int[] BodyPositions = Array.Empty<int>();
         /// The filter button's text (the active body label, or the pinned
         /// plan's "for Android"), its Small-font fit width measured at
         /// build, and the tooltip.
@@ -504,11 +507,15 @@ namespace Implanner.UI
                         + "IMP_PlanMinQualityNoQualityJobs".Translate();
             }
 
-            // The body filter exists only with more than one plannable body
-            // (a modded humanlike race beside the human). An out-of-range
-            // selection (none possible within a session) reads as every body.
-            // A pinned plan fixes the filter to its body: no menu, a label.
+            // The body filter exists only with more than one offered body
+            // (a modded humanlike race beside the human; a copy of the human
+            // anatomy is folded under it). Body stays a plannable-body
+            // position; the menu lists the offered bodies with their
+            // positions. An out-of-range or folded selection (none possible
+            // within a session) reads as every body. A pinned plan fixes
+            // the filter to its body: no menu, a label.
             List<BodyDef> bodies = Catalogs.PlannableBodies();
+            List<BodyDef> offered = Catalogs.OfferedBodies();
             if (selected != null && selected.IsPinned)
             {
                 Body = PlanBodies.IndexOf(selected.Body);
@@ -517,15 +524,23 @@ namespace Implanner.UI
                     PlanBodies.Label(selected.Body));
                 result.BodyFilterTip = "IMP_PlanBodyTip".Translate();
             }
-            else if (bodies.Count > 1)
+            else if (offered.Count > 1)
             {
-                if (Body >= bodies.Count) Body = -1;
-                var labels = new string[bodies.Count + 1];
+                var labels = new string[offered.Count + 1];
+                var positions = new int[offered.Count + 1];
                 labels[0] = "IMP_BodyAll".Translate();
-                for (int b = 0; b < bodies.Count; b++)
-                    labels[b + 1] = bodies[b].LabelCap.ToString();
+                positions[0] = -1;
+                int current = 0;
+                for (int o = 0; o < offered.Count; o++)
+                {
+                    labels[o + 1] = offered[o].LabelCap.ToString();
+                    positions[o + 1] = bodies.IndexOf(offered[o]);
+                    if (positions[o + 1] == Body) current = o + 1;
+                }
+                if (current == 0) Body = -1;
                 result.BodyLabels = labels;
-                result.BodyFilterText = labels[Body + 1];
+                result.BodyPositions = positions;
+                result.BodyFilterText = labels[current];
                 result.BodyFilterTip = "IMP_BodyFilterTip".Translate();
             }
             if (result.BodyFilterText.Length > 0)

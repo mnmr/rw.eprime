@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using HarmonyLib;
 using RimShared.Common;
 using RimShared.GameLib;
@@ -394,19 +393,19 @@ namespace WorkRoles
             if (cached) entry!.RuleHour = hour;
         }
 
-        /// Deterministic wrapper for callers holding an unordered pawn set:
-        /// interruption cascades into job searches and reservations, so MP
-        /// clients must process pawns identically.
-        internal static void ReconcileAll(IEnumerable<Pawn> pawns)
+        private static readonly Comparison<Pawn> ByThingId =
+            (left, right) => left.thingIDNumber.CompareTo(right.thingIDNumber);
+
+        /// Deterministic wrapper for the drained (deduplicated, non-null)
+        /// pawn set: interruption cascades into job searches and
+        /// reservations, so MP clients must process pawns identically.
+        /// Thing ids are unique, so the unstable sort is still total.
+        internal static void ReconcileAll(List<Pawn> pawns)
         {
-            if (pawns == null) return;
-            var ordered = pawns
-                .Where(pawn => pawn != null)
-                .Distinct(ReferenceIdentityComparer<Pawn>.Instance)
-                .OrderBy(pawn => pawn.thingIDNumber)
-                .ToList();
-            for (int i = 0; i < ordered.Count; i++)
-                ReconcileInFlightWork(ordered[i]);
+            if (pawns == null || pawns.Count == 0) return;
+            pawns.Sort(ByThingId);
+            for (int i = 0; i < pawns.Count; i++)
+                ReconcileInFlightWork(pawns[i]);
         }
 
         /// Ends in-flight jobs whose exact giver lost authority or whose type
@@ -419,12 +418,15 @@ namespace WorkRoles
             var jobs = pawn.jobs;
             if (jobs == null) return;
 
-            // Build once before cleanup: ending the current job can immediately
-            // search again, and must see the new giver authority. Clean queued
-            // work first in native queue order, releasing its reservations via
-            // the same Cleanup call that vanilla uses. Valid siblings and
-            // player-forced jobs keep their order and exact instances.
-            var entry = For(pawn);
+            // The compiled order is built on first use: pawns holding no
+            // work-giver job (sleeping, eating, idle, drafted) compile on
+            // their own next job search instead of on this synced tick. Any
+            // build here precedes the first EndCurrentJob, so an immediate
+            // re-search sees the new giver authority. Clean queued work first
+            // in native queue order, releasing its reservations via the same
+            // Cleanup call that vanilla uses. Valid siblings and player-forced
+            // jobs keep their order and exact instances.
+            Entry? entry = null;
             if (jobs.jobQueue != null)
             {
                 var queued = QueuedJobs(jobs.jobQueue);
@@ -433,7 +435,7 @@ namespace WorkRoles
                 for (int i = 0; i < count; i++)
                 {
                     var item = queued[i];
-                    if (item?.job != null && IsRevoked(item.job, entry))
+                    if (item?.job != null && IsRevoked(item.job, pawn, ref entry))
                     {
                         item.Cleanup(pawn, canReturnToPool: true);
                         continue;
@@ -446,7 +448,7 @@ namespace WorkRoles
 
             var current = jobs.curJob;
             var currentType = current?.workGiverDef?.workType;
-            if (current != null && IsRevoked(current, entry))
+            if (current != null && IsRevoked(current, pawn, ref entry))
             {
                 jobs.EndCurrentJob(JobCondition.InterruptForced);
                 return;
@@ -463,12 +465,13 @@ namespace WorkRoles
                 jobs.EndCurrentJob(JobCondition.InterruptForced);
         }
 
-        private static bool IsRevoked(Job job, Entry entry)
+        private static bool IsRevoked(Job job, Pawn pawn, ref Entry? entry)
         {
             if (job.playerForced) return false;
             var giver = job.workGiverDef;
             var type = giver?.workType;
             if (giver == null || type == null) return false; // No invented provenance.
+            entry ??= For(pawn);
             int index = type.index;
             if ((uint)index >= (uint)entry.PriorityByIndex.Length
                 || entry.PriorityByIndex[index] == 0) return true;

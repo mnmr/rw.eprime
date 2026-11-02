@@ -11,7 +11,7 @@ La droite de l'onglet Recommandations contient les réglages du moteur, réunis 
 - **Sélection des champions** choisit le pilier de chaque rôle.
 - **Parcours de formation et objectifs facultatifs** détermine quand les parcours s'activent et quand recommander les rôles facultatifs à plusieurs compétences.
 - **Ordre final des rôles** détermine la séquence recommandée pour chaque colon.
-- **Placement du Chasseur** définit les seuils de tir de sa position dynamique.
+- **Placement du Chasseur** choisit qui chasse en premier (mauvais tireurs, meilleurs tireurs, ou Chasseur comme rôle normal) et définit les seuils de tir de sa position dynamique.
 
 <!-- l10n:b-ab5db2d3bdf3 -->
 Chaque réglage s'explique sur place. Réinitialiser rétablit les valeurs par défaut de la section après vos expériences.

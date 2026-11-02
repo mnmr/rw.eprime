@@ -41,7 +41,7 @@
   <WR_RecGlobalPanel>Opciones globales</WR_RecGlobalPanel>
   <WR_RecGlobalPanelHelp>Estas opciones modifican la puntuación y clasificación de candidatos y la posición final de los roles recomendados. Usa Restablecer para recuperar los valores predeterminados si no te convencen los cambios.</WR_RecGlobalPanelHelp>
   <WR_RecRolePanel>Opciones de roles</WR_RecRolePanel>
-  <WR_RecRolePanelHelp>Aquí aparecen todos los roles salvo los excluidos. Expande uno para ajustar sus recomendaciones. Los roles se ordenan automáticamente por colono; Cazador conserva su posición según Disparo.</WR_RecRolePanelHelp>
+  <WR_RecRolePanelHelp>Aquí aparecen todos los roles salvo los excluidos. Expande uno para ajustar sus recomendaciones. Los roles se ordenan automáticamente por colono; Cazador sigue la opción de posición del Cazador en Opciones globales.</WR_RecRolePanelHelp>
   <WR_RecExcludedHeader>Roles excluidos</WR_RecExcludedHeader>
   <WR_RecExcludedHelp>Los roles de esta lista nunca se recomiendan, ni mediante rutas de formación ni roles automáticos. Las asignaciones fijadas existentes se conservan. Usa Añadir rol para excluir uno; elimina su ficha para volver a permitirlo.</WR_RecExcludedHelp>
   <WR_RecExcludedTip>Las exclusiones afectan a las recomendaciones de todos los colonos de esta partida, incluidas Arreglar mi colonia y la optimización automática. Puedes seguir asignándolos manualmente. Editar esta lista no cambia asignaciones actuales. Aplicar recomendaciones elimina los roles excluidos no fijados y conserva los fijados.</WR_RecExcludedTip>
@@ -65,7 +65,7 @@
   <WR_RecTuneOptionalSection>Opciones de rutas de formación y objetivos opcionales</WR_RecTuneOptionalSection>
   <WR_RecTuneOptionalSectionIntro>Deciden cuándo se activa una ruta de formación para un colono y cuándo merece la pena recomendar un rol opcional de varias habilidades.</WR_RecTuneOptionalSectionIntro>
   <WR_RecTuneHunterSection>Opciones de posición del Cazador</WR_RecTuneHunterSection>
-  <WR_RecTuneHunterSectionIntro>Un rol Cazador no fijado se coloca según Disparo: los mejores tiradores cazan más tarde en el orden de prioridades porque su tiempo resulta más valioso en otros trabajos.</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneHunterSectionIntro>Cazar entrena Disparo, así que por defecto todos los colonos armados tienen Cazador y los peores tiradores cazan primero. Aquí puedes cambiar quién caza primero o planificar Cazador como un rol normal.</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneCandidateMinimumSignal>Señal mínima de candidatos</WR_RecTuneCandidateMinimumSignal>
   <WR_RecTuneCandidateMinimumSignalDesc>Señal mínima admitida en la selección normal. Subirla descarta candidatos débiles antes de elegir principales y cubrir el mínimo de titulares.</WR_RecTuneCandidateMinimumSignalDesc>
   <WR_RecTuneChampionSkillDivisor>Divisor de habilidad del principal</WR_RecTuneChampionSkillDivisor>
@@ -655,4 +655,13 @@ No se interrumpió el trabajo. Este aviso aparece una vez por partida.</WR_Giver
   <WR_RoleCapCannotTakeJobs>{0} no puede aceptar tareas asignadas de {1}</WR_RoleCapCannotTakeJobs>
   <WR_WorkNativeFireNearby>puede apagar incendios cercanos mientras está inactivo, pero no acepta tareas asignadas de extinción de incendios</WR_WorkNativeFireNearby>
   <WR_WorkNotNative>no compatible con las asignaciones de trabajo de este modelo</WR_WorkNotNative>
+  <WR_RecTuneHunterPlacement>Posición del Cazador</WR_RecTuneHunterPlacement>
+  <WR_RecTuneHunterPlacementBestShotsFirst>Mejores tiradores primero</WR_RecTuneHunterPlacementBestShotsFirst>
+  <WR_RecTuneHunterPlacementBestShotsFirstTip>Todos los colonos armados tienen Cazador. Tu mejor tirador es el principal de Cazador y caza justo después del trabajo básico; los demás cazan más tarde y lo sustituyen cuando está ocupado. Elige esto si la colonia necesita carne o cuero ya y los fallos o los animales heridos cuestan más de lo que vale la práctica.</WR_RecTuneHunterPlacementBestShotsFirstTip>
+  <WR_RecTuneHunterPlacementDesc>«Malos tiradores primero» da práctica a los tiradores flojos. «Mejores tiradores primero» es para cuando la colonia necesita la carne y no puede permitirse fallos. «Rol normal» sirve para un equipo de caza fijo en vez de todos los que tengan un arma. Siempre se requiere un arma a distancia.</WR_RecTuneHunterPlacementDesc>
+  <WR_RecTuneHunterPlacementNormalRole>Rol normal</WR_RecTuneHunterPlacementNormalRole>
+  <WR_RecTuneHunterPlacementNormalRoleTip>Cazador se planifica como cualquier otro rol de habilidad, en lugar de asignarse a todos los que tengan un arma: define su mínimo de colonia y su cobertura en Opciones de roles y los mejores tiradores ocuparán esos puestos. Los tiradores destacados aún pueden recibirlo como extra. Elige esto si quieres un equipo de caza fijo.</WR_RecTuneHunterPlacementNormalRoleTip>
+  <WR_RecTuneHunterPlacementPoorShotsFirst>Malos tiradores primero</WR_RecTuneHunterPlacementPoorShotsFirst>
+  <WR_RecTuneHunterPlacementPoorShotsFirstTip>Todos los colonos armados tienen Cazador. Los peores tiradores cazan primero para ganar práctica de Disparo; los tiradores de élite cazan los últimos. Elige esto si la comida está asegurada y quieres más colonos que sepan disparar. Es el valor predeterminado.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
+  <WR_RecTuneHunterTiersRowDescReversed>Límites de nivel de Disparo para el lugar dinámico de Cazador, leídos de arriba abajo. Los niveles por encima del último límite son el nivel 1 y colocan a Cazador justo después del trabajo básico; los niveles 2 y 3 siguen a los roles de trabajo intermedios y finales, y el nivel 5 coloca a Cazador en último lugar.</WR_RecTuneHunterTiersRowDescReversed>
 </LanguageData>

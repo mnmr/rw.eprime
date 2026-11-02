@@ -26,7 +26,7 @@ Puoi vedere il giudizio del sistema ovunque. I suggerimenti della palette elenca
 ![I più adatti nel suggerimento della palette](palette-tooltip.png)
 
 <!-- l10n:b-f1a1a1196f55 -->
-Due ruoli hanno regole speciali. Cacciatore è consigliato a chiunque porti un'arma a distanza, perché cacciare allena Tiro. Viene collocato prima per i tiratori inesperti e dopo per quelli eccellenti, il cui tempo vale di più altrove. Anche l'avversione alla caccia lo sposta più indietro. Meccanitor viene consigliato solo ai coloni con un mechlink, indipendentemente dall'abilità degli altri artigiani; anche il suo elenco Più adatti segue questa regola.
+Due ruoli hanno regole speciali. Cacciatore è consigliato a chiunque porti un'arma a distanza e, poiché cacciare allena Tiro, viene collocato prima per i tiratori inesperti e dopo per quelli eccellenti. L'opzione di posizionamento di Cacciatore nelle [Opzioni globali](topic:global-tuning) può mettere i migliori tiratori per primi quando la colonia ha bisogno di carne, oppure pianificare Cacciatore come un ruolo normale. Anche l'avversione alla caccia sposta Cacciatore più indietro nella riga. Meccanitor viene consigliato solo ai coloni con un mechlink, indipendentemente dall'abilità degli altri artigiani; anche il suo elenco Più adatti segue questa regola.
 
 <!-- l10n:b-b241ec72dcda -->
 Il sistema propone, ma decidi tu cosa applicare, [un ruolo alla volta](topic:cherry-picking) oppure tutti insieme con [Ottimizza la colonia](topic:fix-my-colony). Fa eccezione l'[Ottimizzazione automatica](topic:auto-optimize): attivandola, Ottimizza la colonia viene eseguito ogni ora di gioco in tutte le colonie.

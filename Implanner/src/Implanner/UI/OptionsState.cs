@@ -160,6 +160,7 @@ namespace Implanner.UI
         internal WrTip ShowPurchaseOnly = null!;
         internal WrTip SkillSliderMaximum = null!;
         internal WrTip AndroidSurgeons = null!;
+        internal WrTip EntryStyle = null!;
 
         /// Called after the window observed the current UI metrics.
         internal void Ensure()
@@ -176,6 +177,7 @@ namespace Implanner.UI
                 ModCompatibility.PurchaseOnlyTipLines());
             SkillSliderMaximum = WrTips.Key("IMP_OptSkillSliderMaximumTip");
             AndroidSurgeons = WrTips.Key("IMP_OptAndroidSurgeonsTip");
+            EntryStyle = WrTips.Key("IMP_OptEntryStyleTip");
         }
 
         internal void Release()
@@ -183,7 +185,7 @@ namespace Implanner.UI
             stamp = -1;
             AllowMultipleBladders = AllowMultipleHygieneEnhancers = null!;
             ShowPurchaseOnly = SkillSliderMaximum = null!;
-            AndroidSurgeons = null!;
+            AndroidSurgeons = EntryStyle = null!;
         }
     }
 }

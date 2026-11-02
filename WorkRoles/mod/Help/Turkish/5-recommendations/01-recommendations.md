@@ -26,7 +26,7 @@ Motorun görüşünü her yerde görebilirsiniz. Palet ipuçları her role en uy
 ![Palet ipucunda en uygun kişiler](palette-tooltip.png)
 
 <!-- l10n:b-f1a1a1196f55 -->
-İki rol özel ele alınır. Avcı, menzilli silah taşıyan herkese önerilir (avcılık Nişancılığı geliştirir); kötü nişancılarda önce, zamanı başka işte daha değerli keskin nişancılarda sonra yerleşir. Avcılıktan kaçınma da Avcıyı geriye taşır. Mekanitör, diğer zanaatkârlar ne kadar iyi olsa da yalnızca mekabağı olanlara önerilir; en uygun kişiler listesi de aynı kurala uyar.
+İki rol özel ele alınır. Avcı, menzilli silah taşıyan herkese önerilir; avcılık Nişancılığı geliştirdiği için kötü nişancılarda daha önce, keskin nişancılarda daha sonra yerleştirilir. [Genel seçenekler](topic:global-tuning) içindeki Avcı yerleşimi seçeneği, koloninin ete ihtiyacı olduğunda en iyi nişancıları öne alabilir veya Avcıyı normal bir rol gibi planlayabilir. Avcılıktan kaçınma da Avcıyı satırda geriye taşır. Mekanitör, diğer zanaatkârlar ne kadar iyi olsa da yalnızca mekabağı olan kolonicilere önerilir; En uygun kişiler listesi de aynı kurala uyar.
 
 <!-- l10n:b-b241ec72dcda -->
 Motor önerir; uygulamak size kalır: [tek tek](topic:cherry-picking) veya [Kolonimi düzenle](topic:fix-my-colony) ile topluca. İstisna [Otomatik iyileştirme](topic:auto-optimize): açarsanız Kolonimi düzenle tüm kolonilerde her oyun saatinde otomatik çalışır.

@@ -149,7 +149,6 @@
   <IMP_SaveFailed>Kaydedilemedi: {0}</IMP_SaveFailed>
   <IMP_SavedTo>Planlar {0} konumuna kaydedildi</IMP_SavedTo>
   <IMP_ScopeAll>Her yer</IMP_ScopeAll>
-  <IMP_SettingsShowToolbarButton>Araç çubuğu düğmesini göster</IMP_SettingsShowToolbarButton>
   <IMP_ShipFallback>Gravgemi</IMP_ShipFallback>
   <IMP_StateAway>Uzakta</IMP_StateAway>
   <IMP_StateDone>Bitti</IMP_StateDone>
@@ -222,8 +221,15 @@
   <IMP_PlanBody>Vücut</IMP_PlanBody>
   <IMP_PlanBodyAny>Herhangi bir vücut</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0} (yüklenmedi)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>Tek bir vücut için hazırlanan plan yalnızca o vücudun parçalarını listeler ve yalnızca o vücuda sahip kolonicileri kapsayabilir.\n\nHerhangi bir vücut için hazırlanan plan tüm kolonicilere uygulanır. Bir koloniciin vücudunda bulunmayan parçalar o koloni için atlanır.\n\nBir plan, herhangi bir vücut için hazırlanmış bir planı veya aynı vücut için hazırlanmış bir planı genişletebilir.</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>Tek bir vücut için hazırlanan plan yalnızca o vücudun parçalarını listeler ve yalnızca o vücuda sahip kolonicileri kapsayabilir. İnsan vücudu için hazırlanan plan, fazladan kanat gibi eklerle birlikte insan vücudunun tüm parçalarına sahip olan kolonicileri de kapsar.\n\nHerhangi bir vücut için hazırlanan plan tüm kolonicilere uygulanır. Bir koloniciin vücudunda bulunmayan parçalar o koloni için atlanır.\n\nBir plan, herhangi bir vücut için hazırlanmış bir planı veya aynı vücut için hazırlanmış bir planı genişletebilir.</IMP_PlanBodyTip>
   <IMP_PlanForBody>{0} için</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0} (yalnızca {1})</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>Bu vücut için değil</IMP_StateNotForBody>
+  <IMP_EntryStyleBoth>İkisi de</IMP_EntryStyleBoth>
+  <IMP_EntryStyleTab>Ana sekme</IMP_EntryStyleTab>
+  <IMP_EntryStyleToolbar>Araç çubuğu düğmesi</IMP_EntryStyleToolbar>
+  <IMP_OptEntryStyle>Implanner şuradan açılsın</IMP_OptEntryStyle>
+  <IMP_OptEntryStyleTip>Araç çubuğu düğmesi, sağ alt köşedeki görünüm düğmelerinin yanında yer alır ve bu yüzen pencereyi açar. Ana sekme, alt çubukta Tarihçe ve Hizipler sekmelerinin yanında yer alır ve Implanner'ı onun üstünde, sağ alt köşede açar; yeniden boyutlandırmak için pencerenin sol üst köşesini sürükleyin. İkisi de seçeneği iki giriş noktasını da korur. Bir klavye kısayolu Seçenekler, Klavye, Ana sekmeler bölümünden atanabilir.</IMP_OptEntryStyleTip>
+  <IMP_OptInterface>Arayüz</IMP_OptInterface>
+  <IMP_ResizeGripTip>Pencereyi yeniden boyutlandırmak için sürükleyin. Varsayılan boyuta dönmek için çift tıklayın.</IMP_ResizeGripTip>
 </LanguageData>

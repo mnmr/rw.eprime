@@ -209,7 +209,7 @@ namespace WorkRoles.Core.Recs
         }
 
         private static bool MeetsEquipmentRequirement(MechanicalWorkerView worker, RoleView role)
-            => !role.Hunting || worker.Facts.HasRangedWeapon;
+            => EngineContext.MeetsEquipmentRequirement(worker.Facts, role);
 
         private static void ExplainTarget(ColonyView colony, MechanicalWorkerView worker,
             EngineContext facts, int[] target, Dictionary<int, SignalBucket> suitability,

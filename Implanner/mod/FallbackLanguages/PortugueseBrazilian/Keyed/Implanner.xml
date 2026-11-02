@@ -210,7 +210,6 @@
   <IMP_DeleteFileConfirm>Excluir “{0}”?</IMP_DeleteFileConfirm>
   <IMP_NoFiles>Ainda não há arquivos de planos exportados aqui.</IMP_NoFiles>
   <IMP_ShipFallback>Gravinave</IMP_ShipFallback>
-  <IMP_SettingsShowToolbarButton>Mostrar botão na barra de ferramentas</IMP_SettingsShowToolbarButton>
   <IMP_CompatibilityLevelMod>{0}: A automação do Implanner é desativada com este mod de múltiplos níveis. O planejamento e o acompanhamento continuam funcionando.</IMP_CompatibilityLevelMod>
   <IMP_OptAndroidSurgeonsCrafters>Operações em androides: artesãos com "Reparar androides" (segue o Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>Operações em androides: médicos (segue o Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
@@ -222,8 +221,15 @@
   <IMP_PlanBody>Corpo</IMP_PlanBody>
   <IMP_PlanBodyAny>Qualquer corpo</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0} (não carregado)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>Um plano feito para um corpo lista apenas as partes desse corpo e só pode convocar colonos com esse corpo.\n\nUm plano para qualquer corpo vale para todos os colonos. As partes que o corpo de um colono não tem são ignoradas para ele.\n\nUm plano pode estender um plano para qualquer corpo ou um plano para o mesmo corpo.</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>Um plano feito para um corpo lista apenas as partes desse corpo e só pode convocar colonos com esse corpo. Um plano para o corpo humano também aceita colonos cujo corpo tenha todas as partes humanas, como uma raça com asas extras.\n\nUm plano para qualquer corpo vale para todos os colonos. As partes que o corpo de um colono não tem são ignoradas para ele.\n\nUm plano pode estender um plano para qualquer corpo ou um plano para o mesmo corpo.</IMP_PlanBodyTip>
   <IMP_PlanForBody>para {0}</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0} (somente {1})</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>Não serve para este corpo</IMP_StateNotForBody>
+  <IMP_EntryStyleBoth>Ambos</IMP_EntryStyleBoth>
+  <IMP_EntryStyleTab>Aba principal</IMP_EntryStyleTab>
+  <IMP_EntryStyleToolbar>Botão da barra de ferramentas</IMP_EntryStyleToolbar>
+  <IMP_OptEntryStyle>Abrir o Implanner por</IMP_OptEntryStyle>
+  <IMP_OptEntryStyleTip>O botão da barra de ferramentas fica ao lado dos botões de alternar visualização, no canto inferior direito, e abre esta janela flutuante. A aba principal fica na barra inferior, ao lado de Histórico e Facções, e abre o Implanner acima dela, no canto inferior direito; arraste o canto superior esquerdo da janela para redimensioná-la. "Ambos" mantém as duas formas de acesso. Você pode atribuir um atalho de teclado em Opções, Teclado, Abas principais.</IMP_OptEntryStyleTip>
+  <IMP_OptInterface>Interface</IMP_OptInterface>
+  <IMP_ResizeGripTip>Arraste para redimensionar a janela. Clique duas vezes para voltar ao tamanho padrão.</IMP_ResizeGripTip>
 </LanguageData>

@@ -1,17 +1,20 @@
 # Changelog
 
+## 1.2.7 — 2026-11-01
+
+- Changed: Plans for the human body now also cover races with the same or more body parts.
+- Changed: Races with the same body parts as humans are no longer listed as a separate body.
+- Fixed: Combat Bionics' swarm wrist implant can no longer be planned alongside a bionic arm.
+
 ## 1.2.6 — 2026-11-01
 
-- Added: Plans can be made for one body (Human, Android, or any other race a mod adds) when creating them. Such a plan lists only that body's parts, checks conflicts on that body, and enlists only colonists with that body. A plan for any body keeps working for every colonist as before. A plan may extend a plan for any body or one for the same body.
-- Added: Plan exports carry the body; older exports and saves read as plans for any body.
-- Changed: Help covers plans for one body, the body filter in the plan editor, and the new "Under ..." and "Not for this body" states.
-
-## 1.2.5 — 2026-11-01
-
-- Fixed: A modded race whose body nests organs differently (such as the liver under a kidney) no longer makes those implants exclusive in everyone's plans. Implant conflicts are now judged on the human body first.
-- Fixed: The toolbar button is now drawn through the game's standard button widget, so toolbar-restyling mods such as UI Rethemed - Main Bar no longer hide it.
-- Fixed: An implant planned on a part that sits under an installed artificial part (an elbow blade under a bionic arm) no longer waits forever while holding an item. It is skipped for that colonist and listed under the blocking part in the colonist details. The same applies to a part another implant of the plan replaces on that colonist's body.
-- Added: A body filter in the plan editor when a mod adds races with their own bodies. It shows only the parts the chosen body has; plans still apply to every colonist.
+- Added: Option to select body anatomy target for plans (Any, Human or race from mods, e.g. Android). Targets plans allow for better UI validation and feedback.
+- Added: Plan exports carry the body; older exports and saves read as plans for Any body.
+- Added: Main bar icon to open the window along with an option to choose which buttons to keep.
+- Added: A body filter in the plan editor when a mod adds races with their own bodies.
+- Fixed: Toolbar icon is now rendered via standard methods to improve compatibility with toolbar mods like UI Rethemed.
+- Fixed: A modded race whose body nests organs differently (such as the liver under a kidney) no longer makes those implants exclusive in everyone's plans. 
+- Fixed: An issue where multiple implants targeting the same body part could stall a plan.
 
 ## 1.2.4 — 2026-11-01
 

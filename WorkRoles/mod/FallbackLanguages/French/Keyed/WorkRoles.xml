@@ -41,7 +41,7 @@
   <WR_RecGlobalPanel>Options générales</WR_RecGlobalPanel>
   <WR_RecGlobalPanelHelp>Ces options modifient la notation et le classement des candidats par le moteur de recommandations, ainsi que la place des rôles dans la liste finale. Les boutons Réinitialiser permettent de retrouver les valeurs par défaut si vos changements ne vous conviennent pas.</WR_RecGlobalPanelHelp>
   <WR_RecRolePanel>Options des rôles</WR_RecRolePanel>
-  <WR_RecRolePanelHelp>Tous les rôles sauf les Rôles exclus figurent ici. Développez un rôle pour régler ses options de recommandation. Les rôles sont automatiquement ordonnés pour chaque colon ; Chasseur conserve son placement selon le niveau de tir.</WR_RecRolePanelHelp>
+  <WR_RecRolePanelHelp>Tous les rôles sauf les Rôles exclus figurent ici. Développez un rôle pour régler ses options de recommandation. Les rôles sont automatiquement ordonnés pour chaque colon ; Chasseur suit le choix de placement du Chasseur dans les Options générales.</WR_RecRolePanelHelp>
   <WR_RecExcludedHeader>Rôles exclus</WR_RecExcludedHeader>
   <WR_RecExcludedHelp>Les rôles de cette liste ne sont jamais recommandés, même par les parcours de formation ou les rôles automatiques. Les affectations épinglées restent protégées. Utilisez Ajouter un rôle pour en exclure un ; retirez sa pastille pour autoriser à nouveau les recommandations.</WR_RecExcludedHelp>
   <WR_RecExcludedTip>Les exclusions s'appliquent aux recommandations de tous les colons de cette sauvegarde, y compris Optimiser ma colonie et l'optimisation automatique. Vous pouvez toujours affecter ces rôles manuellement. Modifier cette liste ne change pas les affectations actuelles. Appliquer les recommandations retire les rôles exclus non épinglés et conserve les affectations épinglées.</WR_RecExcludedTip>
@@ -65,7 +65,7 @@
   <WR_RecTuneOptionalSection>Parcours de formation et objectifs facultatifs</WR_RecTuneOptionalSection>
   <WR_RecTuneOptionalSectionIntro>Ces options déterminent quand un parcours de formation s'active pour un colon et quand un rôle facultatif à plusieurs compétences mérite d'être recommandé.</WR_RecTuneOptionalSectionIntro>
   <WR_RecTuneHunterSection>Placement du Chasseur</WR_RecTuneHunterSection>
-  <WR_RecTuneHunterSectionIntro>Un rôle Chasseur non épinglé se place dynamiquement selon le niveau de tir : les meilleurs tireurs chassent plus tard dans l'ordre de priorité, car leur temps est plus utile ailleurs.</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneHunterSectionIntro>La chasse entraîne le Tir : par défaut, tout colon armé a le rôle Chasseur et les tireurs les plus faibles chassent en premier. Choisissez ici qui chasse en premier, ou planifiez Chasseur comme un rôle normal.</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneCandidateMinimumSignal>Signal minimal des candidats</WR_RecTuneCandidateMinimumSignal>
   <WR_RecTuneCandidateMinimumSignalDesc>Signal le plus faible admis pour la sélection ordinaire. L'augmenter élimine les candidats plus faibles avant le choix du champion et des effectifs minimaux.</WR_RecTuneCandidateMinimumSignalDesc>
   <WR_RecTuneChampionSkillDivisor>Diviseur de compétence du champion</WR_RecTuneChampionSkillDivisor>
@@ -655,4 +655,13 @@ La tâche n'a pas été interrompue. Cet avertissement apparaît une fois par sa
   <WR_RoleCapCannotTakeJobs>{0} ne peut pas effectuer les tâches assignées pour {1}</WR_RoleCapCannotTakeJobs>
   <WR_WorkNativeFireNearby>peut éteindre les incendies à proximité en période d’inactivité, mais n’effectue pas les tâches de lutte contre les incendies assignées</WR_WorkNativeFireNearby>
   <WR_WorkNotNative>non pris en charge par les affectations de travail de ce modèle</WR_WorkNotNative>
+  <WR_RecTuneHunterPlacement>Placement du Chasseur</WR_RecTuneHunterPlacement>
+  <WR_RecTuneHunterPlacementBestShotsFirst>Meilleurs tireurs d'abord</WR_RecTuneHunterPlacementBestShotsFirst>
+  <WR_RecTuneHunterPlacementBestShotsFirstTip>Tout colon armé a le rôle Chasseur. Votre meilleur tireur est le champion du Chasseur et chasse juste après le travail de base ; les autres chassent plus tard et prennent le relais quand le champion est occupé. À choisir si la colonie a besoin de viande ou de cuir tout de suite et que les tirs manqués ou les animaux blessés coûtent plus cher que l'entraînement ne rapporte.</WR_RecTuneHunterPlacementBestShotsFirstTip>
+  <WR_RecTuneHunterPlacementDesc>Mauvais tireurs d'abord donne de l'entraînement aux tireurs faibles. Meilleurs tireurs d'abord convient quand la colonie a besoin de viande et ne peut pas se permettre de tirs manqués. Rôle normal sert à former une équipe de chasse fixe plutôt que de confier la chasse à tous ceux qui ont une arme. Une arme à distance est toujours requise.</WR_RecTuneHunterPlacementDesc>
+  <WR_RecTuneHunterPlacementNormalRole>Rôle normal</WR_RecTuneHunterPlacementNormalRole>
+  <WR_RecTuneHunterPlacementNormalRoleTip>Chasseur est planifié comme tout autre rôle qualifié, au lieu d'être confié à tous ceux qui ont une arme : définissez son minimum de colonie et sa couverture dans les Options des rôles, et les meilleurs tireurs occupent ces places. Les bons tireurs peuvent toutefois l'recevoir en surplus. À choisir pour une équipe de chasse fixe.</WR_RecTuneHunterPlacementNormalRoleTip>
+  <WR_RecTuneHunterPlacementPoorShotsFirst>Mauvais tireurs d'abord</WR_RecTuneHunterPlacementPoorShotsFirst>
+  <WR_RecTuneHunterPlacementPoorShotsFirstTip>Tout colon armé a le rôle Chasseur. Les tireurs les plus faibles chassent en premier pour s'entraîner au Tir ; les tireurs d'élite chassent en dernier. À choisir si la nourriture est assurée et que vous voulez plus de colons sachant tirer. Valeur par défaut.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
+  <WR_RecTuneHunterTiersRowDescReversed>Seuils de niveau de tir pour la position dynamique du Chasseur, lus de haut en bas. Les niveaux au-dessus du dernier seuil forment le palier 1 et placent Chasseur juste après le travail de base ; les paliers 2 et 3 suivent les rôles de travail intermédiaires et derniers, et le palier 5 place Chasseur en dernier.</WR_RecTuneHunterTiersRowDescReversed>
 </LanguageData>

@@ -1,0 +1,7 @@
+<ModMetaData>
+  <name>Implanner conflict-rule probe</name>
+  <author>Implanner tests</author>
+  <packageId>eprime.implanner.conflicts</packageId>
+  <supportedVersions><li>1.6</li></supportedVersions>
+  <loadAfter><li>eprime.implanner</li><li>nighty.archotechbionics</li><li>bambaryla.bor</li></loadAfter>
+</ModMetaData>

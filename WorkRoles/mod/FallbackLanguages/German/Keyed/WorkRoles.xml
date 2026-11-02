@@ -41,7 +41,7 @@
   <WR_RecGlobalPanel>Globale Optionen</WR_RecGlobalPanel>
   <WR_RecGlobalPanelHelp>Diese Optionen verändern die Bewertung und Rangfolge von Kandidaten sowie die Platzierung in der endgültigen Empfehlungsliste. Mit Zurücksetzen stellst du die Standards wieder her, falls du deine Änderungen bereust.</WR_RecGlobalPanelHelp>
   <WR_RecRolePanel>Rollenoptionen</WR_RecRolePanel>
-  <WR_RecRolePanelHelp>Hier stehen alle Rollen außer den ausgeschlossenen. Klappe eine Rolle auf, um ihre Empfehlungsoptionen anzupassen. Rollen werden für jeden Kolonisten automatisch geordnet; Jäger behält seine von der Schießfertigkeit abhängige Position.</WR_RecRolePanelHelp>
+  <WR_RecRolePanelHelp>Hier stehen alle Rollen außer den ausgeschlossenen. Klappe eine Rolle auf, um ihre Empfehlungsoptionen anzupassen. Rollen werden für jeden Kolonisten automatisch geordnet; der Jäger folgt der Auswahl unter „Position des Jägers“ in den Globalen Optionen.</WR_RecRolePanelHelp>
   <WR_RecExcludedHeader>Ausgeschlossene Rollen</WR_RecExcludedHeader>
   <WR_RecExcludedHelp>Rollen in dieser Liste werden niemals empfohlen, auch nicht über Trainingspfade oder automatische Rollen. Bestehende angeheftete Zuweisungen bleiben geschützt. Schließe mit Rolle hinzufügen eine Rolle aus; entferne ihre Marke, um Empfehlungen wieder zuzulassen.</WR_RecExcludedHelp>
   <WR_RecExcludedTip>Ausschlüsse gelten für Empfehlungen aller Kolonisten dieses Spielstands, auch bei „Meine Kolonie verbessern“ und automatischer Optimierung. Ausgeschlossene Rollen lassen sich weiterhin manuell zuweisen. Listenänderungen verändern keine aktuellen Zuweisungen. Beim Anwenden von Empfehlungen werden nicht angeheftete ausgeschlossene Rollen entfernt und angeheftete Zuweisungen erhalten.</WR_RecExcludedTip>
@@ -65,7 +65,7 @@
   <WR_RecTuneOptionalSection>Optionen für Trainingspfade und optionale Ziele</WR_RecTuneOptionalSection>
   <WR_RecTuneOptionalSectionIntro>Diese Optionen bestimmen, wann ein Trainingspfad für einen Kolonisten aktiviert wird und wann sich eine optionale Rolle mit mehreren Fertigkeiten überhaupt zur Empfehlung lohnt.</WR_RecTuneOptionalSectionIntro>
   <WR_RecTuneHunterSection>Optionen zur Platzierung von Jäger</WR_RecTuneHunterSection>
-  <WR_RecTuneHunterSectionIntro>Eine nicht angeheftete Jägerrolle wird dynamisch nach Schießfertigkeit eingeordnet: Bessere Schützen jagen später in der Prioritätsfolge, weil ihre Zeit anderswo wertvoller ist.</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneHunterSectionIntro>Jagen trainiert Schießen, daher jagt standardmäßig jeder bewaffnete Kolonist und die schwächsten Schützen jagen zuerst. Lege hier fest, wer zuerst jagt, oder plane den Jäger als normale Rolle.</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneCandidateMinimumSignal>Mindestsignal für Kandidaten</WR_RecTuneCandidateMinimumSignal>
   <WR_RecTuneCandidateMinimumSignalDesc>Niedrigstes Signal für die normale Rollenauswahl. Eine Erhöhung entfernt schwächere Kandidaten vor der Auswahl des Hauptverantwortlichen und der Mindestbesetzung.</WR_RecTuneCandidateMinimumSignalDesc>
   <WR_RecTuneChampionSkillDivisor>Fertigkeitsdivisor für Hauptverantwortliche</WR_RecTuneChampionSkillDivisor>
@@ -655,4 +655,13 @@ Die Aufgabe wurde nicht unterbrochen. Dieser Hinweis erscheint einmal pro Spiels
   <WR_RoleCapCannotTakeJobs>{0} kann keine zugewiesenen Arbeiten für {1} übernehmen</WR_RoleCapCannotTakeJobs>
   <WR_WorkNativeFireNearby>kann im Leerlauf Brände in der Nähe löschen, übernimmt aber keine zugewiesenen Feuerlöscharbeiten</WR_WorkNativeFireNearby>
   <WR_WorkNotNative>von den Arbeitszuweisungen dieses Modells nicht unterstützt</WR_WorkNotNative>
+  <WR_RecTuneHunterPlacement>Position des Jägers</WR_RecTuneHunterPlacement>
+  <WR_RecTuneHunterPlacementBestShotsFirst>Beste Schützen zuerst</WR_RecTuneHunterPlacementBestShotsFirst>
+  <WR_RecTuneHunterPlacementBestShotsFirstTip>Jeder bewaffnete Kolonist jagt. Der beste Schütze wird Hauptverantwortlicher des Jägers und jagt direkt nach der Grundarbeit; die anderen jagen später und springen ein, wenn er beschäftigt ist. Wähle dies, wenn die Kolonie jetzt Fleisch oder Leder braucht und Fehlschüsse oder verwundete Tiere mehr kosten, als die Übung wert ist.</WR_RecTuneHunterPlacementBestShotsFirstTip>
+  <WR_RecTuneHunterPlacementDesc>„Schlechte Schützen zuerst“ gibt schwachen Schützen die Übung. „Beste Schützen zuerst“ ist für den Fall, dass die Kolonie das Fleisch braucht und sich Fehlschüsse nicht leisten kann. „Normale Rolle“ ist für eine feste Jagdgruppe statt für jeden mit Waffe. Eine Fernkampfwaffe ist immer erforderlich.</WR_RecTuneHunterPlacementDesc>
+  <WR_RecTuneHunterPlacementNormalRole>Normale Rolle</WR_RecTuneHunterPlacementNormalRole>
+  <WR_RecTuneHunterPlacementNormalRoleTip>Der Jäger wird wie jede andere Fertigkeitsrolle geplant, statt an jeden mit Waffe zu gehen: Lege Kolonieminimum und Abdeckung in den Rollenoptionen fest, und die besten Schützen füllen diese Plätze. Starke Schützen können ihn trotzdem als zusätzliche Wahl erhalten. Wähle dies, wenn du eine feste Jagdgruppe möchtest.</WR_RecTuneHunterPlacementNormalRoleTip>
+  <WR_RecTuneHunterPlacementPoorShotsFirst>Schlechte Schützen zuerst</WR_RecTuneHunterPlacementPoorShotsFirst>
+  <WR_RecTuneHunterPlacementPoorShotsFirstTip>Jeder bewaffnete Kolonist jagt. Die schwächsten Schützen jagen zuerst, damit sie Schießen üben; Scharfschützen jagen zuletzt. Wähle dies, wenn die Nahrung gesichert ist und du mehr Kolonisten haben möchtest, die schießen können. Das ist die Standardeinstellung.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
+  <WR_RecTuneHunterTiersRowDescReversed>Schießen-Schwellen für die dynamische Position des Jägers, von oben nach unten gelesen. Stufen über der letzten Schwelle gehören zu Rang 1 und setzen den Jäger direkt hinter die Grundarbeit, Rang 2 und 3 folgen den mittleren und letzten Arbeitsrollen, und Rang 5 setzt den Jäger ans Ende.</WR_RecTuneHunterTiersRowDescReversed>
 </LanguageData>

@@ -26,7 +26,7 @@ Son avis est visible partout. Les infobulles de la palette listent les meilleurs
 ![Meilleurs candidats dans l'infobulle de la palette](palette-tooltip.png)
 
 <!-- l10n:b-f1a1a1196f55 -->
-Deux rôles ont un traitement spécial. Chasseur est recommandé à toute personne portant une arme à distance : la chasse entraîne le Tir. Il est placé plus tôt pour les mauvais tireurs, et plus tard pour les tireurs d'élite, dont le temps est plus utile ailleurs. Une aversion pour la chasse le repousse aussi dans la ligne. Méchanitor n'est recommandé qu'aux colons possédant un mécalien, même si les autres artisans sont excellents ; sa liste Meilleurs candidats respecte cette règle.
+Deux rôles ont un traitement spécial. Chasseur est recommandé à toute personne portant une arme à distance : la chasse entraîne le Tir, donc le rôle est placé plus tôt pour les mauvais tireurs et plus tard pour les tireurs d'élite. L'option de placement du Chasseur dans les [Options globales](topic:global-tuning) permet de placer les meilleurs tireurs en premier lorsque la colonie a besoin de viande, ou de planifier Chasseur comme un rôle normal. Une aversion pour la chasse place aussi Chasseur plus tard dans la ligne. Méchanitor n'est recommandé qu'aux colons possédant un mécalien, même si les autres artisans sont excellents ; sa liste Meilleurs candidats respecte la même règle.
 
 <!-- l10n:b-b241ec72dcda -->
 Le moteur suggère ; vous appliquez, [rôle par rôle](topic:cherry-picking) ou [pour toute la colonie](topic:fix-my-colony). L'exception est l'[optimisation automatique](topic:auto-optimize) : activez-la pour lancer Optimiser ma colonie à chaque heure du jeu dans toutes vos colonies.

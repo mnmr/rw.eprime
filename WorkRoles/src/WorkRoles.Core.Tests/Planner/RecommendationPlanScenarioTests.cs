@@ -1089,6 +1089,127 @@ public class RecommendationPlanScenarioTests
     [Arguments(17, "200,204,201,202,203,206,207,205,208")]
     public async Task HunterTierPlacesHunterAtTheExpectedRolePosition(int shooting, string expectedAssignmentOrder)
     {
+        // A low shooter owns the first tier, so the main pawn's tier is not
+        // promoted (the engine promotes the lowest shooter when no pawn lands
+        // in the first tier naturally).
+        ColonyView colony = HunterTierColony(shooting, companionShooting: 3);
+
+        RecommendationPlan plan = RecommendationPlan.Build(colony);
+        string actualAssignmentOrder = string.Join(",", Enumerable.Range(0, plan.RoleCountAt(0)).Select(index => plan.RoleAt(0, index)));
+
+        await Assert.That(actualAssignmentOrder).IsEqualTo(expectedAssignmentOrder);
+    }
+
+    /// Best shots first reverses the tier walk: the top band takes the slot
+    /// the lowest band had and so on down, with the same cutoffs. The
+    /// companion is a level-20 marksman who takes the champion slot, so the
+    /// main pawn's placement is its own band, not the champion promotion.
+    [Test]
+    [Arguments(17, "200,204,205,201,202,203,206,207,208")]
+    [Arguments(16, "200,204,201,202,203,206,205,207,208")]
+    [Arguments(12, "200,204,201,202,205,203,206,207,208")]
+    [Arguments(8, "200,204,201,202,203,206,205,207,208")]
+    [Arguments(4, "200,204,201,202,203,206,207,205,208")]
+    public async Task BestShotsFirstReversesTheHunterTierWalk(int shooting, string expectedAssignmentOrder)
+    {
+        ColonyView colony = HunterTierColony(shooting, companionShooting: 20);
+
+        RecommendationPlan plan = RecommendationPlan.Build(colony, BestShotsFirst());
+        string actualAssignmentOrder = string.Join(",", Enumerable.Range(0, plan.RoleCountAt(0)).Select(index => plan.RoleAt(0, index)));
+
+        await Assert.That(actualAssignmentOrder).IsEqualTo(expectedAssignmentOrder);
+    }
+
+    /// Best shots first: the best armed shooter is Hunter's champion and
+    /// hunts right after basic work; weaker armed colonists still hold Hunter
+    /// as backups at their reversed tier; an unarmed colonist never hunts,
+    /// however good a shot.
+    [Test]
+    public async Task BestShotsFirstChampionsTheBestArmedShooterAndKeepsBackups()
+    {
+        RoleView basics = RecsTestBed.Unskilled(300, "BasicWorker");
+        basics.AutoAssign = true;
+        RoleView cook = SkilledRole(301, "Cooking", "Cooking");
+        RecsTestBed.Require(cook, 3);
+        cook.Category = RoleCategory.Normal;
+        cook.Time = RoleTime.FullTime;
+        RoleView hunter = SkilledRole(302, "Hunting", "Shooting");
+        PawnView marksman = ArmedCook(shooting: 18, armed: true);
+        PawnView novice = ArmedCook(shooting: 10, armed: true);
+        PawnView unarmed = ArmedCook(shooting: 20, armed: false);
+        unarmed.Existing.Add(new AssignmentView { RoleId = hunter.Id, Enabled = true });
+        ColonyView colony = RecsTestBed.Colony([basics, cook, hunter], marksman, novice, unarmed);
+        colony.HunterRoleId = hunter.Id;
+
+        RecommendationPlan plan = RecommendationPlan.Build(colony, BestShotsFirst());
+
+        await Assert.That(Order(plan, 0)).IsEqualTo("300,302,301");
+        await Assert.That(Order(plan, 1)).IsEqualTo("300,301,302");
+        await Assert.That(Order(plan, 2)).IsEqualTo("300,301");
+        await Assert.That(plan.TryGetExplanation(0, hunter.Id, out RoleRecommendationExplanation championExplanation)).IsTrue();
+        await Assert.That(championExplanation.SelectionStage).IsEqualTo(RecommendationSelectionStage.Required);
+        await Assert.That(plan.TryGetExplanation(1, hunter.Id, out RoleRecommendationExplanation backupExplanation)).IsTrue();
+        await Assert.That(backupExplanation.SpecialPickReason).IsEqualTo(SpecialPickReason.Hunter);
+        await Assert.That(plan.TryGetExplanation(2, hunter.Id, out RoleRecommendationExplanation unarmedExplanation)).IsTrue();
+        await Assert.That(unarmedExplanation.Recommended).IsFalse();
+        await Assert.That(unarmedExplanation.RejectReason).IsEqualTo(PickRejectReason.HunterRequirementsNotMet);
+    }
+
+    /// Normal role: Hunter is planned by its demand like any skilled role, so
+    /// only the required best shot holds it, while the default mode hands it
+    /// to every armed colonist. The ranged-weapon requirement holds in both.
+    [Test]
+    public async Task NormalRoleModePlansHunterByDemandAndStillRequiresAWeapon()
+    {
+        RoleView basics = RecsTestBed.Unskilled(400, "BasicWorker");
+        basics.AutoAssign = true;
+        RoleView hunter = SkilledRole(401, "Hunting", "Shooting");
+        RecsTestBed.Require(hunter, 1);
+        PawnView marksman = ArmedCook(shooting: 18, armed: true);
+        PawnView novice = ArmedCook(shooting: 5, armed: true);
+        PawnView unarmed = ArmedCook(shooting: 20, armed: false);
+        unarmed.Existing.Add(new AssignmentView { RoleId = hunter.Id, Enabled = true });
+        ColonyView colony = RecsTestBed.Colony([basics, hunter], marksman, novice, unarmed);
+        colony.HunterRoleId = hunter.Id;
+
+        RecommendationPlan normal = RecommendationPlan.Build(colony,
+            RecommendationsTuningOptions.Default.With(RecommendationTuningOption.HunterPlacement, (int)HunterPlacementMode.NormalRole));
+        RecommendationPlan defaults = RecommendationPlan.Build(colony);
+
+        await Assert.That(Order(normal, 0)).IsEqualTo("400,401");
+        await Assert.That(Order(normal, 1)).IsEqualTo("400");
+        await Assert.That(Order(normal, 2)).IsEqualTo("400");
+        await Assert.That(normal.TryGetExplanation(0, hunter.Id, out RoleRecommendationExplanation plannedExplanation)).IsTrue();
+        await Assert.That(plannedExplanation.SelectionStage).IsEqualTo(RecommendationSelectionStage.Required);
+        await Assert.That(plannedExplanation.DemandApplies).IsTrue();
+        await Assert.That(normal.TryGetExplanation(2, hunter.Id, out RoleRecommendationExplanation unarmedExplanation)).IsTrue();
+        await Assert.That(unarmedExplanation.RejectReason).IsEqualTo(PickRejectReason.HunterRequirementsNotMet);
+        await Assert.That(Order(defaults, 0)).IsEqualTo("400,401");
+        await Assert.That(Order(defaults, 1)).IsEqualTo("400,401");
+        await Assert.That(Order(defaults, 2)).IsEqualTo("400");
+    }
+
+    private static string Order(RecommendationPlan plan, int pawnIndex) =>
+        string.Join(",", Enumerable.Range(0, plan.RoleCountAt(pawnIndex)).Select(index => plan.RoleAt(pawnIndex, index)));
+
+    private static RecommendationsTuningOptions BestShotsFirst() =>
+        RecommendationsTuningOptions.Default.With(RecommendationTuningOption.HunterPlacement, (int)HunterPlacementMode.BestShotsFirst);
+
+    private static PawnView ArmedCook(int shooting, bool armed)
+    {
+        PawnView pawn = MultiSkillPawn(
+            new Dictionary<string, (int, SignalBucket)> { ["Cooking"] = (8, SignalBucket.Neutral), ["Shooting"] = (shooting, SignalBucket.Neutral) },
+            ("BasicWorker", SignalBucket.Neutral),
+            ("Cooking", SignalBucket.Neutral),
+            ("Hunting", SignalBucket.Neutral)
+        );
+        pawn.HasRangedWeapon = armed;
+        pawn.ShootingLevel = shooting;
+        return pawn;
+    }
+
+    private static ColonyView HunterTierColony(int shooting, int companionShooting)
+    {
         /*
          * Default role recommendation order: Basics > Crafter > Cook > Miner >
          * Smith > Doctor > Grunt > Researcher; the Important+PartTime ordering
@@ -1156,21 +1277,18 @@ public class RecommendationPlanScenarioTests
         pawn.HasRangedWeapon = true;
         pawn.ShootingLevel = shooting;
 
-        // A low shooter owns the first tier, so the main pawn's tier is not
-        // promoted (the engine promotes the lowest shooter when no pawn lands
-        // in the first tier naturally).
-        PawnView lowShooter = MultiSkillPawn(
-            new Dictionary<string, (int, SignalBucket)> { ["Shooting"] = (3, SignalBucket.Neutral) },
+        PawnView companion = MultiSkillPawn(
+            new Dictionary<string, (int, SignalBucket)> { ["Shooting"] = (companionShooting, SignalBucket.Neutral) },
             ("BasicWorker", SignalBucket.Neutral),
             ("Hunting", SignalBucket.Neutral)
         );
-        lowShooter.HasRangedWeapon = true;
-        lowShooter.ShootingLevel = 3;
-        lowShooter.CapableWorkTypes.Clear();
-        lowShooter.CapableWorkTypes.Add("BasicWorker");
-        lowShooter.CapableWorkTypes.Add("Hunting");
+        companion.HasRangedWeapon = true;
+        companion.ShootingLevel = companionShooting;
+        companion.CapableWorkTypes.Clear();
+        companion.CapableWorkTypes.Add("BasicWorker");
+        companion.CapableWorkTypes.Add("Hunting");
 
-        ColonyView colony = RecsTestBed.Colony([basics, crafter, cook, miner, smith, doctor, grunt, researcher, hunter], pawn, lowShooter);
+        ColonyView colony = RecsTestBed.Colony([basics, crafter, cook, miner, smith, doctor, grunt, researcher, hunter], pawn, companion);
         colony.HunterRoleId = hunter.Id;
         // A legacy saved override placed Hunter first. Automatic ordering must
         // ignore it and retain every shooting tier's observable placement.
@@ -1179,11 +1297,7 @@ public class RecommendationPlanScenarioTests
         colony.OrderTemplate = new RecommendationOrderCache().For(new object(),
             colony.Roles, 1, [hunter.Id, basics.Id, crafter.Id, cook.Id, miner.Id,
                 smith.Id, doctor.Id, grunt.Id, researcher.Id]).Template.ToList();
-
-        RecommendationPlan plan = RecommendationPlan.Build(colony);
-        string actualAssignmentOrder = string.Join(",", Enumerable.Range(0, plan.RoleCountAt(0)).Select(index => plan.RoleAt(0, index)));
-
-        await Assert.That(actualAssignmentOrder).IsEqualTo(expectedAssignmentOrder);
+        return colony;
     }
 
     [Test]

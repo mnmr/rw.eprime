@@ -243,40 +243,49 @@ namespace WorkRoles.Core.Recs
         {
             RoleView hunter = facts.RoleOf(facts.Colony.HunterRoleId);
             if (hunter == null
+                || !RecommendationPlan.PlacesHunterSpecially(facts, hunter, formulas)
                 || facts.IsRecommendationExcluded(hunter)
                 || hunter.HasRules
                 || hunter.Blocker
                 || !hunter.Enabled
                 || !hunter.Available)
                 return;
+            bool bestFirst = formulas.HunterPlacement == HunterPlacementMode.BestShotsFirst;
             int firstTier = -1;
-            int lowest = -1;
-            int lowestShooting = int.MaxValue;
-            int lowestTier = int.MaxValue;
+            // Promotion fallback when nobody lands in the first tier: the
+            // lowest shooter in the earliest tier, or the best shooter under
+            // best shots first (whose champion normally fills that tier).
+            int promotable = -1;
+            int promotableShooting = 0;
+            int promotableTier = int.MaxValue;
             for (int pawnIndex = 0; pawnIndex < drafts.Length; pawnIndex++)
             {
                 PawnView pawn = facts.Colony.Pawns[pawnIndex];
-                if (!pawn.HasRangedWeapon || !facts.Capable(pawnIndex, hunter))
-                    continue;
+                if (!facts.Capable(pawnIndex, hunter)) continue;
                 if (!drafts[pawnIndex].ContainsRole(hunter.Id)
                     && PawnHasCoverer(
                         facts, drafts[pawnIndex], pawnIndex, hunter))
                     continue;
-                int tier = System.Math.Min(5, formulas.HunterTier(pawn.ShootingLevel)
-                    + RecommendationFormulaEngine.AversionPenalty(facts.HasWorkAversion(pawnIndex, hunter)));
+                int tier = bestFirst && drafts[pawnIndex].IsChampionPick(hunter.Id)
+                    ? 1
+                    : System.Math.Min(5, formulas.HunterPlacementTier(pawn.ShootingLevel)
+                        + RecommendationFormulaEngine.AversionPenalty(facts.HasWorkAversion(pawnIndex, hunter)));
                 drafts[pawnIndex].AddHunter(hunter.Id, tier);
                 if (tier == 1) firstTier = pawnIndex;
-                if (tier < lowestTier || tier == lowestTier
-                    && (pawn.ShootingLevel < lowestShooting
-                        || pawn.ShootingLevel == lowestShooting && pawnIndex < lowest))
+                bool betterShot = bestFirst
+                    ? pawn.ShootingLevel > promotableShooting
+                    : pawn.ShootingLevel < promotableShooting;
+                if (tier < promotableTier || tier == promotableTier
+                    && (betterShot
+                        || pawn.ShootingLevel == promotableShooting && pawnIndex < promotable))
                 {
-                    lowest = pawnIndex;
-                    lowestTier = tier;
-                    lowestShooting = pawn.ShootingLevel;
+                    promotable = pawnIndex;
+                    promotableTier = tier;
+                    promotableShooting = pawn.ShootingLevel;
                 }
             }
-            if (firstTier < 0 && lowest >= 0)
-                drafts[lowest].PromoteHunterToFirstTier();
+            if (firstTier < 0 && promotable >= 0)
+                drafts[promotable].PromoteHunterToFirstTier();
         }
     }
 }

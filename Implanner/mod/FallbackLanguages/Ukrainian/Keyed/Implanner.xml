@@ -149,7 +149,6 @@
   <IMP_SaveFailed>Не вдалося зберегти: {0}</IMP_SaveFailed>
   <IMP_SavedTo>Плани збережено в {0}</IMP_SavedTo>
   <IMP_ScopeAll>Усюди</IMP_ScopeAll>
-  <IMP_SettingsShowToolbarButton>Показувати кнопку на панелі</IMP_SettingsShowToolbarButton>
   <IMP_ShipFallback>Гравкорабель</IMP_ShipFallback>
   <IMP_StateAway>Відсутній</IMP_StateAway>
   <IMP_StateDone>Готово</IMP_StateDone>
@@ -222,8 +221,15 @@
   <IMP_PlanBody>Тіло</IMP_PlanBody>
   <IMP_PlanBodyAny>Будь-яке тіло</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0} (не завантажено)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>План, створений для одного типу тіла, містить лише частини цього тіла та може залучати лише колоністів із таким тілом.\n\nПлан для будь-якого тіла застосовується до кожного колоніста. Частини, яких немає в тілі колоніста, для нього пропускаються.\n\nПлан може розширювати план для будь-якого тіла або план для того самого тіла.</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>План, створений для одного типу тіла, містить лише частини цього тіла та може залучати лише колоністів із таким тілом. План для людського тіла також охоплює колоністів, тіло яких має всі людські частини, наприклад раси з додатковими крилами.\n\nПлан для будь-якого тіла застосовується до кожного колоніста. Частини, яких немає в тілі колоніста, для нього пропускаються.\n\nПлан може розширювати план для будь-якого тіла або план для того самого тіла.</IMP_PlanBodyTip>
   <IMP_PlanForBody>для {0}</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0} (лише {1})</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>Не для цього тіла</IMP_StateNotForBody>
+  <IMP_EntryStyleBoth>Обидва</IMP_EntryStyleBoth>
+  <IMP_EntryStyleTab>Головна вкладка</IMP_EntryStyleTab>
+  <IMP_EntryStyleToolbar>Кнопка на панелі</IMP_EntryStyleToolbar>
+  <IMP_OptEntryStyle>Відкривати Implanner через</IMP_OptEntryStyle>
+  <IMP_OptEntryStyleTip>Кнопка на панелі розташована поруч із перемикачами вигляду в правому нижньому куті та відкриває це плаваюче вікно. Головна вкладка розташована в нижній панелі поруч з «Історією» та «Фракціями» і відкриває Implanner над нею в правому нижньому куті; щоб змінити розмір, перетягніть лівий верхній кут вікна. «Обидва» зберігає обидві точки входу. Сполучення клавіш можна призначити в розділі «Параметри», «Клавіатура», «Головні вкладки».}</IMP_OptEntryStyleTip>
+  <IMP_OptInterface>Інтерфейс</IMP_OptInterface>
+  <IMP_ResizeGripTip>Перетягніть, щоб змінити розмір вікна. Двічі клацніть, щоб повернути типовий розмір.</IMP_ResizeGripTip>
 </LanguageData>

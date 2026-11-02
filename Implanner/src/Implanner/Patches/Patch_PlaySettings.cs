@@ -35,7 +35,7 @@ namespace Implanner.Patches
         public static void Postfix(WidgetRow row, bool worldView)
         {
             if (worldView) return;
-            if (!ImplannerMod.Settings.showToolbarButton) return;
+            if (!ImplannerMod.Settings.ShowToolbarButton) return;
 
             if (LanguageDatabase.activeLanguage != tipLanguage)
             {
@@ -69,15 +69,7 @@ namespace Implanner.Patches
                 : ImplannerTex.ToolbarButton;
             bool clicked = row.ButtonIcon(tex, tip, mouseoverColor: Color.white);
             row.Gap(WidgetRow.DefaultGap);
-            if (clicked)
-            {
-                Dialog_Implanner? open =
-                    Find.WindowStack.WindowOfType<Dialog_Implanner>();
-                if (open != null)
-                    open.Close();
-                else
-                    Find.WindowStack.Add(new Dialog_Implanner());
-            }
+            if (clicked) ImplannerEntry.Toggle();
         }
     }
 

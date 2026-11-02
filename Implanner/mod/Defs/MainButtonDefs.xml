@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- The bottom-bar tab (ImplannerSettings.entryStyle Tab or Both; the
+       worker hides nothing itself: ImplannerEntry sets buttonVisible from
+       the style). A half-width icon button in the right-hand group
+       (History 80, Factions 90, Ideoligions 100, Menu 500), its window
+       anchored bottom-right like the Menu tab. The icon is the padded
+       64px variant: the game draws it at 32x32 in the 36px button with no
+       inset of its own. No default hotkey: ImplannerEntry attaches the
+       rebindable Implanner_MainTab binding instead. -->
+  <MainButtonDef>
+    <defName>Implanner</defName>
+    <label>Implanner</label>
+    <description>Plan, rank and automate colonist implants.</description>
+    <tabWindowClass>Implanner.UI.MainTabWindow_Implanner</tabWindowClass>
+    <workerClass>Implanner.UI.MainButtonWorker_Implanner</workerClass>
+    <order>110</order>
+    <minimized>True</minimized>
+    <iconPath>EPrimeImplanner/MainTabButton</iconPath>
+    <closesWorldView>true</closesWorldView>
+  </MainButtonDef>
+
+</Defs>

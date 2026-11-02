@@ -6,8 +6,8 @@ title: Thứ tự và loại trừ
 
 <!-- l10n:b-7c60ec8be352 -->
 - [Vai trò rèn luyện](topic:training-paths) nằm ngay sau mục tiêu lộ trình, nên Y tá và Nhân viên y tế theo sau Bác sĩ.
-- Vai trò được bao phủ đầy đủ nằm ngay sau vai trò bao phủ, như Người vận chuyển sau Phụ việc.
-- **Thợ săn giữ vị trí theo Bắn súng:** người bắn kém săn sớm, người giỏi săn muộn vì có ích hơn ở việc khác. Phân công ghim riêng vẫn được bảo vệ.
+- Vai trò được bao phủ đầy đủ nằm ngay sau vai trò bao phủ nó, như Người vận chuyển theo sau Phụ việc.
+- **Thợ săn giữ vị trí theo kỹ năng Bắn súng:** săn bắn rèn luyện Bắn súng, nên mặc định người bắn kém săn sớm hơn, người bắn giỏi săn muộn hơn. Tùy chọn Vị trí Thợ săn trong [Tùy chọn chung](topic:global-tuning) có thể đảo ngược điều này để xạ thủ có vũ khí giỏi nhất săn đầu tiên làm người chủ lực của Thợ săn, hoặc lên kế hoạch cho Thợ săn như một vai trò bình thường. Phân công ghim riêng vẫn được bảo vệ.
 
 <!-- l10n:b-ae303b9cef12 -->
 Bảng **Vai trò bị loại** đầu thẻ Đề xuất kiểm soát vai trò không bao giờ được đề xuất. Dùng Thêm vai trò để loại; nhấp biểu tượng bỏ trên thẻ để cho phép lại.

@@ -341,7 +341,7 @@ WorkRoles надає керованим колоністам списки зав
   <WR_RecGlobalPanelHelp>Ці параметри змінюють оцінювання й упорядкування кандидатів та місце ролей у підсумкових рекомендаціях. Кнопки скидання повертають типові значення.</WR_RecGlobalPanelHelp>
   <WR_RecMoreContentGates>Ще {0}</WR_RecMoreContentGates>
   <WR_RecRolePanel>Параметри ролей</WR_RecRolePanel>
-  <WR_RecRolePanelHelp>Тут усі ролі, крім виключених. Розгорніть роль для налаштування рекомендацій. Порядок ролей визначається автоматично для кожного колоніста; місце мисливця залежить від стрільби.</WR_RecRolePanelHelp>
+  <WR_RecRolePanelHelp>Тут усі ролі, крім виключених. Розгорніть роль для налаштування рекомендацій. Порядок ролей визначається автоматично для кожного колоніста; місце мисливця залежить від вибору «Місце мисливця» в загальних параметрах.</WR_RecRolePanelHelp>
   <WR_RecScalingSection>Масштаб призначень</WR_RecScalingSection>
   <WR_RecSkillsSection>Навички</WR_RecSkillsSection>
   <WR_RecTipAssignmentsMany>Потрібно призначень: {0}</WR_RecTipAssignmentsMany>
@@ -370,7 +370,7 @@ WorkRoles надає керованим колоністам списки зав
   <WR_RecTuneChampionTieBreakRow>Бали за рівності</WR_RecTuneChampionTieBreakRow>
   <WR_RecTuneChampionTieBreakRowDesc>Бали ознак для порівняння за рівних оцінок провідних виконавців. Для багатонавичкових ролей підсумовуються придатні ознаки.</WR_RecTuneChampionTieBreakRowDesc>
   <WR_RecTuneHunterSection>Місце мисливця</WR_RecTuneHunterSection>
-  <WR_RecTuneHunterSectionIntro>Незакріплений мисливець розміщується за навичкою стрільби: вправніші стрільці полюють пізніше, бо їхній час цінніший для іншої роботи.</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneHunterSectionIntro>Полювання тренує стрільбу, тому типово роль мисливця має кожен озброєний колоніст, а найслабші стрільці полюють першими. Тут можна змінити, хто полює першим, або вважати мисливця звичайною роллю.</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneHunterTiersRow>Максимальна стрільба рівня</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Межі стрільби для місця мисливця. Рівень 1 ставить мисливця одразу після основних робіт, 2 і 3 — після середніх та останніх робочих ролей, а понад рівень 4 — останнім.</WR_RecTuneHunterTiersRowDesc>
   <WR_RecTuneMinimumPickRow>Бонус мінімального добору</WR_RecTuneMinimumPickRow>
@@ -655,4 +655,13 @@ WorkRoles керує пріоритетами колоністів із роля
   <WR_RoleCapCannotTakeJobs>{0} не може виконувати призначені завдання для {1}</WR_RoleCapCannotTakeJobs>
   <WR_WorkNativeFireNearby>може гасити пожежі поблизу під час простою, але не бере призначених завдань із пожежогасіння</WR_WorkNativeFireNearby>
   <WR_WorkNotNative>не підтримується призначеннями робіт для цієї моделі</WR_WorkNotNative>
+  <WR_RecTuneHunterPlacement>Місце мисливця</WR_RecTuneHunterPlacement>
+  <WR_RecTuneHunterPlacementBestShotsFirst>Спершу найкращі стрільці</WR_RecTuneHunterPlacementBestShotsFirst>
+  <WR_RecTuneHunterPlacementBestShotsFirstTip>Роль мисливця має кожен озброєний колоніст. Найкращий стрілець стає провідним мисливцем і полює одразу після базової роботи; решта полюють пізніше й підміняють його, коли він зайнятий. Обирайте, коли колонії зараз потрібні м'ясо чи шкіра, а промахи й поранені тварини коштують більше за користь від практики.</WR_RecTuneHunterPlacementBestShotsFirstTip>
+  <WR_RecTuneHunterPlacementDesc>«Спершу слабкі стрільці» дає практику слабким стрільцям. «Спершу найкращі стрільці» — для випадку, коли колонії потрібне м'ясо й не можна припускатися промахів. «Звичайна роль» — для сталої команди мисливців замість усіх, хто має зброю. Дальнобійна зброя потрібна завжди.</WR_RecTuneHunterPlacementDesc>
+  <WR_RecTuneHunterPlacementNormalRole>Звичайна роль</WR_RecTuneHunterPlacementNormalRole>
+  <WR_RecTuneHunterPlacementNormalRoleTip>Мисливця планують як будь-яку кваліфіковану роль, а не дають кожному, хто має зброю: задайте мінімум для колонії та охоплення в параметрах ролі, і ці місця посядуть найкращі стрільці. Сильні стрільці все ж можуть отримати її як додатковий вибір. Обирайте, коли потрібна стала команда мисливців.</WR_RecTuneHunterPlacementNormalRoleTip>
+  <WR_RecTuneHunterPlacementPoorShotsFirst>Спершу слабкі стрільці</WR_RecTuneHunterPlacementPoorShotsFirst>
+  <WR_RecTuneHunterPlacementPoorShotsFirstTip>Роль мисливця має кожен озброєний колоніст. Найслабші стрільці полюють першими, щоб потренувати стрільбу; влучні стрільці полюють останніми. Обирайте, коли їжі вдосталь і хочеться більше колоністів, які вміють стріляти. Типовий варіант.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
+  <WR_RecTuneHunterTiersRowDescReversed>Межі рівня стрільби для рухомої позиції мисливця, зверху вниз. Рівні вище за останню межу — ярус 1, і мисливець стоїть одразу після базової роботи; яруси 2 і 3 йдуть за середніми та останніми робочими ролями, а ярус 5 ставить мисливця останнім.</WR_RecTuneHunterTiersRowDescReversed>
 </LanguageData>

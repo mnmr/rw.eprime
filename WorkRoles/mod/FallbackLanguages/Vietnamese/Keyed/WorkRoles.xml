@@ -341,7 +341,7 @@ Việc không bị ngắt. Thông báo chỉ hiện một lần mỗi bản lưu
   <WR_RecGlobalPanelHelp>Các tùy chọn này đổi cách bộ đề xuất chấm điểm, xếp hạng ứng viên và vị trí trong danh sách đề xuất cuối. Dùng nút Đặt lại để khôi phục mặc định nếu không muốn giữ chỉnh sửa.</WR_RecGlobalPanelHelp>
   <WR_RecMoreContentGates>{0} mục nữa</WR_RecMoreContentGates>
   <WR_RecRolePanel>Tùy chọn vai trò</WR_RecRolePanel>
-  <WR_RecRolePanelHelp>Liệt kê mọi vai trò trừ Vai trò bị loại. Mở vai trò để chỉnh tùy chọn đề xuất. Vai trò tự xếp thứ tự riêng cho mỗi cư dân; Thợ săn giữ vị trí theo kỹ năng bắn súng.</WR_RecRolePanelHelp>
+  <WR_RecRolePanelHelp>Liệt kê mọi vai trò trừ Vai trò bị loại. Mở vai trò để chỉnh tùy chọn đề xuất. Vai trò tự xếp thứ tự riêng cho mỗi cư dân; Thợ săn theo lựa chọn Vị trí Thợ săn trong Tùy chọn chung.</WR_RecRolePanelHelp>
   <WR_RecScalingSection>Quy mô phân công</WR_RecScalingSection>
   <WR_RecSkillsSection>Kỹ năng</WR_RecSkillsSection>
   <WR_RecTipAssignmentsMany>Cần {0} phân công</WR_RecTipAssignmentsMany>
@@ -370,7 +370,7 @@ Việc không bị ngắt. Thông báo chỉ hiện một lần mỗi bản lưu
   <WR_RecTuneChampionTieBreakRow>Điểm phân định hòa</WR_RecTuneChampionTieBreakRow>
   <WR_RecTuneChampionTieBreakRowDesc>So sánh điểm dấu hiệu khi điểm chủ lực bằng nhau. Vai trò nhiều kỹ năng cộng điểm các dấu hiệu đạt chuẩn.</WR_RecTuneChampionTieBreakRowDesc>
   <WR_RecTuneHunterSection>Tùy chọn vị trí Thợ săn</WR_RecTuneHunterSection>
-  <WR_RecTuneHunterSectionIntro>Vai trò Thợ săn chưa ghim đổi vị trí theo kỹ năng bắn súng: người bắn giỏi săn muộn hơn vì thời gian của họ có ích hơn ở việc khác.</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneHunterSectionIntro>Săn bắn rèn luyện Bắn súng, nên mặc định mọi cư dân có vũ khí đều giữ vai trò Thợ săn và người bắn yếu nhất săn trước. Tại đây bạn đổi người săn đầu tiên, hoặc lên kế hoạch cho Thợ săn như một vai trò bình thường.</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneHunterTiersRow>Cấp bắn súng tối đa mỗi bậc</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Ngưỡng Bắn súng cho vị trí động của Thợ săn. Bậc 1 đặt ngay sau việc cơ bản; bậc 2 và 3 đặt sau vai trò công việc giữa và cuối; trên bậc 4 đặt cuối cùng.</WR_RecTuneHunterTiersRowDesc>
   <WR_RecTuneMinimumPickRow>Điểm cộng chọn tối thiểu</WR_RecTuneMinimumPickRow>
@@ -655,4 +655,13 @@ Thông báo hiện một lần mỗi mod trong mỗi bản lưu.</WR_SetPriority
   <WR_RoleCapCannotTakeJobs>{0} không thể nhận công việc được giao thuộc {1}</WR_RoleCapCannotTakeJobs>
   <WR_WorkNativeFireNearby>có thể dập lửa gần đó khi rảnh, nhưng không nhận công việc chữa cháy được giao</WR_WorkNativeFireNearby>
   <WR_WorkNotNative>không được hỗ trợ trong phân công công việc của mẫu này</WR_WorkNotNative>
+  <WR_RecTuneHunterPlacement>Vị trí Thợ săn</WR_RecTuneHunterPlacement>
+  <WR_RecTuneHunterPlacementBestShotsFirst>Người bắn giỏi nhất trước</WR_RecTuneHunterPlacementBestShotsFirst>
+  <WR_RecTuneHunterPlacementBestShotsFirstTip>Mọi cư dân có vũ khí đều giữ vai trò Thợ săn. Xạ thủ giỏi nhất là người chủ lực của Thợ săn và săn ngay sau công việc cơ bản; những người khác săn muộn hơn và thay thế khi người chủ lực bận. Chọn cách này khi khu định cư cần thịt hoặc da ngay và việc bắn trượt hay làm thú bị thương tốn kém hơn lợi ích của việc luyện tập.</WR_RecTuneHunterPlacementBestShotsFirstTip>
+  <WR_RecTuneHunterPlacementDesc>Người bắn kém trước giúp người bắn yếu được luyện tập. Người bắn giỏi nhất trước dành cho lúc khu định cư cần thịt và không thể để bắn trượt. Vai trò bình thường dành cho một nhóm săn cố định thay vì mọi người có súng. Luôn cần vũ khí tầm xa.</WR_RecTuneHunterPlacementDesc>
+  <WR_RecTuneHunterPlacementNormalRole>Vai trò bình thường</WR_RecTuneHunterPlacementNormalRole>
+  <WR_RecTuneHunterPlacementNormalRoleTip>Thợ săn được lên kế hoạch như mọi vai trò kỹ năng khác thay vì giao cho mọi người có súng: đặt mức tối thiểu của khu định cư và độ bao phủ trong Tùy chọn vai trò, và những người bắn giỏi nhất sẽ lấp các vị trí đó. Người bắn giỏi vẫn có thể được giao thêm vai trò này như lựa chọn dư. Chọn cách này khi bạn muốn một nhóm săn cố định.</WR_RecTuneHunterPlacementNormalRoleTip>
+  <WR_RecTuneHunterPlacementPoorShotsFirst>Người bắn kém trước</WR_RecTuneHunterPlacementPoorShotsFirst>
+  <WR_RecTuneHunterPlacementPoorShotsFirstTip>Mọi cư dân có vũ khí đều giữ vai trò Thợ săn. Người bắn yếu nhất săn trước để được luyện Bắn súng; xạ thủ giỏi săn sau cùng. Chọn cách này khi lương thực ổn định và bạn muốn có thêm cư dân biết bắn. Đây là mặc định.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
+  <WR_RecTuneHunterTiersRowDescReversed>Ngưỡng cấp Bắn súng cho vị trí động của Thợ săn, đọc từ trên xuống. Cấp cao hơn ngưỡng cuối cùng là bậc 1 và đặt Thợ săn ngay sau công việc cơ bản, bậc 2 và 3 theo sau các vai trò công việc giữa và cuối, còn bậc 5 đặt Thợ săn sau cùng.</WR_RecTuneHunterTiersRowDescReversed>
 </LanguageData>

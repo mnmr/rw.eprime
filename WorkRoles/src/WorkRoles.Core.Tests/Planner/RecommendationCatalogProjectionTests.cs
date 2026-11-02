@@ -206,6 +206,26 @@ public class RecommendationCatalogProjectionTests
         await Assert.That(projection.FireBlockerRoleId).IsEqualTo(4);
     }
 
+    /// A player who deletes the seeded Hunter and rebuilds it by hand may tick
+    /// the whole Hunting work type or only its Hunt job. Either rebuild must
+    /// take over the Hunter placement; a role containing the whole work type
+    /// ranks above one that only lists the job.
+    [Test]
+    public async Task RecreatedHunterResolvesFromWholeWorkTypeBeforeHuntJobEntry()
+    {
+        var jobs = new FakeCatalog().WithWorkType("Hunting", "Hunt").WithWorkType("Handling", "Tame");
+        JobProfileIndex profiles = SpecialProfiles();
+        var priorities = new Dictionary<string, int> { ["Hunting"] = 950, ["Handling"] = 1000 };
+        var ranger = new RecommendationRoleSource { Id = 1, Entries = [new(JobEntryKind.WorkType, "Handling"), new(JobEntryKind.WorkType, "Hunting")] };
+        var huntJobOnly = new RecommendationRoleSource { Id = 2, Entries = [new(JobEntryKind.WorkGiver, "Hunt")] };
+
+        RecommendationCatalogProjection both = RecommendationCatalogBuilder.Build([huntJobOnly, ranger], [], jobs, priorities, profiles);
+        RecommendationCatalogProjection jobOnly = RecommendationCatalogBuilder.Build([huntJobOnly], [], jobs, priorities, profiles);
+
+        await Assert.That(both.HunterRoleId).IsEqualTo(ranger.Id);
+        await Assert.That(jobOnly.HunterRoleId).IsEqualTo(huntJobOnly.Id);
+    }
+
     [Test]
     public async Task CreatingAColonyDerivesSkillMaximumsFromItsPawns()
     {

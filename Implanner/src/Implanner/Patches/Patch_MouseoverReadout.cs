@@ -11,11 +11,11 @@ namespace Implanner.Patches
     /// draw entirely while the dialog is open; everything else is untouched,
     /// and closing the dialog restores vanilla behavior (runtime-verified).
     /// The prefix runs every OnGUI frame for the whole session, so it reads
-    /// the dialog's PreOpen/PostClose flag instead of scanning the window
-    /// stack.
+    /// the view's Open/Close flag (set by either host window) instead of
+    /// scanning the window stack.
     [HarmonyPatch(typeof(MouseoverReadout), nameof(MouseoverReadout.MouseoverReadoutOnGUI))]
     public static class Patch_MouseoverReadout
     {
-        public static bool Prefix() => !Dialog_Implanner.AnyOpen;
+        public static bool Prefix() => !ImplannerView.AnyOpen;
     }
 }

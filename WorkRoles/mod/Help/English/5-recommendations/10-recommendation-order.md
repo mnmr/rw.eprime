@@ -13,9 +13,12 @@ has been removed, and saved custom orders no longer affect recommendations.
 path's target, so Nurse and Medic follow Doctor.
 - A role fully covered by another sits right after the role covering it,
 the way Hauler follows Grunt.
-- **Hunter keeps its shooting-skill placement:** poor shots hunt earlier
-and better shots hunt later, because their time is worth more elsewhere.
-An individually pinned assignment remains protected.
+- **Hunter keeps its shooting-skill placement:** hunting trains Shooting,
+so by default poor shots hunt earlier and better shots later. The Hunter
+placement option in [Global options](topic:global-tuning) can reverse
+this so the best armed shooter hunts first as Hunter's champion, or plan
+Hunter as a normal role. An individually pinned assignment remains
+protected.
 
 <!-- l10n:b-ae303b9cef12 -->
 The **Excluded roles** panel at the top of the Recommendations tab controls

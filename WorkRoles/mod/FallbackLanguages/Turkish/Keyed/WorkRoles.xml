@@ -341,7 +341,7 @@ WorkRoles, yönetilen her koloniciye standart oyun yöntemleriyle iş listesi ve
   <WR_RecGlobalPanelHelp>Bu seçenekler öneri motorunun adayları nasıl puanlayıp sıraladığını ve işlerin son öneri listesinde nereye yerleştiğini değiştirir. Değişiklikleri geri almak isterseniz varsayılanlar için Sıfırla düğmelerini kullanın.</WR_RecGlobalPanelHelp>
   <WR_RecMoreContentGates>{0} tane daha</WR_RecMoreContentGates>
   <WR_RecRolePanel>Rol seçenekleri</WR_RecRolePanel>
-  <WR_RecRolePanelHelp>Hariç tutulan roller dışındaki tüm roller burada listelenir. Öneri seçeneklerini ayarlamak için rolü genişletin. Roller her kolonici için otomatik sıralanır; Avcı nişancılık becerisine göre konumunu korur.</WR_RecRolePanelHelp>
+  <WR_RecRolePanelHelp>Hariç tutulan roller dışındaki tüm roller burada listelenir. Öneri seçeneklerini ayarlamak için rolü genişletin. Roller her kolonici için otomatik sıralanır; Avcı, Genel seçenekler'deki Avcı yerleşimi seçimini izler.</WR_RecRolePanelHelp>
   <WR_RecScalingSection>Atama ölçeklendirmesi</WR_RecScalingSection>
   <WR_RecSkillsSection>Beceriler</WR_RecSkillsSection>
   <WR_RecTipAssignmentsMany>{0} atama istendi</WR_RecTipAssignmentsMany>
@@ -370,7 +370,7 @@ WorkRoles, yönetilen her koloniciye standart oyun yöntemleriyle iş listesi ve
   <WR_RecTuneChampionTieBreakRow>Eşitlik bozma puanları</WR_RecTuneChampionTieBreakRow>
   <WR_RecTuneChampionTieBreakRowDesc>Lider puanları eşitse karşılaştırılan işaret puanları. Çok becerili rollerde uygun işaretlerin puanları toplanır.</WR_RecTuneChampionTieBreakRowDesc>
   <WR_RecTuneHunterSection>Avcı yerleşimi seçenekleri</WR_RecTuneHunterSection>
-  <WR_RecTuneHunterSectionIntro>Sabitlenmemiş Avcı rolü nişancılığa göre dinamik yerleşir: iyi nişancılar, zamanları başka işlerde daha değerli olduğundan öncelik sırasının daha ilerisinde avlanır.</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneHunterSectionIntro>Avcılık Nişancılığı geliştirir; bu yüzden varsayılan olarak silahlı her kolonici Avcı rolünü alır ve en zayıf nişancılar önce avlanır. Kimin önce avlanacağını buradan değiştirin veya Avcıyı normal bir rol olarak planlayın.</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneHunterTiersRow>Kademenin azami nişancılık düzeyi</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Dinamik Avcı konumu için nişancılık eşikleri. Kademe 1, Avcıyı temel işlerin hemen arkasına; 2 ve 3, orta ve son iş rollerinin arkasına koyar. Kademe 4'ün üzerindeki düzeyler Avcıyı en sona koyar.</WR_RecTuneHunterTiersRowDesc>
   <WR_RecTuneMinimumPickRow>Asgari seçim bonusu</WR_RecTuneMinimumPickRow>
@@ -655,4 +655,13 @@ Bu bildirim kayıt başına her mod için bir kez gösterilir.</WR_SetPriorityBl
   <WR_RoleCapCannotTakeJobs>{0}, {1} için atanan işleri üstlenemez</WR_RoleCapCannotTakeJobs>
   <WR_WorkNativeFireNearby>boştayken yakındaki yangınları söndürebilir, ancak atanan yangın söndürme işlerini üstlenmez</WR_WorkNativeFireNearby>
   <WR_WorkNotNative>bu modelin iş atamaları tarafından desteklenmiyor</WR_WorkNotNative>
+  <WR_RecTuneHunterPlacement>Avcı yerleşimi</WR_RecTuneHunterPlacement>
+  <WR_RecTuneHunterPlacementBestShotsFirst>En iyi nişancılar önce</WR_RecTuneHunterPlacementBestShotsFirst>
+  <WR_RecTuneHunterPlacementBestShotsFirstTip>Silahlı her kolonici Avcı rolünü alır. En iyi nişancınız Avcının lideridir ve temel işlerden hemen sonra avlanır; diğerleri daha sonra avlanır ve lider meşgulken yerine bakar. Koloninin şimdi ete veya deriye ihtiyacı varsa ve ıskalayan ya da yaralanan hayvanlar alıştırmanın değerinden pahalıya geliyorsa bunu seçin.</WR_RecTuneHunterPlacementBestShotsFirstTip>
+  <WR_RecTuneHunterPlacementDesc>Kötü nişancılar önce seçeneği zayıf nişancılara alıştırma yaptırır. İyi nişancılar önce, koloninin ete ihtiyacı olduğu ve ıskalamayı göze alamadığı durumlar içindir. Normal rol, silahı olan herkes yerine sabit bir avcı ekibi içindir. Menzilli silah her zaman gereklidir.</WR_RecTuneHunterPlacementDesc>
+  <WR_RecTuneHunterPlacementNormalRole>Normal rol</WR_RecTuneHunterPlacementNormalRole>
+  <WR_RecTuneHunterPlacementNormalRoleTip>Avcı, silahı olan herkese verilmek yerine becerili herhangi bir rol gibi planlanır: koloni asgarisini ve kapsamını Rol seçenekleri'nde ayarlayın, bu kontenjanları en iyi nişancılar doldurur. Güçlü nişancılar yine de fazladan seçim olarak bu rolü alabilir. Sabit bir avcı ekibi istiyorsanız bunu seçin.</WR_RecTuneHunterPlacementNormalRoleTip>
+  <WR_RecTuneHunterPlacementPoorShotsFirst>Kötü nişancılar önce</WR_RecTuneHunterPlacementPoorShotsFirst>
+  <WR_RecTuneHunterPlacementPoorShotsFirstTip>Silahlı her kolonici Avcı rolünü alır. En zayıf nişancılar önce avlanır ve böylece Nişancılık alıştırması yapar; keskin nişancılar en son avlanır. Yiyecek güvendeyse ve silah kullanabilen daha çok kolonici istiyorsanız bunu seçin. Varsayılan budur.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
+  <WR_RecTuneHunterTiersRowDescReversed>Dinamik Avcı konumu için nişancılık seviyesi eşikleri, yukarıdan aşağı okunur. Son eşiğin üzerindeki seviyeler 1. kademedir ve Avcıyı temel işlerin hemen arkasına yerleştirir; 2. ve 3. kademeler orta ve son iş rollerini izler, 5. kademe ise Avcıyı en sona koyar.</WR_RecTuneHunterTiersRowDescReversed>
 </LanguageData>

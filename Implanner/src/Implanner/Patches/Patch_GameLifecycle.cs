@@ -17,7 +17,7 @@ namespace Implanner.Patches
         {
             // Window-level statics: the mouseover-readout suppression flag
             // and any implant drag in progress must not outlive the world.
-            Dialog_Implanner.AnyOpen = false;
+            ImplannerView.AnyOpen = false;
             PlannerDrag.Cancel();
             MapClassifications.ReleaseSnapshot();
             Catalogs.Release();

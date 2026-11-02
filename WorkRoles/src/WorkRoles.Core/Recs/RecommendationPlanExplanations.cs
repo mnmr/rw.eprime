@@ -76,7 +76,7 @@ namespace WorkRoles.Core.Recs
                             requiredTotal, requirement.TrainingWaivers),
                         CoveredTotal = coveredTotals.TryGetValue(
                             requirementRole.Id, out int covered) ? covered : 0,
-                        DemandApplies = requirementRole.PlannedByDemand
+                        DemandApplies = RecommendationPlan.PlannedByDemand(facts, requirementRole, formulas)
                             && !requirementRole.IsNever,
                         EveryoneCapable =
                             requirementRole.CoveragePercent >= 100,
@@ -260,7 +260,7 @@ namespace WorkRoles.Core.Recs
             // the pass picked already carries its stage and score stats.
             if (explanation.SelectionStage == RecommendationSelectionStage.None)
             {
-                SpecialPickReason special = SpecialReasonFor(facts, pawn, role);
+                SpecialPickReason special = SpecialReasonFor(facts, pawn, role, formulas);
                 if (special != SpecialPickReason.None)
                 {
                     explanation.SelectionStage =
@@ -276,10 +276,10 @@ namespace WorkRoles.Core.Recs
         }
 
         private static SpecialPickReason SpecialReasonFor(
-            EngineContext facts, PawnView pawn, RoleView role)
+            EngineContext facts, PawnView pawn, RoleView role, RecommendationFormulaEngine formulas)
         {
             if (role.AutoAssign) return SpecialPickReason.AutoAssigned;
-            if (role.Id == facts.Colony.HunterRoleId)
+            if (RecommendationPlan.PlacesHunterSpecially(facts, role, formulas))
                 return SpecialPickReason.Hunter;
             if (role.Id == facts.Colony.FireBlockerRoleId && pawn.FireFear)
                 return SpecialPickReason.FireSafety;
@@ -302,7 +302,7 @@ namespace WorkRoles.Core.Recs
             RoleRecommendationExplanation explanation)
         {
             PawnView pawn = facts.Colony.Pawns[pawnIndex];
-            if (role.PlannedByDemand && !role.HasDemand)
+            if (RecommendationPlan.PlannedByDemand(facts, role, formulas) && !role.HasDemand)
             {
                 // A no-demand role that is a training-path trainee is controlled
                 // by its target (e.g. Medic by Doctor); an unskilled no-demand
@@ -334,15 +334,17 @@ namespace WorkRoles.Core.Recs
                 explanation.RejectReason = PickRejectReason.NotMechanitor;
                 return;
             }
-            if (!facts.MeetsCapabilityRequirement(pawnIndex, role))
-            {
-                explanation.RejectReason = PickRejectReason.Incapable;
-                return;
-            }
-            if (role.Hunting && !pawn.HasRangedWeapon)
+            // The weapon gate is part of capability; name it before the
+            // generic verdict so the tooltip says what is missing.
+            if (!EngineContext.MeetsEquipmentRequirement(pawn, role))
             {
                 explanation.RejectReason =
                     PickRejectReason.HunterRequirementsNotMet;
+                return;
+            }
+            if (!facts.MeetsCapabilityRequirement(pawnIndex, role))
+            {
+                explanation.RejectReason = PickRejectReason.Incapable;
                 return;
             }
             if (rawSignal < formulas.CandidateMinimumSignal)

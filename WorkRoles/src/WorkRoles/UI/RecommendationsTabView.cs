@@ -1097,17 +1097,24 @@ namespace WorkRoles.UI
             float labelHeight = Mathf.Max(labelAdvance,
                 Mathf.Ceil(Text.LineHeightOf(GameFont.Small)));
             // Controls occupy the rightmost 108px; captions keep 20px clear.
+            // A worded picker sits under a full-width caption instead.
+            float textWidth = row.SegmentsBelow ? rect.width : rect.width - 128f;
             Widgets.Label(new Rect(
-                rect.x, rect.y, rect.width - 128f, labelHeight), row.Label);
+                rect.x, rect.y, textWidth, labelHeight), row.Label);
             GUI.color = WrStyle.CaptionText;
             TinyText.Label(new Rect(
                 rect.x,
                 rect.y + labelAdvance,
-                rect.width - 128f,
-                rect.height - labelAdvance),
+                textWidth,
+                row.SegmentsBelow ? row.SegmentRect.y - labelAdvance : rect.height - labelAdvance),
                 row.Description);
             GUI.color = Color.white;
 
+            if (row.SegmentsBelow)
+            {
+                DrawTuningEnumSegments(Offset(row.SegmentRect, new Vector2(rect.x, rect.y)), row);
+                return;
+            }
             float controlsX = rect.xMax - 108f;
             if (row.EnumOptions != null)
             {

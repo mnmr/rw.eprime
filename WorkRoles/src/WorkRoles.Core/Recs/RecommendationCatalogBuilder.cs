@@ -549,18 +549,27 @@ namespace WorkRoles.Core.Recs
                     return source.Id;
             }
 
-            int best = -1;
+            // A rebuilt Hunter may list the whole work type or only its Hunt
+            // job; the whole type ranks first, fewest entries within a rung.
+            int wholeType = -1;
+            int anyGiver = -1;
             for (int index = 0; index < views.Count; index++)
             {
                 RoleView source = views[index];
                 if (!source.Enabled
                     || source.HasRules
                     || source.Blocker
-                    || !views[index].WorkSpec.HasLiteralWorkType("Hunting"))
+                    || !source.WorkSpec.HasHuntingCapability)
                     continue;
-                if (best < 0 || entryCounts[index] < entryCounts[best])
-                    best = index;
+                if (source.WorkSpec.HasLiteralWorkType("Hunting"))
+                {
+                    if (wholeType < 0 || entryCounts[index] < entryCounts[wholeType])
+                        wholeType = index;
+                }
+                else if (anyGiver < 0 || entryCounts[index] < entryCounts[anyGiver])
+                    anyGiver = index;
             }
+            int best = wholeType >= 0 ? wholeType : anyGiver;
             return best < 0 ? -1 : views[best].Id;
         }
 

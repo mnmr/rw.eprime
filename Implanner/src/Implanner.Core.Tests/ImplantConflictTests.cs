@@ -17,10 +17,37 @@ public class ImplantConflictTests
     static PlannedSlotFacts Facts(string defName, bool replacement, int record,
         int[]? ancestors = null, string[]? tags = null, string[]? incompatible = null,
         string[]? removeWith = null, bool mountsOnArtificial = false,
-        bool wipesPart = false)
+        bool wipesPart = false, bool? mountsUnderArtificial = null)
         => new PlannedSlotFacts(defName, replacement, record,
             ancestors ?? NoAncestors, tags ?? NoTags, incompatible ?? NoTags,
-            removeWith ?? NoTags, mountsOnArtificial, wipesPart);
+            removeWith ?? NoTags, mountsOnArtificial, wipesPart, mountsUnderArtificial);
+
+    /// Combat Bionics' swarm wrist implant: its worker
+    /// (Recipe_InstallImplantOverBionics) refuses only duplicates and tag
+    /// clashes, so it mounts ON an artificial part at its own record (an
+    /// Anima war arm replaces the arm itself). But the game marks every part
+    /// under an added part missing (Hediff_AddedPart.PostAdd), so no surgery
+    /// reaches the arm under a bionic arm at the shoulder: such a kind
+    /// coexists with a replacement at its record and conflicts with one
+    /// above it. Measured against the game's workers in the conflict audit
+    /// of 2026-11-01 (100 pairs the game never kept together).
+    [Test]
+    public async Task ImplantsThatMountOnlyOnTheArtificialPartItselfConflictUnderOne()
+    {
+        var bionicArm = Facts("BionicArm", replacement: true, record: 10);
+        var warArm = Facts("AnimaWarArm", replacement: true, record: 13,
+            ancestors: new[] { 10, 0 });
+        var swarm = Facts("FF_SwarmWristImplant", replacement: false, record: 13,
+            ancestors: new[] { 10, 0 }, mountsOnArtificial: true, mountsUnderArtificial: false);
+        var module = Facts("HandModule", replacement: false, record: 13,
+            ancestors: new[] { 10, 0 }, mountsOnArtificial: true);
+
+        await Assert.That(ImplantConflictRules.Conflicts(swarm, bionicArm)).IsTrue();
+        await Assert.That(ImplantConflictRules.Conflicts(bionicArm, swarm)).IsTrue();
+        await Assert.That(ImplantConflictRules.Conflicts(swarm, warArm)).IsFalse();
+        await Assert.That(ImplantConflictRules.Conflicts(warArm, swarm)).IsFalse();
+        await Assert.That(ImplantConflictRules.Conflicts(module, bionicArm)).IsFalse();
+    }
 
     /// Vanilla Genetics Expanded's install worker restores the whole part
     /// before adding its hediff, even for its implant-class kinds (neuron

@@ -1,0 +1,34 @@
+# Body kinship: Humanoid Alien Races with Milira (human slots plus wings),
+# Android Tiers Continued (distinct anatomy) and the probe's human-copy race
+# (human slots under another body name). WorkRoles removed so the probe owns
+# the colony.
+remove zetrith.prepatcher
+remove brrainz.rimbridgeserver
+remove mehni.pickupandhaul
+remove brrainz.rangefinder
+remove jaxe.rimhud
+remove com.bymarcin.architecticons
+remove mehni.numbers
+remove dubwise.dubsmintminimap
+remove rimworld.randomcoughdrop.geneassistant
+remove carnysenpai.traitraritycolors
+remove tac.genetrader
+remove mlie.haulminedchunks
+remove kota.inventorytab
+remove mlie.relevantstatsindescription
+remove bp.showbuildablematerialcount
+remove mlie.usethisinstead
+remove bodlosh.weaponstats
+remove mlie.smarterdeconstructionandmining
+remove defi.generipper
+remove avilmask.nonunopinata
+remove dubwise.dubsperformanceanalyzer.steam
+remove mnmr.workroles
+after ludeon.rimworld.odyssey
+erdelf.humanoidalienraces
+carnysenpai.enableoversizedweapons
+ancot.ancotlibrary
+maiconneri.androidtierscontinued
+ancot.milirarace
+after eprime.implanner
+eprime.implanner.bodykinship

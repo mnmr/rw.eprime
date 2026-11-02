@@ -30,7 +30,7 @@ namespace Implanner.UI
             basePlanLabel = PlannerLabels.ExtendsNothing;
             bodyLabel = "IMP_PlanBodyAny".Translate();
             bodyTip = "IMP_PlanBodyTip".Translate();
-            offersBody = Catalogs.PlannableBodies().Count > 1;
+            offersBody = Catalogs.OfferedBodies().Count > 1;
         }
 
         protected override float ExtraHeight => offersBody ? 60f : 30f;
@@ -94,7 +94,9 @@ namespace Implanner.UI
             {
                 new FloatMenuOption("IMP_PlanBodyAny".Translate(), () => SetBody("")),
             };
-            List<BodyDef> bodies = Catalogs.PlannableBodies();
+            // The offered bodies only: a copy of the human anatomy is the
+            // human body for planning purposes.
+            List<BodyDef> bodies = Catalogs.OfferedBodies();
             for (int i = 0; i < bodies.Count; i++)
             {
                 BodyDef candidate = bodies[i];

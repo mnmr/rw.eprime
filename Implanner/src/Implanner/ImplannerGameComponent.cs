@@ -9,9 +9,21 @@ namespace Implanner
     {
         public ImplannerGameComponent(Game game) { }
 
+        /// Settings writes requested from OnGUI (tab resize grip, entry
+        /// style) land here, outside the draw pass, one write per batch.
+        private static bool settingsWriteRequested;
+
+        internal static void RequestSettingsWrite() => settingsWriteRequested = true;
+
         public override void GameComponentUpdate()
         {
             GearIconMetrics.ProcessPending();
+            ImplannerEntry.DrainPending();
+            if (settingsWriteRequested)
+            {
+                settingsWriteRequested = false;
+                ImplannerMod.Instance.WriteSettings();
+            }
             if (AndroidTiers.FollowPending && Current.ProgramState == ProgramState.Playing)
             {
                 AndroidTiers.FollowPending = false;
@@ -90,7 +102,6 @@ namespace Implanner
             });
         }
 
-        private static void OpenPlanner() =>
-            Find.WindowStack.Add(new Dialog_Implanner());
+        private static void OpenPlanner() => ImplannerEntry.Open();
     }
 }

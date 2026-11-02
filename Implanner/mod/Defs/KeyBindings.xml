@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- Unbound by default (every free key collides with some mod); the
+       player binds it under Options, Keyboard, Main tabs. In toolbar style
+       it toggles the floating dialog, otherwise the bottom-bar tab. -->
+  <KeyBindingDef>
+    <defName>Implanner_MainTab</defName>
+    <label>toggle Implanner</label>
+    <category>MainTabs</category>
+  </KeyBindingDef>
+
+</Defs>

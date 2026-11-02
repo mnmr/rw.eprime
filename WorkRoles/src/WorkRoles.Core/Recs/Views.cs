@@ -133,8 +133,10 @@ namespace WorkRoles.Core.Recs
         public bool UnskilledFill => UseUnskilledPlacementRules && HasDemand;
         /// Unskilled role without demand: the planner never assigns it.
         public bool IsNever => UseUnskilledPlacementRules && !HasDemand;
-        public bool PlannedByDemand => !AutoAssign && !HasRules && !Blocker
-            && !Hunting;
+        /// Role-level demand planning eligibility. The resolved Hunter is
+        /// additionally withheld by the colony's placement mode
+        /// (RecommendationPlan.PlannedByDemand).
+        public bool PlannedByDemand => !AutoAssign && !HasRules && !Blocker;
     }
 
     /// One training path: bands are [min, max) with 21 = open top. Paths are

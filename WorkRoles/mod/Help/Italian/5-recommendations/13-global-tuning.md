@@ -11,7 +11,7 @@ La parte destra della scheda Consigli contiene le regolazioni del sistema, divis
 - **Scelta del responsabile** decide chi sostiene ciascun ruolo.
 - **Percorsi formativi e obiettivi facoltativi** stabiliscono quando si attivano i percorsi e quando vale la pena consigliare ruoli facoltativi con più abilità.
 - **Ordine finale dei ruoli** decide la sequenza dei ruoli consigliati a un colono.
-- **Posizione del Cacciatore** imposta le soglie di Tiro per la sua posizione dinamica.
+- **Posizione del Cacciatore** sceglie chi caccia per primo (i tiratori meno abili, i migliori o Cacciatore come ruolo normale) e imposta le soglie di Tiro per la sua posizione dinamica.
 
 <!-- l10n:b-ab5db2d3bdf3 -->
 Ogni regolazione è spiegata sul posto e il pulsante Ripristina di ogni sezione recupera i valori predefiniti dopo gli esperimenti.

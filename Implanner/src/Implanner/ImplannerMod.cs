@@ -1,4 +1,5 @@
 using HarmonyLib;
+using Implanner.UI;
 using RimShared.UiLib;
 using UnityEngine;
 using Verse;
@@ -20,15 +21,17 @@ namespace Implanner
 
         // Cache contract:
         // Owner: process (the settings window has no instance state).
-        // Key: none (one label).
-        // Value: the translated toolbar-button setting label (immutable).
-        // Dependencies: UiRevision.LanguageCurrent.
-        // Refresh policy: immediate on the first draw after the language
-        //   revision moves.
-        // Equality policy: an unchanged revision reuses the string.
-        // Teardown: none needed (one bounded string for the process).
-        private static string showToolbarLabel = "";
-        private static int showToolbarLabelStamp = -1;
+        // Key: none.
+        // Value: the Small-font caption height of the entry-style control
+        //   (immutable scalar).
+        // Dependencies: UiRevision.Current (UI scale, language) and the
+        //   settings window width the caption wraps to.
+        // Refresh policy: immediate on the first draw after either moves.
+        // Equality policy: unchanged inputs reuse the scalar.
+        // Teardown: none needed (one scalar for the process).
+        private static float entryCaptionHeight;
+        private static int entryCaptionStamp = -1;
+        private static float entryCaptionWidth = -1f;
 
         public ImplannerMod(ModContentPack content) : base(content)
         {
@@ -41,18 +44,27 @@ namespace Implanner
 
         public override string SettingsCategory() => "Implanner";
 
+        /// The mod settings page carries the same entry-style control as the
+        /// Options tab; the game writes the settings when the page closes.
         public override void DoSettingsWindowContents(Rect inRect)
         {
             UiRevision.ObserveCurrentMetrics();
-            if (showToolbarLabelStamp != UiRevision.LanguageCurrent)
+            PlannerLabels.Ensure();
+            float width = Mathf.Min(inRect.width, 520f);
+            if (entryCaptionStamp != UiRevision.Current || entryCaptionWidth != width)
             {
-                showToolbarLabelStamp = UiRevision.LanguageCurrent;
-                showToolbarLabel = "IMP_SettingsShowToolbarButton".Translate();
+                entryCaptionStamp = UiRevision.Current;
+                entryCaptionWidth = width;
+                using (GuiStateScope.Capture())
+                {
+                    Text.Font = GameFont.Small;
+                    Text.WordWrap = true;
+                    entryCaptionHeight = Mathf.Max(Mathf.Ceil(Text.LineHeight),
+                        Mathf.Ceil(Text.CalcHeight(PlannerLabels.OptEntryStyle, width)));
+                }
             }
-            var listing = new Listing_Standard();
-            listing.Begin(inRect);
-            listing.CheckboxLabeled(showToolbarLabel, ref Settings.showToolbarButton);
-            listing.End();
+            float y = inRect.y;
+            ImplannerEntry.DrawStyleRow(inRect.x, ref y, width, entryCaptionHeight, 30f, null);
         }
     }
 }

@@ -187,7 +187,7 @@ public static class Probe
             "AT3: the bill asks for Crafting 8, not the best doctor's Medicine 20 (" + active.allowedSkillRange.min + ")");
 
         OpenDialog("Plans");
-        object plansState = Traverse.Create(dialog).Field("plans").GetValue();
+        object plansState = Traverse.Create(dialog).Field("view").Field("plans").GetValue();
         Traverse.Create(plansState).Field("SelectedPlanId").SetValue(plan.Id);
         ((QuickSearchWidget)Traverse.Create(plansState).Field("Search").GetValue()).filter.Text = "light sensor";
         Capture("picker");
@@ -391,8 +391,9 @@ public static class Probe
     static void OpenDialog(string tab)
     {
         Type type = typeof(ImplannerStore).Assembly.GetType("Implanner.UI.Dialog_Implanner");
-        Type tabs = type.GetNestedType("Tab", AccessTools.all);
-        AccessTools.Field(type, "curTab").SetValue(null, Enum.Parse(tabs, tab));
+        Type view = typeof(ImplannerStore).Assembly.GetType("Implanner.UI.ImplannerView");
+        Type tabs = view.GetNestedType("Tab", AccessTools.all);
+        AccessTools.Field(view, "curTab").SetValue(null, Enum.Parse(tabs, tab));
         if (dialog == null)
         {
             dialog = (Window)Activator.CreateInstance(type);

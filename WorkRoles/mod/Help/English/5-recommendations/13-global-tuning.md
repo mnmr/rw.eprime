@@ -16,8 +16,9 @@ the recommendations.
 activate and when optional multi-skill roles are worth recommending.
 - **Final role ordering** decides how a colonist's recommended roles are
 sequenced.
-- **Hunter placement** sets the shooting cutoffs for Hunter's dynamic
-slot.
+- **Hunter placement** chooses who hunts first (poor shots, best shots, or
+Hunter as a normal role) and sets the shooting cutoffs for Hunter's
+dynamic slot.
 
 <!-- l10n:b-ab5db2d3bdf3 -->
 Every dial explains itself in place, and each section's Reset restores

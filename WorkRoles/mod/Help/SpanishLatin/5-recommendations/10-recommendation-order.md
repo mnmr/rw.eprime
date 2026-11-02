@@ -7,7 +7,7 @@ Las recomendaciones se ordenan por colono usando el orden interno, aptitud, impo
 <!-- l10n:b-7c60ec8be352 -->
 - Un [rol de formación](topic:training-paths) va justo después del objetivo de su ruta: Enfermero y Sanitario siguen a Médico.
 - Un rol totalmente cubierto por otro va justo detrás, como Transportista tras Mozo.
-- **Cazador conserva su posición según Tiro**: los malos tiradores cazan antes y los buenos después, pues su tiempo vale más en otros trabajos. Una asignación fijada individualmente sigue protegida.
+- **Cazador conserva su posición según Tiro:** cazar entrena Tiro, así que por defecto los malos tiradores cazan antes y los buenos después. La opción Posición del Cazador en [Opciones globales](topic:global-tuning) puede invertir esto para que el mejor tirador armado cace primero como principal de Cazador, o tratar a Cazador como un rol normal. Una asignación fijada individualmente sigue protegida.
 
 <!-- l10n:b-ae303b9cef12 -->
 **Roles excluidos**, arriba en Recomendaciones, decide cuáles nunca se recomendarán. Usa Añadir rol para excluir uno o quita su ficha para volver a permitirlo.

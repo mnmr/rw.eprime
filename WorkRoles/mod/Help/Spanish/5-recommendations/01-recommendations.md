@@ -26,7 +26,7 @@ Puedes consultar su criterio en todas partes. Las descripciones de la paleta enu
 ![Mejores candidatos en la descripción](palette-tooltip.png)
 
 <!-- l10n:b-f1a1a1196f55 -->
-Dos roles tienen trato especial. Cazador se recomienda a quien lleve un arma a distancia, pues entrena Disparo; va antes para malos tiradores y después para expertos cuyo tiempo vale más en otros trabajos. La aversión a cazar también lo retrasa. Mecanitor solo se recomienda a quien tenga el mecaenlace, por buenos que sean otros artesanos; Mejores candidatos respeta la misma regla.
+Dos roles tienen trato especial. Cazador se recomienda a quien lleve un arma a distancia y, como cazar entrena Disparo, se coloca antes para quienes disparan mal y después para los tiradores expertos. La opción de colocación de Cazador en [Opciones globales](topic:global-tuning) puede poner primero a los mejores tiradores cuando la colonia necesita la carne, o planificar Cazador como un rol normal. La aversión a cazar también retrasa a Cazador en la fila. Mecanitor solo se recomienda a colonos con mecaenlace, por buenos que sean otros artesanos; su lista de Mejores candidatos sigue la misma regla.
 
 <!-- l10n:b-b241ec72dcda -->
 El motor propone y tú aplicas, [rol por rol](topic:cherry-picking) o con [Arreglar mi colonia](topic:fix-my-colony). La excepción es [Optimización automática](topic:auto-optimize): al activarla se ajustan todas tus colonias cada hora del juego.

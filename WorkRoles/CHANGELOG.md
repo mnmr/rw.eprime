@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 1.7.8 — 2026-11-02
+
+- Added: Hunter placement option: poor shots first, best shots first with a champion, or normal role.
+- Changed: Custom roles that include hunting are now recommended by their colony minimum and coverage.
+- Fixed: A Hunter role rebuilt by hand from the Hunt job was never recommended.
+
 ## 1.7.7 — 2026-11-01
 
 - Fixed: Multiplayer desyncs when a player joined while colonists were working.

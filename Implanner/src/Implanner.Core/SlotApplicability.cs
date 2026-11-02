@@ -73,7 +73,7 @@ namespace Implanner.Core
                         continue;
                     }
                     blocks[g][j] = SlotBlock.None;
-                    if (slot.MountsOnArtificialParts) continue;
+                    if (slot.MountsUnderArtificialParts) continue;
                     IReadOnlyList<int> ancestors = slot.SlotAncestors;
                     for (int a = 0; a < ancestors.Count && blocks[g][j] == SlotBlock.None; a++)
                         for (int p = 0; p < artificialParts.Count; p++)

@@ -108,6 +108,40 @@ function Test-ChangeNoteVersion([string]$Text, [string]$Version) {
     $Text -match ('^\s*v' + [regex]::Escape($Version) + '\s*(\n|$)')
 }
 
+# The most recently recorded release (rows are appended in publish order), or
+# $null before the first publish.
+function Get-LatestReleaseRecord {
+    param([Parameter(Mandatory)][string]$ModRoot)
+    $path = Join-Path $ModRoot 'RELEASES.md'
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return $null }
+    $latest = $null
+    foreach ($line in Get-Content -LiteralPath $path) {
+        if ($line -match '^\|\s*([^|\s]+)\s*\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|$' -and $Matches[1] -ne 'Version' -and $Matches[1] -notmatch '^-+$') {
+            $latest = [pscustomobject]@{ Version = $Matches[1]; Published = $Matches[2]; Item = $Matches[3] }
+        }
+    }
+    return $latest
+}
+
+# The only version change the publisher accepts unapproved: major.minor.patch
+# with the patch exactly one above the previous release. Anything else (a
+# skipped patch, a minor or major step, a downgrade, a two- or four-part
+# number) needs -ApproveVersion naming the version. Owner, 2026-11-01: a
+# 1.2.4 -> 1.2.6 bump shipped a never-published 1.2.5 section unannounced.
+function Test-NextPatchVersion([string]$Previous, [string]$Version) {
+    $pattern = '^(\d+)\.(\d+)\.(\d+)$'
+    if ($Previous -notmatch $pattern) { return $false }
+    $previousParts = @([int]$Matches[1], [int]$Matches[2], [int]$Matches[3])
+    if ($Version -notmatch $pattern) { return $false }
+    return [int]$Matches[1] -eq $previousParts[0] -and [int]$Matches[2] -eq $previousParts[1] `
+        -and [int]$Matches[3] -eq $previousParts[2] + 1
+}
+
+function Get-NextPatchVersion([string]$Previous) {
+    if ($Previous -notmatch '^(\d+)\.(\d+)\.(\d+)$') { return $null }
+    return "$($Matches[1]).$($Matches[2]).$([int]$Matches[3] + 1)"
+}
+
 function Format-ReleaseRecordLine([string]$Version, [DateTime]$PublishedUtc, [string]$Item) {
     "| $Version | $($PublishedUtc.ToString('yyyy-MM-dd HH:mm')) UTC | $Item |"
 }

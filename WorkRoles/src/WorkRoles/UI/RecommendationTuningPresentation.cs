@@ -18,8 +18,10 @@ namespace WorkRoles.UI
             string controlName,
             IReadOnlyList<string> enumOptions,
             IReadOnlyList<Color> enumColors,
-            IReadOnlyList<string> enumTipKeys)
+            IReadOnlyList<string> enumTipKeys,
+            Rect segmentRect = default)
         {
+            SegmentRect = segmentRect;
             Descriptor = descriptor;
             Value = value;
             SectionLabel = sectionLabel;
@@ -50,6 +52,11 @@ namespace WorkRoles.UI
         internal IReadOnlyList<Color> EnumColors { get; }
         /// Keyed tooltip per segment (the bucket names).
         internal IReadOnlyList<string> EnumTipKeys { get; }
+        /// Row-relative rectangle of a worded segmented picker drawn under
+        /// the full-width caption; empty = compact segments in the control
+        /// column.
+        internal Rect SegmentRect { get; }
+        internal bool SegmentsBelow => SegmentRect.width > 0f;
         internal bool StartsSection => SectionLabel != null;
     }
 }

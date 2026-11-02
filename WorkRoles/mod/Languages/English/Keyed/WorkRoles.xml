@@ -45,7 +45,7 @@
   <WR_RecGlobalPanel>Global Options</WR_RecGlobalPanel>
   <WR_RecGlobalPanelHelp>These options modify how the recommendation engine scores/ranks candidates as well as where orders land in the final recommendation list. Use the Reset buttons to restore defaults if you regret your edits.</WR_RecGlobalPanelHelp>
   <WR_RecRolePanel>Role Options</WR_RecRolePanel>
-  <WR_RecRolePanelHelp>All roles except those in Excluded roles are listed here. Expand a role to adjust its recommendation options. Roles are ordered automatically for each colonist; Hunter keeps its shooting-skill placement.</WR_RecRolePanelHelp>
+  <WR_RecRolePanelHelp>All roles except those in Excluded roles are listed here. Expand a role to adjust its recommendation options. Roles are ordered automatically for each colonist; Hunter follows the Hunter placement choice in Global Options.</WR_RecRolePanelHelp>
   <WR_RecExcludedHeader>Excluded roles</WR_RecExcludedHeader>
   <WR_RecExcludedHelp>Roles in this list are never recommended, even through training paths or automatic roles. Existing pinned assignments remain protected. Use Add Role to exclude a role; remove its chip to allow recommendations again.</WR_RecExcludedHelp>
   <WR_RecExcludedTip>Exclusions apply to recommendations for all colonists in this save, including Fix My Colony and Auto-optimize. You can still assign excluded roles manually. Editing this list does not change current assignments. Applying recommendations removes unpinned excluded roles and preserves pinned assignments.</WR_RecExcludedTip>
@@ -72,7 +72,7 @@
   <WR_RecTuneOptionalSection>Training path and optional target options</WR_RecTuneOptionalSection>
   <WR_RecTuneOptionalSectionIntro>These options decide when a training path activates for a colonist and when an optional multi-skill role is worth recommending at all.</WR_RecTuneOptionalSectionIntro>
   <WR_RecTuneHunterSection>Hunter placement options</WR_RecTuneHunterSection>
-  <WR_RecTuneHunterSectionIntro>An unpinned Hunter role slots in dynamically based on shooting skill: better shooters hunt later in the priority order because their time is worth more elsewhere.</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneHunterSectionIntro>Hunting trains Shooting, so by default every armed colonist holds Hunter and the weakest shooters hunt first. Change who hunts first here, or plan Hunter as a normal role.</WR_RecTuneHunterSectionIntro>
 
   <WR_RecTuneCandidateMinimumSignal>Candidate minimum signal</WR_RecTuneCandidateMinimumSignal>
   <WR_RecTuneCandidateMinimumSignalDesc>Lowest signal admitted to ordinary role selection. Raising it removes weaker candidates before champion and minimum-holder selection.</WR_RecTuneCandidateMinimumSignalDesc>
@@ -119,8 +119,17 @@
   <WR_RecTuneOptionalTargetMinimumPointsDesc>Minimum summed signal steps above the configured signal floor needed to recommend an optional multi-skill target.</WR_RecTuneOptionalTargetMinimumPointsDesc>
 
 
+  <WR_RecTuneHunterPlacement>Hunter placement</WR_RecTuneHunterPlacement>
+  <WR_RecTuneHunterPlacementDesc>Poor shots first gives weak shooters the practice. Best shots first is for when the colony needs the meat and cannot afford misses. Normal role is for a fixed hunting crew instead of everyone with a gun. A ranged weapon is always required.</WR_RecTuneHunterPlacementDesc>
+  <WR_RecTuneHunterPlacementPoorShotsFirst>Poor shots first</WR_RecTuneHunterPlacementPoorShotsFirst>
+  <WR_RecTuneHunterPlacementPoorShotsFirstTip>Every armed colonist holds Hunter. The weakest shooters hunt first so they get the Shooting practice; sharpshooters hunt last. Pick this when food is secure and you want more colonists who can shoot. This is the default.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
+  <WR_RecTuneHunterPlacementBestShotsFirst>Best shots first</WR_RecTuneHunterPlacementBestShotsFirst>
+  <WR_RecTuneHunterPlacementBestShotsFirstTip>Every armed colonist holds Hunter. Your best shot is the Hunter champion and hunts right after basic work; the others hunt later and cover when the champion is busy. Pick this when the colony needs meat or leather now and misses or wounded animals cost more than the practice is worth.</WR_RecTuneHunterPlacementBestShotsFirstTip>
+  <WR_RecTuneHunterPlacementNormalRole>Normal role</WR_RecTuneHunterPlacementNormalRole>
+  <WR_RecTuneHunterPlacementNormalRoleTip>Hunter is planned like any other skilled role instead of going to everyone with a gun: set its colony minimum and coverage in Role Options and the best shots fill those slots. Strong shooters may still receive it as a surplus pick. Pick this when you want a fixed hunting crew.</WR_RecTuneHunterPlacementNormalRoleTip>
   <WR_RecTuneHunterTiersRow>Tier maximum shooting level</WR_RecTuneHunterTiersRow>
   <WR_RecTuneHunterTiersRowDesc>Shooting-level cutoffs for the dynamic Hunter slot. Tier 1 places Hunter right after basic work, tiers 2 and 3 after the middle and last work roles, and levels above tier 4 place Hunter last.</WR_RecTuneHunterTiersRowDesc>
+  <WR_RecTuneHunterTiersRowDescReversed>Shooting-level cutoffs for the dynamic Hunter slot, read from the top down. Levels above the last cutoff are tier 1 and place Hunter right after basic work, tiers 2 and 3 follow the middle and last work roles, and tier 5 places Hunter last.</WR_RecTuneHunterTiersRowDescReversed>
 
 
   <!-- Role-owned training paths -->

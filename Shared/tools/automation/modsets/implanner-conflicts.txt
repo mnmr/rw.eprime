@@ -1,0 +1,32 @@
+# Player report 2026-11-01: Nighty's Archotech Bionics (archotech kidney,
+# liver, skin implant) with Integrated Implants (subdermal armour) and FSF's
+# bionics. WorkRoles removed so the probe owns the colony.
+remove zetrith.prepatcher
+remove brrainz.rimbridgeserver
+remove mehni.pickupandhaul
+remove brrainz.rangefinder
+remove jaxe.rimhud
+remove com.bymarcin.architecticons
+remove mehni.numbers
+remove dubwise.dubsmintminimap
+remove rimworld.randomcoughdrop.geneassistant
+remove carnysenpai.traitraritycolors
+remove tac.genetrader
+remove mlie.haulminedchunks
+remove kota.inventorytab
+remove mlie.relevantstatsindescription
+remove bp.showbuildablematerialcount
+remove mlie.usethisinstead
+remove bodlosh.weaponstats
+remove mlie.smarterdeconstructionandmining
+remove defi.generipper
+remove avilmask.nonunopinata
+remove dubwise.dubsperformanceanalyzer.steam
+remove mnmr.workroles
+after ludeon.rimworld.odyssey
+frozensnowfox.vanillabionicsexpansion
+frozensnowfox.advancedbionicsexpansion
+lts.i
+nighty.archotechbionics
+after eprime.implanner
+eprime.implanner.conflicts

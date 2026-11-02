@@ -41,7 +41,7 @@
   <WR_RecGlobalPanel>Opzioni globali</WR_RecGlobalPanel>
   <WR_RecGlobalPanelHelp>Queste opzioni modificano i punteggi e la graduatoria dei candidati, oltre alla posizione dei ruoli nell'elenco finale dei consigli. Usa Ripristina per tornare ai valori predefiniti se cambi idea.</WR_RecGlobalPanelHelp>
   <WR_RecRolePanel>Opzioni dei ruoli</WR_RecRolePanel>
-  <WR_RecRolePanelHelp>Qui sono elencati tutti i ruoli tranne quelli esclusi. Espandi un ruolo per modificarne i consigli. I ruoli vengono ordinati automaticamente per ogni colono; Cacciatore mantiene la posizione basata su Tiro.</WR_RecRolePanelHelp>
+  <WR_RecRolePanelHelp>Qui sono elencati tutti i ruoli tranne quelli esclusi. Espandi un ruolo per modificarne le opzioni di consiglio. I ruoli vengono ordinati automaticamente per ogni colono; Cacciatore segue la scelta di Posizione del Cacciatore nelle Opzioni globali.</WR_RecRolePanelHelp>
   <WR_RecExcludedHeader>Ruoli esclusi</WR_RecExcludedHeader>
   <WR_RecExcludedHelp>Questi ruoli non vengono mai consigliati, neppure tramite percorsi formativi o ruoli automatici. Le assegnazioni già fissate restano protette. Usa Aggiungi ruolo per escluderne uno; rimuovine la tessera per consentire di nuovo i consigli.</WR_RecExcludedHelp>
   <WR_RecExcludedTip>Le esclusioni valgono per i consigli a tutti i coloni del salvataggio, compresi Ottimizza la colonia e Ottimizzazione automatica. Puoi comunque assegnare manualmente i ruoli esclusi. Modificare l'elenco non cambia le assegnazioni attuali. Applicare i consigli rimuove i ruoli esclusi non fissati e conserva le assegnazioni fissate.</WR_RecExcludedTip>
@@ -65,7 +65,7 @@
   <WR_RecTuneOptionalSection>Opzioni dei percorsi formativi e degli obiettivi facoltativi</WR_RecTuneOptionalSection>
   <WR_RecTuneOptionalSectionIntro>Queste opzioni decidono quando si attiva un percorso formativo per un colono e quando vale la pena consigliare un ruolo facoltativo con più abilità.</WR_RecTuneOptionalSectionIntro>
   <WR_RecTuneHunterSection>Opzioni di posizione del Cacciatore</WR_RecTuneHunterSection>
-  <WR_RecTuneHunterSectionIntro>Il ruolo Cacciatore non fissato viene collocato dinamicamente secondo Tiro: i tiratori migliori cacciano più tardi nell'ordine, perché il loro tempo è più prezioso altrove.</WR_RecTuneHunterSectionIntro>
+  <WR_RecTuneHunterSectionIntro>La caccia allena Tiro, quindi per impostazione predefinita ogni colono armato ha Cacciatore e i tiratori meno abili cacciano per primi. Qui puoi cambiare chi caccia per primo oppure pianificare Cacciatore come un ruolo normale.</WR_RecTuneHunterSectionIntro>
   <WR_RecTuneCandidateMinimumSignal>Segnale minimo dei candidati</WR_RecTuneCandidateMinimumSignal>
   <WR_RecTuneCandidateMinimumSignalDesc>Il segnale più basso ammesso nella selezione ordinaria. Aumentarlo elimina i candidati più deboli prima di scegliere responsabile e titolari minimi.</WR_RecTuneCandidateMinimumSignalDesc>
   <WR_RecTuneChampionSkillDivisor>Divisore dell'abilità del responsabile</WR_RecTuneChampionSkillDivisor>
@@ -655,4 +655,13 @@ L'attività non è stata interrotta. Questo avviso appare una volta per salvatag
   <WR_RoleCapCannotTakeJobs>{0} non può svolgere i lavori assegnati per {1}</WR_RoleCapCannotTakeJobs>
   <WR_WorkNativeFireNearby>può spegnere gli incendi vicini nei momenti di inattività, ma non svolge i lavori antincendio assegnati</WR_WorkNativeFireNearby>
   <WR_WorkNotNative>non supportato dalle assegnazioni di lavoro di questo modello</WR_WorkNotNative>
+  <WR_RecTuneHunterPlacement>Posizione del Cacciatore</WR_RecTuneHunterPlacement>
+  <WR_RecTuneHunterPlacementBestShotsFirst>Prima i migliori tiratori</WR_RecTuneHunterPlacementBestShotsFirst>
+  <WR_RecTuneHunterPlacementBestShotsFirstTip>Ogni colono armato ha Cacciatore. Il miglior tiratore è il campione del Cacciatore e caccia subito dopo il lavoro di base; gli altri cacciano dopo e lo sostituiscono quando è occupato. Scegli questa opzione quando la colonia ha bisogno subito di carne o pelle e i colpi mancati o gli animali feriti costano più di quanto valga l'allenamento.</WR_RecTuneHunterPlacementBestShotsFirstTip>
+  <WR_RecTuneHunterPlacementDesc>Con «Prima i tiratori meno abili» i tiratori deboli si allenano. «Prima i migliori tiratori» serve quando la colonia ha bisogno di carne e non può permettersi errori. «Ruolo normale» serve per una squadra di caccia fissa invece di tutti quelli con un'arma. È sempre richiesta un'arma a distanza.</WR_RecTuneHunterPlacementDesc>
+  <WR_RecTuneHunterPlacementNormalRole>Ruolo normale</WR_RecTuneHunterPlacementNormalRole>
+  <WR_RecTuneHunterPlacementNormalRoleTip>Cacciatore viene pianificato come qualsiasi altro ruolo qualificato invece di andare a tutti quelli con un'arma: imposta il minimo per la colonia e la copertura nelle Opzioni dei ruoli, e i migliori tiratori occupano quei posti. I tiratori forti possono comunque riceverlo come scelta in eccedenza. Scegli questa opzione se vuoi una squadra di caccia fissa.</WR_RecTuneHunterPlacementNormalRoleTip>
+  <WR_RecTuneHunterPlacementPoorShotsFirst>Prima i tiratori meno abili</WR_RecTuneHunterPlacementPoorShotsFirst>
+  <WR_RecTuneHunterPlacementPoorShotsFirstTip>Ogni colono armato ha Cacciatore. I tiratori meno abili cacciano per primi, così si allenano a Tiro; i cecchini cacciano per ultimi. Scegli questa opzione quando il cibo è assicurato e vuoi più coloni capaci di sparare. È l'opzione predefinita.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
+  <WR_RecTuneHunterTiersRowDescReversed>Soglie di livello di Tiro per la posizione dinamica del Cacciatore, lette dall'alto verso il basso. I livelli sopra l'ultima soglia sono il livello 1 e collocano Cacciatore subito dopo il lavoro di base, i livelli 2 e 3 seguono i ruoli di lavoro intermedi e ultimi, e il livello 5 colloca Cacciatore per ultimo.</WR_RecTuneHunterTiersRowDescReversed>
 </LanguageData>

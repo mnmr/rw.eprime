@@ -20,6 +20,14 @@ namespace Implanner
         /// replacement (Bionic modularity's module worker). Implanner's
         /// assumption for any worker it cannot classify.
         MountsOnArtificialParts = 2,
+
+        /// Refuses only duplicates, tag clashes and missing parts (Combat
+        /// Bionics' Recipe_InstallImplantOverBionics): it mounts on an
+        /// artificial part at its own record, but since the game marks
+        /// every part under an added part missing (Hediff_AddedPart.PostAdd)
+        /// it never reaches a part under one, like vanilla's implant worker.
+        /// Natural parts take it too.
+        MountsOnArtificialPart = 3,
     }
 
     /// Declares the behaviour of a modded surgery worker that derives from

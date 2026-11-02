@@ -7,7 +7,7 @@ Empfehlungen werden für jeden Kolonisten automatisch geordnet. Die Logik verbin
 <!-- l10n:b-7c60ec8be352 -->
 - Eine [Trainingsrolle](topic:training-paths) steht direkt hinter dem Ziel ihres Pfades. Krankenpfleger und Sanitäter folgen also auf Arzt.
 - Eine Rolle, die vollständig von einer anderen abgedeckt wird, steht direkt hinter dieser, etwa Transporteur hinter Handlanger.
-- **Jäger behält seine von Schießen abhängige Position:** Schlechte Schützen jagen früher, bessere später, weil ihre Zeit anderswo wertvoller ist. Eine einzeln angeheftete Zuweisung bleibt geschützt.
+- **Jäger behält seine von Schießen abhängige Position:** Jagen trainiert Schießen, daher jagen standardmäßig schlechte Schützen früher und bessere später. Die Option „Position des Jägers“ in den [Globalen Optionen](topic:global-tuning) kann das umkehren, sodass der beste bewaffnete Schütze als Hauptverantwortlicher des Jägers zuerst jagt, oder den Jäger wie eine normale Rolle planen. Eine einzeln angeheftete Zuweisung bleibt geschützt.
 
 <!-- l10n:b-ae303b9cef12 -->
 Der Bereich **Ausgeschlossene Rollen** oben auf dem Reiter „Empfehlungen“ legt fest, welche Rollen niemals empfohlen werden dürfen. Mit „Rolle hinzufügen“ schließt du eine Rolle aus; mit dem Entfernen-Symbol auf ihrer Marke erlaubst du Empfehlungen wieder.

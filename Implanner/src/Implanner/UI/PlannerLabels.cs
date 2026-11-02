@@ -81,6 +81,13 @@ namespace Implanner.UI
         internal static string OptAndroidSurgeonsCrafters = "";
         internal static string OptCatalog = "";
         internal static string OptShowPurchaseOnly = "";
+        internal static string OptInterface = "";
+        internal static string OptEntryStyle = "";
+
+        /// Segment labels of the entry-style control (toolbar button, main
+        /// tab, both; ImplannerEntry maps segments to styles). Cached array
+        /// so render passes hand SegmentedControl a stable reference.
+        internal static readonly string[] EntryStyles = new string[3];
         internal static string DragItemsHere = "";
         internal static string Help = "";
         internal static string RankTiersTitle = "";
@@ -169,6 +176,11 @@ namespace Implanner.UI
             OptAndroidSurgeonsCrafters = "IMP_OptAndroidSurgeonsCrafters".Translate();
             OptCatalog = "IMP_OptCatalog".Translate();
             OptShowPurchaseOnly = "IMP_OptShowPurchaseOnly".Translate();
+            OptInterface = "IMP_OptInterface".Translate();
+            OptEntryStyle = "IMP_OptEntryStyle".Translate();
+            EntryStyles[0] = "IMP_EntryStyleToolbar".Translate();
+            EntryStyles[1] = "IMP_EntryStyleTab".Translate();
+            EntryStyles[2] = "IMP_EntryStyleBoth".Translate();
             DragItemsHere = "IMP_DragItemsHere".Translate();
             Help = "IMP_Help".Translate();
             RankTiersTitle = "IMP_RankTiersTitle".Translate();

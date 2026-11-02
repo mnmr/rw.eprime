@@ -49,8 +49,10 @@ for every role:
 
 <!-- l10n:b-f1a1a1196f55 -->
 Two roles get special handling. Hunter is recommended to anyone carrying
-a ranged weapon (hunting trains Shooting), placed earlier for poor shots
-and later for sharpshooters whose time is worth more elsewhere.
+a ranged weapon, and because hunting trains Shooting it is placed earlier
+for poor shots and later for sharpshooters. The Hunter placement option
+in [Global options](topic:global-tuning) can put the best shots first
+when the colony needs the meat, or plan Hunter as a normal role.
 An aversion to hunting also places Hunter later in the row.
 Mechanitor is recommended only to colonists with a mechlink, however
 good the other crafters are, and its Best fits list follows the same

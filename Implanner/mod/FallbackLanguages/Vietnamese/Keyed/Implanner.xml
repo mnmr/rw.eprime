@@ -149,7 +149,6 @@
   <IMP_SaveFailed>Không lưu được: {0}</IMP_SaveFailed>
   <IMP_SavedTo>Đã lưu kế hoạch vào {0}</IMP_SavedTo>
   <IMP_ScopeAll>Mọi nơi</IMP_ScopeAll>
-  <IMP_SettingsShowToolbarButton>Hiện nút trên thanh công cụ</IMP_SettingsShowToolbarButton>
   <IMP_ShipFallback>Tàu hấp dẫn</IMP_ShipFallback>
   <IMP_StateAway>Vắng mặt</IMP_StateAway>
   <IMP_StateDone>Xong</IMP_StateDone>
@@ -222,8 +221,15 @@
   <IMP_PlanBody>Cơ thể</IMP_PlanBody>
   <IMP_PlanBodyAny>Mọi cơ thể</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0} (chưa tải)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>Kế hoạch dành cho một cơ thể chỉ liệt kê các bộ phận của cơ thể đó và chỉ có thể tuyển cư dân có cơ thể đó.\n\nKế hoạch dành cho mọi cơ thể áp dụng cho mọi cư dân. Những bộ phận mà cơ thể của cư dân không có sẽ bị bỏ qua với cư dân đó.\n\nMột kế hoạch có thể mở rộng một kế hoạch dành cho mọi cơ thể, hoặc một kế hoạch cho cùng cơ thể.</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>Kế hoạch dành cho một cơ thể chỉ liệt kê các bộ phận của cơ thể đó và chỉ có thể tuyển cư dân có cơ thể đó. Kế hoạch dành cho cơ thể người cũng nhận cả những cư dân có cơ thể chứa đủ mọi bộ phận của người, chẳng hạn một chủng tộc có thêm cánh.\n\nKế hoạch dành cho mọi cơ thể áp dụng cho mọi cư dân. Những bộ phận mà cơ thể của cư dân không có sẽ bị bỏ qua với cư dân đó.\n\nMột kế hoạch có thể mở rộng một kế hoạch dành cho mọi cơ thể, hoặc một kế hoạch cho cùng cơ thể.</IMP_PlanBodyTip>
   <IMP_PlanForBody>cho {0}</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0} (chỉ {1})</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>Không dành cho cơ thể này</IMP_StateNotForBody>
+  <IMP_EntryStyleBoth>Cả hai</IMP_EntryStyleBoth>
+  <IMP_EntryStyleTab>Tab chính</IMP_EntryStyleTab>
+  <IMP_EntryStyleToolbar>Nút trên thanh công cụ</IMP_EntryStyleToolbar>
+  <IMP_OptEntryStyle>Mở Implanner từ</IMP_OptEntryStyle>
+  <IMP_OptEntryStyleTip>Nút trên thanh công cụ nằm cạnh các nút chuyển chế độ xem ở góc dưới bên phải và mở cửa sổ nổi này. Tab chính nằm trên thanh dưới cùng, cạnh Lịch sử và Phe phái, và mở Implanner phía trên nó ở góc dưới bên phải; kéo góc trên bên trái của cửa sổ để đổi kích thước. "Cả hai" giữ cả hai lối vào. Có thể gán phím tắt trong Tùy chọn, Bàn phím, Tab chính.</IMP_OptEntryStyleTip>
+  <IMP_OptInterface>Giao diện</IMP_OptInterface>
+  <IMP_ResizeGripTip>Kéo để đổi kích thước cửa sổ. Nhấp đúp để trở về kích thước mặc định.</IMP_ResizeGripTip>
 </LanguageData>

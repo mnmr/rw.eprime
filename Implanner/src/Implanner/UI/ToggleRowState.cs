@@ -9,7 +9,7 @@ namespace Implanner.UI
         Enable, AutoProduction, IdleBenches, DesignatedBenches, Intermediaries,
         CountHospitalized, UpgradeByPriority, AutoFloor,
         MultipleBladders, MultipleHygiene, PurchaseOnly,
-        AndroidSurgeonsDoctors, AndroidSurgeonsCrafters
+        AndroidSurgeonsDoctors, AndroidSurgeonsCrafters, EntryStyle
     }
 
     internal sealed class ToggleRowSnapshot
@@ -51,7 +51,7 @@ namespace Implanner.UI
                 PlannerLabels.OptUpgradeByPriority, PlannerLabels.OptAutoFloor,
                 PlannerLabels.OptAllowMultipleBladders, PlannerLabels.OptAllowMultipleHygieneEnhancers,
                 PlannerLabels.OptShowPurchaseOnly, PlannerLabels.OptAndroidSurgeonsDoctors,
-                PlannerLabels.OptAndroidSurgeonsCrafters };
+                PlannerLabels.OptAndroidSurgeonsCrafters, PlannerLabels.OptEntryStyle };
             float[] heights = new float[labels.Length];
             float iterationHeight;
             using (GuiStateScope.Capture())
@@ -69,10 +69,15 @@ namespace Implanner.UI
                 int count = PlannerLabels.IterationModes.Length;
                 float segmentWidth = Mathf.Max(1f, Mathf.Floor(
                     (Mathf.Floor((labelWidth + 36f) * scale) - 4f - (count - 1)) / count) / scale);
+                // The entry-style row (Options tab) shares the segment
+                // height: three segments in the same column width.
                 float segmentHeight = Mathf.Ceil(Text.LineHeight);
                 for (int i = 0; i < count; i++)
                     segmentHeight = Mathf.Max(segmentHeight,
                         Mathf.Ceil(Text.CalcHeight(PlannerLabels.IterationModes[i], segmentWidth)));
+                for (int i = 0; i < PlannerLabels.EntryStyles.Length; i++)
+                    segmentHeight = Mathf.Max(segmentHeight,
+                        Mathf.Ceil(Text.CalcHeight(PlannerLabels.EntryStyles[i], segmentWidth)));
                 iterationHeight = Mathf.Max(30f, Mathf.Ceil(segmentHeight + 4f / scale));
             }
             if (snapshot == null || !snapshot.Matches(heights, iterationHeight))

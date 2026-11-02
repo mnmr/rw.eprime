@@ -210,7 +210,6 @@
   <IMP_DeleteFileConfirm>Supprimer « {0} » ?</IMP_DeleteFileConfirm>
   <IMP_NoFiles>Aucun fichier de plans exportés ici pour le moment.</IMP_NoFiles>
   <IMP_ShipFallback>Vaisseau gravitationnel</IMP_ShipFallback>
-  <IMP_SettingsShowToolbarButton>Afficher le bouton de la barre d'outils</IMP_SettingsShowToolbarButton>
   <IMP_CompatibilityLevelMod>{0} : l'automatisation d'Implanner est désactivée avec ce mod à plusieurs niveaux. La planification et le suivi restent disponibles.</IMP_CompatibilityLevelMod>
   <IMP_OptAndroidSurgeonsCrafters>Opérations sur les androïdes : artisans avec « Réparer les androïdes » (suit Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>Opérations sur les androïdes : médecins (suit Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
@@ -222,8 +221,15 @@
   <IMP_PlanBody>Corps</IMP_PlanBody>
   <IMP_PlanBodyAny>Tout corps</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0} (non chargé)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>Un plan conçu pour un seul corps ne liste que les parties de ce corps et ne peut mobiliser que les colons ayant ce corps.\n\nUn plan pour tout corps s'applique à tous les colons. Les parties que le corps d'un colon n'a pas sont ignorées pour ce colon.\n\nUn plan peut étendre un plan pour tout corps, ou un plan pour le même corps.</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>Un plan conçu pour un seul corps ne liste que les parties de ce corps et ne peut mobiliser que les colons ayant ce corps. Un plan pour le corps humain accepte aussi les colons dont le corps possède toutes les parties humaines, comme une race dotée d'ailes supplémentaires.\n\nUn plan pour tout corps s'applique à tous les colons. Les parties que le corps d'un colon n'a pas sont ignorées pour ce colon.\n\nUn plan peut étendre un plan pour tout corps, ou un plan pour le même corps.</IMP_PlanBodyTip>
   <IMP_PlanForBody>pour {0}</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0} ({1} uniquement)</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>Pas pour ce corps</IMP_StateNotForBody>
+  <IMP_EntryStyleBoth>Les deux</IMP_EntryStyleBoth>
+  <IMP_EntryStyleTab>Onglet principal</IMP_EntryStyleTab>
+  <IMP_EntryStyleToolbar>Bouton de barre d'outils</IMP_EntryStyleToolbar>
+  <IMP_OptEntryStyle>Ouvrir Implanner depuis</IMP_OptEntryStyle>
+  <IMP_OptEntryStyleTip>Le bouton de barre d'outils se trouve à côté des boutons d'affichage, dans le coin inférieur droit, et ouvre cette fenêtre flottante. L'onglet principal se trouve dans la barre du bas, à côté d'Historique et de Factions, et ouvre Implanner au-dessus, dans le coin inférieur droit ; faites glisser le coin supérieur gauche de la fenêtre pour la redimensionner. « Les deux » conserve les deux points d'accès. Un raccourci clavier peut être attribué dans Options, Clavier, Onglets principaux.</IMP_OptEntryStyleTip>
+  <IMP_OptInterface>Interface</IMP_OptInterface>
+  <IMP_ResizeGripTip>Faites glisser pour redimensionner la fenêtre. Double-cliquez pour revenir à la taille par défaut.</IMP_ResizeGripTip>
 </LanguageData>

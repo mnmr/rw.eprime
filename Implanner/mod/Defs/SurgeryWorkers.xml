@@ -10,6 +10,10 @@
     ClearsPart               restores the part and its subtree first
     MountsOnArtificialParts  mounts on a replacement (the default for
                              any worker not listed here)
+    MountsOnArtificialPart   mounts on a replacement at its own record only;
+                             parts under an added part are missing to the
+                             game, so a worker that checks for missing parts
+                             never reaches them
 -->
 <Defs>
 
@@ -37,6 +41,19 @@
     <defName>Implanner_ATC_InstallArtificialBodyPartAndroid</defName>
     <workerClass>MOARANDROIDS.Recipe_InstallArtificialBodyPartAndroid</workerClass>
     <behavior>ClearsPart</behavior>
+  </Implanner.SurgeryWorkerDef>
+
+  <!-- Combat Bionics (Continued): Recipe_InstallImplantOverBionics derives
+       from Recipe_Surgery and refuses only missing parts, duplicates and
+       tag clashes (GetPartsToApplyOn, github.com/emipa606/CombatBionics).
+       It mounts on an artificial part at its own record (an Anima war arm
+       on the arm), but the game marks every part under an added part
+       missing, so it never installs under a bionic arm at the shoulder:
+       measured in the conflict audit of 2026-11-01. -->
+  <Implanner.SurgeryWorkerDef>
+    <defName>Implanner_CombatBionics_InstallImplantOverBionics</defName>
+    <workerClass>CombatBionics.Recipe_InstallImplantOverBionics</workerClass>
+    <behavior>MountsOnArtificialPart</behavior>
   </Implanner.SurgeryWorkerDef>
 
 </Defs>

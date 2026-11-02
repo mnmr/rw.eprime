@@ -53,9 +53,10 @@ namespace Implanner
             bool isReplacement, ImplantRegion region, LimbKind limb,
             List<string> incompatibleTags, bool mountsOnArtificialParts,
             bool requiresArtificialPart, string? upgradesFrom, bool purchaseOnly,
-            bool wipesPart)
+            bool wipesPart, bool mountsUnderArtificialParts)
         {
             WipesPart = wipesPart;
+            MountsUnderArtificialParts = mountsUnderArtificialParts;
             RequiresArtificialPart = requiresArtificialPart;
             UpgradesFrom = upgradesFrom;
             PurchaseOnly = purchaseOnly;
@@ -102,6 +103,15 @@ namespace Implanner
         /// Recipe_Surgery) mount ON a bionic limb. Always false for
         /// replacements.
         internal bool MountsOnArtificialParts { get; }
+
+        /// True when such a worker also reaches parts UNDER an artificial
+        /// part. The game marks every part below an added part missing, so
+        /// a worker that checks for missing parts (Combat Bionics'
+        /// Recipe_InstallImplantOverBionics, SurgeryWorkerBehavior
+        /// .MountsOnArtificialPart) mounts on the artificial part at its
+        /// own record only; the unclassified-worker assumption keeps both.
+        /// Always false for replacements.
+        internal bool MountsUnderArtificialParts { get; }
 
         /// A mounts-on-artificial kind whose every surgery uses such a
         /// worker (no vanilla implant recipe that could take a natural
@@ -193,6 +203,8 @@ namespace Implanner
         internal static void Release()
         {
             plannableBodies = null;
+            bodyKinships = null;
+            offeredBodies = null;
             implants = null;
             implantsByDefName = null;
             languageStamp = -1;
@@ -317,16 +329,18 @@ namespace Implanner
                 // installed on a colonist.
                 if (slots.Count == 0) continue;
                 bool wipes = !replacement && ClearsPart(surgeryRecipes);
-                bool mounts = !replacement && !wipes
+                bool mountsUnder = !replacement && !wipes
                     && MountsOnArtificialParts(surgeryRecipes);
+                bool mounts = mountsUnder || (!replacement && !wipes
+                    && AnyWorker(surgeryRecipes, SurgeryWorkerBehavior.MountsOnArtificialPart));
                 result.Add(new ImplantCatalogEntry(
                     pair.Key, pair.Key.LabelCap.ToString(), efficiency,
                     fixedParts, GroupLabelOf(slots), slots,
                     surgeryRecipes, replacement,
                     ClassifyRegion(slots[0].Record), ClassifyLimb(slots[0].Record),
                     IncompatibleTagsOf(surgeryRecipes), mounts,
-                    mounts && !AnyVanillaImplantRecipe(surgeryRecipes), null,
-                    purchaseOnly, wipes));
+                    mountsUnder && !AnyVanillaImplantRecipe(surgeryRecipes), null,
+                    purchaseOnly, wipes, mountsUnder));
             }
             AddUpgrades(result, upgrades, producible, implantItems);
             result.Sort(ByGroupThenLabel);
@@ -372,7 +386,7 @@ namespace Implanner
                     mountsOnArtificialParts: false, requiresArtificialPart: false,
                     baseEntry.Def.defName,
                     baseEntry.PurchaseOnly || IsPurchaseOnly(def, producible, implantItems),
-                    wipesPart: false));
+                    wipesPart: false, mountsUnderArtificialParts: false));
             }
         }
 
@@ -527,6 +541,71 @@ namespace Implanner
                 : b == BodyDefOf.Human ? 1
                 : string.CompareOrdinal(a.defName, b.defName));
             return plannableBodies = bodies;
+        }
+
+        // Cache contract (body kinship):
+        // Owner: process.
+        // Key: PlannableBodies position.
+        // Value: immutable BodyKinship per body (Core BodyKinships.Classify
+        //   over the catalog slot keys each body carries, against the human
+        //   body's), and the derived offered-body list.
+        // Dependencies: the loaded definition set (static per session; slot
+        //   addresses are label-free, so not language-gated).
+        // Refresh policy: built on first query.
+        // Equality policy: never changes within a session.
+        // Teardown: Release clears both with the catalog.
+        private static BodyKinship[]? bodyKinships;
+        private static List<BodyDef>? offeredBodies;
+
+        /// How the body at this PlannableBodies position relates to the
+        /// human body by the catalog slots it carries (owner, 2026-11-01):
+        /// a copy of the human anatomy folds under the human body, a body
+        /// with every human slot and more joins human plans and keeps its
+        /// own entry, anything missing a human slot is a body of its own.
+        /// Allocation-free after the first query (tick path per pawn).
+        internal static BodyKinship KinshipOf(int body)
+        {
+            BodyKinship[] kinships = bodyKinships ?? BuildKinships();
+            return body >= 0 && body < kinships.Length ? kinships[body] : BodyKinship.Distinct;
+        }
+
+        /// The bodies offered as a body of their own in the body filter and
+        /// the new-plan dialog: the plannable bodies less the human
+        /// equivalents, in plannable-body order.
+        internal static List<BodyDef> OfferedBodies()
+        {
+            if (offeredBodies != null) return offeredBodies;
+            List<BodyDef> bodies = PlannableBodies();
+            var offered = new List<BodyDef>(bodies.Count);
+            for (int b = 0; b < bodies.Count; b++)
+                if (BodyKinships.Offered(KinshipOf(b))) offered.Add(bodies[b]);
+            return offeredBodies = offered;
+        }
+
+        private static BodyKinship[] BuildKinships()
+        {
+            List<BodyDef> bodies = PlannableBodies();
+            IReadOnlyList<ImplantCatalogEntry> entries = Implants();
+            var keys = new List<string>[bodies.Count];
+            for (int b = 0; b < bodies.Count; b++)
+            {
+                var carried = new HashSet<string>(StringComparer.Ordinal);
+                for (int i = 0; i < entries.Count; i++)
+                {
+                    List<CatalogSlot> slots = entries[i].Slots;
+                    for (int s = 0; s < slots.Count; s++)
+                        if (slots[s].Address.Occurrence < bodies[b].GetPartsWithDef(slots[s].Part).Count)
+                            carried.Add(slots[s].Address.Key);
+                }
+                keys[b] = new List<string>(carried);
+            }
+            int human = bodies.IndexOf(BodyDefOf.Human);
+            var result = new BodyKinship[bodies.Count];
+            for (int b = 0; b < bodies.Count; b++)
+                result[b] = b == human ? BodyKinship.Human
+                    : human < 0 ? BodyKinship.Distinct
+                    : BodyKinships.Classify(keys[human], keys[b]);
+            return bodyKinships = result;
         }
 
         /// Every anatomy instance of the given part kinds across the

@@ -132,9 +132,12 @@ try {
     Check ($preview -ccontains $expectedNote -and $global:publishPrompts -eq 1) 'The plan must show the generated note and ask once.'
     Check ($global:publishPrompt -match 'y or yes' -and -not $global:publishStartedEarly) 'The prompt must ask for y/yes before Steam starts.'
     Check (@($preview | Where-Object { $_ -match '^Tags:\s' }).Count -eq 1 -and @($preview | Where-Object { $_ -match 'Publish Example 1\.0\.0' }).Count -eq 1) 'The plan must name the version and the tag changes.'
-    Check (@($preview | Where-Object { $_ -match '^Record:.*RELEASES\.md.*\| 1\.0\.0 \|' }).Count -eq 1) 'The plan must show the release record line.'
+    # 1.0.0 was recorded by the first publish above: a republish adds no row
+    # (Steam ships nothing for unchanged content) and the plan says so.
+    Check (@($preview | Where-Object { $_ -match '^Record:\s+none \(1\.0\.0 is already recorded\)' }).Count -eq 1) 'The plan must say a republish records nothing.'
     $record = Get-Content -LiteralPath "$fixture\repo\RELEASES.md" -Raw
     Check ($record -match '\| 1\.0\.0 \| \d{4}-\d\d-\d\d \d\d:\d\d UTC \| 1234567890 \|') "A successful publish must record the version, time and item: $record"
+    Check (@([regex]::Matches($record, '\| 1\.0\.0 \|')).Count -eq 1) "A republish must not add a second 1.0.0 row: $record"
     function Read-Host { 'yes' }
 
     # A recorded version is skipped before any prompt or upload; declining
