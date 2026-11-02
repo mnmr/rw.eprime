@@ -45,6 +45,9 @@ Melez implantlar, yapıldıkları gen iskeletinin kalitesini alır ([asgari kali
 <!-- l10n:b-7a2e3799838c -->
 **Elite Bionics Framework**: vücut parçasının canını artıran veya azaltan implantlar değişikliği ipuçlarında gösterir.
 
+<!-- l10n:gene-hediffs -->
+**Vanilla Races Expanded - Saurid** ve diğer gen modları: bir kolonicinin geninin verdiği vücut özelliği, örneğin ellerdeki saurid pençeleri, o uzuvdaki değiştirmeyi engellemez. Gen kolonicide kalır; bu yüzden Implanner planlanan biyonik kolu her zamanki gibi takar.
+
 <!-- l10n:b-c7cd0a958354 -->
 ![Bacak modülü gereksinim penceresi](requirement-prompt.png)
 

@@ -209,6 +209,7 @@ namespace Implanner
             implantsByDefName = null;
             languageStamp = -1;
             ImplantConflicts.Release();
+            GeneHediffs.Release();
         }
 
         private static void EnsureCurrent()

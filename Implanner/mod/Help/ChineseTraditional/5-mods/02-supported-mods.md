@@ -45,6 +45,9 @@ title: 支持的模組
 <!-- l10n:b-7a2e3799838c -->
 **Elite Bionics Framework**：提升或降低身體部位生命值的植入體會在提示中顯示變化。
 
+<!-- l10n:gene-hediffs -->
+**Vanilla Races Expanded - Saurid** 及其他基因模組：殖民者的基因所賦予的身體特徵（例如手部的蜥蜴人爪）不會阻止該肢體的替換。基因會一直留在殖民者身上，因此 Implanner 會照常安裝規劃好的仿生手臂。
+
 <!-- l10n:b-c7cd0a958354 -->
 ![腿部模塊前置要求窗口](requirement-prompt.png)
 

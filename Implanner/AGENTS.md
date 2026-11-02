@@ -251,7 +251,11 @@ when its operation is scheduled and reinstalled right after it
 (`PlannerReinstall`, below). No part-clearing surgery (replacement or wiper,
 in-place upgrades exempt) is ever scheduled while it would destroy something
 for good (`PlannerSurgery.WouldDestroy`: a hediff on the part or below that is
-not `isBad`, not `keepOnBodyPartRestoration`, and has no item, or an implant a
+not `isBad`, not `keepOnBodyPartRestoration`, not granted by one of the pawn's
+active genes (`GeneHediffs`, owner 2026-11-02: Vanilla Expanded Framework's
+`GeneExtension.hediffsToBodyParts`/`hediffToWholeBody`, read by type name;
+Vanilla Races Expanded - Saurid's claws on both hands blocked every planned
+bionic arm, `tests/InGame/SauridClaws`), and has no item, or an implant a
 wiper pushes out that no available surgery can install again); the details
 panel reads "Would destroy X".
 Curated exceptions (owner, 2026-09-05): the modded bladder implants and
@@ -406,9 +410,9 @@ catalog. Active package IDs, display names and translated reasons are resolved
 only at the welcome lifecycle boundary, then one immutable notice is shared
 by admission and the window. `ImplannerSettings.compatibilityWarningsSeen`
 records per-player save/package acknowledgements; a newly encountered conflict
-reopens an already-seen welcome once. The warning reports that automation is
-disabled while planning and tracking remain available. Notice lifetime and
-geometry follow the shared welcome ownership and teardown rules above.
+reopens an already-seen welcome once. The warning reports that automation
+cannot carry implants or operations across level boundaries. Notice lifetime
+and geometry follow the shared welcome ownership and teardown rules above.
 
 `ExternalPawnFacts.Revision` advances via the `Patch_PawnFacts` event
 seams (and when the synced Quality Bionics Remastered efficiency multiplier
@@ -491,16 +495,20 @@ Changes to these dependencies require updated behavioral tests in the same chang
   Floors are kept per surgeon pool (`SurgeonPool`, owner 2026-10-31): the game gates a bill on its recipe's own work skill (`Bill.PawnAllowedToStartAnew` reads `recipe.workSkill`; Android Tiers' android operations work Crafting), so a pool is that skill plus who performs the operation: doctors (Doctor work active), or, for Android Tiers androids while `PlannerModel.AndroidSurgeryByCrafters` is on (Options domain, default off, scribed `androidSurgeryByCrafters`, synced `SetAndroidSurgeryByCrafters`; it mirrors that mod's local "androids can only be healed by crafters" setting, which `WorkGiver_DoBill_Patch.JobOnThing` enforces), crafters with Smithing work active and the saved per-pawn `CompSurrogateOwner.repairAndroids` toggle. Doctors judged by Medical skill keep the bare colony floor key older saves carry; every other pool is `PlannerModel.FloorKey(colony, "<Skill>/Doctors|Crafters")`, pruned with its colony. The boundary publishes every skill a catalog surgery works for doctors, plus the crafter pools while the option is on with Android Tiers loaded. A recipe that checks no skill gets no floor. Implanner follows the Android Tiers setting (owner, 2026-10-31): `AndroidTiers.FollowSetting` issues the synced command when the setting differs from the option, on the first frame update while playing after a load or new game (`AndroidTiers.FollowPending`, set in `LoadedGame`/`StartedNewGame`, cleared on world teardown) and after Android Tiers writes its settings (`Patch_AndroidTiersSettings`, a postfix on `Mod.WriteSettings` filtered to `MOARANDROIDS.AndroidTiersPP`, which the game calls when that mod's settings window closes; the setting changes nowhere else). Automation reads only the synced option. In multiplayer, players whose settings differ leave the last write in effect for everyone; Android Tiers is not multiplayer compatible itself. The Options tab shows a read-only "Android operations" line with Android Tiers loaded.
 - **Extended skills** (owner, 2026-09-13): doctor floors and manual/production thresholds preserve nonnegative skill values above 20, including on load. New bills set only the minimum, preserving the game's/mods' constructor-provided maximum. Reconciliation repairs legacy Implanner-owned bills whose maximum is 20 through Endless Growth's existing bill-limit provider. The Options-tab `skillSliderMaximum` preference (20–100, steps of 10, default 20) controls only the Medical/Crafting slider bounds; it is local presentation state and never clamps existing thresholds, changes bill eligibility, enters synchronized commands, or invalidates automation snapshots.
 - **Master-switch hand-back** (`PlannerCommands.CleanupAutomation` + `Dialog_AutomationCleanup`): clicking `Enable automation` off opens a local dialog on the clicking client listing every live Implanner-owned bill with a remove toggle (checked by default); automation stays ON until the dialog resolves. OK issues the pause command followed by the synced cleanup command (payload: newline-joined bill load ids, a plain string for serialization safety): listed bills are deleted from the game and their records dropped (stale records drop even without a bill object), every item reservation is released, and unlisted bills keep both bill and record so re-enabling automation resumes managing them without duplicating operations. Cancel/ESC aborts the switch entirely and changes nothing. With no owned bills automation pauses directly, no dialog.
-- **Level mods stand automation down** (`PlannerAutomation`). With Strata, MultiFloors, or either As above So below active, Implanner runs as a planning tool only: `PlannerReconciler.Tick` releases every reservation and drops every owned-bill record once, then returns immediately on all later ticks. Plans, assignments, priorities, rankings, progress and the stored doctor floor all keep working. The gate resolves once per session from the active mod list, so every multiplayer client derives it identically.
+- **Level mods get a warning, not a stand-down** (`PlannerAutomation`, owner 2026-11-02; through 1.2.6 the gate stood automation down entirely). With Strata, MultiFloors, or either As above So below active, automation runs unchanged and the Automation tab shows a warning beside the master switch (`IMP_LevelModWarning`, in the right column of the top row, measured as `ToggleRow.LevelModWarning`); the welcome notice carries the same caveat. The mod name resolves once per session from the active mod list and is presentation only: no tick, command or snapshot reads it.
 
-  The reason, verified in each mod's source rather than inferred: a medical
+  The limit, verified in each mod's source rather than inferred: a medical
   bill's ingredient search never leaves the patient's map, and none of the
   three covers `Bill_Medical` — Strata's shortfall hauling only walks colonist
   buildings that are `IBillGiver`, MultiFloors additionally demands
   `Bill_Production` (a sibling of `Bill_Medical`, not a base), and As above So
   below II's only `WorkGiver_DoBill` patch records timings and changes
-  nothing. Scheduling operations that can silently never complete is worse
-  than a clear boundary.
+  nothing. An operation whose reserved implant sits on another level waits
+  until the player moves it; a player who keeps implants and patients on one
+  level gets full automation. Proven in-game 2026-11-02 with Strata on the
+  local 1.7 copy (`tests/InGame/LevelModWarning`, mod set
+  `implanner-level-mod-warning`): the warning draws beside the master switch
+  and the reconcile pass still reserves a spawned bionic eye.
 
   `FloorMaps.Canonical` is unaffected and stays exactly as it is: it answers
   colony identity for grouping and display, which still matters with a level

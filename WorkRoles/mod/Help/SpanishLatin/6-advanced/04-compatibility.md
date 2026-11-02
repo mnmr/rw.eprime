@@ -7,6 +7,9 @@ El trabajo de otros mods se detecta automáticamente. Algunas integraciones son 
 <!-- l10n:b-c7669aaaba7d -->
 Los mods opcionales de trabajo y habilidades pueden aportar perfiles que identifican las habilidades usadas y entrenadas, y ajustar la principal para recomendaciones cuando corresponda. WorkRoles deja elegibilidad, designaciones y ejecución al mod de origen. No añade dependencias obligatorias.
 
+<!-- l10n:endless-growth -->
+Los mods de habilidades que elevan el nivel máximo, como Endless Growth, funcionan sin configuración: las columnas de habilidad, la idoneidad y las recomendaciones usan el nivel real, y el tramo superior de una ruta de formación (20+) abarca todos los niveles por encima.
+
 <!-- l10n:b-27d73501db9c -->
 Las recomendaciones leen etiquetas laborales, capacidades exigidas, oposición de preceptos y negativas verificadas a la minería normal. Con versiones auditadas de Humanoid Alien Races en RimWorld 1.6 y 1.7 usan sus restricciones reales de proveedores y recetas; todas las razas que las emplean se benefician. Una receta bloqueada no elimina otras utilizables del rol ni cuenta como vía de formación.
 

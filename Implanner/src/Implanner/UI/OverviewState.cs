@@ -658,10 +658,7 @@ namespace Implanner.UI
             result.ColonyLabelText =
                 "IMP_StripColony".Translate(LabelOf(Grouping!)).ToString();
             result.StatsText = "IMP_AggregateColonists".Translate(complete, total);
-            // The chip reflects the effective master state: the player's
-            // switch, and the level-mod stand-down that overrides it.
-            result.AutomationOn = !store.Model.AutomationPaused
-                && PlannerAutomation.Available;
+            result.AutomationOn = !store.Model.AutomationPaused;
             result.AutomationText = (result.AutomationOn
                 ? "IMP_StripAutomationOn"
                 : "IMP_StripAutomationOff").Translate().ToString();
@@ -846,13 +843,12 @@ namespace Implanner.UI
         /// star tiers), take the first item's pawn as that colonist, and
         /// name them with the dispatch tier's star run at the end
         /// ("Implanting batch on Twiggy (★★★)"). Empty when no batch is
-        /// pending or surgery automation is off (the master switch, or a
-        /// level-mod stand-down — surgery has no separate toggle).
+        /// pending or surgery automation is off (the master switch — surgery
+        /// has no separate toggle).
         private static void BuildSurgeryBatch(
             OverviewData result, List<OverviewRow> rows, ImplannerStore store)
         {
-            if (store.Model.AutomationPaused || !PlannerAutomation.Available)
-                return;
+            if (store.Model.AutomationPaused) return;
             // ASAP ranks candidates on live pawn facts, sampled once per
             // colonist with missing work (builder path, same facts the
             // reconciler reads).
@@ -1091,10 +1087,8 @@ namespace Implanner.UI
 
             // The activity line and the tooltip's Status column report only
             // what production automation is actually doing; while it is off
-            // (master switch, production option, or a level-mod stand-down)
-            // both stay blank.
-            bool producing = model.AutoProduction && !model.AutomationPaused
-                && PlannerAutomation.Available;
+            // (master switch or production option) both stay blank.
+            bool producing = model.AutoProduction && !model.AutomationPaused;
             result.ProductionStatusShown = producing;
 
             // Dispatch rank per item (best owning implant's star tier, then

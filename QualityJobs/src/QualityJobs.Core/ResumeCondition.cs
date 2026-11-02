@@ -10,7 +10,7 @@ namespace QualityJobs.Core
 
         public ResumeCondition(int minSkill, bool requireInspired, bool requireSpecialist)
         {
-            MinSkill = minSkill < 0 ? 0 : (minSkill > 20 ? 20 : minSkill);
+            MinSkill = SkillRules.ClampSkill(minSkill);
             RequireInspired = requireInspired;
             RequireSpecialist = requireSpecialist;
         }

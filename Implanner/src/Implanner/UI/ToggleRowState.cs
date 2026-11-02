@@ -9,7 +9,10 @@ namespace Implanner.UI
         Enable, AutoProduction, IdleBenches, DesignatedBenches, Intermediaries,
         CountHospitalized, UpgradeByPriority, AutoFloor,
         MultipleBladders, MultipleHygiene, PurchaseOnly,
-        AndroidSurgeonsDoctors, AndroidSurgeonsCrafters, EntryStyle
+        AndroidSurgeonsDoctors, AndroidSurgeonsCrafters, EntryStyle,
+        /// The level-mod warning beside the master switch; measured at the
+        /// narrowest checkbox label width, which the column never undercuts.
+        LevelModWarning
     }
 
     internal sealed class ToggleRowSnapshot
@@ -51,7 +54,8 @@ namespace Implanner.UI
                 PlannerLabels.OptUpgradeByPriority, PlannerLabels.OptAutoFloor,
                 PlannerLabels.OptAllowMultipleBladders, PlannerLabels.OptAllowMultipleHygieneEnhancers,
                 PlannerLabels.OptShowPurchaseOnly, PlannerLabels.OptAndroidSurgeonsDoctors,
-                PlannerLabels.OptAndroidSurgeonsCrafters, PlannerLabels.OptEntryStyle };
+                PlannerLabels.OptAndroidSurgeonsCrafters, PlannerLabels.OptEntryStyle,
+                PlannerLabels.LevelModWarning };
             float[] heights = new float[labels.Length];
             float iterationHeight;
             using (GuiStateScope.Capture())

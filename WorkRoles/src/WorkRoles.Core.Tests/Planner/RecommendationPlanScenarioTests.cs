@@ -453,6 +453,25 @@ public class RecommendationPlanScenarioTests
         await Assert.That(medicAssignments.SetEquals([2])).IsTrue();
     }
 
+    [Test]
+    public async Task SkillAboveTwentyCountsAsMasteryOfTheOpenTopBand()
+    {
+        // Endless Growth lets skills pass 20. The training axis ends at 21
+        // (open top), so a level-45 medic is a full Doctor, never sent back
+        // to the Medic trainee band.
+        var recs = new RecsProjection().WorkType("Doctoring", "Medicine", 100, "Operate", "Tend");
+        RecommendationRoleSource doctor = recs.RoleByWorkType(1, 1, 0, "Doctoring");
+        RecommendationRoleSource medic = recs.RoleByGiver(2, 0, 0, "Tend");
+        recs.Path(RecsTestBed.Path(10, (medic.Id, 5, 15), (doctor.Id, 15, 21)));
+
+        RecommendationPlan plan = recs.Plan(MedicPawn(45, SignalBucket.Strong), MedicPawn(11, SignalBucket.Strong));
+        HashSet<int> veteran = [.. Enumerable.Range(0, plan.RoleCountAt(0)).Select(index => plan.RoleAt(0, index))];
+        HashSet<int> trainee = [.. Enumerable.Range(0, plan.RoleCountAt(1)).Select(index => plan.RoleAt(1, index))];
+
+        await Assert.That(veteran.SetEquals([1])).IsTrue();
+        await Assert.That(trainee.SetEquals([2])).IsTrue();
+    }
+
     private static PawnView MedicPawn(int medicine, SignalBucket signal)
     {
         var pawn = new PawnView { CapableWorkTypes = { "Doctoring" } };

@@ -10,6 +10,9 @@ Quality Jobs, Harmony gerektirir ve RimWorld 1.6 ile 1.7'yi destekler. DLC gerek
 <!-- l10n:expanded -->
 **Vanilla Skills Expanded:** İnşaat, zanaat ve sanat kalite bonusları, tamamlayıcı seçiminde ve olasılık önizlemesinde hesaba katılır. Hız bonusları kalite açısından tercih sebebi değildir. Bu bonuslardaki değişikliklerin görünmesi için simülasyonun kısa bir süre ilerlemesi gerekebilir.
 
+<!-- l10n:endless-growth -->
+**Endless Growth:** tamamlayıcı beceri kaydırıcıları 100'e kadar çıkar; olasılık önizlemesi ve otomatik tamamlayıcı seçimi bu modun kalite eğrisini izler; buna ilham olmadan elde edilen Efsanevi sonuçlar da dâhildir.
+
 <!-- l10n:ingredients -->
 **Quality Bionics Remastered:** kaliteye sahip ürünler veren desteklenen tarifler, üretim emri panelini kullanabilir. **Vanilla Genetics Expanded:** kalitesi genoframe bileşeninden gelen tariflerde, o bileşenin kalite kuralları geçerliliğini korur; işi tamamlayacak kişiyi seçmek, bileşenin kalitesini artıramaz.
 

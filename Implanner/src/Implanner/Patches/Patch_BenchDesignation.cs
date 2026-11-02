@@ -71,8 +71,7 @@ namespace Implanner.Patches
                 || bench.Faction == null || !bench.Faction.IsPlayer)
                 return;
             bool designated = BenchDesignations.Contains(bench);
-            if (!designated && !(PlannerAutomation.Available
-                    && PlannerProduction.CraftsImplants(bench.def)))
+            if (!designated && !PlannerProduction.CraftsImplants(bench.def))
                 return;
 
             BenchLock.EnsureLabels();

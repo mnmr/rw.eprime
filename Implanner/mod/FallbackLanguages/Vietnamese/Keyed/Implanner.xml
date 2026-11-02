@@ -4,8 +4,6 @@
   <IMP_AddImplantReserveTip>Chọn bộ phận cấy ghép để giữ riêng, không cho tự động dùng.</IMP_AddImplantReserveTip>
   <IMP_AddPlan>Kế hoạch mới</IMP_AddPlan>
   <IMP_AggregateColonists>Cư dân: {0} / {1}</IMP_AggregateColonists>
-  <IMP_AutomationOffBody>{0} chia khu định cư này thành nhiều tầng. Implanner không thể chuyển bộ phận cấy ghép hay ca mổ qua ranh giới giữa các tầng, nên sẽ ngừng giữ vật phẩm và xếp lịch mổ để tránh chỉ thực hiện được một phần kế hoạch.\n\nCác chức năng khác vẫn hoạt động. Bạn vẫn có thể tạo kế hoạch, giao kế hoạch và xếp hạng bộ phận cấy ghép. Hãy tự thêm ca mổ; Implanner sẽ theo dõi những gì đã lắp và còn thiếu.</IMP_AutomationOffBody>
-  <IMP_AutomationOffTitle>Tự động hóa đã tắt</IMP_AutomationOffTitle>
   <IMP_BadDirectory>Nhập thư mục hợp lệ.</IMP_BadDirectory>
   <IMP_BadFileName>Nhập tên tệp hợp lệ.</IMP_BadFileName>
   <IMP_BenchLockedTip>Không thể dán, tạm dừng hoặc tiếp tục lệnh tại bàn Implanner. Bỏ chọn "Bàn Implanner" ở đầu thẻ Công việc để lấy lại quyền sử dụng bàn.</IMP_BenchLockedTip>
@@ -24,7 +22,7 @@
   <IMP_ColShootingTip>Kỹ năng bắn súng</IMP_ColShootingTip>
   <IMP_ColState>Trạng thái</IMP_ColState>
   <IMP_ColonistDetails>Chi tiết cư dân</IMP_ColonistDetails>
-  <IMP_CompatibilityLevelMod>{0}: Tự động hóa của Implanner bị vô hiệu hóa khi dùng mod nhiều tầng này. Lập kế hoạch và theo dõi vẫn hoạt động.</IMP_CompatibilityLevelMod>
+  <IMP_CompatibilityLevelMod>{0}: Tự động hóa của Implanner không thể chuyển bộ phận cấy ghép hay ca mổ qua ranh giới giữa các tầng. Hãy để bộ phận cấy ghép, bàn mổ và bệnh nhân trên cùng một tầng, nếu không một số ca mổ sẽ chờ mãi.</IMP_CompatibilityLevelMod>
   <IMP_CopyClipboard>Chép vào bộ nhớ tạm</IMP_CopyClipboard>
   <IMP_DeleteFileConfirm>Xóa "{0}"?</IMP_DeleteFileConfirm>
   <IMP_DeletePlan>Xóa kế hoạch</IMP_DeletePlan>
@@ -232,4 +230,5 @@
   <IMP_OptEntryStyleTip>Nút trên thanh công cụ nằm cạnh các nút chuyển chế độ xem ở góc dưới bên phải và mở cửa sổ nổi này. Tab chính nằm trên thanh dưới cùng, cạnh Lịch sử và Phe phái, và mở Implanner phía trên nó ở góc dưới bên phải; kéo góc trên bên trái của cửa sổ để đổi kích thước. "Cả hai" giữ cả hai lối vào. Có thể gán phím tắt trong Tùy chọn, Bàn phím, Tab chính.</IMP_OptEntryStyleTip>
   <IMP_OptInterface>Giao diện</IMP_OptInterface>
   <IMP_ResizeGripTip>Kéo để đổi kích thước cửa sổ. Nhấp đúp để trở về kích thước mặc định.</IMP_ResizeGripTip>
+  <IMP_LevelModWarning>{0} chia khu định cư này thành nhiều tầng. Implanner không thể chuyển bộ phận cấy ghép hay ca mổ qua ranh giới giữa các tầng, nên ca mổ có bộ phận cấy ghép nằm ở tầng khác sẽ chờ cho đến khi bạn chuyển nó đi.</IMP_LevelModWarning>
 </LanguageData>

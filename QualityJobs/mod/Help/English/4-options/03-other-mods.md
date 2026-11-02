@@ -10,6 +10,9 @@ Quality Jobs requires Harmony and supports RimWorld 1.6 and 1.7. No DLC is requi
 <!-- l10n:expanded -->
 **Vanilla Skills Expanded:** construction, crafting and art quality bonuses count in finisher selection and the odds preview. Speed bonuses do not give a quality preference. Changes to these bonuses may need a little simulation time to appear.
 
+<!-- l10n:endless-growth -->
+**Endless Growth:** finisher skill sliders reach 100, and the odds preview and automatic finisher selection follow that mod's quality curve, including Legendary results without inspiration.
+
 <!-- l10n:ingredients -->
 **Quality Bionics Remastered:** supported quality-producing recipes can use the bill panel. **Vanilla Genetics Expanded:** recipes whose quality comes from a genoframe keep that ingredient's quality rules; choosing a finisher cannot improve the ingredient's quality.
 

@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.2.8 — 2026-11-02
+
+- Added: Endless Growth support: finisher skill up to 100; odds and finisher choice follow its curve.
+
 ## 1.2.7 — 2026-11-01
 
 - Fixed: The toolbar button is now drawn through the game's standard button widget, so toolbar-restyling mods no longer hide it.

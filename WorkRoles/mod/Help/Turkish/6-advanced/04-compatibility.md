@@ -7,6 +7,9 @@ Diğer modların iş türleri ve işleri otomatik algılanır; birkaç modla dah
 <!-- l10n:b-c7669aaaba7d -->
 İsteğe bağlı iş ve beceri modları ek iş profilleri sağlayabilir. Bunlar işin kullandığı ve geliştirdiği becerileri tanımlar; ilgili modlar kuruluysa asıl öneri becerisini daha kesin belirleyebilir. WorkRoles iş uygunluğunu, işaretlemelerini ve yürütmesini onları sağlayan modlara bırakır. Bu entegrasyonlar zorunlu mod bağımlılığı eklemez.
 
+<!-- l10n:endless-growth -->
+Seviye sınırını yükselten beceri modları (örneğin Endless Growth) ayar gerektirmeden çalışır: beceri sütunları, uygunluk ve öneriler gerçek seviyeyi kullanır; bir eğitim yolunun en üst aralığı (20+) üstündeki tüm seviyeleri kapsar.
+
 <!-- l10n:b-27d73501db9c -->
 Öneriler ayrıca bildirilmiş iş etiketlerini, gereken kapasiteleri, öğreti karşıtlığını ve doğrulanmış sıradan madencilik retlerini okur. RimWorld 1.6 ve 1.7 için incelenmiş Humanoid Alien Races sürümlerinde altyapının gerçek iş sağlayıcı ve tarif kısıtlamalarını kullanır. Bu kuralları kullanan farklı ırklar aynı entegrasyondan yararlanır. Engellenen tarif, roldeki diğer kullanılabilir tarifleri kaldırmaz ve beceriyi geliştirme yolu sayılmaz.
 

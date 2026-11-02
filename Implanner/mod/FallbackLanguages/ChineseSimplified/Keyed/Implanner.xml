@@ -154,8 +154,6 @@
   <IMP_OptShowPurchaseOnly>显示仅能购买的植入体</IMP_OptShowPurchaseOnly>
   <IMP_CleanupTitle>关闭自动化？</IMP_CleanupTitle>
   <IMP_CleanupBody>这些清单由 Implanner 创建。确认会关闭自动化，并移除已勾选的清单。未勾选的清单仍然有效，殖民者仍可继续制作或进行这些手术。重新启用自动化后，Implanner 会恢复管理保留的清单。无论保留与否，已分配的植入体物品都会被释放。取消则保持自动化开启。</IMP_CleanupBody>
-  <IMP_AutomationOffTitle>自动化已关闭</IMP_AutomationOffTitle>
-  <IMP_AutomationOffBody>{0} 将此殖民地分布在多个楼层。Implanner 无法跨楼层运输植入体或执行手术，因此停止分配物品和安排手术，以免每个方案都只能完成一部分。\n\n其他功能仍然可用。你可以继续创建和分配方案，并排序植入体。自行添加手术后，Implanner 会跟踪已安装和仍缺少的植入体。</IMP_AutomationOffBody>
   <IMP_OptEnableTip>控制 Implanner 所有自动操作的总开关：分配植入体物品、安排手术和创建制作清单。关闭后 Implanner 仍会跟踪方案与进度。关闭时会询问保留哪些现有清单；保留的清单仍然有效，因此殖民者仍可继续制作或进行这些手术。</IMP_OptEnableTip>
   <IMP_OptIterationTip>决定自动化处理缺失植入体的顺序。“概览”页的殖民者优先级始终决定先后。\n\n按层级分批：先让所有人获得最高层级的植入体，再依次处理较低层级。某殖民者整个层级所需物品都已分配后才进入手术。\n\n整套安装：完成一名殖民者的整个方案后再处理下一名。全部方案物品都已分配后才安排手术。\n\n尽快安装：库存中的每个植入体立即安排给缺少它且优先级最高的殖民者。优先级相同时，腿优先给行动最慢者；手臂先给装备近战武器者，再给手工与智识技能总和最高者。</IMP_OptIterationTip>
   <IMP_OptAutoFloorTip>手术清单仅允许当前最佳医生执行，避免新手医生仅因先到手术台就失误损坏仿生体。每个殖民地的要求会随人员来去跟随最佳医生变化。任何人都无法给自己动手术，因此最佳医生本人的手术交给次佳医生。\n\n关闭后可手动设置固定技能下限。</IMP_OptAutoFloorTip>
@@ -210,7 +208,7 @@
   <IMP_DeleteFileConfirm>删除“{0}”？</IMP_DeleteFileConfirm>
   <IMP_NoFiles>此处尚无导出的方案文件。</IMP_NoFiles>
   <IMP_ShipFallback>逆重飞船</IMP_ShipFallback>
-  <IMP_CompatibilityLevelMod>{0}：使用此多层地图模组时，Implanner 的自动化功能将被禁用。规划和追踪功能仍可正常使用。</IMP_CompatibilityLevelMod>
+  <IMP_CompatibilityLevelMod>{0}：Implanner 的自动化无法跨楼层搬运植入体或安排手术。请将植入体、手术台和患者放在同一楼层，否则部分手术可能永远无法进行。</IMP_CompatibilityLevelMod>
   <IMP_OptAndroidSurgeonsCrafters>机器人手术：已开启“修复机器人”的工匠（跟随 Android Tiers）</IMP_OptAndroidSurgeonsCrafters>
   <IMP_OptAndroidSurgeonsDoctors>机器人手术：医生（跟随 Android Tiers）</IMP_OptAndroidSurgeonsDoctors>
   <IMP_OptAndroidSurgeonsTip>Implanner 会跟随 Android Tiers 的“机器人只能由工匠修复”设置，该设置需在 Android Tiers 的模组设置中更改。开启时，由已开启“修复机器人”的工匠执行机器人手术；关闭时由医生执行。机器人手术使用手工技能。开启医生自动选择后，Implanner 会将每项机器人手术限定给手工技能最高的合格殖民者。</IMP_OptAndroidSurgeonsTip>
@@ -232,4 +230,5 @@
   <IMP_OptEntryStyleTip>工具栏按钮位于右下角视图切换按钮旁,会打开此浮动窗口。主选项卡位于底部栏中“历史”和“派系”旁,会在右下角其上方打开 Implanner;拖动窗口左上角可调整大小。“两者”则同时保留这两个入口。可在“选项”“键盘”“主选项卡”中分配快捷键。</IMP_OptEntryStyleTip>
   <IMP_OptInterface>界面</IMP_OptInterface>
   <IMP_ResizeGripTip>拖动可调整窗口大小。双击可恢复默认大小。</IMP_ResizeGripTip>
+  <IMP_LevelModWarning>{0} 会将此殖民地分成多个楼层。Implanner 无法跨楼层搬运植入体或安排手术，因此若手术所需的植入体位于其他楼层，手术会一直等待，直到你将其移过来。</IMP_LevelModWarning>
 </LanguageData>

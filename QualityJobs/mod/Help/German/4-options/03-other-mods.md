@@ -10,6 +10,9 @@ Quality Jobs benötigt Harmony und unterstützt RimWorld 1.6 und 1.7. Es wird ke
 <!-- l10n:expanded -->
 **Vanilla Skills Expanded:** Qualitätsboni für Bauen, Handwerk und Kunst werden bei der Auswahl zum Fertigstellen und in der Wahrscheinlichkeitsvorschau berücksichtigt. Geschwindigkeitsboni führen zu keiner Bevorzugung bei der Qualitätsauswahl. Änderungen an diesen Boni werden unter Umständen erst nach kurzer Simulationszeit angezeigt.
 
+<!-- l10n:endless-growth -->
+**Endless Growth:** Die Fertigstellerfertigkeits-Regler reichen bis 100, und die Wahrscheinlichkeitsvorschau sowie die automatische Auswahl der Fertigstellenden folgen der Qualitätskurve dieser Mod, einschließlich legendärer Ergebnisse ohne Inspiration.
+
 <!-- l10n:ingredients -->
 **Quality Bionics Remastered:** Unterstützte Rezepte, die Gegenstände mit Qualität erzeugen, können die Auftragsverwaltung nutzen. **Vanilla Genetics Expanded:** Rezepte, deren Qualität von einem Genoframe stammt, behalten die Qualitätsregeln dieser Zutat bei; die Auswahl der Person für die Fertigstellung kann die Qualität der Zutat nicht verbessern.
 

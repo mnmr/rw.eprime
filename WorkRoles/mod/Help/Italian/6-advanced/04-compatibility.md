@@ -7,6 +7,9 @@ I lavori delle altre mod vengono rilevati automaticamente; alcune mod hanno un'i
 <!-- l10n:b-c7669aaaba7d -->
 Le mod opzionali di lavoro e abilità possono fornire profili aggiuntivi delle attività. Questi identificano le abilità utilizzate e allenate e possono precisare l'abilità principale usata nei consigli quando le mod pertinenti sono installate. WorkRoles lascia alle mod fornitrici idoneità, designazioni ed esecuzione delle attività. Queste integrazioni non introducono dipendenze obbligatorie.
 
+<!-- l10n:endless-growth -->
+Le mod di abilità che alzano il limite di livello, come Endless Growth, funzionano senza impostazioni: colonne delle abilità, idoneità e consigli usano il livello reale, e la fascia più alta di un percorso formativo (20+) copre tutti i livelli superiori.
+
 <!-- l10n:b-27d73501db9c -->
 I consigli leggono anche categorie di lavoro dichiarate, capacità richieste, opposizione dei precetti e rifiuti verificati dell'estrazione ordinaria. Per le versioni controllate di Humanoid Alien Races su RimWorld 1.6 e 1.7, usano le restrizioni effettive del framework su fornitori di lavoro e ricette. Specie diverse che adottano quelle regole beneficiano della stessa integrazione. Una ricetta bloccata non rimuove altre ricette utilizzabili dal ruolo e non conta come modo per allenarne l'abilità.
 

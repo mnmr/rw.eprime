@@ -7,6 +7,11 @@ Loại việc và công việc từ mod khác được tự nhận. Một số m
 <!-- l10n:b-c7669aaaba7d -->
 Mod việc và kỹ năng tùy chọn có thể cung cấp hồ sơ công việc bổ sung. Hồ sơ xác định kỹ năng việc dùng/rèn và có thể tinh chỉnh kỹ năng đề xuất chính khi cài mod liên quan. WorkRoles để mod nguồn quyết định điều kiện nhận việc, chỉ định và thực thi. Tích hợp không tạo phụ thuộc mod bắt buộc.
 
+<!-- l10n:endless-growth -->
+Các mod nâng giới hạn cấp kỹ năng, như Endless Growth, hoạt động mà không cần
+cài đặt: cột kỹ năng, mức phù hợp và đề xuất đều dùng cấp thật,
+và dải cao nhất của lộ trình rèn luyện (20+) bao gồm mọi cấp trên đó.
+
 <!-- l10n:b-27d73501db9c -->
 Đề xuất cũng đọc nhóm việc được khai báo, chức năng cơ thể cần thiết, giáo lý phản đối và từ chối đào mỏ thường đã xác minh. Với bản Humanoid Alien Races đã kiểm tra trên RimWorld 1.6 và 1.7, nó dùng hạn chế nguồn giao việc và công thức thật của framework. Các chủng loài dùng cùng quy tắc đều hưởng tích hợp. Công thức bị chặn không loại các công thức còn dùng được khỏi vai trò, cũng không được tính là cách rèn kỹ năng.
 

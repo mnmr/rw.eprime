@@ -112,7 +112,7 @@
   <IMP_WelcomeBody>Implanner plans colonist implants and optionally automates the work needed to produce and install them.</IMP_WelcomeBody>
   <IMP_WelcomeFind>Open Implanner with this button in the toolbar at the bottom right of the screen, next to the view toggles.</IMP_WelcomeFind>
   <IMP_WelcomeTakeMeThere>Take me there now</IMP_WelcomeTakeMeThere>
-  <IMP_CompatibilityLevelMod>{0}: Implanner automation is disabled with this multi-level mod. Planning and tracking still work.</IMP_CompatibilityLevelMod>
+  <IMP_CompatibilityLevelMod>{0}: Implanner automation cannot carry implants or operations across level boundaries. Keep implants, benches and patients on one level, or expect some operations to wait forever.</IMP_CompatibilityLevelMod>
 
   <!-- ===== States ===== -->
   <IMP_StateWaiting>Waiting</IMP_StateWaiting>
@@ -264,8 +264,8 @@
   <!-- Hand-back dialog shown when the player clicks the master switch off -->
   <IMP_CleanupTitle>Turn off automation?</IMP_CleanupTitle>
   <IMP_CleanupBody>Implanner created these bills. OK turns automation off and removes checked bills. Unchecked bills remain active: colonists can still craft or perform those operations. Implanner resumes managing any remaining bills when automation is enabled again. Reserved implant items are released either way. Cancel keeps automation on.</IMP_CleanupBody>
-  <IMP_AutomationOffTitle>Automation is switched off</IMP_AutomationOffTitle>
-  <IMP_AutomationOffBody>{0} spreads this colony across several levels. Implanner cannot carry an implant or an operation across a level boundary, so it stops reserving items and scheduling surgeries rather than deliver half of every plan.\n\nEverything else still works. Keep building plans, assign them, and rank your implants. Add operations yourself and Implanner will track what is installed and what is still missing.</IMP_AutomationOffBody>
+  <!-- Shown beside the master switch while a level mod is active; {0}=mod name -->
+  <IMP_LevelModWarning>{0} spreads this colony across several levels. Implanner cannot carry an implant or an operation across a level boundary, so an operation whose implant sits on another level waits until you move it.</IMP_LevelModWarning>
 
   <!-- ===== Automation tooltips ===== -->
   <IMP_OptEnableTip>The master switch for everything Implanner does on its own: reserving implant items, scheduling operations, and creating crafting bills. Switched off, Implanner still tracks plans and progress. Switching it off asks which of its existing bills to keep; retained bills remain active, so colonists can still craft or perform those operations.</IMP_OptEnableTip>

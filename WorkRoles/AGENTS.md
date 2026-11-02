@@ -34,6 +34,18 @@ commands. Where this file is silent, the root contract governs.
   needs a run larger than the floor (2560x1440 @1.25 verified 2026-11-01,
   `temp/resize`).
 
+## Skill levels
+
+- The training axis is `SkillProgressionMath.MaxLevel` = 21 with 21 as the
+  open top: a band ending at 21 covers every level from its minimum up,
+  including levels past 20 from cap-raising mods (Endless Growth). Pawn
+  facts carry the native level unclamped. Proven 2026-11-02
+  (`tests/InGame/EndlessGrowth`, mod set `workroles-endless-growth`):
+  Crafting 60 and Plants 100 flow through facts, plans, the roster and the
+  selected panel; `RecommendationPlanScenarioTests.SkillAboveTwentyCountsAsMasteryOfTheOpenTopBand`
+  pins the band rule. The axis is not widened: it is a progression, not a
+  level display.
+
 ## Canonical refresh boundaries
 
 - Time-driven invalidation must fire on computed game-tick boundaries, never on per-frame or per-tick polling.

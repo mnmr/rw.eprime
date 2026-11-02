@@ -7,6 +7,9 @@ Arbeitsarten und Arbeiten aus anderen Mods werden automatisch übernommen. Einig
 <!-- l10n:b-c7669aaaba7d -->
 Optionale Arbeits- und Fertigkeitsmods können zusätzliche Arbeitsprofile liefern. Diese geben an, welche Fertigkeiten eine Arbeit verwendet und trainiert. Sind die entsprechenden Mods installiert, können sie auch die primäre Fertigkeit für die Empfehlung genauer bestimmen. WorkRoles überlässt Zulässigkeit, Arbeitsmarkierungen und Ausführung der Arbeit den Mods, die sie bereitstellen. Durch diese Integrationen entstehen keine zwingenden Mod-Abhängigkeiten.
 
+<!-- l10n:endless-growth -->
+Fertigkeitsmods, die das Stufenlimit anheben, etwa Endless Growth, funktionieren ohne zusätzliche Einstellungen: Fertigkeitsspalten, Eignung und Empfehlungen verwenden die tatsächliche Stufe, und die oberste Stufengruppe eines Trainingspfads (20+) deckt alle darüberliegenden Stufen ab.
+
 <!-- l10n:b-27d73501db9c -->
 Empfehlungen berücksichtigen außerdem deklarierte Arbeitskennzeichen, erforderliche Fähigkeiten, entgegenstehende Glaubenssätze und bestätigte Verweigerungen gewöhnlicher Bergbauarbeit. Bei geprüften Versionen von Humanoid Alien Races für RimWorld 1.6 und 1.7 verwenden sie die tatsächlichen Beschränkungen des Frameworks für Arbeitsgeber und Rezepte. Verschiedene Spezies, die diese Regeln nutzen, profitieren von derselben Integration. Ein gesperrtes Rezept entfernt weder andere nutzbare Rezepte aus der Rolle noch zählt es als Möglichkeit, deren Fertigkeit zu trainieren.
 

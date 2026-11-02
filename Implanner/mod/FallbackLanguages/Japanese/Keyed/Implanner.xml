@@ -4,8 +4,6 @@
   <IMP_AddImplantReserveTip>自動化に使わず取り置くインプラントを選びます。</IMP_AddImplantReserveTip>
   <IMP_AddPlan>新規プラン</IMP_AddPlan>
   <IMP_AggregateColonists>入植者: {0} / {1}</IMP_AggregateColonists>
-  <IMP_AutomationOffBody>{0}により、このコロニーは複数の階層にまたがっています。Implannerは階層をまたぐインプラントの運搬や手術に対応できないため、アイテムの割り当てと手術予約を停止しています。\n\nその他の機能は利用できます。プランの作成・割り当てやインプラントの優先順位設定を続けられます。手術は手動で追加してください。取付済みの部位と不足分はImplannerが追跡します。</IMP_AutomationOffBody>
-  <IMP_AutomationOffTitle>自動化は停止しています</IMP_AutomationOffTitle>
   <IMP_BadDirectory>有効なフォルダーを入力してください。</IMP_BadDirectory>
   <IMP_BadFileName>有効なファイル名を入力してください。</IMP_BadFileName>
   <IMP_BenchLockedTip>Implanner専用作業台では、指示の貼り付け、中断、再開はできません。「加工」タブ上部の「Implanner専用作業台」をオフにすると通常の管理に戻せます。</IMP_BenchLockedTip>
@@ -24,7 +22,7 @@
   <IMP_ColShootingTip>射撃スキル</IMP_ColShootingTip>
   <IMP_ColState>状態</IMP_ColState>
   <IMP_ColonistDetails>入植者の詳細</IMP_ColonistDetails>
-  <IMP_CompatibilityLevelMod>{0}: この多層マップModとの併用中はImplannerの自動化を無効にします。計画と進捗確認は利用できます。</IMP_CompatibilityLevelMod>
+  <IMP_CompatibilityLevelMod>{0}: Implannerの自動化は、階層をまたいでインプラントや手術を運べません。インプラント、手術台、患者を同じ階層にまとめてください。そうしないと、一部の手術が永久に待機する場合があります。</IMP_CompatibilityLevelMod>
   <IMP_CopyClipboard>クリップボードにコピー</IMP_CopyClipboard>
   <IMP_DeleteFileConfirm>「{0}」を削除しますか？</IMP_DeleteFileConfirm>
   <IMP_DeletePlan>プランを削除</IMP_DeletePlan>
@@ -232,4 +230,5 @@
   <IMP_OptEntryStyleTip>ツールバーボタンは右下の表示切り替えボタンの横にあり、このフローティングウィンドウを開きます。メインタブは下部バーの「歴史」や「派閥」の横にあり、右下のバーの上にImplannerを開きます。ウィンドウの左上の角をドラッグするとサイズを変更できます。「両方」を選ぶと、2つの開き方がどちらも使えます。キーボードショートカットは、オプション、キーボード、メインタブで割り当てられます。</IMP_OptEntryStyleTip>
   <IMP_OptInterface>インターフェース</IMP_OptInterface>
   <IMP_ResizeGripTip>ドラッグでウィンドウのサイズを変更します。ダブルクリックで既定のサイズに戻ります。</IMP_ResizeGripTip>
+  <IMP_LevelModWarning>{0}によってこのコロニーは複数の階層に分かれています。Implannerは階層をまたいでインプラントや手術を運べないため、インプラントが別の階層にある手術は、プレイヤーが移動するまで待機します。</IMP_LevelModWarning>
 </LanguageData>

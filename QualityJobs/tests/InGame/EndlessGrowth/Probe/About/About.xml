@@ -1,0 +1,7 @@
+<ModMetaData>
+  <name>Quality Jobs Endless Growth probe</name>
+  <author>Quality Jobs tests</author>
+  <packageId>eprime.qualityjobs.endlessgrowth</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <loadAfter><li>eprime.qualityjobs</li><li>SlimeSenpai.EndlessGrowth</li></loadAfter>
+</ModMetaData>

@@ -1,0 +1,7 @@
+<ModMetaData>
+  <name>WorkRoles Endless Growth probe</name>
+  <author>WorkRoles tests</author>
+  <packageId>tests.workroles.endlessgrowth</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <loadAfter><li>mnmr.workroles</li><li>SlimeSenpai.EndlessGrowth</li></loadAfter>
+</ModMetaData>

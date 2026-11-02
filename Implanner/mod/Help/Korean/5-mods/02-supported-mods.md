@@ -45,6 +45,9 @@ title: 지원 모드
 <!-- l10n:b-7a2e3799838c -->
 **Elite Bionics Framework**: 신체 부위 체력을 바꾸는 이식물은 툴팁에 변화를 표시합니다.
 
+<!-- l10n:gene-hediffs -->
+**Vanilla Races Expanded - Saurid** 등 유전자 모드: 손의 사우리드 발톱처럼 정착민의 유전자가 부여하는 신체 특징은 해당 팔다리의 교체를 막지 않습니다. 유전자는 정착민에게 그대로 남으므로 Implanner는 계획한 생체공학 팔을 평소처럼 설치합니다.
+
 <!-- l10n:b-c7cd0a958354 -->
 ![다리 모듈의 필요 조건 창](requirement-prompt.png)
 

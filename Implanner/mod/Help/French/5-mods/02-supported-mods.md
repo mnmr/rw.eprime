@@ -45,6 +45,9 @@ Les hybrides tirent leur qualité du génocadre utilisé pour les fabriquer (voi
 <!-- l10n:b-7a2e3799838c -->
 **Elite Bionics Framework** : les implants augmentant ou diminuant les points de vie d'une partie affichent ce changement dans leur infobulle.
 
+<!-- l10n:gene-hediffs -->
+**Vanilla Races Expanded - Saurid** et autres mods de gènes : une caractéristique corporelle accordée par le gène d'un colon, comme les griffes de saurid sur les mains, n'empêche pas un remplacement sur ce membre. Le gène reste avec le colon ; Implanner pose donc le bras bionique prévu comme d'habitude.
+
 <!-- l10n:b-c7cd0a958354 -->
 ![Demande de prérequis pour un module de jambe](requirement-prompt.png)
 

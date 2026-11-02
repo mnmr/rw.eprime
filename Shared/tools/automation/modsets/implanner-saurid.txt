@@ -1,0 +1,29 @@
+# Mod set: Vanilla Races Expanded - Saurid (gene-granted claw hediffs on
+# both hands) over Vanilla Expanded Framework, for Implanner's loss gate.
+remove zetrith.prepatcher
+remove brrainz.rimbridgeserver
+remove mehni.pickupandhaul
+remove brrainz.rangefinder
+remove jaxe.rimhud
+remove com.bymarcin.architecticons
+remove mehni.numbers
+remove dubwise.dubsmintminimap
+remove rimworld.randomcoughdrop.geneassistant
+remove carnysenpai.traitraritycolors
+remove tac.genetrader
+remove mlie.haulminedchunks
+remove kota.inventorytab
+remove mlie.relevantstatsindescription
+remove bp.showbuildablematerialcount
+remove mlie.usethisinstead
+remove bodlosh.weaponstats
+remove mlie.smarterdeconstructionandmining
+remove defi.generipper
+remove avilmask.nonunopinata
+remove dubwise.dubsperformanceanalyzer.steam
+remove mnmr.workroles
+after ludeon.rimworld.odyssey
+oskarpotocki.vanillafactionsexpanded.core
+vanillaracesexpanded.saurid
+after eprime.implanner
+eprime.implanner.sauridclaws

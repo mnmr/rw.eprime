@@ -10,6 +10,9 @@ Quality Jobs yêu cầu Harmony và hỗ trợ RimWorld 1.6 và 1.7. Không yêu
 <!-- l10n:expanded -->
 **Vanilla Skills Expanded:** phần thưởng chất lượng xây dựng, chế tạo và nghệ thuật được tính khi chọn người hoàn thiện và xem trước xác suất. Phần thưởng tốc độ không tạo ưu thế khi xét chất lượng. Thay đổi các phần thưởng này có thể cần một chút thời gian trong trò chơi để được phản ánh.
 
+<!-- l10n:endless-growth -->
+**Endless Growth:** thanh trượt kỹ năng hoàn thiện có thể lên đến 100, còn phần xem trước xác suất và việc tự chọn người hoàn thiện đều theo đường cong chất lượng của mod đó, kể cả kết quả Huyền thoại mà không cần cảm hứng.
+
 <!-- l10n:ingredients -->
 **Quality Bionics Remastered:** các công thức được hỗ trợ tạo ra sản phẩm có chất lượng có thể dùng bảng lệnh chế tạo. **Vanilla Genetics Expanded:** các công thức lấy chất lượng từ genoframe vẫn tuân theo quy tắc chất lượng của nguyên liệu đó; việc chọn người hoàn thiện không thể nâng chất lượng nguyên liệu.
 

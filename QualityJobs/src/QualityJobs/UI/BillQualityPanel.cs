@@ -278,7 +278,7 @@ namespace QualityJobs.UI
                             _minSkillLabelValue = minSkill;
                         }
                         Rect skillRow = new Rect(x, y, w, SliderH);
-                        newMinSkill = QjUi.SliderRow(skillRow, _minSkillLabel!, minSkill, 0f, 20f);
+                        newMinSkill = QjUi.SliderRow(skillRow, _minSkillLabel!, minSkill, 0f, SkillRules.MaxSkill);
                         WrTips.Key("QJ_FinisherSkillTip").Region(skillRow.LeftHalf());
                         y += SliderH + Gap;
                     }

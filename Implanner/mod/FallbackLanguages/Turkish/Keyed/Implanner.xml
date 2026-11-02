@@ -4,8 +4,6 @@
   <IMP_AddImplantReserveTip>Otomasyonun kullanmaması için ayıracağınız bir implant seçin.</IMP_AddImplantReserveTip>
   <IMP_AddPlan>Yeni plan</IMP_AddPlan>
   <IMP_AggregateColonists>Koloniciler: {0} / {1}</IMP_AggregateColonists>
-  <IMP_AutomationOffBody>{0}, bu koloniyi birden fazla kata yayıyor. Implanner bir implantı veya ameliyatı katlar arasında taşıyamadığından planları yarım uygulamak yerine eşya ayırmayı ve ameliyat planlamayı durdurur.\n\nDiğer her şey çalışmaya devam eder. Plan oluşturabilir, atayabilir ve implantları sıralayabilirsiniz. Ameliyatları kendiniz ekleyin; Implanner takılan ve eksik olan implantları takip eder.</IMP_AutomationOffBody>
-  <IMP_AutomationOffTitle>Otomasyon kapalı</IMP_AutomationOffTitle>
   <IMP_BadDirectory>Geçerli bir klasör girin.</IMP_BadDirectory>
   <IMP_BadFileName>Geçerli bir dosya adı girin.</IMP_BadFileName>
   <IMP_BenchLockedTip>Bir Implanner tezgâhına iş siparişi yapıştıramaz, siparişleri duraklatamaz veya sürdüremezsiniz. Tezgâhın kontrolünü geri almak için Siparişler sekmesinin üstündeki "Implanner tezgâhı" işaretini kaldırın.</IMP_BenchLockedTip>
@@ -24,7 +22,7 @@
   <IMP_ColShootingTip>Nişancılık becerisi</IMP_ColShootingTip>
   <IMP_ColState>Durum</IMP_ColState>
   <IMP_ColonistDetails>Kolonici ayrıntıları</IMP_ColonistDetails>
-  <IMP_CompatibilityLevelMod>{0}: Bu çok katlı harita moduyla Implanner otomasyonu devre dışıdır. Planlama ve takip çalışmaya devam eder.</IMP_CompatibilityLevelMod>
+  <IMP_CompatibilityLevelMod>{0}: Implanner otomasyonu implantları veya ameliyatları kat sınırları arasında taşıyamaz. İmplantları, ameliyat tezgâhlarını ve hastaları aynı katta tutun; aksi hâlde bazı ameliyatlar sonsuza dek bekleyebilir.</IMP_CompatibilityLevelMod>
   <IMP_CopyClipboard>Panoya kopyala</IMP_CopyClipboard>
   <IMP_DeleteFileConfirm>"{0}" silinsin mi?</IMP_DeleteFileConfirm>
   <IMP_DeletePlan>Planı sil</IMP_DeletePlan>
@@ -232,4 +230,5 @@
   <IMP_OptEntryStyleTip>Araç çubuğu düğmesi, sağ alt köşedeki görünüm düğmelerinin yanında yer alır ve bu yüzen pencereyi açar. Ana sekme, alt çubukta Tarihçe ve Hizipler sekmelerinin yanında yer alır ve Implanner'ı onun üstünde, sağ alt köşede açar; yeniden boyutlandırmak için pencerenin sol üst köşesini sürükleyin. İkisi de seçeneği iki giriş noktasını da korur. Bir klavye kısayolu Seçenekler, Klavye, Ana sekmeler bölümünden atanabilir.</IMP_OptEntryStyleTip>
   <IMP_OptInterface>Arayüz</IMP_OptInterface>
   <IMP_ResizeGripTip>Pencereyi yeniden boyutlandırmak için sürükleyin. Varsayılan boyuta dönmek için çift tıklayın.</IMP_ResizeGripTip>
+  <IMP_LevelModWarning>{0} bu koloniyi birkaç kata yayar. Implanner bir implantı veya ameliyatı kat sınırı boyunca taşıyamaz; bu yüzden implantı başka bir katta olan bir ameliyat, siz implantı taşıyana kadar bekler.</IMP_LevelModWarning>
 </LanguageData>

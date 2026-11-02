@@ -557,11 +557,13 @@ namespace Implanner
         /// removes every hediff on it and below it; items drop for those
         /// that have one, harmful conditions (scars, old injuries) are
         /// happily gone, and hediffs the game keeps through restoration
-        /// (psylink, mechlink) stay. Anything else would be lost, and so
-        /// would an implant a part wiper pushes out that no surgery can
-        /// install again right now (PlannerReinstall puts the others back).
-        /// Implanner never schedules such a surgery (owner, 2026-09-26).
-        /// In-place upgrades remove only their base and are exempt.
+        /// (psylink, mechlink) stay, as do hediffs the pawn's own genes
+        /// grant (GeneHediffs: saurid claws), since the gene remains.
+        /// Anything else would be lost, and so would an implant a part
+        /// wiper pushes out that no surgery can install again right now
+        /// (PlannerReinstall puts the others back). Implanner never
+        /// schedules such a surgery (owner, 2026-09-26). In-place upgrades
+        /// remove only their base and are exempt.
         internal static Hediff? WouldDestroy(Pawn pawn, ImplantCatalogEntry entry,
             BodyPartRecord part)
         {
@@ -574,7 +576,8 @@ namespace Implanner
                 if (hediff.Part == null || !IsSameOrAncestor(part, hediff.Part))
                     continue;
                 HediffDef def = hediff.def;
-                if (def == entry.Def || def.isBad || def.keepOnBodyPartRestoration)
+                if (def == entry.Def || def.isBad || def.keepOnBodyPartRestoration
+                    || GeneHediffs.IsGranted(pawn, def))
                     continue;
                 if (def.spawnThingOnRemoved == null) return hediff;
                 if (entry.WipesPart

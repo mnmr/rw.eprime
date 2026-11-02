@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.8 — 2026-11-02
+
+- Changed: Multi-level mods no longer switch automation off; a warning explains the limits instead.
+- Fixed: Saurid claws (Vanilla Races Expanded) no longer stop planned bionic arms from being installed.
+
 ## 1.2.7 — 2026-11-01
 
 - Changed: Plans for the human body now also cover races with the same or more body parts.

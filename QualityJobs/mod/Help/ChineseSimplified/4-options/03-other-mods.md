@@ -10,6 +10,9 @@ Quality Jobs 需要 Harmony，支持 RimWorld 1.6 和 1.7，无需任何 DLC。�
 <!-- l10n:expanded -->
 **Vanilla Skills Expanded：**建筑、手工和艺术的品质加成会计入收尾者选择及品质概率预览。速度加成不会带来品质方面的优先待遇。这些加成的变化可能需要游戏运行片刻后才会体现。
 
+<!-- l10n:endless-growth -->
+**Endless Growth：**收尾者技能滑块上限提高到 100，品质概率预览和自动选择收尾者都会遵循该模组的品质曲线，包括无需灵感即可出现的传说品质结果。
+
 <!-- l10n:ingredients -->
 **Quality Bionics Remastered：**受支持且能产出带品质物品的配方可以使用生产清单面板。**Vanilla Genetics Expanded：**品质取决于基因框架的配方仍遵循该原料的品质规则；选择收尾者无法提升原料的品质。
 

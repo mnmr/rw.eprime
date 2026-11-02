@@ -45,6 +45,9 @@ Cấy ghép lai lấy chất lượng từ genoframe dùng chế tạo (xem [ch�
 <!-- l10n:b-7a2e3799838c -->
 **Elite Bionics Framework**: cấy ghép tăng/giảm máu bộ phận hiện thay đổi trong chú giải.
 
+<!-- l10n:gene-hediffs -->
+**Vanilla Races Expanded - Saurid** và các mod gene khác: đặc điểm cơ thể do gene của cư dân mang lại, chẳng hạn móng vuốt saurid ở bàn tay, không ngăn việc thay thế chi đó. Gene vẫn ở lại với cư dân, nên Implanner vẫn lắp cánh tay sinh học đã lên kế hoạch như bình thường.
+
 <!-- l10n:b-c7cd0a958354 -->
 ![Hộp yêu cầu cho mô-đun chân](requirement-prompt.png)
 

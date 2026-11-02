@@ -45,6 +45,9 @@ Hybridimplantate erhalten ihre Qualität vom verwendeten Genorahmen (siehe [Mind
 <!-- l10n:b-7a2e3799838c -->
 **Elite Bionics Framework**: Implantate, die Trefferpunkte eines Körperteils verändern, zeigen dies im Tooltip.
 
+<!-- l10n:gene-hediffs -->
+**Vanilla Races Expanded - Saurid** und andere Genmods: Ein Körpermerkmal, das das Gen eines Kolonisten verleiht, etwa Saurierkrallen an den Händen, verhindert keinen Ersatz an dieser Gliedmaße. Das Gen bleibt beim Kolonisten, daher setzt Implanner den geplanten bionischen Arm wie gewohnt ein.
+
 <!-- l10n:b-c7cd0a958354 -->
 ![Anforderungsabfrage für ein Beinmodul](requirement-prompt.png)
 

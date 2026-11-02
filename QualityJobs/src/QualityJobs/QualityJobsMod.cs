@@ -1,5 +1,6 @@
 using System;
 using HarmonyLib;
+using QualityJobs.Core;
 using QualityJobs.UI;
 using RimShared.UiLib;
 using RimWorld;
@@ -260,7 +261,7 @@ namespace QualityJobs
                 if (leftAuto)
                     GUI.color = new Color(rowColor.r, rowColor.g, rowColor.b, rowColor.a * 0.55f);
                 int newLeftSkill = QjUi.SliderRow(leftRow,
-                    SettingsLabels.MinSkillLabel!, leftSkill, 0f, 20f);
+                    SettingsLabels.MinSkillLabel!, leftSkill, 0f, SkillRules.MaxSkill);
                 GUI.color = rowColor;
                 WrTips.Key("QJ_SettingsFinisherSkillTip").Region(leftRow);
                 if (newLeftSkill != leftSkill)
@@ -282,7 +283,7 @@ namespace QualityJobs
                 if (rightAuto)
                     GUI.color = new Color(rowColor.r, rowColor.g, rowColor.b, rowColor.a * 0.55f);
                 int newRightSkill = QjUi.SliderRow(rightRow,
-                    SettingsLabels.ConstructionMinSkillLabel!, rightSkill, 0f, 20f);
+                    SettingsLabels.ConstructionMinSkillLabel!, rightSkill, 0f, SkillRules.MaxSkill);
                 GUI.color = rowColor;
                 WrTips.Key("QJ_SettingsFinisherSkillTip").Region(rightRow);
                 if (newRightSkill != rightSkill)

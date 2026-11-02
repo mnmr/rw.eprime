@@ -15,6 +15,11 @@ primary recommendation skill when the relevant mods are installed.
 WorkRoles leaves job eligibility, designations and execution to the mods
 that provide them. These integrations add no required mod dependencies.
 
+<!-- l10n:endless-growth -->
+Skill mods that raise the level cap, such as Endless Growth, work without
+settings: skill columns, suitability and recommendations use the real level,
+and the top band of a training path (20+) covers every level above it.
+
 <!-- l10n:b-27d73501db9c -->
 Recommendations also read declared work tags, required capacities, precept
 opposition, and verified ordinary-mining refusals. For audited Humanoid Alien

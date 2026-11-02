@@ -79,6 +79,12 @@ quality it installs (see [minimum quality](topic:minimum-quality)).
 **Elite Bionics Framework**: implants that raise or lower a body part's hit
 points show the change in their tooltip.
 
+<!-- l10n:gene-hediffs -->
+**Vanilla Races Expanded - Saurid** and other gene mods: a body feature a
+colonist's gene grants, such as saurid claws on the hands, does not stop a
+replacement on that limb. The gene stays with the colonist, so Implanner
+installs the planned bionic arm as usual.
+
 <!-- l10n:b-c7cd0a958354 -->
 ![The requirement prompt for a leg module](requirement-prompt.png)
 

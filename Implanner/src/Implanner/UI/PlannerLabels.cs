@@ -100,10 +100,9 @@ namespace Implanner.UI
 
         /// Right-aligned tier captions, indexed by tier (0 = five stars).
         internal static readonly string[] TierPriorities = new string[5];
-        internal static string AutomationOffTitle = "";
         /// Formatted once with the level mod's name, which is fixed for the
-        /// session (PlannerAutomation).
-        internal static string AutomationOffBody = "";
+        /// session (PlannerAutomation); empty while no level mod is active.
+        internal static string LevelModWarning = "";
 
         /// Segment labels in DISPLAY order — tier batching (the default)
         /// first, full sets, then ASAP; parallel to
@@ -138,9 +137,8 @@ namespace Implanner.UI
             DeletePlan = "IMP_DeletePlan".Translate();
             NoPlan = "IMP_NoPlan".Translate();
             OptEnable = "IMP_OptEnable".Translate();
-            AutomationOffTitle = "IMP_AutomationOffTitle".Translate();
-            AutomationOffBody =
-                "IMP_AutomationOffBody".Translate(PlannerAutomation.BlockedBy);
+            LevelModWarning = PlannerAutomation.LevelMod.Length == 0 ? ""
+                : "IMP_LevelModWarning".Translate(PlannerAutomation.LevelMod);
             for (int i = 0; i < priorityLabels.Length; i++)
                 priorityLabels[i] = ("IMP_Priority" + i).Translate();
             PlansHeader = "IMP_PlansHeader".Translate();

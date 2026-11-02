@@ -45,6 +45,9 @@ title: 対応Mod
 <!-- l10n:b-7a2e3799838c -->
 **Elite Bionics Framework**: 部位の耐久値を増減させる品は、その変化をツールチップに表示します。
 
+<!-- l10n:gene-hediffs -->
+**Vanilla Races Expanded - Saurid**などのジーンMod: 入植者のジーンが与える身体的特徴（手のサウリドの爪など）は、その四肢の置換を妨げません。ジーンは入植者に残るため、Implannerは計画した強化上肢を通常どおり取り付けます。
+
 <!-- l10n:b-c7cd0a958354 -->
 ![脚モジュールの必要部位を選ぶ画面](requirement-prompt.png)
 

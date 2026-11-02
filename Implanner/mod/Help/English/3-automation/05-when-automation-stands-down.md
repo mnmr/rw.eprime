@@ -19,9 +19,8 @@ released either way, and Cancel keeps automation on.
 
 <!-- l10n:b-6747bf547c20 -->
 With a multi-level colony mod active (Strata, MultiFloors, As above So
-below), automation stands down on its own. Vanilla surgery cannot fetch an
-implant across a level boundary, so rather than schedule operations that
-can never complete, Implanner releases its reservations and leaves the
-work to you. Bills it already created stay in place for you to keep or
-cancel. Everything else keeps functioning, and implants you install by
-hand still count toward progress.
+below), a warning appears beside the master switch. Vanilla surgery cannot
+fetch an implant across a level boundary, so an operation whose reserved
+implant sits on another level waits until the implant is moved to the
+patient's level. Automation keeps working within a level; keep implants,
+benches and patients together to avoid the wait.

@@ -7,6 +7,9 @@ Le travail et les tâches des autres mods sont détectés automatiquement. Certa
 <!-- l10n:b-c7669aaaba7d -->
 Des mods facultatifs de travail et de compétences peuvent fournir des profils de tâches supplémentaires. Ces profils identifient les compétences utilisées et entraînées, et peuvent préciser la compétence principale de recommandation lorsque les mods concernés sont installés. WorkRoles laisse l'admissibilité, les désignations et l'exécution aux mods qui fournissent les tâches. Ces intégrations n'ajoutent aucune dépendance obligatoire.
 
+<!-- l10n:endless-growth -->
+Les mods de compétences qui relèvent le niveau maximal, comme Endless Growth, fonctionnent sans réglage : les colonnes de compétences, l'adéquation et les recommandations utilisent le niveau réel, et la tranche supérieure d'un parcours d'entraînement (20+) couvre tous les niveaux au-dessus.
+
 <!-- l10n:b-27d73501db9c -->
 Les recommandations lisent aussi les catégories de travail déclarées, les capacités requises, l'opposition des préceptes et les refus vérifiés d'extraction minière ordinaire. Pour les versions vérifiées de Humanoid Alien Races sous RimWorld 1.6 et 1.7, elles utilisent les véritables restrictions de tâches et de recettes du framework. Toutes les races utilisant ces règles profitent de l'intégration. Une recette bloquée ne retire pas les autres recettes utilisables du rôle et ne compte pas comme moyen d'entraîner la compétence.
 

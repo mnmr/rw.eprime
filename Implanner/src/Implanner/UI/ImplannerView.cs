@@ -269,10 +269,7 @@ namespace Implanner.UI
             {
                 case Tab.Overview: overviewFront = overview.Current(store); break;
                 case Tab.Plans: plansFront = plans.Current(store); break;
-                case Tab.Automation:
-                    if (PlannerAutomation.Available)
-                        automationFront = automation.Current(store);
-                    break;
+                case Tab.Automation: automationFront = automation.Current(store); break;
                 case Tab.Options: optionsFront = options.Current(store); break;
             }
         }
@@ -1633,13 +1630,6 @@ namespace Implanner.UI
         {
             Text.Font = GameFont.Small;
             Text.WordWrap = true;
-            // A level mod stood automation down; none of these controls does
-            // anything, so explain instead of offering them.
-            if (!PlannerAutomation.Available)
-            {
-                DrawAutomationUnavailable(rect);
-                return;
-            }
 
             // Refreshed in WindowUpdate; the fallback covers a mid-frame
             // tab switch only.
@@ -1648,9 +1638,15 @@ namespace Implanner.UI
             AutomationTips tips = automationTips;
             SkillSliderSnapshot slider = skillSliderFront ??= skillSliders.Current(SkillLabelWidth);
 
+            // With a level mod active the top row also carries its warning,
+            // in the right column beside the master switch (PlannerAutomation).
+            bool levelMod = PlannerLabels.LevelModWarning.Length > 0;
+            float topHeight = levelMod
+                ? Mathf.Max(ToggleHeights[ToggleRow.Enable], ToggleHeights[ToggleRow.LevelModWarning])
+                : ToggleHeights[ToggleRow.Enable];
             float leftHeight = ProductionColumnHeight(snapshot, slider.RowHeight);
             float rightHeight = SurgeryColumnHeight(snapshot, slider.RowHeight);
-            float innerHeight = ToggleHeights[ToggleRow.Enable] + Pad + Mathf.Max(leftHeight, rightHeight);
+            float innerHeight = topHeight + Pad + Mathf.Max(leftHeight, rightHeight);
             // Symmetric layout: the scrollbar gutter is reserved only while
             // the content overflows, both columns share one width, and the
             // right column ends flush at the content edge — the leftover
@@ -1678,8 +1674,17 @@ namespace Implanner.UI
                     if (now) PlannerCommands.SetAutomationPaused(false);
                     else Dialog_AutomationCleanup.ShowToTurnOffAutomation(store);
                 }
+                if (levelMod)
+                {
+                    using (GuiStateScope.Capture())
+                    {
+                        GUI.color = PlannerStyle.BlockedText;
+                        Widgets.Label(new Rect(innerWidth - columnWidth, 0f, columnWidth,
+                            ToggleHeights[ToggleRow.LevelModWarning]), PlannerLabels.LevelModWarning);
+                    }
+                }
 
-                float top = ToggleHeights[ToggleRow.Enable] + Pad;
+                float top = topHeight + Pad;
                 DrawProductionColumn(new Rect(0f, top, columnWidth, leftHeight),
                     snapshot, tips);
                 DrawSurgeryColumn(new Rect(innerWidth - columnWidth, top,
@@ -1971,26 +1976,6 @@ namespace Implanner.UI
                     + Pad + SectionHeader.SubHeight + 2f         // keep-in-stock
                     + snapshot.Reserves.Count * (CompactRowHeight + 4f);
             return height;
-        }
-
-        /// Shown in place of the automation controls when a level mod is
-        /// active (PlannerAutomation). Static text only — no snapshot, no
-        /// store read.
-        private static void DrawAutomationUnavailable(Rect rect)
-        {
-            const float ColumnWidth = 560f;
-            float width = Mathf.Min(ColumnWidth, rect.width);
-            using (GuiStateScope.Capture())
-            {
-                Text.Font = GameFont.Medium;
-                Widgets.Label(new Rect(rect.x, rect.y, width, 32f),
-                    PlannerLabels.AutomationOffTitle);
-                Text.Font = GameFont.Small;
-                GUI.color = PlannerStyle.CaptionText;
-                Widgets.Label(
-                    new Rect(rect.x, rect.y + 36f, width, rect.height - 36f),
-                    PlannerLabels.AutomationOffBody);
-            }
         }
 
         // ----------------------------------------------------------- Options

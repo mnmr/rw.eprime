@@ -1,0 +1,7 @@
+<ModMetaData>
+  <name>Implanner saurid claws probe</name>
+  <author>Implanner tests</author>
+  <packageId>eprime.implanner.sauridclaws</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <loadAfter><li>eprime.implanner</li><li>vanillaracesexpanded.saurid</li></loadAfter>
+</ModMetaData>

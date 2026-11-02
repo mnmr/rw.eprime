@@ -45,6 +45,9 @@ Gli ibridi ereditano la qualità dal genotelaio usato per produrli; vedi [qualit
 <!-- l10n:b-7a2e3799838c -->
 **Elite Bionics Framework**: gli impianti che aumentano o riducono i punti salute di una parte mostrano la variazione nel suggerimento.
 
+<!-- l10n:gene-hediffs -->
+**Vanilla Races Expanded - Saurid** e altre mod di geni: una caratteristica fisica concessa dal gene di un colono, come gli artigli saurid sulle mani, non impedisce la sostituzione di quell'arto. Il gene resta al colono, quindi Implanner installa il braccio bionico pianificato come al solito.
+
 <!-- l10n:b-c7cd0a958354 -->
 ![La richiesta del componente necessario per un modulo della gamba](requirement-prompt.png)
 

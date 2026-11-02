@@ -4,8 +4,6 @@
   <IMP_AddImplantReserveTip>Виберіть імплант, який слід відкласти від автоматизації.</IMP_AddImplantReserveTip>
   <IMP_AddPlan>Новий план</IMP_AddPlan>
   <IMP_AggregateColonists>Колоністів: {0} / {1}</IMP_AggregateColonists>
-  <IMP_AutomationOffBody>{0} розміщує цю колонію на кількох поверхах. Implanner не може перенести імплант або операцію між поверхами, тому припиняє резервування й призначення операцій, щоб не виконувати лише частину кожного плану.\n\nРешта можливостей працює. Створюйте плани, призначайте їх і впорядковуйте імпланти. Додавайте операції вручну, а Implanner відстежуватиме встановлені й відсутні імпланти.</IMP_AutomationOffBody>
-  <IMP_AutomationOffTitle>Автоматизацію вимкнено</IMP_AutomationOffTitle>
   <IMP_BadDirectory>Введіть коректну папку.</IMP_BadDirectory>
   <IMP_BadFileName>Введіть коректну назву файлу.</IMP_BadFileName>
   <IMP_BenchLockedTip>На верстаті Implanner не можна вставляти, призупиняти чи поновлювати замовлення. Зніміть позначку «Верстат Implanner» вгорі вкладки «Завдання», щоб повернути верстат.</IMP_BenchLockedTip>
@@ -24,7 +22,7 @@
   <IMP_ColShootingTip>Навичка стрільби</IMP_ColShootingTip>
   <IMP_ColState>Стан</IMP_ColState>
   <IMP_ColonistDetails>Відомості про колоніста</IMP_ColonistDetails>
-  <IMP_CompatibilityLevelMod>{0}: автоматизацію Implanner вимкнено з цим модом поверхів. Планування й відстеження працюють.</IMP_CompatibilityLevelMod>
+  <IMP_CompatibilityLevelMod>{0}: автоматизація Implanner не може переносити імпланти чи операції між рівнями. Тримайте імпланти, верстаки та пацієнтів на одному рівні, інакше деякі операції чекатимуть вічно.</IMP_CompatibilityLevelMod>
   <IMP_CopyClipboard>Копіювати до буфера</IMP_CopyClipboard>
   <IMP_DeleteFileConfirm>Видалити «{0}»?</IMP_DeleteFileConfirm>
   <IMP_DeletePlan>Видалити план</IMP_DeletePlan>
@@ -232,4 +230,5 @@
   <IMP_OptEntryStyleTip>Кнопка на панелі розташована поруч із перемикачами вигляду в правому нижньому куті та відкриває це плаваюче вікно. Головна вкладка розташована в нижній панелі поруч з «Історією» та «Фракціями» і відкриває Implanner над нею в правому нижньому куті; щоб змінити розмір, перетягніть лівий верхній кут вікна. «Обидва» зберігає обидві точки входу. Сполучення клавіш можна призначити в розділі «Параметри», «Клавіатура», «Головні вкладки».}</IMP_OptEntryStyleTip>
   <IMP_OptInterface>Інтерфейс</IMP_OptInterface>
   <IMP_ResizeGripTip>Перетягніть, щоб змінити розмір вікна. Двічі клацніть, щоб повернути типовий розмір.</IMP_ResizeGripTip>
+  <IMP_LevelModWarning>{0} розподіляє цю колонію на кілька рівнів. Implanner не може переносити імплант чи операцію через межу рівнів, тож операція, для якої імплант лежить на іншому рівні, чекатиме, доки ви його не перенесете.</IMP_LevelModWarning>
 </LanguageData>

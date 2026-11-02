@@ -10,6 +10,9 @@ Quality Jobs requiere Harmony y es compatible con RimWorld 1.6 y 1.7. No requier
 <!-- l10n:expanded -->
 **Vanilla Skills Expanded:** las bonificaciones de calidad de construcción, fabricación y arte se tienen en cuenta al elegir quién termina el trabajo y en la vista previa de probabilidades. Las bonificaciones de velocidad no dan preferencia para la calidad. Los cambios en estas bonificaciones pueden necesitar un poco de tiempo de simulación para reflejarse.
 
+<!-- l10n:endless-growth -->
+**Endless Growth:** los deslizadores de habilidad para dar el toque final llegan hasta 100, y la vista previa de probabilidades y la selección automática de quién termina el trabajo siguen la curva de calidad de ese mod, incluidos los resultados legendarios sin inspiración.
+
 <!-- l10n:ingredients -->
 **Quality Bionics Remastered:** las recetas compatibles que producen objetos con calidad pueden usar el panel de órdenes. **Vanilla Genetics Expanded:** las recetas cuya calidad procede de un genoframe conservan las reglas de calidad de ese ingrediente; elegir quién termina el trabajo no puede mejorar la calidad del ingrediente.
 

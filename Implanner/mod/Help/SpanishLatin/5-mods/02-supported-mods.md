@@ -45,6 +45,9 @@ La calidad del híbrido procede de la estructura genética utilizada (consulta [
 <!-- l10n:b-7a2e3799838c -->
 **Elite Bionics Framework**: los implantes que modifican la salud de una parte muestran ese cambio en su descripción.
 
+<!-- l10n:gene-hediffs -->
+**Vanilla Races Expanded - Saurid** y otros mods de genes: un rasgo corporal que otorga un gen al colono, como las garras de saurio en las manos, no impide reemplazar esa extremidad. El gen permanece con el colono, así que Implanner instala el brazo biónico planificado como de costumbre.
+
 <!-- l10n:b-c7cd0a958354 -->
 ![Requisitos de un módulo de pierna](requirement-prompt.png)
 
