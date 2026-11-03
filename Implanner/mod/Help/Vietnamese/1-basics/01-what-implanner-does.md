@@ -11,3 +11,7 @@ Implanner lập kế hoạch cấy ghép cho cư dân và tự động hóa côn
 
 <!-- l10n:b-64a81f113814 -->
 Có thể tắt hoàn toàn tự động hóa. Mọi bước đều hiện trong danh sách lệnh và ca mổ bạn vẫn dùng.
+
+<!-- l10n:who-is-plannable -->
+Mọi cư dân trưởng thành đều có thể được lập kế hoạch, cũng như các ghoul của thuộc địa từ Anomaly. Ghoul dùng được bộ phận bionic thông thường và bộ dành riêng cho ghoul (giáp, gai và các trái tim ghoul), và chỉ kế hoạch dành cho ghoul mới giao được cho họ (xem [tạo kế hoạch](topic:creating-plans)). Trẻ em, nô lệ và tù nhân không được liệt kê.
+

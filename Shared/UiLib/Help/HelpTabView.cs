@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RimShared.Common.Help;
 using UnityEngine;
 using Verse;
 
@@ -17,7 +18,25 @@ namespace RimShared.UiLib
         private const float ChapterRowHeight = 28f;
         private const float TopicPanelWidth = 220f;
         private const float TopicRowHeight = 28f;
+        private const float TopicIconSize = 16f;
         private const float Gap = 8f;
+
+        // Splitter between the topic list and the content: the gap between the
+        // panels is the grab zone. The list width is a session preference per
+        // assembly (not persisted); the content keeps a readable minimum.
+        private const float TopicPanelMinWidth = 120f;
+        private const float ContentMinWidth = 320f;
+        private const float SplitterDoubleClickSeconds = 0.35f;
+        private static float topicPanelWidth = TopicPanelWidth;
+        private Rect splitterRect;
+        private bool splitterDragging;
+        private float splitterGrabOffset;
+        private float splitterLastClickTime = -1f;
+
+        private static readonly Color TableCellFill =
+            new Color(1f, 1f, 1f, 0.05f);
+        private static readonly Color TableHeaderFill =
+            new Color(1f, 1f, 1f, 0.12f);
 
         private static readonly Color LinkColor = new Color(0.45f, 0.7f, 1f);
         private static readonly Color LinkHoverColor =
@@ -50,14 +69,20 @@ namespace RimShared.UiLib
 
         // Owner: this help window. Key: published topics identity, panel width
         // and height, and host UI metric revision. Value: immutable wrapped
-        // topic-row rectangles and scroll extent. Dependencies: topic titles,
-        // Small-font metrics, available width and scrollbar presence. Refresh:
-        // immediate behind this gate. Equality: equal geometry retains arrays.
-        // Teardown: ReleaseWindowData drops topics and rectangles.
+        // topic-row rectangles, the label inset (icon column when any topic
+        // in the chapter declares one) and scroll extent. Dependencies: topic
+        // titles and icons, Small-font metrics, available width and scrollbar
+        // presence. Refresh: immediate behind this gate. Equality: equal
+        // geometry retains arrays. Teardown: ReleaseWindowData drops topics
+        // and rectangles.
         private HelpTopicData[]? topicLayoutSource;
         private Rect[]? topicRowRects;
         private float topicLayoutWidth = -1f, topicLayoutHeight = -1f;
         private float topicViewWidth, topicViewHeight;
+        private float topicLabelInset;
+        /// The panel width at which every title fits on one line (the
+        /// splitter's double-click target), from the same gated build.
+        private float topicFitPanelWidth;
         private int topicLayoutMetrics = -1;
 
         // Owner: window. Key: the host's language revision. Value: translated
@@ -169,6 +194,8 @@ namespace RimShared.UiLib
         public void ReleaseWindowData()
         {
             content.Release();
+            SplitterCursor.Set(false);
+            splitterDragging = false;
             chapterLabels = null;
             labelLanguageStamp = -1;
             titleHeightStamp = -1;
@@ -255,16 +282,63 @@ namespace RimShared.UiLib
                 DrawStartHub(body, tour);
                 return;
             }
-            var panelRect = new Rect(
-                body.x, body.y, TopicPanelWidth, body.height);
+            float maxPanelWidth = Mathf.Max(TopicPanelMinWidth, body.width - Gap - ContentMinWidth);
+            float panelWidth = Mathf.Clamp(topicPanelWidth, TopicPanelMinWidth, maxPanelWidth);
+            var panelRect = new Rect(body.x, body.y, panelWidth, body.height);
             var contentRect = new Rect(panelRect.xMax + Gap, body.y,
-                body.width - TopicPanelWidth - Gap, body.height);
+                body.width - panelWidth - Gap, body.height);
+            splitterRect = new Rect(panelRect.xMax - 1f, body.y, Gap + 2f, body.height);
 
             HelpTopicData[] topics = content.ChapterTopics(activeChapter);
             int selected = SelectedTopicIndex(topics);
+            HandleSplitter(body, panelWidth, maxPanelWidth);
             DrawTopicPanel(panelRect, topics, selected);
             if (selected >= 0)
                 DrawTopic(contentRect, activeChapter, topics[selected]);
+        }
+
+        /// <summary>Drag the gap between the panels to resize the topic
+        /// list; double-click it to size the list so every title fits on one
+        /// line. The resize cursor shows while the mouse is over the gap or a
+        /// drag is in progress. Input only: the layout gates re-measure when
+        /// the width they are keyed on changes.</summary>
+        private void HandleSplitter(Rect body, float panelWidth, float maxPanelWidth)
+        {
+            Event e = Event.current;
+            bool over = Mouse.IsOver(splitterRect);
+            if (e.type == EventType.MouseDown && e.button == 0 && over)
+            {
+                float now = Time.realtimeSinceStartup;
+                bool doubleClick = e.clickCount >= 2
+                    || (splitterLastClickTime >= 0f && now - splitterLastClickTime <= SplitterDoubleClickSeconds);
+                splitterLastClickTime = doubleClick ? -1f : now;
+                if (doubleClick)
+                {
+                    splitterDragging = false;
+                    topicPanelWidth = Mathf.Clamp(topicFitPanelWidth, TopicPanelMinWidth, maxPanelWidth);
+                }
+                else
+                {
+                    splitterDragging = true;
+                    splitterGrabOffset = e.mousePosition.x - (body.x + panelWidth);
+                }
+                e.Use();
+            }
+            if (splitterDragging)
+            {
+                if (e.type == EventType.MouseDrag || e.type == EventType.Repaint)
+                    topicPanelWidth = Mathf.Clamp(e.mousePosition.x - splitterGrabOffset - body.x,
+                        TopicPanelMinWidth, maxPanelWidth);
+                // rawType sees the release even when it lands outside the
+                // view's clip, so a drag never outlives its button.
+                if (e.rawType == EventType.MouseUp)
+                {
+                    splitterDragging = false;
+                    e.Use();
+                }
+            }
+            if (e.type == EventType.Repaint)
+                SplitterCursor.Set(over || splitterDragging);
         }
 
         /// <summary>The Start page: the welcome text and the tour checklist
@@ -492,7 +566,7 @@ namespace RimShared.UiLib
             Rect rect, HelpTopicData[] topics, int selected)
         {
             Rect inner = SegmentedControl.Panel(rect);
-            EnsureTopicLayout(topics, inner.width, inner.height);
+            EnsureTopicLayout(topics, inner.width, inner.height, rect.width - inner.width);
             var viewRect = new Rect(0f, 0f,
                 topicViewWidth, topicViewHeight);
             bool[] read = TopicReadFlags(topics);
@@ -505,6 +579,7 @@ namespace RimShared.UiLib
                     Text.Anchor = TextAnchor.MiddleLeft;
                     Text.WordWrap = true;
                     Color plainColor = GUI.color;
+                    float inset = topicLabelInset;
                     for (int i = 0; i < topics.Length; i++)
                     {
                         Rect row = topicRowRects![i];
@@ -512,8 +587,13 @@ namespace RimShared.UiLib
                             Widgets.DrawBoxSolid(row, TopicSelectedFill);
                         else
                             Widgets.DrawHighlightIfMouseover(row);
-                        var label = new Rect(row.x + 8f, row.y + 4f,
-                            row.width - 12f, row.height - 8f);
+                        Texture2D? icon = topics[i].Icon;
+                        if (icon != null)
+                            GUI.DrawTexture(new Rect(row.x + 8f,
+                                row.y + (row.height - TopicIconSize) / 2f,
+                                TopicIconSize, TopicIconSize), icon);
+                        var label = new Rect(row.x + 8f + inset, row.y + 4f,
+                            row.width - 12f - inset, row.height - 8f);
                         GUI.color = read[i] ? ReadTopicColor : plainColor;
                         Widgets.Label(label, topics[i].ListTitle);
                         GUI.color = plainColor;
@@ -531,25 +611,37 @@ namespace RimShared.UiLib
             }
         }
 
-        private void EnsureTopicLayout(HelpTopicData[] topics, float width, float height)
+        private void EnsureTopicLayout(HelpTopicData[] topics, float width, float height, float frame)
         {
             int metrics = host.UiMetricRevision;
             if (ReferenceEquals(topicLayoutSource, topics) && topicLayoutWidth == width
                 && topicLayoutHeight == height && topicLayoutMetrics == metrics) return;
             var rows = new Rect[topics.Length];
             float viewWidth = width, y = 0f;
+            float inset = 0f;
+            for (int i = 0; i < topics.Length; i++)
+                if (topics[i].Icon != null) { inset = TopicIconSize + 6f; break; }
             using (GuiStateScope.Capture())
             {
                 Text.Font = GameFont.Small;
                 Text.WordWrap = true;
                 float lineHeight = Mathf.Ceil(Text.LineHeight);
+                // Widest unwrapped title, plus the label margins, the icon
+                // column, the panel frame and a scrollbar when single-line
+                // rows still overflow: the double-click width of the splitter.
+                float widest = 0f;
+                for (int i = 0; i < topics.Length; i++)
+                    widest = Mathf.Max(widest, Text.CalcSize(topics[i].ListTitle).x);
+                float singleLineRow = Mathf.Max(TopicRowHeight, lineHeight + 8f);
+                bool overflows = topics.Length * singleLineRow > height;
+                topicFitPanelWidth = Mathf.Ceil(widest + 12f + inset + frame + (overflows ? 16f : 0f)) + 2f;
                 for (int pass = 0; pass < 2; pass++)
                 {
                     y = 0f;
                     for (int i = 0; i < topics.Length; i++)
                     {
                         float rowHeight = Mathf.Max(TopicRowHeight, Mathf.Max(lineHeight,
-                            Mathf.Ceil(Text.CalcHeight(topics[i].ListTitle, Mathf.Max(1f, viewWidth - 12f)))) + 8f);
+                            Mathf.Ceil(Text.CalcHeight(topics[i].ListTitle, Mathf.Max(1f, viewWidth - 12f - inset)))) + 8f);
                         rows[i] = new Rect(0f, y, viewWidth, rowHeight);
                         y += rowHeight;
                     }
@@ -564,6 +656,7 @@ namespace RimShared.UiLib
             if (!equal) topicRowRects = rows;
             topicViewWidth = viewWidth;
             topicViewHeight = y;
+            topicLabelInset = inset;
             topicLayoutSource = topics;
             topicLayoutWidth = width;
             topicLayoutHeight = height;
@@ -672,6 +765,12 @@ namespace RimShared.UiLib
                         || itemRect.y > visibleBottom)
                         continue;
                     byte kind = model.Kinds[i];
+                    if (kind == HelpDrawModel.KindCellFill)
+                    {
+                        Widgets.DrawBoxSolid(itemRect, model.Texts[i].Length > 0
+                            ? TableHeaderFill : TableCellFill);
+                        continue;
+                    }
                     if (kind == HelpDrawModel.KindDemo)
                     {
                         model.Demos[i]?.Draw(itemRect);
@@ -713,6 +812,13 @@ namespace RimShared.UiLib
 
         private void NavigateTo(string slug)
         {
+            if (HelpMarkdown.IsWebUrl(slug))
+            {
+                // Vanilla's convention (mod dependencies, Mods page): the
+                // Steam overlay when enabled, else the OS default browser.
+                SteamUtility.OpenUrl(slug);
+                return;
+            }
             if (!content.TryFindTopic(slug,
                     out int chapterIndex, out int topicIndex))
                 return;

@@ -93,4 +93,5 @@
   <QJ_TabOptions>設定</QJ_TabOptions>
   <QJ_SettingsAllowRobotPreparation>允許機械族與機器人參與品質工作</QJ_SettingsAllowRobotPreparation>
   <QJ_SettingsAllowRobotPreparationTip>允許機械族與受支援的機器人參與受管理的製作與建造工作。關閉後，這些工作及其技能經驗將保留給殖民者，同時也會停止它們正在進行的受管理工作。符合條件的機械族與機器人仍可完成 Quality Jobs 指派的收尾工作。一般未受管理的工作不受影響。</QJ_SettingsAllowRobotPreparationTip>
+  <QJ_HelpChapterMods>模組</QJ_HelpChapterMods>
 </LanguageData>

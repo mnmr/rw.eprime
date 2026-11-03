@@ -664,4 +664,5 @@ WorkRoles는 기본 게임 방식으로 관리 대상의 작업 목록을 제공
   <WR_RecTuneHunterPlacementPoorShotsFirst>사격이 서투른 순</WR_RecTuneHunterPlacementPoorShotsFirst>
   <WR_RecTuneHunterPlacementPoorShotsFirstTip>무장한 모든 정착민이 사냥꾼을 맡습니다. 가장 서투른 사수가 먼저 사냥하여 사격 숙련도를 쌓고, 명사수는 가장 나중에 사냥합니다. 식량이 안정적이고 사격할 수 있는 정착민을 더 늘리고 싶을 때 선택하세요. 기본값입니다.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
   <WR_RecTuneHunterTiersRowDescReversed>사냥꾼 동적 슬롯의 사격 수준 기준값이며, 위에서 아래로 읽습니다. 마지막 기준값보다 높은 수준은 1단계로 사냥꾼을 기본 작업 직후에 배치하고, 2·3단계는 중간 및 마지막 작업 역할 뒤에 오며, 5단계는 사냥꾼을 맨 마지막에 배치합니다.</WR_RecTuneHunterTiersRowDescReversed>
+  <WR_HelpChapterMods>모드</WR_HelpChapterMods>
 </LanguageData>

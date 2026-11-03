@@ -4,6 +4,9 @@ title: Bảng tổng quan
 <!-- l10n:b-b3adf99a5ff7 -->
 Thẻ Tổng quan liệt kê mọi cư dân có thể nhận cấy ghép.
 
+<!-- l10n:overview-ghouls -->
+Ghoul (Anomaly) được liệt kê cùng các cư dân. Trình đơn kế hoạch chỉ đưa ra các kế hoạch dành cho ghoul cho họ, và không đưa kế hoạch ghoul cho ai khác; các kế hoạch còn lại bị làm mờ kèm ghi chú dành cho ai. Ghoul không có kỹ năng, nên cột B và C của họ hiện 0.
+
 <!-- l10n:b-e8c75fea3beb -->
 ![Các hàng tổng quan với cột kế hoạch, tiến độ, ưu tiên và trạng thái](overview-rows.png)
 

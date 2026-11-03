@@ -219,7 +219,7 @@
   <IMP_PlanBody>Cuerpo</IMP_PlanBody>
   <IMP_PlanBodyAny>Cualquier cuerpo</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0} (no cargado)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>Un plan hecho para un cuerpo solo enumera las partes de ese cuerpo y solo puede reclutar colonos con ese cuerpo. Un plan para el cuerpo humano también admite colonos cuyo cuerpo tenga todas las partes humanas, como una raza con alas adicionales.\n\nUn plan para cualquier cuerpo se aplica a todos los colonos. Las partes que el cuerpo de un colono no tiene se omiten para ese colono.\n\nUn plan puede extender un plan para cualquier cuerpo o un plan para el mismo cuerpo.</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>Un plan hecho para un cuerpo solo enumera las partes de ese cuerpo y solo puede reclutar colonos con ese cuerpo. Un plan para el cuerpo humano también admite colonos cuyo cuerpo tenga todas las partes humanas, como una raza con alas adicionales.\n\nUn plan para cualquier cuerpo se aplica a todos los colonos. Las partes que el cuerpo de un colono no tiene se omiten para ese colono.\n\nUn plan hecho para necrófagos enumera los implantes ordinarios y el kit de necrófagos, y solo puede reclutar necrófagos. Ningún otro plan recluta a un necrófago.\n\nUn plan puede extender un plan para cualquier cuerpo o un plan para el mismo cuerpo. Un plan para necrófagos también puede extender un plan para cualquier cuerpo.</IMP_PlanBodyTip>
   <IMP_PlanForBody>para {0}</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0} (solo {1})</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>No es para este cuerpo</IMP_StateNotForBody>
@@ -231,4 +231,7 @@
   <IMP_OptInterface>Interfaz</IMP_OptInterface>
   <IMP_ResizeGripTip>Arrastra para cambiar el tamaño de la ventana. Haz doble clic para volver al tamaño predeterminado.</IMP_ResizeGripTip>
   <IMP_LevelModWarning>{0} reparte esta colonia en varios niveles. Implanner no puede llevar un implante ni una operación a través de los límites entre niveles, así que una operación cuyo implante está en otro nivel espera hasta que lo muevas.</IMP_LevelModWarning>
+  <IMP_PlanForGhouls>para necrófagos</IMP_PlanForGhouls>
+  <IMP_PlanGhouls>Necrófagos</IMP_PlanGhouls>
+  <IMP_PlanTargetColonists>colonos</IMP_PlanTargetColonists>
 </LanguageData>

@@ -93,4 +93,5 @@
   <QJ_TabOptions>Opzioni</QJ_TabOptions>
   <QJ_SettingsAllowRobotPreparation>Consenti a mech e robot di lavorare ai lavori di qualità</QJ_SettingsAllowRobotPreparation>
   <QJ_SettingsAllowRobotPreparationTip>Consente ai mech e ai robot supportati di svolgere i lavori di produzione e costruzione gestiti. Disattiva questa opzione per riservare ai coloni quel lavoro e la relativa esperienza nelle abilità. Questo interrompe anche il lavoro che mech e robot stanno già svolgendo sui lavori gestiti. I mech e i robot idonei possono comunque completare i lavori assegnati da Quality Jobs. I normali lavori non gestiti non sono interessati.</QJ_SettingsAllowRobotPreparationTip>
+  <QJ_HelpChapterMods>Mod</QJ_HelpChapterMods>
 </LanguageData>

@@ -516,12 +516,16 @@ namespace Implanner.UI
             // the filter to its body: no menu, a label.
             List<BodyDef> bodies = Catalogs.PlannableBodies();
             List<BodyDef> offered = Catalogs.OfferedBodies();
-            if (selected != null && selected.IsPinned)
+            if (selected != null && (selected.IsPinned || selected.IsForMutant))
             {
+                // A ghoul plan reads "for ghouls" (ghouls have the human
+                // body; a body pin on top of it, import only, keeps the
+                // body filter fixed).
                 Body = PlanBodies.IndexOf(selected.Body);
                 result.PinnedBody = true;
-                result.BodyFilterText = "IMP_PlanForBody".Translate(
-                    PlanBodies.Label(selected.Body));
+                result.BodyFilterText = selected.IsForMutant
+                    ? "IMP_PlanForGhouls".Translate()
+                    : "IMP_PlanForBody".Translate(PlanBodies.Label(selected.Body));
                 result.BodyFilterTip = "IMP_PlanBodyTip".Translate();
             }
             else if (offered.Count > 1)
@@ -582,11 +586,15 @@ namespace Implanner.UI
                 // two implants), not distinct implant kinds.
                 IReadOnlyList<ImplantGoal> planGoals = model.EffectiveImplants(plan);
                 // A pinned plan counts only the slots its body carries
-                // (inherited picks for other bodies never apply to it).
+                // (inherited picks for other bodies never apply to it); a
+                // plan for one kind of pawn only the kinds that kind takes
+                // (an inherited revenant vertebrae never applies to ghouls).
                 int slotCount = 0;
                 int pinnedBody = plan.IsPinned ? PlanBodies.IndexOf(plan.Body) : -1;
                 for (int g = 0; g < planGoals.Count; g++)
                 {
+                    ImplantCatalogEntry? kind = Catalogs.ImplantByDefName(planGoals[g].ImplantDefName);
+                    if (kind != null && !kind.AcceptsMutant(plan.Mutant)) continue;
                     if (pinnedBody < 0)
                     {
                         slotCount += planGoals[g].Count;
@@ -603,7 +611,8 @@ namespace Implanner.UI
                 for (int p = 0; planPawns != null && p < planPawns.Count; p++)
                 {
                     PlanEvaluation evaluation = PawnProjection.Evaluate(
-                        model, planPawns[p], planGoals, away: false, plan.MinQuality, plan.Body);
+                        model, planPawns[p], planGoals, away: false, plan.MinQuality, plan.Body,
+                        plan.Mutant);
                     satisfied += evaluation.SatisfiedUnits;
                     total += evaluation.TotalUnits;
                 }
@@ -614,13 +623,16 @@ namespace Implanner.UI
                     ? model.PlanById(plan.BasePlanId)
                     : null;
                 // The name row's caption holds one fact: the base link, or
-                // the pinned body ("for Android"). A pinned plan that also
-                // extends one shows its body on the counts line instead (the
-                // editor header shows it in full once selected).
-                string forBody = plan.IsPinned
-                    ? "IMP_PlanForBody".Translate(PlanBodies.Label(plan.Body)).ToString()
-                    : "";
-                if (plan.IsPinned && basePlan != null) counts += " · " + forBody;
+                // who the plan is for ("for Android", "for ghouls"). A plan
+                // for someone that also extends one shows that on the
+                // counts line instead (the editor header shows it in full
+                // once selected).
+                string forBody = plan.IsForMutant
+                    ? "IMP_PlanForGhouls".Translate().ToString()
+                    : plan.IsPinned
+                        ? "IMP_PlanForBody".Translate(PlanBodies.Label(plan.Body)).ToString()
+                        : "";
+                if (forBody.Length > 0 && basePlan != null) counts += " · " + forBody;
                 var row = new PlanListRow
                 {
                     PlanId = plan.Id,
@@ -651,12 +663,16 @@ namespace Implanner.UI
             return result;
         }
 
-        /// The region segment (every region while a search is active), and
-        /// purchase-only kinds only while the catalog option shows them.
+        /// The region segment (every region while a search is active),
+        /// purchase-only kinds only while the catalog option shows them, and
+        /// only the kinds the plan's kind of pawn can take (the ghoul kit
+        /// for a ghoul plan, never the revenant vertebrae; no ghoul kit for
+        /// an ordinary plan).
         private bool PassesFilters(ImplantCatalogEntry entry, bool showPurchaseOnly,
-            bool searching) =>
+            bool searching, string planMutant) =>
             (searching || entry.Region == (ImplantRegion)Region)
-            && (showPurchaseOnly || !entry.PurchaseOnly);
+            && (showPurchaseOnly || !entry.PurchaseOnly)
+            && entry.AcceptsMutant(planMutant);
 
         /// Builds the filtered selection tree: one node per body-part group
         /// (the catalog's GroupLabel), then the group's implant slots as
@@ -707,7 +723,7 @@ namespace Implanner.UI
                 for (int i = 0; i < implants.Count; i++)
                 {
                     ImplantCatalogEntry entry = implants[i];
-                    if (!PassesFilters(entry, showPurchaseOnly, searching)) continue;
+                    if (!PassesFilters(entry, showPurchaseOnly, searching, selected.Mutant)) continue;
                     // The body-part group matches for every slot of the
                     // entry; resolved once, before the per-slot labels.
                     bool groupMatches = searching
@@ -749,7 +765,7 @@ namespace Implanner.UI
                             Depth = searching ? 0 : 1,
                             DefName = entry.Def.defName,
                             Slot = slot,
-                            IconDef = entry.Def.spawnThingOnRemoved,
+                            IconDef = entry.Item,
                             Label = label,
                             Selected = own,
                             Inherited = !own
@@ -875,7 +891,7 @@ namespace Implanner.UI
                 {
                     DefName = goal.ImplantDefName,
                     Label = entry?.Label ?? goal.ImplantDefName,
-                    IconDef = entry?.Def.spawnThingOnRemoved,
+                    IconDef = entry?.Item,
                     CountText = goal.Count.ToStringCached(),
                 };
                 int tier = StarRanking.TierOf(

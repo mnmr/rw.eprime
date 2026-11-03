@@ -15,7 +15,7 @@ namespace Implanner.Core
     /// Format:
     /// <code>
     /// &lt;ImplannerPlans&gt;
-    ///   &lt;Plan Name="Full bionics" Extends="Essentials" MinQuality="Good" Body="Human"&gt;
+    ///   &lt;Plan Name="Full bionics" Extends="Essentials" MinQuality="Good" Body="Human" Mutant="Ghoul"&gt;
     ///     &lt;Implant Def="BionicArm" MayRequire="pkg.id"&gt;
     ///       &lt;Slot&gt;Shoulder#0&lt;/Slot&gt;
     ///       &lt;Slot&gt;Shoulder#1&lt;/Slot&gt;
@@ -83,6 +83,8 @@ namespace Implanner.Core
                             ImplantQuality.NameOf(plan.MinQuality));
                     if (plan.IsPinned)
                         planEl.SetAttributeValue("Body", plan.Body);
+                    if (plan.IsForMutant)
+                        planEl.SetAttributeValue("Mutant", plan.Mutant);
 
                     foreach (var goal in plan.Implants)
                     {
@@ -273,7 +275,7 @@ namespace Implanner.Core
                 // the game's concern (an unloaded body leaves the plan inert
                 // until its mod returns).
                 plans.Add(new Plan(tempId, name, 0, goals, minQuality,
-                    (string)planEl.Attribute("Body")));
+                    (string)planEl.Attribute("Body"), (string)planEl.Attribute("Mutant")));
             }
 
             // Second pass: resolve Extends names onto temp ids. A target
@@ -286,7 +288,7 @@ namespace Implanner.Core
                 if (extendsName == null || extendsName.Length == 0) continue;
                 if (keptNames.TryGetValue(extendsName, out int baseTempId))
                 {
-                    if (Plan.IsCompatibleBase(plans[baseTempId - 1].Body, plans[i].Body))
+                    if (Plan.IsCompatibleBase(plans[baseTempId - 1], plans[i].Body, plans[i].Mutant))
                         plans[i].BasePlanId = baseTempId;
                 }
                 else if (!skippedNames.Contains(extendsName))

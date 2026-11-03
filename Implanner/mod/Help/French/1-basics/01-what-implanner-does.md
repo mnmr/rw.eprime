@@ -11,3 +11,7 @@ Implanner planifie les implants des colons et automatise le travail nécessaire 
 
 <!-- l10n:b-64a81f113814 -->
 L'automatisation peut être entièrement désactivée. Chacune de ses actions apparaît dans les mêmes ordres de production et listes d'opérations que vous utilisez déjà.
+
+<!-- l10n:who-is-plannable -->
+Tout colon adulte peut être planifié, tout comme les goules de la colonie issues d'Anomaly. Les goules reçoivent les prothèses bioniques ordinaires et le kit de goule (plaquage, barbelures et cœurs de goule), et seul un plan conçu pour les goules peut les affecter (voir [créer des plans](topic:creating-plans)). Les enfants, les esclaves et les prisonniers ne sont pas listés.
+

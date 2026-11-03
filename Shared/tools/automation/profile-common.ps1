@@ -238,12 +238,16 @@ for ($index = 0; $index -lt $saveModIds.Count; $index++) {
     }
 }
 
-$canonicalSave = Join-Path $script:AutomationRepositoryRoot 'Saves\Fisso-NAM.rws'
+# The repository keeps its own copy of every save a run has used, under the
+# save's own name; a source that already is that copy is not copied onto itself.
+$canonicalSave = Join-Path $script:LocalSavesRoot $sourceSave.Name
 $autostartSave = Join-Path $profileSaves 'Autostart.rws'
-$canonicalHash = Copy-VerifiedFile $sourceSave.FullName $canonicalSave
 $autostartHash = Copy-VerifiedFile $sourceSave.FullName $autostartSave
-if ($canonicalHash -ne $autostartHash) {
-    throw 'canonical and autostart save hashes differ'
+if ([IO.Path]::GetFullPath($sourceSave.FullName) -ne [IO.Path]::GetFullPath($canonicalSave)) {
+    $canonicalHash = Copy-VerifiedFile $sourceSave.FullName $canonicalSave
+    if ($canonicalHash -ne $autostartHash) {
+        throw 'canonical and autostart save hashes differ'
+    }
 }
 
 # The template config (verified above to equal the save's list) is the

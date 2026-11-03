@@ -36,8 +36,9 @@ body shows that body in place of the button and lists only its parts
 <!-- l10n:b-4c96d69447df -->
 Downgrades such as peg legs cannot be planned. Implants with a drawback
 or a narrow use are also left out: joywire, painstopper, power claw and
-pilot assistant. Implants only ghouls can take are never
-listed. Purchase-only parts such as archotech implants, whose item no
+pilot assistant. Implants only ghouls can take are listed for plans made
+for ghouls only (see [creating plans](topic:creating-plans)); the
+corrosive heart and the blood warmer stay out as downgrades. Purchase-only parts such as archotech implants, whose item no
 workbench can craft, are hidden until **Show purchase-only implants** on
 the Options tab is switched on. An archotech part the player installs
 manually still counts for the slot it occupies, whether the option is on

@@ -178,4 +178,5 @@ Para añadir un conjunto a un grupo, cambia al Editor de grupos y utiliza la ram
   <EPR.UseVanillaConfirmButton>Usar el del juego base</EPR.UseVanillaConfirmButton>
   <EPR.CounterFontSmall>Pequeña</EPR.CounterFontSmall>
   <EPR.CounterFontTiny>Diminuta</EPR.CounterFontTiny>
+  <EPR.HelpChapterMods>Mods</EPR.HelpChapterMods>
 </LanguageData>

@@ -219,7 +219,7 @@
   <IMP_PlanBody>Corps</IMP_PlanBody>
   <IMP_PlanBodyAny>Tout corps</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0} (non chargé)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>Un plan conçu pour un seul corps ne liste que les parties de ce corps et ne peut mobiliser que les colons ayant ce corps. Un plan pour le corps humain accepte aussi les colons dont le corps possède toutes les parties humaines, comme une race dotée d'ailes supplémentaires.\n\nUn plan pour tout corps s'applique à tous les colons. Les parties que le corps d'un colon n'a pas sont ignorées pour ce colon.\n\nUn plan peut étendre un plan pour tout corps, ou un plan pour le même corps.</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>Un plan conçu pour un seul corps ne liste que les parties de ce corps et ne peut mobiliser que les colons ayant ce corps. Un plan pour le corps humain accepte aussi les colons dont le corps possède toutes les parties humaines, comme une race dotée d'ailes supplémentaires.\n\nUn plan pour tout corps s'applique à tous les colons. Les parties que le corps d'un colon n'a pas sont ignorées pour ce colon.\n\nUn plan conçu pour les goules liste les implants ordinaires et l'équipement pour goules, et ne peut mobiliser que des goules. Aucun autre plan ne mobilise de goule.\n\nUn plan peut étendre un plan pour tout corps, ou un plan pour le même corps. Un plan pour les goules peut aussi étendre un plan pour tout corps.</IMP_PlanBodyTip>
   <IMP_PlanForBody>pour {0}</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0} ({1} uniquement)</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>Pas pour ce corps</IMP_StateNotForBody>
@@ -231,4 +231,7 @@
   <IMP_OptInterface>Interface</IMP_OptInterface>
   <IMP_ResizeGripTip>Faites glisser pour redimensionner la fenêtre. Double-cliquez pour revenir à la taille par défaut.</IMP_ResizeGripTip>
   <IMP_LevelModWarning>{0} répartit cette colonie sur plusieurs niveaux. Implanner ne peut pas transporter un implant ni gérer une opération à travers la limite d'un niveau : une opération dont l'implant se trouve à un autre niveau attend que vous le déplaciez.</IMP_LevelModWarning>
+  <IMP_PlanForGhouls>pour les goules</IMP_PlanForGhouls>
+  <IMP_PlanGhouls>Goules</IMP_PlanGhouls>
+  <IMP_PlanTargetColonists>colons</IMP_PlanTargetColonists>
 </LanguageData>

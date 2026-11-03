@@ -30,6 +30,12 @@ locales are retired; the active tooling does not update their archived content.
 - Finisher skill label: Danish `Færdiggørelseskrav: {0}`;
   German `Fertigstellen ab Stufe {0}`.
 - Distinguish implants held back for manual use from implants allocated by automation.
+- Implanner's ghouls are Anomaly's ghouls: use the game's own Anomaly term
+  for ghoul in the locale. "Ghoul kit" means Anomaly's ghoul-only prosthetics
+  (ghoul plating, ghoul barbs, the ghoul hearts); keep the game's implant
+  names. `IMP_PlanGhouls` is a short menu entry; `IMP_PlanForGhouls` is a
+  short caption ("for ghouls"); `IMP_PlanTargetColonists` fills
+  `IMP_PlanMenuOnlyFor`'s `{1}` ("colonists only").
 - Japanese: use the game's `思想` for ideoligion, `戒律` for a Precept,
   and `詳細な設定` when quoting the manual-priorities control. Preserve `Ideology`
   when it names the DLC. Keep `入植者`, `グラヴシップ`, `情熱` and `熱心な情熱`
@@ -93,7 +99,11 @@ directives exactly as supplied, in the same order. Retain the frontmatter struct
 For a help block key ending in `#<id>`, return only that block's text. A `#title`
 entry is the title alone, without frontmatter. Preserve a heading's `#` prefix,
 list structure and image Markdown. Do not return localization ID comments.
-`page_english`, `page_current` and `previous_english` provide read-only context;
+A table block is consecutive lines that each start with `|`: keep one table
+row per line, the same number of rows and cells, and never add a header
+separator line. An image destination may carry a display-height suffix such
+as `(verdict-blue.png|16)`; keep it exactly as supplied.
+The `pages` map (each page's `english` and `current`) and `previous_english` provide read-only context;
 never return or rewrite their other blocks. A list or section may be requested
 because its introductory context changed even though its own English is equal.
 Retain its current translation when that context does not require a wording change.

@@ -106,7 +106,7 @@ namespace Implanner
             foreach (KeyValuePair<string, int> pair in model.ImplantReserves)
             {
                 ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(pair.Key);
-                ThingDef? item = entry?.Def.spawnThingOnRemoved;
+                ThingDef? item = entry?.Item;
                 if (item == null) continue;
                 result.TryGetValue(item, out int existing);
                 result[item] = Math.Max(existing, pair.Value);
@@ -374,7 +374,7 @@ namespace Implanner
             if (goals.Count == 0) return statuses;
 
             List<string> missing = PawnProjection.MissingImplantSlotKeys(
-                model, pawn, goals, plan.MinQuality, plan.Body);
+                model, pawn, goals, plan.MinQuality, plan.Body, plan.Mutant);
             if (missing.Count == 0) return statuses;
             List<string> batch = SurgeryPlanner.ComputeBatch(
                 missing, model, goals, model.Iteration,

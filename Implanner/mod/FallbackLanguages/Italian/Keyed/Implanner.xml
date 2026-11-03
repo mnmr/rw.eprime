@@ -219,7 +219,7 @@
   <IMP_PlanBody>Corpo</IMP_PlanBody>
   <IMP_PlanBodyAny>Qualsiasi corpo</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0} (non caricato)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>Un piano creato per un solo corpo elenca soltanto le parti di quel corpo e può arruolare solo i coloni con quel corpo. Un piano per il corpo umano accoglie anche i coloni il cui corpo ha tutte le parti umane, come una razza con ali aggiuntive.\n\nUn piano per qualsiasi corpo si applica a tutti i coloni. Le parti che il corpo di un colono non possiede vengono saltate per quel colono.\n\nUn piano può estendere un piano per qualsiasi corpo oppure un piano per lo stesso corpo.</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>Un piano creato per un solo corpo elenca soltanto le parti di quel corpo e può arruolare solo i coloni con quel corpo. Un piano per il corpo umano accoglie anche i coloni il cui corpo ha tutte le parti umane, come una razza con ali aggiuntive.\n\nUn piano per qualsiasi corpo si applica a tutti i coloni. Le parti che il corpo di un colono non possiede vengono saltate per quel colono.\n\nUn piano creato per i ghoul elenca gli impianti ordinari e il kit per ghoul, e può arruolare solo ghoul. Nessun altro piano arruola un ghoul.\n\nUn piano può estendere un piano per qualsiasi corpo oppure un piano per lo stesso corpo. Un piano per i ghoul può estendere anche un piano per qualsiasi corpo.</IMP_PlanBodyTip>
   <IMP_PlanForBody>per {0}</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0} (solo {1})</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>Non per questo corpo</IMP_StateNotForBody>
@@ -231,4 +231,7 @@
   <IMP_OptInterface>Interfaccia</IMP_OptInterface>
   <IMP_ResizeGripTip>Trascina per ridimensionare la finestra. Fai doppio clic per tornare alla dimensione predefinita.</IMP_ResizeGripTip>
   <IMP_LevelModWarning>{0} distribuisce questa colonia su più livelli. Implanner non può trasportare un impianto o un intervento oltre il confine tra livelli, quindi un intervento il cui impianto si trova su un altro livello resta in attesa finché non lo sposti.</IMP_LevelModWarning>
+  <IMP_PlanForGhouls>per i ghoul</IMP_PlanForGhouls>
+  <IMP_PlanGhouls>Ghoul</IMP_PlanGhouls>
+  <IMP_PlanTargetColonists>i coloni</IMP_PlanTargetColonists>
 </LanguageData>

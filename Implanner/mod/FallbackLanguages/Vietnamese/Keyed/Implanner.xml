@@ -219,7 +219,7 @@
   <IMP_PlanBody>Cơ thể</IMP_PlanBody>
   <IMP_PlanBodyAny>Mọi cơ thể</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0} (chưa tải)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>Kế hoạch dành cho một cơ thể chỉ liệt kê các bộ phận của cơ thể đó và chỉ có thể tuyển cư dân có cơ thể đó. Kế hoạch dành cho cơ thể người cũng nhận cả những cư dân có cơ thể chứa đủ mọi bộ phận của người, chẳng hạn một chủng tộc có thêm cánh.\n\nKế hoạch dành cho mọi cơ thể áp dụng cho mọi cư dân. Những bộ phận mà cơ thể của cư dân không có sẽ bị bỏ qua với cư dân đó.\n\nMột kế hoạch có thể mở rộng một kế hoạch dành cho mọi cơ thể, hoặc một kế hoạch cho cùng cơ thể.</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>Kế hoạch dành cho một cơ thể chỉ liệt kê các bộ phận của cơ thể đó và chỉ có thể tuyển cư dân có cơ thể đó. Kế hoạch dành cho cơ thể người cũng nhận cả những cư dân có cơ thể chứa đủ mọi bộ phận của người, chẳng hạn một chủng tộc có thêm cánh.\n\nKế hoạch dành cho mọi cơ thể áp dụng cho mọi cư dân. Những bộ phận mà cơ thể của cư dân không có sẽ bị bỏ qua với cư dân đó.\n\nKế hoạch dành cho ngạ quỷ liệt kê các cấy ghép thông thường và bộ cấy ghép ngạ quỷ, và chỉ có thể tuyển ngạ quỷ. Không kế hoạch nào khác tuyển ngạ quỷ.\n\nMột kế hoạch có thể mở rộng một kế hoạch dành cho mọi cơ thể, hoặc một kế hoạch cho cùng cơ thể. Kế hoạch dành cho ngạ quỷ cũng có thể mở rộng một kế hoạch dành cho mọi cơ thể.</IMP_PlanBodyTip>
   <IMP_PlanForBody>cho {0}</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0} (chỉ {1})</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>Không dành cho cơ thể này</IMP_StateNotForBody>
@@ -231,4 +231,7 @@
   <IMP_OptInterface>Giao diện</IMP_OptInterface>
   <IMP_ResizeGripTip>Kéo để đổi kích thước cửa sổ. Nhấp đúp để trở về kích thước mặc định.</IMP_ResizeGripTip>
   <IMP_LevelModWarning>{0} chia khu định cư này thành nhiều tầng. Implanner không thể chuyển bộ phận cấy ghép hay ca mổ qua ranh giới giữa các tầng, nên ca mổ có bộ phận cấy ghép nằm ở tầng khác sẽ chờ cho đến khi bạn chuyển nó đi.</IMP_LevelModWarning>
+  <IMP_PlanForGhouls>cho ngạ quỷ</IMP_PlanForGhouls>
+  <IMP_PlanGhouls>Ngạ quỷ</IMP_PlanGhouls>
+  <IMP_PlanTargetColonists>cư dân</IMP_PlanTargetColonists>
 </LanguageData>

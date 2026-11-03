@@ -22,6 +22,9 @@ Quando um mod adiciona uma raça com corpo próprio, como o Android Tiers, a jan
 <!-- l10n:plan-body-extends -->
 Um plano para qualquer corpo pode ser estendido por um plano para qualquer corpo ou para um corpo específico. Um plano feito para um corpo específico só pode ser estendido por um plano para o mesmo corpo. Escolher primeiro o plano a estender restringe as opções de Corpo de acordo, e escolher primeiro um corpo lista apenas os planos que ele pode estender.
 
+<!-- l10n:plan-ghouls -->
+Com Anomaly, as opções de **Corpo** terminam com **Carniçais**. Um plano feito para carniçais lista os implantes comuns e o kit de carniçal, e só pode vincular carniçais; nenhum outro plano vincula um carniçal. O cartão dele mostra "para carniçais". Um plano para carniçais pode estender um plano para qualquer corpo, de modo que um carniçal herde os biônicos padrão da colônia, mas um plano comum não pode estender um plano para carniçais. Implantes que carniçais não podem receber, como as vértebras de revenant, não aparecem em um plano para carniçais.
+
 <!-- l10n:b-515b3ee4d180 -->
 Cada cartão mostra a quantidade de implantes, os colonos vinculados e o progresso combinado.
 

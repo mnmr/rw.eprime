@@ -4,6 +4,9 @@ title: Genel bakış tablosu
 <!-- l10n:b-b3adf99a5ff7 -->
 Genel bakış sekmesi, implant alabilecek tüm kolonicileri listeler.
 
+<!-- l10n:overview-ghouls -->
+Gullar (Anomaly) kolonicilerle birlikte listelenir. Plan menüsü onlara yalnızca gullar için hazırlanmış planları sunar; gul planlarını da başka kimseye sunmaz. Diğer planlar, kimler için olduklarıyla birlikte soluk gösterilir. Gulların becerisi olmadığından N ve Y sütunları 0 gösterir.
+
 <!-- l10n:b-e8c75fea3beb -->
 ![Plan, ilerleme, öncelik ve durum sütunlu genel bakış satırları](overview-rows.png)
 

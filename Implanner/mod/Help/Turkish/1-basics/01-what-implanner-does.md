@@ -11,3 +11,7 @@ Implanner, kolonicilerin implantlarını planlar ve takılmaları için gereken 
 
 <!-- l10n:b-64a81f113814 -->
 Otomasyon tamamen kapatılabilir. Attığı her adım, zaten kullandığınız iş siparişleri ve ameliyat listelerinde görünür.
+
+<!-- l10n:who-is-plannable -->
+Her yetişkin kolonici planlanabilir; Anomaly'deki koloni gulları da öyle. Gullar sıradan bionikleri ve gul takımını (zırh, dikenler ve gul kalpleri) alabilir ve onları yalnızca gullar için hazırlanmış bir plan atar (bkz. [plan oluşturma](topic:creating-plans)). Çocuklar, kölelar ve tutsaklar listelenmez.
+

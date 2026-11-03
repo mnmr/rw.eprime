@@ -51,6 +51,7 @@
   <EPR.HelpChapterGroups>Groups</EPR.HelpChapterGroups>
   <EPR.HelpChapterPools>Resource Pools</EPR.HelpChapterPools>
   <EPR.HelpChapterOptions>Options</EPR.HelpChapterOptions>
+  <EPR.HelpChapterMods>Mods</EPR.HelpChapterMods>
   <EPR.HelpReload>Reload</EPR.HelpReload>
 
   <!-- ===== Welcome dialog (shown once per player per save) ===== -->

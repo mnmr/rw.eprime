@@ -1,8 +1,13 @@
 ﻿# Changelog
 
+## 1.2.9 — 2026-11-03
+
+- Added: Help pages for mods to show compatibility verdicts and other relevant information.
+
 ## 1.2.8 — 2026-11-02
 
 - Added: Endless Growth support: finisher skill up to 100; odds and finisher choice follow its curve.
+- Fixed: Mechs in modded work modes (Smart Work Mode, WVC - Work Modes) are accepted as finishers.
 
 ## 1.2.7 — 2026-11-01
 

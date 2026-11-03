@@ -22,6 +22,9 @@ Quando una mod aggiunge una razza con un corpo proprio, come Android Tiers, la f
 <!-- l10n:plan-body-extends -->
 Un piano per qualsiasi corpo può essere esteso da un piano per qualsiasi corpo o per un solo corpo. Un piano creato per un solo corpo può essere esteso soltanto da un piano per lo stesso corpo. Se scegli prima il piano da estendere, le opzioni di Corpo si restringono di conseguenza; se scegli prima un corpo, vengono elencati solo i piani che può estendere.
 
+<!-- l10n:plan-ghouls -->
+Con Anomaly, le opzioni di **Corpo** terminano con **Ghoul**. Un piano creato per i ghoul elenca gli impianti normali e il kit per ghoul e può assegnare solo ghoul; nessun altro piano assegna un ghoul. La sua scheda riporta "per ghoul". Un piano per ghoul può estendere un piano per qualsiasi corpo, così un ghoul può ereditare le protesi bioniche standard della colonia, ma un piano normale non può estendere un piano per ghoul. Gli impianti che i ghoul non possono ricevere, come le vertebre del revenant, non sono elencati in un piano per ghoul.
+
 <!-- l10n:b-515b3ee4d180 -->
 Ogni scheda nell'elenco mostra il numero di impianti del piano, quanti coloni vi sono assegnati e il loro avanzamento complessivo.
 

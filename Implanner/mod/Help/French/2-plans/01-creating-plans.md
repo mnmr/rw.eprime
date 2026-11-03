@@ -22,6 +22,9 @@ Lorsqu'un mod ajoute une race dotée de son propre corps, comme Android Tiers, l
 <!-- l10n:plan-body-extends -->
 Un plan pour tout corps peut être complété par un plan pour tout corps ou pour un corps donné. Un plan conçu pour un corps donné ne peut être complété que par un plan pour le même corps. Choisir d'abord le plan à compléter restreint les choix de Corps en conséquence, et choisir d'abord un corps ne liste que les plans qu'il peut compléter.
 
+<!-- l10n:plan-ghouls -->
+Avec Anomaly, les choix de **Corps** se terminent par **Goules**. Un plan conçu pour les goules liste les implants ordinaires et le kit de goule, et ne peut affecter que des goules ; aucun autre plan n'affecte de goule. Sa fiche indique « pour goules ». Un plan pour goules peut compléter un plan pour tout corps, de sorte qu'une goule peut hériter des prothèses bioniques standard de la colonie, mais un plan ordinaire ne peut pas compléter un plan pour goules. Les implants que les goules ne peuvent pas recevoir, comme les vertèbres de revenant, ne sont pas listés pour un plan de goules.
+
 <!-- l10n:b-515b3ee4d180 -->
 Chaque fiche de la liste indique le nombre d'implants, le nombre de colons affectés et leur progression cumulée.
 

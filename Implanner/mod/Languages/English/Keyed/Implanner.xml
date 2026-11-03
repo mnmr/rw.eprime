@@ -156,9 +156,16 @@
        adds a humanlike race with its own body); "Any body" = every colonist -->
   <IMP_PlanBody>Body</IMP_PlanBody>
   <IMP_PlanBodyAny>Any body</IMP_PlanBodyAny>
-  <IMP_PlanBodyTip>A plan made for one body lists only that body's parts and can enlist only colonists with that body. A plan for the human body also takes colonists whose body has every human part, such as a race with extra wings.\n\nA plan for any body applies to every colonist. Parts a colonist's body does not have are skipped for that colonist.\n\nA plan can extend a plan for any body, or a plan for the same body.</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>A plan made for one body lists only that body's parts and can enlist only colonists with that body. A plan for the human body also takes colonists whose body has every human part, such as a race with extra wings.\n\nA plan for any body applies to every colonist. Parts a colonist's body does not have are skipped for that colonist.\n\nA plan made for ghouls lists ordinary implants and the ghoul kit, and can enlist only ghouls. No other plan enlists a ghoul.\n\nA plan can extend a plan for any body, or a plan for the same body. A plan for ghouls can also extend a plan for any body.</IMP_PlanBodyTip>
   <!-- {0}=body label; plan card caption and the plan editor's fixed body label -->
   <IMP_PlanForBody>for {0}</IMP_PlanForBody>
+  <!-- New-plan dialog Body menu entry for a plan made for ghouls (Anomaly),
+       and the greyed plan menu's "(Ghouls only)" -->
+  <IMP_PlanGhouls>Ghouls</IMP_PlanGhouls>
+  <!-- Plan card caption and plan editor label of a plan made for ghouls -->
+  <IMP_PlanForGhouls>for ghouls</IMP_PlanForGhouls>
+  <!-- Greyed plan menu entry of an ordinary plan on a ghoul: "(colonists only)" -->
+  <IMP_PlanTargetColonists>colonists</IMP_PlanTargetColonists>
   <!-- {0}=BodyDef name of a race mod that is not loaded -->
   <IMP_PlanBodyNotLoaded>{0} (not loaded)</IMP_PlanBodyNotLoaded>
   <!-- Greyed plan in a colonist's plan menu: {0}=plan name, {1}=body label -->

@@ -1,0 +1,7 @@
+<ModMetaData>
+  <name>Implanner ghoul plans probe</name>
+  <author>Implanner tests</author>
+  <packageId>eprime.implanner.ghouls</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <loadAfter><li>eprime.implanner</li></loadAfter>
+</ModMetaData>

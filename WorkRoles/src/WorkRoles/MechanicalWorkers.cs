@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System;
 using System.Linq.Expressions;
 using HarmonyLib;
+using RimShared.GameLib;
 using RimWorld;
 using RimWorld.Planet;
 using Verse;
@@ -128,7 +129,7 @@ namespace WorkRoles
             worker.ProvidesService = IsColonyWorker(pawn) && !pawn.Downed
                 && !pawn.InMentalState && !pawn.Drafted
                 && (misc ? MiscRobotSupport.AutomaticWorkEnabled(pawn)
-                    : pawn.IsColonyMechPlayerControlled && pawn.GetMechWorkMode() == MechWorkModeDefOf.Work)
+                    : pawn.IsColonyMechPlayerControlled && MechWorkModes.IsWorking(pawn))
                 // Restricted-area work is partial coverage; do not promise
                 // colony-wide replacement without spatial demand evidence.
                 && HasUnrestrictedServiceArea(pawn);
@@ -179,20 +180,30 @@ namespace WorkRoles
         // X2_JobGiver_Work.PawnCanUseWorkGiver); vanilla disabled work types
         // and work tags never gate it, and mechEnabledWorkTypes is maintained
         // by hand in those defs. Vanilla mechs keep the JobGiver_Work rules.
-        internal static bool WorkTypeDisabled(Pawn pawn, WorkTypeDef workType)
-            => !MiscRobotSupport.IsRobot(pawn) && pawn.WorkTypeIsDisabled(workType);
+        // With MiscRobots WorkTab support, robots run vanilla JobGiver_Work over
+        // Work-tab priorities: its Pawn.WorkTypeIsDisabled patch is the model's
+        // capability, work tags apply, and canBeDoneByMechs is ignored.
+        private static bool NativeSelector(Pawn pawn)
+            => MiscRobotSupport.IsRobot(pawn) && !MiscRobotSupport.WorkTabControlled;
+
+        // Null work types never reach WorkTypeIsDisabled: WorkTab support's
+        // patch dereferences the def, and vanilla would answer false anyway.
+        internal static bool WorkTypeDisabled(Pawn pawn, WorkTypeDef? workType)
+            => workType != null && !NativeSelector(pawn) && pawn.WorkTypeIsDisabled(workType);
 
         internal static bool WorkTagsDisabled(Pawn pawn, WorkTags tags)
-            => !MiscRobotSupport.IsRobot(pawn) && pawn.WorkTagIsDisabled(tags);
+            => !NativeSelector(pawn) && pawn.WorkTagIsDisabled(tags);
 
         internal static WorkTags DisabledWorkTags(Pawn pawn)
-            => MiscRobotSupport.IsRobot(pawn) ? WorkTags.None : pawn.CombinedDisabledWorkTags;
+            => NativeSelector(pawn) ? WorkTags.None : pawn.CombinedDisabledWorkTags;
 
         internal static bool CanDo(Pawn pawn, WorkGiverDef giver)
         {
             if (!IsMechanical(pawn)) return true;
             if (MiscRobotSupport.IsRobot(pawn))
-                return MiscRobotSupport.DeclaresWorkGiver(pawn.def, giver);
+                return MiscRobotSupport.WorkTabControlled
+                    ? giver.workType != null && !pawn.WorkTypeIsDisabled(giver.workType)
+                    : MiscRobotSupport.DeclaresWorkGiver(pawn.def, giver);
             return giver.canBeDoneByMechs
                 && pawn.RaceProps.mechEnabledWorkTypes.Contains(giver.workType);
         }

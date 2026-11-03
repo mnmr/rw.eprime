@@ -328,8 +328,63 @@ absent; purchase-only hosts only while `ShowPurchaseOnly` is on, the same
 filter as the picker rows), cheapest efficiency first. Confirm issues two ordinary
 `SetImplantSlot` commands (host, then the slot); Cancel/ESC issues nothing,
 so the row simply keeps its published state. The candidates are resolved
-into the plans snapshot (`PickerRow.Requirement`), never in the draw pass. Mutant-only implants (ghoul kit)
-are excluded from the catalog: only ordinary humanlikes are plannable.
+into the plans snapshot (`PickerRow.Requirement`), never in the draw pass.
+Ghoul plans (2026-11-03; through 1.2.6 ghouls and the ghoul kit were
+excluded entirely): a colony ghoul (`pawn.IsGhoul`, an
+adult of the authoritative faction with no host faction; the game still
+operates on ghouls with ordinary bionics and Anomaly's ghoul kit) is a
+plannable colonist (`ColonyScope.IsPlanableColonist`; every roster is
+built from it, and every skill read tolerates a pawn without skills). A
+plan carries a second target dimension beside `Body`: `Plan.Mutant`, a
+MutantDef name ("Ghoul"; "" = ordinary colonists; fixed at creation,
+scribed `mutant`, absent in older saves = "", exported as
+`Mutant="Ghoul"`), orthogonal to the body pin (ghouls have the human
+body). Enlisting compares the kind exactly (`Plan.AcceptsMutant`,
+`PlanBodies.Accepts(plan, pawn)` = mutant match and the body rule, used
+by `AssignPlan` for every plan, the plan menu greyed "X (Ghouls only)" /
+"X (colonists only)" via `PlanBodies.TargetLabel`, and `PawnProjection`'s
+no-target path): an ordinary plan never enlists a ghoul, a ghoul plan
+nobody else. Extension follows the body rule (`Plan.IsCompatibleBase`:
+base kind "" or the same kind), so a ghoul plan may build on an ordinary
+plan (ghouls take ordinary bionics) and nothing else may build on it.
+The new-plan prompt's Body menu ends with "Ghouls" while
+`Catalogs.GhoulsPlannable()` (Anomaly active and a catalog kind requiring
+the Ghoul mutant); the card and editor caption read "for ghouls"
+(`IMP_PlanForGhouls`). Catalog: every kind stays in the catalog whatever
+its recipes' mutant rules, carrying `ImplantCatalogEntry.RequiredMutants`
+(the union of the recipes' `mutantPrerequisite`, empty when any recipe
+has none: ghoul plating, barbs, adrenal and metalblood heart; the
+corrosive heart at 0.85 and Odyssey's blood warmer at 0.8 part efficiency
+stay out by the downgrade rule) and `BlacklistedMutants` (the mutants every recipe's
+`mutantBlacklist` names: revenant vertebrae for ghouls), both folded into
+`PlannedSlotFacts`. The picker shows a plan only the kinds its kind of
+pawn can take (`ImplantCatalogEntry.AcceptsMutant(plan.Mutant)`), and the
+card's slot count skips the others. Per pawn, `SlotApplicability.Resolve`
+receives the pawn's kind (`ColonyScope.MutantOf`): a kind needing a
+mutant the pawn is not is `SlotBlock.RequiresMutant`, one refusing the
+pawn's kind `SlotBlock.RefusesMutant`, both outside the target like
+missing anatomy (no blocker name, unlisted in the details). The surgery
+item of a kind is `ImplantCatalogEntry.Item` (`Catalogs.ItemOf` for a
+bare hediff): `spawnThingOnRemoved` where the hediff has one, else the
+lowest-defName tech-hediff item its surgery recipes' ingredient filters
+allow, since ghoul plating and barbs drop nothing when removed and name no
+item (found by the first ghoul run: the plating read as item-free, its
+bill would have been owned and unbound, so no doctor could ever supply
+it). Reservation, binding, production, stock counts, reserves and icons
+read `Item`; what removal drops (reinstalls, `WouldDestroy`, upgrades)
+keeps reading `spawnThingOnRemoved`. Surgery and
+production need nothing else: `SelectRecipe` already asks
+`RecipeDef.AvailableOnNow` (which applies the mutant rules), the ghoul
+surgeries are plain `Bill_Medical`s with no medicine ingredient and no
+anesthesia (the hearts want Medical 4, enforced by the game's own skill
+gate), the ghoul items' recipes name the bioferrite shaper as a user so
+they route like any implant item. Proven in-game 2026-11-03
+(`tests/InGame/Ghouls`, mod set `implanner-ghouls`, evidence under
+`temp/ghouls/run3-f2f210dc3ae342839d7a08b328501c72`): a colonist turned
+ghoul on a ghoul plan (ASAP iteration) has the plating reserved, the bill
+scheduled and installed by the game's doctor job, and the missing barbs
+queued as the game's own `Bill_ProductionWithUft` at a crafting spot from
+stockpiled bioferrite.
 
 ## Project boundaries
 
@@ -353,7 +408,7 @@ are excluded from the catalog: only ordinary humanlikes are plannable.
 
 | Cached artifact | Required invalidation inputs |
 |---|---|
-| Wrapped help-topic rows (`HelpTabView`) | Topic-array identity, panel width/height and UI metric revision; scrollbar width participates in the gated build. Equal rectangle contents preserve array identity. Close releases topic references and geometry; changing topic geometry does not invalidate content models. |
+| Wrapped help-topic rows (`HelpTabView`) | Topic-array identity, panel width/height and UI metric revision; scrollbar width participates in the gated build, which also measures the widest title into the splitter's double-click fit width. The panel width is a per-assembly session value set by dragging the gap between the panels (resize cursor from `SplitterCursor`, released on close); changing it re-keys this build only. Equal rectangle contents preserve array identity. Close releases topic references and geometry; changing topic geometry does not invalidate content models. |
 | Map classifications (shared `RimShared.GameLib.MapClassifications`) | Grav-engine spawn/despawn/holder transfer, settlement ownership flips, map settle, map add/remove (the shared `Patch_LocationTransitions` events; Implanner implements none of the optional `LocationTransitions` hooks), plus the map-count guard on location reads; publishes `MapClassifications.LocationRevision`; teardown via `MapClassifications.ReleaseSnapshot` on world teardown |
 | Location snapshots (`ColonyScope.locationSnapshots`) | `MapClassifications.LocationRevision`, map-set membership, faction identity, language; cleared through the required `MapClassifications.InvalidateLocationSnapshots` hook on every classification or map-set invalidation and on teardown; equal rebuilds preserve snapshot identity |
 | Floor-map canonicalization (shared `RimShared.GameLib.FloorMaps.cache`) | Hash of live map ids; `ReleaseForTeardown` on map-set invalidation and world teardown |

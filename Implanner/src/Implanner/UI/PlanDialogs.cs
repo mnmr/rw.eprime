@@ -10,18 +10,22 @@ namespace Implanner.UI
 {
     /// The new-plan prompt: the shared name dialog (Enter confirms, ESC
     /// cancels) plus an "Extends" selector so a plan can inherit an existing
-    /// plan's selections and, with more than one plannable body, a "Body"
-    /// selector pinning the plan to one body. The two constrain each other
-    /// (Plan.IsCompatibleBase): a pinned base fixes the body, a chosen body
-    /// offers only unpinned bases and bases of that body. Labels resolve at
-    /// construction and on choice; the draw pass renders stored text.
+    /// plan's selections and, with more than one plannable body or
+    /// Anomaly's ghoul kit loaded, a "Body" selector pinning the plan to one
+    /// body or making it a plan for ghouls (Plan.Mutant). The two constrain
+    /// each other (Plan.IsCompatibleBase): a pinned base fixes the body, a
+    /// chosen body offers only unpinned bases and bases of that body. Labels
+    /// resolve at construction and on choice; the draw pass renders stored
+    /// text.
     public class Dialog_NewPlan : NameDialog
     {
         private int basePlanId;
         private string basePlanLabel;
         private string body = "";
+        private string mutant = "";
         private string bodyLabel;
         private readonly bool offersBody;
+        private readonly bool offersGhouls;
         private readonly string bodyTip;
 
         public Dialog_NewPlan()
@@ -30,7 +34,8 @@ namespace Implanner.UI
             basePlanLabel = PlannerLabels.ExtendsNothing;
             bodyLabel = "IMP_PlanBodyAny".Translate();
             bodyTip = "IMP_PlanBodyTip".Translate();
-            offersBody = Catalogs.OfferedBodies().Count > 1;
+            offersGhouls = Catalogs.GhoulsPlannable();
+            offersBody = offersGhouls || Catalogs.OfferedBodies().Count > 1;
         }
 
         protected override float ExtraHeight => offersBody ? 60f : 30f;
@@ -75,14 +80,16 @@ namespace Implanner.UI
             for (int i = 0; i < plans.Count; i++)
             {
                 Plan plan = plans[i];
-                // Only a base this plan's body may extend; a pinned base
-                // pins the new plan to its body.
-                if (!Plan.IsCompatibleBase(plan.Body, body)) continue;
+                // Only a base this plan's body and kind may extend; a
+                // pinned base pins the new plan to its body, a ghoul base
+                // makes it a ghoul plan.
+                if (!Plan.IsCompatibleBase(plan, body, mutant)) continue;
                 options.Add(new FloatMenuOption(plan.Name, () =>
                 {
                     basePlanId = plan.Id;
                     basePlanLabel = plan.Name;
-                    if (plan.IsPinned) SetBody(plan.Body);
+                    if (plan.IsForMutant) SetBody("", plan.Mutant);
+                    else if (plan.IsPinned) SetBody(plan.Body, "");
                 }));
             }
             Find.WindowStack.Add(new FloatMenu(options));
@@ -92,32 +99,41 @@ namespace Implanner.UI
         {
             var options = new List<FloatMenuOption>
             {
-                new FloatMenuOption("IMP_PlanBodyAny".Translate(), () => SetBody("")),
+                new FloatMenuOption("IMP_PlanBodyAny".Translate(), () => SetBody("", "")),
             };
             // The offered bodies only: a copy of the human anatomy is the
-            // human body for planning purposes.
+            // human body for planning purposes. With more than one body the
+            // ghoul entry is listed as a choice of its own after them
+            // (ghouls have the human body).
             List<BodyDef> bodies = Catalogs.OfferedBodies();
-            for (int i = 0; i < bodies.Count; i++)
-            {
-                BodyDef candidate = bodies[i];
-                options.Add(new FloatMenuOption(candidate.LabelCap,
-                    () => SetBody(candidate.defName)));
-            }
+            if (bodies.Count > 1)
+                for (int i = 0; i < bodies.Count; i++)
+                {
+                    BodyDef candidate = bodies[i];
+                    options.Add(new FloatMenuOption(candidate.LabelCap,
+                        () => SetBody(candidate.defName, "")));
+                }
+            if (offersGhouls)
+                options.Add(new FloatMenuOption("IMP_PlanGhouls".Translate(),
+                    () => SetBody("", Catalogs.GhoulMutant)));
             Find.WindowStack.Add(new FloatMenu(options));
         }
 
-        /// Applies a body choice; a base the new body may no longer extend
-        /// is dropped so the pair stays compatible.
-        private void SetBody(string defName)
+        /// Applies a body or ghoul choice; a base the new choice may no
+        /// longer extend is dropped so the pair stays compatible.
+        private void SetBody(string defName, string mutantDefName)
         {
             body = defName;
-            bodyLabel = defName.Length == 0
-                ? "IMP_PlanBodyAny".Translate().ToString()
-                : PlanBodies.Label(defName);
+            mutant = mutantDefName;
+            bodyLabel = mutant.Length > 0
+                ? "IMP_PlanGhouls".Translate().ToString()
+                : defName.Length == 0
+                    ? "IMP_PlanBodyAny".Translate().ToString()
+                    : PlanBodies.Label(defName);
             ImplannerStore? store = ImplannerStore.Current;
             Plan? basePlan = store != null && basePlanId != 0
                 ? store.Model.PlanById(basePlanId) : null;
-            if (basePlan != null && !Plan.IsCompatibleBase(basePlan.Body, body))
+            if (basePlan != null && !Plan.IsCompatibleBase(basePlan, body, mutant))
             {
                 basePlanId = 0;
                 basePlanLabel = PlannerLabels.ExtendsNothing;
@@ -125,7 +141,7 @@ namespace Implanner.UI
         }
 
         protected override void Confirm(string trimmedName) =>
-            PlannerCommands.CreatePlan(trimmedName, basePlanId, body);
+            PlannerCommands.CreatePlan(trimmedName, basePlanId, body, mutant);
     }
 
     /// The requirement prompt for a slot the game only offers on an

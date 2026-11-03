@@ -11,3 +11,7 @@ Implanner planeja os implantes dos colonos e automatiza o trabalho necessário p
 
 <!-- l10n:b-64a81f113814 -->
 Você pode desligar toda a automação. Cada ação aparece nas mesmas listas de ordens e operações que já usa.
+
+<!-- l10n:who-is-plannable -->
+Todo colono adulto pode ter um plano, assim como os carniçais da colônia, de Anomaly. Os carniçais recebem biônicos comuns e o kit de carniçal (placas, farpas e os corações de carniçal), e somente um plano feito para carniçais pode vinculá-los (veja [criar planos](topic:creating-plans)). Crianças, escravizados e prisioneiros não aparecem na lista.
+

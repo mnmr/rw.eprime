@@ -66,6 +66,13 @@ internal static class HelpContentChecks
             await Assert.That(document.Title)
                 .IsNotEmpty()
                 .Because($"{file} must declare a front-matter title");
+            if (document.Icon.Length > 0)
+            {
+                await Assert.That(File.Exists(
+                        Path.Combine(imagesDir, document.Icon)))
+                    .IsTrue()
+                    .Because($"{file} declares missing icon '{document.Icon}'");
+            }
             foreach (HelpBlock block in document.Blocks)
             {
                 if (block.Kind == HelpBlockKind.Image)
@@ -94,6 +101,7 @@ internal static class HelpContentChecks
                         continue;
                     }
                     if (run.Kind != HelpRunKind.TopicLink) continue;
+                    if (HelpMarkdown.IsWebUrl(run.Target)) continue;
                     await Assert.That(slugs.Contains(run.Target))
                         .IsTrue()
                         .Because(

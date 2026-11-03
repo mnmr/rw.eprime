@@ -62,7 +62,7 @@ namespace Implanner.Core
         /// plan in one step. Takes ownership of <paramref name="goals"/>:
         /// the caller must not retain or mutate the list afterwards.
         public Plan(int id, string name, int basePlanId, List<ImplantGoal> goals,
-            int minQuality = 0, string? body = null)
+            int minQuality = 0, string? body = null, string? mutant = null)
         {
             Id = id;
             Name = name;
@@ -70,6 +70,7 @@ namespace Implanner.Core
             implants = goals;
             MinQuality = ImplantQuality.Clamp(minQuality);
             Body = NormalizeBody(body);
+            Mutant = NormalizeBody(mutant);
         }
 
         public int Id { get; }
@@ -85,11 +86,33 @@ namespace Implanner.Core
 
         public bool IsPinned => Body.Length > 0;
 
-        /// Whether a plan of <paramref name="body"/> may extend a plan of
-        /// <paramref name="baseBody"/>: an unpinned base takes any child, a
-        /// pinned base only children of the same body.
-        public static bool IsCompatibleBase(string baseBody, string body) =>
-            baseBody.Length == 0 || string.Equals(baseBody, body, System.StringComparison.Ordinal);
+        /// The mutant kind this plan is made for (a MutantDef name, "Ghoul"),
+        /// or "" for ordinary colonists. Fixed at creation like Body and
+        /// orthogonal to it. A plan enlists a pawn only when the pawn's
+        /// mutant kind is exactly this (AcceptsMutant): an ordinary plan
+        /// never enlists a ghoul, a ghoul plan enlists nobody else.
+        public string Mutant { get; internal set; } = "";
+
+        public bool IsForMutant => Mutant.Length > 0;
+
+        /// Whether a pawn of the given mutant kind ("" = none) may be
+        /// enlisted in this plan.
+        public bool AcceptsMutant(string pawnMutant) =>
+            string.Equals(Mutant, pawnMutant, System.StringComparison.Ordinal);
+
+        /// Whether a plan of <paramref name="body"/> and <paramref name="mutant"/>
+        /// may extend a plan of <paramref name="baseBody"/> and
+        /// <paramref name="baseMutant"/>: an unpinned base takes any child, a
+        /// pinned base only children of the same body; the same rule for the
+        /// mutant kind (a ghoul plan may build on an ordinary plan, since
+        /// ghouls take ordinary bionics, but nothing else may build on it).
+        public static bool IsCompatibleBase(string baseBody, string baseMutant,
+            string body, string mutant) =>
+            (baseBody.Length == 0 || string.Equals(baseBody, body, System.StringComparison.Ordinal))
+            && (baseMutant.Length == 0 || string.Equals(baseMutant, mutant, System.StringComparison.Ordinal));
+
+        public static bool IsCompatibleBase(Plan basePlan, string body, string mutant) =>
+            IsCompatibleBase(basePlan.Body, basePlan.Mutant, body, mutant);
 
         internal static string NormalizeBody(string? body) => body?.Trim() ?? "";
 

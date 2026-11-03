@@ -18,6 +18,9 @@ namespace RimShared.Common.Help
         ListMarker,
         Image,
         Demo,
+        /// <summary>A table cell background, emitted before the cell's text
+        /// items; Text is "header" for header-row cells, otherwise "".</summary>
+        CellFill,
     }
 
     /// <summary>
@@ -40,6 +43,11 @@ namespace RimShared.Common.Help
         public float HeadingSpacingBottom = 4f;
         public float ListIndent = 24f;
         public float ListItemSpacing = 2f;
+        /// <summary>Inset between a table cell's fill and its text.</summary>
+        public float TableCellPadding = 6f;
+        /// <summary>Gap between neighbouring cell fills; the panel shows
+        /// through it as the grid line.</summary>
+        public float TableCellGap = 1f;
     }
 
     /// <summary>
@@ -116,22 +124,42 @@ namespace RimShared.Common.Help
             for (int i = 0; i < blocks.Length; i++)
             {
                 HelpBlock block = document.Blocks[i];
-                HelpRun[] runs = block.Runs;
-                HelpRun[]? resolved = null;
-                for (int j = 0; j < runs.Length; j++)
+                if (block.Kind == HelpBlockKind.TableRow)
                 {
-                    if (runs[j].Kind != HelpRunKind.KeyedLabel) continue;
-                    resolved ??= (HelpRun[])runs.Clone();
-                    string label = resolve(runs[j].Target) ?? runs[j].Target;
-                    resolved[j] = new HelpRun(HelpRunKind.Text,
-                        runs[j].Style, label, "");
+                    HelpRun[][]? cells = null;
+                    for (int c = 0; c < block.Cells.Length; c++)
+                    {
+                        HelpRun[]? resolvedCell = ResolveRuns(block.Cells[c], resolve);
+                        if (resolvedCell == null) continue;
+                        cells ??= (HelpRun[][])block.Cells.Clone();
+                        cells[c] = resolvedCell;
+                    }
+                    blocks[i] = cells == null ? block : new HelpBlock(block.Level, cells);
+                    continue;
                 }
+                HelpRun[]? resolved = ResolveRuns(block.Runs, resolve);
                 blocks[i] = resolved == null
                     ? block
                     : new HelpBlock(block.Kind, block.Level, resolved,
                         block.ImagePath);
             }
-            return new HelpDocument(document.Title, blocks);
+            return new HelpDocument(document.Title, document.Icon, blocks);
+        }
+
+        /// <summary>Null when the runs hold no keyed label.</summary>
+        private static HelpRun[]? ResolveRuns(HelpRun[] runs,
+            Func<string, string?> resolve)
+        {
+            HelpRun[]? resolved = null;
+            for (int j = 0; j < runs.Length; j++)
+            {
+                if (runs[j].Kind != HelpRunKind.KeyedLabel) continue;
+                resolved ??= (HelpRun[])runs.Clone();
+                string label = resolve(runs[j].Target) ?? runs[j].Target;
+                resolved[j] = new HelpRun(HelpRunKind.Text,
+                    runs[j].Style, label, "");
+            }
+            return resolved;
         }
     }
 
@@ -189,17 +217,141 @@ namespace RimShared.Common.Help
                         HelpFont.Body, HelpRunStyle.None, block.ImagePath, ""));
                     y += naturalHeight * scale;
                 }
+                else if (block.Kind == HelpBlockKind.TableRow)
+                {
+                    int end = i + 1;
+                    while (end < document.Blocks.Length
+                        && document.Blocks[end].Kind == HelpBlockKind.TableRow)
+                        end++;
+                    if (anyEmitted)
+                        y += SpacingBefore(block.Kind, previousKind, metrics);
+                    y = FlowTable(document.Blocks, i, end, y, width, measurer,
+                        metrics, imageSize, items, segments, line);
+                    i = end - 1;
+                }
                 else
                 {
                     if (anyEmitted)
                         y += SpacingBefore(block.Kind, previousKind, metrics);
-                    y = FlowTextBlock(block, y, width, measurer, metrics,
+                    y = FlowTextBlock(block, y, 0f, width, measurer, metrics,
                         imageSize, items, segments, line);
                 }
                 previousKind = block.Kind;
                 anyEmitted = true;
             }
             return new HelpTopicLayout(items.ToArray(), y);
+        }
+
+        /// <summary>
+        /// Lays out the rows [first, end) as one full-width table. Column
+        /// widths come from the widest unwrapped cell per column; when they
+        /// do not fit, columns wider than an equal share split the remaining
+        /// width equally and their cells wrap. The last column absorbs any
+        /// slack so the table always spans the content width. Each cell
+        /// emits a CellFill item before its text; the row height is the
+        /// tallest cell plus padding.
+        /// </summary>
+        private static float FlowTable(HelpBlock[] blocks, int first, int end,
+            float top, float width, IHelpTextMeasurer measurer,
+            HelpLayoutMetrics metrics, ImageSizeResolver imageSize,
+            List<HelpLayoutItem> items, List<Segment> segments,
+            List<LineItem> line)
+        {
+            int columns = 0;
+            for (int r = first; r < end; r++)
+                if (blocks[r].Cells.Length > columns) columns = blocks[r].Cells.Length;
+            if (columns == 0) return top;
+
+            float pad = metrics.TableCellPadding;
+            float gap = metrics.TableCellGap;
+            var natural = new float[columns];
+            for (int r = first; r < end; r++)
+            {
+                HelpRun[][] cells = blocks[r].Cells;
+                for (int c = 0; c < cells.Length; c++)
+                {
+                    float w = NaturalWidth(cells[c], measurer, imageSize, segments) + 2f * pad;
+                    if (w > natural[c]) natural[c] = w;
+                }
+            }
+
+            float available = width - gap * (columns - 1);
+            float share = available / columns;
+            float fixedTotal = 0f;
+            int flexible = 0;
+            for (int c = 0; c < columns; c++)
+            {
+                if (natural[c] <= share) fixedTotal += natural[c];
+                else flexible++;
+            }
+            var columnWidth = new float[columns];
+            float total = 0f;
+            for (int c = 0; c < columns; c++)
+            {
+                columnWidth[c] = natural[c] <= share
+                    ? natural[c]
+                    : Math.Max(2f * pad + 1f, (available - fixedTotal) / flexible);
+                total += columnWidth[c];
+            }
+            if (total < available) columnWidth[columns - 1] += available - total;
+
+            var columnX = new float[columns];
+            for (int c = 1; c < columns; c++)
+                columnX[c] = columnX[c - 1] + columnWidth[c - 1] + gap;
+
+            float y = top;
+            for (int r = first; r < end; r++)
+            {
+                HelpBlock row = blocks[r];
+                string fillText = row.Level == 1 ? "header" : "";
+                int fillIndex = items.Count;
+                for (int c = 0; c < columns; c++)
+                    items.Add(new HelpLayoutItem(HelpItemKind.CellFill, columnX[c],
+                        y, columnWidth[c], 0f, HelpFont.Body, HelpRunStyle.None,
+                        fillText, ""));
+                float bottom = y + pad;
+                for (int c = 0; c < row.Cells.Length; c++)
+                {
+                    var cell = new HelpBlock(HelpBlockKind.Paragraph, 0,
+                        row.Cells[c], "");
+                    float cellBottom = FlowTextBlock(cell, y + pad, columnX[c] + pad,
+                        columnX[c] + columnWidth[c] - pad, measurer, metrics,
+                        imageSize, items, segments, line);
+                    if (cellBottom > bottom) bottom = cellBottom;
+                }
+                float rowHeight = bottom + pad - y;
+                for (int c = 0; c < columns; c++)
+                    items[fillIndex + c] = new HelpLayoutItem(HelpItemKind.CellFill,
+                        columnX[c], y, columnWidth[c], rowHeight, HelpFont.Body,
+                        HelpRunStyle.None, fillText, "");
+                y += rowHeight;
+                if (r + 1 < end) y += gap;
+            }
+            return y;
+        }
+
+        /// <summary>The unwrapped width of a cell's content.</summary>
+        private static float NaturalWidth(HelpRun[] runs,
+            IHelpTextMeasurer measurer, ImageSizeResolver imageSize,
+            List<Segment> segments)
+        {
+            Tokenize(runs, segments);
+            float width = 0f;
+            for (int i = 0; i < segments.Count; i++)
+            {
+                Segment segment = segments[i];
+                if (segment.IsImage && imageSize(segment.Target,
+                        out float imageWidth, out float imageHeight)
+                    && imageWidth > 0f && imageHeight > 0f)
+                    width += imageWidth;
+                else
+                    width += measurer.WordWidth(segment.Text, HelpFont.Body,
+                        segment.Style);
+                if (segment.GapAfter && i + 1 < segments.Count)
+                    width += measurer.SpaceWidth(HelpFont.Body, segment.Style);
+            }
+            segments.Clear();
+            return width;
         }
 
         private static float SpacingBefore(HelpBlockKind kind,
@@ -214,11 +366,13 @@ namespace RimShared.Common.Help
             return tightList ? metrics.ListItemSpacing : metrics.ParagraphSpacing;
         }
 
-        /// <summary>Flows one text block's words and returns the new y.
-        /// Lines buffer their items so an inline image can grow the line box;
-        /// shorter items center vertically within the finished line.</summary>
+        /// <summary>Flows one text block's words between the absolute left
+        /// and right edges and returns the new y. Lines buffer their items so
+        /// an inline image can grow the line box; shorter items center
+        /// vertically within the finished line.</summary>
         private static float FlowTextBlock(HelpBlock block, float top,
-            float width, IHelpTextMeasurer measurer, HelpLayoutMetrics metrics,
+            float left, float width, IHelpTextMeasurer measurer,
+            HelpLayoutMetrics metrics,
             HelpFlowLayout.ImageSizeResolver imageSize,
             List<HelpLayoutItem> items, List<Segment> segments,
             List<LineItem> line)
@@ -227,7 +381,7 @@ namespace RimShared.Common.Help
             float lineHeight = measurer.LineHeight(font);
             bool isList = block.Kind == HelpBlockKind.Bullet
                 || block.Kind == HelpBlockKind.Numbered;
-            float indent = 0f;
+            float indent = left;
             if (isList)
             {
                 string marker = block.Kind == HelpBlockKind.Bullet
@@ -245,11 +399,11 @@ namespace RimShared.Common.Help
                     Text = marker,
                     Target = "",
                     Style = HelpRunStyle.None,
-                    X = markerX,
+                    X = left + markerX,
                     Width = markerWidth,
                     Height = lineHeight,
                 });
-                indent = metrics.ListIndent;
+                indent = left + metrics.ListIndent;
             }
 
             Tokenize(block.Runs, segments);

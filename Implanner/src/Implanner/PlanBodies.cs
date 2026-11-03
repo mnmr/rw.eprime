@@ -1,6 +1,7 @@
 using Implanner.Core;
 using RimWorld;
 using Verse;
+using Plan = Implanner.Core.Plan;
 
 namespace Implanner
 {
@@ -16,6 +17,24 @@ namespace Implanner
     /// reconcile tick path per pawn.
     internal static class PlanBodies
     {
+        /// Whether the pawn may be enlisted in (and is evaluated against)
+        /// the plan: the plan's mutant kind must be exactly the pawn's
+        /// (an ordinary plan never takes a ghoul, a ghoul plan nobody
+        /// else), then the body rule.
+        internal static bool Accepts(Plan plan, Pawn pawn) =>
+            Accepts(plan.Body, plan.Mutant, pawn);
+
+        internal static bool Accepts(string planBody, string planMutant, Pawn pawn) =>
+            string.Equals(planMutant, ColonyScope.MutantOf(pawn), System.StringComparison.Ordinal)
+            && Accepts(planBody, pawn);
+
+        /// Who the plan is for, for the greyed plan menu entry: its mutant
+        /// kind ("Ghouls"), its body, or ordinary colonists. Builder path.
+        internal static string TargetLabel(Plan plan) =>
+            plan.IsForMutant ? "IMP_PlanGhouls".Translate().ToString()
+            : plan.IsPinned ? Label(plan.Body)
+            : "IMP_PlanTargetColonists".Translate().ToString();
+
         /// Whether a colonist with this body may be enlisted in (and is
         /// evaluated against) a plan of the given body.
         internal static bool Accepts(string planBody, Pawn pawn)

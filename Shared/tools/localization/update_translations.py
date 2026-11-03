@@ -1,5 +1,6 @@
 """Translate changed content with Claude Code (Sonnet), validate it, then update source snapshots."""
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 from pathlib import Path
@@ -53,7 +54,7 @@ def pending_entries(root, locale, source, mods):
     english_pages = checks.help_pages(root, 'English', mods)
     target_pages = checks.help_pages(root, locale, mods)
     path = checks.manifest_path(root, locale)
-    previous = json.loads(path.read_text(encoding='utf-8')).get('help_source', {}) if path.exists() else {}
+    previous = checks.load_manifest(root, locale).get('help_source', {}) if path.exists() else {}
     for entry in entries:
         if '/Help/' in entry['key'] and '#' in entry['key']:
             page = entry['key'].split('#')[0]
@@ -62,18 +63,41 @@ def pending_entries(root, locale, source, mods):
     return entries, sorted(target.keys() - source.keys())
 
 
+PAGE_CONTEXT = ('page_english', 'page_current')
+
+
 def batches(entries):
-    # A paragraph/list stays intact; full-page context is read-only input.
-    batch, size = [], 0
+    # A paragraph/list stays intact; full-page context is read-only input that
+    # the request carries once per page, so blocks of one page pack together.
+    batch, size, pages = [], 0, set()
     for entry in entries:
-        length = len(json.dumps(entry, ensure_ascii=False))
+        page = entry['key'].split('#')[0] if '#' in entry['key'] else None
+        length = len(json.dumps({k: v for k, v in entry.items() if k not in PAGE_CONTEXT}, ensure_ascii=False))
+        if page is not None and page not in pages:
+            length += sum(len(entry.get(field, '')) for field in PAGE_CONTEXT)
         if batch and (size + length > 16000 or len(batch) == 40):
             yield batch
-            batch, size = [], 0
+            batch, size, pages = [], 0, set()
         batch.append(entry)
         size += length
+        if page is not None:
+            pages.add(page)
     if batch:
         yield batch
+
+
+def request_payload(entries):
+    """The JSON a translation request carries: page context once per page,
+    entries referencing their page by key."""
+    pages, items = {}, []
+    for entry in entries:
+        item = {k: v for k, v in entry.items() if k not in PAGE_CONTEXT}
+        if any(field in entry for field in PAGE_CONTEXT):
+            page = entry['key'].split('#')[0]
+            item['page'] = page
+            pages[page] = {'english': entry.get('page_english', ''), 'current': entry.get('page_current', '')}
+        items.append(item)
+    return {'pages': pages, 'entries': items}
 
 
 DEFAULT_MODEL = 'sonnet'
@@ -142,9 +166,10 @@ class ClaudeTranslator:
                   + '\nReturn exactly one translation for every supplied key. '
                   'Use current translations as terminology context; revise only as needed to match English. '
                   'For help blocks, return only the requested block text, without ID comments or surrounding page text. '
-                  'page_english, page_current and previous_english are read-only context. '
+                  'pages maps each help page to its English text and current translation; an entry names its page. '
+                  'That and previous_english are read-only context. '
                   'Values are plain text, not XML: do not XML-escape them.\n'
-                  + json.dumps({'entries': entries}, ensure_ascii=False))
+                  + json.dumps(request_payload(entries), ensure_ascii=False))
         # A separate, empty working directory keeps repository instructions out of
         # a text-only translation request; all tools, settings sources, skills and
         # session persistence are disabled, so Claude never touches the repository.
@@ -176,17 +201,26 @@ class ClaudeTranslator:
 
 def apply_translations(root, locale, updated, retired, mods):
     english_pages = checks.help_pages(root, 'English', mods)
-    current_pages = checks.help_pages(root, locale, mods)
+    english_files = checks.help_files(root, 'English', mods)
+    current_files = checks.help_files(root, locale, mods)
+    current_pages = {key: path.read_bytes().decode('utf-8') for key, path in current_files.items()}
+
+    def place(page, text):
+        # The locale's file takes the English file name, so a renumbered
+        # chapter keeps the same order in every language.
+        destination = checks.help_target_path(root, locale, page.split('/', 1)[0], english_files[page])
+        old = current_files.get(page)
+        if text != current_pages.get(page) or old != destination:
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(text.encode('utf-8'))
+            if old is not None and old != destination:
+                old.unlink()
+
     for page, source in english_pages.items():
         if checks.help_units.parse(source) is None:
             continue
         selected = {key.split('#', 1)[1]: value for key, value in updated.items() if key.startswith(page + '#')}
-        result = checks.help_units.patch(source, current_pages.get(page, ''), selected)
-        if result != current_pages.get(page):
-            mod, _, rest = page.split('/', 2)
-            path = checks.content_root(root, mod) / 'Help' / locale / rest
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(result.encode('utf-8'))
+        place(page, checks.help_units.patch(source, current_pages.get(page, ''), selected))
     trees, locations, english_locations = {}, {}, {}
     for mod in mods:
         base = checks.content_root(root, mod)
@@ -210,18 +244,13 @@ def apply_translations(root, locale, updated, retired, mods):
     for key in sorted(set(updated) | set(retired)):
         mod, kind, rest = key.split('/', 2)
         if kind == 'Help':
-            if '#' in rest:
-                page = key.split('#')[0]
-                if page not in english_pages:
-                    path = checks.content_root(root, mod) / 'Help' / locale / rest.split('#')[0]
-                    path.unlink(missing_ok=True)
+            page = key.split('#')[0]
+            if '#' in key and page in english_pages:
                 continue
-            path = checks.content_root(root, mod) / 'Help' / locale / rest
-            if key in updated:
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(updated[key], encoding='utf-8', newline='')
-            else:
-                path.unlink()
+            if key in updated:   # legacy whole-page translation
+                place(key, updated[key])
+            elif page in current_files:
+                current_files[page].unlink(missing_ok=True)
             continue
         if key in locations:
             path, entry = locations[key]
@@ -285,7 +314,19 @@ def commit_files(root, locales, mods, before, after):
     return len(changed)
 
 
-def update(root, locales, translator, mods=checks.MODS, dry_run=False):
+def translate_locale(translator, locale, entries):
+    translated = {}
+    for number, batch in enumerate(batches(entries), 1):
+        print(f'{locale}: translating batch {number} ({len(batch)} entries)...', flush=True)
+        result = translator(locale, batch)
+        if (not isinstance(result, dict) or set(result) != {e['key'] for e in batch}
+                or any(not isinstance(text, str) for text in result.values())):
+            raise ValueError(f'{locale}: response must contain exactly the requested keys and text values')
+        translated.update(result)
+    return translated
+
+
+def update(root, locales, translator, mods=checks.MODS, dry_run=False, workers=4):
     root = Path(root).resolve()
     locales = tuple(dict.fromkeys(locales))
     before = content_files(root, locales, mods)
@@ -300,7 +341,7 @@ def update(root, locales, translator, mods=checks.MODS, dry_run=False):
         # A retired manifest key may already have had its translation removed.
         locale_issues = checks.check_locale(root, locale, mods)
         has_retired_hashes = any(i.code == 'retired' for i in locale_issues)
-        has_order_change = any(i.code == 'help-order' for i in locale_issues)
+        has_order_change = any(i.code in ('help-order', 'help-name') for i in locale_issues)
         help_entries = [e for e in entries if '/Help/' in e['key']]
         pages = {e['key'].split('#')[0] for e in help_entries}
         blocks = sum('#' in e['key'] for e in help_entries)
@@ -326,22 +367,40 @@ def update(root, locales, translator, mods=checks.MODS, dry_run=False):
             destination = staged / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(data)
+        # Locales are independent until they are applied, so their Claude calls
+        # run side by side; applying and validating stays sequential.
+        with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
+            futures = {locale: pool.submit(translate_locale, translator, locale, entries)
+                       for locale, (entries, _) in pending.items()}
+            results = {locale: future.result() for locale, future in futures.items()}
+        failed = {}
         for locale, (entries, retired) in pending.items():
-            translated = {}
-            for number, batch in enumerate(batches(entries), 1):
-                print(f'{locale}: translating batch {number} ({len(batch)} entries)...', flush=True)
-                result = translator(locale, batch)
-                if (not isinstance(result, dict) or set(result) != {e['key'] for e in batch}
-                        or any(not isinstance(text, str) for text in result.values())):
-                    raise ValueError(f'{locale}: response must contain exactly the requested keys and text values')
-                translated.update(result)
-            apply_translations(staged, locale, translated, retired, mods)
-            retired_hashes = [i.path for i in checks.check_locale(staged, locale, mods) if i.code == 'retired']
-            checks.snapshot_locale(staged, locale, mods, keys=[*translated, *retired, *retired_hashes])
-            require_clean(checks.check_locale(staged, locale, mods, True), locale)
-        after = content_files(staged, locales, mods)
-        changed = commit_files(root, locales, mods, before, after)
+            translated = results[locale]
+            # A locale whose translations fail to apply or validate is left out
+            # of the commit so the other locales' finished work still lands;
+            # the run ends with an error naming it so it can be rerun alone.
+            try:
+                apply_translations(staged, locale, translated, retired, mods)
+                retired_hashes = [i.path for i in checks.check_locale(staged, locale, mods) if i.code == 'retired']
+                checks.snapshot_locale(staged, locale, mods, keys=[*translated, *retired, *retired_hashes])
+                problems = [f'{i.code} {i.path}: {i.message}'
+                            for i in checks.check_locale(staged, locale, mods, True) if i.severity == 'error']
+            except ValueError as error:
+                problems = [str(error)]
+            if problems:
+                failed[locale] = problems
+                print(f'ERROR: {locale}: {len(problems)} errors; its translations are discarded, other locales continue:', flush=True)
+                for problem in problems[:10]:
+                    print(f'  {problem}', flush=True)
+        accepted = [locale for locale in locales if locale not in failed]
+        after = content_files(staged, accepted, mods)
+        before_accepted = {relative: data for relative, data in before.items()
+                           if not any(part in failed for part in relative.parts) and relative.stem not in failed}
+        changed = commit_files(root, accepted, mods, before_accepted, after)
         print(f'Updated {changed} files. Review the diff and run check-localization.cmd before publishing.')
+        if failed:
+            raise ValueError('Translation failed validation for: ' + ', '.join(failed)
+                             + '. Rerun update-localization for those locales after fixing the reported blocks.')
 
 
 def main():
@@ -351,11 +410,12 @@ def main():
     parser.add_argument('--dry-run', action='store_true', help='List affected entries without calling Claude or modifying content')
     parser.add_argument('--model', default=DEFAULT_MODEL, help=f'Claude model alias or id (default: {DEFAULT_MODEL})')
     parser.add_argument('--claude', type=Path, help='Explicit Claude Code executable path; otherwise taken from PATH')
+    parser.add_argument('--parallel', type=int, default=4, help='Locales translated at the same time (default: 4)')
     args = parser.parse_args()
     try:
         command = [str(args.claude.expanduser().resolve())] if args.claude else None
         update(args.root, args.locale or checks.LOCALES,
-               ClaudeTranslator(command=command, model=args.model), dry_run=args.dry_run)
+               ClaudeTranslator(command=command, model=args.model), dry_run=args.dry_run, workers=args.parallel)
     except (ValueError, OSError, RuntimeError) as error:
         print(f'ERROR: {error}')
         return 1

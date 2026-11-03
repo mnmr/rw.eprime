@@ -178,4 +178,5 @@ Um einen Pool zu einer Gruppe hinzuzufügen, wechsle zum Gruppeneditor und verwe
   <EPR.UseVanillaConfirmButton>Standardanzeige verwenden</EPR.UseVanillaConfirmButton>
   <EPR.CounterFontSmall>Klein</EPR.CounterFontSmall>
   <EPR.CounterFontTiny>Winzig</EPR.CounterFontTiny>
+  <EPR.HelpChapterMods>Mods</EPR.HelpChapterMods>
 </LanguageData>

@@ -93,4 +93,5 @@
   <QJ_TabOptions>Einstellungen</QJ_TabOptions>
   <QJ_SettingsAllowRobotPreparation>Mechs und Roboter dürfen Qualitätsaufträge bearbeiten</QJ_SettingsAllowRobotPreparation>
   <QJ_SettingsAllowRobotPreparationTip>Erlaubt Mechs und unterstützten Robotern, verwaltete Herstellungs- und Bauarbeiten auszuführen. Deaktiviere diese Option, um diese Arbeiten und die dabei gewonnene Fertigkeitserfahrung Kolonisten vorzubehalten. Dadurch werden auch ihre laufenden Arbeiten an verwalteten Aufträgen gestoppt. Geeignete Mechs und Roboter können weiterhin von Quality Jobs zugewiesene Arbeiten fertigstellen. Gewöhnliche, nicht verwaltete Arbeiten bleiben davon unberührt.</QJ_SettingsAllowRobotPreparationTip>
+  <QJ_HelpChapterMods>Mods</QJ_HelpChapterMods>
 </LanguageData>

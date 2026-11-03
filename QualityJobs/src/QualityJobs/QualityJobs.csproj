@@ -17,6 +17,7 @@
   <ItemGroup>
     <Compile Include="$(RimSharedRoot)\UiLib\**\*.cs" LinkBase="Shared" />
     <Compile Include="$(RimSharedRoot)\GameLib\Localization\**\*.cs" LinkBase="Shared" />
+    <Compile Include="$(RimSharedRoot)\GameLib\Mechs\**\*.cs" LinkBase="Shared" />
     <Compile Include="$(RimSharedRoot)\GameLib\Multiplayer\**\*.cs" LinkBase="Shared" />
   </ItemGroup>
   <ItemGroup>

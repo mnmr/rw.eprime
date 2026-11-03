@@ -100,6 +100,34 @@ public class HelpFlowLayoutTests
     }
 
     [Test]
+    public async Task TablesSpanTheWidthAndWrapOnlyTheColumnsThatDoNotFit()
+    {
+        // Natural widths with 6 padding: col0 = max(20,10)+12 = 32,
+        // col1 = max(50,20)+12 = 62. Width 80 minus one 1px gap leaves 79;
+        // an equal share is 39.5, so col0 keeps 32 and col1 takes the rest
+        // (47) and wraps "ef" to a second line. Fills precede each row's
+        // text and take the row's final height; the header row is marked.
+        var doc = HelpMarkdown.Parse(
+            "| ab | cd ef |\n" +
+            "|---|---|\n" +
+            "| g | hi |");
+
+        string dump = Dump(Layout(doc, width: 80f));
+
+        await Assert.That(dump).IsEqualTo(
+            "F(0,0,32x52) header\n" +
+            "F(33,0,47x52) header\n" +
+            "T(6,6,20) ab\n" +
+            "T(39,6,20) cd\n" +
+            "T(39,26,20) ef\n" +
+            "F(0,53,32x32)\n" +
+            "F(33,53,47x32)\n" +
+            "T(6,59,10) g\n" +
+            "T(39,59,20) hi\n" +
+            "H=85");
+    }
+
+    [Test]
     public async Task ImagesScaleDownToTheContentWidthAndUnresolvedImagesVanish()
     {
         var doc = HelpMarkdown.Parse(
@@ -318,6 +346,8 @@ public class HelpFlowLayoutTests
         HeadingSpacingBottom = 4f,
         ListIndent = 18f,
         ListItemSpacing = 2f,
+        TableCellPadding = 6f,
+        TableCellGap = 1f,
     };
 
     private sealed class MonoMeasurer : IHelpTextMeasurer
@@ -352,6 +382,10 @@ public class HelpFlowLayoutTests
                     break;
                 case HelpItemKind.Demo:
                     sb.Append($"DEMO({x},{y},{w}x{N(item.Height)}) {item.Text}");
+                    break;
+                case HelpItemKind.CellFill:
+                    sb.Append($"F({x},{y},{w}x{N(item.Height)})");
+                    if (item.Text.Length > 0) sb.Append(' ').Append(item.Text);
                     break;
                 case HelpItemKind.TopicLink:
                     sb.Append($"L({x},{y},{w}>{item.Target}) {item.Text}");

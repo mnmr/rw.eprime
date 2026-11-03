@@ -4,6 +4,9 @@ title: Table de la vue d'ensemble
 <!-- l10n:b-b3adf99a5ff7 -->
 L'onglet Vue d'ensemble liste tous les colons pouvant recevoir des implants.
 
+<!-- l10n:overview-ghouls -->
+Les goules (Anomaly) sont listées avec les colons. Le menu des plans ne leur propose que les plans conçus pour les goules, et ne propose les plans pour goules à personne d'autre ; les autres plans sont grisés avec l'indication des personnes concernées. Les goules n'ont aucune compétence : leurs colonnes T et M affichent 0.
+
 <!-- l10n:b-e8c75fea3beb -->
 ![Lignes avec colonnes Plan, Progression, Priorité et État](overview-rows.png)
 

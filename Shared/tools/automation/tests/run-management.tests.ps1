@@ -267,7 +267,8 @@ try {
             [IO.File]::WriteAllText((Join-Path $saveDirectory 'Fisso-NAM-fixture.rws'), ('<savegame><meta><modIds>' + (($legacyBaseline.ModsConfigData.activeMods.li | ForEach-Object { '<li>' + $_ + '</li>' }) -join '') + '</modIds></meta></savegame>'))
             Rejects { Initialize-RunProfile $destination $saveDirectory 'Fisso-NAM*.rws' 'own-mods-waylith' $worktree } 'The ordinary baseline must still reject a differently ordered source save.'
             $legacy = Initialize-RunProfile $destination $saveDirectory 'Fisso-NAM*.rws' 'own-mods-waylith' $worktree $legacyBaselinePath
-            Check (($legacy.activeMods -join ',') -ceq ($prepared.activeMods -join ',')) 'An explicit matching legacy baseline must layer the same clean mod set without weakening default verification.'
+            # Each baseline keeps its own save's order; the clean membership must match.
+            Check ((($legacy.activeMods | Sort-Object) -join ',') -ceq (($prepared.activeMods | Sort-Object) -join ',')) 'An explicit matching legacy baseline must layer the same clean mod set without weakening default verification.'
         } finally { $script:AutomationRepositoryRoot = $repositoryRoot }
     } finally { $script:InstalledGameRoot = $installedRoot }
     Write-Output 'PASS run selection, ownership, lease liveness, immutable snapshots, junction-safe removal, independent neighbors.'

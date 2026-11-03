@@ -1039,15 +1039,16 @@ namespace Implanner.Core
         /// base of an incompatible body (Plan.IsCompatibleBase) refuses the
         /// creation, since the UI never offers that pair.
         public Plan? CreatePlan(string? preferredName, Func<int> takePlanId,
-            int basePlanId = 0, string? body = null)
+            int basePlanId = 0, string? body = null, string? mutant = null)
         {
             string? name = CatalogNameRules.Unique(preferredName, plans, PlanNameOf);
             if (name == null) return null;
             string planBody = Plan.NormalizeBody(body);
+            string planMutant = Plan.NormalizeBody(mutant);
             Plan? basePlan = basePlanId != 0 ? PlanById(basePlanId) : null;
-            if (basePlan != null && !Plan.IsCompatibleBase(basePlan.Body, planBody))
+            if (basePlan != null && !Plan.IsCompatibleBase(basePlan, planBody, planMutant))
                 return null;
-            var plan = new Plan(takePlanId(), name) { Body = planBody };
+            var plan = new Plan(takePlanId(), name) { Body = planBody, Mutant = planMutant };
             if (basePlan != null)
             {
                 plan.BasePlanId = basePlanId;
@@ -1376,7 +1377,7 @@ namespace Implanner.Core
             {
                 if (plans[i].BasePlanId == 0) continue;
                 Plan? basePlan = PlanById(plans[i].BasePlanId);
-                if (basePlan != null && Plan.IsCompatibleBase(basePlan.Body, plans[i].Body))
+                if (basePlan != null && Plan.IsCompatibleBase(basePlan, plans[i].Body, plans[i].Mutant))
                     continue;
                 plans[i].BasePlanId = 0;
                 change |= PlannerChange.Plans;
@@ -1498,7 +1499,7 @@ namespace Implanner.Core
                     || !tempToReal.TryGetValue(baseTempId, out int realBaseId))
                     continue;
                 Plan? basePlan = PlanById(realBaseId);
-                if (basePlan != null && Plan.IsCompatibleBase(basePlan.Body, added[i].Body))
+                if (basePlan != null && Plan.IsCompatibleBase(basePlan, added[i].Body, added[i].Mutant))
                     added[i].BasePlanId = realBaseId;
             }
 

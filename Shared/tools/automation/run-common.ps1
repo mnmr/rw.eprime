@@ -8,6 +8,22 @@ $script:InstalledWorkshopRoot = 'C:\Program Files (x86)\Steam\steamapps\workshop
 # slots Windows runs execute from (stable executable paths, see Request-RunSlot).
 $script:GameInstallsRoot = Join-Path $script:AutomationRepositoryRoot 'GameInstalls'
 $script:AutomationSlotsRoot = Join-Path $script:AutomationSharedRoot 'Slots'
+# The repository's own save copies: the only saves runs load. The player's folder
+# is read solely by Copy-PlayerSave (create-run -RefreshFromPlayer), never written.
+$script:LocalSavesRoot = Join-Path $script:AutomationRepositoryRoot 'Saves'
+$script:PlayerSavesRoot = 'C:\Users\morte\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Saves'
+
+function Copy-PlayerSave {
+    param([Parameter(Mandatory)][string]$SavePattern, [string]$Destination = $script:LocalSavesRoot)
+    $source = Get-ChildItem -LiteralPath $script:PlayerSavesRoot -File |
+        Where-Object { $_.Name -like $SavePattern } |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+    if ($null -eq $source) { throw "no player save matching '$SavePattern' in $script:PlayerSavesRoot" }
+    New-Item -ItemType Directory -Path $Destination -Force | Out-Null
+    Copy-Item -LiteralPath $source.FullName -Destination (Join-Path $Destination $source.Name) -Force
+    Write-Host "local save copy refreshed from $($source.FullName)"
+}
 
 function Get-AutomationOwner {
     if ($env:RIMWORLD_AUTOMATION_OWNER) { return $env:RIMWORLD_AUTOMATION_OWNER }

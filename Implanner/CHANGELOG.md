@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.9 — 2026-11-03
+
+- Added: Help pages for mods to show compatibility verdicts and other relevant information.
+- Added: You can now create plans targeting ghouls (Anomaly DLC required).
+
 ## 1.2.8 — 2026-11-02
 
 - Changed: Multi-level mods no longer switch automation off; a warning explains the limits instead.

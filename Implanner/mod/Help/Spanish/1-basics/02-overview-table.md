@@ -4,6 +4,9 @@ title: La tabla de vista general
 <!-- l10n:b-b3adf99a5ff7 -->
 Vista general enumera los colonos que podrían recibir implantes.
 
+<!-- l10n:overview-ghouls -->
+Los necrófagos (Anomaly) aparecen junto a los colonos. El menú de planes solo les ofrece planes hechos para necrófagos, y los planes para necrófagos no se ofrecen a nadie más; los demás planes aparecen en gris indicando para quién son. Los necrófagos no tienen habilidades, así que sus columnas D y C muestran 0.
+
 <!-- l10n:b-e8c75fea3beb -->
 ![Filas con plan, progreso, prioridad y estado](overview-rows.png)
 

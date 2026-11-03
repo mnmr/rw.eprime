@@ -3,7 +3,11 @@ param(
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Purpose,
     [string]$Owner = '',
     [string]$ModSet = '',
-    [string]$SourceSaveDirectory = 'C:\Users\morte\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Saves',
+    # Runs load the repository's own save copies (D:\Code\RimWorld\Saves), never the
+    # player's folder. -RefreshFromPlayer copies the newest matching player save in
+    # first (read-only source); that is the only time the player's saves are read.
+    [string]$SourceSaveDirectory = '',
+    [switch]$RefreshFromPlayer,
     [string]$SavePattern = 'Fisso-NAM*.rws',
     [string]$ModSourceRoot = 'D:\Code\RimWorld',
     [string]$GameRoot = '',
@@ -18,6 +22,8 @@ param(
 . (Join-Path $PSScriptRoot 'profile-common.ps1')
 . (Join-Path $PSScriptRoot 'snapshot-common.ps1')
 if ($GameRoot -and $GameVersion) { throw 'Pass -GameRoot or -GameVersion, not both.' }
+if (-not $SourceSaveDirectory) { $SourceSaveDirectory = $script:LocalSavesRoot }
+if ($RefreshFromPlayer) { Copy-PlayerSave -SavePattern $SavePattern -Destination $script:LocalSavesRoot }
 if ($GameVersion) {
     $GameRoot = Join-Path $script:GameInstallsRoot $GameVersion
     if (-not (Test-Path -LiteralPath $GameRoot -PathType Container)) { throw "No local game copy for $GameVersion at $GameRoot" }

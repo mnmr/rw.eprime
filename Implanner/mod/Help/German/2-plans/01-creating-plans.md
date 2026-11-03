@@ -22,6 +22,9 @@ Fügt eine Mod eine Rasse mit eigenem Körper hinzu, etwa Android Tiers, fragt d
 <!-- l10n:plan-body-extends -->
 Ein Plan für einen beliebigen Körper kann von einem Plan für einen beliebigen Körper oder für einen bestimmten Körper erweitert werden. Ein Plan für einen bestimmten Körper kann nur von einem Plan für denselben Körper erweitert werden. Wählst du zuerst den zu erweiternden Plan, werden die Körper-Optionen entsprechend eingeschränkt. Wählst du zuerst einen Körper, werden nur die Pläne aufgelistet, die er erweitern darf.
 
+<!-- l10n:plan-ghouls -->
+Mit Anomaly enden die **Körper**-Optionen mit **Ghule**. Ein für Ghule erstellter Plan listet gewöhnliche Implantate und die Ghul-Ausstattung auf und kann nur Ghulen zugewiesen werden; kein anderer Plan weist einen Ghul zu. Seine Karte lautet „für Ghule“. Ein Ghulplan kann einen Plan für einen beliebigen Körper erweitern, sodass ein Ghul die Standardbionik der Kolonie erben kann, aber ein gewöhnlicher Plan kann keinen Ghulplan erweitern. Implantate, die Ghule nicht aufnehmen können, etwa die Revenant-Wirbel, werden für einen Ghulplan nicht aufgelistet.
+
 <!-- l10n:b-515b3ee4d180 -->
 Jede Karte der Planliste zeigt Implantatanzahl, Zahl zugewiesener Kolonisten und deren gemeinsamen Fortschritt.
 

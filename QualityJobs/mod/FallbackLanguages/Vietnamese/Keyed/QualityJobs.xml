@@ -93,4 +93,5 @@
   <QJ_TabOptions>Tùy chọn</QJ_TabOptions>
   <QJ_SettingsAllowRobotPreparation>Cho phép mech và robot làm công việc chất lượng</QJ_SettingsAllowRobotPreparation>
   <QJ_SettingsAllowRobotPreparationTip>Cho phép mech và robot được hỗ trợ làm các công việc chế tạo và xây dựng được quản lý. Tắt để dành công việc này cùng kinh nghiệm kỹ năng cho cư dân. Thao tác này cũng dừng công việc được quản lý mà chúng đang làm. Mech và robot đủ điều kiện vẫn có thể hoàn thiện công việc do Quality Jobs phân công. Công việc thông thường không được quản lý không bị ảnh hưởng.</QJ_SettingsAllowRobotPreparationTip>
+  <QJ_HelpChapterMods>Mod</QJ_HelpChapterMods>
 </LanguageData>

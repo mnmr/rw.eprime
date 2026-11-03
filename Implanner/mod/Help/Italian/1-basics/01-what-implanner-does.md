@@ -11,3 +11,7 @@ Implanner pianifica gli impianti dei coloni e automatizza il lavoro necessario a
 
 <!-- l10n:b-64a81f113814 -->
 Puoi disattivare completamente l'automazione. Ogni sua azione compare negli stessi elenchi di ordini e interventi che usi già.
+
+<!-- l10n:who-is-plannable -->
+Ogni colono adulto può essere pianificato, così come i ghoul della colonia di Anomaly. I ghoul accettano le normali protesi bioniche e il kit per ghoul (placcatura, aculei e cuori da ghoul), e solo un piano creato per i ghoul può assegnarli (vedi [creare piani](topic:creating-plans)). Bambini, schiavi e prigionieri non sono elencati.
+

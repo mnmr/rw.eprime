@@ -664,4 +664,5 @@ A tarefa não foi interrompida. Este aviso aparece uma vez por partida salva.</W
   <WR_RecTuneHunterPlacementPoorShotsFirst>Atiradores ruins primeiro</WR_RecTuneHunterPlacementPoorShotsFirst>
   <WR_RecTuneHunterPlacementPoorShotsFirstTip>Todo colono armado tem a função Caçador. Os atiradores mais fracos caçam primeiro para ganhar treino de Tiro; os exímios atiradores caçam por último. Escolha esta opção quando a comida estiver garantida e você quiser mais colonos que saibam atirar. É o padrão.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
   <WR_RecTuneHunterTiersRowDescReversed>Limites de nível de Tiro para o lugar dinâmico do Caçador, lidos de cima para baixo. Níveis acima do último limite são o nível 1 e colocam o Caçador logo após o trabalho básico; os níveis 2 e 3 seguem as funções de trabalho intermediárias e finais, e o nível 5 coloca o Caçador por último.</WR_RecTuneHunterTiersRowDescReversed>
+  <WR_HelpChapterMods>Mods</WR_HelpChapterMods>
 </LanguageData>

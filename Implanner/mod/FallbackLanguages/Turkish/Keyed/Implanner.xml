@@ -219,7 +219,7 @@
   <IMP_PlanBody>Vücut</IMP_PlanBody>
   <IMP_PlanBodyAny>Herhangi bir vücut</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0} (yüklenmedi)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>Tek bir vücut için hazırlanan plan yalnızca o vücudun parçalarını listeler ve yalnızca o vücuda sahip kolonicileri kapsayabilir. İnsan vücudu için hazırlanan plan, fazladan kanat gibi eklerle birlikte insan vücudunun tüm parçalarına sahip olan kolonicileri de kapsar.\n\nHerhangi bir vücut için hazırlanan plan tüm kolonicilere uygulanır. Bir koloniciin vücudunda bulunmayan parçalar o koloni için atlanır.\n\nBir plan, herhangi bir vücut için hazırlanmış bir planı veya aynı vücut için hazırlanmış bir planı genişletebilir.</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>Tek bir vücut için hazırlanan plan yalnızca o vücudun parçalarını listeler ve yalnızca o vücuda sahip kolonicileri kapsayabilir. İnsan vücudu için hazırlanan plan, fazladan kanat gibi eklerle birlikte insan vücudunun tüm parçalarına sahip olan kolonicileri de kapsar.\n\nHerhangi bir vücut için hazırlanan plan tüm kolonicilere uygulanır. Bir koloniciin vücudunda bulunmayan parçalar o kolonici için atlanır.\n\nGûllar için hazırlanan plan sıradan implantları ve gûl parçalarını listeler ve yalnızca gûlları kapsayabilir. Başka hiçbir plan gûlları kapsamaz.\n\nBir plan, herhangi bir vücut için hazırlanmış bir planı veya aynı vücut için hazırlanmış bir planı genişletebilir. Gûllar için hazırlanan plan, herhangi bir vücut için hazırlanmış bir planı da genişletebilir.</IMP_PlanBodyTip>
   <IMP_PlanForBody>{0} için</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0} (yalnızca {1})</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>Bu vücut için değil</IMP_StateNotForBody>
@@ -231,4 +231,7 @@
   <IMP_OptInterface>Arayüz</IMP_OptInterface>
   <IMP_ResizeGripTip>Pencereyi yeniden boyutlandırmak için sürükleyin. Varsayılan boyuta dönmek için çift tıklayın.</IMP_ResizeGripTip>
   <IMP_LevelModWarning>{0} bu koloniyi birkaç kata yayar. Implanner bir implantı veya ameliyatı kat sınırı boyunca taşıyamaz; bu yüzden implantı başka bir katta olan bir ameliyat, siz implantı taşıyana kadar bekler.</IMP_LevelModWarning>
+  <IMP_PlanForGhouls>gûllar için</IMP_PlanForGhouls>
+  <IMP_PlanGhouls>Gûllar</IMP_PlanGhouls>
+  <IMP_PlanTargetColonists>kolonicilere</IMP_PlanTargetColonists>
 </LanguageData>

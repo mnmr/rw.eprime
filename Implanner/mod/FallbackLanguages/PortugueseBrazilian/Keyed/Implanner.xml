@@ -219,7 +219,7 @@
   <IMP_PlanBody>Corpo</IMP_PlanBody>
   <IMP_PlanBodyAny>Qualquer corpo</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0} (não carregado)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>Um plano feito para um corpo lista apenas as partes desse corpo e só pode convocar colonos com esse corpo. Um plano para o corpo humano também aceita colonos cujo corpo tenha todas as partes humanas, como uma raça com asas extras.\n\nUm plano para qualquer corpo vale para todos os colonos. As partes que o corpo de um colono não tem são ignoradas para ele.\n\nUm plano pode estender um plano para qualquer corpo ou um plano para o mesmo corpo.</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>Um plano feito para um corpo lista apenas as partes desse corpo e só pode convocar colonos com esse corpo. Um plano para o corpo humano também aceita colonos cujo corpo tenha todas as partes humanas, como uma raça com asas extras.\n\nUm plano para qualquer corpo vale para todos os colonos. As partes que o corpo de um colono não tem são ignoradas para ele.\n\nUm plano feito para carniçais lista implantes comuns e o kit de carniçal, e só pode convocar carniçais. Nenhum outro plano convoca um carniçal.\n\nUm plano pode estender um plano para qualquer corpo ou um plano para o mesmo corpo. Um plano para carniçais também pode estender um plano para qualquer corpo.</IMP_PlanBodyTip>
   <IMP_PlanForBody>para {0}</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0} (somente {1})</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>Não serve para este corpo</IMP_StateNotForBody>
@@ -231,4 +231,7 @@
   <IMP_OptInterface>Interface</IMP_OptInterface>
   <IMP_ResizeGripTip>Arraste para redimensionar a janela. Clique duas vezes para voltar ao tamanho padrão.</IMP_ResizeGripTip>
   <IMP_LevelModWarning>{0} distribui esta colônia em vários níveis. O Implanner não consegue levar um implante ou uma operação através de um limite de nível, então uma operação cujo implante está em outro nível fica esperando até que você o leve até lá.</IMP_LevelModWarning>
+  <IMP_PlanForGhouls>para carniçais</IMP_PlanForGhouls>
+  <IMP_PlanGhouls>Carniçais</IMP_PlanGhouls>
+  <IMP_PlanTargetColonists>colonos</IMP_PlanTargetColonists>
 </LanguageData>

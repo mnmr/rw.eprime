@@ -178,4 +178,5 @@ Pour ajouter un ensemble à un groupe, passez à l'éditeur de groupes et utilis
   <EPR.UseVanillaConfirmButton>Utiliser celui du jeu de base</EPR.UseVanillaConfirmButton>
   <EPR.CounterFontSmall>Petite</EPR.CounterFontSmall>
   <EPR.CounterFontTiny>Très petite</EPR.CounterFontTiny>
+  <EPR.HelpChapterMods>Mods</EPR.HelpChapterMods>
 </LanguageData>

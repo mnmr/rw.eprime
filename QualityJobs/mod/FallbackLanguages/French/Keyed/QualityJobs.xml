@@ -93,4 +93,5 @@
   <QJ_TabOptions>Options</QJ_TabOptions>
   <QJ_SettingsAllowRobotPreparation>Autoriser les mécas et robots à effectuer les travaux de qualité</QJ_SettingsAllowRobotPreparation>
   <QJ_SettingsAllowRobotPreparationTip>Autorise les mécas et les robots compatibles à effectuer les travaux de fabrication et de construction gérés. Désactivez cette option pour réserver ce travail et l'expérience de compétence associée aux colons. Cela interrompt aussi leur travail en cours sur les tâches gérées. Les mécas et robots admissibles peuvent toujours terminer les travaux attribués par Quality Jobs. Les travaux ordinaires non gérés restent inchangés.</QJ_SettingsAllowRobotPreparationTip>
+  <QJ_HelpChapterMods>Mods</QJ_HelpChapterMods>
 </LanguageData>

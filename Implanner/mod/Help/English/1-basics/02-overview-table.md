@@ -4,6 +4,12 @@ title: The overview table
 <!-- l10n:b-b3adf99a5ff7 -->
 The Overview tab lists every colonist who could receive implants.
 
+<!-- l10n:overview-ghouls -->
+Ghouls (Anomaly) are listed with the colonists. The plan menu offers them
+only plans made for ghouls, and offers ghoul plans to nobody else; the
+other plans are greyed with who they are for. Ghouls have no skills, so
+their S and M columns read 0.
+
 <!-- l10n:b-e8c75fea3beb -->
 ![Overview rows with plan, progress, priority and state columns](overview-rows.png)
 

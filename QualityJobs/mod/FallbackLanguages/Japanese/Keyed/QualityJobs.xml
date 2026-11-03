@@ -93,4 +93,5 @@
   <QJ_TabOptions>設定</QJ_TabOptions>
   <QJ_SettingsAllowRobotPreparation>メカノイドとロボットの品質管理対象作業を許可</QJ_SettingsAllowRobotPreparation>
   <QJ_SettingsAllowRobotPreparationTip>Quality Jobsが管理する製作と建築の作業を、メカノイドや対応ロボットにも許可します。無効にすると、その作業とスキル経験値を入植者に確保できます。管理対象の作業を現在行っている場合も中止します。条件を満たすメカノイドやロボットは、引き続きQuality Jobsが割り当てる仕上げ作業を行えます。管理対象外の通常の作業には影響しません。</QJ_SettingsAllowRobotPreparationTip>
+  <QJ_HelpChapterMods>MOD</QJ_HelpChapterMods>
 </LanguageData>

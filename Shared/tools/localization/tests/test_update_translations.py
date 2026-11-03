@@ -57,7 +57,7 @@ class TranslationUpdates(unittest.TestCase):
         expected = {'Example/Keyed/Count': '{0} af {1} genstande',
                     'Example/Keyed/New': 'Ny etiket',
                     'Example/DefInjected/RoleDef/Doctor.label': 'læge',
-                    'Example/Help/new/02-more.md':
+                    'Example/Help/new/more.md':
                     '---\ntitle: Mere\n---\nBrug `Doctor` [her](topic:details).\n@demo:example\n'}
         requested = {}
 

@@ -263,7 +263,7 @@ namespace Implanner.UI
                 {
                     DefName = pair.Key,
                     Label = entry?.Label ?? pair.Key,
-                    IconDef = entry?.Def.spawnThingOnRemoved,
+                    IconDef = entry?.Item,
                     Amount = pair.Value,
                     BufferKey = "h|" + pair.Key,
                     FieldName = "IMP_ImplantReserve_" + pair.Key,
@@ -301,7 +301,7 @@ namespace Implanner.UI
             IReadOnlyList<ImplantCatalogEntry> implants = Catalogs.Implants();
             for (int i = 0; i < implants.Count; i++)
             {
-                ThingDef? item = implants[i].Def.spawnThingOnRemoved;
+                ThingDef? item = implants[i].Item;
                 if (item == null) continue;
                 IReadOnlyList<RecipeDef> candidates = PlannerProduction.ProductionRecipesFor(item);
                 for (int r = 0; r < candidates.Count; r++)

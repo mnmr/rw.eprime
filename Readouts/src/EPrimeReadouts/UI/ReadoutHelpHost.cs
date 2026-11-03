@@ -17,6 +17,7 @@ namespace EPrimeReadouts.UI
             new HelpChapter("2-groups", "EPR.HelpChapterGroups"),
             new HelpChapter("3-pools", "EPR.HelpChapterPools"),
             new HelpChapter("4-options", "EPR.HelpChapterOptions"),
+            new HelpChapter("5-mods", "EPR.HelpChapterMods"),
         };
 
         // Owner: process. Key: none. Value: the Help folder path, derived

@@ -1,0 +1,1 @@
+<ModMetaData><name>Help capture probe</name><author>Local test</author><packageId>eprime.shared.helpcapture</packageId><supportedVersions><li>1.6</li><li>1.7</li></supportedVersions><loadAfter><li>mnmr.workroles</li><li>eprime.implanner</li></loadAfter></ModMetaData>

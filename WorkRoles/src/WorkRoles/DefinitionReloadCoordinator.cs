@@ -35,6 +35,7 @@ namespace WorkRoles
             GameJobCatalog.Instance.InvalidateSessionCache();
             CompiledJobOrders.InvalidateDefinitions();
             VseSignalReflection.InvalidateDefinitions();
+            RimShared.GameLib.MechWorkModes.Reset();
             ExternalPawnFacts.InvalidateAll();
         }
 

@@ -22,6 +22,9 @@ Khi một mod thêm chủng tộc có cơ thể riêng, chẳng hạn Android Ti
 <!-- l10n:plan-body-extends -->
 Kế hoạch cho mọi cơ thể có thể được mở rộng bởi kế hoạch cho mọi cơ thể hoặc kế hoạch cho một cơ thể cụ thể. Kế hoạch dành cho một cơ thể chỉ có thể được mở rộng bởi kế hoạch cho cùng cơ thể đó. Nếu chọn kế hoạch cần mở rộng trước, các lựa chọn Cơ thể sẽ được thu hẹp cho phù hợp; nếu chọn cơ thể trước, danh sách chỉ hiện những kế hoạch có thể mở rộng.
 
+<!-- l10n:plan-ghouls -->
+Khi có Anomaly, các lựa chọn **Cơ thể** kết thúc bằng **Ghoul**. Kế hoạch dành cho ghoul liệt kê các cấy ghép thông thường và bộ dành riêng cho ghoul, và chỉ có thể giao cho ghoul; không kế hoạch nào khác giao được cho ghoul. Thẻ của nó ghi "dành cho ghoul". Kế hoạch cho ghoul có thể mở rộng từ kế hoạch cho mọi cơ thể, nên ghoul có thể kế thừa các bộ phận bionic tiêu chuẩn của thuộc địa, nhưng kế hoạch thông thường không thể mở rộng từ kế hoạch cho ghoul. Những cấy ghép ghoul không dùng được, như đốt sống revenant, sẽ không được liệt kê trong kế hoạch cho ghoul.
+
 <!-- l10n:b-515b3ee4d180 -->
 Mỗi thẻ trong danh sách hiện số cấy ghép, số cư dân được giao và tổng tiến độ.
 

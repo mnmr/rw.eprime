@@ -20,9 +20,10 @@ namespace Implanner
         /// for a goal only when it is at least as good as the goal's implant
         /// at that quality.
         internal static PlanEvaluation Evaluate(PlannerModel model, Pawn pawn,
-            IReadOnlyList<ImplantGoal> goals, bool away, int minQuality, string planBody)
+            IReadOnlyList<ImplantGoal> goals, bool away, int minQuality, string planBody,
+            string planMutant)
         {
-            Project(pawn, goals, minQuality, planBody,
+            Project(pawn, goals, minQuality, planBody, planMutant,
                 out List<InstalledImplant> installed,
                 out ImplantContext[] implantContexts);
             return PlanEvaluator.Evaluate(
@@ -35,9 +36,9 @@ namespace Implanner
         /// matching).
         internal static List<string> MissingImplantSlotKeys(
             PlannerModel model, Pawn pawn, IReadOnlyList<ImplantGoal> goals,
-            int minQuality, string planBody)
+            int minQuality, string planBody, string planMutant)
         {
-            Project(pawn, goals, minQuality, planBody,
+            Project(pawn, goals, minQuality, planBody, planMutant,
                 out List<InstalledImplant> installed,
                 out ImplantContext[] implantContexts);
             return PlanEvaluator.MissingImplantSlotKeys(
@@ -48,14 +49,15 @@ namespace Implanner
         /// The shared projection prologue: both evaluation entry points must
         /// feed PlanEvaluator identical inputs.
         private static void Project(Pawn pawn, IReadOnlyList<ImplantGoal> goals,
-            int minQuality, string planBody,
+            int minQuality, string planBody, string planMutant,
             out List<InstalledImplant> installed, out ImplantContext[] contexts)
         {
             installed = BuildInstalledImplants(pawn);
-            // A plan pinned to another body (or to one that is not loaded)
-            // has no target on this pawn: every slot reads as missing
-            // anatomy, so nothing is counted, reserved or scheduled.
-            if (!PlanBodies.Accepts(planBody, pawn))
+            // A plan pinned to another body (or to one that is not loaded),
+            // or made for another kind of pawn (a ghoul on an ordinary
+            // plan), has no target on this pawn: every slot reads as
+            // missing anatomy, so nothing is counted, reserved or scheduled.
+            if (!PlanBodies.Accepts(planBody, planMutant, pawn))
             {
                 contexts = new ImplantContext[goals.Count];
                 for (int i = 0; i < goals.Count; i++)
@@ -64,8 +66,10 @@ namespace Implanner
             }
             // Each slot judged on THIS pawn's body (SlotApplicability): a
             // slot under an installed artificial part, or under a part
-            // another goal of the plan replaces on this body, is outside
-            // the pawn's target. The facts are the conflict cache's
+            // another goal of the plan replaces on this body, or a kind
+            // whose surgeries the game refuses for this kind of pawn (the
+            // ghoul kit on a human, revenant vertebrae on a ghoul), is
+            // outside the pawn's target. The facts are the conflict cache's
             // per-body records, so record indices agree with the slot keys.
             int body = Catalogs.PlannableBodies().IndexOf(pawn.RaceProps.body);
             SlotBlock[][]? blocks = null;
@@ -85,7 +89,8 @@ namespace Implanner
                         facts[i][j] = ImplantConflicts.FactsOn(
                             goal.ImplantDefName, goal.Slots[j], body);
                 }
-                SlotApplicability.Resolve(facts, ArtificialParts(pawn), blocks, blockers);
+                SlotApplicability.Resolve(facts, ArtificialParts(pawn), blocks, blockers,
+                    ColonyScope.MutantOf(pawn));
             }
             contexts = new ImplantContext[goals.Count];
             for (int i = 0; i < goals.Count; i++)
@@ -114,7 +119,7 @@ namespace Implanner
         /// The lowest item quality this plan accepts for the entry: the
         /// plan's minimum for an item that carries a quality, any otherwise.
         internal static int PlanMinimumFor(ImplantCatalogEntry entry, int planMinQuality) =>
-            ImplantQualities.HasQuality(entry.Def.spawnThingOnRemoved)
+            ImplantQualities.HasQuality(entry.Item)
                 ? planMinQuality
                 : ImplantQuality.Lowest;
 
@@ -163,7 +168,7 @@ namespace Implanner
         internal static ThingDef? RequiredItem(
             Pawn pawn, ImplantCatalogEntry entry, PartAddress slot)
         {
-            ThingDef? item = entry.Def.spawnThingOnRemoved;
+            ThingDef? item = entry.Item;
             if (item == null || entry.UpgradesFrom == null) return item;
             BodyPartRecord? part = ResolveSlotPart(pawn, entry, slot);
             if (part == null) return item;

@@ -188,8 +188,8 @@ namespace Implanner
         }
 
         /// The implant item kinds automation can consume, in defName
-        /// order: the catalog's spawnThingOnRemoved defs plus the items of
-        /// the model's reinstall records, deduplicated.
+        /// order: the catalog's surgery items plus the items of the model's
+        /// reinstall records (what removal dropped), deduplicated.
         internal static List<ThingDef> ImplantItemDefs(Core.PlannerModel model)
         {
             var defs = new List<ThingDef>();
@@ -197,7 +197,7 @@ namespace Implanner
             IReadOnlyList<ImplantCatalogEntry> catalog = Catalogs.Implants();
             for (int i = 0; i < catalog.Count; i++)
             {
-                ThingDef? item = catalog[i].Def.spawnThingOnRemoved;
+                ThingDef? item = catalog[i].Item;
                 if (item != null && seen.Add(item))
                     defs.Add(item);
             }

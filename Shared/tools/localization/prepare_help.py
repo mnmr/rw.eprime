@@ -14,7 +14,7 @@ def prepare(root, locales=checks.LOCALES, mods=checks.MODS, dry_run=False):
     locales = tuple(dict.fromkeys(locales))
     before = updater.content_files(root, locales, mods)
     after = dict(before)
-    manifests = {locale: json.loads(checks.manifest_path(root, locale).read_text(encoding='utf-8'))
+    manifests = {locale: checks.load_manifest(root, locale)
                  for locale in locales if checks.manifest_path(root, locale).exists()}
     updater.require_clean(checks.catalog(root, 'English', mods)[1], 'English')
     for locale in locales:
@@ -22,9 +22,10 @@ def prepare(root, locales=checks.LOCALES, mods=checks.MODS, dry_run=False):
         issues = checks.check_locale(root, locale, mods)
         updater.require_clean([i for i in issues if i.code in ('xml', 'duplicate', 'source', 'text', 'manifest')], locale)
     migrated, units, problems = 0, 0, []
+    english_files = checks.help_files(root, 'English', mods)
     for page, source in checks.help_pages(root, 'English', mods).items():
-        mod, _, relative = page.split('/', 2)
-        source_path = checks.content_root(root, mod) / 'Help/English' / relative
+        mod = page.split('/', 1)[0]
+        source_path = english_files[page]
         try:
             source_blocks = blocks.parse(source)
             marked = source if source_blocks is not None else blocks.annotate(source)
@@ -37,8 +38,8 @@ def prepare(root, locales=checks.LOCALES, mods=checks.MODS, dry_run=False):
         legacy_source = re.sub(blocks.MARKER, '', source).lstrip('\ufeff').replace('\r\n', '\n')
         after[source_path.relative_to(root)] = marked.encode('utf-8')
         for locale in locales:
-            target_path = checks.content_root(root, mod) / 'Help' / locale / relative
-            if not target_path.exists():
+            target_path = checks.help_files(root, locale, (mod,)).get(page)
+            if target_path is None:
                 continue
             current = target_path.read_bytes().decode('utf-8')
             try:

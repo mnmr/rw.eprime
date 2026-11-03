@@ -219,7 +219,7 @@
   <IMP_PlanBody>身体</IMP_PlanBody>
   <IMP_PlanBodyAny>任意身体</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0}(未加载)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>针对某一种身体制定的方案只会列出该身体的部位,并且只能征召拥有该身体的殖民者。针对人类身体的方案,还会包含身体具备所有人类部位的殖民者,例如拥有额外翅膀的种族。\n\n针对任意身体的方案适用于所有殖民者。殖民者身体上没有的部位会被跳过。\n\n方案可以继承针对任意身体的方案,也可以继承针对同一种身体的方案。</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>针对某一种身体制定的方案只会列出该身体的部位,并且只能征召拥有该身体的殖民者。针对人类身体的方案,还会包含身体具备所有人类部位的殖民者,例如拥有额外翅膀的种族。\n\n针对任意身体的方案适用于所有殖民者。殖民者身体上没有的部位会被跳过。\n\n针对食尸鬼制定的方案会列出普通植入体和食尸鬼专用义体,并且只能征召食尸鬼。其他任何方案都不会征召食尸鬼。\n\n方案可以继承针对任意身体的方案,也可以继承针对同一种身体的方案。针对食尸鬼的方案也可以继承针对任意身体的方案。</IMP_PlanBodyTip>
   <IMP_PlanForBody>适用于{0}</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0}(仅限{1})</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>不适用于此身体</IMP_StateNotForBody>
@@ -231,4 +231,7 @@
   <IMP_OptInterface>界面</IMP_OptInterface>
   <IMP_ResizeGripTip>拖动可调整窗口大小。双击可恢复默认大小。</IMP_ResizeGripTip>
   <IMP_LevelModWarning>{0} 会将此殖民地分成多个楼层。Implanner 无法跨楼层搬运植入体或安排手术，因此若手术所需的植入体位于其他楼层，手术会一直等待，直到你将其移过来。</IMP_LevelModWarning>
+  <IMP_PlanForGhouls>针对食尸鬼</IMP_PlanForGhouls>
+  <IMP_PlanGhouls>食尸鬼</IMP_PlanGhouls>
+  <IMP_PlanTargetColonists>殖民者</IMP_PlanTargetColonists>
 </LanguageData>

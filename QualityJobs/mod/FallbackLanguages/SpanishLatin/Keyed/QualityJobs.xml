@@ -93,4 +93,5 @@
   <QJ_TabOptions>Opciones</QJ_TabOptions>
   <QJ_SettingsAllowRobotPreparation>Permitir que mecanoides y robots trabajen en trabajos de calidad</QJ_SettingsAllowRobotPreparation>
   <QJ_SettingsAllowRobotPreparationTip>Permite que los mecanoides y robots compatibles realicen trabajos de fabricación y construcción gestionados. Desactiva esta opción para reservar ese trabajo y su experiencia de habilidad a los colonos. Esto también detiene el trabajo que estén realizando en trabajos gestionados. Los mecanoides y robots aptos pueden seguir finalizando trabajos asignados por Quality Jobs. No afecta a los trabajos normales sin gestionar.</QJ_SettingsAllowRobotPreparationTip>
+  <QJ_HelpChapterMods>Mods</QJ_HelpChapterMods>
 </LanguageData>

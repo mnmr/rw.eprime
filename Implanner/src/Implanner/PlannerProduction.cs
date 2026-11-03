@@ -1136,7 +1136,7 @@ namespace Implanner
                 IReadOnlyList<ImplantCatalogEntry> catalog = Catalogs.Implants();
                 for (int i = 0; i < catalog.Count; i++)
                 {
-                    ThingDef? item = catalog[i].Def.spawnThingOnRemoved;
+                    ThingDef? item = catalog[i].Item;
                     if (item == null) continue;
                     IReadOnlyList<RecipeDef> candidates = ProductionRecipesFor(item);
                     for (int r = 0; r < candidates.Count; r++)

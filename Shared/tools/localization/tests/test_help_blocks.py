@@ -9,7 +9,7 @@ import update_translations as updater
 import test_translations as fixtures
 
 
-PAGE = 'Example/Help/start/01-welcome.md'
+PAGE = 'Example/Help/start/welcome.md'
 SOURCE = '---\ntitle: Welcome\n---\n<!-- l10n:intro -->\nChoose a setting.\n\n<!-- l10n:choices -->\n- Fast\n- Slow\n\n<!-- l10n:other -->\nKeep this paragraph.\n'
 TARGET = '\ufeff---\r\ntitle: Velkommen\r\n---\r\n<!-- l10n:intro -->\r\nVælg en indstilling.\r\n\r\n<!-- l10n:choices -->\r\n- Hurtig\r\n- Langsom\r\n\r\n<!-- l10n:other -->\r\nBevar  denne formulering.\r\n'
 
@@ -46,6 +46,69 @@ class HelpUpdates(unittest.TestCase):
         self.assertEqual(TARGET.replace('Bevar  denne formulering.', 'Bevar denne nyttige formulering.').encode(),
                          self.target.read_bytes())
         self.update(lambda *_: self.fail('Already current: no calls or writes'))
+
+    def test_front_matter_metadata_follows_english_and_a_table_is_one_block(self):
+        self.prepare()
+        self.english.write_bytes(SOURCE.replace('title: Welcome\n', 'title: Welcome\nicon: verdict-ok.png\n')
+                                 .replace('Keep this paragraph.', '| Verdict | ok |\n| When | now |').encode())
+        issues = translations.check_locale(self.root, 'Danish', ('Example',))
+        self.assertIn('frontmatter', [i.code for i in issues])
+        requested = []
+
+        def translate(locale, entries):
+            requested.extend(e['key'] for e in entries)
+            return {e['key']: '| Dom | ok |\n| Hvornår | nu |' for e in entries}
+
+        self.update(translate)
+        self.assertEqual([PAGE + '#other'], requested)
+        self.assertEqual(TARGET.replace('title: Velkommen\r\n', 'title: Velkommen\r\nicon: verdict-ok.png\r\n')
+                         .replace('Bevar  denne formulering.', '| Dom | ok |\r\n| Hvornår | nu |').encode(),
+                         self.target.read_bytes())
+        self.assertNotIn('frontmatter', [i.code for i in translations.check_locale(self.root, 'Danish', ('Example',))])
+        self.update(lambda *_: self.fail('Already current: no calls or writes'))
+
+    def test_a_locale_whose_translation_breaks_block_shape_is_skipped_while_the_others_land(self):
+        self.prepare()
+        german = self.root / 'Example/mod/Help/German/start/01-welcome.md'
+        german.parent.mkdir(parents=True, exist_ok=True)
+        german.write_bytes(TARGET.replace('Velkommen', 'Willkommen').encode('utf-8'))
+        self.write('Example/mod/FallbackLanguages/German/Keyed/Main.xml',
+                   '<LanguageData><Title>Beispiel</Title><Count>Von {1}: {0}</Count></LanguageData>')
+        translations.snapshot_locale(self.root, 'German', ('Example',))
+        self.english.write_bytes(SOURCE.replace('Keep this paragraph.', 'Keep this useful paragraph.').encode())
+
+        def translate(locale, entries):
+            # German invents a link the English block does not have, which the checker rejects.
+            return {e['key']: ('Behalte [diesen](topic:absatz) Absatz.' if locale == 'German' else 'Bevar denne nyttige formulering.')
+                    for e in entries}
+
+        with self.assertRaises(ValueError) as failure:
+            updater.update(self.root, ['Danish', 'German'], translate, mods=('Example',))
+        self.assertIn('German', str(failure.exception))
+        self.assertIn('Bevar denne nyttige formulering.', self.target.read_text(encoding='utf-8'))
+        self.assertEqual(TARGET.replace('Velkommen', 'Willkommen').encode('utf-8'), german.read_bytes())
+        self.assertFalse(any(i.severity == 'error' for i in translations.check_locale(self.root, 'Danish', ('Example',))))
+
+    def test_renumbering_an_english_page_keeps_its_translation_and_renames_the_file(self):
+        self.prepare()
+        self.english.rename(self.english.with_name('03-welcome.md'))
+        self.assertIn('help-name', [i.code for i in translations.check_locale(self.root, 'Danish', ('Example',))])
+        self.update(lambda *_: self.fail('A renumbered page needs no translation'))
+        moved = self.target.with_name('03-welcome.md')
+        self.assertFalse(self.target.exists())
+        self.assertEqual(TARGET.encode('utf-8'), moved.read_bytes())
+        issues = translations.check_locale(self.root, 'Danish', ('Example',))
+        self.assertFalse(any(i.severity == 'error' or i.code == 'help-name' for i in issues))
+
+    def test_blocks_of_one_page_share_their_page_context_in_a_request(self):
+        page = 'x' * 7000   # 14000 of context per page: three blocks fit only if it counts once
+        entries = [{'key': f'{PAGE}#b{i}', 'english': 'e', 'current': '', 'page_english': page, 'page_current': page,
+                    'previous_english': ''} for i in range(3)]
+        self.assertEqual([3], [len(b) for b in updater.batches(entries)])
+        payload = updater.request_payload(entries)
+        self.assertEqual([PAGE], list(payload['pages']))
+        self.assertEqual(page, payload['pages'][PAGE]['english'])
+        self.assertTrue(all('page_english' not in e and e['page'] == PAGE for e in payload['entries']))
 
     def test_soft_wrap_is_ignored_but_list_context_change_requests_only_dependent_blocks(self):
         self.prepare()

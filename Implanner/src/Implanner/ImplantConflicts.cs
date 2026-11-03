@@ -213,7 +213,8 @@ namespace Implanner
                         body.GetIndexOfPart(record), ancestors,
                         tags, entry.IncompatibleTags, removeWith,
                         entry.MountsOnArtificialParts, entry.WipesPart,
-                        entry.MountsUnderArtificialParts);
+                        entry.MountsUnderArtificialParts,
+                        entry.RequiredMutants, entry.BlacklistedMutants);
                 }
             }
             return slots;

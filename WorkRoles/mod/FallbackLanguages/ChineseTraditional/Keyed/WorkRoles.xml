@@ -664,4 +664,5 @@ WorkRoles 通過遊戲標準方法為受管理殖民者提供工作列表。另�
   <WR_RecTuneHunterPlacementPoorShotsFirst>射擊差者優先</WR_RecTuneHunterPlacementPoorShotsFirst>
   <WR_RecTuneHunterPlacementPoorShotsFirstTip>所有持有武器的殖民者都擁有獵人職責。射擊最弱的人最先狩獵，藉此練習射擊；神射手最後才狩獵。當食物充足、你希望有更多人會射擊時，請選擇此項。此為預設值。</WR_RecTuneHunterPlacementPoorShotsFirstTip>
   <WR_RecTuneHunterTiersRowDescReversed>動態獵人位置的射擊等級分界，由上往下讀取。高於最後一個分界的等級屬於第 1 層，會將獵人安排在基礎工作之後；第 2 層和第 3 層依序接在中段與最後的工作職責之後，第 5 層則將獵人排在最後。</WR_RecTuneHunterTiersRowDescReversed>
+  <WR_HelpChapterMods>模組</WR_HelpChapterMods>
 </LanguageData>

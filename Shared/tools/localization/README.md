@@ -54,9 +54,14 @@ each paragraph, heading, image caption, directive or related list. The title
 has the reserved ID `title`. Keep the comment attached when moving or editing
 content within a topic; never regenerate existing IDs. New blocks need a new
 unique ID (a descriptive ID such as `import-options` also works). A block must
-contain one paragraph or one related list, not an entire section. Keep related
-list items together for grammatical context. The game ignores these comments
-while loading help; they add no rendering or tick work.
+contain one paragraph, one table (consecutive `| a | b |` rows) or one related
+list, not an entire section. Keep related list items together for grammatical
+context. The game ignores these comments while loading help; they add no
+rendering or tick work.
+
+Front-matter lines other than `title:` (the topic-list `icon:`) are metadata,
+not translation units: the updater copies them from English into every locale
+on its next run, and the checker reports a locale whose metadata drifted.
 
 The checker hashes each block independently. English soft wrapping does not
 change a hash. Section headings are context dependencies for their contents;
@@ -89,10 +94,12 @@ boundaries first. It never retranslates wording. Duplicate IDs, unmarked extra
 paragraphs, and new untracked pages after migration fail the checker.
 
 Claude returns schema-validated JSON from a tool-less print-mode call. The helper
-applies the text to a temporary copy, validates all selected locales, and only
-then writes translations and their English-source manifests. Invalid responses,
-authentication failures, timeouts or validation failures leave the original
-content and hashes untouched. A missing manifest causes all of that locale's
+applies the text to a temporary copy, validates each selected locale, and only
+then writes translations and their English-source manifests. A locale whose
+translations fail to apply or validate is reported and left out of the write
+(the other locales still land); rerun with `--locale <name>` after fixing the
+reported block. Invalid responses, authentication failures and timeouts leave
+the original content and hashes untouched. A missing manifest causes all of that locale's
 entries to be translated; a malformed manifest or ambiguous XML needs manual
 repair. Concurrent localization edits abort the update before it writes files.
 Temporary copies are cleaned up after the run. Interrupted attempts during a
@@ -144,7 +151,11 @@ Bundled non-English XML lives under `mod/FallbackLanguages/<locale>/Keyed` and
 normal mod translations have loaded, so community translations win in either
 mod order. A partial community pack leaves bundled entries available as fallback.
 
-Help follows `mod/Help/<locale>` with the same topic filenames as English.
+Help follows `mod/Help/<locale>` with the same topic filenames as English. A
+page's translation key is its chapter and slug (`Mod/Help/5-mods/strata.md`),
+without the numeric list-order prefix, so renumbering a chapter retranslates
+nothing; the updater renames the locale files to the English names instead
+(the checker reports a mismatch as `help-name`).
 Translate titles, prose and visible link labels; retain filenames, link targets,
 `@demo` IDs, code identifiers, placeholders and markup. Images may fall back to
 English assets. Companion help packs can use

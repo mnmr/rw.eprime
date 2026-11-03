@@ -16,15 +16,16 @@ namespace Implanner
     {
         /// basePlanId 0 creates a standalone plan; otherwise the new plan
         /// extends the given plan (its goals are inherited until overridden).
-        /// body pins the plan to one BodyDef ("" = any body); the base must
-        /// be unpinned or of the same body (Plan.IsCompatibleBase), else
-        /// nothing is created.
+        /// body pins the plan to one BodyDef ("" = any body); mutant makes it
+        /// a plan for that mutant kind ("Ghoul", "" = ordinary colonists);
+        /// the base must be unpinned or of the same body and kind
+        /// (Plan.IsCompatibleBase), else nothing is created.
         [SyncMethod]
-        public static void CreatePlan(string name, int basePlanId, string body)
+        public static void CreatePlan(string name, int basePlanId, string body, string mutant)
         {
             ImplannerStore? store = ImplannerStore.Current;
             if (store == null) return;
-            if (store.Model.CreatePlan(name, store.TakePlanId, basePlanId, body) != null)
+            if (store.Model.CreatePlan(name, store.TakePlanId, basePlanId, body, mutant) != null)
                 store.Bump(PlannerChange.Plans);
         }
 
@@ -479,15 +480,16 @@ namespace Implanner
             ImplannerStore? store = ImplannerStore.Current;
             if (store == null) return;
             // A plan pinned to one body enlists only colonists with that
-            // body (the menu greys the others; a desynced click lands
-            // here). The colonist set is identical on every client.
+            // body, a ghoul plan only ghouls and an ordinary plan no ghoul
+            // (the menu greys the others; a desynced click lands here). The
+            // colonist set is identical on every client.
             Plan? plan = planId != 0 ? store.Model.PlanById(planId) : null;
-            if (plan != null && plan.IsPinned)
+            if (plan != null)
             {
                 List<Pawn> colonists = ColonyScope.AllPlanableColonists();
                 for (int i = 0; i < colonists.Count; i++)
                     if (colonists[i].thingIDNumber == pawnId
-                        && !PlanBodies.Accepts(plan.Body, colonists[i]))
+                        && !PlanBodies.Accepts(plan, colonists[i]))
                         return;
             }
             store.Bump(store.Model.AssignPlan(pawnId, planId));

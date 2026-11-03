@@ -1,4 +1,4 @@
-# WorkRoles
+# EPrime's WorkRoles
 
 WorkRoles replaces [RimWorld](https://rimworldgame.com/)'s Work tab with role-based work management. No setup required, safe to remove if you don't like it.
 

@@ -219,7 +219,7 @@
   <IMP_PlanBody>신체</IMP_PlanBody>
   <IMP_PlanBodyAny>모든 신체</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0} (불러오지 않음)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>특정 신체용으로 만든 계획은 해당 신체의 부위만 나열하며, 그 신체를 가진 정착민만 지정할 수 있습니다. 인간 신체용 계획은 날개가 추가로 달린 종족처럼 인간의 모든 부위를 갖춘 신체의 정착민도 대상으로 합니다.\n\n모든 신체용 계획은 모든 정착민에게 적용됩니다. 정착민의 신체에 없는 부위는 그 정착민에게서 건너뜁니다.\n\n계획은 모든 신체용 계획이나 같은 신체용 계획을 확장할 수 있습니다.</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>특정 신체용으로 만든 계획은 해당 신체의 부위만 나열하며, 그 신체를 가진 정착민만 지정할 수 있습니다. 인간 신체용 계획은 날개가 추가로 달린 종족처럼 인간의 모든 부위를 갖춘 신체의 정착민도 대상으로 합니다.\n\n모든 신체용 계획은 모든 정착민에게 적용됩니다. 정착민의 신체에 없는 부위는 그 정착민에게서 건너뜁니다.\n\n구울용으로 만든 계획은 일반 이식물과 구울 전용 보철을 나열하며, 구울만 지정할 수 있습니다. 다른 계획은 구울을 지정할 수 없습니다.\n\n계획은 모든 신체용 계획이나 같은 신체용 계획을 확장할 수 있습니다. 구울용 계획은 모든 신체용 계획도 확장할 수 있습니다.</IMP_PlanBodyTip>
   <IMP_PlanForBody>{0}용</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0} ({1} 전용)</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>이 신체용 아님</IMP_StateNotForBody>
@@ -231,4 +231,7 @@
   <IMP_OptInterface>인터페이스</IMP_OptInterface>
   <IMP_ResizeGripTip>드래그하여 창 크기를 조절합니다. 더블클릭하면 기본 크기로 돌아갑니다.</IMP_ResizeGripTip>
   <IMP_LevelModWarning>{0} 모드로 이 정착지가 여러 층으로 나뉩니다. Implanner는 층 경계를 넘어 이식물이나 수술을 처리할 수 없으므로, 이식물이 다른 층에 있는 수술은 직접 옮길 때까지 대기합니다.</IMP_LevelModWarning>
+  <IMP_PlanForGhouls>구울용</IMP_PlanForGhouls>
+  <IMP_PlanGhouls>구울</IMP_PlanGhouls>
+  <IMP_PlanTargetColonists>정착민</IMP_PlanTargetColonists>
 </LanguageData>

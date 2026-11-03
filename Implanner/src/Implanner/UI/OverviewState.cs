@@ -57,10 +57,12 @@ namespace Implanner.UI
         internal string Name = "";
         internal int PlanId;
         internal string PlanName = "";
-        /// The assigned plan's minimum item quality and pinned body ("" =
-        /// any), sampled at rebuild.
+        /// The assigned plan's minimum item quality, pinned body ("" =
+        /// any) and mutant kind ("" = ordinary colonists), sampled at
+        /// rebuild.
         internal int MinQuality;
         internal string PlanBody = "";
+        internal string PlanMutant = "";
         internal float Progress;
         internal string ProgressText = "";
         internal ColonistStatus State;
@@ -624,16 +626,19 @@ namespace Implanner.UI
                         goalsByPlan.Add(plan.Id, goals);
                     }
                     PlanEvaluation evaluation = PawnProjection.Evaluate(
-                        store.Model, pawn, goals, away, plan.MinQuality, plan.Body);
+                        store.Model, pawn, goals, away, plan.MinQuality, plan.Body,
+                        plan.Mutant);
                     row.Goals = goals;
                     row.PlanId = plan.Id;
                     row.MinQuality = plan.MinQuality;
                     row.PlanBody = plan.Body;
+                    row.PlanMutant = plan.Mutant;
                     row.PlanName = plan.Name;
-                    // A colonist left on a plan pinned to another body
-                    // (import, a race mod removed) is outside it entirely:
-                    // no progress to show, not "done".
-                    bool accepted = PlanBodies.Accepts(plan.Body, pawn);
+                    // A colonist left on a plan pinned to another body or
+                    // made for another kind of pawn (import, a race mod
+                    // removed) is outside it entirely: no progress to show,
+                    // not "done".
+                    bool accepted = PlanBodies.Accepts(plan, pawn);
                     row.Progress = accepted ? evaluation.Progress : 0f;
                     row.ProgressText = evaluation.SatisfiedUnits + " / " + evaluation.TotalUnits;
                     row.State = accepted
@@ -887,7 +892,8 @@ namespace Implanner.UI
             IReadOnlyList<ImplantGoal> goals = next.Goals!;
 
             List<string> missing = PawnProjection.MissingImplantSlotKeys(
-                store.Model, next.Pawn, goals, next.MinQuality, next.PlanBody);
+                store.Model, next.Pawn, goals, next.MinQuality, next.PlanBody,
+                next.PlanMutant);
             List<string> batch = SurgeryPlanner.ComputeBatch(
                 missing, store.Model, goals, store.Model.Iteration,
                 PlannerSurgery.OptionalFlags(next.Pawn, goals, missing),
@@ -963,7 +969,8 @@ namespace Implanner.UI
                 if (row.Evaluation == null || row.Goals == null) continue;
                 if (row.Evaluation.State == PawnPlanState.Complete) continue;
                 List<string> missing = PawnProjection.MissingImplantSlotKeys(
-                    model, row.Pawn, row.Goals, row.MinQuality, row.PlanBody);
+                    model, row.Pawn, row.Goals, row.MinQuality, row.PlanBody,
+                    row.PlanMutant);
                 SurgeryCandidate candidate = model.Iteration == IterationStrategy.Asap
                     ? PawnProjection.CandidateOf(row.Pawn) : default;
                 for (int k = 0; k < missing.Count; k++)
@@ -1097,7 +1104,7 @@ namespace Implanner.UI
             IReadOnlyList<ImplantCatalogEntry> catalog = Catalogs.Implants();
             for (int i = 0; i < catalog.Count; i++)
             {
-                ThingDef? produced = catalog[i].Def.spawnThingOnRemoved;
+                ThingDef? produced = catalog[i].Item;
                 if (produced == null) continue;
                 string hediff = catalog[i].Def.defName;
                 var rank = (StarRanking.TierOf(model.ImplantStarsOf(hediff)),

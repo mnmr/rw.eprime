@@ -81,6 +81,24 @@ On "update changelog":
 - The changelog is not help. No explanations of how a feature works, which
   keys to press or where to click.
 
+## Mod test history
+
+`<mod>/mod-test-history.md` records every verification run of our mod against
+a third-party mod (compatibility, support or conflict checks), so help pages
+can state when and at which version a mod was last tested. Append a row for
+each such run in the same change as the verification evidence.
+
+- One table, newest first, columns: `Date | Mod | Version | <Our mod> |
+  Tested | Outcome`. `Version` is the third-party mod's `modVersion`, or its
+  Workshop id plus the newest file date when About.xml has none. `<Our mod>`
+  is our `modVersion` at the time of the run.
+- At most one row per third-party mod per day: a later run on the same day
+  updates that row (what was tested and the outcome) instead of adding one.
+  A run covering several mods gets one row per mod.
+- `Tested` names the scenario and its evidence folder under `<mod>/temp/`;
+  `Outcome` is the verdict (passed, failed with what, or blocked) in one
+  sentence. Rows are evidence pointers, not help text.
+
 ## Project boundaries
 
 The following uses a fictitious mod named RimMod to illustrate boundaries:
@@ -482,8 +500,11 @@ for a human to review. Source-text tests are not allowed.
   content remain shared and must not be modified during runs. Each game loads
   its run's mod copies, so a subsequent build/run cannot replace its assemblies.
   Do not use the player installation as a deployment staging area for automation.
-- Creation refreshes from the newest player `Fisso-NAM*.rws`, treating the source
-  as read-only. It verifies the copied save's SHA-256 and the baseline ordered
+- Creation loads the newest `Fisso-NAM*.rws` from the repository's own copies in
+  `Saves\`, never the player's save folder. Only `create-run.ps1
+  -RefreshFromPlayer` reads the player's newest matching save, copying it into
+  `Saves\` (read-only source); use it when a test needs the player's latest
+  game. Creation verifies the copied save's SHA-256 and the baseline ordered
   mod list, then layers the automation runtime and optional `-ModSet <name>`.
   `refresh-profile.ps1` is an alias for creating a fresh run; it never rewrites
   an existing one. Mod sets are the sanctioned way to add mods absent from the

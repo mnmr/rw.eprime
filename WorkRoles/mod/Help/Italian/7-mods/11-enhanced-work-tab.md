@@ -1,0 +1,21 @@
+---
+title: Enhanced Work Tab
+icon: verdict-red.png
+---
+<!-- l10n:verdict -->
+| **Verdetto** | ![Incompatibile](verdict-red.png|16) Incompatibile |
+| **Prove** | Analisi del codice sorgente |
+| **Verificato** | 2026-10-26 |
+| **Versioni** | WorkRoles 1.7.2, Enhanced Work Tab 1.0.3.6, [Workshop 3715873875](https://steamcommunity.com/sharedfiles/filedetails/?id=3715873875), file 2026-07-22 |
+
+<!-- l10n:summary -->
+Enhanced Work Tab sostituisce la scheda Lavoro e controlla le priorità.
+
+<!-- l10n:effect -->
+Le sostituzioni della scheda Lavoro entrano in conflitto con WorkRoles sulla stessa interfaccia e sulle stesse
+priorità, quindi i due non possono gestire insieme una colonia.
+
+<!-- l10n:advice -->
+Tieni solo uno dei due. I ruoli sostituiscono la griglia delle priorità per singolo colono, e la
+[griglia delle priorità](topic:priority-grid) resta disponibile per un controllo manuale.
+

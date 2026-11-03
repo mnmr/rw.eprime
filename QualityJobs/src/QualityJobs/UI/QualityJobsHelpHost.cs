@@ -13,6 +13,7 @@ namespace QualityJobs.UI
             new HelpChapter("2-crafting", "QJ_HelpChapterCrafting"),
             new HelpChapter("3-construction", "QJ_HelpChapterConstruction"),
             new HelpChapter("4-options", "QJ_HelpChapterOptions"),
+            new HelpChapter("5-mods", "QJ_HelpChapterMods"),
         };
 
         // Owner: process. Key: fixed mod installation root. Value: immutable path.

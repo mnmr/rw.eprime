@@ -705,6 +705,9 @@ namespace Implanner
         // BodyDef name the plan is pinned to; absent (saves before 1.2.6)
         // or empty = any body.
         private string body = "";
+        // MutantDef name the plan is made for ("Ghoul"); absent (saves
+        // before 1.2.7) or empty = ordinary colonists.
+        private string mutant = "";
         private List<ImplantRecord>? implants;
 
         public PlanRecord() { }
@@ -716,6 +719,7 @@ namespace Implanner
             basePlanId = plan.BasePlanId;
             minQuality = plan.MinQuality;
             body = plan.Body;
+            mutant = plan.Mutant;
             implants = new List<ImplantRecord>();
             foreach (ImplantGoal goal in plan.Implants)
                 implants.Add(new ImplantRecord(goal));
@@ -740,7 +744,7 @@ namespace Implanner
                         (legacyGoals ??= new Dictionary<int, (int, string)>())
                             [record.LegacyId] = (planIndex, goal.ImplantDefName);
                 }
-            return new Plan(id, name, basePlanId, goals, minQuality, body);
+            return new Plan(id, name, basePlanId, goals, minQuality, body, mutant);
         }
 
         public void ExposeData()
@@ -751,6 +755,8 @@ namespace Implanner
             Scribe_Values.Look(ref minQuality, "minQuality", 0);
             Scribe_Values.Look(ref body, "body", "");
             if (body == null) body = "";
+            Scribe_Values.Look(ref mutant, "mutant", "");
+            if (mutant == null) mutant = "";
             Scribe_Collections.Look(ref implants, "implants", LookMode.Deep);
         }
     }

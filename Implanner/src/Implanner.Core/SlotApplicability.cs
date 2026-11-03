@@ -26,6 +26,14 @@ namespace Implanner.Core
         /// artificial part. Plans are validated on a reference body, so a
         /// race whose body nests the parts differently reaches this.
         UnderPlannedReplacement = 3,
+
+        /// Every surgery of the kind needs a mutant the pawn is not
+        /// (Anomaly's ghoul kit on an ordinary colonist).
+        RequiresMutant = 4,
+
+        /// Every surgery of the kind refuses the pawn's mutant kind
+        /// (revenant vertebrae on a ghoul).
+        RefusesMutant = 5,
     }
 
     /// An artificial part installed on the pawn: its anatomy record and
@@ -55,10 +63,13 @@ namespace Implanner.Core
         /// nearest one up the body), null where the slot is not blocked
         /// by an implant. An installed artificial part outranks a planned
         /// replacement, since the planned one is itself unreachable then.
+        /// pawnMutant is the pawn's mutant kind ("" = none): a kind whose
+        /// surgeries the game refuses for that kind of pawn (mutant
+        /// prerequisite or blacklist) is outside the target on every slot.
         public static void Resolve(
             IReadOnlyList<IReadOnlyList<PlannedSlotFacts?>> facts,
             IReadOnlyList<ArtificialPart> artificialParts,
-            SlotBlock[][] blocks, string?[][] blockers)
+            SlotBlock[][] blocks, string?[][] blockers, string pawnMutant = "")
         {
             for (int g = 0; g < facts.Count; g++)
             {
@@ -70,6 +81,15 @@ namespace Implanner.Core
                     if (slot == null)
                     {
                         blocks[g][j] = SlotBlock.NoAnatomy;
+                        continue;
+                    }
+                    if (!slot.AcceptsMutant(pawnMutant))
+                    {
+                        // A listed mutant is refused outright; otherwise
+                        // the kind needs a mutant this pawn is not.
+                        blocks[g][j] = slot.RefusesMutant(pawnMutant)
+                            ? SlotBlock.RefusesMutant
+                            : SlotBlock.RequiresMutant;
                         continue;
                     }
                     blocks[g][j] = SlotBlock.None;

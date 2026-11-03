@@ -25,6 +25,7 @@ namespace WorkRoles.UI
             new HelpChapter("4-organizing", "WR_HelpChapterOrganizing"),
             new HelpChapter("5-recommendations", "WR_HelpChapterRecommendations"),
             new HelpChapter("6-advanced", "WR_HelpChapterAdvanced"),
+            new HelpChapter("7-mods", "WR_HelpChapterMods"),
         };
 
         private static readonly string[] TourSlugs =

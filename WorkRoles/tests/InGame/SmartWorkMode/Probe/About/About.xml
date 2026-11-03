@@ -1,0 +1,7 @@
+<ModMetaData>
+  <name>WorkRoles Smart Work Mode probe</name>
+  <author>WorkRoles tests</author>
+  <packageId>tests.workroles.smartworkmode</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <loadAfter><li>mnmr.workroles</li><li>EPrime.QualityJobs</li><li>smartworkmode.1trickPwnyta</li></loadAfter>
+</ModMetaData>

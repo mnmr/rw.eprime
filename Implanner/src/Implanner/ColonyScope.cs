@@ -13,8 +13,8 @@ namespace Implanner
     // Adapted from WorkRoles' ColonyScope (an intentional independent copy;
     // divergence from WorkRoles is expected); the map classification core,
     // FloorMaps and the transition patches are shared (RimShared.GameLib).
-    // Adaptations: free colonists only (no slaves), mutants that can receive
-    // no implants are excluded, and there is no origin/last-location
+    // Adaptations: free colonists and colony ghouls only (no slaves; other
+    // mutants are excluded), and there is no origin/last-location
     // tracking — caravans are their own presentation groupings and their
     // pawns are Away.
 
@@ -206,15 +206,22 @@ namespace Implanner
         internal static string CurrentLocationId() => LocationId(Find.CurrentMap) ?? "";
 
         /// A planable colonist: an adult free colonist of the viewed faction
-        /// that can, in principle, receive implants. Mutants that
-        /// categorically cannot (Anomaly ghouls) are excluded entirely, as
-        /// are children and babies.
+        /// that can, in principle, receive implants, or one of its ghouls
+        /// (Anomaly: a subhuman mutant the game still operates on, with
+        /// ordinary bionics and the ghoul kit; enlisted only by a plan made
+        /// for ghouls, PlanBodies.Accepts). Other mutants, children and
+        /// babies are excluded.
         internal static bool IsPlanableColonist(Pawn pawn, Faction faction) =>
             pawn?.Faction == faction
             && !pawn.Dead
-            && pawn.IsFreeColonist
-            && !pawn.IsMutant
+            && ((pawn.IsFreeColonist && !pawn.IsMutant)
+                || (pawn.IsGhoul && pawn.HostFaction == null))
             && pawn.DevelopmentalStage == DevelopmentalStage.Adult;
+
+        /// The pawn's mutant kind for plan targeting (Plan.Mutant), "" for
+        /// an ordinary colonist. Allocation-free: tick path per pawn.
+        internal static string MutantOf(Pawn pawn) =>
+            pawn.IsMutant ? pawn.mutant.Def.defName : "";
 
         /// Presentation overload: the local view faction's colonists.
         internal static List<Pawn> AllPlanableColonists() =>

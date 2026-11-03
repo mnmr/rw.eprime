@@ -1,0 +1,7 @@
+<ModMetaData>
+  <name>WorkRoles mech mod mix probe</name>
+  <author>WorkRoles tests</author>
+  <packageId>tests.workroles.mechmodmix</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <loadAfter><li>mnmr.workroles</li><li>EPrime.QualityJobs</li><li>Spacemoth.MechTab</li><li>wvc.sergkart.biotech.MoreMechanoidsWorkModes</li><li>smartworkmode.1trickPwnyta</li></loadAfter>
+</ModMetaData>

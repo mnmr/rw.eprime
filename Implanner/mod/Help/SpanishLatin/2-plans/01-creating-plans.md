@@ -22,6 +22,9 @@ Cuando un mod añade una raza con cuerpo propio, como Android Tiers, el diálogo
 <!-- l10n:plan-body-extends -->
 Un plan para cualquier cuerpo puede ser ampliado por un plan para cualquier cuerpo o para un cuerpo concreto. Un plan hecho para un cuerpo solo puede ser ampliado por un plan para el mismo cuerpo. Si eliges primero el plan que ampliar, las opciones de Cuerpo se reducen para coincidir; si eliges primero un cuerpo, solo se listan los planes que puede ampliar.
 
+<!-- l10n:plan-ghouls -->
+Con Anomaly, las opciones de **Cuerpo** terminan con **Necrófagos**. Un plan hecho para necrófagos muestra los implantes comunes y el kit de necrófago, y solo puede asignarse a necrófagos; ningún otro plan asigna un necrófago. Su tarjeta indica «para necrófagos». Un plan para necrófagos puede ampliar un plan para cualquier cuerpo, de modo que un necrófago puede heredar los biónicos estándar de la colonia, pero un plan común no puede ampliar un plan para necrófagos. Los implantes que los necrófagos no admiten, como las vértebras de revenante, no aparecen en un plan para necrófagos.
+
 <!-- l10n:b-515b3ee4d180 -->
 Cada tarjeta muestra la cantidad de implantes, los colonos asignados y su progreso conjunto.
 

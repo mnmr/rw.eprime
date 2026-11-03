@@ -93,4 +93,5 @@
   <QJ_TabOptions>Ayarlar</QJ_TabOptions>
   <QJ_SettingsAllowRobotPreparation>Mekanizmalar ve robotlar kalite işlerinde çalışabilsin</QJ_SettingsAllowRobotPreparation>
   <QJ_SettingsAllowRobotPreparationTip>Mekanizmaların ve desteklenen robotların yönetilen üretim ve inşaat işlerinde çalışmasına izin verir. Bu işleri ve bunlardan kazanılan beceri deneyimini kolonicilere ayırmak için bu ayarı kapatın. Bu, yönetilen işlerde sürdürdükleri çalışmayı da durdurur. Uygun mekanizmalar ve robotlar, Quality Jobs tarafından atanan işleri yine de tamamlayabilir. Yönetilmeyen sıradan işler etkilenmez.</QJ_SettingsAllowRobotPreparationTip>
+  <QJ_HelpChapterMods>Modlar</QJ_HelpChapterMods>
 </LanguageData>

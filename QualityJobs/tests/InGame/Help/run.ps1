@@ -78,7 +78,7 @@ $preferences.Save($prefs)
   Request 'check-help' 'help'
   Request 'sample-start' 'steady'
   & "$tools\capture.ps1" -RunId $run.runId -OutName 'help.png'
-  $topics=if($Version -eq '1.6'){@('2:1')}else{@('0:1','0:2','1:0','1:1','2:0','2:1','2:2','3:0','3:1','3:2','3:3')}
+  $topics=if($Version -eq '1.6'){@('2:1')}else{@('0:1','0:2','1:0','1:1','2:0','2:1','2:2','3:0','3:1','3:2','4:0','4:5','4:13')}
   foreach($topic in $topics) {
    Request "topic:$topic" 'topic-points'
    Click-Point 'chapter'

@@ -8,27 +8,31 @@ using Verse;
 
 namespace RimShared.UiLib
 {
-    /// <summary>One loaded topic: plan entry, parsed document, list title.</summary>
+    /// <summary>One loaded topic: plan entry, parsed document, list title
+    /// and the optional list icon (owned by the store, null when the page
+    /// declares none or the image failed to load).</summary>
     public sealed class HelpTopicData
     {
         internal HelpTopicData(HelpTopicEntry entry, HelpDocument document,
-            string listTitle)
+            string listTitle, Texture2D? icon)
         {
             Entry = entry;
             Document = document;
             ListTitle = listTitle;
+            Icon = icon;
         }
 
         public HelpTopicEntry Entry { get; }
         public HelpDocument Document { get; }
         public string ListTitle { get; }
+        public Texture2D? Icon { get; }
     }
 
     /// <summary>
     /// Fully positioned draw model for one topic at one width: parallel
     /// arrays the render pass iterates by index. Kinds: 0 text, 1 topic
-    /// link, 2 list marker, 3 image, 4 demo. Texts carry final rich-text
-    /// markup.
+    /// link, 2 list marker, 3 image, 4 demo, 5 table cell fill (Texts is
+    /// "header" for header cells). Texts carry final rich-text markup.
     /// </summary>
     public sealed class HelpDrawModel
     {
@@ -46,6 +50,7 @@ namespace RimShared.UiLib
         internal const byte KindMarker = 2;
         internal const byte KindImage = 3;
         internal const byte KindDemo = 4;
+        internal const byte KindCellFill = 5;
     }
 
     /// <summary>
@@ -457,6 +462,10 @@ namespace RimShared.UiLib
                         built.Texts[i] = item.Text;
                         built.Images[i] = LoadTexture(item.Text);
                         break;
+                    case HelpItemKind.CellFill:
+                        built.Kinds[i] = HelpDrawModel.KindCellFill;
+                        built.Texts[i] = item.Text;
+                        break;
                     case HelpItemKind.TopicLink:
                         built.Kinds[i] = HelpDrawModel.KindLink;
                         built.Texts[i] = HelpTextMeasurer.Markup(
@@ -510,7 +519,8 @@ namespace RimShared.UiLib
                 HelpDocument document = HelpMarkdown.Parse(text);
                 topics.Add(new HelpTopicData(plan[i], document,
                     document.Title.Length > 0
-                        ? document.Title : plan[i].Slug));
+                        ? document.Title : plan[i].Slug,
+                    document.Icon.Length > 0 ? LoadTexture(document.Icon) : null));
             }
             return topics.ToArray();
         }

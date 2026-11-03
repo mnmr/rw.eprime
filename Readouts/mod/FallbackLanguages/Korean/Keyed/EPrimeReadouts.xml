@@ -178,4 +178,5 @@
   <EPR.UseVanillaConfirmButton>기본 자원 표시 사용</EPR.UseVanillaConfirmButton>
   <EPR.CounterFontSmall>작게</EPR.CounterFontSmall>
   <EPR.CounterFontTiny>아주 작게</EPR.CounterFontTiny>
+  <EPR.HelpChapterMods>모드</EPR.HelpChapterMods>
 </LanguageData>

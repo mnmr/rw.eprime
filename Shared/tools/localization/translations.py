@@ -38,6 +38,47 @@ DIRECTIVE = re.compile(r'^\s*(@[A-Za-z][^\r\n]*)$', re.MULTILINE)
 RICH_TAG = re.compile(r'</?(?:b|i|color|size|material|quad)(?:\s[^>]*|=[^>]*)?>')
 CODE = re.compile(r'`([^`]+)`')
 FRONTMATTER = re.compile(r'\A---\r?\n(.*?)\r?\n---(?:\r?\n|\Z)', re.DOTALL)
+ORDER_PREFIX = re.compile(r'^\d+-')
+
+
+def help_key(mod, relative):
+    """A help page's translation key: chapter plus slug, the way the game
+    indexes topics. The list-order prefix of the file name is not part of it,
+    so renumbering a chapter never retranslates anything."""
+    parts = list(Path(relative).parts)
+    parts[-1] = ORDER_PREFIX.sub('', parts[-1])
+    return f'{mod}/Help/' + '/'.join(parts)
+
+
+def normalize_key(key):
+    """Older manifests keyed help pages by file name, prefix included."""
+    match = re.match(r'^([^/]+/Help/(?:[^/#]+/)*)\d+-([^/#]+)(#.*)?$', key)
+    return match.group(1) + match.group(2) + (match.group(3) or '') if match else key
+
+
+def load_manifest(root, locale):
+    manifest = json.loads(manifest_path(root, locale).read_text(encoding='utf-8'))
+    for name in ('source_sha256', 'help_source'):
+        if isinstance(manifest.get(name), dict):
+            manifest[name] = {normalize_key(key): value for key, value in manifest[name].items()}
+    return manifest
+
+
+def help_files(root, locale, mods):
+    """Help page key to file path for one locale."""
+    files = {}
+    for mod in mods:
+        base = content_root(root, mod) / 'Help' / locale
+        for path in sorted(base.rglob('*.md')):
+            files[help_key(mod, path.relative_to(base).as_posix())] = path
+    return files
+
+
+def help_target_path(root, locale, mod, english_path):
+    """Where a locale's copy of an English page belongs: the same chapter and
+    file name, so the list order follows English."""
+    base = content_root(root, mod) / 'Help'
+    return base / locale / english_path.relative_to(base / 'English')
 
 
 class Issue(NamedTuple):
@@ -111,9 +152,7 @@ def catalog(root, locale, mods):
             for path in sorted(injected.glob('*/**/*.xml')):
                 definition_type = path.relative_to(injected).parts[0]
                 _merge(entries, _xml(path, f'{mod}/DefInjected/{definition_type}/', issues), issues)
-        help_root = base / 'Help' / locale
-        for path in sorted(help_root.rglob('*.md')):
-            key = f'{mod}/Help/{path.relative_to(help_root).as_posix()}'
+        for key, path in help_files(root, locale, (mod,)).items():
             try:
                 text = path.read_bytes().decode('utf-8')
                 blocks = help_units.parse(text)
@@ -137,9 +176,7 @@ def _digest(text):
 
 
 def help_pages(root, locale, mods):
-    return {f'{mod}/Help/{path.relative_to(content_root(root, mod) / "Help" / locale).as_posix()}':
-            path.read_bytes().decode('utf-8') for mod in mods
-            for path in sorted((content_root(root, mod) / 'Help' / locale).rglob('*.md'))}
+    return {key: path.read_bytes().decode('utf-8') for key, path in help_files(root, locale, mods).items()}
 
 
 def source_snapshot(root, mods, source):
@@ -210,8 +247,11 @@ def check_locale(root, locale, mods=MODS, require_manifest=False):
                 issues.append(Issue('directive', key, 'Help demo/directive identifier differs'))
         # Exact equality is only a review signal: many valid cognates and brand
         # names are identical. It must never force deliberately wrong wording.
+        # Mod pages are titled with the mod's Workshop name in every language.
+        mod_name_title = key.endswith('#title') and re.search(r'/Help/\d+-mods/', key) is not None
         if (original.strip() == translated.strip()
                 and len(re.findall(r'[A-Za-z]', original)) > 12
+                and not mod_name_title
                 and BRAND_TITLES.get(key) != original.strip()
                 and UNCHANGED_TRANSLATIONS.get((locale, key)) != original.strip()):
             issues.append(Issue('unchanged', key, 'Text matches English; check whether intentional', 'warning'))
@@ -219,6 +259,11 @@ def check_locale(root, locale, mods=MODS, require_manifest=False):
         return issues
     hashes, order, _ = source_snapshot(root, mods, source)
     target_pages = help_pages(root, locale, mods)
+    english_pages = help_pages(root, 'English', mods)
+    english_files = help_files(root, 'English', mods)
+    for page, path in help_files(root, locale, mods).items():
+        if page in english_files and path != help_target_path(root, locale, page.split('/', 1)[0], english_files[page]):
+            issues.append(Issue('help-name', page, 'File name differs from English (list order); run the updater', 'warning'))
     for page, identifiers in order.items():
         if page in target_pages:
             blocks = help_units.parse(target_pages[page])
@@ -226,10 +271,12 @@ def check_locale(root, locale, mods=MODS, require_manifest=False):
                 issues.append(Issue('help-block', page, 'Legacy translation needs help migration'))
             elif [b.id for b in blocks] != identifiers:
                 issues.append(Issue('help-order', page, 'Help blocks were added, removed or reordered'))
+            elif help_units.metadata(target_pages[page]) != help_units.metadata(english_pages[page]):
+                issues.append(Issue('frontmatter', page, 'Front-matter metadata (icon) differs from English; run the updater'))
     path = manifest_path(root, locale)
     if path.exists():
         try:
-            manifest = json.loads(path.read_text(encoding='utf-8'))
+            manifest = load_manifest(root, locale)
             recorded = manifest['source_sha256']
             if (not isinstance(recorded, dict)
                     or any(not isinstance(value, str) or not re.fullmatch(r'[0-9a-f]{64}', value)
@@ -271,7 +318,7 @@ def snapshot_locale(root, locale, mods=MODS, keys=None):
              'translation_method': 'automated; Danish/German translations include owner corrections',
              'source_sha256': {}}
     if keys is not None and path.exists():
-        value = json.loads(path.read_text(encoding='utf-8'))
+        value = load_manifest(root, locale)
     selected = set(hashes) if keys is None else set(keys)
     unknown = selected - hashes.keys() - value['source_sha256'].keys()
     if unknown:

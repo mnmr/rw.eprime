@@ -117,17 +117,17 @@ public static class Probe
         var store = ImplannerStore.Current;
         PlannerModel model = store.Model;
         int before = model.Plans.Count;
-        PlannerCommands.CreatePlan("Android only", 0, "Android4Tier");
-        PlannerCommands.CreatePlan("Human only", 0, "Human");
-        PlannerCommands.CreatePlan("Human child of any", plan.Id, "Human");
+        PlannerCommands.CreatePlan("Android only", 0, "Android4Tier", "");
+        PlannerCommands.CreatePlan("Human only", 0, "Human", "");
+        PlannerCommands.CreatePlan("Human child of any", plan.Id, "Human", "");
         androidOnly = model.Plans.First(p => p.Name == "Android only");
         humanOnly = model.Plans.First(p => p.Name == "Human only");
         Plan humanChild = model.Plans.First(p => p.Name == "Human child of any");
         Check(androidOnly.Body == "Android4Tier" && humanOnly.Body == "Human"
             && humanChild.Body == "Human" && humanChild.BasePlanId == plan.Id,
             "B3: pinned plans and a pinned child of an unpinned base are created with their bodies");
-        PlannerCommands.CreatePlan("Any of human", humanOnly.Id, "");
-        PlannerCommands.CreatePlan("Android of human", humanOnly.Id, "Android4Tier");
+        PlannerCommands.CreatePlan("Any of human", humanOnly.Id, "", "");
+        PlannerCommands.CreatePlan("Android of human", humanOnly.Id, "Android4Tier", "");
         Check(model.Plans.Count == before + 3,
             "B3: an unpinned or differently pinned child of a pinned base is refused (" + (model.Plans.Count - before) + " created)");
 

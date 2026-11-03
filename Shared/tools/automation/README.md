@@ -158,14 +158,26 @@ Large installed game assets and Workshop content are shared; leave them unchange
 Concurrent functional tests are supported. Hardware contention makes concurrent
 runs unsuitable for isolated performance comparisons.
 
-`create-run.ps1` reads the newest player `Fisso-NAM*.rws` without modifying it,
-verifies the save/hash and ordered mod list, and applies the always-on
-`automation-runtime` mod set. Use `-ModSet readouts-modern-dev-tools` for that
+`create-run.ps1` loads the newest `Fisso-NAM*.rws` (or `-SavePattern`) from the
+repository's own copies in `D:\Code\RimWorld\Saves`, never from the player's
+save folder. `-RefreshFromPlayer` copies the newest matching player save into
+that folder first, reading the player's file only; that is the one sanctioned
+way a run picks up the player's latest game. Creation verifies the save/hash
+and ordered mod list, and applies the always-on `automation-runtime` mod set. Use `-ModSet readouts-modern-dev-tools` for that
 compatibility scenario. Use
 `-ModSourceRoot <worktree>` to snapshot completed builds from an isolated checkout.
 Our four mods and automation runtime come from that root; other local mods are
 copied from the installation. Build changes after creation do not affect the run.
 `refresh-profile.ps1` accepts the same options and always creates a new run.
+
+A save whose pawn carries a current job without a `<def>` (the JobDef was
+gone when the game saved) errors on every load: vanilla's cleanup throws in
+`Pawn_JobTracker.EndCurrentJob`, then the pawn fails `PostMapInit` pathing
+and every tick. `repair-save-jobs.ps1 -Save <path> [-WhatIf]` lists such
+pawns and, without `-WhatIf`, nulls the job, marks the pather not moving,
+drops the map reservations that job held and keeps a `<save>.<stamp>.bak`
+beside the file (never a `.rws`, so run creation ignores it). The Fisso 1.7
+save was repaired this way on 2026-11-02.
 
 For downloaded third-party mods outside the installation, pass
 `-AdditionalModSource @('D:\Downloads\SomeMod', 'D:\Downloads\Dependency')`.
@@ -182,6 +194,12 @@ Every run layers `modsets/automation-runtime.txt`: the automation runtime,
 RimBridgeServer, and `remove dubwise.dubsmintminimap` (the minimap takes keyboard
 focus on load and adds nothing to mod tests). Mod set lines are `after <id>` /
 `before <id>` anchors, lower-case package ids to insert, and `remove <id>`.
+
+Help pages of WorkRoles and Implanner are photographed with the shared probe
+`Shared/Tests/InGame/HelpCapture` (`capture-help.ps1 -Mod WorkRoles -Topics
+overview,strata`; build `Probe.csproj` first). It opens the mod's main tab
+on Help at each slug by reflection and writes nothing else; Readouts uses its
+Display probe's `help:<slug>` scene and Quality Jobs its Help probe.
 
 ## Game state queries (RimBridgeServer)
 

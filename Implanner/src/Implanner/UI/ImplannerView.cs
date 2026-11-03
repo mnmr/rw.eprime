@@ -790,16 +790,18 @@ namespace Implanner.UI
             {
                 Plan plan = allPlans[i];
                 int planId = plan.Id;
-                // A plan pinned to another body cannot take this colonist:
-                // listed greyed with its body, so the player sees why.
-                bool accepts = PlanBodies.Accepts(plan.Body, row.Pawn);
+                // A plan pinned to another body, or made for another kind
+                // of pawn (ghouls, or ordinary colonists for a ghoul),
+                // cannot take this colonist: listed greyed with who it is
+                // for, so the player sees why.
+                bool accepts = PlanBodies.Accepts(plan, row.Pawn);
                 yield return new Widgets.DropdownMenuElement<PlanChoice>
                 {
                     option = accepts
                         ? new FloatMenuOption(plan.Name,
                             () => PlannerCommands.AssignPlan(pawnId, planId))
                         : new FloatMenuOption("IMP_PlanMenuOnlyFor".Translate(
-                            plan.Name, PlanBodies.Label(plan.Body)), null),
+                            plan.Name, PlanBodies.TargetLabel(plan)), null),
                     payload = new PlanChoice(planId),
                 };
             }
@@ -1822,7 +1824,7 @@ namespace Implanner.UI
             for (int i = 0; i < catalog.Count; i++)
             {
                 ImplantCatalogEntry entry = catalog[i];
-                if (entry.Def.spawnThingOnRemoved == null) continue;
+                if (entry.Item == null) continue;
                 if (entry.PurchaseOnly && !model.ShowPurchaseOnly) continue;
                 string defName = entry.Def.defName;
                 if (model.ImplantReserveOf(defName) > 0) continue;

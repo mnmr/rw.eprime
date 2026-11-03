@@ -14,3 +14,10 @@ install them.
 <!-- l10n:b-64a81f113814 -->
 Automation can be switched off entirely, and every step it takes shows up
 in the same bills and operation lists you already use.
+
+<!-- l10n:who-is-plannable -->
+Every adult colonist can be planned, and so can the colony's ghouls from
+Anomaly. Ghouls take ordinary bionics and the ghoul kit (plating, barbs
+and the ghoul hearts), and only a plan made for ghouls enlists them (see
+[creating plans](topic:creating-plans)). Children, slaves and prisoners
+are not listed.

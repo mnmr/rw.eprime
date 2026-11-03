@@ -93,4 +93,5 @@
   <QJ_TabOptions>설정</QJ_TabOptions>
   <QJ_SettingsAllowRobotPreparation>메카노이드와 로봇의 품질 관리 작업 허용</QJ_SettingsAllowRobotPreparation>
   <QJ_SettingsAllowRobotPreparationTip>메카노이드와 지원되는 로봇이 관리 대상 제작 및 건설 작업을 수행하도록 허용합니다. 끄면 해당 작업과 그 기술 경험치를 정착민에게만 배정합니다. 현재 관리 대상 작업을 수행 중인 메카노이드와 로봇도 작업을 중단합니다. 조건을 충족하는 메카노이드와 로봇은 계속 Quality Jobs가 배정한 마무리 작업을 할 수 있습니다. 일반적인 비관리 작업에는 영향이 없습니다.</QJ_SettingsAllowRobotPreparationTip>
+  <QJ_HelpChapterMods>모드</QJ_HelpChapterMods>
 </LanguageData>

@@ -664,4 +664,5 @@ WorkRoles керує пріоритетами колоністів із роля
   <WR_RecTuneHunterPlacementPoorShotsFirst>Спершу слабкі стрільці</WR_RecTuneHunterPlacementPoorShotsFirst>
   <WR_RecTuneHunterPlacementPoorShotsFirstTip>Роль мисливця має кожен озброєний колоніст. Найслабші стрільці полюють першими, щоб потренувати стрільбу; влучні стрільці полюють останніми. Обирайте, коли їжі вдосталь і хочеться більше колоністів, які вміють стріляти. Типовий варіант.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
   <WR_RecTuneHunterTiersRowDescReversed>Межі рівня стрільби для рухомої позиції мисливця, зверху вниз. Рівні вище за останню межу — ярус 1, і мисливець стоїть одразу після базової роботи; яруси 2 і 3 йдуть за середніми та останніми робочими ролями, а ярус 5 ставить мисливця останнім.</WR_RecTuneHunterTiersRowDescReversed>
+  <WR_HelpChapterMods>Моди</WR_HelpChapterMods>
 </LanguageData>

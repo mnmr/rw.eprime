@@ -27,6 +27,14 @@ namespace WorkRoles
         private static readonly Func<Thing, IList?>? container = BindField<Thing, IList?>(StationType, "container");
         private static readonly Func<Pawn, Thing?>? stationFor = BindField<Pawn, Thing?>(RobotType, "rechargeStation");
         private static readonly Func<Thing, bool>? autoSpawn = BindField<Thing, bool>(StationType, "SpawnRobotAfterRecharge");
+        // MiscRobots WorkTab support replaces the robot work selector: its XML
+        // swaps X2_JobGiver_Work for vanilla JobGiver_Work, X2_AIRobot.GetPriority
+        // reads the Work tab, and Pawn.WorkTypeIsDisabled reports what a model
+        // cannot do (every robotWorkTypes entry counts, whatever its priority).
+        // Declared priorities then only seed the Work tab; Misc. Robots++ lists
+        // Research at priority 0 on Crafter and Omni bots, which that mod enables.
+        private static readonly bool workTabControlled =
+            ModLister.GetActiveModWithIdentifier("elf.miscrobots.worktab.support", ignorePostfix: true) != null;
 
         // Owner: current Game. Key: station identity. Value: lifecycle registry,
         // not render data. Dependencies: spawn/load/destroy and map/world removal.
@@ -43,6 +51,7 @@ namespace WorkRoles
         private static readonly Dictionary<Pawn, Thing> containedStations = new Dictionary<Pawn, Thing>();
 
         internal static bool IsRobot(Pawn pawn) => isRobot != null && isRobot(pawn);
+        internal static bool WorkTabControlled => workTabControlled;
         internal static bool StationAutomaticWorkEnabled(Thing station) => autoSpawn?.Invoke(station) == true;
         internal static bool IsRegisteredStation(Thing station) => ReferenceEquals(owner, Current.Game)
             && stationMaps.ContainsKey(station);
@@ -78,6 +87,7 @@ namespace WorkRoles
 
         internal static int NativePriority(Pawn pawn, WorkTypeDef type)
         {
+            if (workTabControlled) return pawn.workSettings?.GetPriority(type) ?? 0;
             IList? types = workTypes?.Invoke(pawn.def);
             if (types == null || workType == null || priority == null) return 0;
             for (int i = 0; i < types.Count; i++)

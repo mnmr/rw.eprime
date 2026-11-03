@@ -36,13 +36,24 @@ def kind(text):
         return 'image'
     if first.startswith('@'):
         return 'directive'
+    if first.startswith('|'):
+        return 'table'
     if ITEM.match(first):
         return 'list'
     return 'paragraph'
 
 
+def metadata(text):
+    """Front-matter lines other than the title: shared verbatim by every locale."""
+    header = HEADER.match(text)
+    if not header:
+        return []
+    return [line.strip() for line in header[1].splitlines()
+            if line.strip() and not re.match(r'title:', line.strip())]
+
+
 def spans(text, offset=0):
-    """Paragraphs, headings, captions, directives and contiguous related lists."""
+    """Paragraphs, headings, captions, directives, tables and contiguous related lists."""
     lines = list(re.finditer(r'[^\r\n]+(?:\r?\n|$)|\r?\n', text))
     result, i = [], 0
     while i < len(lines):
@@ -52,7 +63,7 @@ def spans(text, offset=0):
         first = i
         category = kind(lines[i][0])
         i += 1
-        if category in ('paragraph', 'list'):
+        if category in ('paragraph', 'list', 'table'):
             while i < len(lines):
                 line = lines[i][0].strip()
                 if not line:
@@ -62,7 +73,11 @@ def spans(text, offset=0):
                         continue
                     break
                 following = kind(line)
-                if following != 'paragraph' and not (category == 'list' and following == 'list'):
+                if category == 'table':
+                    # A table is its rows only; prose after it is a new block.
+                    if following != 'table':
+                        break
+                elif following != 'paragraph' and not (category == 'list' and following == 'list'):
                     break
                 i += 1
         start, end = lines[first].start(), lines[i - 1].end()
@@ -192,10 +207,17 @@ def patch(source, current, updated):
         raise ValueError('Legacy target needs help migration before block updates')
     old_by_id = {b.id: b for b in old}
     newline = '\r\n' if '\r\n' in current else '\n'
-    prefix = current[:old[1].marker_start] if len(old) > 1 else (current or '---' + newline + 'title: ' + updated['title'] + newline + '---' + newline)
-    if old and 'title' in updated:
-        b = old[0]
-        prefix = prefix[:b.start] + updated['title'].strip() + prefix[b.end:]
+    # The header follows the English front matter (icon and any later
+    # metadata) with only the title translated, so metadata edits reach every
+    # locale on the next update without a translation request.
+    translated_title = updated['title'].strip() if 'title' in updated else (old[0].text if old else None)
+    if translated_title is None:
+        raise ValueError('Missing translated title')
+    header_lines = [('title: ' + translated_title) if re.match(r'title:', line.strip()) else line.strip()
+                    for line in HEADER.match(source)[1].splitlines() if line.strip()]
+    header = ('\ufeff' if current.startswith('\ufeff') else '') + '---' + newline + newline.join(header_lines) + newline + '---' + newline
+    body_start = HEADER.match(current).end() if current else 0
+    prefix = header + current[body_start:old[1].marker_start if len(old) > 1 else len(current)]
     chunks, previous = [], None
     old_next = {b.id: old[i + 1].id if i + 1 < len(old) else None for i, b in enumerate(old)}
     source_kinds = {b.id: b.kind for b in source_blocks}

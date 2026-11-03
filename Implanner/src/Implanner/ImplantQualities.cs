@@ -186,7 +186,7 @@ namespace Implanner
         {
             IReadOnlyList<ImplantCatalogEntry> catalog = Catalogs.Implants();
             for (int i = 0; i < catalog.Count; i++)
-                if (HasQuality(catalog[i].Def.spawnThingOnRemoved))
+                if (HasQuality(catalog[i].Item))
                     return true;
             return false;
         }

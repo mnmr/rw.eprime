@@ -117,11 +117,13 @@ public class HelpMarkdownTests
         var doc = HelpMarkdown.Parse(
             "See [pinning roles](topic:pinning) and press **{k:WR_MakeItSo}**.\n" +
             "\n" +
-            "External [site](https://example.com) degrades to text.\n");
+            "External [site](https://example.com) keeps its URL; " +
+            "[mailto](mailto:x@y.z) degrades to text.\n");
 
         await Assert.That(Dump(doc)).IsEqualTo(
             "P See ·LINK(pinning roles→pinning)· and press ·B-KEY(WR_MakeItSo)·.\n" +
-            "P External site degrades to text.");
+            "P External ·LINK(site→https://example.com)· keeps its URL; " +
+            "mailto degrades to text.");
     }
 
     [Test]
@@ -191,6 +193,39 @@ public class HelpMarkdownTests
     }
 
     [Test]
+    public async Task TableRowsKeepTheirCellsAndASeparatorMarksTheHeader()
+    {
+        // The image height suffix "|16" sits inside parentheses and must
+        // not split the cell.
+        var doc = HelpMarkdown.Parse(
+            "| Verdict | ![ok](ok.png|16) Supported |\n" +
+            "|---|---|\n" +
+            "| **Checked** | 2026-10-30 |\n" +
+            "| No trailing pipe | x\n" +
+            "\n" +
+            "After.\n");
+
+        await Assert.That(Dump(doc)).IsEqualTo(
+            "TH Verdict ¦ ·IMG(ok→ok.png|16)· Supported\n" +
+            "TR ·B(Checked)· ¦ 2026-10-30\n" +
+            "TR No trailing pipe ¦ x\n" +
+            "P After.");
+        await Assert.That(doc.Blocks[0].Runs.Length).IsEqualTo(3);
+    }
+
+    [Test]
+    public async Task FrontMatterIconIsOptional()
+    {
+        var withIcon = HelpMarkdown.Parse(
+            "---\ntitle: Strata\nicon: verdict-supported.png\n---\nBody.\n");
+        var without = HelpMarkdown.Parse("---\ntitle: Strata\n---\nBody.\n");
+
+        await Assert.That(withIcon.Icon).IsEqualTo("verdict-supported.png");
+        await Assert.That(withIcon.Title).IsEqualTo("Strata");
+        await Assert.That(without.Icon).IsEqualTo("");
+    }
+
+    [Test]
     public async Task EmptyAndWhitespaceDocumentsYieldNoBlocks()
     {
         await Assert.That(Dump(HelpMarkdown.Parse(""))).IsEqualTo("");
@@ -228,6 +263,14 @@ public class HelpMarkdownTests
                     continue;
                 case HelpBlockKind.Demo:
                     sb.Append("DEMO ").Append(block.ImagePath);
+                    continue;
+                case HelpBlockKind.TableRow:
+                    sb.Append(block.Level == 1 ? "TH " : "TR ");
+                    for (int c = 0; c < block.Cells.Length; c++)
+                    {
+                        if (c > 0) sb.Append(" ¦ ");
+                        AppendRuns(sb, block.Cells[c]);
+                    }
                     continue;
                 default:
                     sb.Append("P ");

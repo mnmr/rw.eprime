@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.5.5 — 2026-11-03
+
+- Added: Help pages for mods to show compatibility verdicts and other relevant information.
+
 ## 1.5.4 — 2026-10-31
 
 - Fixed: Importing a setup could fail when another mod bundled an older Multiplayer API.

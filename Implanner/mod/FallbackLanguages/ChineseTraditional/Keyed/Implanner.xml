@@ -219,7 +219,7 @@
   <IMP_PlanBody>身體</IMP_PlanBody>
   <IMP_PlanBodyAny>任意身體</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0}（未載入）</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>為單一身體類型制定的計畫只會列出該身體的部位，也只能徵召擁有該身體的殖民者。人類身體的計畫也會納入身體具備所有人類部位的殖民者，例如多了翅膀的種族。\n\n適用於任意身體的計畫會套用到每位殖民者。殖民者身體上沒有的部位會對該殖民者略過。\n\n計畫可以延伸自適用於任意身體的計畫，或同一身體類型的計畫。</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>為單一身體類型制定的計畫只會列出該身體的部位，也只能徵召擁有該身體的殖民者。人類身體的計畫也會納入身體具備所有人類部位的殖民者，例如多了翅膀的種族。\n\n適用於任意身體的計畫會套用到每位殖民者。殖民者身體上沒有的部位會對該殖民者略過。\n\n為食屍鬼制定的計畫會列出一般植入物與食屍鬼專用義體，且只能徵召食屍鬼。其他計畫都不會徵召食屍鬼。\n\n計畫可以延伸自適用於任意身體的計畫，或同一身體類型的計畫。食屍鬼計畫也可以延伸自適用於任意身體的計畫。</IMP_PlanBodyTip>
   <IMP_PlanForBody>適用於{0}</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0}（僅限{1}）</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>不適用於此身體</IMP_StateNotForBody>
@@ -231,4 +231,7 @@
   <IMP_OptInterface>介面</IMP_OptInterface>
   <IMP_ResizeGripTip>拖曳可調整視窗大小。按兩下可還原為預設大小。</IMP_ResizeGripTip>
   <IMP_LevelModWarning>{0} 會讓此殖民地分布在多個樓層。Implanner 無法跨樓層運送植入體或進行手術，因此若手術的植入體位於另一個樓層，該手術會等到你將其移過來為止。</IMP_LevelModWarning>
+  <IMP_PlanForGhouls>適用於食屍鬼</IMP_PlanForGhouls>
+  <IMP_PlanGhouls>食屍鬼</IMP_PlanGhouls>
+  <IMP_PlanTargetColonists>殖民者</IMP_PlanTargetColonists>
 </LanguageData>

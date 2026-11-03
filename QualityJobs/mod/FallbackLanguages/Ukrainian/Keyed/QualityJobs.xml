@@ -93,4 +93,5 @@
   <QJ_TabOptions>Налаштування</QJ_TabOptions>
   <QJ_SettingsAllowRobotPreparation>Дозволити механоїдам і роботам працювати над завданнями з вимогами до якості</QJ_SettingsAllowRobotPreparation>
   <QJ_SettingsAllowRobotPreparationTip>Дозволити механоїдам і підтримуваним роботам виконувати керовані завдання з виготовлення та будівництва. Вимкніть, щоб залишити цю роботу та досвід навичок за неї колоністам. Це також зупиняє їхню поточну роботу над керованими завданнями. Механоїди й роботи, що відповідають вимогам, і надалі можуть завершувати завдання, призначені Quality Jobs. На звичайні некеровані завдання це не впливає.</QJ_SettingsAllowRobotPreparationTip>
+  <QJ_HelpChapterMods>Моди</QJ_HelpChapterMods>
 </LanguageData>

@@ -35,6 +35,15 @@ body. A plan made for one body can only be extended by a plan for the
 same body. Choosing the plan to extend first narrows the Body choices to
 match, and choosing a body first lists only the plans it may extend.
 
+<!-- l10n:plan-ghouls -->
+With Anomaly, the **Body** choices end with **Ghouls**. A plan made for
+ghouls lists ordinary implants and the ghoul kit, and can enlist only
+ghouls; no other plan enlists a ghoul. Its card reads "for ghouls". A
+plan for ghouls can extend a plan for any body, so a ghoul can inherit
+the colony's standard bionics, but an ordinary plan cannot extend a plan
+for ghouls. Implants ghouls cannot take, such as the revenant vertebrae,
+are not listed for a ghoul plan.
+
 <!-- l10n:b-515b3ee4d180 -->
 Each card in the plan list shows the plan's implant count, how many
 colonists are enlisted, and their combined progress.

@@ -4,6 +4,9 @@ title: Die Übersichtstabelle
 <!-- l10n:b-b3adf99a5ff7 -->
 Der Übersichtsreiter listet alle Kolonisten auf, die Implantate erhalten könnten.
 
+<!-- l10n:overview-ghouls -->
+Ghule (Anomaly) werden zusammen mit den Kolonisten aufgelistet. Das Planmenü bietet ihnen nur Pläne an, die für Ghule erstellt wurden, und Ghulpläne werden sonst niemandem angeboten; die übrigen Pläne sind ausgegraut und zeigen, für wen sie gelten. Ghule haben keine Fertigkeiten, daher steht in ihren Spalten S und N jeweils 0.
+
 <!-- l10n:b-e8c75fea3beb -->
 ![Übersichtszeilen mit Plan, Fortschritt, Priorität und Zustand](overview-rows.png)
 

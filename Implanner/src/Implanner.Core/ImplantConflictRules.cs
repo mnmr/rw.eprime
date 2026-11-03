@@ -13,8 +13,12 @@ namespace Implanner.Core
             int slotRecord, IReadOnlyList<int> slotAncestors,
             IReadOnlyList<string> tags, IReadOnlyList<string> incompatibleTags,
             IReadOnlyList<string> removeWithTags, bool mountsOnArtificialParts,
-            bool wipesPart = false, bool? mountsUnderArtificialParts = null)
+            bool wipesPart = false, bool? mountsUnderArtificialParts = null,
+            IReadOnlyList<string>? requiredMutants = null,
+            IReadOnlyList<string>? blacklistedMutants = null)
         {
+            RequiredMutants = requiredMutants ?? NoMutants;
+            BlacklistedMutants = blacklistedMutants ?? NoMutants;
             WipesPart = wipesPart;
             MountsUnderArtificialParts = mountsUnderArtificialParts ?? mountsOnArtificialParts;
             DefName = defName;
@@ -72,6 +76,41 @@ namespace Implanner.Core
         /// it stays; what was there before is pushed out. Always false for
         /// replacements, which wipe the part anyway.
         public bool WipesPart { get; }
+
+        /// The mutant kinds (MutantDef names) at least one of which the pawn
+        /// must be for any surgery of the kind to apply: every surgery
+        /// recipe carries a mutantPrerequisite (Anomaly's ghoul kit). Empty
+        /// = ordinary pawns and mutants alike (Recipe_Surgery.AvailableOnNow).
+        public IReadOnlyList<string> RequiredMutants { get; }
+
+        /// The mutant kinds every surgery recipe of the kind refuses
+        /// (mutantBlacklist on all of them: revenant vertebrae for ghouls).
+        public IReadOnlyList<string> BlacklistedMutants { get; }
+
+        private static readonly string[] NoMutants = System.Array.Empty<string>();
+
+        /// Whether the pawn's mutant kind is blacklisted by every surgery.
+        public bool RefusesMutant(string pawnMutant)
+        {
+            if (pawnMutant.Length == 0) return false;
+            for (int i = 0; i < BlacklistedMutants.Count; i++)
+                if (string.Equals(BlacklistedMutants[i], pawnMutant, System.StringComparison.Ordinal))
+                    return true;
+            return false;
+        }
+
+        /// Whether a pawn of the given mutant kind ("" = none) can take any
+        /// surgery of this kind at all, by the recipes' mutant rules.
+        public bool AcceptsMutant(string pawnMutant)
+        {
+            if (pawnMutant.Length == 0) return RequiredMutants.Count == 0;
+            if (RefusesMutant(pawnMutant)) return false;
+            if (RequiredMutants.Count == 0) return true;
+            for (int i = 0; i < RequiredMutants.Count; i++)
+                if (string.Equals(RequiredMutants[i], pawnMutant, System.StringComparison.Ordinal))
+                    return true;
+            return false;
+        }
     }
 
     /// Deterministic implant-combination rules, mirroring what the game's

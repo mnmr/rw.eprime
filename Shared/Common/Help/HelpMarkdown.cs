@@ -14,11 +14,18 @@ namespace RimShared.Common.Help
         /// <summary>An embedded interactive demo control; the name travels
         /// in ImagePath. Renderers register game-side by name.</summary>
         Demo,
+        /// <summary>One row of a table ("| a | b |" lines); consecutive rows
+        /// form one table. Cells carry the per-cell runs, Runs their
+        /// concatenation, and Level is 1 for a header row (one followed by
+        /// a "|---|" separator line).</summary>
+        TableRow,
     }
 
     public enum HelpRunKind
     {
         Text,
+        /// <summary>Clickable link: Target is a topic slug, or a web URL
+        /// (<see cref="HelpMarkdown.IsWebUrl"/>) opened outside the game.</summary>
         TopicLink,
         KeyedLabel,
         /// <summary>Inline image: Text is the alt text (used when the image
@@ -70,27 +77,58 @@ namespace RimShared.Common.Help
             Level = level;
             Runs = runs;
             ImagePath = imagePath;
+            Cells = Array.Empty<HelpRun[]>();
+        }
+
+        /// <summary>A table row: Runs is the concatenation of all cells so
+        /// run-walking consumers (link checks, keyed-label scans) see every
+        /// run once; layout reads Cells.</summary>
+        public HelpBlock(int level, HelpRun[][] cells)
+        {
+            Kind = HelpBlockKind.TableRow;
+            Level = level;
+            Cells = cells;
+            ImagePath = "";
+            int count = 0;
+            for (int i = 0; i < cells.Length; i++) count += cells[i].Length;
+            var runs = new HelpRun[count];
+            int next = 0;
+            for (int i = 0; i < cells.Length; i++)
+            {
+                Array.Copy(cells[i], 0, runs, next, cells[i].Length);
+                next += cells[i].Length;
+            }
+            Runs = runs;
         }
 
         public HelpBlockKind Kind { get; }
         public int Level { get; }
         public HelpRun[] Runs { get; }
         public string ImagePath { get; }
+        public HelpRun[][] Cells { get; }
     }
 
     /// <summary>
-    /// Parsed, immutable representation of one help topic file. Title comes
-    /// from the front-matter block and is empty when absent.
+    /// Parsed, immutable representation of one help topic file. Title and
+    /// Icon (an image path for the topic list, usually empty) come from the
+    /// front-matter block.
     /// </summary>
     public sealed class HelpDocument
     {
         public HelpDocument(string title, HelpBlock[] blocks)
+            : this(title, "", blocks)
+        {
+        }
+
+        public HelpDocument(string title, string icon, HelpBlock[] blocks)
         {
             Title = title;
+            Icon = icon;
             Blocks = blocks;
         }
 
         public string Title { get; }
+        public string Icon { get; }
         public HelpBlock[] Blocks { get; }
     }
 
@@ -104,6 +142,12 @@ namespace RimShared.Common.Help
     {
         private const string TopicLinkScheme = "topic:";
 
+        /// <summary>A link target that opens outside the game (the host
+        /// hands it to the browser) rather than naming a topic slug.</summary>
+        public static bool IsWebUrl(string target) =>
+            target.StartsWith("https://", StringComparison.Ordinal)
+            || target.StartsWith("http://", StringComparison.Ordinal);
+
         public static HelpDocument Parse(string text)
         {
             if (string.IsNullOrEmpty(text))
@@ -111,7 +155,7 @@ namespace RimShared.Common.Help
 
             string[] lines = text.Split('\n');
             int index = 0;
-            string title = ParseFrontMatter(lines, ref index);
+            string title = ParseFrontMatter(lines, ref index, out string icon);
 
             var blocks = new List<HelpBlock>();
             // Pending multi-line block: a paragraph, or a list item that
@@ -154,6 +198,22 @@ namespace RimShared.Common.Help
                     Flush();
                     blocks.Add(new HelpBlock(HelpBlockKind.Heading, headingLevel,
                         ParseInline(line.Substring(headingLevel + 1).Trim()), ""));
+                    continue;
+                }
+
+                if (line[0] == '|')
+                {
+                    Flush();
+                    if (IsTableSeparator(line))
+                    {
+                        // "|---|---|" promotes the row above it to a header.
+                        int last = blocks.Count - 1;
+                        if (last >= 0 && blocks[last].Kind == HelpBlockKind.TableRow
+                            && blocks[last].Level == 0)
+                            blocks[last] = new HelpBlock(1, blocks[last].Cells);
+                        continue;
+                    }
+                    blocks.Add(new HelpBlock(0, ParseTableCells(line)));
                     continue;
                 }
 
@@ -202,7 +262,42 @@ namespace RimShared.Common.Help
             }
             Flush();
 
-            return new HelpDocument(title, blocks.ToArray());
+            return new HelpDocument(title, icon, blocks.ToArray());
+        }
+
+        private static bool IsTableSeparator(string line)
+        {
+            bool anyDash = false;
+            for (int i = 0; i < line.Length; i++)
+            {
+                char c = line[i];
+                if (c == '-') anyDash = true;
+                else if (c != '|' && c != ':' && c != ' ' && c != '\t') return false;
+            }
+            return anyDash;
+        }
+
+        /// <summary>Splits "| a | b |" into cell runs. A '|' inside brackets
+        /// or parentheses belongs to the inline syntax (the image height
+        /// suffix "![x](icon.png|16)") and does not end a cell.</summary>
+        private static HelpRun[][] ParseTableCells(string line)
+        {
+            var cells = new List<HelpRun[]>();
+            int depth = 0;
+            int start = 1;
+            for (int i = 1; i <= line.Length; i++)
+            {
+                char c = i < line.Length ? line[i] : '|';
+                if (c == '[' || c == '(') depth++;
+                else if ((c == ']' || c == ')') && depth > 0) depth--;
+                else if (c == '|' && depth == 0)
+                {
+                    if (i == line.Length && start >= line.Length) break;
+                    cells.Add(ParseInline(line.Substring(start, i - start).Trim()));
+                    start = i + 1;
+                }
+            }
+            return cells.ToArray();
         }
 
         /// <summary>
@@ -235,8 +330,10 @@ namespace RimShared.Common.Help
         /// Without a closing fence nothing is consumed: the document falls
         /// back to being parsed entirely as content.
         /// </summary>
-        private static string ParseFrontMatter(string[] lines, ref int index)
+        private static string ParseFrontMatter(string[] lines, ref int index,
+            out string icon)
         {
+            icon = "";
             if (lines.Length == 0 || lines[0].Trim() != "---") return "";
 
             for (int close = 1; close < lines.Length; close++)
@@ -249,6 +346,8 @@ namespace RimShared.Common.Help
                     string line = lines[i].Trim();
                     if (line.StartsWith("title:", StringComparison.Ordinal))
                         title = line.Substring(6).Trim();
+                    else if (line.StartsWith("icon:", StringComparison.Ordinal))
+                        icon = line.Substring(5).Trim();
                 }
                 index = close + 1;
                 return title;
@@ -355,6 +454,12 @@ namespace RimShared.Common.Help
                         runs.Add(new HelpRun(HelpRunKind.TopicLink, style,
                             display,
                             target.Substring(TopicLinkScheme.Length)));
+                    }
+                    else if (IsWebUrl(target))
+                    {
+                        FlushLiteral(literal, style, runs);
+                        runs.Add(new HelpRun(HelpRunKind.TopicLink, style,
+                            display, target));
                     }
                     else
                     {

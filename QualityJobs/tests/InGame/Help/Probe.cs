@@ -66,10 +66,13 @@ namespace HelpVerification
         {
             if (Event.current.type == EventType.Repaint) Point("gizmo", GUIUtility.GUIToScreenPoint(topLeft + new Vector2(35,35)));
         }
-        private static void Toolbar()
+        private static void Toolbar(WidgetRow row)
         {
-            if (Event.current.type != EventType.Repaint || !initialized) return;
-            Rect rect = (Rect)AccessTools.Field(typeof(Patch_PlaySettings), "lastIconRect").GetValue(null);
+            if (Event.current.type != EventType.Repaint || !initialized || row == null) return;
+            // The toolbar button is drawn through the row (ButtonIcon then a
+            // DefaultGap), so right after the postfix the row's cursor sits one
+            // gap past the icon's left edge in a row that grows leftwards.
+            var rect = new Rect(row.FinalX + WidgetRow.DefaultGap, row.FinalY, WidgetRow.IconSize, WidgetRow.IconSize);
             var point = GUIUtility.GUIToScreenPoint(rect.center);
             Point("toolbar", point);
         }
@@ -132,7 +135,7 @@ namespace HelpVerification
                     var help = (HelpTabView)Field(lastDialog,"help");
                     var content = (HelpContentState)Field(help,"content");
                     int count = 0;
-                    for(int c=0;c<4;c++)
+                    for(int c=0;c<content.Chapters.Length;c++)
                     {
                         var topics=content.ChapterTopics(c); count+=topics.Length;
                         foreach(var item in topics)
@@ -151,7 +154,8 @@ namespace HelpVerification
                             }
                         }
                     }
-                    Require(count == 12, "all twelve help topics load");
+                    int shipped = Directory.GetFiles(Path.Combine(LoadedModManager.GetMod<QualityJobsMod>().Content.RootDir, "Help", "English"), "*.md", SearchOption.AllDirectories).Length;
+                    Require(count == shipped, "all " + shipped + " help topics load (loaded " + count + ")");
                     var topic = content.ChapterTopics(0)[0];
                     var model = content.Model(0,topic,700f);
                     Require(ReferenceEquals(model,content.Model(0,topic,700f)), "steady help reads reuse draw model identity");
@@ -177,7 +181,8 @@ namespace HelpVerification
                     var parts = action.Split(':'); int chapter=int.Parse(parts[1]); int index=int.Parse(parts[2]);
                     var origin = lastDialog.windowRect.position + new Vector2(28f,60f);
                     float width=lastDialog.windowRect.width-56f;
-                    Point("chapter", origin + new Vector2(width*(chapter+0.5f)/4f,14f));
+                    int chapterCount = ((HelpContentState)Field((HelpTabView)Field(lastDialog,"help"),"content")).Chapters.Length;
+                    Point("chapter", origin + new Vector2(width*(chapter+0.5f)/chapterCount,14f));
                     Point("topic", origin + new Vector2(100f,36f+28f*(index+0.5f)));
                     Mark("topic-points");
                 }

@@ -2,56 +2,81 @@ Share unfinished works and optimize your quality rolls by configuring finisher r
 
 [h1]Crafting[/h1]
 [list]
-[*] Pauses quality bill work the instant before completion; the item is set aside (haulable, shelvable) until a qualifying worker exists to complete the job. If the current crafter already qualifies, their work completion is not interrupted.
-[*] [b]Shared unfinished work:[/b] bills are no longer locked to the worker who started an item, so anyone can resume work on an unfinished item. This also rescues items whose creator died.
-[*] [b]Per-bill conditions[/b] (minimum skill, require inspiration, require production specialist) with a live quality-odds preview for your configuration and current best crafter.
-[*] Once a crafter is identified that can complete the work, a bill assigned to that crafter is created automatically (and removed when completed).
-[*] [b]Stock caps per product:[/b] stop starting new items once enough are waiting for a finisher; in-progress items still get completed.
+[*]Pauses quality bill work the instant before completion; the item is set aside (haulable, shelvable) until a qualifying worker exists to complete the job. If the current crafter already qualifies, their work completion is not interrupted.
+[*][b]Shared unfinished work:[/b] bills are no longer locked to the worker who started an item, so anyone can resume work on an unfinished item. This also rescues items whose creator died.
+[*][b]Per-bill conditions[/b] (minimum skill, require inspiration, require production specialist) with a live quality-odds preview for your configuration and current best crafter.
+[*]Once a crafter is identified that can complete the work, a bill assigned to that crafter is created automatically (and removed when completed).
+[*][b]Stock caps per product:[/b] stop starting new items once enough are waiting for a finisher; in-progress items still get completed.
 [/list]
 
 [h1]Construction[/h1]
 [list]
-[*] Opt in per building via the [i]Quality Job[/i] button on any quality blueprint or frame, or globally for all quality buildings from mod settings. Enablement is implicit: set any option and the build is managed; the [i]Clear[/i] button resets it.
-[*] [b]Per-build conditions[/b] (minimum skill, require inspiration, require production specialist, retry until quality level reached) with a live quality-odds preview for your configuration and current best builder.
-[*] [b]Target quality:[/b] builds that roll below your chosen quality are automatically marked for deconstruction and will be rebuilt until you get the desired quality (or you clear the build from being a Quality Job).
-[*] [b]Build now, improve later:[/b] You can now enlist already completed buildings as quality jobs. Paint and bed settings are preserved, and eligible original bed owners return when rebuilding ends.
-[*] Managed builds pause at 100% and wait for a builder who meets your conditions; a sparkle overlay marks them on the map.
+[*]Opt in per building via the [i]Quality Job[/i] button on any quality blueprint or frame, or globally for all quality buildings from mod settings. Enablement is implicit: set any option and the build is managed; the [i]Clear[/i] button resets it.
+[*][b]Per-build conditions[/b] (minimum skill, require inspiration, require production specialist, retry until quality level reached) with a live quality-odds preview for your configuration and current best builder.
+[*][b]Target quality:[/b] builds that roll below your chosen quality are automatically marked for deconstruction and will be rebuilt until you get the desired quality (or you clear the build from being a Quality Job).
+[*][b]Build now, improve later:[/b] You can now enlist already completed buildings as quality jobs. Paint and bed settings are preserved, and eligible original bed owners return when rebuilding ends.
+[*]Managed builds pause at 100% and wait for a builder who meets your conditions; a sparkle overlay marks them on the map.
 [/list]
 
 [h1]Worth Knowing[/h1]
 [list]
-[*] This mod isn't a cheat that gives you better quality items. Quality is rolled by whoever finishes the work, and this mod just helps ensure that is someone with a high success rate.
-[*] Inspired Creativity is consumed on the finishing touch, exactly as vanilla intends.
-[*] Paused items show [i]Author: reserved (Quality Jobs)[/i] and cannot be resumed until a qualifying finisher exists.
-[*] Ideology's production specialist role is supported but not required; no DLC is needed.
-[*] Colony mechs and supported robots can finish jobs they are capable of doing. A per-save option, enabled by default, also lets them do the work before finishing. Turn it off to reserve that work and its skill experience for colonists.
+[*]This mod isn't a cheat that gives you better quality items. Quality is rolled by whoever finishes the work, and this mod just helps ensure that is someone with a high success rate.
+[*]Inspired Creativity is consumed on the finishing touch, exactly as vanilla intends.
+[*]Paused items show [i]Author: reserved (Quality Jobs)[/i] and cannot be resumed until a qualifying finisher exists.
+[*]Ideology's production specialist role is supported but not required; no DLC is needed.
+[*]Colony mechs and supported robots can finish jobs they are capable of doing. A per-save option, enabled by default, also lets them do the work before finishing. Turn it off to reserve that work and its skill experience for colonists.
+[*]No defs are patched and unmanaged bills/builds behave exactly as vanilla; integration is a handful of targeted Harmony patches at job boundaries.
+[*][b]Designed for Performance:[/b] Extensive caching, rendering from pre-calculated caches, scoped invalidation, no per-tick logic.
 [/list]
 
 [h1]Languages[/h1]
-Built-in support for English, French, German, Italian, Japanese, Korean, Brazilian Portuguese, Spanish (European and Latin American), Simplified Chinese, Traditional Chinese, Turkish, Ukrainian, and Vietnamese.
+[list]
+[*]Built-in support for English, French, German, Italian, Japanese, Korean, Brazilian Portuguese, Spanish (European and Latin American), Simplified Chinese, Traditional Chinese, Turkish, Ukrainian, and Vietnamese.
+[*]No built-in Russian translation; community translation mods are welcome and override built-in text.
+[/list]
 
 [h1]Compatibility[/h1]
 [list]
-[*] Multiplayer compatible (RimWorld Multiplayer).
-[*] Safe to add/remove mid-game, but removal without disabling in mod settings will leave unfinished items without an owner (they must be cancelled). Disabling the mod makes items resumable by their (new) owner.
-[*] No defs are patched and unmanaged bills/builds behave exactly as vanilla; integration is a handful of targeted Harmony patches at job boundaries.
-[*] Supported robot mods: [url=https://steamcommunity.com/sharedfiles/filedetails/?id=724602224]Misc. Robots[/url] and [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3253308913]Misc. Robots++[/url].
-[*] Supported skill mods: Vanilla Skills Expanded quality bonuses count for finishers; [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2894401734]Endless Growth[/url] skill levels up to 100 work in sliders, odds and finisher choice.
-[*] [b]Designed for Performance:[/b] Extensive caching, rendering from pre-calculated caches, scoped invalidation, no per-tick logic.
-[*] Requires Harmony.
+[*][b]Save Compatible:[/b] Safe to add mid-game. Before removing, disable the mod in mod settings so unfinished items become resumable by their (new) owner; removing it without that leaves them without an owner (they must be cancelled).
+[*]Robot mods: [url=https://steamcommunity.com/sharedfiles/filedetails/?id=724602224]Misc. Robots[/url] and [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3253308913]Misc. Robots++[/url] robots count as finishers. Mechs count in any working mode, including Smart Work Mode's smart work.
+[*]Skill mods: Vanilla Skills Expanded quality bonuses count for finishers; [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2894401734]Endless Growth[/url] skill levels up to 100 work in sliders, odds and finisher choice.
+[*][b]Multiplayer:[/b] Fully [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2606448745]RimWorld Multiplayer[/url] compatible.
+[*]Requires [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077]Harmony[/url].
+[/list]
+
+[h1]Tested Mods[/h1]
+The built-in Help tab has a page per tested mod with compatibility notes and Workshop links.
+[list]
+[*]Craft with Color
+[*]Endless Growth
+[*]EPrime's Implanner
+[*]EPrime's WorkRoles
+[*]Misc. Robots and Misc. Robots++
+[*]Personal Work Categories (partial: Finish jobs do not appear in its categories)
+[*]Quality Bionics Remastered
+[*]Smart Work Mode
+[*]Vanilla Genetics Expanded
+[*]Vanilla Skills Expanded
+[*]WVC - Work Modes
+[/list]
+
+[h1]Known Incompatible[/h1]
+[list]
+[*][b]Unfinished-Work Mods:[/b] Finish it!, No Job Authors.
+[*][b]Quality Construction Mods:[/b] QualityBuilder.
 [/list]
 
 Found a bug or an incompatible mod? Let me know in the comments.
 
 [h1]Check Out My Other Mods[/h1]
 [list]
-[*] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3769342092]EPrime's Readouts[/url]: A modern, compact resource readout with support for custom resource pools.
-[*] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3760146134]WorkRoles[/url]: Easily and intuitively manage work priorities by assigning named roles to colonists.
-[*] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3793988932]EPrime's Implanner[/url]: Plan, track and optionally automate the rollouts of bionic implants.
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3769342092]EPrime's Readouts[/url]: A modern, compact resource readout with support for custom resource pools.
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3760146134]EPrime's WorkRoles[/url]: Easily and intuitively manage work priorities by assigning named roles to colonists.
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3793988932]EPrime's Implanner[/url]: Plan, track and optionally automate the rollouts of bionic implants.
 [/list]
 
 [h1]Disclaimer[/h1]
-Created with the help of Claude Code.
+Created with the help of Claude Code (by a professional programmer).
 
 [h1]Links[/h1]
 [list]

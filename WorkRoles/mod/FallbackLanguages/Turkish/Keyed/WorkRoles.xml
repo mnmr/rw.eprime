@@ -664,4 +664,5 @@ Bu bildirim kayıt başına her mod için bir kez gösterilir.</WR_SetPriorityBl
   <WR_RecTuneHunterPlacementPoorShotsFirst>Kötü nişancılar önce</WR_RecTuneHunterPlacementPoorShotsFirst>
   <WR_RecTuneHunterPlacementPoorShotsFirstTip>Silahlı her kolonici Avcı rolünü alır. En zayıf nişancılar önce avlanır ve böylece Nişancılık alıştırması yapar; keskin nişancılar en son avlanır. Yiyecek güvendeyse ve silah kullanabilen daha çok kolonici istiyorsanız bunu seçin. Varsayılan budur.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
   <WR_RecTuneHunterTiersRowDescReversed>Dinamik Avcı konumu için nişancılık seviyesi eşikleri, yukarıdan aşağı okunur. Son eşiğin üzerindeki seviyeler 1. kademedir ve Avcıyı temel işlerin hemen arkasına yerleştirir; 2. ve 3. kademeler orta ve son iş rollerini izler, 5. kademe ise Avcıyı en sona koyar.</WR_RecTuneHunterTiersRowDescReversed>
+  <WR_HelpChapterMods>Modlar</WR_HelpChapterMods>
 </LanguageData>

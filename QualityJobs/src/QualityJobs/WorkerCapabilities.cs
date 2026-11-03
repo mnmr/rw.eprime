@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using RimShared.GameLib;
 using RimWorld;
 using RimWorld.Planet;
 using Verse;
@@ -40,8 +41,10 @@ namespace QualityJobs
             // These are the native mech tree's exclusive work gates. Ordinary
             // busy jobs (including charging) remain eligible, as for humans.
             // Keep this availability separate from the full-colony quality pool.
+            // A working mode is any mode whose think-tree branch runs work
+            // (Work, Smart Work Mode's SmartWork), read from the tree itself.
             return !pawn.Drafted && pawn.IsColonyMechPlayerControlled
-                && pawn.GetMechWorkMode() == MechWorkModeDefOf.Work
+                && MechWorkModes.IsWorking(pawn)
                 && !pawn.IsFormingCaravan()
                 && pawn.needs?.energy?.IsLowEnergySelfShutdown != true;
         }

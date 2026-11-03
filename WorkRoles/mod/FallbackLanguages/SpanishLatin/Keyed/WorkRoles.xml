@@ -664,4 +664,5 @@ No se interrumpió el trabajo. Este aviso aparece una vez por partida.</WR_Giver
   <WR_RecTuneHunterPlacementPoorShotsFirst>Malos tiradores primero</WR_RecTuneHunterPlacementPoorShotsFirst>
   <WR_RecTuneHunterPlacementPoorShotsFirstTip>Todo colono armado tiene Cazador. Los tiradores más débiles cazan primero para ganar práctica de Tiro; los francotiradores cazan al final. Elígelo cuando la comida esté asegurada y quieras más colonos que sepan disparar. Es el valor predeterminado.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
   <WR_RecTuneHunterTiersRowDescReversed>Límites de nivel de Tiro para el lugar dinámico de Cazador, leídos de arriba abajo. Los niveles por encima del último límite son el nivel 1 y colocan a Cazador justo después del trabajo básico; los niveles 2 y 3 siguen a los roles de trabajo intermedios y finales, y el nivel 5 coloca a Cazador en último lugar.</WR_RecTuneHunterTiersRowDescReversed>
+  <WR_HelpChapterMods>Mods</WR_HelpChapterMods>
 </LanguageData>

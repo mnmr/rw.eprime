@@ -104,7 +104,7 @@ namespace Implanner.UI
                     hp = (hp.Length > 0 ? hp + " " : "") + linear.ToStringWithSign();
                 text.AppendLine("IMP_TipMaxHp".Translate(hp));
             }
-            ThingDef? item = entry.Def.spawnThingOnRemoved;
+            ThingDef? item = entry.Item;
             if (item != null)
             {
                 float value = item.GetStatValueAbstract(StatDefOf.MarketValue);
@@ -117,8 +117,8 @@ namespace Implanner.UI
                 }
             }
             string? description = entry.Def.description;
-            if (description.NullOrEmpty() && entry.Def.spawnThingOnRemoved != null)
-                description = entry.Def.spawnThingOnRemoved.description;
+            if (description.NullOrEmpty() && item != null)
+                description = item.description;
             if (!description.NullOrEmpty())
             {
                 text.AppendLine();

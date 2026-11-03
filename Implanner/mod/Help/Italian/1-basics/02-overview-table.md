@@ -4,6 +4,9 @@ title: La tabella della panoramica
 <!-- l10n:b-b3adf99a5ff7 -->
 La scheda Panoramica elenca tutti i coloni che potrebbero ricevere impianti.
 
+<!-- l10n:overview-ghouls -->
+I ghoul (Anomaly) sono elencati insieme ai coloni. Il menu dei piani propone loro solo i piani creati per i ghoul, e i piani per ghoul non vengono proposti a nessun altro; gli altri piani sono in grigio, con l'indicazione di a chi sono destinati. I ghoul non hanno abilità, quindi le colonne T e M mostrano 0.
+
 <!-- l10n:b-e8c75fea3beb -->
 ![Righe della panoramica con colonne per piano, avanzamento, priorità e stato](overview-rows.png)
 

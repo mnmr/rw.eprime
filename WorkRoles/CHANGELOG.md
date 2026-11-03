@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 1.8.0 — 2026-11-03
+
+- Added: Help pages for mods to show compatibility verdicts and other relevant information.
+- Added: Milira Race's Milian mechs can hold roles and are managed like Biotech mechs.
+- Fixed: Crafter and Omni bots under MiscRobots WorkTab support can now hold the Researcher role.
+- Fixed: Every robot model under MiscRobots WorkTab support can now hold the Firefighter role.
+
+## 1.7.9 — 2026-11-02
+
+- Changed: Renamed to EPrime's WorkRoles so it sorts beside the other EPrime mods.
+- Fixed: Mechs in modded work modes (Smart Work Mode, WVC - Work Modes) now count as workers.
+
 ## 1.7.8 — 2026-11-02
 
 - Added: Hunter placement option: poor shots first, best shots first with a champion, or normal role.

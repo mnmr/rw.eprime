@@ -53,8 +53,13 @@ namespace Implanner
             bool isReplacement, ImplantRegion region, LimbKind limb,
             List<string> incompatibleTags, bool mountsOnArtificialParts,
             bool requiresArtificialPart, string? upgradesFrom, bool purchaseOnly,
-            bool wipesPart, bool mountsUnderArtificialParts)
+            bool wipesPart, bool mountsUnderArtificialParts,
+            List<string> requiredMutants, List<string> blacklistedMutants,
+            ThingDef? item)
         {
+            Item = item;
+            RequiredMutants = requiredMutants;
+            BlacklistedMutants = blacklistedMutants;
             WipesPart = wipesPart;
             MountsUnderArtificialParts = mountsUnderArtificialParts;
             RequiresArtificialPart = requiresArtificialPart;
@@ -77,6 +82,16 @@ namespace Implanner
         internal HediffDef Def { get; }
         internal string Label { get; }
         internal float Efficiency { get; }
+
+        /// The implant item its surgery consumes, or null for a kind whose
+        /// surgeries take no tech-hediff item: the hediff's
+        /// spawnThingOnRemoved where it has one (every vanilla bionic), else
+        /// the lowest-defName tech-hediff item the surgery recipes'
+        /// ingredient filters allow (Anomaly's ghoul plating and barbs drop
+        /// nothing when removed, so their hediffs name no item). Automation
+        /// reserves, binds, crafts and counts this item; what removal
+        /// drops stays Def.spawnThingOnRemoved (reinstalls, loss gate).
+        internal ThingDef? Item { get; }
         internal List<BodyPartDef> FixedParts { get; }
         internal string GroupLabel { get; }
 
@@ -138,6 +153,26 @@ namespace Implanner
         /// while PlannerModel.ShowPurchaseOnly is on; automation treats its
         /// slots as optional so a batch never waits for it.
         internal bool PurchaseOnly { get; }
+
+        /// MutantDef names of which the pawn must be one for any surgery of
+        /// this kind to apply: every surgery recipe carries a
+        /// mutantPrerequisite (Anomaly's ghoul kit, Odyssey's blood warmer).
+        /// Empty = ordinary colonists and mutants alike.
+        internal List<string> RequiredMutants { get; }
+
+        /// MutantDef names every surgery recipe refuses (mutantBlacklist on
+        /// all of them: revenant vertebrae for ghouls).
+        internal List<string> BlacklistedMutants { get; }
+
+        /// Whether a pawn of the given mutant kind ("" = none) can take any
+        /// surgery of this kind, by the recipes' mutant rules
+        /// (Recipe_Surgery.AvailableOnNow). Allocation-free.
+        internal bool AcceptsMutant(string mutant)
+        {
+            if (mutant.Length == 0) return RequiredMutants.Count == 0;
+            if (BlacklistedMutants.Contains(mutant)) return false;
+            return RequiredMutants.Count == 0 || RequiredMutants.Contains(mutant);
+        }
 
         /// The anatomy region of the entry's targeted parts (classified on
         /// its first slot's body).
@@ -322,9 +357,6 @@ namespace Implanner
                     : 1f;
                 List<RecipeDef> surgeryRecipes = surgeries[pair.Key];
                 surgeryRecipes.Sort(ByRecipeDefName);
-                // Mutant-only implants (ghoul barbs and kin) are not plan
-                // goals: only ordinary humanlikes are plannable.
-                if (!AnyHumanRecipe(surgeryRecipes)) continue;
                 List<CatalogSlot> slots = BuildSlots(bodies, pair.Value);
                 // Parts no humanlike body has (an animal jaw) can never be
                 // installed on a colonist.
@@ -341,7 +373,9 @@ namespace Implanner
                     ClassifyRegion(slots[0].Record), ClassifyLimb(slots[0].Record),
                     IncompatibleTagsOf(surgeryRecipes), mounts,
                     mountsUnder && !AnyVanillaImplantRecipe(surgeryRecipes), null,
-                    purchaseOnly, wipes, mountsUnder));
+                    purchaseOnly, wipes, mountsUnder,
+                    RequiredMutantsOf(surgeryRecipes), BlacklistedMutantsOf(surgeryRecipes),
+                    SurgeryItemOf(pair.Key, implantItems)));
             }
             AddUpgrades(result, upgrades, producible, implantItems);
             result.Sort(ByGroupThenLabel);
@@ -373,7 +407,6 @@ namespace Implanner
                 if (byDef.ContainsKey(def)) continue; // also installable directly
                 List<RecipeDef> surgeryRecipes = upgrades[def];
                 surgeryRecipes.Sort(ByRecipeDefName);
-                if (!AnyHumanRecipe(surgeryRecipes)) continue;
                 if (!byDef.TryGetValue(surgeryRecipes[0].removesHediff,
                         out ImplantCatalogEntry? baseEntry))
                     continue;
@@ -387,7 +420,9 @@ namespace Implanner
                     mountsOnArtificialParts: false, requiresArtificialPart: false,
                     baseEntry.Def.defName,
                     baseEntry.PurchaseOnly || IsPurchaseOnly(def, producible, implantItems),
-                    wipesPart: false, mountsUnderArtificialParts: false));
+                    wipesPart: false, mountsUnderArtificialParts: false,
+                    RequiredMutantsOf(surgeryRecipes), BlacklistedMutantsOf(surgeryRecipes),
+                    SurgeryItemOf(def, implantItems)));
             }
         }
 
@@ -494,6 +529,28 @@ namespace Implanner
                     items.Add(ingredient);
                 }
         }
+
+        /// The implant item a kind's surgery consumes (ImplantCatalogEntry
+        /// .Item): spawnThingOnRemoved, else the lowest-defName tech-hediff
+        /// item its surgeries' ingredient filters allow, else null.
+        private static ThingDef? SurgeryItemOf(HediffDef def,
+            Dictionary<HediffDef, List<ThingDef>> implantItems)
+        {
+            if (def.spawnThingOnRemoved != null) return def.spawnThingOnRemoved;
+            if (!implantItems.TryGetValue(def, out List<ThingDef>? items) || items.Count == 0)
+                return null;
+            ThingDef item = items[0];
+            for (int i = 1; i < items.Count; i++)
+                if (string.CompareOrdinal(items[i].defName, item.defName) < 0)
+                    item = items[i];
+            return item;
+        }
+
+        /// The surgery item of a hediff kind (ImplantCatalogEntry.Item),
+        /// falling back to spawnThingOnRemoved for kinds outside the
+        /// catalog. Dictionary lookup: reached from the surgery patches.
+        internal static ThingDef? ItemOf(HediffDef def) =>
+            ImplantByDefName(def.defName)?.Item ?? def.spawnThingOnRemoved;
 
         /// Purchase-only implants (archotech parts, joywire-class trader
         /// goods, and modded equivalents): the implant item its surgery
@@ -760,16 +817,77 @@ namespace Implanner
             return false;
         }
 
-        /// Whether any surgery recipe applies to ordinary humanlikes: a
-        /// recipe with a mutant prerequisite is refused for non-mutants by
-        /// Recipe_Surgery.AvailableOnNow.
-        private static bool AnyHumanRecipe(List<RecipeDef> surgeryRecipes)
+        /// The mutant kinds any surgery of the kind needs, or empty when at
+        /// least one recipe applies to ordinary pawns (Recipe_Surgery
+        /// .AvailableOnNow refuses a recipe with a mutantPrerequisite for
+        /// non-mutants and for other mutants). Sorted by defName.
+        private static List<string> RequiredMutantsOf(List<RecipeDef> surgeryRecipes)
         {
+            var required = new List<string>();
             for (int i = 0; i < surgeryRecipes.Count; i++)
-                if (surgeryRecipes[i].mutantPrerequisite.NullOrEmpty())
+            {
+                List<MutantDef>? prerequisite = surgeryRecipes[i].mutantPrerequisite;
+                if (prerequisite.NullOrEmpty())
+                {
+                    required.Clear();
+                    return required;
+                }
+                for (int m = 0; m < prerequisite!.Count; m++)
+                    if (!required.Contains(prerequisite[m].defName))
+                        required.Add(prerequisite[m].defName);
+            }
+            required.Sort(StringComparer.Ordinal);
+            return required;
+        }
+
+        /// The mutant kinds every surgery of the kind refuses
+        /// (mutantBlacklist on each recipe): a kind with one recipe that
+        /// does not blacklist a mutant still reaches it. Sorted by defName.
+        private static List<string> BlacklistedMutantsOf(List<RecipeDef> surgeryRecipes)
+        {
+            var blacklisted = new List<string>();
+            for (int i = 0; i < surgeryRecipes.Count; i++)
+            {
+                List<MutantDef>? blacklist = surgeryRecipes[i].mutantBlacklist;
+                if (blacklist.NullOrEmpty())
+                {
+                    blacklisted.Clear();
+                    return blacklisted;
+                }
+                if (i == 0)
+                {
+                    for (int m = 0; m < blacklist!.Count; m++)
+                        blacklisted.Add(blacklist[m].defName);
+                    continue;
+                }
+                for (int b = blacklisted.Count - 1; b >= 0; b--)
+                {
+                    bool kept = false;
+                    for (int m = 0; m < blacklist!.Count && !kept; m++)
+                        kept = blacklist[m].defName == blacklisted[b];
+                    if (!kept) blacklisted.RemoveAt(b);
+                }
+            }
+            blacklisted.Sort(StringComparer.Ordinal);
+            return blacklisted;
+        }
+
+        /// Whether any catalog kind is for ghouls (Anomaly active with its
+        /// ghoul kit loaded): the new-plan prompt then offers a ghoul plan.
+        /// Builder path (dialog construction), scans the catalog once.
+        internal static bool GhoulsPlannable()
+        {
+            if (!ModsConfig.AnomalyActive) return false;
+            IReadOnlyList<ImplantCatalogEntry> entries = Implants();
+            for (int i = 0; i < entries.Count; i++)
+                if (entries[i].RequiredMutants.Contains(GhoulMutant))
                     return true;
             return false;
         }
+
+        /// The MutantDef name of Anomaly's ghoul, the one mutant kind plans
+        /// can be made for.
+        internal const string GhoulMutant = "Ghoul";
 
         private static List<string> IncompatibleTagsOf(List<RecipeDef> surgeryRecipes)
         {

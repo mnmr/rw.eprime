@@ -15,7 +15,7 @@ namespace Implanner
         internal static bool Accepts(Pawn pawn, HediffDef def, BodyPartRecord part,
             Thing item, int planMinimum, float retainedFloor = 0f)
         {
-            if (item.Destroyed || item.def != def.spawnThingOnRemoved) return false;
+            if (item.Destroyed || item.def != Catalogs.ItemOf(def)) return false;
             return AcceptsQuality(pawn, def, part, ImplantQualities.QualityOf(item),
                 planMinimum, retainedFloor);
         }
@@ -28,7 +28,7 @@ namespace Implanner
                 ?? typeof(Hediff_AddedPart).IsAssignableFrom(def.hediffClass);
             float floor = replacement || entry?.WipesPart == true
                 ? RecoverablePartEfficiency.Of(pawn, part) : 1f;
-            int minimum = ImplantQualities.HasQuality(def.spawnThingOnRemoved) ? planMinimum : 0;
+            int minimum = ImplantQualities.HasQuality(Catalogs.ItemOf(def)) ? planMinimum : 0;
             int accepted = ImplantQuality.AcceptableQualities(
                 ImplantQualities.AfterInstall(def, replacement), Math.Max(floor, retainedFloor), minimum);
             return ImplantQuality.Accepts(accepted, quality);
@@ -67,14 +67,15 @@ namespace Implanner
             // The actual recipe may be the base-install step of a planned
             // in-place upgrade. Always judge what this operation installs.
             var placed = job.placedThings;
+            ThingDef? addedItem = Catalogs.ItemOf(added);
             for (int i = 0; placed != null && i < placed.Count; i++)
-                if (placed[i].Count > 0 && placed[i].thing.def == added.spawnThingOnRemoved)
+                if (placed[i].Count > 0 && placed[i].thing.def == addedItem)
                     return Accepts(pawn, added, part, placed[i].thing, minimum, retainedFloor);
 
             // An in-place upgrade creates a fresh hediff. Its worker does
             // not necessarily transfer the old implant's quality.
             ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(added.defName);
-            if (entry?.UpgradesFrom == null && added.spawnThingOnRemoved != null) return false;
+            if (entry?.UpgradesFrom == null && addedItem != null) return false;
             return AcceptsWithoutItem(pawn, added, part, retainedFloor);
         }
 

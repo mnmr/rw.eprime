@@ -664,4 +664,5 @@ La tâche n'a pas été interrompue. Cet avertissement apparaît une fois par sa
   <WR_RecTuneHunterPlacementPoorShotsFirst>Mauvais tireurs d'abord</WR_RecTuneHunterPlacementPoorShotsFirst>
   <WR_RecTuneHunterPlacementPoorShotsFirstTip>Tout colon armé a le rôle Chasseur. Les tireurs les plus faibles chassent en premier pour s'entraîner au Tir ; les tireurs d'élite chassent en dernier. À choisir si la nourriture est assurée et que vous voulez plus de colons sachant tirer. Valeur par défaut.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
   <WR_RecTuneHunterTiersRowDescReversed>Seuils de niveau de tir pour la position dynamique du Chasseur, lus de haut en bas. Les niveaux au-dessus du dernier seuil forment le palier 1 et placent Chasseur juste après le travail de base ; les paliers 2 et 3 suivent les rôles de travail intermédiaires et derniers, et le palier 5 place Chasseur en dernier.</WR_RecTuneHunterTiersRowDescReversed>
+  <WR_HelpChapterMods>Mods</WR_HelpChapterMods>
 </LanguageData>

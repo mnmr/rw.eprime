@@ -178,4 +178,5 @@ Para adicionar um conjunto a um grupo, mude para o Editor de grupos e use o ramo
   <EPR.UseVanillaConfirmButton>Usar painel original</EPR.UseVanillaConfirmButton>
   <EPR.CounterFontSmall>Pequena</EPR.CounterFontSmall>
   <EPR.CounterFontTiny>Minúscula</EPR.CounterFontTiny>
+  <EPR.HelpChapterMods>Mods</EPR.HelpChapterMods>
 </LanguageData>

@@ -219,7 +219,7 @@
   <IMP_PlanBody>Körper</IMP_PlanBody>
   <IMP_PlanBodyAny>Beliebiger Körper</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0} (nicht geladen)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>Ein Plan für einen bestimmten Körper listet nur dessen Körperteile auf und kann nur Kolonisten mit diesem Körper einbeziehen. Ein Plan für den menschlichen Körper erfasst auch Kolonisten, deren Körper alle menschlichen Körperteile hat, etwa eine Rasse mit zusätzlichen Flügeln.\n\nEin Plan für einen beliebigen Körper gilt für jeden Kolonisten. Körperteile, die der Körper eines Kolonisten nicht hat, werden für diesen Kolonisten übersprungen.\n\nEin Plan kann einen Plan für einen beliebigen Körper oder einen Plan für denselben Körper erweitern.</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>Ein Plan für einen bestimmten Körper listet nur dessen Körperteile auf und kann nur Kolonisten mit diesem Körper einbeziehen. Ein Plan für den menschlichen Körper erfasst auch Kolonisten, deren Körper alle menschlichen Körperteile hat, etwa eine Rasse mit zusätzlichen Flügeln.\n\nEin Plan für einen beliebigen Körper gilt für jeden Kolonisten. Körperteile, die der Körper eines Kolonisten nicht hat, werden für diesen Kolonisten übersprungen.\n\nEin Plan für Ghule listet gewöhnliche Implantate und die Ghul-Ausrüstung auf und kann nur Ghule einbeziehen. Kein anderer Plan erfasst einen Ghul.\n\nEin Plan kann einen Plan für einen beliebigen Körper oder einen Plan für denselben Körper erweitern. Ein Plan für Ghule kann außerdem einen Plan für einen beliebigen Körper erweitern.</IMP_PlanBodyTip>
   <IMP_PlanForBody>für {0}</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0} (nur {1})</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>Nicht für diesen Körper</IMP_StateNotForBody>
@@ -231,4 +231,7 @@
   <IMP_OptInterface>Oberfläche</IMP_OptInterface>
   <IMP_ResizeGripTip>Ziehen, um die Fenstergröße zu ändern. Doppelklicken, um die Standardgröße wiederherzustellen.</IMP_ResizeGripTip>
   <IMP_LevelModWarning>{0} verteilt diese Kolonie auf mehrere Ebenen. Implanner kann ein Implantat oder eine Operation nicht über eine Ebenengrenze hinweg abwickeln. Eine Operation, deren Implantat auf einer anderen Ebene liegt, wartet daher, bis du es verschiebst.</IMP_LevelModWarning>
+  <IMP_PlanForGhouls>für Ghule</IMP_PlanForGhouls>
+  <IMP_PlanGhouls>Ghule</IMP_PlanGhouls>
+  <IMP_PlanTargetColonists>Kolonisten</IMP_PlanTargetColonists>
 </LanguageData>

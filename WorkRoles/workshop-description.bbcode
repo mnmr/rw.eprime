@@ -8,31 +8,31 @@ Set up a role once and hand it to any number of colonists. You can then adjust e
 
 [h1]Key Features[/h1]
 [list]
-[*][b]No Priorities:[/b] Roles are just ordered lists of jobs (whole work types like Cooking or single jobs like Smelting). Assigned roles combine into one clear work order: earlier roles win, and within a role, earlier jobs win.
+[*][b]No Priorities:[/b] Roles are just ordered lists of jobs (whole work types like Cooking or single jobs like Smelting). Assignments are processed left-to-right, so earlier roles win (and within a role, earlier jobs win).
 [*][b]No Setup:[/b] Seeds pre-made roles covering every vanilla and official DLC work type. Auto-assigns roles to match existing priorities.
-[*][b]Overlapping Roles:[/b] The same job can live in multiple roles, and a colonist can hold both. Assign [i]Emergency Harvester[/i] to half the colony at high priority but disabled, and when blight or a cold snap hits, one click re-tasks everyone to the fields.
-[img]https://raw.githubusercontent.com/mnmr/rw.eprime/main/WorkRoles/images/feature-toggles.png[/img]
 [*][b]Easy Switching:[/b] Toggle any role globally or per colonist, without touching the underlying assignments. No more remembering what priorities colonists used to have.
+[*][b]Overlapping Roles:[/b] The same job can live in multiple roles, and a colonist can hold both. Assign [i]Emergency Harvester[/i] at high priority but disabled, and when blight or a cold snap hits, one click to enable the role sends everyone to the fields.
+[img]https://raw.githubusercontent.com/mnmr/rw.eprime/main/WorkRoles/images/feature-toggles.png[/img]
 [*][b]Rules Engine:[/b] Configure roles to only be enabled at certain times of day or at specific locations (settlements, the gravship, caravans).
-[*][b]Bill Support:[/b] Configure work bills to be restricted to a particular role. Useful when a bill requires multiple skills, e.g. Leaf Roller (crafting + cooking) vs Drug Maker (crafting + intellectual).
+[*][b]Bill Support:[/b] Restrict work bills to a particular role. Especially useful when a bill requires multiple skills.
 [*][b]Deep Job Control:[/b] The role editor provides a filterable job tree. Jobs within a role can be freely reordered. All of the seeded roles can be edited or removed.
-[*][b]Role Groups:[/b] Organize the role list into named, collapsible groups (drag to move or reorder). Roles with rules gather under Conditional Roles automatically.
-[*][b]Smart Recommendations:[/b] A per-colonist panel suggests roles from burning passions, gene aptitudes, colony-best skills, training opportunities and colony needs.
+[*][b]Suitability Insights:[/b] Role chips show a suitability verdict for the selected colonist.
+[*][b]Smart Recommendations:[/b] A per-colonist panel suggests roles from burning passions, gene aptitudes, colony-best skills, training opportunities and colony needs. 
 [img]https://raw.githubusercontent.com/mnmr/rw.eprime/main/WorkRoles/images/feature-advisor.png[/img]
-[*][b]Import/Export:[/b] Easily share or backup your role setup. Import allows overwrite or merge.
-[*][b]Designed for Performance:[/b] Extensive caching, rendering from pre-calculated caches, scoped invalidation, no per-tick logic.
+[*][b]Import/Export:[/b] Easily share or backup your role setup.
+[*][b]Performance:[/b] Extensive caching, rendering from pre-calculated caches, scoped invalidation, no per-tick logic.
 [*][b]Automation:[/b] You can enable automation in Options to have WorkRoles automatically manage role assignments for you.
+[*][b]Modded Jobs:[/b] Jobs added by mods are mostly unassigned by default; the role editor warns when a job isn't in any role.
 [/list]
 
-[h1]Worth Knowing[/h1]
+[h1]Role Types[/h1]
+An initial role set is seeded into the game, covering all detected work types and jobs.
 [list]
-[*][b]Seeded Roles:[/b] An initial role set is seeded into the game, covering all detected work types and jobs.
 [*][b]Combo Roles:[/b] Various roles (Basics, Farmer, Grunt) that combine multiple work types to make work assignment easier.
 [*][b]Composite Roles:[/b] Compose new roles from other roles to re-use your existing definitions.
 [*][b]Conditional Roles:[/b] Specify rules that govern at what times and/or location a role should be enabled.
 [*][b]Blocker Roles:[/b] Used to prevent work from any subsequent role assignment.
 [*][b]Extra Roles:[/b] Training roles that enable role progression and convenience roles to make prioritization easier.
-[*][b]Modded Jobs:[/b] Jobs added by mods are unassigned by default; the role editor warns when a job isn't in any role. Jobs from AllowTool and Keyz' Allow Utilities are assigned to existing roles automatically.
 [/list]
 
 [h1]Recommendation Logic[/h1]
@@ -43,39 +43,63 @@ Set up a role once and hand it to any number of colonists. You can then adjust e
 [*][b]Protected:[/b] Conditional roles, pinned roles and blockers are never suggested, moved or removed.
 [*][b]Genetics:[/b] Those afraid of fire get Pyrophobe before Core.
 [*][b]Signal Visibility:[/b] Skill tooltips show every signal behind a recommendation verdict.
-[*][b]Full Spec:[/b] See [url=https://github.com/mnmr/rw.eprime/tree/main/WorkRoles#readme]README[/url] for full details.
 [/list]
 
 [h1]How It Works[/h1]
 [list]
-[*]Each colonist's ordered roles compile into one strict job order: earlier (enabled) roles win, and within a role, earlier jobs win; a job that appears in several of a colonist's roles keeps its earliest position.
-[*]The compiled order is fed to the game through the same lists vanilla's job selection already consumes, so work behavior matches a hand-tuned priority grid.
+[*]Role assignments are translated into an ordered list of jobs. Duplicate jobs are trimmed from the list (only the earliest job is kept; jobs in disabled roles are skipped), before it is handed to the game (which is also what the vanilla priority grid does). 
 [*]Emergency jobs (firefighting, urgent tending, going to bed for emergency treatment) interrupt everything (by default, only when in any of the first five enabled role assignments, with an option to always allow interruptions).
-[*]Other mods that read priorities get the values WorkRoles computed; priority writes are owned by WorkRoles for managed workers (which is why priority-setting mods don't mix).
-[*]Role priorities are continuously mirrored into vanilla's 0-4 priority map, so uninstalling hands the vanilla Work tab back with your roles converted to priorities.
+[*]Other mods that read priorities get the values WorkRoles computed. Setting priorities is owned by WorkRoles (which is why priority-setting mods don't mix).
 [/list]
 
 [h1]Languages[/h1]
-Built-in support for English, French, German, Italian, Japanese, Korean, Brazilian Portuguese, Spanish (European and Latin American), Simplified Chinese, Traditional Chinese, Turkish, Ukrainian, and Vietnamese.
+[list]
+[*]Built-in support for English, French, German, Italian, Japanese, Korean, Brazilian Portuguese, Spanish (European and Latin American), Simplified Chinese, Traditional Chinese, Turkish, Ukrainian, and Vietnamese.
+[*]No built-in Russian translation; community translation mods are welcome and override built-in text.
+[/list]
 
 [h1]Compatibility[/h1]
 [list]
 [*][b]Save Compatible:[/b] Safe to add to existing saves (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).
-[*][b]Vanilla Skills Expanded / Alpha Skills:[/b] Expertise and passions are recommendation signals.
-[*][b]Endless Growth:[/b] Skill levels above 20 are supported; the top training band (20+) covers them.
-[*][b]More Than Capable:[/b] Hated work becomes an Awful recommendation signal and is flagged on assigned roles.
-[*][b]MultiFloors / Strata / As above, so below 2:[/b] Floors on a single tile are treated as one location.
-[*][b]Colony Groups:[/b] Groups appear in the colonist table's Group dropdown.
-[*]Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense, Achtung! and many others.
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=2606448745]RimWorld Multiplayer[/url] compatible.
 [*]Requires [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077]Harmony[/url].
 [/list]
 
+[h1]Tested Mods[/h1]
+The built-in Help tab has a page per tested mod with compatibility notes and Workshop links.
+[list]
+[*]Achtung!
+[*]Allow Tool
+[*]Alpha Skills
+[*]As above, So below II
+[*]Better Workbench Management
+[*]Colony Groups
+[*]Common Sense
+[*]Endless Growth
+[*]Fortified Features Framework
+[*]Humanoid Alien Races
+[*]Keyz' Allow Utilities
+[*]Mech Work Tab
+[*]Milira Race
+[*]Misc. Robots and Misc. Robots++
+[*]MiscRobots WorkTab support
+[*]More Than Capable
+[*]MultiFloors
+[*]Passion On Level Up Plus
+[*]Pick Up And Haul
+[*]Priority Treatment (resurrected)
+[*]Smart Work Mode
+[*]Strata
+[*]Vanilla Races Expanded - Android
+[*]Vanilla Skills Expanded
+[*]Vivi Race
+[*]WVC - Work Modes
+[/list]
+
 [h1]Known Incompatible[/h1]
 [list]
-[*][b]Work Tab Mods:[/b] Not compatible with other mods that replace the Work tab.
-[*][b]Priority-Setting Mods:[/b] Anything that uses SetPriority to control job priorities will not work with this mod (e.g. Free Will, PriorityMaster).
-[*]Found another incompatible mod? Let me know and I'll add it here.
+[*][b]Work Tab Mods:[/b] Better Work Tab, Enhanced Work Tab, Work Tab and its forks, [FSF] Complex Jobs.
+[*][b]Priority-Setting Mods:[/b] Force Do Job, Free Will, PriorityMaster, Personal Work Categories, and anything else that uses SetPriority.
 [/list]
 
 [h1]Check Out My Other Mods[/h1]
@@ -86,7 +110,7 @@ Built-in support for English, French, German, Italian, Japanese, Korean, Brazili
 [/list]
 
 [h1]Disclaimer[/h1]
-Created with the help of Claude Code.
+Created with the help of Claude Code (by a professional programmer).
 
 [h1]Links[/h1]
 [list]

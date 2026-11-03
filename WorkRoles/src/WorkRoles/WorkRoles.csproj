@@ -20,6 +20,7 @@
     <Compile Include="$(RimSharedRoot)\GameLib\Localization\**\*.cs" LinkBase="Shared" />
     <!-- Opt-in per GameLib subfolder: Locations carries Harmony patches. -->
     <Compile Include="$(RimSharedRoot)\GameLib\Locations\**\*.cs" LinkBase="Shared" />
+    <Compile Include="$(RimSharedRoot)\GameLib\Mechs\**\*.cs" LinkBase="Shared" />
     <Compile Include="$(RimSharedRoot)\GameLib\Multiplayer\**\*.cs" LinkBase="Shared" />
   </ItemGroup>
   <ItemGroup>

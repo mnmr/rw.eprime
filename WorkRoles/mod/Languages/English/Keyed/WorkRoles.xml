@@ -207,6 +207,7 @@
   <WR_HelpChapterOrganizing>Organizing</WR_HelpChapterOrganizing>
   <WR_HelpChapterRecommendations>Recommendations</WR_HelpChapterRecommendations>
   <WR_HelpChapterAdvanced>Advanced</WR_HelpChapterAdvanced>
+  <WR_HelpChapterMods>Mods</WR_HelpChapterMods>
   <!-- Dev-mode only: re-read help topic files from disk -->
   <WR_HelpReload>Reload</WR_HelpReload>
   <!-- Chip labels used by the animated drag demo on the ordering topic -->

@@ -11,3 +11,7 @@ Implanner planifica los implantes de los colonos y automatiza el trabajo necesar
 
 <!-- l10n:b-64a81f113814 -->
 Puedes desactivar por completo la automatización. Cada paso aparece en las mismas listas de producción y operaciones que ya utilizas.
+
+<!-- l10n:who-is-plannable -->
+Puedes planificar a cualquier colono adulto, y también a los necrófagos de la colonia de Anomaly. Los necrófagos admiten biónicos comunes y el kit de necrófago (placas, púas y corazones de necrófago), y solo un plan hecho para necrófagos los asigna (consulta [crear planes](topic:creating-plans)). Los niños, los esclavos y los prisioneros no aparecen en la lista.
+

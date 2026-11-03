@@ -47,6 +47,7 @@ namespace QualityJobs
             // The recipe→workType memo in Dispatcher shares the same def-database
             // dependency. Clear it so WorkTypeForRecipe re-resolves after a reload.
             WorkerCapabilities.InvalidateWorkTypeCache();
+            RimShared.GameLib.MechWorkModes.Reset();
             FinishWorkGivers.Invalidate();
             QualityBonusStats.Refresh();
             QualityJobsStore.Active?.NotifyDefinitionsChanged();

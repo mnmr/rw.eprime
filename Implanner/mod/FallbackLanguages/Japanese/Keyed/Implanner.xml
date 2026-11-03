@@ -219,7 +219,7 @@
   <IMP_PlanBody>体型</IMP_PlanBody>
   <IMP_PlanBodyAny>すべての体型</IMP_PlanBodyAny>
   <IMP_PlanBodyNotLoaded>{0}(未読み込み)</IMP_PlanBodyNotLoaded>
-  <IMP_PlanBodyTip>特定の体型向けに作成したプランには、その体型の部位のみが表示され、その体型の入植者のみを対象にできます。人間の体型向けのプランは、追加の翼を持つ種族など、人間の部位をすべて備えた体型の入植者も対象にできます。\n\nすべての体型向けのプランは、全入植者に適用されます。入植者の体型にない部位は、その入植者については省略されます。\n\nプランは、すべての体型向けのプラン、または同じ体型のプランを継承できます。</IMP_PlanBodyTip>
+  <IMP_PlanBodyTip>特定の体型向けに作成したプランには、その体型の部位のみが表示され、その体型の入植者のみを対象にできます。人間の体型向けのプランは、追加の翼を持つ種族など、人間の部位をすべて備えた体型の入植者も対象にできます。\n\nすべての体型向けのプランは、全入植者に適用されます。入植者の体型にない部位は、その入植者については省略されます。\n\nグール向けに作成したプランには、通常のインプラントとグール用装備が表示され、対象にできるのはグールのみです。他のプランではグールを対象にできません。\n\nプランは、すべての体型向けのプラン、または同じ体型のプランを継承できます。グール向けのプランは、すべての体型向けのプランも継承できます。</IMP_PlanBodyTip>
   <IMP_PlanForBody>{0}向け</IMP_PlanForBody>
   <IMP_PlanMenuOnlyFor>{0}({1}専用)</IMP_PlanMenuOnlyFor>
   <IMP_StateNotForBody>この体型は対象外</IMP_StateNotForBody>
@@ -231,4 +231,7 @@
   <IMP_OptInterface>インターフェース</IMP_OptInterface>
   <IMP_ResizeGripTip>ドラッグでウィンドウのサイズを変更します。ダブルクリックで既定のサイズに戻ります。</IMP_ResizeGripTip>
   <IMP_LevelModWarning>{0}によってこのコロニーは複数の階層に分かれています。Implannerは階層をまたいでインプラントや手術を運べないため、インプラントが別の階層にある手術は、プレイヤーが移動するまで待機します。</IMP_LevelModWarning>
+  <IMP_PlanForGhouls>グール向け</IMP_PlanForGhouls>
+  <IMP_PlanGhouls>グール</IMP_PlanGhouls>
+  <IMP_PlanTargetColonists>入植者</IMP_PlanTargetColonists>
 </LanguageData>

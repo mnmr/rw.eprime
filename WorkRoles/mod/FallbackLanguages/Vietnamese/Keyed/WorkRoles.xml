@@ -664,4 +664,5 @@ Thông báo hiện một lần mỗi mod trong mỗi bản lưu.</WR_SetPriority
   <WR_RecTuneHunterPlacementPoorShotsFirst>Người bắn kém trước</WR_RecTuneHunterPlacementPoorShotsFirst>
   <WR_RecTuneHunterPlacementPoorShotsFirstTip>Mọi cư dân có vũ khí đều giữ vai trò Thợ săn. Người bắn yếu nhất săn trước để được luyện Bắn súng; xạ thủ giỏi săn sau cùng. Chọn cách này khi lương thực ổn định và bạn muốn có thêm cư dân biết bắn. Đây là mặc định.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
   <WR_RecTuneHunterTiersRowDescReversed>Ngưỡng cấp Bắn súng cho vị trí động của Thợ săn, đọc từ trên xuống. Cấp cao hơn ngưỡng cuối cùng là bậc 1 và đặt Thợ săn ngay sau công việc cơ bản, bậc 2 và 3 theo sau các vai trò công việc giữa và cuối, còn bậc 5 đặt Thợ săn sau cùng.</WR_RecTuneHunterTiersRowDescReversed>
+  <WR_HelpChapterMods>Mod</WR_HelpChapterMods>
 </LanguageData>
