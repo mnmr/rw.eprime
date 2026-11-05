@@ -3,7 +3,7 @@
 ## 1.8.1 — 2026-11-05
 
 - Fixed: Misc. Robots++ Crafter and Omni bots can now hold the Researcher role without WorkTab support.
-- Changed: Every Misc. Robots robot can now hold the Firefighter role, whatever its model.
+- Changed: Any robot that can beat out flames can now hold the Firefighter role.
 
 ## 1.8.0 — 2026-11-03
 
