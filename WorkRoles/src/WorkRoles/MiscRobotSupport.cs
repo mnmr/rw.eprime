@@ -74,14 +74,17 @@ namespace WorkRoles
                 && autoSpawn?.Invoke(station) == true;
         }
 
+        // Every robotWorkTypes entry is a capability, whatever its priority.
+        // Native X2_AIRobot.GetWorkGivers skips priority 0 (Misc. Robots++
+        // lists Research that way on Crafter/Omni bots), but WorkRoles replaces
+        // that list for managed robots, so a priority only seeds unmanaged work.
         internal static bool DeclaresWorkGiver(ThingDef robotDef, WorkGiverDef giver)
         {
             IList? types = workTypes?.Invoke(robotDef);
-            if (types == null || workType == null || priority == null) return false;
+            if (types == null || workType == null) return false;
             for (int i = 0; i < types.Count; i++)
                 if (workType(types[i]!) == giver.workType)
-                    return priority(types[i]!) > 0
-                        && giver.workType.workGiversByPriority.Contains(giver);
+                    return giver.workType.workGiversByPriority.Contains(giver);
             return false;
         }
 

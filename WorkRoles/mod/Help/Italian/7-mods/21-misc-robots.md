@@ -5,14 +5,17 @@ icon: verdict-blue.png
 <!-- l10n:verdict -->
 | **Verdetto** | ![Pienamente compatibile](verdict-blue.png|16) Pienamente compatibile (supporto dedicato) |
 | **Prove** | Analisi del codice sorgente, test automatico in gioco |
-| **Verificato** | 2026-11-02 |
-| **Versioni** | WorkRoles 1.7.9, Misc. Robots 1.7.0, [Workshop 724602224](https://steamcommunity.com/sharedfiles/filedetails/?id=724602224), file 2026-10-28, Misc. Robots++ [Workshop 3253308913](https://steamcommunity.com/sharedfiles/filedetails/?id=3253308913), file 2026-10-28 |
+| **Verificato** | 2026-11-05 |
+| **Versioni** | WorkRoles 1.8.0, Misc. Robots 1.7.0, [Workshop 724602224](https://steamcommunity.com/sharedfiles/filedetails/?id=724602224), file 2026-10-28, Misc. Robots++ [Workshop 3253308913](https://steamcommunity.com/sharedfiles/filedetails/?id=3253308913), file 2026-10-28 |
 
 <!-- l10n:summary -->
 I robot possono avere ruoli come i coloni.
 
 <!-- l10n:mechanical-workers -->
 **Mostra robot e meccanoidi in Coloni** è un'opzione per salvataggio, disattivata di default. Aggiunge alla tabella esistente i meccanoidi di Biotech, Misc. Robots e Misc. Robots++. Assegna i ruoli lì; usa le loro schede native per gruppi di controllo, aree, attivazione e ricarica. I ruoli ordinano solo il lavoro che il lavoratore può davvero svolgere. Gli androidi umanoidi continuano a seguire le normali regole dei coloni.
+
+<!-- l10n:declared-work -->
+Un robot con dei ruoli può svolgere tutti i tipi di lavoro elencati dal suo modello, compresi quelli che il modello lascia disattivati di default. Un robot Artigiano o Omni di Misc. Robots++ con il ruolo Ricercatore svolge ricerche e usa gli scanner. Ogni robot in grado di spegnere le fiamme può anche ricevere il ruolo Pompiere, qualunque sia il suo modello.
 
 <!-- l10n:recommendations -->
 I consigli privilegiano l'abbinamento più adatto: un robot con un solo compito riceve Trasportatore o Addetto alle pulizie anziché Manovale, e le sue stelle di idoneità si basano sulle abilità, come per un colono.

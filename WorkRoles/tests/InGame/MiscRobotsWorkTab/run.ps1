@@ -1,12 +1,14 @@
 param([string]$Label='worktab',[string]$ModSourceRoot='D:\Code\RimWorld',[ValidateSet('before','after')][string]$Phase='after',[string]$Version='1.7',
+ # native: Misc. Robots + Misc. Robots++ without WorkTab support (WorkRoles alone picks robot work).
+ [ValidateSet('worktab','native')][string]$Mode='worktab',
  # Root of the MiscRobots WorkTab support mod when it is not in the Steam workshop folder (exact mod root with About\About.xml).
  [string]$WorkTabSource='')
 $ErrorActionPreference='Stop'
 $tools='D:\Code\RimWorld\Shared\tools\automation'
 $sources=@("$PSScriptRoot\Probe"); if($WorkTabSource){$sources+=$WorkTabSource}
-$parameters=@{Purpose="WorkRoles user report: Misc. Robots++ research/firefighting under MiscRobots WorkTab support ($Phase): $Label";ModSourceRoot=$ModSourceRoot;ModSet='workroles-misc-robots-worktab';AdditionalModSource=$sources;GameVersion=$Version}
+$parameters=@{Purpose="WorkRoles user report: Misc. Robots++ research/firefighting, mode $Mode ($Phase): $Label";ModSourceRoot=$ModSourceRoot;ModSet="workroles-misc-robots-$Mode";AdditionalModSource=$sources;GameVersion=$Version;SavePattern="Fisso-NAM-$Version.rws"}
 $run=& "$tools\create-run.ps1" @parameters
-$out=Join-Path $PSScriptRoot "../../../temp/misc-robots-worktab/$Phase-$Label-$($run.runId)"
+$out=Join-Path $PSScriptRoot "../../../temp/misc-robots-worktab/$Mode-$Phase-$Label-$($run.runId)"
 New-Item -ItemType Directory -Path $out -Force | Out-Null
 [IO.File]::WriteAllText((Join-Path $run.profile 'worktab-phase.txt'),$Phase)
 Write-Output "RUN $($run.runId) $out"

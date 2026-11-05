@@ -19,11 +19,14 @@ namespace MiscRobotsWorkTabProbe;
 /// fires, yet WorkRoles marks Researcher/Firefighter red and never recommends
 /// them. Phase "before" only records; phase "after" also asserts the fix and
 /// watches the game consume the roles (a research job, an extinguished fire).
+/// Without WorkTab support (2026-11-05 save), WorkRoles' Researcher role must
+/// still drive Crafter/Omni research (every robotWorkTypes entry counts) and
+/// every model with the vanilla beat-fire verb fights fires through its role.
 [StaticConstructorOnStartup]
 public static class Probe
 {
  static bool started, done, outcomeRunning; static int elapsed;
- static Map map; static string phase;
+ static Map map; static string phase; static bool native;
  static readonly List<Pawn> workers=new(); static readonly List<IntVec3> origins=new();
  static readonly Dictionary<Pawn,Thing> targets=new(); static readonly Dictionary<Pawn,HashSet<string>> jobs=new();
  static ResearchProjectDef project; static float progressBefore;
@@ -58,7 +61,9 @@ public static class Probe
   var store=RoleStore.Current;
   Record("GAME "+VersionControl.CurrentVersionString+" phase="+phase);
   foreach(var mod in LoadedModManager.RunningModsListForReading)Record("MOD "+mod.PackageId+" root="+mod.RootDir);
-  Record("WORKTAB_CONTROLLED "+Static("WorkRoles.MiscRobotSupport","get_WorkTabControlled"));
+  // native: no WorkTab support, WorkRoles alone picks managed robots' work.
+  native=!(bool)Static("WorkRoles.MiscRobotSupport","get_WorkTabControlled");
+  Record("WORKTAB_CONTROLLED "+!native);
   foreach(var p in map.mapPawns.AllPawnsSpawned.ToArray()) {
    if(p.CurJob!=null&&p.CurJob.def==null){p.jobs.curJob=null;p.jobs.curDriver=null;p.jobs.ClearQueuedJobs();p.pather.StopDead();}
    if(p.RaceProps.Humanlike&&p.drafter!=null)p.drafter.Drafted=true; else if(!p.RaceProps.Humanlike)p.DeSpawn();
@@ -66,7 +71,7 @@ public static class Probe
   var overseers=map.mapPawns.FreeColonistsSpawned.Where(p=>!p.Downed&&!p.DevelopmentalStage.Baby()).Take(6).ToArray();
   var parent=(MapParent)WorldObjectMaker.MakeWorldObject(WorldObjectDefOf.Settlement);parent.SetFaction(Faction.OfPlayer);parent.Tile=TileFinder.RandomStartingTile();Find.WorldObjects.Add(parent);
   map=MapGenerator.GenerateMap(new IntVec3(100,1,100),parent,new MapGeneratorDef{defName="WorkTabProbeGround",genSteps=new List<GenStepDef>()},extraInitBeforeContentGen:m=>{foreach(var cell in m.AllCells)m.terrainGrid.SetTerrain(cell,TerrainDefOf.Soil);});
-  for(int i=0;i<overseers.Length;i++){overseers[i].DeSpawn();GenSpawn.Spawn(overseers[i],new IntVec3(4+i,0,4),map);}
+  for(int i=0;i<overseers.Length;i++){overseers[i].DeSpawn();GenSpawn.Spawn(overseers[i],new IntVec3(4+i,0,4),map);overseers[i].drafter.Drafted=true;} // despawn undrafts; idle colonists would take the bots' benches
   Current.Game.CurrentMap=map;Find.CameraDriver.JumpToCurrentMapLoc(map.Center);
   // Think tree proof: WorkTab support swaps AIRobot's work node for vanilla JobGiver_Work.
   var tree=DefDatabase<ThinkTreeDef>.GetNamedSilentFail("X2_AIRobot");
@@ -93,6 +98,7 @@ public static class Probe
    Record("WR "+p.def.defName+" executable="+string.Join(",",worker.ExecutableGivers.Where(g=>g=="Research"||g=="LongRangeScan"||g=="GroundPenetratingScan"||g=="FightFires"))+" recommended="+string.Join(",",recommended));
    bool researchBot=ResearchBots.Contains(p.def.defName);
    if(researchBot){Expect(worker.ExecutableGivers.Contains("Research")&&worker.ExecutableGivers.Contains("GroundPenetratingScan"),p.def.defName+" research jobs executable");Expect(recommended.Contains("WS_Researcher")&&covered.Contains("Research")&&covered.Contains("GroundPenetratingScan"),p.def.defName+" Researcher recommended");}
+   // Every robot with the vanilla beat-fire verb fights fires, with or without WorkTab support.
    Expect(worker.ExecutableGivers.Contains("FightFires"),p.def.defName+" FightFires executable");
    Expect(covered.Contains("FightFires"),p.def.defName+" firefighting covered by a recommended role ("+string.Join(",",recommended.Where(t=>t=="WS_Firefighter"||t=="WS_Core"))+")");
    RoleCommands.PasteRoleSet(p,(researchBot?new[]{researcher.id,firefighter.id}:new[]{firefighter.id}).Select(id=>new RoleAssignment{roleId=id}).ToList());
@@ -159,8 +165,19 @@ public static class Probe
    bool researchBot=ResearchBots.Contains(p.def.defName);
    bool success=researchBot?jobs[p].Contains("Research"):targets[p].Destroyed&&jobs[p].Contains("BeatFire");
    Record("OUTCOME "+p.def.defName+" success="+success+" jobs="+string.Join(",",jobs[p])+(researchBot?" progress="+(project.ProgressReal-progressBefore):" fireDestroyed="+targets[p].Destroyed)+" downed="+p.Downed);
-   Expect(success,p.def.defName+(researchBot?" researched":" fought fire")+" through its WorkRoles role");
+   if(!success&&researchBot)Diagnose(p);
+  }
+  foreach(var p in workers) {
+   bool researchBot=ResearchBots.Contains(p.def.defName);
+   Expect(researchBot?jobs[p].Contains("Research"):targets[p].Destroyed&&jobs[p].Contains("BeatFire"),p.def.defName+(researchBot?" researched":" fought fire")+" through its WorkRoles role");
   }
   done=true;Stage("SUCCESS");
+ }
+ static void Diagnose(Pawn p)
+ {
+  var bench=targets[p];
+  Record("DIAG "+p.def.defName+" researchSpeed="+p.GetStatValue(StatDefOf.ResearchSpeed)+" timetable="+p.timetable?.CurrentAssignment?.defName+" intellectual="+p.skills?.GetSkill(SkillDefOf.Intellectual)?.Level+"/disabled="+p.skills?.GetSkill(SkillDefOf.Intellectual)?.TotallyDisabled+" reserve="+p.CanReserve(bench)+" sittable="+p.CanReserveSittableOrSpot(bench.InteractionCell)+" reserver="+map.reservationManager.FirstRespectedReserver(bench,p)+" job="+map.reservationManager.FirstRespectedReserver(bench,p)?.CurJob?.def.defName+" drafted="+map.reservationManager.FirstRespectedReserver(bench,p)?.Drafted);
+  foreach(WorkGiver g in (List<WorkGiver>)Call(p,"GetWorkGivers",false))
+   Record("DIAG giver "+g.def.defName+" skip="+g.ShouldSkip(p)+" missing="+g.MissingRequiredCapacity(p)?.defName+(g is WorkGiver_Scanner s&&g.def.scanThings?" hasJobOnBench="+s.HasJobOnThing(p,bench):""));
  }
 }

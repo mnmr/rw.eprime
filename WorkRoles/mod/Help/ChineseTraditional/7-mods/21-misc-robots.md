@@ -5,8 +5,8 @@ icon: verdict-blue.png
 <!-- l10n:verdict -->
 | **結論** | ![完全相容](verdict-blue.png|16) 完全相容(專屬支援) |
 | **依據** | 原始碼分析、遊戲內自動化測試 |
-| **檢查日期** | 2026-11-02 |
-| **版本** | WorkRoles 1.7.9、Misc. Robots 1.7.0、[Workshop 724602224](https://steamcommunity.com/sharedfiles/filedetails/?id=724602224)、檔案日期 2026-10-28、Misc. Robots++ [Workshop 3253308913](https://steamcommunity.com/sharedfiles/filedetails/?id=3253308913)、檔案日期 2026-10-28 |
+| **檢查日期** | 2026-11-05 |
+| **版本** | WorkRoles 1.8.0、Misc. Robots 1.7.0、[Workshop 724602224](https://steamcommunity.com/sharedfiles/filedetails/?id=724602224)、檔案日期 2026-10-28、Misc. Robots++ [Workshop 3253308913](https://steamcommunity.com/sharedfiles/filedetails/?id=3253308913)、檔案日期 2026-10-28 |
 
 <!-- l10n:summary -->
 機器人可以像殖民者一樣擔任角色。
@@ -17,6 +17,9 @@ icon: verdict-blue.png
 請在表格中指派角色;控制群組、區域、啟用
 與充電請使用它們的原生分頁。角色只會安排工作者實際能執行的工作。類人
 機器人仍沿用一般殖民者的規則。
+
+<!-- l10n:declared-work -->
+擁有角色的機器人可以執行其型號列出的所有工作類型,包括型號本身預設關閉的工作。擁有研究員角色的 Misc. Robots++ 工匠型或全能型機器人會進行研究並操作掃描儀。凡是能撲滅火焰的機器人,無論型號為何,也都可以擔任消防員角色。
 
 <!-- l10n:recommendations -->
 建議會優先選擇最貼合的角色,因此單一職責的機器人會得到搬運工

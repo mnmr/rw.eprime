@@ -5,8 +5,8 @@ icon: verdict-blue.png
 <!-- l10n:verdict -->
 | **Veredito** | ![Totalmente compatível](verdict-blue.png|16) Totalmente compatível (suporte personalizado) |
 | **Evidência** | Análise do código-fonte, teste automatizado no jogo |
-| **Verificado** | 2026-11-02 |
-| **Versões** | WorkRoles 1.7.9, Misc. Robots 1.7.0, [Workshop 724602224](https://steamcommunity.com/sharedfiles/filedetails/?id=724602224), arquivos de 2026-10-28, Misc. Robots++ [Workshop 3253308913](https://steamcommunity.com/sharedfiles/filedetails/?id=3253308913), arquivos de 2026-10-28 |
+| **Verificado** | 2026-11-05 |
+| **Versões** | WorkRoles 1.8.0, Misc. Robots 1.7.0, [Workshop 724602224](https://steamcommunity.com/sharedfiles/filedetails/?id=724602224), arquivos de 2026-10-28, Misc. Robots++ [Workshop 3253308913](https://steamcommunity.com/sharedfiles/filedetails/?id=3253308913), arquivos de 2026-10-28 |
 
 <!-- l10n:summary -->
 Robôs podem ter papéis como os colonos.
@@ -17,6 +17,9 @@ Ela adiciona mechs do Biotech, Misc. Robots e Misc. Robots++ à tabela existente
 Atribua papéis ali; use as abas nativas deles para grupos de controle, áreas, ativação
 e recarga. Os papéis só ordenam trabalhos que o trabalhador realmente pode executar. Androides
 humanoides continuam usando as regras comuns de colonos.
+
+<!-- l10n:declared-work -->
+Um robô com papéis pode fazer todos os tipos de trabalho listados em seu modelo, inclusive trabalhos que o modelo deixa desativados por conta própria. Um robô Artesão ou Omni do Misc. Robots++ com o papel de Pesquisador pesquisa e opera scanners. Todo robô capaz de apagar chamas também pode receber o papel de Bombeiro, seja qual for o modelo.
 
 <!-- l10n:recommendations -->
 As recomendações preferem o melhor encaixe, então um robô de função única recebe Carregador

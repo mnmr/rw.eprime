@@ -177,7 +177,8 @@ namespace WorkRoles
 
         // Misc. Robots selects work from its def's robotWorkTypes and the
         // giver's required capacities only (X2_AIRobot.GetWorkGivers,
-        // X2_JobGiver_Work.PawnCanUseWorkGiver); vanilla disabled work types
+        // X2_JobGiver_Work.PawnCanUseWorkGiver; WorkRoles supplies that list
+        // for managed robots, so every listed type counts); vanilla disabled work types
         // and work tags never gate it, and mechEnabledWorkTypes is maintained
         // by hand in those defs. Vanilla mechs keep the JobGiver_Work rules.
         // With MiscRobots WorkTab support, robots run vanilla JobGiver_Work over
@@ -203,7 +204,11 @@ namespace WorkRoles
             if (MiscRobotSupport.IsRobot(pawn))
                 return MiscRobotSupport.WorkTabControlled
                     ? giver.workType != null && !pawn.WorkTypeIsDisabled(giver.workType)
-                    : MiscRobotSupport.DeclaresWorkGiver(pawn.def, giver);
+                    : MiscRobotSupport.DeclaresWorkGiver(pawn.def, giver)
+                        // Every robot with the vanilla beat-fire verb (ToolUser
+                        // intelligence or giveNonToolUserBeatFireVerb) can fight
+                        // fires, whether or not its model lists Firefighter.
+                        || giver.workType == WorkTypeDefOf.Firefighter && pawn.natives?.BeatFireVerb != null;
             return giver.canBeDoneByMechs
                 && pawn.RaceProps.mechEnabledWorkTypes.Contains(giver.workType);
         }
