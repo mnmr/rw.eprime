@@ -180,6 +180,8 @@ namespace WorkRoles.Patches
             PawnLocationTracker.NotifyDestroyed(__instance);
             JobRankBaseline.NotifyDestroyed(__instance);
             var store = RoleStore.Current;
+            // Death also lands here (Thing.Kill destroys); keep its roles dormant.
+            if (store != null) DeathRoles.Park(store, __instance);
             if (store?.pawnSets.Remove(__instance) == true)
                 UiVersion.PawnChanged(__instance, planChanged: true);
             store?.Revisions.ForgetPawn(__instance.thingIDNumber);
@@ -189,6 +191,17 @@ namespace WorkRoles.Patches
                 ExternalPawnFacts.Release(__instance);
             }
             PriorityGridFacts.Release(__instance);
+        }
+    }
+
+    /// Every vanilla resurrection (serum, mech resurrector, mech gestator) and
+    /// most modded ones end here with the same pawn alive again.
+    [HarmonyPatch(typeof(ResurrectionUtility), nameof(ResurrectionUtility.TryResurrect))]
+    public static class Patch_ResurrectionUtility_TryResurrect
+    {
+        public static void Postfix(Pawn pawn, bool __result)
+        {
+            if (__result) DeathRoles.NotifyResurrected(pawn);
         }
     }
 

@@ -54,6 +54,20 @@ namespace WorkRoles.Patches
         private static bool Prepare() => AccessTools.TypeByName("AIRobot.X2_Building_AIRobotRechargeStation") != null;
         private static MethodBase TargetMethod() => AccessTools.Method(
             AccessTools.TypeByName("AIRobot.X2_Building_AIRobotRechargeStation"), "Destroy");
-        private static void Prefix(Thing __instance) => MechanicalWorkers.RemoveStation(__instance);
+        private static void Prefix(Thing __instance)
+        {
+            MechanicalWorkers.RemoveStation(__instance);
+            DeathRoles.NotifyStationDestroyed(__instance);
+        }
+    }
+
+    /// Repair and reset both spawn the station's new robot through Button_SpawnBot.
+    [MainThreadPatch, HarmonyPatch]
+    internal static class Patch_MiscRobotSpawned
+    {
+        private static bool Prepare() => AccessTools.TypeByName("AIRobot.X2_Building_AIRobotRechargeStation") != null;
+        private static MethodBase TargetMethod() => AccessTools.Method(
+            AccessTools.TypeByName("AIRobot.X2_Building_AIRobotRechargeStation"), "Button_SpawnBot");
+        private static void Postfix(Thing __instance) => DeathRoles.NotifyRobotSpawned(__instance);
     }
 }

@@ -27,6 +27,7 @@ namespace WorkRoles
         private static readonly Func<Thing, IList?>? container = BindField<Thing, IList?>(StationType, "container");
         private static readonly Func<Pawn, Thing?>? stationFor = BindField<Pawn, Thing?>(RobotType, "rechargeStation");
         private static readonly Func<Thing, bool>? autoSpawn = BindField<Thing, bool>(StationType, "SpawnRobotAfterRecharge");
+        private static readonly Func<Thing, Pawn?>? stationRobot = BindField<Thing, Pawn?>(StationType, "robot");
         // MiscRobots WorkTab support replaces the robot work selector: its XML
         // swaps X2_JobGiver_Work for vanilla JobGiver_Work, X2_AIRobot.GetPriority
         // reads the Work tab, and Pawn.WorkTypeIsDisabled reports what a model
@@ -53,6 +54,10 @@ namespace WorkRoles
         internal static bool IsRobot(Pawn pawn) => isRobot != null && isRobot(pawn);
         internal static bool WorkTabControlled => workTabControlled;
         internal static bool StationAutomaticWorkEnabled(Thing station) => autoSpawn?.Invoke(station) == true;
+        // A dead robot is destroyed; repairing it at its station spawns a new
+        // pawn (X2_Building_AIRobotRechargeStation.Button_RepairDamagedRobot).
+        internal static Thing? AssignedStation(Pawn pawn) => stationFor?.Invoke(pawn);
+        internal static Pawn? StationRobot(Thing station) => stationRobot?.Invoke(station);
         internal static bool IsRegisteredStation(Thing station) => ReferenceEquals(owner, Current.Game)
             && stationMaps.ContainsKey(station);
         // AIRobot keeps docked pawns in a serialized plain list, not an

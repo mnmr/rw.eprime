@@ -1,0 +1,30 @@
+# WorkRoles: roles survive death (resurrected colonist/mech, repaired Misc. Robots robot)
+# across a save/reload, with the diagnostic probe.
+remove mnmr.eprimereadouts
+remove eprime.implanner
+remove zetrith.prepatcher
+remove brrainz.rimbridgeserver
+remove mehni.pickupandhaul
+remove brrainz.rangefinder
+remove jaxe.rimhud
+remove com.bymarcin.architecticons
+remove mehni.numbers
+remove dubwise.dubsmintminimap
+remove rimworld.randomcoughdrop.geneassistant
+remove carnysenpai.traitraritycolors
+remove tac.genetrader
+remove mlie.haulminedchunks
+remove kota.inventorytab
+remove mlie.relevantstatsindescription
+remove bp.showbuildablematerialcount
+remove mlie.usethisinstead
+remove bodlosh.weaponstats
+remove mlie.smarterdeconstructionandmining
+remove defi.generipper
+remove avilmask.nonunopinata
+remove dubwise.dubsperformanceanalyzer.steam
+remove elf.miscrobots.worktab.support
+
+after eprime.qualityjobs
+haplo.miscellaneous.robots
+eprime.workroles.deathroles

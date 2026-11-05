@@ -1352,7 +1352,12 @@ namespace WorkRoles
         }
 
         [SyncMethod]
-        public static void PasteRoleSet(Pawn pawn, List<RoleAssignment> source)
+        public static void PasteRoleSet(Pawn pawn, List<RoleAssignment> source) =>
+            PasteRoleSetDirect(pawn, source);
+
+        /// Engine-initiated path (a dead pawn's roles returning, DeathRoles):
+        /// runs inside the synced simulation, so no sync interception.
+        internal static void PasteRoleSetDirect(Pawn pawn, List<RoleAssignment> source)
         {
             if (Store == null || pawn == null || source == null) return;
             var assignments = ClipboardRules.FilterValidDistinct(

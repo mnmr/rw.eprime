@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.8.2 — 2026-11-05
+
+- Fixed: Mechs and colonists keep their roles when they die and get them back when resurrected.
+- Fixed: A repaired Misc. Robots robot gets the roles of the robot it replaces.
+
 ## 1.8.1 — 2026-11-05
 
 - Fixed: Misc. Robots++ Crafter and Omni bots can now hold the Researcher role without WorkTab support.

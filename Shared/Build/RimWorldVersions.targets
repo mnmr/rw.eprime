@@ -1,16 +1,24 @@
 <Project>
   <!-- Imported last by each mod's game project. A build without an explicit
-       RimWorldVersion (build.cmd, build-deploy-all.cmd, the canonical
-       dotnet build) also builds mod/1.7 after mod/1.6. Core projects are
-       version-independent, so the 1.7 pass reuses their 1.6 build. -->
-  <ItemDefinitionGroup>
+       RimWorldVersion (build.cmd, the canonical dotnet build) also builds
+       mod/1.7 after mod/1.6. Core projects are version-independent, so the 1.7
+       pass reuses their 1.6 build.
+
+       Every reference to a project must carry the same global properties
+       everywhere in one build, or MSBuild builds it twice in parallel into the
+       same obj/bin paths (CS2012 "file is being used by another process").
+       So only the automatic 1.7 pass strips its own properties: it reaches
+       Core exactly as the outer build did. An explicit -p:RimWorldVersion is
+       never stripped, because the solution and test projects reference Core
+       with it too. -->
+  <ItemDefinitionGroup Condition="'$(RimWorldInnerPass)' == 'true'">
     <ProjectReference>
-      <GlobalPropertiesToRemove>RimWorldVersion</GlobalPropertiesToRemove>
+      <GlobalPropertiesToRemove>RimWorldVersion;RimWorldInnerPass</GlobalPropertiesToRemove>
     </ProjectReference>
   </ItemDefinitionGroup>
   <Target Name="BuildRimWorld17" AfterTargets="Build" Condition="'$(RimWorldVersionRequested)' == ''">
     <!-- The unique property forces a fresh evaluation for restore, as NuGet requires. -->
     <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="Restore" Properties="Configuration=$(Configuration);RimWorldVersion=1.7;RimWorldRestoreSession=$([System.Guid]::NewGuid())" />
-    <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="Build" Properties="Configuration=$(Configuration);RimWorldVersion=1.7" />
+    <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="Build" Properties="Configuration=$(Configuration);RimWorldVersion=1.7;RimWorldInnerPass=true" />
   </Target>
 </Project>

@@ -22,6 +22,13 @@ namespace WorkRoles
         public List<Role> roles = new List<Role>();
         /// Mutate only via RoleCommands — direct writes bypass cache invalidation.
         public Dictionary<Pawn, PawnRoleSet> pawnSets = new Dictionary<Pawn, PawnRoleSet>();
+        /// Role sets of managed pawns that died (Pawn.Kill ends in Destroy).
+        /// Resurrection restores them (DeathRoles); kept only while the corpse
+        /// exists, and never consulted for a living pawn. Lifecycle code only.
+        public Dictionary<Pawn, PawnRoleSet> dormantPawnSets = new Dictionary<Pawn, PawnRoleSet>();
+        /// Role sets of dead Misc. Robots, keyed by their recharge station: a
+        /// repaired robot is a new pawn the station spawns, which inherits them.
+        public Dictionary<Thing, PawnRoleSet> stationRoleSets = new Dictionary<Thing, PawnRoleSet>();
         public bool seeded;
         /// Default training paths seeded (only ever set alongside role seeding;
         /// pre-existing saves adopt them via Restore Defaults instead).
@@ -104,6 +111,10 @@ namespace WorkRoles
 
         private List<Pawn>? pawnKeysWorkingList;
         private List<PawnRoleSet>? setValuesWorkingList;
+        private List<Pawn>? dormantKeysWorkingList;
+        private List<PawnRoleSet>? dormantValuesWorkingList;
+        private List<Thing>? stationKeysWorkingList;
+        private List<PawnRoleSet>? stationValuesWorkingList;
         private List<Bill>? billKeysWorkingList;
         private List<int>? billValuesWorkingList;
         private List<Pawn>? locationKeysWorkingList;
@@ -640,6 +651,47 @@ namespace WorkRoles
                 ref pawnKeysWorkingList, ref setValuesWorkingList);
             if (Scribe.mode != LoadSaveMode.Saving)
                 pawnSets = pawnSetsToExpose;
+            Dictionary<Thing, PawnRoleSet> stationSetsToExpose = stationRoleSets;
+            if (Scribe.mode == LoadSaveMode.Saving)
+            {
+                // Same snapshot-only filtering as pawnSets: a dormant set needs
+                // a corpse the game saves (the pawn is deep-saved inside it).
+                dormantKeysWorkingList = new List<Pawn>();
+                dormantValuesWorkingList = new List<PawnRoleSet>();
+                foreach (var kv in dormantPawnSets)
+                    if (DeathRoles.CanReturn(kv.Key))
+                    { dormantKeysWorkingList.Add(kv.Key); dormantValuesWorkingList.Add(kv.Value); }
+                stationSetsToExpose = new Dictionary<Thing, PawnRoleSet>();
+                foreach (var kv in stationRoleSets)
+                    if (kv.Key != null && !kv.Key.Destroyed) stationSetsToExpose[kv.Key] = kv.Value;
+            }
+            // Killed pawns are Destroyed (Thing.Kill), and dictionary scribing
+            // writes null references to destroyed things: parallel lists instead.
+            Scribe_Collections.Look(ref dormantKeysWorkingList, "dormantPawns",
+                saveDestroyedThings: true, LookMode.Reference);
+            Scribe_Collections.Look(ref dormantValuesWorkingList, "dormantPawnSets", LookMode.Deep);
+            Scribe_Collections.Look(ref stationSetsToExpose, "stationRoleSets",
+                LookMode.Reference, LookMode.Deep,
+                ref stationKeysWorkingList, ref stationValuesWorkingList);
+            // Older saves lack the node: keep it null until PostLoadInit, or
+            // ResolvingCrossRefs asks for key ids LoadingVars never read.
+            if (Scribe.mode != LoadSaveMode.Saving)
+                stationRoleSets = Scribe.mode == LoadSaveMode.PostLoadInit
+                    ? stationSetsToExpose ?? new Dictionary<Thing, PawnRoleSet>()
+                    : stationSetsToExpose!;
+            if (Scribe.mode == LoadSaveMode.Saving || Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                if (Scribe.mode == LoadSaveMode.PostLoadInit)
+                {
+                    dormantPawnSets = new Dictionary<Pawn, PawnRoleSet>();
+                    int count = System.Math.Min(dormantKeysWorkingList?.Count ?? 0, dormantValuesWorkingList?.Count ?? 0);
+                    for (int i = 0; i < count; i++)
+                        if (dormantKeysWorkingList![i] != null && dormantValuesWorkingList![i] != null)
+                            dormantPawnSets[dormantKeysWorkingList[i]] = dormantValuesWorkingList[i];
+                }
+                dormantKeysWorkingList = null;
+                dormantValuesWorkingList = null;
+            }
             Scribe_Collections.Look(ref billRoles, "billRoles", LookMode.Reference, LookMode.Value,
                 ref billKeysWorkingList, ref billValuesWorkingList);
             Scribe_Values.Look(ref locationTokenSchemaVersion,
@@ -695,6 +747,8 @@ namespace WorkRoles
                 RoleCommands.EnforcePaletteCoverage(this);
                 pawnSets ??= new Dictionary<Pawn, PawnRoleSet>();
                 pawnSets.RemoveAll(kv => kv.Key == null || kv.Value == null);
+                dormantPawnSets.RemoveAll(kv => kv.Value.assignments == null);
+                stationRoleSets.RemoveAll(kv => kv.Key == null || kv.Value?.assignments == null);
                 lastLocationIds ??= new Dictionary<Pawn, string>();
                 if (legacyLastLocationMapIds != null)
                     foreach (var kv in legacyLastLocationMapIds)
