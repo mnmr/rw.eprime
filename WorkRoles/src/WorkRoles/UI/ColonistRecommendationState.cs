@@ -501,7 +501,7 @@ namespace WorkRoles.UI
                 cohortMapId = mapId;
             }
             List<Pawn> pawns = planPawns!;
-            MechanicalRecommendationSnapshot workers = producer.MechanicalFor(store, map);
+            MechanicalRecommendationSnapshot workers = producer.MechanicalFor(store, map, externalSnapshot);
             RecommendationSnapshot snapshot = producer.For(store, pawns, externalSnapshot, workers);
             if (plans != null && ReferenceEquals(planSnapshot, snapshot)
                 && planAssignmentPresentation == UiVersion.AssignmentPresentation

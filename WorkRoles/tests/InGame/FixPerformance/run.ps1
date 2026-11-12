@@ -3,7 +3,7 @@ param(
     [string]$Label = 'fixed',
     [switch]$SkipProbeBuild,
     [string]$SourceSaveDirectory = '',
-    [string]$SavePattern = 'Fisso-NAM*.rws'
+    [string]$SavePattern = 'Fisso-NAM-1.7.rws'
 )
 $ErrorActionPreference = 'Stop'
 $workspace = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..\..'))
@@ -22,6 +22,7 @@ $parameters = @{
     ModSet = 'workroles-fix-performance'
     AdditionalModSource = @("$PSScriptRoot\Probe")
     SavePattern = $SavePattern
+    GameVersion = '1.7'
 }
 if ($SourceSaveDirectory) { $parameters.SourceSaveDirectory = $SourceSaveDirectory }
 $run = & "$tools\create-run.ps1" @parameters

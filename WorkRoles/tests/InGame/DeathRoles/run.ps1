@@ -1,6 +1,7 @@
 param([string]$Label='proof',[string]$ModSourceRoot='D:\Code\RimWorld',[string]$Version='1.7')
 # Kills a role-holding colonist, mech and Misc. Robots robot, resurrects the
-# colonist, saves and reloads, then resurrects the mech and repairs the robot.
+# colonist, saves/reloads, then repeats mech resurrection and robot repair with
+# changed roles and checks permanent corpse/station destruction releases slots.
 $ErrorActionPreference='Stop'
 $tools='D:\Code\RimWorld\Shared\tools\automation'
 $parameters=@{Purpose="WorkRoles owner report: roles survive death (resurrection, robot repair, save/reload): $Label";ModSourceRoot=$ModSourceRoot;ModSet='workroles-death-roles';AdditionalModSource=@("$PSScriptRoot\Probe");GameVersion=$Version;SavePattern="Fisso-NAM-$Version.rws"}

@@ -7,7 +7,7 @@
   <GenerateDependencyFile>false</GenerateDependencyFile><ProduceReferenceAssembly>false</ProduceReferenceAssembly>
   <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
  </PropertyGroup>
- <ItemGroup><Compile Include="Probe.cs"/><Compile Include="Trades.cs"/>
+ <ItemGroup><Compile Include="Probe.cs"/><Compile Include="Trades.cs"/><Compile Include="Replacement.cs"/>
   <Reference Include="WorkRoles" HintPath="../../../mod/$(RimWorldVersion)/Assemblies/WorkRoles.dll" Private="false"/>
   <Reference Include="WorkRoles.Core" HintPath="../../../mod/$(RimWorldVersion)/Assemblies/WorkRoles.Core.dll" Private="false"/>
  </ItemGroup>

@@ -126,6 +126,81 @@ public class MechanicalNativeFitTests
         await Assert.That(Ids(MechanicalDutyPlan.BuildFixTarget(colony, worker))).IsEqualTo("2,1");
     }
 
+    [Test]
+    [Arguments("disabled", "1")]
+    [Arguments("cross-pin", "1,2")]
+    [Arguments("pinned-target", "1,3")]
+    [Arguments("force-on", "3")]
+    public async Task ApplyingNarrowerDutyKeepsPrimaryWorkAcrossDisabledAssignmentsAndPins(string scenario, string expectedActive)
+    {
+        const int grunt = 1, laborer = 2, hauler = 3;
+        bool pinnedLaborer = scenario == "cross-pin";
+        var recs = new RecsProjection()
+            .WorkType("BasicWorker", null, 1150, "Flick")
+            .WorkType("Hauling", null, 200, "HaulGeneral", "HaulMerge", "Refuel")
+            .WorkType("Cleaning", null, 100, "CleanFilth", "ClearSnow", "ClearPollution");
+        var broad = recs.RoleByWorkType(grunt, 0, 100, "Hauling", "Cleaning");
+        broad.TemplateDefName = "WS_Grunt"; broad.AutoAssign = true;
+        recs.RoleByWorkType(laborer, 0, 0, "BasicWorker").TemplateDefName = "WS_Laborer";
+        recs.RoleByWorkType(hauler, 2, 0, "Hauling").TemplateDefName = "WS_Hauler";
+        PawnView Human() => new() { CapableWorkTypes = { "BasicWorker", "Hauling", "Cleaning" } };
+        ColonyView colony = recs.Colony(Human(), Human());
+        colony.OrderTemplate = OrderTemplate.DeriveTemplate(colony.Roles);
+        var worker = Worker(pinnedLaborer
+            ? ["HaulGeneral", "HaulMerge", "Refuel", "Flick"]
+            : ["HaulGeneral", "HaulMerge", "Refuel"],
+            pinnedLaborer ? ["Hauling", "BasicWorker"] : ["Hauling"]);
+        worker.ProvidesService = true;
+        worker.Facts.Existing.Add(new() { RoleId = grunt, Enabled = true });
+        if (pinnedLaborer)
+            worker.Facts.Existing.Add(new() { RoleId = laborer, Enabled = true, Pinned = true });
+        worker.Facts.Existing.Add(new() { RoleId = hauler, Enabled = scenario != "disabled",
+            ForceOn = scenario == "force-on", Pinned = scenario == "pinned-target" });
+        PublishActiveWork(colony, worker);
+        colony.IntegrateMechanicalWorkers = true;
+        colony.MechanicalWorkers.Add(worker);
+        RecommendationPlan before = RecommendationPlan.Build(colony);
+        // Automatic Grunt already covers the humans' hauling, so their final
+        // role IDs cannot prove this independent staffing-credit invariant.
+        await Assert.That(new EngineContext(colony).RequirementOf(hauler).RequiredTotal).IsEqualTo(1);
+
+        PawnFixTarget target = MechanicalDutyPlan.BuildFixTarget(colony, worker);
+        // The game preview retains the stored state and pin of a surviving ID;
+        // a newly assigned role starts enabled. Apply that public target contract
+        // before observing work and coverage, rather than assuming all IDs run.
+        var previous = worker.Facts.Existing.ToDictionary(a => a.RoleId);
+        worker.Facts.Existing.Clear();
+        foreach (int id in target.RoleIds)
+            worker.Facts.Existing.Add(previous.TryGetValue(id, out var held)
+                ? held : new AssignmentView { RoleId = id, Enabled = true });
+        PublishActiveWork(colony, worker);
+
+        await Assert.That(string.Join(",", worker.ActiveRoleIds)).IsEqualTo(expectedActive);
+        await Assert.That(worker.CommittedGivers.Contains("HaulGeneral")).IsTrue();
+        if (pinnedLaborer)
+            await Assert.That(worker.Facts.Existing.Single(a => a.RoleId == laborer).Pinned).IsTrue();
+        if (scenario == "pinned-target")
+            await Assert.That(worker.Facts.Existing.Single(a => a.RoleId == hauler).Pinned).IsTrue();
+        if (scenario == "force-on")
+            await Assert.That(worker.Facts.Existing.Single(a => a.RoleId == hauler).ForceOn).IsTrue();
+        RecommendationPlan after = RecommendationPlan.Build(colony);
+        await Assert.That(new EngineContext(colony).RequirementOf(hauler).RequiredTotal).IsEqualTo(1);
+        await Assert.That(HumanRoles(after)).IsEqualTo(HumanRoles(before));
+    }
+
+    private static void PublishActiveWork(ColonyView colony, MechanicalWorkerView worker)
+    {
+        worker.ActiveRoleIds.Clear();
+        worker.CommittedGivers.Clear();
+        foreach (AssignmentView assignment in worker.Facts.Existing)
+        {
+            RoleView role = colony.Roles.Single(r => r.Id == assignment.RoleId);
+            if (!assignment.ForceOn && (!assignment.Enabled || !role.Enabled)) continue;
+            worker.ActiveRoleIds.Add(role.Id);
+            worker.CommittedGivers.UnionWith(role.Coverage.Where(worker.ExecutableGivers.Contains));
+        }
+    }
+
     private static MechanicalWorkerView Worker(string[] givers, string[] workTypes) => new()
     {
         ExecutableGivers = new(givers), Facts = new PawnView { IsMechanical = true, CapableWorkTypes = new(workTypes) }

@@ -48,15 +48,17 @@ namespace RimShared.Common
         /// receives every owner whose published snapshot was replaced or
         /// removed; it is left empty for a full generation, which
         /// <paramref name="fullGeneration"/> reports instead.
+        /// Explicit cohort notifications may reconcile arrivals/departures
+        /// without invalidating the retained owners' facts.
         /// </summary>
         public bool Refresh(IEnumerable<TOwner> owners,
             OwnerInvalidationRevisions<TOwner> revisions,
-            List<TOwner>? changedOwners, out bool fullGeneration)
+            List<TOwner>? changedOwners, out bool fullGeneration, bool cohortChanged = false)
         {
             if (revisions == null) throw new ArgumentNullException(nameof(revisions));
             fullGeneration = false;
             changedOwners?.Clear();
-            if (!NeedsRefresh(revisions)) return false;
+            if (!cohortChanged && !NeedsRefresh(revisions)) return false;
 
             bool full = observedFullGeneration != revisions.FullGeneration;
             fullGeneration = full;

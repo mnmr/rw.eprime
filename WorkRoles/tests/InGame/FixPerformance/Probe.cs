@@ -47,7 +47,11 @@ public sealed class Probe : GameComponent
     static Probe()
     {
         var harmony = new Harmony("tests.workroles.fixperformance");
-        harmony.Patch(AccessTools.Method(typeof(MainTabWindow_WorkRoles), nameof(MainTabWindow_WorkRoles.DoWindowContents)),
+        MethodInfo draw = AccessTools.Method(typeof(MainTabWindow_WorkRoles), nameof(MainTabWindow_WorkRoles.DoWindowContents));
+        // The implementation may be inherited from the shared window host.
+        // Patch its declaring type; ReflectedType alone is rejected by Harmony.
+        draw = AccessTools.DeclaredMethod(draw.DeclaringType, draw.Name, new[] { typeof(Rect) });
+        harmony.Patch(draw,
             prefix: new HarmonyMethod(typeof(Probe), nameof(BeforeRepaint)), postfix: new HarmonyMethod(typeof(Probe), nameof(AfterRepaint)));
         harmony.Patch(AccessTools.Method(typeof(RecsAdapter), "CapturePawnSnapshot"), postfix: new HarmonyMethod(typeof(Probe), nameof(CapturedPawn)));
     }
@@ -58,7 +62,7 @@ public sealed class Probe : GameComponent
         internal long Bytes, Timestamp;
     }
     private static void CapturedPawn() { if (instance != null) instance.captures++; }
-    private static void BeforeRepaint(MainTabWindow_WorkRoles __instance, Rect inRect, out Measurement __state)
+    private static void BeforeRepaint(object __instance, Rect inRect, out Measurement __state)
     {
         __state = default;
         Probe probe = instance;

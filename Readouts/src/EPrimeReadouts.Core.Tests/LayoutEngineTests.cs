@@ -147,19 +147,15 @@ public class LayoutEngineTests
         await Assert.That(counters[0].Text).IsEqualTo("0");
     }
 
-    /// Group disappears only when ALL tokens are ~-flagged and have zero count.
     [Test]
-    public async Task EmptyGroupKeepsOnlyItsIdentificationBand()
+    public async Task EmptyGroupKeepsItsInteractiveIdentificationBand()
     {
-        // No visible slots: the group renders collapsed-style — stripe,
-        // backing, dim triangles, no slots or marker hit. Presence must be
-        // depth-invariant so hover expansion cannot remove the band under
-        // the pointer.
+        // Hiding every slot preserves the band and its tier controls.
         var model = ReadoutLayoutEngine.Build(Input(Group(1, new[] { "~Cloth" })));
         await Assert.That(model.Cells.Count(c => c.Kind == CellKind.Icon)).IsEqualTo(0);
         await Assert.That(model.Cells.Count(c => c.Kind == CellKind.Counter)).IsEqualTo(0);
         await Assert.That(model.SlotHits.Count).IsEqualTo(0);
-        await Assert.That(model.MarkerHits.Count).IsEqualTo(0);
+        await Assert.That(model.MarkerHits.Count).IsEqualTo(1);
         await Assert.That(model.Bands.Count).IsEqualTo(1);
         await Assert.That(model.TotalHeight).IsEqualTo(model.Bands[0].Rect.H);
     }

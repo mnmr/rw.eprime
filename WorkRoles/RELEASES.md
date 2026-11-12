@@ -10,3 +10,4 @@ Versions published to the Steam Workshop, recorded by the publish script.
 | 1.8.0 | 2026-11-03 01:53 UTC | 3760146134 |
 | 1.8.1 | 2026-11-05 00:40 UTC | 3760146134 |
 | 1.8.2 | 2026-11-05 11:14 UTC | 3760146134 |
+| 1.8.3 | 2026-11-09 02:27 UTC | 3760146134 |

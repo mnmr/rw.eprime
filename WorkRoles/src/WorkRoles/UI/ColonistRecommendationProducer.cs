@@ -37,19 +37,35 @@ namespace WorkRoles.UI
         // Owner: window/store. Key: map identity (one retained map). Value:
         // detached mechanical facts and matching stable pawn identities, shared
         // by human coverage and robot targets, immutable after publication.
-        // Dependencies: support, catalog/definitions, external-facts generation,
-        // mechanical facts, runtime rules, roster and assignment presentation.
-        // Refresh: event-driven on read; equal contents keep snapshot identity.
+        // Dependencies: support, definitions, roster and each worker's shared
+        // external snapshot identity, RuntimeForPawn, PresentationForPawn,
+        // ProvidesService and QualityPreparationAllowed. Aggregate external,
+        // mechanical, runtime and presentation revisions only gate comparing
+        // these keys; human edits never rebuild worker projections. Service
+        // booleans are observed only after explicit external/mechanical events.
+        // Refresh: event-driven on read; equal worker contents and cohorts keep
+        // snapshot identity. Map scans occur only on roster/map changes.
         // Teardown: Reset/store change, disabling support, or selecting another
         // map releases the old projection; no map scans on unchanged reads.
         private MechanicalRecommendationSnapshot mechanical = MechanicalRecommendationSnapshot.Empty;
         private Map? mechanicalMap;
-        private RecommendationCatalogProjection? mechanicalCatalog;
+        private int mechanicalDefinitions = -1;
         private int mechanicalExternal = -1;
         private int mechanicalRevision = -1;
         private int mechanicalRuntime = -1;
         private int mechanicalRoster = -1;
         private int mechanicalPresentation = -1;
+        // Same owner/key/dependencies/refresh/teardown as mechanical above.
+        // Metadata is private and mutable; each published View is immutable.
+        private sealed class WorkerEntry
+        {
+            internal PawnExternalSnapshot External = null!;
+            internal MechanicalWorkerView View = null!;
+            internal int Runtime, Presentation, Definitions;
+            internal bool ProvidesService, PreparationAllowed;
+        }
+        private readonly Dictionary<Pawn, WorkerEntry> mechanicalEntries = new Dictionary<Pawn, WorkerEntry>();
+        private readonly List<Pawn> departedWorkers = new List<Pawn>();
 
         internal ColonistRecommendationProducer()
         {
@@ -92,33 +108,80 @@ namespace WorkRoles.UI
             owner = store;
         }
 
-        internal MechanicalRecommendationSnapshot MechanicalFor(RoleStore store, Map? map)
+        internal MechanicalRecommendationSnapshot MechanicalFor(RoleStore store, Map? map,
+            Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
             EnsureOwner(store);
             if (!store.mechanicalWorkersEnabled || map == null)
             {
-                mechanical = MechanicalRecommendationSnapshot.Empty;
-                mechanicalMap = null;
-                mechanicalCatalog = null;
+                ReleaseMechanical();
                 return mechanical;
             }
-            RecommendationCatalogProjection nextCatalog = RecsAdapter.BuildRoleCatalog(store);
-            if (ReferenceEquals(mechanicalMap, map) && ReferenceEquals(mechanicalCatalog, nextCatalog)
+            int definitions = DefinitionReloadCoordinator.Revision;
+            bool sameMap = ReferenceEquals(mechanicalMap, map);
+            if (sameMap && mechanicalDefinitions == definitions
                 && mechanicalExternal == externalGeneration && mechanicalRevision == store.MechanicalFactsRevision
                 && mechanicalRuntime == UiVersion.RuntimeRules && mechanicalRoster == UiVersion.Roster
                 && mechanicalPresentation == UiVersion.AssignmentPresentation) return mechanical;
-            List<Pawn> pawns = MechanicalWorkers.OnMap(map);
-            var views = new MechanicalWorkerView[pawns.Count];
-            bool equal = ReferenceEquals(mechanicalMap, map) && mechanical.Pawns.Count == pawns.Count;
+            if (!sameMap) ReleaseMechanical();
+            bool rosterChanged = !sameMap || mechanicalRoster != UiVersion.Roster;
+            IReadOnlyList<Pawn> pawns = rosterChanged ? MechanicalWorkers.OnMap(map) : mechanical.Pawns;
+            bool sameCohort = sameMap && mechanical.Pawns.Count == pawns.Count;
+            if (sameCohort)
+                for (int i = 0; i < pawns.Count; i++)
+                    if (!ReferenceEquals(mechanical.Pawns[i], pawns[i])) { sameCohort = false; break; }
+            if (sameCohort) pawns = mechanical.Pawns;
+            MechanicalWorkerView[]? views = sameCohort ? null : new MechanicalWorkerView[pawns.Count];
+            bool observeService = mechanicalRevision != store.MechanicalFactsRevision
+                || mechanicalExternal != externalGeneration || mechanicalDefinitions != definitions;
+            bool preparation = MechanicalWorkers.QualityPreparationAllowed;
             for (int i = 0; i < pawns.Count; i++)
             {
-                views[i] = MechanicalWorkers.Capture(pawns[i], store);
-                if (equal && (!ReferenceEquals(mechanical.Pawns[i], pawns[i])
-                    || !views[i].ContentEquals(mechanical.Workers[i]))) equal = false;
+                Pawn pawn = pawns[i];
+                PawnExternalSnapshot external = externalSnapshot(pawn);
+                int runtime = UiVersion.RuntimeForPawn(pawn);
+                int presentation = UiVersion.PresentationForPawn(pawn);
+                mechanicalEntries.TryGetValue(pawn, out WorkerEntry? entry);
+                bool service = entry == null || observeService
+                    ? MechanicalWorkers.ProvidesService(pawn) : entry.ProvidesService;
+                if (entry == null || !ReferenceEquals(entry.External, external)
+                    || entry.Runtime != runtime || entry.Presentation != presentation
+                    || entry.Definitions != definitions || entry.ProvidesService != service
+                    || entry.PreparationAllowed != preparation)
+                {
+                    MechanicalWorkerView rebuilt = MechanicalWorkers.CaptureFromSnapshot(pawn, store, external);
+                    entry ??= new WorkerEntry();
+                    if (entry.View == null || !rebuilt.ContentEquals(entry.View)) entry.View = rebuilt;
+                    entry.External = external;
+                    entry.Runtime = runtime;
+                    entry.Presentation = presentation;
+                    entry.Definitions = definitions;
+                    entry.ProvidesService = service;
+                    entry.PreparationAllowed = preparation;
+                    mechanicalEntries[pawn] = entry;
+                }
+                if (views == null && !ReferenceEquals(entry.View, mechanical.Workers[i]))
+                {
+                    views = new MechanicalWorkerView[pawns.Count];
+                    for (int previous = 0; previous < i; previous++) views[previous] = mechanical.Workers[previous];
+                }
+                if (views != null) views[i] = entry.View;
             }
-            if (!equal) mechanical = new MechanicalRecommendationSnapshot(pawns, views);
+            if (views != null) mechanical = new MechanicalRecommendationSnapshot(pawns, views);
+            if (rosterChanged)
+            {
+                foreach (Pawn cached in mechanicalEntries.Keys)
+                {
+                    bool retained = false;
+                    for (int i = 0; i < pawns.Count; i++)
+                        if (ReferenceEquals(cached, pawns[i])) { retained = true; break; }
+                    if (!retained) departedWorkers.Add(cached);
+                }
+                for (int i = 0; i < departedWorkers.Count; i++) mechanicalEntries.Remove(departedWorkers[i]);
+                departedWorkers.Clear();
+            }
             mechanicalMap = map;
-            mechanicalCatalog = nextCatalog;
+            mechanicalDefinitions = definitions;
             mechanicalExternal = externalGeneration;
             mechanicalRevision = store.MechanicalFactsRevision;
             mechanicalRuntime = UiVersion.RuntimeRules;
@@ -140,9 +203,16 @@ namespace WorkRoles.UI
             currentExternalSnapshot = null;
             currentWorkers = null;
             externalGeneration = 0;
+            ReleaseMechanical();
+        }
+
+        private void ReleaseMechanical()
+        {
             mechanical = MechanicalRecommendationSnapshot.Empty;
             mechanicalMap = null;
-            mechanicalCatalog = null;
+            mechanicalEntries.Clear();
+            departedWorkers.Clear();
+            mechanicalDefinitions = -1;
             mechanicalExternal = -1;
             mechanicalRevision = mechanicalRuntime = mechanicalRoster = mechanicalPresentation = -1;
         }

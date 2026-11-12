@@ -3,6 +3,28 @@ namespace RimShared.Common.Tests;
 public class SelectiveSnapshotCacheTests
 {
     [Test]
+    public async Task ExplicitCohortChangeAddsAndRemovesOwnersWithoutRecapturingSurvivors()
+    {
+        var survivor = new Owner("survivor");
+        var departed = new Owner("departed");
+        var arrived = new Owner("arrived");
+        var revisions = new OwnerInvalidationRevisions<Owner>();
+        int builds = 0;
+        var cache = new SelectiveSnapshotCache<Owner, object>(_ => { builds++; return new object(); });
+        cache.Refresh([survivor, departed], revisions);
+        object prior = cache.Get(survivor);
+        var changed = new List<Owner>();
+        cache.Refresh([survivor, arrived], revisions, changed, out bool full, cohortChanged: true);
+        await Assert.That(cache.Contains(arrived)).IsTrue();
+        await Assert.That(cache.Contains(departed)).IsFalse();
+        await Assert.That(ReferenceEquals(prior, cache.Get(survivor))).IsTrue();
+        await Assert.That(builds).IsEqualTo(3);
+        await Assert.That(full).IsFalse();
+        await Assert.That(changed).IsEquivalentTo([arrived, departed]);
+        await Assert.That(cache.Refresh([survivor, arrived], revisions)).IsFalse();
+    }
+
+    [Test]
     public async Task TargetedInvalidationRebuildsOnlyTheSpecifiedOwner()
     {
         var first = new Owner("first");

@@ -145,8 +145,12 @@ namespace WorkRoles.UI
                 BuildSnapshot, StatsContentEquals, ReferenceIdentityComparer<Pawn>.Instance);
         }
 
-        internal bool NeedsExternalSnapshotRefresh =>
-            externalSnapshots.NeedsRefresh(ExternalPawnFacts.Revisions);
+        // Cohort membership changes independently from individual pawn facts
+        // (notably enabling mechanical workers while this window is open).
+        // Window-owned metadata; reset on snapshot release. No model polling.
+        private int externalRoster = -1;
+        internal bool NeedsExternalSnapshotRefresh => externalRoster != UiVersion.Roster
+            || externalSnapshots.NeedsRefresh(ExternalPawnFacts.Revisions);
 
         internal void Reset(IEnumerable<Pawn> pawns)
         {
@@ -166,6 +170,7 @@ namespace WorkRoles.UI
 
         internal void ReleaseSnapshots()
         {
+            externalRoster = -1;
             PawnSignalSnapshotCache.Clear();
             externalSnapshots.Clear();
             skillCaptures.Clear();
@@ -189,8 +194,9 @@ namespace WorkRoles.UI
             out bool fullGeneration)
         {
             if (!externalSnapshots.Refresh(pawns, ExternalPawnFacts.Revisions,
-                    changedPawns, out fullGeneration))
+                    changedPawns, out fullGeneration, cohortChanged: externalRoster != UiVersion.Roster))
                 return false;
+            externalRoster = UiVersion.Roster;
 
             // Keep previous stats available to compare each refreshed skill.
             // Only departures release ownership; changed owners retain their

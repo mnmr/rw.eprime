@@ -1,9 +1,10 @@
-param([string]$Label='native-work',[string]$ModSourceRoot='D:\Code\RimWorld',[string]$Phase='trades-fixed',[string]$Version='1.7')
+param([string]$Label='native-work',[string]$ModSourceRoot='D:\Code\RimWorld',[string]$Phase='trades-fixed',[string]$Version='1.7',[string]$SavePattern='Fisso-NAM-1.7.rws')
 $ErrorActionPreference='Stop'
 $tools='D:\Code\RimWorld\Shared\tools\automation'
 $modset='workroles-native-work'
 $parameters=@{Purpose="WorkRoles user report native robot capabilities, recommendations and outcomes: $Label";ModSourceRoot=$ModSourceRoot;ModSet=$modset;AdditionalModSource=@("$PSScriptRoot\Probe")}
 if($Version -eq '1.6'){$parameters.GameRoot='D:\Code\RimWorld\Readouts\temp\linux-validation\game-1.6';$parameters.WslDistribution='Ubuntu-22.04';$parameters.WslRenderer='Software';$parameters.SavePattern='Fisso-NAM.rws';$parameters.BaselineConfigPath="$tools\profile-template\Config\ModsConfig-1.6.xml"}
+else{$parameters.GameVersion='1.7';$parameters.SavePattern=$SavePattern}
 $run=& "$tools\create-run.ps1" @parameters
 $out=Join-Path $PSScriptRoot "../../../temp/mechanical-native-work/$Label-$($run.runId)"
 New-Item -ItemType Directory -Path $out -Force | Out-Null

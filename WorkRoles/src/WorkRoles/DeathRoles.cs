@@ -22,7 +22,10 @@ namespace WorkRoles
                 if (station != null && !station.Destroyed) store.stationRoleSets[station] = set;
                 return;
             }
-            store.dormantPawnSets[pawn] = set;
+            // Kill can destroy an unplaceable corpse before it reaches Pawn.Destroy.
+            // Keep one latest set only while resurrection still has a native owner.
+            if (CanReturn(pawn)) store.dormantPawnSets[pawn] = set;
+            else store.dormantPawnSets.Remove(pawn);
         }
 
         /// A dead pawn can come back only from a corpse the game still keeps.
@@ -52,5 +55,11 @@ namespace WorkRoles
 
         internal static void NotifyStationDestroyed(Thing station) =>
             RoleStore.Current?.stationRoleSets?.Remove(station);
+
+        /// Native permanent corpse destruction/discard, never resurrection (which
+        /// detaches InnerPawn before destroying the empty corpse). Event-driven
+        /// lifecycle cleanup releases the pawn graph without waiting for save/load.
+        internal static void NotifyCorpseDestroyed(Pawn pawn) =>
+            RoleStore.Current?.dormantPawnSets?.Remove(pawn);
     }
 }

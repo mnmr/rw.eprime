@@ -33,6 +33,43 @@ public class LayoutEngineCollapsedTests
         + LayoutMetrics.MarkerColW + LayoutMetrics.GroupPadX;
 
     [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task EmptyLeadingTiersRemainClickableUntilStockedThirdTierIsReached(bool vertical)
+    {
+        var group = Group(1, "~Cloth");
+        group.Tiers.Add(new List<string> { "~Gold" });
+        group.Tiers.Add(new List<string> { "~Steel" });
+        var input = Input(group);
+        input.VerticalTiers = vertical;
+        int depth = 1;
+        input.DepthOf = _ => depth;
+        input.ConfiguredDepthOf = _ => depth;
+        for (int step = 0; step < 3; step++)
+        {
+            var model = ReadoutLayoutEngine.Build(input);
+            await Assert.That(model.MarkerHits.Count).IsEqualTo(1);
+            var hit = model.MarkerHits[0];
+            await Assert.That(PanelViewport.MarkerAt(model.MarkerHits, 0, 1,
+                hit.Rect.X + hit.Rect.W / 2, hit.Rect.Y + hit.Rect.H / 2,
+                0, model.TotalHeight)).IsEqualTo(0);
+            await Assert.That(CellsOf(model, CellKind.Triangle)
+                .Count(c => c.Triangle == TriangleState.Lit)).IsEqualTo(depth);
+            await Assert.That(model.TotalHeight).IsEqualTo(input.Metrics.RowPairH);
+            if (depth < 3)
+            {
+                await Assert.That(model.SlotHits.Count).IsEqualTo(0);
+                await Assert.That(model.Bands[0].Rect.W).IsEqualTo(ZeroSlotW);
+            }
+            else
+                await Assert.That(model.SlotHits.Select(h => h.Token))
+                    .IsEquivalentTo(new[] { "~Steel" });
+            depth = Markers.NextDepth(group.TierCount, depth);
+        }
+        await Assert.That(depth).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task CollapsedGroupIsAZeroSlotBandAtNormalRowHeight()
     {
         var input = Input(Group(1, "Steel"));

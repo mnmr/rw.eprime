@@ -198,24 +198,14 @@ namespace EPrimeReadouts.Core
                     int cellStart = model.Cells.Count;
                     int slotStart = model.SlotHits.Count;
                     int markerStart = model.MarkerHits.Count;
-                    if (slots.Count == 0)
-                    {
-                        // Band presence is depth-invariant: a group with no
-                        // visible slots keeps its thin identification band in
-                        // the expanded state exactly as it does collapsed.
-                        // Omitting it would remove the band under a hovering
-                        // pointer, shift the bands below, and oscillate the
-                        // hover-expansion state every frame.
-                        y = BuildCollapsedGroup(group, input, model, y, groupDisplayIndex);
-                    }
-                    else
-                    {
-                        int columns = input.VerticalTiers
-                            ? WidestRow(slots) : slots.Count;
-                        float containerW = GroupContainerWidth(columns, input.Metrics);
-                        if (containerW > maxGroupW) maxGroupW = containerW;
-                        y = BuildGroup(group, input, model, slots, y, searching, groupDisplayIndex, containerW);
-                    }
+                    // Hidden slots must not remove the controls needed to
+                    // reach later tiers. Keep a compact, interactive band
+                    // even when the currently revealed tiers have no stock.
+                    int columns = input.VerticalTiers
+                        ? WidestRow(slots) : slots.Count;
+                    float containerW = GroupContainerWidth(columns, input.Metrics);
+                    if (containerW > maxGroupW) maxGroupW = containerW;
+                    y = BuildGroup(group, input, model, slots, y, searching, groupDisplayIndex, containerW);
                     RecordBand(model, cellStart, slotStart, markerStart);
                 }
             }
@@ -575,7 +565,7 @@ namespace EPrimeReadouts.Core
         {
             // Horizontal: one icon+counter row pair. Vertical: one row pair
             // per tier that has something to show, a TierRowGap apart.
-            int rows = RowCount(slots, input.VerticalTiers);
+            int rows = Math.Max(1, RowCount(slots, input.VerticalTiers));
             float contentH = rows * input.Metrics.RowPairH
                 + (rows - 1) * LayoutMetrics.TierRowGap;
             float containerH = 2f * LayoutMetrics.GroupPadY + contentH;

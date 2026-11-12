@@ -113,14 +113,14 @@ namespace WorkRoles.Core.Recs
             {
                 for (int i = 0; i < candidates.Count; i++)
                     if (candidates[i].Role.Id == accepted.Id)
-                    { accepted = BestFit(candidates[i], candidates, worker); break; }
+                    { accepted = BestFit(candidates[i], candidates, worker, facts); break; }
                 result.Add(accepted.Id);
                 foreach (string giver in accepted.Coverage)
                     if (worker.CommittedGivers.Contains(giver)) seenWork.Add(giver);
             }
             foreach (Candidate candidate in candidates)
             {
-                RoleView role = BestFit(candidate, candidates, worker);
+                RoleView role = BestFit(candidate, candidates, worker, facts);
                 bool useful = false;
                 foreach (string giver in role.Coverage)
                 {
@@ -183,14 +183,15 @@ namespace WorkRoles.Core.Recs
         }
 
         private static RoleView BestFit(Candidate original, List<Candidate> candidates,
-            MechanicalWorkerView worker)
+            MechanicalWorkerView worker, EngineContext facts)
         {
             if (original.Unsupported == 0 || IsProtected(worker, original.Role)) return original.Role;
             Candidate best = original;
             foreach (Candidate candidate in candidates)
             {
                 if (candidate.Unsupported >= best.Unsupported
-                    || candidate.Executable != original.Executable) continue;
+                    || candidate.Executable != original.Executable
+                    || !CanReplaceAssignment(original.Role, candidate.Role, worker, facts)) continue;
                 bool equal = true;
                 foreach (string giver in original.Role.Coverage)
                     if (worker.ExecutableGivers.Contains(giver) && !candidate.Role.Coverage.Contains(giver))
@@ -198,6 +199,37 @@ namespace WorkRoles.Core.Recs
                 if (equal) best = candidate;
             }
             return best.Role;
+        }
+
+        private static bool CanReplaceAssignment(RoleView original, RoleView replacement,
+            MechanicalWorkerView worker, EngineContext facts)
+        {
+            int originalIndex = -1;
+            int replacementIndex = -1;
+            IReadOnlyList<AssignmentView> existing = worker.Facts.Existing;
+            for (int i = 0; i < existing.Count; i++)
+            {
+                AssignmentView assignment = existing[i];
+                if (assignment.RoleId == original.Id) originalIndex = i;
+                if (assignment.RoleId != replacement.Id) continue;
+                // Apply retains an existing target's activation state. Matching
+                // native givers cannot make a disabled target replace live work.
+                if (!assignment.Enabled && !assignment.ForceOn) return false;
+                replacementIndex = i;
+            }
+            if (originalIndex < 0) return true;
+            // Removing the source ID also removes its ordering anchor. Keep it
+            // when a protected predecessor relies on that anchor, or when a held
+            // target would cross a protected assignment on its way to this slot.
+            int lastProtectedIndex = Math.Max(originalIndex - 1, replacementIndex);
+            for (int i = 0; i <= lastProtectedIndex; i++)
+            {
+                AssignmentView assignment = existing[i];
+                RoleView? role = facts.RoleOf(assignment.RoleId);
+                if (assignment.Pinned || role?.HasRules == true || role?.Blocker == true)
+                    return false;
+            }
+            return true;
         }
 
         private static bool IsProtected(MechanicalWorkerView worker, RoleView role)

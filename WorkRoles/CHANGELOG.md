@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 1.8.3 — 2026-11-08
+
+- Fixed: Permanently destroyed corpses no longer retain unused role data in memory.
+- Fixed: Minor robot recommendation fixes.
+- Fixed: Minor performance improvements.
+
 ## 1.8.2 — 2026-11-05
 
 - Fixed: Mechs and colonists keep their roles when they die and get them back when resurrected.

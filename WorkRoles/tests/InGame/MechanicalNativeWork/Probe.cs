@@ -62,6 +62,7 @@ public static partial class Probe
   foreach(Window w in Find.WindowStack.Windows.ToArray())w.Close(false);
   RoleCommands.SetAutoOptimize(false);RoleCommands.SetMechanicalWorkersEnabled(false);
   var store=RoleStore.Current;
+  if(phase=="replacement") { VerifyReplacementApply();done=true;Stage("SUCCESS");return; }
   // The copied save was seeded with the 1.7.0 default exclusions; loading
   // under the current defaults must have cleared exactly those, once.
   var retired=new[]{"WS_Rescuer","WS_Firefighter","WS_Patient","WS_Bedrest","WS_Laborer"};

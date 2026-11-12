@@ -14,6 +14,8 @@ namespace DeathRolesProbe;
 /// and WorkRoles dropped the role set there. Proves: a resurrected colonist
 /// (same session), a mech resurrected after a save/reload, and a Misc. Robots
 /// robot repaired at its station after a save/reload get their exact roles back.
+/// Repeated deaths retain only the latest roles; permanent corpse/station
+/// destruction releases the dormant slot in the same session.
 [StaticConstructorOnStartup]
 public static class Probe
 {
@@ -97,5 +99,30 @@ public static class Probe
   Expect(robot!=null&&robot.thingIDNumber!=robotId,"repair spawned a new robot");
   Expect(Roles(robot).SequenceEqual(robotRoles),"repaired robot has the dead robot's exact roles");
   Expect(!store.stationRoleSets.ContainsKey(station),"station slot released");
+  int dormantBaseline=store.dormantPawnSets.Count, stationBaseline=store.stationRoleSets.Count;
+  for(int cycle=0;cycle<3;cycle++)
+  {
+   Assign(mech,store,("WS_Core",cycle%2==0?AssignmentState.Disabled:AssignmentState.ForceOn,cycle%2==0));
+   var latestMech=Roles(mech);
+   Assign(robot,store,("WS_Firefighter",cycle%2==0?AssignmentState.Disabled:AssignmentState.ForceOn,cycle%2!=0));
+   var latestRobot=Roles(robot);
+   mech.Kill(null);robot.Kill(null);
+   // Retention is a lifecycle contract: restored roles alone cannot reveal leaked entries.
+   Expect(store.dormantPawnSets.Count==dormantBaseline+1,"cycle "+cycle+" retains only one mech death set");
+   Expect(store.stationRoleSets.Count==stationBaseline+1,"cycle "+cycle+" retains only one station death set");
+   Expect(ResurrectionUtility.TryResurrect(mech),"cycle "+cycle+" mech resurrected");
+   Expect(Roles(mech).SequenceEqual(latestMech),"cycle "+cycle+" restores latest mech roles");
+   AccessTools.Method(station.GetType(),"Notify_RobotRepaired").Invoke(station,null);
+   robot=(Pawn)AccessTools.Field(station.GetType(),"robot").GetValue(station);
+   Expect(robot!=null&&Roles(robot).SequenceEqual(latestRobot),"cycle "+cycle+" restores latest repaired robot roles");
+   Expect(store.dormantPawnSets.Count==dormantBaseline&&store.stationRoleSets.Count==stationBaseline,"cycle "+cycle+" consumes both death slots");
+  }
+  mech.Kill(null);
+  Expect(store.dormantPawnSets.ContainsKey(mech),"last mech death retained while corpse exists");
+  mech.Corpse.Destroy();
+  Expect(!store.dormantPawnSets.ContainsKey(mech)&&store.dormantPawnSets.Count==dormantBaseline,"permanent corpse destruction releases obsolete death set immediately");
+  robot.Kill(null);
+  station.Destroy();
+  Expect(store.stationRoleSets.Count==stationBaseline,"permanent station destruction releases last robot death set");
  }
 }

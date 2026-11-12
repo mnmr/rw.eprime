@@ -117,22 +117,18 @@ namespace WorkRoles
         }
 
         internal static MechanicalWorkerView Capture(Pawn pawn, RoleStore store)
+            => CaptureFromSnapshot(pawn, store, RecsAdapter.CapturePawnSnapshot(pawn,
+                Core.Signals.PawnSignalSnapshot.Empty));
+
+        // The window supplies its shared external projection. Only the detached
+        // assignment overlay is copied; published pawn facts are never mutated.
+        internal static MechanicalWorkerView CaptureFromSnapshot(Pawn pawn, RoleStore store,
+            PawnExternalSnapshot snapshot)
         {
-            PawnView facts = RecsAdapter.CapturePawnSnapshot(pawn,
-                Core.Signals.PawnSignalSnapshot.Empty).RecommendationFacts;
+            PawnView facts = RecsAdapter.PawnViewOf(pawn, store, snapshot);
             var worker = new MechanicalWorkerView { Id = pawn.thingIDNumber, Facts = facts };
-            if (store.pawnSets.TryGetValue(pawn, out PawnRoleSet? set))
-                foreach (RoleAssignment assignment in set.assignments)
-                    facts.Existing.Add(new AssignmentView { RoleId = assignment.roleId, Pinned = assignment.pinned });
             bool preparationAllowed = QualityPreparationAllowed;
-            bool misc = MiscRobotSupport.IsRobot(pawn);
-            worker.ProvidesService = IsColonyWorker(pawn) && !pawn.Downed
-                && !pawn.InMentalState && !pawn.Drafted
-                && (misc ? MiscRobotSupport.AutomaticWorkEnabled(pawn)
-                    : pawn.IsColonyMechPlayerControlled && MechWorkModes.IsWorking(pawn))
-                // Restricted-area work is partial coverage; do not promise
-                // colony-wide replacement without spatial demand evidence.
-                && HasUnrestrictedServiceArea(pawn);
+            worker.ProvidesService = ProvidesService(pawn);
             foreach (WorkGiverDef giver in DefDatabase<WorkGiverDef>.AllDefsListForReading)
                 if (giver.workType != null && CanDo(pawn, giver) && !WorkTypeDisabled(pawn, giver.workType)
                     && !WorkTagsDisabled(pawn, giver.workTags) && !facts.WorkEvidence.Blocks(giver.defName))
@@ -150,6 +146,14 @@ namespace WorkRoles
             }
             return worker;
         }
+
+        // Evaluated only at mechanical/external notification boundaries, never
+        // polled by steady rendering. Restricted areas cannot promise full supply.
+        internal static bool ProvidesService(Pawn pawn) => IsColonyWorker(pawn) && !pawn.Downed
+            && !pawn.InMentalState && !pawn.Drafted
+            && (MiscRobotSupport.IsRobot(pawn) ? MiscRobotSupport.AutomaticWorkEnabled(pawn)
+                : pawn.IsColonyMechPlayerControlled && MechWorkModes.IsWorking(pawn))
+            && HasUnrestrictedServiceArea(pawn);
 
         internal static void AddSupply(RoleStore store, ColonyView colony, IReadOnlyList<Pawn> humans)
         {

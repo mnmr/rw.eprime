@@ -2,7 +2,17 @@
 
 ## RimWorld data
 
-RimWorld source code is available in Game/src and official artwork in Game/art.
+- RimWorld 1.6 (Unity) decompiled gameplay source: `Game/src_1.6`.
+- RimWorld 1.7 (Waylith) decompiled source: `Game/src_1.7`. Gameplay source is
+  under `Assembly-CSharp`; the engine, host, and compatibility assemblies have
+  separate sibling directories. See [the source index](Game/src_1.7/README.md)
+  and `Game/src_1.7/decompilation-manifest.json` for scope and build provenance.
+- Official artwork: `Game/art`.
+
+Use the source matching the mod's target game version when verifying behaviour.
+For changes supporting both versions, check both relevant implementations.
+These are local reference snapshots; check the recorded assembly version and
+hash before assuming they match an updated game installation.
 
 ## Rule 1: No unsolicited specs or plans
 
@@ -412,8 +422,9 @@ proportionate to what is new:
   things) is proven only when the game has been observed CONSUMING them: a
   pawn completing the bill, not merely the bill appearing on the bench.
   Creating such objects MUST go through the game's own factory or the exact
-  construction the game's own UI uses (found in Game/src, e.g.
-  `BillUtility.MakeNewBill`), never a bare constructor chosen by type name.
+  construction the game's own UI uses (found in the matching `Game/src_1.6`
+  or `Game/src_1.7/Assembly-CSharp` tree, e.g. `BillUtility.MakeNewBill`), never
+  a bare constructor chosen by type name.
   Implanner's production bills shipped as plain `Bill_Production` and every
   craft failed at the bench for the feature's whole life (2026-09-07).
 - Modifying one feature or UI panel does not require re-verifying every

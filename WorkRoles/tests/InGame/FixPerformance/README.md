@@ -12,9 +12,12 @@ pwsh WorkRoles/tests/InGame/FixPerformance/run.ps1 -Label fixed -ModSourceRoot D
 The caller coordinates idle machine workload. Each command creates an independent
 managed run, loads the native saved colony, pauses, selects Takeo, opens Colonists
 with ideology grouping and the whole roster, warms 60 actual window repaints,
-and samples 180 actual `MainTabWindow_WorkRoles.DoWindowContents` Repaint calls.
+and samples 180 actual WorkRoles `DoWindowContents` Repaint calls. The probe
+resolves the method's declaring type, including the shared window base class,
+and measures only the selected WorkRoles window instance.
 No synthetic draw loop or production instrumentation is used. Both runs use
-the managed default 1920x1080 at 1.25 UI scale. Do not interact during sampling.
+the local 1.7 game, explicit `Fisso-NAM-1.7.rws` fixture and managed default
+1920x1080 at 1.25 UI scale. Do not interact during sampling.
 
 Test-only Harmony brackets record current-thread allocated bytes using the native
 `GC.GetAllocatedBytesForCurrentThread` API and elapsed `Stopwatch` ticks around

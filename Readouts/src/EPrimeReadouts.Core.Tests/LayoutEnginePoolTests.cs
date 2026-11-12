@@ -101,7 +101,7 @@ public class LayoutEnginePoolTests
         var model = ReadoutLayoutEngine.Build(Input(Group(1, "@Nope")));
         await Assert.That(model.Cells.Count(c => c.Kind == CellKind.Icon)).IsEqualTo(0);
         await Assert.That(model.SlotHits.Count).IsEqualTo(0);
-        await Assert.That(model.MarkerHits.Count).IsEqualTo(0);
+        await Assert.That(model.MarkerHits.Count).IsEqualTo(1);
         await Assert.That(model.Bands.Count).IsEqualTo(1);
     }
 }

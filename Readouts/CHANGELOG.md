@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 1.5.8 — 2026-11-12
+
+- Fixed: Removed the rendering workaround for Camera+ which caused problems with SimpleCameraSetting; use Camera+ 3.4.9.0 or later.
+
+## 1.5.7 — 2026-11-11
+
+- Fixed: Camera+ no longer corrupts hostile outlines when Readouts is enabled on RimWorld 1.7.
+
+## 1.5.6 — 2026-11-11
+
+- Fixed: Empty tiers no longer block expansion to stocked items in later tiers.
+
 ## 1.5.5 — 2026-11-03
 
 - Added: Help pages for mods to show compatibility verdicts and other relevant information.
