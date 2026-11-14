@@ -12,6 +12,7 @@ Phần lớn vai trò là Thường: danh sách việc như Bác sĩ hoặc Đ�
 - **Chặn**: cấm công việc thay vì cho phép. Xem [Vai trò chặn](topic:blocker-roles).
 - **Có điều kiện**: tự bật/tắt theo giờ hoặc nơi. Xem [Vai trò có điều kiện](topic:conditional-roles).
 - **Tổ hợp**: gom vai trò khác thay vì công việc. Xem [Vai trò tổ hợp](topic:composite-roles).
+- **Ẩn**: vai trò không hiện trong bảng vai trò ở đầu tab Người định cư. Nó vẫn hoạt động bình thường, và nút dấu cộng ở cuối hàng của người định cư vẫn liệt kê nó.
 
 <!-- l10n:b-a57d054ddfd3 -->
 Còn một dạng không có công tắc: vai trò thường bao phủ đầy đủ vai trò khác sẽ hiện chúng lồng bên dưới trong [cây vai trò](topic:tree-views). Cơ bản và Phụ việc hoạt động như vậy.

@@ -28,6 +28,9 @@ title: 모드 옵션
 <!-- l10n:android-surgeons -->
 **안드로이드 수술** 옵션은 Android Tiers Continued가 로드된 경우에만 표시됩니다. 이 옵션은 안드로이드 수술을 누가 하는지 보여 주며, Implanner는 Android Tiers의 "안드로이드는 제작자만 치료할 수 있음" 설정을 따릅니다. 기본값인 꺼짐에서는 의사가 수술하고, 켜면 "안드로이드 수리"가 켜진 제작자가 수술합니다. 설정은 Android Tiers 모드 설정에서 바꾸면 되고, Implanner가 그대로 따릅니다. 안드로이드 수술에는 제작 기술을 사용합니다. 자동 의사 선택이 켜져 있으면 Implanner는 각 안드로이드 수술을 제작 기술이 가장 높은 적격 정착민에게 맡깁니다.
 
+<!-- l10n:surgery-teams -->
+**수술팀**은 Implanner가 예약하는 수술을 누가 수행할지 정합니다. Multi-Doctor Surgery가 필요하며, 없으면 단독으로 유지됩니다. 기본값인 **단독**은 의사 한 명이 수술합니다. **기본 팀**은 Multi-Doctor Surgery의 수술 탭에 설정된 기본 수술팀을 사용합니다. **최적 팀**은 가장 숙련된 가용 의사가 집도하고, 성공 확률을 가장 많이 높여 주는 의사들이 보조합니다([Multi-Doctor Surgery](topic:multi-doctor-surgery) 참고).
+
 <!-- l10n:b-119eac06340c -->
 ![구매 전용 옵션의 해당 이식물 툴팁](options-purchase-tip.png)
 

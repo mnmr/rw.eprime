@@ -9,7 +9,7 @@ namespace Implanner.UI
         Enable, AutoProduction, IdleBenches, DesignatedBenches, Intermediaries,
         CountHospitalized, UpgradeByPriority, AutoFloor,
         MultipleBladders, MultipleHygiene, PurchaseOnly,
-        AndroidSurgeonsDoctors, AndroidSurgeonsCrafters, EntryStyle,
+        AndroidSurgeonsDoctors, AndroidSurgeonsCrafters, EntryStyle, SurgeryTeams,
         /// The level-mod warning beside the master switch; measured at the
         /// narrowest checkbox label width, which the column never undercuts.
         LevelModWarning
@@ -55,7 +55,7 @@ namespace Implanner.UI
                 PlannerLabels.OptAllowMultipleBladders, PlannerLabels.OptAllowMultipleHygieneEnhancers,
                 PlannerLabels.OptShowPurchaseOnly, PlannerLabels.OptAndroidSurgeonsDoctors,
                 PlannerLabels.OptAndroidSurgeonsCrafters, PlannerLabels.OptEntryStyle,
-                PlannerLabels.LevelModWarning };
+                PlannerLabels.OptSurgeryTeams, PlannerLabels.LevelModWarning };
             float[] heights = new float[labels.Length];
             float iterationHeight;
             using (GuiStateScope.Capture())
@@ -82,6 +82,10 @@ namespace Implanner.UI
                 for (int i = 0; i < PlannerLabels.EntryStyles.Length; i++)
                     segmentHeight = Mathf.Max(segmentHeight,
                         Mathf.Ceil(Text.CalcHeight(PlannerLabels.EntryStyles[i], segmentWidth)));
+                // So does the surgery-team row (Options tab, three segments).
+                for (int i = 0; i < PlannerLabels.SurgeryTeamModes.Length; i++)
+                    segmentHeight = Mathf.Max(segmentHeight,
+                        Mathf.Ceil(Text.CalcHeight(PlannerLabels.SurgeryTeamModes[i], segmentWidth)));
                 iterationHeight = Mathf.Max(30f, Mathf.Ceil(segmentHeight + 4f / scale));
             }
             if (snapshot == null || !snapshot.Matches(heights, iterationHeight))

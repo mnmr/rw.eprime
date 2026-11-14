@@ -665,4 +665,6 @@ WorkRoles 通过游戏标准方法为受管理殖民者提供工作列表。另�
   <WR_RecTuneHunterPlacementPoorShotsFirstTip>所有持有武器的殖民者都拥有猎人职责。射击最弱的人最先狩猎，借此练习射击；神射手最后狩猎。当食物有保障、你希望有更多会射击的殖民者时，请选择此项。此为默认设置。</WR_RecTuneHunterPlacementPoorShotsFirstTip>
   <WR_RecTuneHunterTiersRowDescReversed>动态“猎人”位置的射击等级分界线，从上往下读取。高于最后一个分界线的等级为第 1 档，将“猎人”放在基础工作之后；第 2、3 档依次位于中间和最后的工作职责之后；第 5 档将“猎人”放在最后。</WR_RecTuneHunterTiersRowDescReversed>
   <WR_HelpChapterMods>模组</WR_HelpChapterMods>
+  <WR_HiddenRole>隐藏职责</WR_HiddenRole>
+  <WR_HiddenRoleTip>隐藏职责不会显示在殖民者标签页顶部的职责调色板中，但它们仍照常运作：已持有的殖民者保留该职责，殖民者所在行的 + 按钮仍会列出它，推荐功能也仍可能建议它。适用于很少直接分配的职责，或职责调色板占用空间过多的情况。</WR_HiddenRoleTip>
 </LanguageData>

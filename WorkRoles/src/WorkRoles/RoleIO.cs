@@ -133,6 +133,7 @@ namespace WorkRoles
                     autoAssign = role.autoAssign,
                     blocker = role.blocker,
                     enabled = role.enabled,
+                    hidden = role.hidden,
                     activeHours = role.activeHours,
                     locations = role.locationTokens.Select(FileLocationToken)
                         .Where(t => t != null).Select(t => t!).ToList(),
@@ -541,6 +542,7 @@ namespace WorkRoles
             private readonly bool customName;
             private readonly bool autoAssign;
             private readonly bool blocker;
+            private readonly bool hidden;
             private readonly RoleCategory category;
             private readonly RoleTime time;
             private readonly bool championPenalty;
@@ -577,6 +579,7 @@ namespace WorkRoles
                 customName = role.customName;
                 autoAssign = role.autoAssign;
                 blocker = role.blocker;
+                hidden = role.hidden;
                 category = role.category;
                 time = role.time;
                 championPenalty = role.championPenalty;
@@ -614,6 +617,7 @@ namespace WorkRoles
                 && customName == other.customName
                 && autoAssign == other.autoAssign
                 && blocker == other.blocker
+                && hidden == other.hidden
                 && category == other.category
                 && time == other.time
                 && championPenalty == other.championPenalty
@@ -647,7 +651,8 @@ namespace WorkRoles
                     || generatedWorkTypeDefName != other.generatedWorkTypeDefName
                     || hasCustomColor != other.hasCustomColor || !color.Equals(other.color))
                     changed |= ModelDomain.RolePresentation;
-                if (autoAssign != other.autoAssign) changed |= ModelDomain.RolePresentation;
+                if (autoAssign != other.autoAssign || hidden != other.hidden)
+                    changed |= ModelDomain.RolePresentation;
                 if (groupId != other.groupId) changed |= ModelDomain.Catalog;
                 if (enabled != other.enabled) changed |= ModelDomain.RoleActivation;
                 if (activeHours != other.activeHours || !locationTokens.SequenceEqual(other.locationTokens))
@@ -900,6 +905,7 @@ namespace WorkRoles
                     target.autoAssign = row.role.autoAssign;
                     target.blocker = row.role.blocker;
                     target.enabled = row.role.enabled;
+                    target.hidden = row.role.hidden;
                     target.activeHours = row.role.activeHours;
                     target.locationTokens = locationTokens;
                     target.category = row.role.category;

@@ -13,5 +13,8 @@ Inhaber erledigen die Aufgaben der Mitglieder in deren Reihenfolge als eine Zuwe
 <!-- l10n:b-d1d6142f5648 -->
 Mitglieder müssen normale Rollen ohne Zeit- oder Ortsregeln sein. Eine Zusammensetzung darf keine andere enthalten. Änderungen einer Mitgliedsrolle wirken auf alle Zusammensetzungen, die sie enthalten.
 
+<!-- l10n:hidden-members -->
+Mitgliedsrollen, die du nie einzeln zuweist, lassen sich ausblenden: Hake im Editor „Verborgene Rolle“ an, dann verschwindet die Rolle aus der Rollenpalette im Reiter „Kolonisten“, und die Palette zeigt nur die Zusammensetzung. Das Mitglied arbeitet weiterhin innerhalb der Zusammensetzung, und mit der Plus-Schaltfläche am Ende der Zeile kannst du es einem Kolonisten trotzdem geben.
+
 <!-- l10n:b-842cedf95cbc -->
 Mehrere Zeilen der Mitgliedsliste lassen sich wie in der [Aufgabenliste](topic:picking-jobs) gemeinsam wählen, verschieben und entfernen.

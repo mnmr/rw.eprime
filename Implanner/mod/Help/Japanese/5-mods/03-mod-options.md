@@ -28,6 +28,9 @@ title: Mod設定
 <!-- l10n:android-surgeons -->
 **アンドロイドの手術担当**は、Android Tiers Continuedの読み込み中のみ表示されます。アンドロイドの手術を誰が行うかを示し、ImplannerはAndroid Tiersの設定「Androids can only be healed by crafters」から取得します。オフ（初期状態）なら医者、オンなら「Repair androids」をオンにした製作担当が行います。変更はAndroid TiersのMod設定で行い、Implannerがそれに従います。アンドロイドの手術には工芸スキルを使います。医者の自動選択がオンの場合、Implannerはアンドロイドの手術ごとに、工芸スキルが最も高い対象入植者だけに限定します。
 
+<!-- l10n:surgery-teams -->
+**手術チーム**は、Implannerが予定する手術を誰が行うかを選びます。Multi-Doctor Surgeryが必要で、導入していない場合は「単独」のままです。初期設定の**単独**では、医者1人が手術します。**既定のチーム**は、Multi-Doctor Surgeryの「Operations」タブで設定した既定の手術チームを使います。**最適チーム**は、手術可能な医者のうち最も腕の良い医者が主導し、成功率を最も高めてくれる医者が補助します（[Multi-Doctor Surgery](topic:multi-doctor-surgery)を参照）。
+
 <!-- l10n:b-119eac06340c -->
 ![対象品を示すツールチップ](options-purchase-tip.png)
 

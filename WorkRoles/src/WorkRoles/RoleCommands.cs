@@ -262,6 +262,17 @@ namespace WorkRoles
             UiVersion.Changed(ModelDomain.RecommendationOrder);
         }
 
+        /// Hide/show one role in the Colonists tab's role palette. Presentation
+        /// only: assignments, jobs and recommendations are unaffected.
+        [SyncMethod]
+        public static void SetRoleHidden(int roleId, bool hidden)
+        {
+            Role? role = FindRole(roleId);
+            if (role == null || role.hidden == hidden) return;
+            role.hidden = hidden;
+            UiVersion.RoleChanged(role.id, ModelDomain.RolePresentation);
+        }
+
         /// Exclude/include one role for every pawn's recommendation plan.
         [SyncMethod]
         public static void SetRoleRecommendationExcluded(int roleId, bool excluded)
@@ -853,6 +864,7 @@ namespace WorkRoles
                 id = id,
                 label = label,
                 enabled = values.Enabled,
+                hidden = source.hidden,
                 hasCustomColor = values.HasCustomColor,
                 color = values.Color,
                 iconPath = values.IconPath,

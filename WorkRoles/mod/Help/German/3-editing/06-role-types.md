@@ -12,6 +12,7 @@ Die meisten Rollen sind normal: einfache Aufgabenlisten wie Arzt oder Koch. Die 
 - **Sperrrolle**: Verbietet ihre Aufgaben, statt sie zu erlauben. Siehe [Sperrrollen](topic:blocker-roles).
 - **Bedingte Rolle**: Schaltet sich nach Zeit oder Ort. Siehe [Bedingte Rollen](topic:conditional-roles).
 - **Zusammengesetzte Rolle**: Bündelt andere Rollen statt Aufgaben. Siehe [Zusammengesetzte Rollen](topic:composite-roles).
+- **Verborgen**: Die Rolle erscheint nicht in der Rollenpalette oben im Reiter „Kolonisten“. Sie funktioniert weiterhin wie gewohnt, und die Plus-Schaltfläche am Ende der Zeile eines Kolonisten listet sie weiterhin auf.
 
 <!-- l10n:b-a57d054ddfd3 -->
 Daneben gibt es eine informelle Art ohne Schalter: Eine normale Rolle, die andere vollständig abdeckt, zeigt sie im [Rollenbaum](topic:tree-views) eingerückt darunter. Grundlagen und Handlanger funktionieren so.

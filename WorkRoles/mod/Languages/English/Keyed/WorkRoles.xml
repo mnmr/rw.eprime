@@ -653,6 +653,8 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <!-- Composite role editor (member roles instead of jobs) -->
   <WR_CompositeRole>Composite role</WR_CompositeRole>
   <WR_CompositeRoleTip>Composite roles bundle other roles: holders do the member roles' jobs in the member order. A composite role has no job list of its own.</WR_CompositeRoleTip>
+  <WR_HiddenRole>Hidden role</WR_HiddenRole>
+  <WR_HiddenRoleTip>Hidden roles are left out of the role palette at the top of the Colonists tab. They still work as usual: colonists who hold them keep them, the + button on a colonist's row still lists them, and recommendations can still suggest them. Use this to hide roles you rarely assign directly or if your role palette is taking up too much space.</WR_HiddenRoleTip>
   <!-- {0} = role label -->
   <WR_CompositeConfirm>Turn '{0}' into a composite role? Its selected jobs will be removed.</WR_CompositeConfirm>
   <WR_CompositeRevertConfirm>Turn '{0}' back into a regular role? Its member roles will be removed.</WR_CompositeRevertConfirm>

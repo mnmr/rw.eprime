@@ -234,4 +234,13 @@
   <IMP_PlanForGhouls>per i ghoul</IMP_PlanForGhouls>
   <IMP_PlanGhouls>Ghoul</IMP_PlanGhouls>
   <IMP_PlanTargetColonists>i coloni</IMP_PlanTargetColonists>
+  <IMP_OptSurgeryTeams>Squadre chirurgiche</IMP_OptSurgeryTeams>
+  <IMP_OptSurgeryTeamsTip>Chi esegue le operazioni pianificate da Implanner. Richiede la mod Multi-Doctor Surgery; senza di essa opera un solo medico.\n\nSingolo: opera un solo medico.\n\nSquadra predefinita: la squadra chirurgica predefinita impostata nella scheda Operazioni di Multi-Doctor Surgery. Se il chirurgo capo non può operare sul colono, ad esempio perché è lui stesso il paziente o si trova in un'altra colonia, un solo medico esegue l'operazione senza squadra.\n\nSquadra migliore: guida il medico disponibile più abile, assistito dai medici che aumentano di più la probabilità di successo, fino al limite di medici di Multi-Doctor Surgery.\n\nUn'operazione di squadra attende il chirurgo capo, che può operare anche con un'abilità inferiore a quella richiesta dalla selezione automatica del medico. Le operazioni escluse nelle impostazioni di Multi-Doctor Surgery restano singole. Le squadre non vengono usate in multigiocatore.</IMP_OptSurgeryTeamsTip>
+  <IMP_SurgeryTeamBest>Squadra migliore</IMP_SurgeryTeamBest>
+  <IMP_SurgeryTeamDefault>Squadra predefinita</IMP_SurgeryTeamDefault>
+  <IMP_SurgeryTeamSolo>Singolo</IMP_SurgeryTeamSolo>
+  <IMP_OptCompatAndroidTiers>Android Tiers Continued</IMP_OptCompatAndroidTiers>
+  <IMP_OptCompatHygiene>Dubs Bad Hygiene e [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
+  <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
+  <IMP_OptCompatSkills>Endless Growth e altre mod sulle abilità</IMP_OptCompatSkills>
 </LanguageData>

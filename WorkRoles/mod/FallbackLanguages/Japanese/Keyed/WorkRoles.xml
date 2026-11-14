@@ -665,4 +665,6 @@ WorkRolesはゲーム標準の仕組みで管理中の入植者に作業一覧�
   <WR_RecTuneHunterPlacementPoorShotsFirstTip>武装した入植者は全員が狩人を担当します。射撃が苦手な人から先に狩りをするので、射撃の経験を積めます。名手は最後に狩りをします。食料に余裕があり、射撃のできる入植者を増やしたいときに選んでください。初期設定です。</WR_RecTuneHunterPlacementPoorShotsFirstTip>
   <WR_RecTuneHunterTiersRowDescReversed>動的な狩人の配置に使う射撃レベルの境界で、上から順に読みます。最後の境界を超えるレベルは階層1で、狩人を基本作業の直後に配置します。階層2と3は中間および最後の作業ロールの後に続き、階層5では狩人が最後になります。</WR_RecTuneHunterTiersRowDescReversed>
   <WR_HelpChapterMods>Mod</WR_HelpChapterMods>
+  <WR_HiddenRole>非表示ロール</WR_HiddenRole>
+  <WR_HiddenRoleTip>非表示ロールは、入植者タブ上部のロールパレットに表示されません。それ以外は通常どおり機能します。持っている入植者はそのまま保持し、入植者の行の+ボタンの一覧にも表示され、おすすめとして提案されることもあります。直接割り当てる機会の少ないロールや、ロールパレットが場所を取りすぎる場合に使ってください。</WR_HiddenRoleTip>
 </LanguageData>

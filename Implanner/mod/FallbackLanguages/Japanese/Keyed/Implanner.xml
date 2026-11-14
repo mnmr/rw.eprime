@@ -234,4 +234,13 @@
   <IMP_PlanForGhouls>グール向け</IMP_PlanForGhouls>
   <IMP_PlanGhouls>グール</IMP_PlanGhouls>
   <IMP_PlanTargetColonists>入植者</IMP_PlanTargetColonists>
+  <IMP_OptSurgeryTeams>手術チーム（Multi-Doctor Surgery）</IMP_OptSurgeryTeams>
+  <IMP_OptSurgeryTeamsTip>Implannerが予定する手術を誰が行うかを選びます。Multi-Doctor Surgery Modが必要です。導入していない場合は医者1人が手術します。\n\n単独：医者1人が手術します。\n\n既定のチーム：Multi-Doctor Surgeryの「Operations」タブで設定した既定の手術チームです。主導する執刀医がその入植者を手術できない場合（たとえば主導医本人が患者である、または別の拠点にいる場合）は、チームを使わず医者1人が手術します。\n\n最適チーム：手術可能な医者のうち最も腕の良い医者が主導し、成功率を最も高めてくれる医者が、Multi-Doctor Surgeryの医者数の上限まで補助します。\n\nチーム手術は主導する執刀医を待ちます。この執刀医は、医者の自動選択が求めるスキルを下回っていても手術できます。Multi-Doctor Surgeryの設定で除外した手術は単独のままです。マルチプレイではチームを使いません。</IMP_OptSurgeryTeamsTip>
+  <IMP_SurgeryTeamBest>最適チーム</IMP_SurgeryTeamBest>
+  <IMP_SurgeryTeamDefault>既定のチーム</IMP_SurgeryTeamDefault>
+  <IMP_SurgeryTeamSolo>単独</IMP_SurgeryTeamSolo>
+  <IMP_OptCompatAndroidTiers>Android Tiers Continued</IMP_OptCompatAndroidTiers>
+  <IMP_OptCompatHygiene>Dubs Bad Hygiene と [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
+  <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
+  <IMP_OptCompatSkills>Endless Growth などのスキル系MOD</IMP_OptCompatSkills>
 </LanguageData>

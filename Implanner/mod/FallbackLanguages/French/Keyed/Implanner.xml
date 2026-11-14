@@ -234,4 +234,13 @@
   <IMP_PlanForGhouls>pour les goules</IMP_PlanForGhouls>
   <IMP_PlanGhouls>Goules</IMP_PlanGhouls>
   <IMP_PlanTargetColonists>colons</IMP_PlanTargetColonists>
+  <IMP_OptSurgeryTeams>Équipes chirurgicales</IMP_OptSurgeryTeams>
+  <IMP_OptSurgeryTeamsTip>Qui effectue les opérations que planifie Implanner. Nécessite le mod Multi-Doctor Surgery ; sans lui, un seul médecin opère.\n\nSolo : un seul médecin opère.\n\nÉquipe par défaut : l'équipe chirurgicale par défaut définie dans l'onglet Opérations de Multi-Doctor Surgery. Si son chirurgien principal ne peut pas opérer le colon, par exemple parce qu'il est le patient ou se trouve dans une autre colonie, un seul médecin effectue l'opération, sans équipe.\n\nMeilleure équipe : le médecin disponible le plus compétent la dirige, assisté des médecins qui augmentent le plus les chances de réussite, dans la limite du nombre de médecins de Multi-Doctor Surgery.\n\nUne opération en équipe attend son chirurgien principal, qui peut opérer même en dessous de la compétence exigée par le choix automatique du médecin. Les opérations exclues dans les réglages de Multi-Doctor Surgery restent en solo. Les équipes ne sont pas utilisées en multijoueur.</IMP_OptSurgeryTeamsTip>
+  <IMP_SurgeryTeamBest>Meilleure équipe</IMP_SurgeryTeamBest>
+  <IMP_SurgeryTeamDefault>Équipe par défaut</IMP_SurgeryTeamDefault>
+  <IMP_SurgeryTeamSolo>Solo</IMP_SurgeryTeamSolo>
+  <IMP_OptCompatAndroidTiers>Android Tiers Continued</IMP_OptCompatAndroidTiers>
+  <IMP_OptCompatHygiene>Dubs Bad Hygiene et [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
+  <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
+  <IMP_OptCompatSkills>Endless Growth et autres mods de compétences</IMP_OptCompatSkills>
 </LanguageData>

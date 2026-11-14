@@ -83,6 +83,16 @@ namespace Implanner
             store.Bump(store.Model.SetAndroidSurgeryByCrafters(enabled));
         }
 
+        /// Mod compatibility (Multi-Doctor Surgery): who performs Implanner
+        /// operations, as a SurgeryTeamMode number.
+        [SyncMethod]
+        public static void SetSurgeryTeams(int mode)
+        {
+            ImplannerStore? store = ImplannerStore.Current;
+            if (store == null) return;
+            store.Bump(store.Model.SetSurgeryTeams((SurgeryTeamMode)mode));
+        }
+
         /// Mod compatibility (Quality Bionics Remastered): the efficiency
         /// multiplier table automation evaluates implants with, as one
         /// plain string (QualityMultipliers.Encode); an unparsable payload

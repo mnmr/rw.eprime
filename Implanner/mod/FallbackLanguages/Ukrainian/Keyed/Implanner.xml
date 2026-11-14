@@ -234,4 +234,13 @@
   <IMP_PlanForGhouls>для гулів</IMP_PlanForGhouls>
   <IMP_PlanGhouls>Гули</IMP_PlanGhouls>
   <IMP_PlanTargetColonists>колоністів</IMP_PlanTargetColonists>
+  <IMP_OptSurgeryTeams>Хірургічні бригади</IMP_OptSurgeryTeams>
+  <IMP_OptSurgeryTeamsTip>Хто виконує операції, які планує Implanner. Потрібен мод Multi-Doctor Surgery; без нього оперує один лікар.\n\nНаодинці: оперує один лікар.\n\nТипова бригада: типова хірургічна бригада з вкладки «Операції» мода Multi-Doctor Surgery. Якщо її провідний хірург не може оперувати колоніста, наприклад, бо він сам пацієнт або перебуває в іншій колонії, операцію без бригади виконує один лікар.\n\nНайкраща бригада: очолює найкваліфікованіший доступний лікар, а допомагають лікарі, які найбільше підвищують шанс успіху, до ліміту лікарів Multi-Doctor Surgery.\n\nБригадна операція чекає на провідного хірурга, який може оперувати, навіть маючи навичку нижчу за потрібну для автоматичного вибору лікаря. Операції, виключені в налаштуваннях Multi-Doctor Surgery, лишаються одиночними. У мережевій грі бригади не використовуються.</IMP_OptSurgeryTeamsTip>
+  <IMP_SurgeryTeamBest>Найкраща бригада</IMP_SurgeryTeamBest>
+  <IMP_SurgeryTeamDefault>Типова бригада</IMP_SurgeryTeamDefault>
+  <IMP_SurgeryTeamSolo>Наодинці</IMP_SurgeryTeamSolo>
+  <IMP_OptCompatAndroidTiers>Android Tiers Continued</IMP_OptCompatAndroidTiers>
+  <IMP_OptCompatHygiene>Dubs Bad Hygiene та [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
+  <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
+  <IMP_OptCompatSkills>Endless Growth та інші моди навичок</IMP_OptCompatSkills>
 </LanguageData>

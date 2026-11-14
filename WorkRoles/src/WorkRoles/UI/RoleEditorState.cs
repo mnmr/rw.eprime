@@ -221,12 +221,14 @@ namespace WorkRoles.UI
             string blockerLabel = "WR_BlockerRole".Translate().ToString();
             string conditionalRoleLabel = "WR_ConditionalRole".Translate().ToString();
             string compositeLabel = "WR_CompositeRole".Translate().ToString();
+            string hiddenLabel = "WR_HiddenRole".Translate().ToString();
             Text.Font = GameFont.Small;
-            float checksWidth = Mathf.Max(
+            float checksWidth = Mathf.Max(Mathf.Max(
                 Mathf.Max(WrText.FitWidth(autoAssignLabel),
                     WrText.FitWidth(blockerLabel)),
                 Mathf.Max(WrText.FitWidth(conditionalRoleLabel),
-                    WrText.FitWidth(compositeLabel))) + 30f;
+                    WrText.FitWidth(compositeLabel))),
+                WrText.FitWidth(hiddenLabel)) + 30f;
             float checksX = width / 2f - checksWidth;
             RoleIconPresentation iconPresentation =
                 RoleIconPresentationCatalog.For(role.id);
@@ -314,9 +316,10 @@ namespace WorkRoles.UI
                 role.hasCustomColor, role.color,
                 role.autoAssign, role.blocker, role.HasRules,
                 role.HasRules || rulesRevealed, memberLocked, role.composite,
+                role.hidden,
                 customSwatches, customRows,
                 checksWidth, autoAssignLabel, blockerLabel, conditionalRoleLabel,
-                compositeLabel, BlockerTip,
+                compositeLabel, hiddenLabel, BlockerTip,
                 UsesAuthoredTrainingPath(store, role.id)
                     ? "WR_BlockerTrainingConfirm".Translate(role.DisplayLabel).ToString()
                     : null,
@@ -1194,10 +1197,10 @@ namespace WorkRoles.UI
             string roleIconPath, Texture2D roleIcon, bool roleIconAssigned,
             bool hasCustomColor, Color roleColor, bool autoAssign,
             bool blocker, bool hasRules, bool rulesShown, bool memberLocked,
-            bool composite,
+            bool composite, bool hidden,
             List<Color> customSwatches, int customRows, float checksWidth,
             string autoAssignLabel, string blockerLabel, string conditionalRoleLabel,
-            string compositeLabel, StructuredTip blockerTip,
+            string compositeLabel, string hiddenLabel, StructuredTip blockerTip,
             string? blockerTrainingConfirmation, string confirmLabel, string cancelLabel,
             string clearRulesConfirmation, string compositeConfirmation,
             string compositeRevertConfirmation,
@@ -1229,6 +1232,7 @@ namespace WorkRoles.UI
             RulesShown = rulesShown;
             MemberLocked = memberLocked;
             Composite = composite;
+            Hidden = hidden;
             this.customSwatches = customSwatches;
             CustomRows = customRows;
             ChecksWidth = checksWidth;
@@ -1236,6 +1240,7 @@ namespace WorkRoles.UI
             BlockerLabel = blockerLabel;
             ConditionalRoleLabel = conditionalRoleLabel;
             CompositeLabel = compositeLabel;
+            HiddenLabel = hiddenLabel;
             BlockerTip = blockerTip;
             BlockerTrainingConfirmation = blockerTrainingConfirmation;
             ConfirmLabel = confirmLabel;
@@ -1280,6 +1285,8 @@ namespace WorkRoles.UI
         /// The role belongs to a composite: blocker and rule edits are locked.
         internal bool MemberLocked { get; }
         internal bool Composite { get; }
+        /// Left out of the Colonists tab's role palette (Role.hidden).
+        internal bool Hidden { get; }
         internal int CustomSwatchCount => customSwatches.Count;
         internal Color CustomSwatchAt(int index) => customSwatches[index];
         internal int CustomRows { get; }
@@ -1288,6 +1295,7 @@ namespace WorkRoles.UI
         internal string BlockerLabel { get; }
         internal string ConditionalRoleLabel { get; }
         internal string CompositeLabel { get; }
+        internal string HiddenLabel { get; }
         internal StructuredTip BlockerTip { get; }
         internal string? BlockerTrainingConfirmation { get; }
         internal string ConfirmLabel { get; }

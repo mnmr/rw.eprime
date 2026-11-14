@@ -175,7 +175,7 @@ namespace Implanner
                     && existing.recipe == recipe && existing.Part == part)
                     return change;
             return change | model.SetOwnedBill(pawnId, key,
-                pass.BillId(PlannerSurgery.CreateOperation(pawn, recipe, part, floor)));
+                pass.BillId(PlannerSurgery.CreateOperation(model, pawn, recipe, part, floor)));
         }
 
         /// The record is done: its operation (if still queued) and record go.

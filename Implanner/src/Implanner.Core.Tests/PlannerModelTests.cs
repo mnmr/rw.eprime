@@ -300,6 +300,50 @@ public class PlannerModelTests
             .IsEqualTo(PlannerChange.None);
     }
 
+    /// Surgery teams (Multi-Doctor Surgery) default to Solo, so a save
+    /// without the setting and a game without that mod behave as before.
+    /// The synced command carries the mode as a plain int: an unknown value
+    /// normalizes to Solo like the load path, and re-sending the current
+    /// mode reports no change.
+    [Test]
+    public async Task SurgeryTeamsDefaultToSoloAndNormalizeUnknownValues()
+    {
+        var model = NewModel();
+        await Assert.That(model.SurgeryTeams).IsEqualTo(SurgeryTeamMode.Solo);
+        await Assert.That(model.SetSurgeryTeams((SurgeryTeamMode)9))
+            .IsEqualTo(PlannerChange.None);
+
+        await Assert.That(model.SetSurgeryTeams(SurgeryTeamMode.BestTeam))
+            .IsEqualTo(PlannerChange.Options);
+        await Assert.That(model.SetSurgeryTeams(SurgeryTeamMode.BestTeam))
+            .IsEqualTo(PlannerChange.None);
+        await Assert.That(model.SetSurgeryTeams((SurgeryTeamMode)(-1)))
+            .IsEqualTo(PlannerChange.Options);
+        await Assert.That(model.SurgeryTeams).IsEqualTo(SurgeryTeamMode.Solo);
+
+        var loaded = NewModel();
+        loaded.LoadOptions(automationPaused: false,
+            iteration: IterationStrategy.ImplantTier, manualDoctorFloor: 0,
+            autoDoctorFloor: true, surgeryConcurrency: 1,
+            countHospitalized: true, autoProduction: true,
+            productionConcurrency: 1, onlyIdleBenches: true,
+            productionSkill: 0, allowIntermediaries: true,
+            allowMultipleBladders: true, allowMultipleHygieneEnhancers: true,
+            showPurchaseOnly: false, onlyDesignatedBenches: false,
+            surgeryTeams: (SurgeryTeamMode)7);
+        await Assert.That(loaded.SurgeryTeams).IsEqualTo(SurgeryTeamMode.Solo);
+        loaded.LoadOptions(automationPaused: false,
+            iteration: IterationStrategy.ImplantTier, manualDoctorFloor: 0,
+            autoDoctorFloor: true, surgeryConcurrency: 1,
+            countHospitalized: true, autoProduction: true,
+            productionConcurrency: 1, onlyIdleBenches: true,
+            productionSkill: 0, allowIntermediaries: true,
+            allowMultipleBladders: true, allowMultipleHygieneEnhancers: true,
+            showPurchaseOnly: false, onlyDesignatedBenches: false,
+            surgeryTeams: SurgeryTeamMode.DefaultTeam);
+        await Assert.That(loaded.SurgeryTeams).IsEqualTo(SurgeryTeamMode.DefaultTeam);
+    }
+
     [Test]
     public async Task RevisionsBumpOnlyReportedDomains()
     {

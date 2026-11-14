@@ -2002,7 +2002,22 @@ namespace Implanner.UI
 
             float width = Mathf.Floor((rect.width - ColumnGap) / 2f);
             float y = rect.y;
+            y += SectionHeader.Primary(rect.x, y, width, PlannerLabels.OptCatalog) + 2f;
+            DrawOptionToggle(rect.x, ref y, width, ToggleHeights[ToggleRow.PurchaseOnly], PlannerLabels.OptShowPurchaseOnly,
+                snapshot.ShowPurchaseOnly, tips.ShowPurchaseOnly, SetShowPurchaseOnly);
+            y += Pad;
+
+            // Per-player presentation: where Implanner opens from. A change
+            // swaps this window for the other host on the next frame.
+            y += SectionHeader.Primary(rect.x, y, width, PlannerLabels.OptInterface) + 2f;
+            ImplannerEntry.DrawStyleRow(rect.x, ref y, width,
+                ToggleHeights[ToggleRow.EntryStyle], ToggleHeights.IterationHeight, tips.EntryStyle);
+            y += Pad;
+
+            // Other mods last, after Implanner's own options, one
+            // subsection per mod or mod category.
             y += SectionHeader.Primary(rect.x, y, width, PlannerLabels.OptModCompat) + 2f;
+            y += SectionHeader.Sub(rect.x, y, width, PlannerLabels.OptCompatHygiene) + 2f;
             DrawOptionToggle(rect.x, ref y, width, ToggleHeights[ToggleRow.MultipleBladders], PlannerLabels.OptAllowMultipleBladders,
                 snapshot.AllowMultipleBladders, tips.AllowMultipleBladders,
                 SetAllowMultipleBladders);
@@ -2012,6 +2027,8 @@ namespace Implanner.UI
                 SetAllowMultipleHygieneEnhancers);
             if (snapshot.AndroidTiersLoaded)
             {
+                y += Pad;
+                y += SectionHeader.Sub(rect.x, y, width, PlannerLabels.OptCompatAndroidTiers) + 2f;
                 // Read-only: Implanner follows Android Tiers' own setting.
                 bool crafters = snapshot.AndroidSurgeryByCrafters;
                 float height = ToggleHeights[crafters
@@ -2027,6 +2044,11 @@ namespace Implanner.UI
                 }
                 y += height + 2f;
             }
+            y += Pad;
+            y += SectionHeader.Sub(rect.x, y, width, PlannerLabels.OptCompatMultiDoctor) + 2f;
+            DrawSurgeryTeamsRow(rect.x, ref y, width, snapshot, tips.SurgeryTeams);
+            y += Pad;
+            y += SectionHeader.Sub(rect.x, y, width, PlannerLabels.OptCompatSkills) + 2f;
             int maximum = DrawSkillSliderRow(rect.x, ref y, width,
                 PlannerLabels.OptSkillSliderMaximum, slider.MaximumText,
                 slider.Maximum, 20, 100, 10, tips.SkillSliderMaximum);
@@ -2035,18 +2057,42 @@ namespace Implanner.UI
                 ImplannerMod.Settings.skillSliderMaximum = maximum;
                 skillSliderSettingsDirty = true;
             }
-            y += Pad;
+        }
 
-            y += SectionHeader.Primary(rect.x, y, width, PlannerLabels.OptCatalog) + 2f;
-            DrawOptionToggle(rect.x, ref y, width, ToggleHeights[ToggleRow.PurchaseOnly], PlannerLabels.OptShowPurchaseOnly,
-                snapshot.ShowPurchaseOnly, tips.ShowPurchaseOnly, SetShowPurchaseOnly);
-            y += Pad;
+        /// Segment colours of the surgery-team control while Multi-Doctor
+        /// Surgery is absent: dimmed labels, locked to Solo.
+        private static readonly SegmentedPalette LockedPalette = new SegmentedPalette(
+            new Color(1f, 1f, 1f, 0.08f), new Color(1f, 1f, 1f, 0.02f),
+            new Color(0.6f, 0.6f, 0.6f), new Color(0.45f, 0.45f, 0.45f));
 
-            // Per-player presentation: where Implanner opens from. A change
-            // swaps this window for the other host on the next frame.
-            y += SectionHeader.Primary(rect.x, y, width, PlannerLabels.OptInterface) + 2f;
-            ImplannerEntry.DrawStyleRow(rect.x, ref y, width,
-                ToggleHeights[ToggleRow.EntryStyle], ToggleHeights.IterationHeight, tips.EntryStyle);
+        /// Who performs Implanner operations (Multi-Doctor Surgery): a
+        /// caption over a three-segment row in SurgeryTeamMode order. Without
+        /// that mod it shows Solo and ignores clicks.
+        private void DrawSurgeryTeamsRow(float x, ref float y, float width,
+            OptionsSnapshot snapshot, WrTip tip)
+        {
+            float captionHeight = ToggleHeights[ToggleRow.SurgeryTeams];
+            float segmentHeight = ToggleHeights.IterationHeight;
+            tip.Region(new Rect(x, y, width, captionHeight + 2f + segmentHeight));
+            using (GuiStateScope.Capture())
+            {
+                Text.Font = GameFont.Small;
+                Text.Anchor = TextAnchor.MiddleLeft;
+                Text.WordWrap = true;
+                if (!snapshot.MultiDoctorLoaded) GUI.color = Color.gray;
+                Widgets.Label(new Rect(x, y, width, captionHeight), PlannerLabels.OptSurgeryTeams);
+            }
+            y += captionHeight + 2f;
+            int active = snapshot.SurgeryTeamsSegment;
+            var row = new Rect(x, y, width, segmentHeight);
+            if (snapshot.MultiDoctorLoaded)
+            {
+                int clicked = SegmentedControl.Row(row, PlannerLabels.SurgeryTeamModes, active);
+                if (clicked >= 0 && clicked != active) PlannerCommands.SetSurgeryTeams(clicked);
+            }
+            else
+                SegmentedControl.Row(row, PlannerLabels.SurgeryTeamModes, active, LockedPalette);
+            y += segmentHeight + 2f;
         }
 
         // Cached static delegates: the toggle rows take the command by

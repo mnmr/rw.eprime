@@ -28,6 +28,9 @@ Chaque infobulle liste les implants concernés actuellement chargés et leur mod
 <!-- l10n:android-surgeons -->
 **Opérations sur les androïdes** n'apparaît que lorsque Android Tiers Continued est chargé. Cette option indique qui effectue les opérations sur les androïdes ; Implanner la déduit du réglage d'Android Tiers « Androids can only be healed by crafters » : les médecins lorsqu'il est désactivé (par défaut), et les artisans pour lesquels « Réparer les androïdes » est activé lorsqu'il est activé. Modifiez-le dans les réglages du mod Android Tiers, et Implanner suivra. Ces opérations utilisent la compétence Artisanat. Lorsque le choix automatique du médecin est activé, Implanner limite chaque opération sur androïde au meilleur colon admissible selon la compétence Artisanat.
 
+<!-- l10n:surgery-teams -->
+**Équipes chirurgicales** détermine qui effectue les opérations que planifie Implanner. Cette option nécessite Multi-Doctor Surgery et reste sur Solo sans lui. **Solo**, le choix par défaut, confie l'opération à un seul médecin. **Équipe par défaut** utilise l'équipe chirurgicale par défaut définie dans l'onglet Opérations de Multi-Doctor Surgery. **Meilleure équipe** place à sa tête le médecin disponible le plus compétent, assisté des médecins qui augmentent le plus les chances de réussite (voir [Multi-Doctor Surgery](topic:multi-doctor-surgery)).
+
 <!-- l10n:b-119eac06340c -->
 ![Survol de l'option montrant les implants concernés](options-purchase-tip.png)
 

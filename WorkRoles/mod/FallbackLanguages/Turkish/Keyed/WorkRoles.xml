@@ -665,4 +665,6 @@ Bu bildirim kayıt başına her mod için bir kez gösterilir.</WR_SetPriorityBl
   <WR_RecTuneHunterPlacementPoorShotsFirstTip>Silahlı her kolonici Avcı rolünü alır. En zayıf nişancılar önce avlanır ve böylece Nişancılık alıştırması yapar; keskin nişancılar en son avlanır. Yiyecek güvendeyse ve silah kullanabilen daha çok kolonici istiyorsanız bunu seçin. Varsayılan budur.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
   <WR_RecTuneHunterTiersRowDescReversed>Dinamik Avcı konumu için nişancılık seviyesi eşikleri, yukarıdan aşağı okunur. Son eşiğin üzerindeki seviyeler 1. kademedir ve Avcıyı temel işlerin hemen arkasına yerleştirir; 2. ve 3. kademeler orta ve son iş rollerini izler, 5. kademe ise Avcıyı en sona koyar.</WR_RecTuneHunterTiersRowDescReversed>
   <WR_HelpChapterMods>Modlar</WR_HelpChapterMods>
+  <WR_HiddenRole>Gizli rol</WR_HiddenRole>
+  <WR_HiddenRoleTip>Gizli roller, Yerleşimciler sekmesinin üstündeki rol paletinde gösterilmez. Yine de her zamanki gibi çalışmaya devam ederler: onlara sahip yerleşimciler rolü korur, yerleşimcinin satırındaki + düğmesi onları yine listeler ve öneriler de onları yine önerebilir. Doğrudan nadiren atadığınız rolleri gizlemek veya rol paletiniz çok fazla yer kaplıyorsa kullanın.</WR_HiddenRoleTip>
 </LanguageData>

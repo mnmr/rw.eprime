@@ -22,6 +22,8 @@ LOCALES = ('German', 'French', 'Spanish', 'Italian', 'PortugueseBrazilian',
 # key and English text so later prose under the same key is still reviewed.
 BRAND_TITLES = {
     'Implanner/Keyed/IMP_WelcomeTitle': "EPrime's Implanner",
+    'Implanner/Keyed/IMP_OptCompatAndroidTiers': 'Android Tiers Continued',
+    'Implanner/Keyed/IMP_OptCompatMultiDoctor': 'Multi-Doctor Surgery',
     'QualityJobs/Keyed/QJ_WelcomeTitle': "EPrime's Quality Jobs",
     'Readouts/Keyed/EPR.Title': "EPrime's Readouts",
     'Readouts/Keyed/EPR.WelcomeTitle': "EPrime's Readouts",

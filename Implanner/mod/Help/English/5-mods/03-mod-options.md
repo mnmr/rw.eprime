@@ -50,6 +50,14 @@ Implanner follows. Android operations use the Crafting skill. With
 automatic doctor selection on, Implanner restricts each android operation
 to the best eligible colonist by Crafting skill.
 
+<!-- l10n:surgery-teams -->
+**Surgery teams** chooses who performs the operations Implanner schedules.
+It needs Multi-Doctor Surgery and stays on Solo without it. **Solo**, the
+default, has one doctor operate. **Default team** uses the default surgery
+team set up on Multi-Doctor Surgery's Operations tab. **Best team** has the
+most skilled available doctor lead, assisted by the doctors who add the most
+success chance (see [Multi-Doctor Surgery](topic:multi-doctor-surgery)).
+
 <!-- l10n:b-119eac06340c -->
 ![Hovering the option shows the affected implants](options-purchase-tip.png)
 

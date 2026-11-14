@@ -259,6 +259,14 @@
   <IMP_OptAllowMultipleHygieneEnhancers>Allow multiple hygiene enhancers</IMP_OptAllowMultipleHygieneEnhancers>
   <IMP_OptAndroidSurgeonsDoctors>Android operations: doctors (follows Android Tiers)</IMP_OptAndroidSurgeonsDoctors>
   <IMP_OptAndroidSurgeonsCrafters>Android operations: crafters with "Repair androids" (follows Android Tiers)</IMP_OptAndroidSurgeonsCrafters>
+  <IMP_OptCompatHygiene>Dubs Bad Hygiene and [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
+  <IMP_OptCompatAndroidTiers>Android Tiers Continued</IMP_OptCompatAndroidTiers>
+  <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
+  <IMP_OptCompatSkills>Endless Growth and other skill mods</IMP_OptCompatSkills>
+  <IMP_OptSurgeryTeams>Surgery teams</IMP_OptSurgeryTeams>
+  <IMP_SurgeryTeamSolo>Solo</IMP_SurgeryTeamSolo>
+  <IMP_SurgeryTeamDefault>Default team</IMP_SurgeryTeamDefault>
+  <IMP_SurgeryTeamBest>Best team</IMP_SurgeryTeamBest>
   <IMP_OptCatalog>Catalog</IMP_OptCatalog>
   <IMP_OptShowPurchaseOnly>Show purchase-only implants</IMP_OptShowPurchaseOnly>
   <IMP_OptInterface>Interface</IMP_OptInterface>
@@ -291,6 +299,7 @@
   <!-- {0}=newline-separated "implant (mod)" lines for the loaded purchase-only implants -->
   <IMP_OptShowPurchaseOnlyTip>Lists implants whose item no workbench can craft, such as archotech parts. They only arrive through trade, quests or salvage. Switch this on to plan them anyway. Automation reserves the item as soon as it is in stock and installs it with the next batch; a missing one never holds up the other implants. A mod that adds a crafting recipe makes the implant an ordinary one automatically.\n\nAffected implants:\n{0}</IMP_OptShowPurchaseOnlyTip>
   <IMP_OptAndroidSurgeonsTip>Implanner follows the Android Tiers setting "Androids can only be healed by crafters", which you change in the Android Tiers mod settings. Switched on, crafters with "Repair androids" turned on perform android operations. Switched off, doctors perform them. Android operations use the Crafting skill. With automatic doctor selection on, Implanner restricts each android operation to the best eligible colonist by Crafting skill.</IMP_OptAndroidSurgeonsTip>
+  <IMP_OptSurgeryTeamsTip>Who performs the operations Implanner schedules. Requires the Multi-Doctor Surgery mod; without it, one doctor operates.\n\nSolo: one doctor operates.\n\nDefault team: the default surgery team set up on Multi-Doctor Surgery's Operations tab. When its lead surgeon cannot operate on the colonist, for example because the lead is the patient or is at another colony, one doctor performs the operation without a team.\n\nBest team: the most skilled available doctor leads, assisted by the doctors who add the most success chance, up to Multi-Doctor Surgery's doctor limit.\n\nA team operation waits for its lead surgeon, who may operate even below the skill that automatic doctor selection requires. Operations excluded in Multi-Doctor Surgery's settings stay solo. Teams are not used in multiplayer.</IMP_OptSurgeryTeamsTip>
   <IMP_OptCompatNoneLoaded>None of the affected implants are loaded.</IMP_OptCompatNoneLoaded>
   <IMP_OptAutoProductionTip>Missing implants get crafting bills automatically. Implanner counts what plans still need at each colony, subtracts stock and bills already queued, and places bills at capable benches. Bills it created are removed again when the need disappears.</IMP_OptAutoProductionTip>
   <IMP_OptConcurrencyTip>How many benches per colony may hold Implanner crafting bills at once. Each bill crafts one implant, and a bench holds up to two so the next bill is already waiting when the first is done. More benches craft implants in parallel, but your crafters spend more of their time on implants and less on everything else. Hold Shift while clicking +/- to change by 10, or Ctrl to change by 5.</IMP_OptConcurrencyTip>

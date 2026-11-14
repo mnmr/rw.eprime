@@ -18,6 +18,13 @@ House rules: members must be regular roles without hour or location
 rules, and a composite cannot contain another composite. Editing a member
 role updates every composite bundling it.
 
+<!-- l10n:hidden-members -->
+Member roles you never assign on their own can be hidden: tick Hidden role
+in the editor and the role disappears from the role palette on the
+Colonists tab, so the palette shows only the composite. The member keeps
+working inside the composite, and you can still give it to a colonist with
+the plus button at the end of their row.
+
 <!-- l10n:b-842cedf95cbc -->
 Several rows in the Member Roles list can be selected, moved and removed
 at once, the same way as in the [Selected Jobs list](topic:picking-jobs).

@@ -80,6 +80,14 @@ namespace Implanner.UI
         /// Mod compatibility: crafters, not doctors, operate on androids
         /// (the synced option, which follows Android Tiers' setting).
         internal bool AndroidSurgeryByCrafters;
+
+        /// Mod compatibility: Multi-Doctor Surgery is loaded (static per
+        /// session); without it the surgery-team control is locked to Solo.
+        internal bool MultiDoctorLoaded;
+
+        /// The surgery-team segment shown selected: the synced mode, or
+        /// Solo while Multi-Doctor Surgery is absent.
+        internal int SurgeryTeamsSegment;
     }
 
     /// Options tab presentation state. Owned by the dialog; dies with it.
@@ -92,7 +100,8 @@ namespace Implanner.UI
         // Value: an immutable snapshot of the mod compatibility and catalog
         //   flags so the tab never reads the live model.
         // Dependencies: the mod compatibility and catalog options (Options
-        //   domain); whether Android Tiers is loaded (static per session).
+        //   domain); whether Android Tiers and Multi-Doctor Surgery are
+        //   loaded (static per session).
         // Refresh policy: immediate on the next Current read (from the
         //   dialog's WindowUpdate) after any key component moves.
         // Equality policy: rebuilds replace the snapshot.
@@ -127,6 +136,9 @@ namespace Implanner.UI
                     ShowPurchaseOnly = model.ShowPurchaseOnly,
                     AndroidTiersLoaded = AndroidTiers.Loaded,
                     AndroidSurgeryByCrafters = model.AndroidSurgeryByCrafters,
+                    MultiDoctorLoaded = MultiDoctor.Loaded,
+                    SurgeryTeamsSegment = MultiDoctor.Loaded
+                        ? (int)model.SurgeryTeams : (int)SurgeryTeamMode.Solo,
                 };
                 uiStamp = UiRevision.Current;
                 owner = store;
@@ -160,6 +172,7 @@ namespace Implanner.UI
         internal WrTip ShowPurchaseOnly = null!;
         internal WrTip SkillSliderMaximum = null!;
         internal WrTip AndroidSurgeons = null!;
+        internal WrTip SurgeryTeams = null!;
         internal WrTip EntryStyle = null!;
 
         /// Called after the window observed the current UI metrics.
@@ -177,6 +190,7 @@ namespace Implanner.UI
                 ModCompatibility.PurchaseOnlyTipLines());
             SkillSliderMaximum = WrTips.Key("IMP_OptSkillSliderMaximumTip");
             AndroidSurgeons = WrTips.Key("IMP_OptAndroidSurgeonsTip");
+            SurgeryTeams = WrTips.Key("IMP_OptSurgeryTeamsTip");
             EntryStyle = WrTips.Key("IMP_OptEntryStyleTip");
         }
 
@@ -185,7 +199,7 @@ namespace Implanner.UI
             stamp = -1;
             AllowMultipleBladders = AllowMultipleHygieneEnhancers = null!;
             ShowPurchaseOnly = SkillSliderMaximum = null!;
-            AndroidSurgeons = EntryStyle = null!;
+            AndroidSurgeons = SurgeryTeams = EntryStyle = null!;
         }
     }
 }

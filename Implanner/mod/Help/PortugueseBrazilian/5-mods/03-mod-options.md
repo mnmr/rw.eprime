@@ -35,6 +35,14 @@ e o Implanner a acompanha. As operações em androides usam a habilidade de Fabr
 Com a escolha automática de médicos ligada, o Implanner restringe cada operação em androide
 ao melhor colono elegível pela habilidade de Fabricação.
 
+<!-- l10n:surgery-teams -->
+**Equipes cirúrgicas** define quem realiza as operações agendadas pelo Implanner.
+Requer o Multi-Doctor Surgery e permanece em Individual sem ele. **Individual**, o
+padrão, faz um único médico operar. **Equipe padrão** usa a equipe cirúrgica
+padrão configurada na aba Operações do Multi-Doctor Surgery. **Melhor equipe** faz o
+médico disponível mais habilidoso liderar, auxiliado pelos médicos que mais aumentam
+a chance de sucesso (veja [Multi-Doctor Surgery](topic:multi-doctor-surgery)).
+
 <!-- l10n:b-119eac06340c -->
 ![Dica com implantes afetados](options-purchase-tip.png)
 

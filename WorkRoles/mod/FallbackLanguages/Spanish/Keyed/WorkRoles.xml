@@ -665,4 +665,6 @@ No se interrumpió el trabajo. Este aviso aparece una vez por partida.</WR_Giver
   <WR_RecTuneHunterPlacementPoorShotsFirstTip>Todos los colonos armados tienen Cazador. Los peores tiradores cazan primero para ganar práctica de Disparo; los tiradores de élite cazan los últimos. Elige esto si la comida está asegurada y quieres más colonos que sepan disparar. Es el valor predeterminado.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
   <WR_RecTuneHunterTiersRowDescReversed>Límites de nivel de Disparo para el lugar dinámico de Cazador, leídos de arriba abajo. Los niveles por encima del último límite son el nivel 1 y colocan a Cazador justo después del trabajo básico; los niveles 2 y 3 siguen a los roles de trabajo intermedios y finales, y el nivel 5 coloca a Cazador en último lugar.</WR_RecTuneHunterTiersRowDescReversed>
   <WR_HelpChapterMods>Mods</WR_HelpChapterMods>
+  <WR_HiddenRole>Rol oculto</WR_HiddenRole>
+  <WR_HiddenRoleTip>Los roles ocultos no aparecen en la paleta de roles de la parte superior de la pestaña Colonos. Siguen funcionando con normalidad: los colonos que los tienen los conservan, el botón + de la fila de un colono aún los muestra y las recomendaciones pueden seguir sugiriéndolos. Úsalo para ocultar roles que rara vez asignas directamente o si la paleta de roles ocupa demasiado espacio.</WR_HiddenRoleTip>
 </LanguageData>

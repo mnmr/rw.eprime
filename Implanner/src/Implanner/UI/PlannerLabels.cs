@@ -79,6 +79,17 @@ namespace Implanner.UI
         internal static string OptAllowMultipleHygieneEnhancers = "";
         internal static string OptAndroidSurgeonsDoctors = "";
         internal static string OptAndroidSurgeonsCrafters = "";
+        internal static string OptSurgeryTeams = "";
+
+        /// Mod compatibility subsection captions, one per mod or category.
+        internal static string OptCompatHygiene = "";
+        internal static string OptCompatAndroidTiers = "";
+        internal static string OptCompatMultiDoctor = "";
+        internal static string OptCompatSkills = "";
+
+        /// Segment labels of the surgery-team control, in SurgeryTeamMode
+        /// order (solo, default team, best team).
+        internal static readonly string[] SurgeryTeamModes = new string[3];
         internal static string OptCatalog = "";
         internal static string OptShowPurchaseOnly = "";
         internal static string OptInterface = "";
@@ -172,6 +183,14 @@ namespace Implanner.UI
                 "IMP_OptAllowMultipleHygieneEnhancers".Translate();
             OptAndroidSurgeonsDoctors = "IMP_OptAndroidSurgeonsDoctors".Translate();
             OptAndroidSurgeonsCrafters = "IMP_OptAndroidSurgeonsCrafters".Translate();
+            OptSurgeryTeams = "IMP_OptSurgeryTeams".Translate();
+            OptCompatHygiene = "IMP_OptCompatHygiene".Translate();
+            OptCompatAndroidTiers = "IMP_OptCompatAndroidTiers".Translate();
+            OptCompatMultiDoctor = "IMP_OptCompatMultiDoctor".Translate();
+            OptCompatSkills = "IMP_OptCompatSkills".Translate();
+            SurgeryTeamModes[0] = "IMP_SurgeryTeamSolo".Translate();
+            SurgeryTeamModes[1] = "IMP_SurgeryTeamDefault".Translate();
+            SurgeryTeamModes[2] = "IMP_SurgeryTeamBest".Translate();
             OptCatalog = "IMP_OptCatalog".Translate();
             OptShowPurchaseOnly = "IMP_OptShowPurchaseOnly".Translate();
             OptInterface = "IMP_OptInterface".Translate();

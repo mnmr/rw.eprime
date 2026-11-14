@@ -12,6 +12,7 @@ La maggior parte dei ruoli è normale: un semplice elenco di attività, come Med
 - **Blocco**: il ruolo vieta le proprie attività invece di consentirle. Vedi [ruoli di blocco](topic:blocker-roles).
 - **Condizionale**: il ruolo cambia stato secondo orario o luogo. Vedi [ruoli condizionali](topic:conditional-roles).
 - **Composto**: il ruolo contiene altri ruoli invece di attività. Vedi [ruoli composti](topic:composite-roles).
+- **Nascosto**: il ruolo non compare nella tavolozza dei ruoli in cima alla scheda Coloni. Funziona comunque normalmente e il pulsante più alla fine della riga di un colono lo elenca ancora.
 
 <!-- l10n:b-a57d054ddfd3 -->
 Esiste anche una categoria informale senza interruttore: un ruolo normale che copre interamente altri ruoli li mostra annidati sotto di sé nell'[albero dei ruoli](topic:tree-views). Base e Tuttofare funzionano così.

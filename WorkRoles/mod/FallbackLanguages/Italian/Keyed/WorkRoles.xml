@@ -665,4 +665,6 @@ L'attività non è stata interrotta. Questo avviso appare una volta per salvatag
   <WR_RecTuneHunterPlacementPoorShotsFirstTip>Ogni colono armato ha Cacciatore. I tiratori meno abili cacciano per primi, così si allenano a Tiro; i cecchini cacciano per ultimi. Scegli questa opzione quando il cibo è assicurato e vuoi più coloni capaci di sparare. È l'opzione predefinita.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
   <WR_RecTuneHunterTiersRowDescReversed>Soglie di livello di Tiro per la posizione dinamica del Cacciatore, lette dall'alto verso il basso. I livelli sopra l'ultima soglia sono il livello 1 e collocano Cacciatore subito dopo il lavoro di base, i livelli 2 e 3 seguono i ruoli di lavoro intermedi e ultimi, e il livello 5 colloca Cacciatore per ultimo.</WR_RecTuneHunterTiersRowDescReversed>
   <WR_HelpChapterMods>Mod</WR_HelpChapterMods>
+  <WR_HiddenRole>Ruolo nascosto</WR_HiddenRole>
+  <WR_HiddenRoleTip>I ruoli nascosti non compaiono nella tavolozza dei ruoli in cima alla scheda Coloni. Funzionano comunque normalmente: i coloni che li hanno li mantengono, il pulsante + nella riga di un colono li elenca ancora e i suggerimenti possono ancora proporli. Usalo per nascondere i ruoli che assegni di rado in modo diretto o se la tavolozza dei ruoli occupa troppo spazio.</WR_HiddenRoleTip>
 </LanguageData>

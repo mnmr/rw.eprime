@@ -234,4 +234,13 @@
   <IMP_PlanForGhouls>適用於食屍鬼</IMP_PlanForGhouls>
   <IMP_PlanGhouls>食屍鬼</IMP_PlanGhouls>
   <IMP_PlanTargetColonists>殖民者</IMP_PlanTargetColonists>
+  <IMP_OptSurgeryTeams>手術團隊</IMP_OptSurgeryTeams>
+  <IMP_OptSurgeryTeamsTip>決定由誰執行 Implanner 安排的手術。需要 Multi-Doctor Surgery 模組；未安裝時由一名醫生施行手術。\n\n單人：由一名醫生施行手術。\n\n預設團隊：使用在 Multi-Doctor Surgery 的「手術」頁中設定的預設手術團隊。若其主刀醫生無法為該殖民者施行手術，例如主刀本人就是患者，或人在其他殖民地，則改由一名醫生單獨施行，不組成團隊。\n\n最佳團隊：由技術最高的可用醫生主刀，並由最能提高成功率的醫生協助，人數上限為 Multi-Doctor Surgery 的醫生上限。\n\n團隊手術會等待其主刀醫生；即使低於醫生自動選擇所要求的技能，主刀醫生也可以進行手術。在 Multi-Doctor Surgery 設定中被排除的手術維持單人進行。多人遊戲中不使用團隊。</IMP_OptSurgeryTeamsTip>
+  <IMP_SurgeryTeamBest>最佳團隊</IMP_SurgeryTeamBest>
+  <IMP_SurgeryTeamDefault>預設團隊</IMP_SurgeryTeamDefault>
+  <IMP_SurgeryTeamSolo>單人</IMP_SurgeryTeamSolo>
+  <IMP_OptCompatAndroidTiers>Android Tiers Continued</IMP_OptCompatAndroidTiers>
+  <IMP_OptCompatHygiene>Dubs Bad Hygiene 與 [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
+  <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
+  <IMP_OptCompatSkills>Endless Growth 與其他技能模組</IMP_OptCompatSkills>
 </LanguageData>

@@ -17,6 +17,9 @@ Cook. The editor's switches turn a role into something else:
 [Conditional roles](topic:conditional-roles).
 - **Composite**: the role bundles other roles instead of jobs. See
 [Composite roles](topic:composite-roles).
+- **Hidden**: the role is left out of the role palette at the top of the
+Colonists tab. It still works as usual, and the plus button at the end of
+a colonist's row still lists it.
 
 <!-- l10n:b-a57d054ddfd3 -->
 There is also a soft kind with no switch: a regular role whose jobs fully

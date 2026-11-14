@@ -13,5 +13,8 @@ Les titulaires exécutent les tâches des membres dans l'ordre indiqué, en une 
 <!-- l10n:b-d1d6142f5648 -->
 Les membres doivent être des rôles ordinaires sans règles d'horaires ni de lieux ; un composite ne peut pas contenir un autre composite. Modifier un membre actualise tous les composites qui le contiennent.
 
+<!-- l10n:hidden-members -->
+Les rôles membres que vous n'attribuez jamais seuls peuvent être masqués : cochez Rôle masqué dans l'éditeur et le rôle disparaît de la palette de rôles de l'onglet Colons, qui n'affiche alors que le composite. Le membre continue de fonctionner au sein du composite, et vous pouvez toujours l'attribuer à un colon avec le bouton plus au bout de sa ligne.
+
 <!-- l10n:b-842cedf95cbc -->
 Plusieurs lignes de Rôles membres peuvent être sélectionnées, déplacées ou retirées ensemble, comme dans la [liste des tâches sélectionnées](topic:picking-jobs).

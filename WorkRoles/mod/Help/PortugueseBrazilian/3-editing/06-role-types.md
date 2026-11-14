@@ -12,6 +12,7 @@ A maioria é Normal: uma lista de trabalhos, como Médico ou Cozinheiro. Os cont
 - **Bloqueadora**: proíbe os trabalhos em vez de permitir. Veja [Funções bloqueadoras](topic:blocker-roles).
 - **Condicional**: liga e desliga por horário ou local. Veja [Funções condicionais](topic:conditional-roles).
 - **Composta**: reúne funções em vez de trabalhos. Veja [Funções compostas](topic:composite-roles).
+- **Oculta**: a função não aparece na paleta de funções no topo da aba Colonos. Ela continua funcionando normalmente, e o botão de mais no fim da linha de um colono ainda a lista.
 
 <!-- l10n:b-a57d054ddfd3 -->
 Há também uma relação informal sem controle: uma função normal que cobre totalmente outras as mostra aninhadas na [árvore](topic:tree-views), como Básicos e Ajudante.

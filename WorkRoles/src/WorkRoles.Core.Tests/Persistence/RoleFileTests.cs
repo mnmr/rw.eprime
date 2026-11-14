@@ -224,6 +224,7 @@ public class RoleFileTests
             autoAssign = true,
             blocker = true,
             enabled = false,
+            hidden = true,
             activeHours = RoleFile.BitsToHours("111111000000000000000000"),
             locations = { LocationRules.Caravans, "settlement:Bö & <Wood> \"Camp\"", "ship:The Wanderer" },
             entries = [new(JobEntryKind.WorkGiver, "FightFires"), new(JobEntryKind.WorkType, "Hauling")],
@@ -255,6 +256,8 @@ public class RoleFileTests
         await Assert.That(role.autoAssign).IsTrue();
         await Assert.That(role.blocker).IsTrue();
         await Assert.That(role.enabled).IsFalse();
+        // Hidden from the Colonists tab's role palette (still assignable).
+        await Assert.That(role.hidden).IsTrue();
         await Assert.That(RoleFile.HoursToBits(role.activeHours)).IsEqualTo("111111000000000000000000");
         // Location names round-trip any characters a player can type (XLinq escapes).
         await Assert.That(string.Join("|", role.locations)).IsEqualTo("caravans|settlement:Bö & <Wood> \"Camp\"|ship:The Wanderer");
@@ -264,6 +267,7 @@ public class RoleFileTests
         await Assert.That(plain.templateDef == null).IsTrue();
         await Assert.That(plain.colorRef == null).IsTrue();
         await Assert.That(plain.enabled).IsTrue();
+        await Assert.That(plain.hidden).IsFalse();
         await Assert.That(plain.activeHours).IsEqualTo(FileRole.AllHours);
     }
 

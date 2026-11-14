@@ -234,4 +234,13 @@
   <IMP_PlanForGhouls>para necrófagos</IMP_PlanForGhouls>
   <IMP_PlanGhouls>Necrófagos</IMP_PlanGhouls>
   <IMP_PlanTargetColonists>colonos</IMP_PlanTargetColonists>
+  <IMP_OptSurgeryTeams>Equipos quirúrgicos</IMP_OptSurgeryTeams>
+  <IMP_OptSurgeryTeamsTip>Quién realiza las operaciones que programa Implanner. Requiere el mod Multi-Doctor Surgery; sin él, opera un solo médico.\n\nIndividual: opera un solo médico.\n\nEquipo predeterminado: el equipo quirúrgico predeterminado configurado en la pestaña Operaciones de Multi-Doctor Surgery. Si su cirujano principal no puede operar al colono, por ejemplo porque es el propio paciente o está en otra colonia, un solo médico realiza la operación sin equipo.\n\nMejor equipo: el médico disponible más hábil dirige, con la ayuda de los médicos que más aumentan la probabilidad de éxito, hasta el límite de médicos de Multi-Doctor Surgery.\n\nUna operación en equipo espera a su cirujano principal, que puede operar incluso por debajo de la habilidad que exige la selección automática de médicos. Las operaciones excluidas en los ajustes de Multi-Doctor Surgery se hacen en solitario. Los equipos no se usan en multijugador.</IMP_OptSurgeryTeamsTip>
+  <IMP_SurgeryTeamBest>Mejor equipo</IMP_SurgeryTeamBest>
+  <IMP_SurgeryTeamDefault>Equipo predeterminado</IMP_SurgeryTeamDefault>
+  <IMP_SurgeryTeamSolo>Individual</IMP_SurgeryTeamSolo>
+  <IMP_OptCompatAndroidTiers>Android Tiers Continued</IMP_OptCompatAndroidTiers>
+  <IMP_OptCompatHygiene>Dubs Bad Hygiene y [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
+  <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
+  <IMP_OptCompatSkills>Endless Growth y otros mods de habilidades</IMP_OptCompatSkills>
 </LanguageData>

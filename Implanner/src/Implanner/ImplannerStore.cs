@@ -86,6 +86,7 @@ namespace Implanner
         private bool showPurchaseOnly;
         private bool upgradeByPriority;
         private bool androidSurgeryByCrafters;
+        private int surgeryTeams;
         // Quality Bionics Remastered's efficiency multipliers as the
         // simulation uses them (QualityMultipliers.Encode); empty or
         // unparsable (older saves) keeps the model's default table.
@@ -388,6 +389,7 @@ namespace Implanner
                 showPurchaseOnly = Model.ShowPurchaseOnly;
                 upgradeByPriority = Model.UpgradeByPriority;
                 androidSurgeryByCrafters = Model.AndroidSurgeryByCrafters;
+                surgeryTeams = (int)Model.SurgeryTeams;
                 qualityMultipliers = QualityMultipliers.Encode(Model.QualityMultipliers);
             }
 
@@ -447,6 +449,7 @@ namespace Implanner
             Scribe_Values.Look(ref showPurchaseOnly, "showPurchaseOnly", false);
             Scribe_Values.Look(ref upgradeByPriority, "upgradeByPriority", false);
             Scribe_Values.Look(ref androidSurgeryByCrafters, "androidSurgeryByCrafters", false);
+            Scribe_Values.Look(ref surgeryTeams, "surgeryTeams", (int)SurgeryTeamMode.Solo);
             Scribe_Values.Look(ref qualityMultipliers, "qualityMultipliers", "");
             Scribe_Values.Look(ref pendingReconcile, "pendingReconcile", false);
             Scribe_Values.Look(ref pendingProductionPass, "pendingProductionPass", false);
@@ -613,7 +616,7 @@ namespace Implanner
                     onlyIdleBenches, productionSkill, allowIntermediaries,
                     allowMultipleBladders, allowMultipleHygieneEnhancers,
                     showPurchaseOnly, onlyDesignatedBenches, upgradeByPriority,
-                    androidSurgeryByCrafters);
+                    androidSurgeryByCrafters, (SurgeryTeamMode)surgeryTeams);
                 if (QualityMultipliers.TryParse(qualityMultipliers, out float[] multipliers))
                     Model.SetQualityMultipliers(multipliers);
                 // Deferred so maps and pawns are fully loaded when existence

@@ -12,6 +12,7 @@ La mayoría son normales: una lista de trabajos como Médico o Cocinero. Los int
 - **Bloqueo**: prohíbe los trabajos en lugar de permitirlos. Véase [Roles de bloqueo](topic:blocker-roles).
 - **Condicional**: cambia según hora o lugar. Véase [Roles condicionales](topic:conditional-roles).
 - **Compuesto**: reúne roles en lugar de trabajos. Véase [Roles compuestos](topic:composite-roles).
+- **Oculto**: el rol no aparece en la paleta de roles de la parte superior de la pestaña Colonos. Sigue funcionando con normalidad y el botón más al final de la fila de un colono aún lo muestra.
 
 <!-- l10n:b-a57d054ddfd3 -->
 Hay otro tipo informal sin interruptor: un rol normal que cubre por completo otros los muestra anidados en el [árbol](topic:tree-views), como Básicos y Mozo.

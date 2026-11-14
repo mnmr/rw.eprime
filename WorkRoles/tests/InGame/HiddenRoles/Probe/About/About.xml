@@ -1,0 +1,7 @@
+<ModMetaData>
+  <name>WorkRoles hidden roles probe</name>
+  <author>WorkRoles tests</author>
+  <packageId>tests.workroles.hiddenroles</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <loadAfter><li>mnmr.workroles</li></loadAfter>
+</ModMetaData>

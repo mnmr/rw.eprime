@@ -28,6 +28,9 @@ Ogni suggerimento elenca gli impianti interessati caricati e la mod da cui prove
 <!-- l10n:android-surgeons -->
 **Operazioni sugli androidi** compare solo quando Android Tiers Continued è caricata. Indica chi esegue le operazioni sugli androidi, che Implanner ricava dall'impostazione di Android Tiers "Gli androidi possono essere curati solo dagli artigiani": i medici se è disattivata, come per impostazione predefinita, gli artigiani con "Ripara androidi" attivo se è attivata. Cambiala nelle impostazioni della mod Android Tiers e Implanner si adegua. Le operazioni sugli androidi usano l'abilità Artigianato. Con la selezione automatica del medico attiva, Implanner limita ogni operazione su un androide al miglior colono idoneo per abilità Artigianato.
 
+<!-- l10n:surgery-teams -->
+**Squadre chirurgiche** sceglie chi esegue le operazioni pianificate da Implanner. Richiede Multi-Doctor Surgery e senza di essa resta su Singolo. **Singolo**, l'impostazione predefinita, fa operare un solo medico. **Squadra predefinita** usa la squadra chirurgica predefinita impostata nella scheda Operazioni di Multi-Doctor Surgery. **Squadra migliore** fa guidare il medico disponibile più abile, assistito dai medici che aumentano di più la probabilità di successo (vedi [Multi-Doctor Surgery](topic:multi-doctor-surgery)).
+
 <!-- l10n:b-119eac06340c -->
 ![Il suggerimento dell'opzione mostra gli impianti interessati](options-purchase-tip.png)
 

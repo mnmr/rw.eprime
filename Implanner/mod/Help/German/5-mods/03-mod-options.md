@@ -28,6 +28,9 @@ Jeder Tooltip zeigt die geladenen betroffenen Implantate und ihre Ursprungsmods.
 <!-- l10n:android-surgeons -->
 **Android-Operationen** erscheint nur, solange Android Tiers Continued geladen ist. Die Option zeigt, wer Android-Operationen durchführt, und Implanner übernimmt sie aus der Android-Tiers-Einstellung „Androids can only be healed by crafters“: Ärzte, solange sie ausgeschaltet ist (Standard), und Handwerker, bei denen „Repair androids“ aktiviert ist, solange sie eingeschaltet ist. Ändere sie in den Mod-Einstellungen von Android Tiers, Implanner folgt automatisch. Android-Operationen nutzen die Fertigkeit Handwerk. Bei aktiver automatischer Arztwahl beschränkt Implanner jede Android-Operation auf den geeigneten Kolonisten mit der höchsten Handwerksfertigkeit.
 
+<!-- l10n:surgery-teams -->
+**Operationsteams** legt fest, wer die von Implanner geplanten Operationen durchführt. Dafür wird Multi-Doctor Surgery benötigt; ohne die Mod bleibt die Einstellung auf Einzeln. **Einzeln** (Standard) lässt einen Arzt operieren. **Standardteam** nutzt das Standard-Operationsteam aus dem Reiter „Operationen“ von Multi-Doctor Surgery. **Bestes Team** lässt den fähigsten verfügbaren Arzt die Leitung übernehmen, unterstützt von den Ärzten, die die Erfolgschance am stärksten erhöhen (siehe [Multi-Doctor Surgery](topic:multi-doctor-surgery)).
+
 <!-- l10n:b-119eac06340c -->
 ![Der Tooltip zeigt betroffene Implantate](options-purchase-tip.png)
 

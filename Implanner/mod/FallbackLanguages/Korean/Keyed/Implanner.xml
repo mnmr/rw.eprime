@@ -234,4 +234,13 @@
   <IMP_PlanForGhouls>구울용</IMP_PlanForGhouls>
   <IMP_PlanGhouls>구울</IMP_PlanGhouls>
   <IMP_PlanTargetColonists>정착민</IMP_PlanTargetColonists>
+  <IMP_OptSurgeryTeams>수술팀</IMP_OptSurgeryTeams>
+  <IMP_OptSurgeryTeamsTip>Implanner가 예약하는 수술을 누가 수행할지 정합니다. Multi-Doctor Surgery 모드가 필요하며, 없으면 의사 한 명이 수술합니다.\n\n단독: 의사 한 명이 수술합니다.\n\n기본 팀: Multi-Doctor Surgery의 수술 탭에 설정된 기본 수술팀입니다. 집도의가 해당 정착민을 수술할 수 없는 경우(예: 집도의 본인이 환자이거나 다른 정착지에 있는 경우)에는 팀 없이 의사 한 명이 수술합니다.\n\n최적 팀: 가장 숙련된 가용 의사가 집도하고, 성공 확률을 가장 많이 높여 주는 의사들이 Multi-Doctor Surgery의 의사 수 제한까지 보조합니다.\n\n팀 수술은 집도의를 기다리며, 집도의는 자동 의사 선택이 요구하는 기술보다 낮아도 수술할 수 있습니다. Multi-Doctor Surgery 설정에서 제외된 수술은 단독으로 진행됩니다. 멀티플레이에서는 팀을 사용하지 않습니다.</IMP_OptSurgeryTeamsTip>
+  <IMP_SurgeryTeamBest>최적 팀</IMP_SurgeryTeamBest>
+  <IMP_SurgeryTeamDefault>기본 팀</IMP_SurgeryTeamDefault>
+  <IMP_SurgeryTeamSolo>단독</IMP_SurgeryTeamSolo>
+  <IMP_OptCompatAndroidTiers>Android Tiers Continued</IMP_OptCompatAndroidTiers>
+  <IMP_OptCompatHygiene>Dubs Bad Hygiene 및 [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
+  <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
+  <IMP_OptCompatSkills>Endless Growth 및 기타 기술 모드</IMP_OptCompatSkills>
 </LanguageData>

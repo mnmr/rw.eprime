@@ -234,4 +234,13 @@
   <IMP_PlanForGhouls>cho ngạ quỷ</IMP_PlanForGhouls>
   <IMP_PlanGhouls>Ngạ quỷ</IMP_PlanGhouls>
   <IMP_PlanTargetColonists>cư dân</IMP_PlanTargetColonists>
+  <IMP_OptSurgeryTeams>Đội phẫu thuật (Multi-Doctor Surgery)</IMP_OptSurgeryTeams>
+  <IMP_OptSurgeryTeamsTip>Người thực hiện các ca phẫu thuật do Implanner lên lịch. Cần mod Multi-Doctor Surgery; nếu không có, một bác sĩ sẽ mổ.\n\nMột mình: một bác sĩ phẫu thuật.\n\nĐội mặc định: đội phẫu thuật mặc định thiết lập ở thẻ Phẫu thuật của Multi-Doctor Surgery. Khi trưởng ca không thể mổ cho cư dân đó, ví dụ vì họ chính là bệnh nhân hoặc đang ở thuộc địa khác, một bác sĩ sẽ thực hiện ca mổ mà không có đội.\n\nĐội tốt nhất: bác sĩ giỏi nhất đang rảnh làm trưởng ca, hỗ trợ bởi các bác sĩ giúp tăng nhiều nhất tỷ lệ thành công, tối đa theo giới hạn bác sĩ của Multi-Doctor Surgery.\n\nCa phẫu thuật theo đội chờ bác sĩ trưởng ca, người có thể mổ ngay cả khi thấp hơn kỹ năng mà chọn bác sĩ tự động yêu cầu. Các ca bị loại trừ trong thiết lập của Multi-Doctor Surgery vẫn do một người làm. Đội không được dùng trong chế độ nhiều người.</IMP_OptSurgeryTeamsTip>
+  <IMP_SurgeryTeamBest>Đội tốt nhất</IMP_SurgeryTeamBest>
+  <IMP_SurgeryTeamDefault>Đội mặc định</IMP_SurgeryTeamDefault>
+  <IMP_SurgeryTeamSolo>Một mình</IMP_SurgeryTeamSolo>
+  <IMP_OptCompatAndroidTiers>Android Tiers Continued</IMP_OptCompatAndroidTiers>
+  <IMP_OptCompatHygiene>Dubs Bad Hygiene và [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
+  <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
+  <IMP_OptCompatSkills>Endless Growth và các mod kỹ năng khác</IMP_OptCompatSkills>
 </LanguageData>

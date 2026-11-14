@@ -13,5 +13,8 @@ Người giữ làm việc các thành viên theo thứ tự, như một phân c
 <!-- l10n:b-d1d6142f5648 -->
 Thành viên phải là vai trò thường không có quy tắc giờ/vị trí; tổ hợp không chứa tổ hợp khác. Sửa thành viên cập nhật mọi tổ hợp chứa nó.
 
+<!-- l10n:hidden-members -->
+Những vai trò thành viên bạn không bao giờ giao riêng lẻ có thể được ẩn: đánh dấu Vai trò ẩn trong trình chỉnh sửa và vai trò đó sẽ biến mất khỏi bảng vai trò ở tab Người định cư, nên bảng chỉ hiện vai trò tổ hợp. Thành viên vẫn hoạt động bình thường bên trong tổ hợp, và bạn vẫn có thể giao nó cho một người định cư bằng nút dấu cộng ở cuối hàng của họ.
+
 <!-- l10n:b-842cedf95cbc -->
 Có thể chọn, chuyển và bỏ nhiều hàng thành viên cùng lúc, như [danh sách Việc đã chọn](topic:picking-jobs).

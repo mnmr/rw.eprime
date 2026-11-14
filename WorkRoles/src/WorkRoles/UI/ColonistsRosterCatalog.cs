@@ -148,11 +148,12 @@ namespace WorkRoles.UI
         private sealed class RoleFacts
         {
             internal RoleFacts(RoleChipRenderData chip, bool enabled,
-                string abbreviation, int gridPrefixRequirement,
+                bool hidden, string abbreviation, int gridPrefixRequirement,
                 Texture2D? icon, HashSet<string> coverage)
             {
                 Chip = chip;
                 Enabled = enabled;
+                Hidden = hidden;
                 Abbreviation = abbreviation;
                 GridPrefixRequirement = gridPrefixRequirement;
                 Icon = icon;
@@ -161,6 +162,9 @@ namespace WorkRoles.UI
 
             internal RoleChipRenderData Chip { get; }
             internal bool Enabled { get; }
+            /// Left out of the palette clusters (Role.hidden); every other
+            /// consumer of these facts still sees the role.
+            internal bool Hidden { get; }
             internal string Abbreviation { get; }
             /// Fewest leading characters keeping this label distinct from
             /// every other role label (depends on the other labels, hence
@@ -171,6 +175,7 @@ namespace WorkRoles.UI
 
             internal bool ContentEquals(RoleFacts other) =>
                 other != null && Enabled == other.Enabled
+                && Hidden == other.Hidden
                 && Chip.ContentEquals(other.Chip)
                 && string.Equals(Abbreviation, other.Abbreviation,
                     StringComparison.Ordinal)
@@ -276,7 +281,7 @@ namespace WorkRoles.UI
                     RoleIconPresentationCatalog.For(role.id);
                 detachedChips[role.id] = chip;
                 roles[role.id] = new RoleFacts(chip,
-                    role.enabled, abbreviation, gridPrefixRequirements[i],
+                    role.enabled, role.hidden, abbreviation, gridPrefixRequirements[i],
                     icon.Texture,
                     new HashSet<string>(role.Coverage(),
                         StringComparer.Ordinal));
@@ -398,7 +403,8 @@ namespace WorkRoles.UI
                 (Role role, _, int depth, bool virtualRow) = tree[i];
                 if (depth == 0) root = role;
                 if (virtualRow || !seen.Add(role.id) || root == null
-                    || !roles.TryGetValue(role.id, out RoleFacts? facts))
+                    || !roles.TryGetValue(role.id, out RoleFacts? facts)
+                    || facts.Hidden)
                     continue;
                 RolesFor(depth == 0 ? role : root).Add(
                     new ColonistPaletteRole(facts.Chip, facts.Enabled));
@@ -436,7 +442,8 @@ namespace WorkRoles.UI
                     var row = section.rows[rowIndex];
                     if (row.virtualRow || !seen.Add(row.role.id)
                         || !roles.TryGetValue(row.role.id,
-                            out RoleFacts? facts))
+                            out RoleFacts? facts)
+                        || facts.Hidden)
                         continue;
                     clusterRoles.Add(new ColonistPaletteRole(facts.Chip,
                         facts.Enabled));

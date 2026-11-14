@@ -407,9 +407,12 @@ namespace Implanner
                     // The patient never operates on themselves: the floor
                     // and the blocked check both look at the OTHER surgeons
                     // on the map, in the pool the bill's recipe needs.
-                    RecipeDef? recipe = RecipeOfBill(pawn, billId);
+                    // A team surgery's lead surgeon (Multi-Doctor Surgery)
+                    // may start it whatever the floor says.
+                    Bill? owned = BillOf(pawn, billId);
+                    RecipeDef? recipe = owned?.recipe;
                     bool blocked = false;
-                    if (recipe != null)
+                    if (recipe != null && !MultiDoctor.HasLead(owned!))
                     {
                         SurgeonPool pool = SurgeonPool.For(model, pawn, recipe);
                         int bestOther = BestSkill(pawn.MapHeld, pawn, pool);
@@ -601,12 +604,12 @@ namespace Implanner
         }
 
         /// The recipe of a pawn's bill by load id, or null. Presentation path.
-        private static RecipeDef? RecipeOfBill(Pawn pawn, string billId)
+        private static Bill? BillOf(Pawn pawn, string billId)
         {
             BillStack bills = pawn.BillStack;
             for (int i = 0; i < bills.Count; i++)
                 if (bills[i].GetUniqueLoadID() == billId)
-                    return bills[i].recipe;
+                    return bills[i];
             return null;
         }
 
@@ -996,7 +999,7 @@ namespace Implanner
                     return change;
 
             change |= model.SetOwnedBill(pawnId, goalKey,
-                pass.BillId(CreateOperation(pawn, recipe, part, floor)));
+                pass.BillId(CreateOperation(model, pawn, recipe, part, floor)));
             if (entry.WipesPart)
                 change |= model.SetPendingReinstalls(pawnId, goalKey,
                     PlannerReinstall.PushedOut(pawn, entry, part));
@@ -1007,13 +1010,17 @@ namespace Implanner
         /// one (HealthCardUtility.CreateSurgeryBill without its messages),
         /// at the enforced doctor floor. Its implant item is bound through
         /// SurgeryBindings once the reservation and bill record publish.
-        internal static Bill_Medical CreateOperation(Pawn pawn, RecipeDef recipe,
-            BodyPartRecord part, int floor)
+        /// With Multi-Doctor Surgery and a team mode it is that mod's team
+        /// surgery (MultiDoctor); otherwise a plain Bill_Medical.
+        internal static Bill_Medical CreateOperation(PlannerModel model, Pawn pawn,
+            RecipeDef recipe, BodyPartRecord part, int floor)
         {
-            var bill = new Bill_Medical(recipe, null);
+            SurgeryTeamMode teams = MultiDoctor.ModeFor(model);
+            Bill_Medical bill = MultiDoctor.NewBill(teams, pawn, recipe);
             pawn.BillStack.AddBill(bill);
             bill.Part = part;
             bill.allowedSkillRange.min = floor;
+            MultiDoctor.AssignTeam(teams, bill, pawn);
             return bill;
         }
 

@@ -19,6 +19,19 @@ namespace Implanner.Core
         Asap = 2,
     }
 
+    /// Mod compatibility (Multi-Doctor Surgery): who performs an Implanner
+    /// operation. Without that mod every mode behaves as Solo. Values are
+    /// persisted and synced by number.
+    public enum SurgeryTeamMode
+    {
+        /// One doctor, as without the mod (the default).
+        Solo = 0,
+        /// Multi-Doctor Surgery's default surgery team.
+        DefaultTeam = 1,
+        /// The best available lead surgeon and assistants.
+        BestTeam = 2,
+    }
+
     /// The limb family an implant kind belongs to, for ASAP candidate
     /// ranking. Derived from the targeted part's body part tags.
     public enum LimbKind

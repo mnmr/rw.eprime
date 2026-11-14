@@ -60,6 +60,9 @@ namespace WorkRoles
         }
 
         public bool enabled = true;
+        /// Left out of the Colonists tab's role palette only; the role still
+        /// works, shows on assigned colonists and in the row's add menu.
+        public bool hidden;
         public bool hasCustomColor;
         public Color color = Color.white;
         public string? iconPath;
@@ -227,6 +230,7 @@ namespace WorkRoles
             Scribe_Values.Look(ref id, "id");
             Scribe_Values.Look(ref label!, "label");
             Scribe_Values.Look(ref enabled, "enabled", true);
+            Scribe_Values.Look(ref hidden, "hidden");
             Scribe_Values.Look(ref hasCustomColor, "hasCustomColor");
             Scribe_Values.Look(ref color, "color", Color.white);
             Scribe_Values.Look(ref iconPath, "iconPath");

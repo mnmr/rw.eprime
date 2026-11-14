@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.8.4 — 2026-11-14
+
+- Added: Option to hide roles from the role palette on the Colonist tab. Hidden roles can still be added with the + icon.
+
 ## 1.8.3 — 2026-11-08
 
 - Fixed: Permanently destroyed corpses no longer retain unused role data in memory.

@@ -201,7 +201,7 @@ namespace Implanner
                 hediff, target.Part)!;
             int floor = PlannerSurgery.FloorFor(model, pass.Index, colony, pawn, recipe);
             var change = model.SetOwnedBill(pawnId, removalKey, pass.BillId(
-                PlannerSurgery.CreateOperation(pawn, recipe, target.Part, floor)));
+                PlannerSurgery.CreateOperation(model, pawn, recipe, target.Part, floor)));
             change |= model.SetPendingReinstalls(pawnId, removalKey, new[] { record });
             return change | model.Reserve(itemId, pawnId, record.Key);
         }

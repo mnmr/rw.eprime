@@ -51,6 +51,8 @@ namespace WorkRoles.Core
         public bool autoAssign;
         public bool blocker;
         public bool enabled = true;
+        /// Left out of the Colonists tab's role palette; still assignable.
+        public bool hidden;
         public int activeHours = AllHours;
         public List<string> locations = new List<string>();
         /// Recommendation tuning; hasTuning=false marks a pre-tuning file.
@@ -363,6 +365,8 @@ namespace WorkRoles.Core
                 options.Add(new XElement("Blocker", "true"));
             if (!role.enabled)
                 options.Add(new XElement("Enabled", "false"));
+            if (role.hidden)
+                options.Add(new XElement("Hidden", "true"));
             if (role.activeHours != FileRole.AllHours)
                 options.Add(new XElement("ActiveHours", HoursToBits(role.activeHours)));
             if (role.hasTuning)
@@ -807,6 +811,7 @@ namespace WorkRoles.Core
                 role.autoAssign = options.Element("AutoAssign")?.Value.Trim() == "true";
                 role.blocker = options.Element("Blocker")?.Value.Trim() == "true";
                 role.enabled = options.Element("Enabled")?.Value.Trim() != "false";
+                role.hidden = options.Element("Hidden")?.Value.Trim() == "true";
                 foreach (var loc in options.Element("Locations")?.Elements()
                          ?? Enumerable.Empty<XElement>())
                 {

@@ -12,6 +12,7 @@ La plupart des rôles sont ordinaires : une simple liste de tâches comme Médec
 - **Bloqueur** : interdit ses tâches au lieu de les autoriser. Voir [Rôles bloqueurs](topic:blocker-roles).
 - **Conditionnel** : s'active selon l'heure ou le lieu. Voir [Rôles conditionnels](topic:conditional-roles).
 - **Composite** : regroupe des rôles plutôt que des tâches. Voir [Rôles composites](topic:composite-roles).
+- **Masqué** : le rôle n'apparaît pas dans la palette de rôles en haut de l'onglet Colons. Il fonctionne normalement, et le bouton plus au bout de la ligne d'un colon l'affiche toujours.
 
 <!-- l10n:b-a57d054ddfd3 -->
 Il existe aussi une catégorie implicite, sans interrupteur : un rôle ordinaire couvrant toutes les tâches d'autres rôles les affiche imbriqués sous lui dans l'[arbre des rôles](topic:tree-views). Tâches de base et Homme à tout faire fonctionnent ainsi.

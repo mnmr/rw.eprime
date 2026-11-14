@@ -28,6 +28,9 @@ Cada descripción enumera los implantes afectados cargados y su mod de origen.
 <!-- l10n:android-surgeons -->
 **Operaciones de androides** solo aparece mientras Android Tiers Continued está cargado. Muestra quién realiza las operaciones de androides, algo que Implanner toma del ajuste de Android Tiers "Los androides solo pueden ser curados por artesanos": los médicos cuando está desactivado, el valor por defecto, y los artesanos con "Reparar androides" activado cuando está activado. Cámbialo en los ajustes del mod Android Tiers e Implanner lo seguirá. Las operaciones de androides usan la habilidad de Fabricación. Con la selección automática de médicos activada, Implanner limita cada operación de androide al mejor colono elegible según su habilidad de Fabricación.
 
+<!-- l10n:surgery-teams -->
+**Equipos quirúrgicos** elige quién realiza las operaciones que programa Implanner. Requiere Multi-Doctor Surgery y se queda en Individual sin él. **Individual**, el valor por defecto, hace que opere un solo médico. **Equipo predeterminado** usa el equipo quirúrgico predeterminado configurado en la pestaña Operaciones de Multi-Doctor Surgery. **Mejor equipo** pone al frente al médico disponible más hábil, con la ayuda de los médicos que más aumentan la probabilidad de éxito (consulta [Multi-Doctor Surgery](topic:multi-doctor-surgery)).
+
 <!-- l10n:b-119eac06340c -->
 ![Descripción de los implantes afectados](options-purchase-tip.png)
 

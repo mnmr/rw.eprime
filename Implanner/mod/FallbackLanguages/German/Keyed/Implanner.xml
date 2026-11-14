@@ -234,4 +234,13 @@
   <IMP_PlanForGhouls>für Ghule</IMP_PlanForGhouls>
   <IMP_PlanGhouls>Ghule</IMP_PlanGhouls>
   <IMP_PlanTargetColonists>Kolonisten</IMP_PlanTargetColonists>
+  <IMP_OptSurgeryTeams>Operationsteams</IMP_OptSurgeryTeams>
+  <IMP_OptSurgeryTeamsTip>Wer die von Implanner geplanten Operationen durchführt. Erfordert die Mod Multi-Doctor Surgery; ohne sie operiert ein einzelner Arzt.\n\nEinzeln: Ein Arzt operiert.\n\nStandardteam: das Standard-Operationsteam aus dem Reiter „Operationen“ von Multi-Doctor Surgery. Kann der leitende Chirurg den Kolonisten nicht operieren, etwa weil er selbst der Patient ist oder sich in einer anderen Kolonie befindet, führt ein einzelner Arzt die Operation ohne Team durch.\n\nBestes Team: Der fähigste verfügbare Arzt leitet, unterstützt von den Ärzten, die die Erfolgschance am stärksten erhöhen, bis zur Ärztegrenze von Multi-Doctor Surgery.\n\nEine Teamoperation wartet auf den leitenden Chirurgen, der auch unterhalb der von der automatischen Arztwahl geforderten Fertigkeit operieren darf. In den Einstellungen von Multi-Doctor Surgery ausgeschlossene Operationen bleiben Einzeloperationen. Im Mehrspielermodus werden keine Teams verwendet.</IMP_OptSurgeryTeamsTip>
+  <IMP_SurgeryTeamBest>Bestes Team</IMP_SurgeryTeamBest>
+  <IMP_SurgeryTeamDefault>Standardteam</IMP_SurgeryTeamDefault>
+  <IMP_SurgeryTeamSolo>Einzeln</IMP_SurgeryTeamSolo>
+  <IMP_OptCompatAndroidTiers>Android Tiers Continued</IMP_OptCompatAndroidTiers>
+  <IMP_OptCompatHygiene>Dubs Bad Hygiene und [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
+  <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
+  <IMP_OptCompatSkills>Endless Growth und andere Fertigkeiten-Mods</IMP_OptCompatSkills>
 </LanguageData>

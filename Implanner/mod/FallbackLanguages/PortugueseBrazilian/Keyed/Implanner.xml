@@ -234,4 +234,13 @@
   <IMP_PlanForGhouls>para carniçais</IMP_PlanForGhouls>
   <IMP_PlanGhouls>Carniçais</IMP_PlanGhouls>
   <IMP_PlanTargetColonists>colonos</IMP_PlanTargetColonists>
+  <IMP_OptSurgeryTeams>Equipes cirúrgicas</IMP_OptSurgeryTeams>
+  <IMP_OptSurgeryTeamsTip>Quem realiza as operações agendadas pelo Implanner. Requer o mod Multi-Doctor Surgery; sem ele, um único médico opera.\n\nIndividual: um único médico opera.\n\nEquipe padrão: a equipe cirúrgica padrão configurada na aba Operações do Multi-Doctor Surgery. Quando o cirurgião líder não pode operar o colono, por exemplo porque o líder é o paciente ou está em outra colônia, um único médico realiza a operação sem equipe.\n\nMelhor equipe: o médico disponível mais habilidoso lidera, auxiliado pelos médicos que mais aumentam a chance de sucesso, até o limite de médicos do Multi-Doctor Surgery.\n\nUma operação em equipe espera pelo cirurgião líder, que pode operar mesmo abaixo da habilidade exigida pela escolha automática de médicos. Operações excluídas nas configurações do Multi-Doctor Surgery continuam individuais. Equipes não são usadas no multijogador.</IMP_OptSurgeryTeamsTip>
+  <IMP_SurgeryTeamBest>Melhor equipe</IMP_SurgeryTeamBest>
+  <IMP_SurgeryTeamDefault>Equipe padrão</IMP_SurgeryTeamDefault>
+  <IMP_SurgeryTeamSolo>Individual</IMP_SurgeryTeamSolo>
+  <IMP_OptCompatAndroidTiers>Android Tiers Continued</IMP_OptCompatAndroidTiers>
+  <IMP_OptCompatHygiene>Dubs Bad Hygiene e [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
+  <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
+  <IMP_OptCompatSkills>Endless Growth e outros mods de habilidades</IMP_OptCompatSkills>
 </LanguageData>

@@ -234,4 +234,13 @@
   <IMP_PlanForGhouls>gûllar için</IMP_PlanForGhouls>
   <IMP_PlanGhouls>Gûllar</IMP_PlanGhouls>
   <IMP_PlanTargetColonists>kolonicilere</IMP_PlanTargetColonists>
+  <IMP_OptSurgeryTeams>Ameliyat ekipleri</IMP_OptSurgeryTeams>
+  <IMP_OptSurgeryTeamsTip>Implanner'ın planladığı ameliyatları kimin yapacağı. Multi-Doctor Surgery modunu gerektirir; o olmadan ameliyatı tek bir doktor yapar.\n\nTek doktor: ameliyatı tek bir doktor yapar.\n\nVarsayılan ekip: Multi-Doctor Surgery'nin Ameliyatlar sekmesinde ayarlanan varsayılan ameliyat ekibi. Başhekimi o koloniciyi ameliyat edemiyorsa (örneğin hasta kendisiyse ya da başka bir kolonideyse), ameliyatı ekipsiz tek bir doktor yapar.\n\nEn iyi ekip: uygun doktorlar arasında en becerikli olan başa geçer; ona başarı şansına en çok katkı sağlayan doktorlar, Multi-Doctor Surgery'nin doktor sınırına kadar yardım eder.\n\nEkip ameliyatı başhekimini bekler; başhekim, otomatik doktor seçiminin istediği beceri düzeyinin altında olsa bile ameliyat yapabilir. Multi-Doctor Surgery ayarlarında hariç tutulan ameliyatlar tek doktorla kalır. Ekipler çok oyunculu oyunda kullanılmaz.</IMP_OptSurgeryTeamsTip>
+  <IMP_SurgeryTeamBest>En iyi ekip</IMP_SurgeryTeamBest>
+  <IMP_SurgeryTeamDefault>Varsayılan ekip</IMP_SurgeryTeamDefault>
+  <IMP_SurgeryTeamSolo>Tek doktor</IMP_SurgeryTeamSolo>
+  <IMP_OptCompatAndroidTiers>Android Tiers Continued</IMP_OptCompatAndroidTiers>
+  <IMP_OptCompatHygiene>Dubs Bad Hygiene ve [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
+  <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
+  <IMP_OptCompatSkills>Endless Growth ve diğer beceri modları</IMP_OptCompatSkills>
 </LanguageData>

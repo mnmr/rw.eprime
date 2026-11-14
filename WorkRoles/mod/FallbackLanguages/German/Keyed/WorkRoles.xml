@@ -665,4 +665,6 @@ Die Aufgabe wurde nicht unterbrochen. Dieser Hinweis erscheint einmal pro Spiels
   <WR_RecTuneHunterPlacementPoorShotsFirstTip>Jeder bewaffnete Kolonist jagt. Die schwächsten Schützen jagen zuerst, damit sie Schießen üben; Scharfschützen jagen zuletzt. Wähle dies, wenn die Nahrung gesichert ist und du mehr Kolonisten haben möchtest, die schießen können. Das ist die Standardeinstellung.</WR_RecTuneHunterPlacementPoorShotsFirstTip>
   <WR_RecTuneHunterTiersRowDescReversed>Schießen-Schwellen für die dynamische Position des Jägers, von oben nach unten gelesen. Stufen über der letzten Schwelle gehören zu Rang 1 und setzen den Jäger direkt hinter die Grundarbeit, Rang 2 und 3 folgen den mittleren und letzten Arbeitsrollen, und Rang 5 setzt den Jäger ans Ende.</WR_RecTuneHunterTiersRowDescReversed>
   <WR_HelpChapterMods>Mods</WR_HelpChapterMods>
+  <WR_HiddenRole>Verborgene Rolle</WR_HiddenRole>
+  <WR_HiddenRoleTip>Verborgene Rollen erscheinen nicht in der Rollenpalette oben im Reiter „Kolonisten“. Sie funktionieren weiterhin wie gewohnt: Kolonisten, die sie haben, behalten sie, die +-Schaltfläche in der Zeile eines Kolonisten listet sie weiterhin auf, und Empfehlungen können sie weiterhin vorschlagen. Nutze dies für Rollen, die du selten direkt zuweist, oder wenn deine Rollenpalette zu viel Platz einnimmt.</WR_HiddenRoleTip>
 </LanguageData>

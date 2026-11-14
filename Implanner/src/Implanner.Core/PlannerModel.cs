@@ -222,6 +222,25 @@ namespace Implanner.Core
             return PlannerChange.Options;
         }
 
+        /// Mod compatibility (Multi-Doctor Surgery): who performs Implanner
+        /// operations. Solo by default; ignored while that mod is absent.
+        public SurgeryTeamMode SurgeryTeams { get; private set; }
+
+        /// A mode outside the enum (a save or client from another build)
+        /// falls back to Solo.
+        static SurgeryTeamMode NormalizeSurgeryTeams(SurgeryTeamMode mode) =>
+            mode == SurgeryTeamMode.DefaultTeam || mode == SurgeryTeamMode.BestTeam
+                ? mode
+                : SurgeryTeamMode.Solo;
+
+        public PlannerChange SetSurgeryTeams(SurgeryTeamMode mode)
+        {
+            mode = NormalizeSurgeryTeams(mode);
+            if (SurgeryTeams == mode) return PlannerChange.None;
+            SurgeryTeams = mode;
+            return PlannerChange.Options;
+        }
+
         /// Mod compatibility (Quality Bionics Remastered): the per-quality
         /// part efficiency multipliers automation evaluates implants with.
         /// That mod keeps them as per-player settings, so the synced copy
@@ -463,8 +482,10 @@ namespace Implanner.Core
             bool onlyIdleBenches, int productionSkill, bool allowIntermediaries,
             bool allowMultipleBladders, bool allowMultipleHygieneEnhancers,
             bool showPurchaseOnly, bool onlyDesignatedBenches,
-            bool upgradeByPriority = false, bool androidSurgeryByCrafters = false)
+            bool upgradeByPriority = false, bool androidSurgeryByCrafters = false,
+            SurgeryTeamMode surgeryTeams = SurgeryTeamMode.Solo)
         {
+            SurgeryTeams = NormalizeSurgeryTeams(surgeryTeams);
             AndroidSurgeryByCrafters = androidSurgeryByCrafters;
             UpgradeByPriority = upgradeByPriority;
             OnlyDesignatedBenches = onlyDesignatedBenches;

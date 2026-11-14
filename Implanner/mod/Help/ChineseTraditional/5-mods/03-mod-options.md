@@ -28,6 +28,9 @@ title: 模組選項
 <!-- l10n:android-surgeons -->
 **機械人手術**僅在載入 Android Tiers Continued 時出現。它會顯示由誰執行機械人手術，Implanner 依據 Android Tiers 的「機械人只能由工匠治療」設定判斷：關閉（預設）時由醫生執行，開啟時由已開啟「修復機械人」的工匠執行。請在 Android Tiers 的模組設定中更改，Implanner 會隨之調整。機械人手術使用手工技能。開啟醫生自動選擇後，Implanner 會將每項機械人手術限定給手工技能最高的合資格殖民者。
 
+<!-- l10n:surgery-teams -->
+**手術團隊**決定由誰執行 Implanner 安排的手術。此選項需要 Multi-Doctor Surgery，未安裝時會維持為「單人」。預設的**單人**由一名醫生施行手術。**預設團隊**使用在 Multi-Doctor Surgery 的「手術」頁中設定的預設手術團隊。**最佳團隊**由技術最高的可用醫生主刀，並由最能提高成功率的醫生協助（見 [Multi-Doctor Surgery](topic:multi-doctor-surgery)）。
+
 <!-- l10n:b-119eac06340c -->
 ![懸停顯示受影響植入體](options-purchase-tip.png)
 

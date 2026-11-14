@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.10 — 2026-11-14
+
+- Added: Implanner operations can be done by Multi-Doctor Surgery teams (solo by default).
+- Added: Help page for Multi-Doctor Surgery.
+
 ## 1.2.9 — 2026-11-03
 
 - Added: Help pages for mods to show compatibility verdicts and other relevant information.

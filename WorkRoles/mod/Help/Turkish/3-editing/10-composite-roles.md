@@ -13,5 +13,8 @@ Sahipleri üye rollerin işlerini üye sırasıyla tek atama olarak yapar. Çift
 <!-- l10n:b-d1d6142f5648 -->
 Kurallar: üyeler saat veya konum kuralı olmayan normal roller olmalı; bileşik rol başka bileşik rol içeremez. Üye rolü düzenlemek onu içeren her bileşik rolü günceller.
 
+<!-- l10n:hidden-members -->
+Tek başlarına hiç atamadığınız üye roller gizlenebilir: düzenleyicide Gizli rol kutusunu işaretleyin, rol Yerleşimciler sekmesindeki rol paletinden kaybolur ve palette yalnızca bileşik rol görünür. Üye rol bileşik rolün içinde çalışmaya devam eder; yine de bir yerleşimcinin satırının sonundaki artı düğmesiyle onu yerleşimciye verebilirsiniz.
+
 <!-- l10n:b-842cedf95cbc -->
 Üye roller listesindeki birkaç satır, [Seçili işler listesinde](topic:picking-jobs) olduğu gibi birlikte seçilip taşınabilir ve kaldırılabilir.

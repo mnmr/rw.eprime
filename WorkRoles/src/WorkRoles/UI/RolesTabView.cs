@@ -937,7 +937,7 @@ namespace WorkRoles.UI
             float leftContentH = Mathf.Max(
                 TitleH + AssignedRowH + 2f + GroupRowH - 4f + 8f + ageBlockH
                     + 2f + SkillsRowH,
-                CheckRowH * 4f);
+                CheckRowH * 5f);
             bool rulesShown = header.RulesShown;
             float swatchGridW = SwatchCols * (SwatchSize + SwatchGap) - SwatchGap;
             // An editor too narrow for the left rows beside the swatch grid
@@ -1058,12 +1058,13 @@ namespace WorkRoles.UI
             float rowsStartY = topBox.y + TopBoxPadding;
 
             // Checkbox column: right-aligned in the left container, from the TOP —
-            // Auto-assign, Blocker, Conditional role stacked (3 rows).
-            // Measured first so the title and pencil know their room.
+            // Auto-assign, Blocker, Conditional, Composite and Hidden role
+            // stacked (5 rows). Measured first so the title and pencil know
+            // their room.
             Text.Font = GameFont.Small;
             float checksW = header.ChecksWidth;
             float checksX = leftContainerW + topBox.x - checksW;
-            DrawEditorChecks(new Rect(checksX, rowsStartY, checksW, CheckRowH * 4f),
+            DrawEditorChecks(new Rect(checksX, rowsStartY, checksW, CheckRowH * 5f),
                 model, rulesShown, CheckRowH);
 
             // Title with the rename pencil directly AFTER the name (the right
@@ -1127,10 +1128,11 @@ namespace WorkRoles.UI
                 checksX - 8f - leftX, GroupRowH - 4f), model);
 
             // Row 4: the role's age gates as one row of toggleable bands,
-            // 8px below the group picker.
+            // 8px below the group picker, ending 20px before the checkbox
+            // column.
             float ageY = groupY + GroupRowH - 4f + 8f;
             DrawAgeBandsRow(new Rect(leftX, ageY,
-                checksX - 8f - leftX, ageBlockH), model);
+                checksX - 20f - leftX, ageBlockH), model);
 
             DrawSkillsUsedRow(new Rect(leftX, ageY + ageBlockH + 2f,
                 checksX - 8f - leftX, SkillsRowH), model);
@@ -1396,28 +1398,45 @@ namespace WorkRoles.UI
                 WrTips.Key("WR_MemberLockTip").Region(compositeRect);
                 Widgets.CheckboxLabeled(compositeRect, header.CompositeLabel,
                     ref compositeWanted, disabled: true);
-                return;
             }
-            WrTips.Key("WR_CompositeRoleTip").Region(compositeRect);
-            Widgets.CheckboxLabeled(compositeRect, header.CompositeLabel,
-                ref compositeWanted);
-            if (compositeWanted != header.Composite)
+            else
             {
-                int roleId = model.RoleId;
-                bool losesContent = header.Composite
-                    ? model.Composite != null && model.Composite.MemberCount > 0
-                    : model.Entries != null && model.Entries.Count > 0;
-                if (losesContent)
-                    Find.WindowStack.Add(new CompactConfirmDialog(
-                        header.Composite
-                            ? header.CompositeRevertConfirmation
-                            : header.CompositeConfirmation,
-                        () => RoleCommands.SetRoleComposite(roleId, compositeWanted),
-                        "OK".Translate(), "CancelButton".Translate(),
-                        UiRevision.Current, destructive: true));
-                else
-                    RoleCommands.SetRoleComposite(roleId, compositeWanted);
+                WrTips.Key("WR_CompositeRoleTip").Region(compositeRect);
+                Widgets.CheckboxLabeled(compositeRect, header.CompositeLabel,
+                    ref compositeWanted);
+                if (compositeWanted != header.Composite)
+                    RequestCompositeChange(model, header, compositeWanted);
             }
+            y += rowH;
+
+            // Hidden: left out of the Colonists tab's role palette only. Open
+            // to composite members too, the usual reason to hide a role.
+            var hiddenRect = new Rect(rect.x, y, rect.width, rowH);
+            WrTips.Key("WR_HiddenRoleTip").Region(hiddenRect);
+            bool hidden = header.Hidden;
+            Widgets.CheckboxLabeled(hiddenRect, header.HiddenLabel, ref hidden);
+            if (hidden != header.Hidden)
+                RoleCommands.SetRoleHidden(model.RoleId, hidden);
+        }
+
+        // Input-event boundary only: confirms first when flipping drops content.
+        private static void RequestCompositeChange(RoleEditorSnapshot model,
+            RoleEditorHeaderSnapshot header, bool compositeWanted)
+        {
+            int roleId = model.RoleId;
+            bool losesContent = header.Composite
+                ? model.Composite != null && model.Composite.MemberCount > 0
+                : model.Entries != null && model.Entries.Count > 0;
+            if (losesContent)
+                Find.WindowStack.Add(new CompactConfirmDialog(
+                    header.Composite
+                        ? header.CompositeRevertConfirmation
+                        : header.CompositeConfirmation,
+                    () => RoleCommands.SetRoleComposite(roleId, compositeWanted),
+                    "OK".Translate(), "CancelButton".Translate(),
+                    UiRevision.Current, destructive: true));
+            else
+                RoleCommands.SetRoleComposite(roleId, compositeWanted);
         }
 
         // Input-event boundary only: the render snapshot already contains exact
