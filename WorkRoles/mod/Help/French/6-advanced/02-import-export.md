@@ -5,7 +5,7 @@ title: Importer et exporter
 Les boutons du coin de l'onglet Rôles permettent de transférer des configurations entre sauvegardes et amis :
 
 <!-- l10n:b-4f44ec3259f6 -->
-![Boutons Importer, Exporter et Rétablir les valeurs par défaut](io-buttons.png)
+![Boutons Importer, Exporter, Définir les valeurs par défaut et Rétablir les valeurs par défaut](io-buttons.png)
 
 <!-- l10n:b-fcca50ae80e8 -->
 Exporter écrit la configuration complète des rôles dans un fichier ou le presse-papiers : rôles, groupes et leur ordre, icônes personnalisées, couleurs de la palette (y compris les couleurs inutilisées), règles, parcours de formation, réglages des recommandations et options de la sauvegarde. Vos préférences d'affichage sont aussi incluses dans une section dont l'importation est facultative. Les affectations des colons, les associations aux ordres de travail et l'état temporaire des fenêtres restent propres à la sauvegarde ou à la session en cours.

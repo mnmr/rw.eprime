@@ -330,7 +330,7 @@ namespace WorkRoles.UI
                 {
                     var body = new Rect(x, y, width,
                         bodyHeight + PanelPad * 2f);
-                    Widgets.DrawBoxSolidWithOutline(
+                    PixelBox.SolidWithOutline(
                         body, WrStyle.PanelBackground, WrStyle.PanelOutline);
                     DrawExpandedBody(body.ContractedBy(PanelPad), detail!); // expanded ⇒ detail != null
                     y += body.height;
@@ -493,7 +493,7 @@ namespace WorkRoles.UI
                 if (active)
                 {
                     GUI.color = SegmentActiveOutline;
-                    Widgets.DrawBox(cell);
+                    PixelBox.Outline(cell, GUI.color);
                     GUI.color = Color.white;
                 }
                 else
@@ -1070,7 +1070,7 @@ namespace WorkRoles.UI
             Color previousColor = GUI.color;
             try
             {
-                Widgets.DrawBoxSolidWithOutline(
+                PixelBox.SolidWithOutline(
                     panel, WrStyle.PanelBackground, WrStyle.PanelOutline);
                 var origin = new Vector2(
                     panel.x + RecPanelPad, panel.y + RecPanelPad);
@@ -1173,7 +1173,7 @@ namespace WorkRoles.UI
                 if (i == active)
                 {
                     GUI.color = SegmentActiveOutline;
-                    Widgets.DrawBox(cell);
+                    PixelBox.Outline(cell, GUI.color);
                 }
                 else
                 {
@@ -1251,7 +1251,7 @@ namespace WorkRoles.UI
 
         private static void DrawExcludedRoles(Rect panel, RecOrderSnapshot exclusions)
         {
-            Widgets.DrawBoxSolidWithOutline(panel, WrStyle.PanelBackground, WrStyle.PanelOutline);
+            PixelBox.SolidWithOutline(panel, WrStyle.PanelBackground, WrStyle.PanelOutline);
             var origin = new Vector2(panel.x + RecPanelPad, panel.y + RecPanelPad);
             for (int i = 0; i < exclusions.Count; i++)
             {

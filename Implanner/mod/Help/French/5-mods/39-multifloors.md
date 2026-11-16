@@ -14,8 +14,8 @@ L'automatisation ne peut pas transporter un implant ni mener une opération d'un
 <!-- l10n:detail -->
 La planification, le suivi et l'automatisation fonctionnent tous, mais une
 opération médicale ne cherche son implant que sur l'étage du patient ; le
-transport de MultiFloors aide les ordres de production, pas les ordres
-médicaux. Une opération dont l'implant réservé se trouve sur un autre étage
+transport de MultiFloors aide les tâches de production, pas les tâches
+médicales. Une opération dont l'implant réservé se trouve sur un autre étage
 attend que vous le déplaciez, et un avertissement près de l'interrupteur
 principal le signale (voir
 [Quand l'automatisation se met en retrait](topic:when-automation-stands-down)).

@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 1.5.10 — 2026-11-16
+
+- Fixed: The threshold Clear button is no longer cut off when the editor window is at its narrowest.
+
+## 1.5.9 — 2026-11-15
+
+- Fixed: Books on bookcases and apparel on outfit stands are now counted instead of showing 0.
+
 ## 1.5.8 — 2026-11-12
 
 - Fixed: Removed the rendering workaround for Camera+ which caused problems with SimpleCameraSetting; use Camera+ 3.4.9.0 or later.

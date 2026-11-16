@@ -25,6 +25,14 @@ namespace RimShared.UiLib
             DrawEdges(left, top, right, bottom, scale, outline);
         }
 
+        private static readonly Color MenuSectionBorder =
+            new ColorInt(135, 135, 135).ToColor;
+
+        /// Widgets.DrawMenuSection with a one-device-pixel border.
+        public static void MenuSection(Rect rect) =>
+            SolidWithOutline(rect, Widgets.MenuSectionBGFillColor,
+                MenuSectionBorder);
+
         /// One-device-pixel outline only (no fill), snapped like
         /// SolidWithOutline so both can layer on the same rect.
         public static void Outline(Rect rect, Color color)
@@ -34,6 +42,17 @@ namespace RimShared.UiLib
                 Mathf.Round(rect.x * scale), Mathf.Round(rect.y * scale),
                 Mathf.Round(rect.xMax * scale), Mathf.Round(rect.yMax * scale),
                 scale, color);
+        }
+
+        /// Logical rect with every edge snapped to the device grid, for
+        /// controls whose skin draws its own border (text fields).
+        public static Rect Snap(Rect rect)
+        {
+            float scale = Prefs.UIScale > 0f ? Prefs.UIScale : 1f;
+            float left = Mathf.Round(rect.x * scale);
+            float top = Mathf.Round(rect.y * scale);
+            return Logical(left, top, Mathf.Round(rect.xMax * scale) - left,
+                Mathf.Round(rect.yMax * scale) - top, scale);
         }
 
         /// Logical rect snapped to the device grid and extended one device

@@ -172,7 +172,7 @@
   <IMP_OptIdleBenchesTip>Nur Werkbänke ohne wartende Arbeit erhalten neue Implanner-Aufträge. Deine eigenen Produktionslisten haben Vorrang; Implantate füllen die Lücken. Deaktiviere dies, damit Implantataufträge hinter deinen eigenen warten dürfen.</IMP_OptIdleBenchesTip>
   <IMP_OptDesignatedBenchesTip>Fertigungsaufträge gehen nur an Werkbänke mit aktivierter „Implanner-Werkbank“ im Auftragsreiter; ohne eine solche fertigt die Kolonie keine Implantate. Deaktiviert erhalten Implanner-Werkbänke zuerst Aufträge, andere erst, wenn jede davon zwei hat. Die Grenze „Werkbänke mit erlaubten Aufträgen“ gilt in beiden Fällen.</IMP_OptDesignatedBenchesTip>
   <IMP_BenchToggle>Implanner-Werkbank</IMP_BenchToggle>
-  <IMP_BenchToggleTip>Implanner platziert Fertigungsaufträge zuerst an dieser Werkbank; vorhandene Aufträge werden ausgesetzt. Solange dies aktiviert ist, kannst du hier keine Aufträge hinzufügen, einfügen, aussetzen oder fortsetzen.\n\nDeaktiviere es, um die Werkbank zurückzunehmen. Zuvor bereits ausgesetzte Aufträge bleiben ausgesetzt; die übrigen laufen weiter.</IMP_BenchToggleTip>
+  <IMP_BenchToggleTip>Implanner platziert Fertigungsaufträge zuerst an dieser Werkbank; vorhandene Aufträge werden ausgesetzt. Solange dies aktiviert ist, zeigt der Auftragsreiter die Implanner-Produktionswarteschlange, und du kannst hier keine Aufträge hinzufügen, einfügen, aussetzen oder fortsetzen.\n\nDeaktiviere es, um die Werkbank zurückzunehmen. Zuvor bereits ausgesetzte Aufträge bleiben ausgesetzt; die übrigen laufen weiter.</IMP_BenchToggleTip>
   <IMP_BenchLockedTip>An einer Implanner-Werkbank kannst du keine Aufträge einfügen, aussetzen oder fortsetzen. Deaktiviere „Implanner-Werkbank“ oben im Auftragsreiter, um sie zurückzunehmen.</IMP_BenchLockedTip>
   <IMP_BenchNoNewBills>„Implanner-Werkbank“ deaktivieren, um hier Aufträge hinzuzufügen</IMP_BenchNoNewBills>
   <IMP_OptProductionSkillTip>Mindeststufe in Handwerk für Implanner-Produktionsaufträge. Höhere Werte halten teure Komponenten von unerfahrenen Handwerkern fern; niedrigere lassen mehr Kolonisten helfen. Aufträge warten auf einen geeigneten Handwerker.</IMP_OptProductionSkillTip>
@@ -243,4 +243,21 @@
   <IMP_OptCompatHygiene>Dubs Bad Hygiene und [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
   <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
   <IMP_OptCompatSkills>Endless Growth und andere Fertigkeiten-Mods</IMP_OptCompatSkills>
+  <IMP_QueueAge>In Warteschlange</IMP_QueueAge>
+  <IMP_QueueAgeNow>Gerade eben</IMP_QueueAgeNow>
+  <IMP_QueueAgeTip>Spielzeit, seit Implanner diesen Auftrag eingereiht hat.</IMP_QueueAgeTip>
+  <IMP_QueueEmpty>Hier sind keine Aufträge eingereiht. Implanner fügt Aufträge hinzu, wenn ein Plan ein Implantat braucht, das diese Werkbank herstellen kann.</IMP_QueueEmpty>
+  <IMP_QueueFor>Für</IMP_QueueFor>
+  <IMP_QueueNeededFor>Benötigt für</IMP_QueueNeededFor>
+  <IMP_QueuePausedMany>{0} andere Aufträge sind pausiert, solange dies eine Implanner-Werkbank ist.</IMP_QueuePausedMany>
+  <IMP_QueuePausedOne>1 anderer Auftrag ist pausiert, solange dies eine Implanner-Werkbank ist.</IMP_QueuePausedOne>
+  <IMP_QueuePlan>Plan</IMP_QueuePlan>
+  <IMP_QueueQuality>Qualität</IMP_QueueQuality>
+  <IMP_QueueQualityValue>{0} oder besser</IMP_QueueQualityValue>
+  <IMP_QueueStatusCrafting>Wird hergestellt</IMP_QueueStatusCrafting>
+  <IMP_QueueStatusCraftingAt>Herstellung: {0}</IMP_QueueStatusCraftingAt>
+  <IMP_QueueStatusStarted>Begonnen: {0}</IMP_QueueStatusStarted>
+  <IMP_QueueStatusWaiting>Wartet</IMP_QueueStatusWaiting>
+  <IMP_QueueTitle>Implanner-Produktionswarteschlange</IMP_QueueTitle>
+  <IMP_QueueWorker>Arbeiter</IMP_QueueWorker>
 </LanguageData>

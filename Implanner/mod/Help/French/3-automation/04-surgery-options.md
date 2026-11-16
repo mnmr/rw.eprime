@@ -19,4 +19,4 @@ La **Stratégie de progression** détermine l'ordre de livraison des implants. L
 **Donner les meilleurs implants aux colons prioritaires** apparaît lorsqu'un mod donne une qualité aux implants. Voir [Qualité minimale](topic:minimum-quality).
 
 <!-- l10n:b-ca0c8956721b -->
-**Confier les opérations au meilleur médecin disponible**, activé par défaut, limite les ordres chirurgicaux au médecin le plus compétent de chaque colonie. La restriction suit les arrivées et départs. Personne ne peut s'opérer lui-même : le meilleur médecin est donc opéré par le suivant. Désactivez pour fixer vous-même une compétence minimale en Médecine.
+**Confier les opérations au meilleur médecin disponible**, activé par défaut, limite les tâches chirurgicales au médecin le plus compétent de chaque colonie. La restriction suit les arrivées et départs. Personne ne peut s'opérer lui-même : le meilleur médecin est donc opéré par le suivant. Désactivez pour fixer vous-même une compétence minimale en Médecine.

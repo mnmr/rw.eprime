@@ -22,7 +22,7 @@ Changez la priorité par glissement :
 @demo:chip-drag
 
 <!-- l10n:b-be64d575edc7 -->
-Vous pouvez aussi déplacer une pastille vers la ligne d'un autre colon pour transférer l'affectation. Cliquez sur la corbeille d'une pastille pour retirer l'affectation ; elle quitte la ligne.
+Le glisser-déposer fonctionne aussi d'une ligne à l'autre : faites glisser une pastille vers un autre colon pour transférer l'affectation. Cliquez sur la corbeille d'une pastille pour retirer l'affectation ; la pastille quitte la ligne. Si la corbeille est [désactivée](topic:display), faites un clic droit sur la pastille et choisissez Retirer le rôle.
 
 <!-- l10n:b-6bbb9dc33edb -->
 RimWorld conserve une liste distincte de tâches urgentes : combattre les incendies, prodiguer des soins urgents et se coucher pour recevoir des soins urgents. Ces tâches interrompent le sommeil, les repas et toute autre activité. Par défaut, une tâche urgente n'entre dans cette liste que si l'un des cinq premiers rôles activés du colon la contient. Les tâches urgentes des rôles suivants s'exécutent à leur place normale. Un colon ayant Urgences en premier et Médecin en sixième interrompt toujours son travail pour un incendie, mais traite les soins urgents comme du travail médical ordinaire à leur place dans la ligne. Déplacer Urgences au-delà de la cinquième position fait aussi de la lutte contre les incendies un travail ordinaire pour ce colon.

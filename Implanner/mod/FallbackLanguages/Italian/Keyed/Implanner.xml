@@ -172,7 +172,7 @@
   <IMP_OptIdleBenchesTip>Solo i banchi senza lavori in attesa ricevono nuovi ordini di Implanner. Le tue code di produzione mantengono la priorità e gli impianti riempiono gli intervalli liberi. Disattiva questa opzione per accodare gli impianti dopo i tuoi ordini.</IMP_OptIdleBenchesTip>
   <IMP_OptDesignatedBenchesTip>Gli ordini di produzione vanno solo ai banchi con “Banco Implanner” attivo nella scheda Ordini: una colonia senza questi banchi non produce impianti. Se disattivo, i banchi Implanner ricevono per primi gli ordini; gli altri vengono usati quando ogni banco Implanner ne contiene due. Il limite “Banchi che possono ricevere ordini” vale in entrambi i casi.</IMP_OptDesignatedBenchesTip>
   <IMP_BenchToggle>Banco Implanner</IMP_BenchToggle>
-  <IMP_BenchToggleTip>Implanner aggiunge i propri ordini a questo banco prima che agli altri, sospendendo quelli già presenti. Finché l'opzione è attiva, non puoi aggiungere, incollare, sospendere o riprendere ordini su questo banco.\n\nDisattivala per riprendere il controllo del banco. Gli ordini già sospesi prima dell'attivazione restano sospesi; gli altri riprendono.</IMP_BenchToggleTip>
+  <IMP_BenchToggleTip>Implanner aggiunge i propri ordini a questo banco prima che agli altri, sospendendo quelli già presenti. Finché l'opzione è attiva, la scheda Ordini mostra la coda di produzione di Implanner e non puoi aggiungere, incollare, sospendere o riprendere ordini su questo banco.\n\nDisattivala per riprendere il controllo del banco. Gli ordini già sospesi prima dell'attivazione restano sospesi; gli altri riprendono.</IMP_BenchToggleTip>
   <IMP_BenchLockedTip>Non puoi incollare, sospendere o riprendere ordini su un banco Implanner. Disattiva “Banco Implanner” in cima alla scheda Ordini per riprenderne il controllo.</IMP_BenchLockedTip>
   <IMP_BenchNoNewBills>Disattiva “Banco Implanner” per aggiungere ordini qui</IMP_BenchNoNewBills>
   <IMP_OptProductionSkillTip>L'abilità Artigianato minima per gli ordini di produzione di Implanner. Valori alti tengono i componenti costosi lontani dagli artigiani inesperti; valori bassi permettono a più coloni di aiutare. Gli ordini attendono che un artigiano idoneo se ne occupi.</IMP_OptProductionSkillTip>
@@ -243,4 +243,21 @@
   <IMP_OptCompatHygiene>Dubs Bad Hygiene e [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
   <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
   <IMP_OptCompatSkills>Endless Growth e altre mod sulle abilità</IMP_OptCompatSkills>
+  <IMP_QueueAge>In coda</IMP_QueueAge>
+  <IMP_QueueAgeNow>Adesso</IMP_QueueAgeNow>
+  <IMP_QueueAgeTip>Tempo di gioco trascorso da quando Implanner ha messo in coda questo ordine.</IMP_QueueAgeTip>
+  <IMP_QueueEmpty>Nessun ordine in coda qui. Implanner aggiunge ordini quando un piano richiede un impianto che questo banco può fabbricare.</IMP_QueueEmpty>
+  <IMP_QueueFor>Per</IMP_QueueFor>
+  <IMP_QueueNeededFor>Serve per</IMP_QueueNeededFor>
+  <IMP_QueuePausedMany>Altri {0} ordini sono in pausa finché questo è un banco Implanner.</IMP_QueuePausedMany>
+  <IMP_QueuePausedOne>1 altro ordine è in pausa finché questo è un banco Implanner.</IMP_QueuePausedOne>
+  <IMP_QueuePlan>Piano</IMP_QueuePlan>
+  <IMP_QueueQuality>Qualità</IMP_QueueQuality>
+  <IMP_QueueQualityValue>{0} o superiore</IMP_QueueQualityValue>
+  <IMP_QueueStatusCrafting>In lavorazione</IMP_QueueStatusCrafting>
+  <IMP_QueueStatusCraftingAt>In lavorazione: {0}</IMP_QueueStatusCraftingAt>
+  <IMP_QueueStatusStarted>Iniziato: {0}</IMP_QueueStatusStarted>
+  <IMP_QueueStatusWaiting>In attesa</IMP_QueueStatusWaiting>
+  <IMP_QueueTitle>Coda di produzione di Implanner</IMP_QueueTitle>
+  <IMP_QueueWorker>Lavoratore</IMP_QueueWorker>
 </LanguageData>

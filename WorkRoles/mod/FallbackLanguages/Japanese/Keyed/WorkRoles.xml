@@ -263,10 +263,8 @@ WorkRolesはゲーム標準の仕組みで管理中の入植者に作業一覧�
   <WR_OptVanillaRangeTipWhat>WorkRolesは1から始まる重複しない連番で作業を並べます。</WR_OptVanillaRangeTipWhat>
   <WR_OptVerdictsColonists>割当ロールに適性を表示</WR_OptVerdictsColonists>
   <WR_OptVerdictsColonistsTip>入植者一覧のロールチップに、おすすめ判定と同じ適性を星で表示します。好適は白1つ、優秀は白2つ、卓越は金、不向きは赤1つ、極めて不向きは赤2つ、中立は灰色です。</WR_OptVerdictsColonistsTip>
-  <WR_OptVerdictsPalette>パレットに選択中の入植者の適性を表示</WR_OptVerdictsPalette>
-  <WR_OptVerdictsPaletteTip>各ロールが選択中の入植者にどれだけ向いているかをパレットに表示します。</WR_OptVerdictsPaletteTip>
-  <WR_OptVerdictsRecommendations>おすすめのロールに適性を表示</WR_OptVerdictsRecommendations>
-  <WR_OptVerdictsRecommendationsTip>能力パネルや変更プレビューのおすすめチップに、対象の入植者の適性を表示します。</WR_OptVerdictsRecommendationsTip>
+  <WR_OptVerdictsPalette>パレットとスキルパネルに選択中の入植者の適性を表示</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>オンにすると、ロールパレットと入植者のスキルパネルのチップに、適性判定の星を表示します。</WR_OptVerdictsPaletteTip>
   <WR_OptionsTab>オプション</WR_OptionsTab>
   <WR_OrderSuffixAZ>（名前順）</WR_OrderSuffixAZ>
   <WR_OrderSuffixBar>（入植者バー順）</WR_OrderSuffixBar>
@@ -667,4 +665,24 @@ WorkRolesはゲーム標準の仕組みで管理中の入植者に作業一覧�
   <WR_HelpChapterMods>Mod</WR_HelpChapterMods>
   <WR_HiddenRole>非表示ロール</WR_HiddenRole>
   <WR_HiddenRoleTip>非表示ロールは、入植者タブ上部のロールパレットに表示されません。それ以外は通常どおり機能します。持っている入植者はそのまま保持し、入植者の行の+ボタンの一覧にも表示され、おすすめとして提案されることもあります。直接割り当てる機会の少ないロールや、ロールパレットが場所を取りすぎる場合に使ってください。</WR_HiddenRoleTip>
+  <WR_ChipMarkersDots>ドット</WR_ChipMarkersDots>
+  <WR_ChipMarkersIcons>アイコン</WR_ChipMarkersIcons>
+  <WR_ChipMarkersOff>オフ</WR_ChipMarkersOff>
+  <WR_OptChipMarkers>ロールチップのマーカー</WR_OptChipMarkers>
+  <WR_OptChipMarkersTip>ロールチップにマーカーをどう表示するかを選びます。
+
+ドット: マーカーごとに小さな色付きのドットを表示します。白は常時オン、黄色はルールあり、水色は固定を示します。中抜きの星は、入植者がそのロールのすべての仕事をこなせないことを示します。
+
+アイコン: マーカーごとにアイコンを1つ表示します。
+
+オフ: マーカーを表示しません。</WR_OptChipMarkersTip>
+  <WR_OptRecommendations>おすすめを表示</WR_OptRecommendations>
+  <WR_OptRecommendationsTip>オフにすると、「おすすめ」タブ、「コロニーを最適化」ボタン、選択中の入植者へのおすすめロールを非表示にします。適性判定は引き続き利用できます。</WR_OptRecommendationsTip>
+  <WR_OptRemoveIcon>ロールチップに削除アイコンを表示</WR_OptRemoveIcon>
+  <WR_OptRemoveIconTip>オフにすると、割り当て済みのロールチップからごみ箱アイコンを外します。代わりにチップを右クリックして「ロールを削除」を選んでください。</WR_OptRemoveIconTip>
+  <WR_PreviewColonist>入植者</WR_PreviewColonist>
+  <WR_RemoveRole>ロールを削除</WR_RemoveRole>
+  <WR_SelectedActivity>行動</WR_SelectedActivity>
+  <WR_SelectedName>名前</WR_SelectedName>
+  <WR_SelectedTraits>特性</WR_SelectedTraits>
 </LanguageData>

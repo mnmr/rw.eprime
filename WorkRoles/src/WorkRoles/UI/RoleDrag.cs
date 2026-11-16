@@ -141,7 +141,13 @@ namespace WorkRoles.UI
                 if (pending && !Active)
                 {
                     if (pendingReleaseOverSource)
+                    {
                         pendingClickAction?.Invoke();
+                        // The open tip shows the state the click just
+                        // changed: end its frozen session so it reopens
+                        // with current content.
+                        RimShared.UiLib.StructuredTipPresenter.Reset();
+                    }
                     return;
                 }
 

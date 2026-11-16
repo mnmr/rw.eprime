@@ -11,7 +11,10 @@ Ein Palettenklick schaltet sie global um, von ![aktivierte Palettenmarke](palett
 Global deaktivierte Rollen tragen bei allen Inhabern einen Doppelstrich ![Marke mit Doppelstrich](chip-state-global-off.png).
 
 <!-- l10n:b-4d81d20fcc44 -->
-Ein Klick auf eine Marke in der Kolonistenzeile wechselt zwischen an ![aktivierte Marke](chip-state-on.png), aus für diesen Kolonisten ![Marke mit Einzelstrich](chip-state-off.png) und erzwungen an ![Marke mit Anspruchsflagge](chip-state-forced.png). Global und persönlich ausgeschaltet stapelt die Striche ![Marke mit gestapelten Strichen](chip-state-both-off.png). Erzwungen an funktioniert auch bei global ausgeschalteter Rolle.
+Ein Klick auf eine Marke in der Kolonistenzeile wechselt zwischen an ![aktivierte Marke](chip-state-on.png), aus für diesen Kolonisten ![Marke mit Einzelstrich](chip-state-off.png) und erzwungen an ![Marke mit weißem Punkt](chip-state-forced.png). Global und persönlich ausgeschaltet stapelt die Striche ![Marke mit gestapelten Strichen](chip-state-both-off.png). Erzwungen an funktioniert auch bei global ausgeschalteter Rolle.
+
+<!-- l10n:b-8c2e4f7a1d93 -->
+Der weiße Punkt ist die Standardmarkierung für erzwungen an. Mit [Symbolmarkierungen](topic:display) zeigt die Marke stattdessen eine Flagge.
 
 <!-- l10n:b-c5c0217224df -->
 Umschalten entfernt nie die Zuweisung; die Marke behält ihre Position.

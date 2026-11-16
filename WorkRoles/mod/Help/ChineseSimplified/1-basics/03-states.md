@@ -11,7 +11,10 @@ title: 职责状态
 全局禁用时，所有持有者的标签都有双删除线 ![双删除线标签](chip-state-global-off.png)。
 
 <!-- l10n:b-4d81d20fcc44 -->
-点击殖民者行内标签依次切换：开启 ![开启标签](chip-state-on.png)、对此人关闭 ![单删除线标签](chip-state-off.png)、强制开启 ![旗标标签](chip-state-forced.png)。全局和个人均关闭时删除线叠加 ![叠加删除线标签](chip-state-both-off.png)；强制开启则即使全局关闭也照常执行。
+点击殖民者行内标签依次切换：开启 ![开启标签](chip-state-on.png)、对此人关闭 ![单删除线标签](chip-state-off.png)、强制开启 ![带白点的标签](chip-state-forced.png)。全局和个人均关闭时删除线叠加 ![叠加删除线标签](chip-state-both-off.png)；强制开启则即使全局关闭也照常执行。
+
+<!-- l10n:b-8c2e4f7a1d93 -->
+白点是强制开启的默认标记。使用[图标标记](topic:display)时，标签会改为显示旗标。
 
 <!-- l10n:b-c5c0217224df -->
 切换状态不会移除分配，标签保持原位置。

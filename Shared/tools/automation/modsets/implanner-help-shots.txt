@@ -1,3 +1,5 @@
+# Implanner help images (Implanner/scripts/update-help-images.ps1): the saved colony
+# with Harmony, official content, the four repository mods and the capture probe.
 remove zetrith.prepatcher
 remove brrainz.rimbridgeserver
 remove mehni.pickupandhaul
@@ -19,10 +21,5 @@ remove mlie.smarterdeconstructionandmining
 remove defi.generipper
 remove avilmask.nonunopinata
 remove dubwise.dubsperformanceanalyzer.steam
-remove mnmr.workroles
-after ludeon.rimworld.odyssey
-erdelf.humanoidalienraces
-carnysenpai.enableoversizedweapons
-maiconneri.androidtierscontinued
 after eprime.implanner
 eprime.implanner.helpshots

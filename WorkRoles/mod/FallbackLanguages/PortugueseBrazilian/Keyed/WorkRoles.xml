@@ -33,11 +33,9 @@
   <WR_OptSkillCaptionsTip>Cada linha de colono na tabela tem uma pequena legenda sob o nome com as suas melhores habilidades de trabalho e níveis, coloridos pela aptidão. Desative para apresentar apenas o nome na sua linha.</WR_OptSkillCaptionsTip>
   <WR_OptVerdictsColonists>Mostrar avaliações nas fichas de funções dos colonos</WR_OptVerdictsColonists>
   <WR_OptVerdictsColonistsTip>Cada ficha de função na tabela dos colonos mostra um par de estrelas de aptidão para aquele colono, conforme a avaliação do sistema de recomendações: brancas para avaliações boas (uma: forte; duas: ótima; douradas: excepcional), vermelhas para avaliações ruins (uma: ruim; duas: péssima) e cinzas para neutra.</WR_OptVerdictsColonistsTip>
-  <WR_OptVerdictsPalette>Mostrar avaliações do colono selecionado na paleta de funções</WR_OptVerdictsPalette>
-  <WR_OptVerdictsPaletteTip>As fichas da paleta mostram a aptidão do colono selecionado para cada função.</WR_OptVerdictsPaletteTip>
-  <WR_OptVerdictsRecommendations>Mostrar avaliações nas funções recomendadas</WR_OptVerdictsRecommendations>
+  <WR_OptVerdictsPalette>Mostrar avaliações do colono selecionado na paleta de funções e no painel de habilidades</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>Ative para mostrar as estrelas de avaliação de aptidão nas fichas da paleta de funções e do painel de habilidades do colono.</WR_OptVerdictsPaletteTip>
   <WR_OptPaletteGrouping>Agrupamento da paleta de funções</WR_OptPaletteGrouping>
-  <WR_OptVerdictsRecommendationsTip>As fichas de funções recomendadas (painel de estatísticas e pré-visualizações de alterações) mostram a avaliação de aptidão do colono a quem são recomendadas.</WR_OptVerdictsRecommendationsTip>
   <WR_RecGlobalPanel>Opções gerais</WR_RecGlobalPanel>
   <WR_RecGlobalPanelHelp>Estas opções alteram a pontuação e classificação dos candidatos pelo motor de recomendações, bem como a posição das funções na lista final. Use os botões Restaurar para recuperar as configurações padrão se não gostar das alterações.</WR_RecGlobalPanelHelp>
   <WR_RecRolePanel>Opções das funções</WR_RecRolePanel>
@@ -667,4 +665,24 @@ A tarefa não foi interrompida. Este aviso aparece uma vez por partida salva.</W
   <WR_HelpChapterMods>Mods</WR_HelpChapterMods>
   <WR_HiddenRole>Função oculta</WR_HiddenRole>
   <WR_HiddenRoleTip>Funções ocultas não aparecem na paleta de funções no topo da aba Colonos. Elas continuam funcionando normalmente: os colonos que as têm as mantêm, o botão + na linha de um colono ainda as lista e as recomendações ainda podem sugeri-las. Use para ocultar funções que você raramente atribui diretamente ou se a paleta de funções estiver ocupando espaço demais.</WR_HiddenRoleTip>
+  <WR_ChipMarkersDots>Pontos</WR_ChipMarkersDots>
+  <WR_ChipMarkersIcons>Ícones</WR_ChipMarkersIcons>
+  <WR_ChipMarkersOff>Desligado</WR_ChipMarkersOff>
+  <WR_OptChipMarkers>Marcadores das fichas de função</WR_OptChipMarkers>
+  <WR_OptChipMarkersTip>Como as fichas de função mostram seus marcadores.
+
+Pontos: um pequeno ponto colorido por marcador. Branco significa sempre ativa, amarelo significa que a função tem regras e azul-turquesa significa fixada. Estrelas vazias significam que o colono não consegue fazer todos os trabalhos da função.
+
+Ícones: um ícone por marcador.
+
+Desligado: sem marcadores.</WR_OptChipMarkersTip>
+  <WR_OptRecommendations>Mostrar recomendações</WR_OptRecommendations>
+  <WR_OptRecommendationsTip>Desative para ocultar a aba Recomendações, o botão Ajustar minha colônia e as funções recomendadas do colono selecionado. As avaliações de aptidão continuam disponíveis.</WR_OptRecommendationsTip>
+  <WR_OptRemoveIcon>Mostrar o ícone de remover nas fichas de função</WR_OptRemoveIcon>
+  <WR_OptRemoveIconTip>Desative para tirar a lixeira das fichas de função atribuídas. Em vez disso, clique com o botão direito na ficha e escolha Remover função.</WR_OptRemoveIconTip>
+  <WR_PreviewColonist>Colono</WR_PreviewColonist>
+  <WR_RemoveRole>Remover função</WR_RemoveRole>
+  <WR_SelectedActivity>Atividade</WR_SelectedActivity>
+  <WR_SelectedName>Nome</WR_SelectedName>
+  <WR_SelectedTraits>Traços</WR_SelectedTraits>
 </LanguageData>

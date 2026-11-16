@@ -2,7 +2,7 @@
 title: Zuweisungen anheften
 ---
 <!-- l10n:b-1075eaae5085 -->
-Klicke mit der rechten Maustaste auf eine Rollenmarke und wähle „Anheften“. Eine angeheftete Marke trägt ein Stecknadelsymbol:
+Klicke mit der rechten Maustaste auf eine Rollenmarke und wähle „Anheften“. Eine angeheftete Marke trägt einen türkisen Punkt oder bei [Symbolmarkierungen](topic:display) ein Stecknadelsymbol:
 
 <!-- l10n:b-62dc1c2c1729 -->
 ![Eine angeheftete Rollenmarke](chip-pinned.png)

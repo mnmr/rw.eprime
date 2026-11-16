@@ -2,7 +2,7 @@
 title: Atamaları sabitleme
 ---
 <!-- l10n:b-1075eaae5085 -->
-Etikete sağ tıklayıp Sabitle'yi seçin. Sabitlenmiş etiket raptiye taşır:
+Etikete sağ tıklayıp Sabitle'yi seçin. Sabitlenmiş etikette camgöbeği bir nokta bulunur; [simge işaretleri](topic:display) açıksa bunun yerine raptiye simgesi görünür:
 
 <!-- l10n:b-62dc1c2c1729 -->
 ![Sabitlenmiş rol etiketi](chip-pinned.png)

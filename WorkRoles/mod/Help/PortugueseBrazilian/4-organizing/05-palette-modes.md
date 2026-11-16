@@ -2,7 +2,7 @@
 title: Organização da paleta
 ---
 <!-- l10n:b-920248b013cc -->
-A paleta de Colonos tem duas disposições, escolhidas no fim das configurações de exibição em Opções:
+A paleta de funções da aba Colonos pode ser organizada de duas formas, escolhidas nas configurações de exibição da aba Opções:
 
 <!-- l10n:b-b429b8db5576 -->
 ![Configurações com seletor da paleta](options-display.png)

@@ -2,13 +2,13 @@
 title: Options des mods
 ---
 <!-- l10n:b-459ed37f94ab -->
-![Onglet Options avec Compatibilité des mods et Catalogue](options-tab.png)
+![L'onglet Options](options-tab.png)
 
 <!-- l10n:b-045738932f34 -->
 L'onglet Options contient les réglages de compatibilité des plans et la plage des curseurs de compétence. L'automatisation se règle dans son propre onglet. Les réglages de plans et d'automatisation sont partagés entre tous les joueurs.
 
 <!-- l10n:b-d5c494c5ce65 -->
-**Valeur maximale des curseurs de compétence** définit la borne supérieure des curseurs de Médecine et d'Artisanat, de 20 à 100 par pas de 10, avec 20 par défaut. Augmentez-la pour choisir des minima plus élevés avec un mod comme Endless Growth. Cette préférence d'affichage est personnelle : elle ne change pas les minima existants, le choix automatique du médecin ni l'admissibilité aux ordres.
+**Valeur maximale des curseurs de compétence** définit la borne supérieure des curseurs de Médecine et d'Artisanat, de 20 à 100 par pas de 10, avec 20 par défaut. Augmentez-la pour choisir des minima plus élevés avec un mod comme Endless Growth. Cette préférence d'affichage est personnelle : elle ne change pas les minima existants, le choix automatique du médecin ni l'admissibilité aux tâches.
 
 <!-- l10n:b-1592948be502 -->
 ![Survol d'une option listant les implants concernés et leurs mods](options-bladder-tip.png)

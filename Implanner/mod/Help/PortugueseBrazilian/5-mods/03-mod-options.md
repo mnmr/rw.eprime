@@ -2,13 +2,13 @@
 title: Opções de mods
 ---
 <!-- l10n:b-459ed37f94ab -->
-![Opções com Compatibilidade com mods e Catálogo](options-tab.png)
+![A aba Opções](options-tab.png)
 
 <!-- l10n:b-045738932f34 -->
 A aba Opções contém compatibilidade dos planos e intervalo visual dos controles de habilidade. A automação fica na aba Automação. Configurações de planos e automação são compartilhadas por todos no multijogador.
 
 <!-- l10n:b-d5c494c5ce65 -->
-**Valor máximo dos seletores de habilidade** define o teto de Medicina e Fabricação, de 20 a 100 em passos de 10, com padrão 20. Aumente para escolher requisitos maiores com mods como Endless Growth. É uma preferência visual pessoal: não altera mínimos existentes, escolha automática de médicos nem elegibilidade das ordens.
+**Valor máximo dos seletores de habilidade** define o teto de Medicina e Fabricação, de 20 a 100 em passos de 10, com padrão 20. Aumente para escolher requisitos maiores com mods como Endless Growth. É uma preferência visual pessoal: não altera mínimos existentes, escolha automática de médicos nem elegibilidade das tarefas.
 
 <!-- l10n:b-1592948be502 -->
 ![Dica listando implantes afetados e seus mods](options-bladder-tip.png)

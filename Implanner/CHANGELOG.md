@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0 — 2026-11-16
+
+- Added: Implanner benches show a production queue with relevant bill details.
+- Added: Support for Nice Bill Tab.
+- Fixed: Bills that other mods add to an Implanner bench are suspended at once.
+
 ## 1.2.10 — 2026-11-14
 
 - Added: Implanner operations can be done by Multi-Doctor Surgery teams (solo by default).

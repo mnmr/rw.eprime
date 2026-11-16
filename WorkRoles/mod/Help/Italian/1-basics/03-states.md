@@ -11,7 +11,10 @@ Fare clic su un ruolo nella palette ne cambia lo stato globale da ![tessera atti
 Quando è disattivato globalmente, la sua tessera mostra una doppia barratura ![tessera con doppia barratura](chip-state-global-off.png) su ogni colono che lo possiede.
 
 <!-- l10n:b-4d81d20fcc44 -->
-Fare clic su una tessera nella riga di un colono alterna attivo ![tessera attiva](chip-state-on.png), disattivo per quel colono ![tessera con barratura singola](chip-state-off.png) e forzato attivo ![tessera con bandierina](chip-state-forced.png). Disattivarlo sia globalmente sia per il colono sovrappone le barrature ![tessera con barrature sovrapposte](chip-state-both-off.png); forzarlo attivo lo mantiene invece operativo anche quando è disattivato globalmente.
+Fare clic su una tessera nella riga di un colono alterna attivo ![tessera attiva](chip-state-on.png), disattivo per quel colono ![tessera con barratura singola](chip-state-off.png) e forzato attivo ![tessera con punto bianco](chip-state-forced.png). Disattivarlo sia globalmente sia per il colono sovrappone le barrature ![tessera con barrature sovrapposte](chip-state-both-off.png); forzarlo attivo lo mantiene invece operativo anche quando il ruolo è disattivato globalmente.
+
+<!-- l10n:b-8c2e4f7a1d93 -->
+Il punto bianco è il segno predefinito per forzato attivo. Con i [marcatori a icona](topic:display) la tessera mostra invece una bandierina.
 
 <!-- l10n:b-c5c0217224df -->
 Cambiare stato non rimuove mai l'assegnazione: la tessera conserva il posto nella riga.

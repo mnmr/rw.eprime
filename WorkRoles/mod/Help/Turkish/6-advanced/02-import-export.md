@@ -5,7 +5,7 @@ title: İçe ve dışa aktarma
 Roller sekmesinin köşe düğmeleri rol düzenlerini kayıtlar ve arkadaşlar arasında taşır:
 
 <!-- l10n:b-4f44ec3259f6 -->
-![İçe aktar, Dışa aktar ve Varsayılanları geri yükle düğmeleri](io-buttons.png)
+![İçe aktar, Dışa aktar, Varsayılanları ayarla ve Varsayılanları geri yükle düğmeleri](io-buttons.png)
 
 <!-- l10n:b-fcca50ae80e8 -->
 Dışa aktar, rol düzeninin tamamını dosyaya veya panoya yazar: roller, gruplar ve bunların sırası, özel simgeler, palet renkleri (kullanılmayan renkler dahil), kurallar, eğitim yolları, öneri ayarları ve kayıt genelindeki seçenekler. Görüntüleme tercihlerinizi de isteğe bağlı olarak içe aktarılabilecek bir bölüm olarak içerir. Kolonici atamaları, üretim emri bağlantıları ve geçici pencere durumu mevcut kayıtlarında veya oturumlarında kalır.

@@ -33,11 +33,9 @@
   <WR_OptSkillCaptionsTip>Cada fila muestra bajo el nombre las mejores habilidades laborales del colono y sus niveles, con colores según su aptitud. Desactívalo para mostrar solo el nombre.</WR_OptSkillCaptionsTip>
   <WR_OptVerdictsColonists>Mostrar valoraciones en las fichas de roles de los colonos</WR_OptVerdictsColonists>
   <WR_OptVerdictsColonistsTip>Cada ficha muestra un par de estrellas de aptitud para el colono, según el motor de recomendaciones: blancas para valoraciones positivas (una buena, dos excelente, doradas excepcional), rojas para negativas (una mala, dos pésima) y grises para neutral.</WR_OptVerdictsColonistsTip>
-  <WR_OptVerdictsPalette>Mostrar valoraciones para el colono seleccionado en la paleta de roles</WR_OptVerdictsPalette>
-  <WR_OptVerdictsPaletteTip>Las fichas de la paleta indican lo adecuado que es cada rol para el colono seleccionado.</WR_OptVerdictsPaletteTip>
-  <WR_OptVerdictsRecommendations>Mostrar valoraciones en los roles recomendados</WR_OptVerdictsRecommendations>
+  <WR_OptVerdictsPalette>Mostrar valoraciones del colono seleccionado en la paleta de roles y el panel de habilidades</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>Actívalo para mostrar las estrellas de valoración de aptitud en las fichas de la paleta de roles y del panel de habilidades del colono.</WR_OptVerdictsPaletteTip>
   <WR_OptPaletteGrouping>Agrupación de la paleta de roles</WR_OptPaletteGrouping>
-  <WR_OptVerdictsRecommendationsTip>Las fichas recomendadas (panel de estadísticas y vistas previas de cambios) muestran la aptitud del colono al que se recomiendan.</WR_OptVerdictsRecommendationsTip>
   <WR_RecGlobalPanel>Opciones globales</WR_RecGlobalPanel>
   <WR_RecGlobalPanelHelp>Estas opciones modifican la puntuación y clasificación de candidatos y la posición final de los roles recomendados. Usa Restablecer para recuperar los valores predeterminados si no te convencen los cambios.</WR_RecGlobalPanelHelp>
   <WR_RecRolePanel>Opciones de roles</WR_RecRolePanel>
@@ -667,4 +665,24 @@ No se interrumpió el trabajo. Este aviso aparece una vez por partida.</WR_Giver
   <WR_HelpChapterMods>Mods</WR_HelpChapterMods>
   <WR_HiddenRole>Rol oculto</WR_HiddenRole>
   <WR_HiddenRoleTip>Los roles ocultos no aparecen en la paleta de roles de la parte superior de la pestaña Colonos. Siguen funcionando con normalidad: los colonos que los tienen los conservan, el botón + de la fila de un colono aún los muestra y las recomendaciones pueden seguir sugiriéndolos. Úsalo para ocultar roles que rara vez asignas directamente o si la paleta de roles ocupa demasiado espacio.</WR_HiddenRoleTip>
+  <WR_ChipMarkersDots>Puntos</WR_ChipMarkersDots>
+  <WR_ChipMarkersIcons>Iconos</WR_ChipMarkersIcons>
+  <WR_ChipMarkersOff>Desactivados</WR_ChipMarkersOff>
+  <WR_OptChipMarkers>Marcadores de las fichas de rol</WR_OptChipMarkers>
+  <WR_OptChipMarkersTip>Cómo muestran sus marcadores las fichas de rol.
+
+Puntos: un pequeño punto de color por marcador. Blanco significa siempre activo, amarillo que el rol tiene reglas y turquesa que está fijado. Las estrellas huecas indican que el colono no puede hacer todos los trabajos del rol.
+
+Iconos: un icono por marcador.
+
+Desactivados: sin marcadores.</WR_OptChipMarkersTip>
+  <WR_OptRecommendations>Mostrar recomendaciones</WR_OptRecommendations>
+  <WR_OptRecommendationsTip>Desactívalo para ocultar la pestaña Recomendaciones, el botón Arreglar mi colonia y los roles recomendados del colono seleccionado. Las valoraciones de aptitud siguen disponibles.</WR_OptRecommendationsTip>
+  <WR_OptRemoveIcon>Mostrar el icono de quitar en las fichas de rol</WR_OptRemoveIcon>
+  <WR_OptRemoveIconTip>Desactívalo para quitar la papelera de las fichas de rol asignadas. En su lugar, haz clic derecho en una ficha y elige Quitar rol.</WR_OptRemoveIconTip>
+  <WR_PreviewColonist>Colono</WR_PreviewColonist>
+  <WR_RemoveRole>Quitar rol</WR_RemoveRole>
+  <WR_SelectedActivity>Actividad</WR_SelectedActivity>
+  <WR_SelectedName>Nombre</WR_SelectedName>
+  <WR_SelectedTraits>Rasgos</WR_SelectedTraits>
 </LanguageData>

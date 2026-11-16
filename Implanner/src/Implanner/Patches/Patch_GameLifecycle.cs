@@ -33,6 +33,7 @@ namespace Implanner.Patches
             BenchDesignations.Reset();
             SurgeryBindings.Reset();
             BenchLock.Reset();
+            BenchQueue.Reset();
             AndroidTiers.FollowPending = false;
             ImplantQualities.Reset();
         }

@@ -11,6 +11,10 @@ namespace WorkRoles.UI
             new Color(1f, 1f, 1f, 0.15f);
         internal static readonly Color CaptionText =
             new Color(0.60f, 0.62f, 0.64f);
+        /// Secondary values shown under a CaptionText caption: visibly
+        /// lighter than the caption, dimmer than primary white text.
+        internal static readonly Color ValueText =
+            new Color(0.86f, 0.87f, 0.88f);
         internal static readonly Color DimText =
             new Color(0.6f, 0.6f, 0.6f);
         internal static readonly Color DisabledText =

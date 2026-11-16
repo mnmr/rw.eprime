@@ -130,6 +130,8 @@ namespace Implanner.Core
             new Dictionary<int, IReadOnlyList<string>>();
         readonly Dictionary<string, int> productionBillQualities =
             new Dictionary<string, int>(StringComparer.Ordinal);
+        readonly Dictionary<string, ProductionBillOrigin> productionBillOrigins =
+            new Dictionary<string, ProductionBillOrigin>(StringComparer.Ordinal);
         readonly Dictionary<int, IReadOnlyList<ReinstallRecord>> reinstalls =
             new Dictionary<int, IReadOnlyList<ReinstallRecord>>();
 
@@ -897,8 +899,34 @@ namespace Implanner.Core
             if (billId == null || !ownedProductionBills.Remove(billId))
                 return PlannerChange.None;
             productionBillQualities.Remove(billId);
+            productionBillOrigins.Remove(billId);
             return PlannerChange.Production;
         }
+
+        /// When a recorded bill was queued and the goal it most likely
+        /// serves (the bench queue shows both); Unknown for a bill from a
+        /// save that predates the record.
+        public ProductionBillOrigin ProductionBillOriginOf(string billId) =>
+            billId != null && productionBillOrigins.TryGetValue(billId, out ProductionBillOrigin origin)
+                ? origin
+                : ProductionBillOrigin.Unknown;
+
+        public PlannerChange SetProductionBillOrigin(string billId, int createdTick,
+            int pawnId, string goalKey)
+        {
+            if (billId == null || !ownedProductionBills.ContainsKey(billId))
+                return PlannerChange.None;
+            var origin = new ProductionBillOrigin(createdTick, pawnId, goalKey);
+            if (ProductionBillOriginOf(billId).Equals(origin)) return PlannerChange.None;
+            if (origin.Equals(ProductionBillOrigin.Unknown)) productionBillOrigins.Remove(billId);
+            else productionBillOrigins[billId] = origin;
+            return PlannerChange.Production;
+        }
+
+        /// The rollout moved: the bill serves another goal. Its age stays.
+        public PlannerChange SetProductionBillTarget(string billId, int pawnId, string goalKey) =>
+            SetProductionBillOrigin(billId, ProductionBillOriginOf(billId).CreatedTick,
+                pawnId, goalKey);
 
         /// The quality a production bill is set up to deliver (Quality Jobs
         /// manages it at that target, or its ingredient filter allows only
@@ -926,11 +954,16 @@ namespace Implanner.Core
         /// Deterministic load path: restores one production-bill record
         /// with its quality promise (UnknownQuality for none).
         public void AddLoadedProductionBill(string billId, string itemDefName,
-            int quality = ProductionQueue.UnknownQuality)
+            int quality = ProductionQueue.UnknownQuality,
+            int createdTick = ProductionBillOrigin.UnknownTick,
+            int pawnId = ProductionBillOrigin.NoPawn, string goalKey = "")
         {
             ownedProductionBills[billId] = itemDefName;
             if (quality != ProductionQueue.UnknownQuality)
                 productionBillQualities[billId] = quality;
+            var origin = new ProductionBillOrigin(createdTick, pawnId, goalKey);
+            if (!origin.Equals(ProductionBillOrigin.Unknown))
+                productionBillOrigins[billId] = origin;
         }
 
         // ---------------------------------------------- Designated benches

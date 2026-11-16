@@ -33,7 +33,7 @@ commands. Where this file is silent, the root contract governs.
 | Sparkle overlay maps (`SparkleOverlay.MapSnapshot`) | Plan membership and target identity/map/position/rotation/footprint; immediate structural invalidation plus the 2500-tick audit fallback |
 | Structured tips (shared `RimShared.UiLib` `WrTips`/`StructuredTipPresenter`/`WrTipUI` in `Shared/UiLib/Tips`, per-assembly statics; Quality Jobs' window id, table inset and revisions in `UI/TipHost.cs`) | Stable key + continuous-hover session (0.45s delay); content and geometry frozen per session; registries and geometry cleared when `UiRevision.Current` moves; Begin/EndSuppression pairs from popup owners reset the session |
 | Bill dialog status | `QualityJobsStore.BillStatusRevision`; entry/count/sharing/configuration changes and external pawn facts |
-| Bill status row geometry | Panel-owned status-string identities, available column width and `UiRevision.Current`; Small-font wrapped heights are built only after that gate changes. Stable reads retain the scalar geometry; panel/window release drops all strings and measurements. Wrapped rows advance by their measured height while preserving the existing two-pixel single-line descender allowance. |
+| Bill status row geometry | Panel-owned status-string identities, available column width and `UiRevision.Current`; Small-font wrapped heights are built only after that gate changes. The same gate measures the four option checkbox captions against the section width, and each of those rows takes its wrapped height (a caption too long for the panel no longer overlaps the row above). Stable reads retain the scalar geometry; panel/window release drops all strings and measurements. Wrapped rows advance by their measured height while preserving the existing two-pixel single-line descender allowance. |
 | Bill window attachment | Existing window reference (weak key), bill identity, logical screen dimensions and the panel's existing presentation dependencies; attach at factory/open events and native resolution notifications, reuse on repeated attachment, remove on successful close and reset on game disposal. The QJ panel owns the added right column; compact screens narrow vanilla's proportional content columns so the complete window remains onscreen. |
 | Welcome conflict notice (shared `WelcomeConflictNotice`) | Caller-supplied translated conflict catalog and active package IDs, resolved once by `WelcomeDialog.FindConflicts` at welcome admission. Immutable selection shared with the window; empty selection adds no geometry. Shared default heading/advice and optional host guidance resolve once per `PreOpen`, measured with the welcome's existing width/UI-metric gate. Window lifetime; no process cache. Per-player `compatibilityWarningsSeen` acknowledges each persistent save/package pair, allowing a newly detected conflict to reopen an already-seen welcome. |
 | Construction dialog status | `QualityJobsStore.PlanStatusRevision`, published target and construction-definition identity; plan configuration/state/map/definition changes and external pawn facts. Gated eligibility checks native skills, allowed areas and target access. Unpatched access changes use the existing 250-tick responsiveness boundary. Auto-best ranking includes native skill prerequisites but deliberately ignores temporary access; available-finisher status includes access. |
@@ -92,6 +92,24 @@ parallel. These batches click the real UI, observe pawns completing rebuilds,
 exercise cancellation and full save/reload, and retain evidence under
 `temp/completed-buildings`. Use `-Clean` for the final load without the probe.
 
-Building never deploys. Automated verification requires creating a fresh managed
+Build with `scripts\build.cmd` (see the root contract); a bare `dotnet build`
+never deploys. Automated verification requires creating a fresh managed
 run after building, following the root contract; creation deploys its copies.
 Player installation deployment uses `pwsh scripts/deploy.ps1` and a game restart.
+
+Help images are regenerated with `pwsh scripts/update-help-images.ps1` (no
+arguments: 1920x1080, UI scale 1.0, local 1.7 copy; `-Check` reports without
+writing, `-RunFolder <folder>` cuts again from an earlier capture). The script
+is a thin call into the shared pipeline
+(`Shared/tools/automation/help-shots`, shared probe source in
+`Shared/Tests/InGame/HelpShots`): it builds the mod and the test-only probe
+`tests/InGame/HelpShots`, plays a scripted run that saves a full frame per
+scene and a manifest naming the pixel rectangle of every element drawn in it
+(Harmony hooks in the probe; nothing in the shipped mod), then cuts each image
+listed in `crops.json` by region name. An image whose pixels did not change
+is not rewritten. The probe sets the effective UI scale itself and fails the
+run unless the frame is at exactly the requested scale (the 1.7 runtime does
+render at 1.0; only the preference is skewed by the automation desktop's DPI
+factor). Every in-game image the English help references is cut by `crops.json`. A new image needs a scene in `Probe.cs` (if no
+existing frame shows it) and an entry in `crops.json`. The `verdict-*.png`
+icons are artwork from `Shared/assets/help-icons`.

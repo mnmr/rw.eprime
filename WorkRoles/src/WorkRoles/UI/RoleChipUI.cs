@@ -92,12 +92,28 @@ namespace WorkRoles.UI
         private static readonly Color RemovedColor = new Color(1f, 0f, 0f, 1f); // #ff0000
 
         private const float VerdictStarSize = 10f;
+        /// The star pair's top edge below the chip's top, and its height
+        /// (DrawVerdictBadge on the 24-unit chip); the dot stack is
+        /// centred on them.
+        /// Measured on the stars' ink, not their draw rects: the runtime
+        /// star texture's tip starts about 8% of its size below the rect
+        /// top, and its two feet end about 10.5% above the rect bottom.
+        private const float StarInkTop = 0.08f, StarInkBottom = 0.105f;
+        internal const float VerdictStarsTop =
+            (Height - 2f * VerdictStarSize) / 3f + 1f
+            + StarInkTop * VerdictStarSize;
+        internal const float VerdictStarsSpan =
+            Height - 2f * ((Height - 2f * VerdictStarSize) / 3f + 1f)
+            - (StarInkTop + StarInkBottom) * VerdictStarSize;
         private const float RoleIconSize = 20f;
         /// Vertical two-star verdict stack: equal gaps above, between, and
         /// below the stars across the chip height, then each star nudged 1px
         /// toward the middle so the pair reads as one marker.
-        internal static void DrawVerdictBadge(Rect rect, RoleChipVerdict verdict)
+        /// hollow: the colonist cannot do all of the role's jobs.
+        internal static void DrawVerdictBadge(Rect rect, RoleChipVerdict verdict,
+            bool hollow = false)
         {
+            Texture2D star = hollow ? WorkRolesTex.StarHollow : WorkRolesTex.Star;
             Color oldColor = GUI.color;
             try
             {
@@ -105,10 +121,10 @@ namespace WorkRoles.UI
                 float gap = (rect.height - 2f * VerdictStarSize) / 3f;
                 GUI.color = verdict.Top;
                 GUI.DrawTexture(new Rect(x, rect.y + gap + 1f, VerdictStarSize,
-                    VerdictStarSize), WorkRolesTex.Star);
+                    VerdictStarSize), star);
                 GUI.color = verdict.Bottom;
                 GUI.DrawTexture(new Rect(x, rect.y + gap * 2f + VerdictStarSize - 1f,
-                    VerdictStarSize, VerdictStarSize), WorkRolesTex.Star);
+                    VerdictStarSize, VerdictStarSize), star);
             }
             finally
             {
@@ -129,6 +145,49 @@ namespace WorkRoles.UI
         private const float MarkerEdgePad = 3f;
         private const float MarkerGap = 2f;
         private const float VerdictSlotW = 12f;
+
+        /// Per-player marker display. Every cache holding chip widths keys
+        /// on MetricRevision, which carries this value.
+        internal static ChipMarkers Markers =>
+            WorkRolesMod.Settings?.chipMarkers ?? ChipMarkers.Dots;
+
+        /// Per-player: assigned chips carry the trash can (false = the
+        /// right-click menu removes the role).
+        internal static bool RemoveIcon =>
+            WorkRolesMod.Settings?.removeRoleIcon ?? true;
+
+        /// Pin markers show only while something consumes the pin: the
+        /// player's recommendations, or the save's auto-optimize.
+        private static bool PinMarkers =>
+            (WorkRolesMod.Settings?.recommendationsEnabled ?? true)
+            || RoleStore.Current?.autoOptimize == true;
+
+        /// The UI metric revision combined with the marker display, the
+        /// remove-icon preference and the pin-marker gate: the exact key of
+        /// anything measured through WidthFor/LabelInsets.
+        internal static int MetricRevision =>
+            unchecked(((UiRevision.Current * 3 + (int)Markers) * 2
+                + (RemoveIcon ? 1 : 0)) * 2 + (PinMarkers ? 1 : 0));
+
+        /// Logical width of the dot stripe from the chip's left edge: the
+        /// outline pixel plus the atlas cell. Builder-side (WidthFor) and
+        /// Draw share it.
+        /// The chip's dots (RoleChipDots mask), 0 outside the dot display.
+        /// Dots are drawn only for facts that hold: always on, has rules,
+        /// pinned. A chip without any reserves no stripe.
+        /// rulesDot: false where the surface already says the role has
+        /// rules (the palette's Groups mode files it under Conditional).
+        private static int DotMask(RoleChipRenderData role, bool pinned,
+            bool forcedOn, bool rulesDot) =>
+            Markers != ChipMarkers.Dots ? 0
+                : RoleChipDots.Mask(forcedOn, rulesDot && role.HasRules,
+                    pinned && PinMarkers);
+
+        private static float DotStripeWidth()
+        {
+            WorkRolesTex.EnsureChipDots();
+            return (WorkRolesTex.ChipDotsCellW + 1) / WorkRolesTex.ChipDotsScale;
+        }
 
         private static bool Condensed(ChipDisplay display) =>
             display != ChipDisplay.Normal;
@@ -154,7 +213,9 @@ namespace WorkRoles.UI
             RoleAssignmentWarningSeverity warningSeverity, bool forcedOn,
             bool verdictSlot)
         {
-            int icons =
+            // Only the icon display spends band width on markers; the dot
+            // stripe is added by LeftInset.
+            int icons = Markers != ChipMarkers.Icons ? 0 :
                 (warningSeverity != RoleAssignmentWarningSeverity.None ? 1 : 0)
                 + (role.Blocker ? 1 : 0)
                 + (role.HasTimeRule ? 1 : 0)
@@ -168,8 +229,13 @@ namespace WorkRoles.UI
             return band;
         }
 
-        private static float LeftInset(float markerBand, ChipDisplay display) =>
-            markerBand > 0f ? MarkerEdgePad + markerBand + LabelGap(display)
+        private static float LeftInset(float markerBand, ChipDisplay display,
+            bool dots) =>
+            dots
+                ? DotStripeWidth()
+                    + (markerBand > 0f ? MarkerGap + markerBand : 0f)
+                    + LabelGap(display)
+            : markerBand > 0f ? MarkerEdgePad + markerBand + LabelGap(display)
             : Condensed(display) ? 4f : PadFor(display);
 
         private static float RightInset(bool showRemove, ChipDisplay display) =>
@@ -177,10 +243,10 @@ namespace WorkRoles.UI
                 : PadFor(display);
 
         private static bool PinShown(Role role, bool pinned) =>
-            pinned && !role.blocker && !role.HasRules;
+            pinned && PinMarkers && !role.blocker && !role.HasRules;
 
         private static bool PinShown(RoleChipRenderData role, bool pinned) =>
-            pinned && !role.Blocker && !role.HasRules;
+            pinned && PinMarkers && !role.Blocker && !role.HasRules;
 
         /// One role drag ghost for every tab. It uses the normal chip renderer
         /// and adds a red veil and outline only when the current target rejects
@@ -232,7 +298,8 @@ namespace WorkRoles.UI
             bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
             bool forcedOn = false, bool verdictSlot = false,
-            Texture2D? icon = null, bool fadeAllowance = false)
+            Texture2D? icon = null, bool fadeAllowance = false,
+            bool rulesDot = true, bool dotsInWidth = true)
         {
             GameFont oldFont = Text.Font;
             try
@@ -247,7 +314,10 @@ namespace WorkRoles.UI
                         : WrText.FitWidth(shortLabel)
                             + (fadeAllowance ? ChipUI.LabelFadeWidth : 0f);
                 return labelW + LabelInsets(role, showRemove, display, pinned,
-                    warningSeverity, forcedOn, verdictSlot);
+                    warningSeverity, forcedOn, verdictSlot,
+                    rulesDot && dotsInWidth,
+                    // No dot at all when the width must not depend on them.
+                    dotsInWidth ? pinned : false, dotsInWidth && forcedOn);
             }
             finally
             {
@@ -278,11 +348,22 @@ namespace WorkRoles.UI
         internal static float LabelInsets(RoleChipRenderData role,
             bool showRemove, ChipDisplay display, bool pinned,
             RoleAssignmentWarningSeverity warningSeverity, bool forcedOn,
-            bool verdictSlot)
+            bool verdictSlot, bool rulesDot = true)
+            => LabelInsets(role, showRemove, display, pinned, warningSeverity,
+                forcedOn, verdictSlot, rulesDot, pinned, forcedOn);
+
+        /// dotPinned/dotForcedOn: the facts the dot stripe is sized from,
+        /// separate from the icon band's so a width can leave the dots out.
+        private static float LabelInsets(RoleChipRenderData role,
+            bool showRemove, ChipDisplay display, bool pinned,
+            RoleAssignmentWarningSeverity warningSeverity, bool forcedOn,
+            bool verdictSlot, bool rulesDot, bool dotPinned, bool dotForcedOn)
         {
             float band = MarkerBand(role, pinned, warningSeverity, forcedOn,
                 verdictSlot);
-            return LeftInset(band, display) + RightInset(showRemove, display);
+            return LeftInset(band, display,
+                    DotMask(role, dotPinned, dotForcedOn, rulesDot) != 0)
+                + RightInset(showRemove, display);
         }
 
 
@@ -342,8 +423,9 @@ namespace WorkRoles.UI
             bool paint = true, bool activeOutline = false,
             int strikes = RoleChipStrikes.PawnOff, bool forcedOn = false,
             RoleChipVerdict verdict = default, Texture2D? icon = null,
-            float fadeLabelWidth = 0f)
+            float fadeLabelWidth = 0f, bool rulesDot = true)
         {
+            ChipMarkers markers = Markers;
             if (paint)
             {
                 Color bg = role.BaseColor;
@@ -369,7 +451,8 @@ namespace WorkRoles.UI
 
                 float markerBand = MarkerBand(role, pinned, warningSeverity,
                     forcedOn, verdict.Shown);
-                float leftInset = LeftInset(markerBand, display);
+                int dotMask = DotMask(role, pinned, forcedOn, rulesDot);
+                float leftInset = LeftInset(markerBand, display, dotMask != 0);
                 float rightInset = RightInset(showRemove, display);
                 string? label = UsesIcons(display) && icon != null
                     ? null
@@ -408,27 +491,57 @@ namespace WorkRoles.UI
                         GUI.color = Color.white;
                         markerX += RemoveSize + MarkerGap;
                     }
+                    // Scale-gated: a hit is one comparison.
+                    if (dotMask != 0) WorkRolesTex.EnsureChipDots();
+                    Texture2D? dots = dotMask != 0
+                        ? WorkRolesTex.ChipDots : null;
+                    if (dots != null)
+                    {
+                        // One atlas cell, texel for physical pixel, just
+                        // inside the chip's snapped outline.
+                        float scale = WorkRolesTex.ChipDotsScale;
+                        GUI.color = Color.white;
+                        // Shifted so the lights have the same clear space
+                        // to the chip edge as to the stars' ink, inside the
+                        // existing slot and gap (no added width).
+                        float shift = Mathf.Round((MarkerGap
+                            + (VerdictSlotW - VerdictStarSize) / 2f) * scale / 2f);
+                        GUI.DrawTextureWithTexCoords(new Rect(
+                                (Mathf.Round(rect.x * scale) + 1f + shift) / scale,
+                                (Mathf.Round(rect.y * scale) + 1f) / scale,
+                                WorkRolesTex.ChipDotsCellW / scale,
+                                WorkRolesTex.ChipDotsCellH / scale), dots,
+                            new Rect(
+                                dotMask / (float)WorkRolesTex.ChipDotsColumns,
+                                0f, 1f / WorkRolesTex.ChipDotsColumns, 1f));
+                        markerX = rect.x
+                            + (WorkRolesTex.ChipDotsCellW + 1) / scale + MarkerGap;
+                    }
                     if (verdict.Shown)
                     {
                         // Full chip height (the star pair needs the vertical
                         // room) in the narrow star slot.
+                        // In the dot display the stars carry capability.
                         DrawVerdictBadge(new Rect(markerX, rect.y,
-                            VerdictSlotW, rect.height), verdict);
+                            VerdictSlotW, rect.height), verdict,
+                            hollow: markers == ChipMarkers.Dots
+                                && warningSeverity != RoleAssignmentWarningSeverity.None);
                         markerX += VerdictSlotW + MarkerGap;
                     }
-                    if (warningSeverity != RoleAssignmentWarningSeverity.None)
+                    bool iconMarkers = markers == ChipMarkers.Icons;
+                    if (iconMarkers && warningSeverity != RoleAssignmentWarningSeverity.None)
                         Marker(warningSeverity == RoleAssignmentWarningSeverity.Caution
                                 ? WorkRolesTex.RoleCapabilityPartial
                                 : WorkRolesTex.RoleCapabilityAll,
                             tinted: false);
-                    if (role.Blocker) Marker(WorkRolesTex.BlockerMarker, tinted: false); // full-color red X
-                    if (role.HasTimeRule) Marker(WorkRolesTex.TimeMarker, tinted: true);
-                    if (role.HasLocationRule) Marker(WorkRolesTex.LocationMarker, tinted: true);
+                    if (iconMarkers && role.Blocker) Marker(WorkRolesTex.BlockerMarker, tinted: false); // full-color red X
+                    if (iconMarkers && role.HasTimeRule) Marker(WorkRolesTex.TimeMarker, tinted: true);
+                    if (iconMarkers && role.HasLocationRule) Marker(WorkRolesTex.LocationMarker, tinted: true);
                     // Claim keeps its own colors so the override reads at a glance.
-                    if (forcedOn) Marker(WorkRolesTex.ForceOnMarker, tinted: false);
+                    if (iconMarkers && forcedOn) Marker(WorkRolesTex.ForceOnMarker, tinted: false);
                     // The pin texture has less padding than the others; drawn
                     // smaller so it doesn't dominate the strip.
-                    if (PinShown(role, pinned)) Marker(WorkRolesTex.PinMarker,
+                    if (iconMarkers && PinShown(role, pinned)) Marker(WorkRolesTex.PinMarker,
                         tinted: true, size: 13f);
                 }
                 finally

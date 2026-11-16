@@ -123,18 +123,17 @@ function Get-LatestReleaseRecord {
     return $latest
 }
 
-# The only version change the publisher accepts unapproved: major.minor.patch
-# with the patch exactly one above the previous release. Anything else (a
-# skipped patch, a minor or major step, a downgrade, a two- or four-part
-# number) needs -ApproveVersion naming the version. Owner, 2026-11-01: a
+# The only version changes the publisher accepts unapproved: the next patch
+# (1.2.6 -> 1.2.7), next minor (-> 1.3.0) or next major (-> 2.0.0) after the
+# previous release. Anything else (a skipped version, a downgrade, a two- or
+# four-part number) needs -ApproveVersion naming the version. 2026-11-01: a
 # 1.2.4 -> 1.2.6 bump shipped a never-published 1.2.5 section unannounced.
-function Test-NextPatchVersion([string]$Previous, [string]$Version) {
+function Test-NextVersion([string]$Previous, [string]$Version) {
     $pattern = '^(\d+)\.(\d+)\.(\d+)$'
     if ($Previous -notmatch $pattern) { return $false }
-    $previousParts = @([int]$Matches[1], [int]$Matches[2], [int]$Matches[3])
+    $major, $minor, $patch = [int]$Matches[1], [int]$Matches[2], [int]$Matches[3]
     if ($Version -notmatch $pattern) { return $false }
-    return [int]$Matches[1] -eq $previousParts[0] -and [int]$Matches[2] -eq $previousParts[1] `
-        -and [int]$Matches[3] -eq $previousParts[2] + 1
+    return $Version -in "$major.$minor.$($patch + 1)", "$major.$($minor + 1).0", "$($major + 1).0.0"
 }
 
 function Get-NextPatchVersion([string]$Previous) {

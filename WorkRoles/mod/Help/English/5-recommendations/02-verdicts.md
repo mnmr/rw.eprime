@@ -11,8 +11,9 @@ shown as star pairs on chips:
 <!-- l10n:b-7f555b0b6d7d -->
 Red stars warn: one for Poor, a second red star for Awful. Grey is
 Neutral. White stars approve: one for Strong, two for Great, and gold
-marks Exceptional. The tinted chip with the warning marker flags a
-capability problem on top of the rating; hover it for the reason.
+marks Exceptional. Hollow stars flag a capability problem on top of
+the rating; hover the chip for the reason. With
+[icon markers](topic:display) a warning icon flags it instead.
 
 <!-- l10n:b-3fee18313e0f -->
 The chip tooltip states the verdict in words:
@@ -21,7 +22,7 @@ The chip tooltip states the verdict in words:
 ![Verdict in the chip tooltip](chip-tooltip-verdict.png)
 
 <!-- l10n:b-adcd8b157418 -->
-Three Options-tab switches control where verdict stars appear:
+Two Options-tab switches control where verdict stars appear:
 
 <!-- l10n:b-0b21b231401d -->
 ![The verdict switches](verdict-switches.png)

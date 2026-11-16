@@ -6,15 +6,15 @@ A automação examina a colônia aproximadamente duas vezes por hora do jogo. Ap
 
 <!-- l10n:b-6eb19bb9f96f -->
 1. Conta o que ainda falta aos colonos vinculados.
-2. Cria ordens dos implantes que a colônia pode fabricar (veja [Opções de produção](topic:production-options)).
+2. Cria tarefas dos implantes que a colônia pode fabricar (veja [Opções de produção](topic:production-options)).
 3. Reserva itens prontos do estoque para colonos específicos, conforme prioridades e níveis.
-4. Quando tudo necessário para a próxima etapa estiver reservado e no local, acrescenta as operações em bloco à lista do colono, depois das ordens existentes.
+4. Quando tudo necessário para a próxima etapa estiver reservado e no local, acrescenta as operações em bloco à lista do colono, depois das tarefas existentes.
 
 <!-- l10n:b-a747349bea45 -->
 O resumo da colônia no topo da aba Visão geral mostra se a automação está ligada, o que está sendo fabricado ou aguardado, quantos implantes há em estoque e ainda precisam ser produzidos e quem será o próximo operado. Passe o cursor sobre os números de produção ou cirurgia para ver detalhes por implante e o motivo de espera de cada item.
 
 <!-- l10n:production-counts -->
-Na dica de produção, **Ainda a produzir** conta os implantes necessários ainda não cobertos pelo estoque, incluindo trabalho sem ordem de fabricação. **Em ordens de produção** conta a produção esperada das ordens existentes do Implanner, estejam elas aguardando ou em andamento.
+Na dica de produção, **Ainda a produzir** conta os implantes necessários ainda não cobertos pelo estoque, incluindo trabalho sem tarefa de fabricação. **Em tarefas de produção** conta a produção esperada das tarefas existentes do Implanner, estejam elas aguardando ou em andamento.
 
 <!-- l10n:b-8fea0b171c65 -->
 ![Resumo da colônia com produção e cirurgia](colony-next.png)

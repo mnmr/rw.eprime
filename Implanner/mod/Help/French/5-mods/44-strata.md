@@ -15,7 +15,7 @@ L'automatisation ne peut pas transporter un implant ni mener une opération d'un
 La planification, le suivi et l'automatisation fonctionnent tous, mais une
 opération médicale ne cherche son implant que sur le niveau du patient ; le
 transport de complément de Strata sert les établis de production, pas les
-ordres médicaux. Une opération dont l'implant réservé se trouve sur un autre
+tâches médicales. Une opération dont l'implant réservé se trouve sur un autre
 niveau attend que vous le déplaciez, et un avertissement près de
 l'interrupteur principal le signale (voir
 [Quand l'automatisation se met en retrait](topic:when-automation-stands-down)).

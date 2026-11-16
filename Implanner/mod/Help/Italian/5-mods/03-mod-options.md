@@ -2,7 +2,7 @@
 title: Opzioni delle mod
 ---
 <!-- l10n:b-459ed37f94ab -->
-![La scheda Opzioni con le sezioni Compatibilità con le mod e Catalogo](options-tab.png)
+![La scheda Opzioni](options-tab.png)
 
 <!-- l10n:b-045738932f34 -->
 La scheda Opzioni contiene le impostazioni di compatibilità dei piani e l'intervallo visibile dei cursori delle abilità. Le impostazioni dell'automazione sono nella scheda Automazione. Le impostazioni dei piani e dell'automazione sono condivise da tutti in multigiocatore.

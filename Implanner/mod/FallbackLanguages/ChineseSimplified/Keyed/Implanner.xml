@@ -172,7 +172,7 @@
   <IMP_OptIdleBenchesTip>仅向没有待执行工作的工作台添加新清单。你自己的生产队列优先，植入体利用空闲时间制作。关闭后，植入体清单可排在你自己的清单之后。</IMP_OptIdleBenchesTip>
   <IMP_OptDesignatedBenchesTip>仅向“清单”页中勾选“Implanner 工作台”的工作台添加生产清单，因此没有专用台的殖民地不会制作植入体。关闭后仍优先使用 Implanner 工作台，所有专用台各有两份清单后才使用其他工作台。两种情况下都适用“可持有清单的工作台数”上限。</IMP_OptDesignatedBenchesTip>
   <IMP_BenchToggle>Implanner 工作台</IMP_BenchToggle>
-  <IMP_BenchToggleTip>Implanner 优先在此工作台放置生产清单，并暂停原有清单。勾选期间，你无法在此添加、粘贴、暂停或恢复清单。\n\n取消勾选可收回工作台。指定前已暂停的清单仍保持暂停，其余恢复。</IMP_BenchToggleTip>
+  <IMP_BenchToggleTip>Implanner 会优先在此工作台放置制作清单，并暂停这里已有的清单。勾选期间，“清单”页会显示 Implanner 生产队列，你无法在此添加、粘贴、暂停或恢复清单。\n\n取消勾选可收回工作台。勾选前已暂停的清单仍保持暂停，其余恢复。</IMP_BenchToggleTip>
   <IMP_BenchLockedTip>无法在 Implanner 工作台粘贴、暂停或恢复清单。取消勾选“清单”页顶部的“Implanner 工作台”即可收回。</IMP_BenchLockedTip>
   <IMP_BenchNoNewBills>取消勾选“Implanner 工作台”后才能在此添加清单</IMP_BenchNoNewBills>
   <IMP_OptProductionSkillTip>Implanner 生产清单所需的最低手工技能。较高值可避免低技能工匠使用昂贵零部件，较低值则让更多殖民者参与。清单会等待符合要求的工匠接手。</IMP_OptProductionSkillTip>
@@ -243,4 +243,21 @@
   <IMP_OptCompatHygiene>Dubs Bad Hygiene 与 [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
   <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
   <IMP_OptCompatSkills>Endless Growth 及其他技能类模组</IMP_OptCompatSkills>
+  <IMP_QueueAge>已排队</IMP_QueueAge>
+  <IMP_QueueAgeNow>刚刚</IMP_QueueAgeNow>
+  <IMP_QueueAgeTip>自 Implanner 排入此清单以来的游戏内时间。</IMP_QueueAgeTip>
+  <IMP_QueueEmpty>此处没有排队的清单。当计划需要此工作台能制作的植入体时，Implanner 会添加清单。</IMP_QueueEmpty>
+  <IMP_QueueFor>对象</IMP_QueueFor>
+  <IMP_QueueNeededFor>用于</IMP_QueueNeededFor>
+  <IMP_QueuePausedMany>此工作台为 Implanner 工作台期间，另有 {0} 份清单被暂停。</IMP_QueuePausedMany>
+  <IMP_QueuePausedOne>此工作台为 Implanner 工作台期间，另有 1 份清单被暂停。</IMP_QueuePausedOne>
+  <IMP_QueuePlan>计划</IMP_QueuePlan>
+  <IMP_QueueQuality>品质</IMP_QueueQuality>
+  <IMP_QueueQualityValue>{0}或更高</IMP_QueueQualityValue>
+  <IMP_QueueStatusCrafting>制作中</IMP_QueueStatusCrafting>
+  <IMP_QueueStatusCraftingAt>制作中：{0}</IMP_QueueStatusCraftingAt>
+  <IMP_QueueStatusStarted>已开始：{0}</IMP_QueueStatusStarted>
+  <IMP_QueueStatusWaiting>等待中</IMP_QueueStatusWaiting>
+  <IMP_QueueTitle>Implanner 生产队列</IMP_QueueTitle>
+  <IMP_QueueWorker>制作者</IMP_QueueWorker>
 </LanguageData>

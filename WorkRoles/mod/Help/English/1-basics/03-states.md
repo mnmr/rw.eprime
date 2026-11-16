@@ -19,10 +19,14 @@ holding it.
 Clicking a chip in a colonist's row cycles between on
 ![enabled chip](chip-state-on.png), off for this colonist
 ![chip with a single strike](chip-state-off.png), and forced on
-![chip with a claim flag](chip-state-forced.png). Off both globally and
+![chip with a white dot](chip-state-forced.png). Off both globally and
 for the colonist stacks the strikes
 ![chip with stacked strikes](chip-state-both-off.png), while forced on
 keeps working even when the role is disabled globally.
+
+<!-- l10n:b-8c2e4f7a1d93 -->
+The white dot is the default marker for forced on. With
+[icon markers](topic:display) the chip shows a flag instead.
 
 <!-- l10n:b-c5c0217224df -->
 Toggling never removes the assignment; the chip keeps its place in the

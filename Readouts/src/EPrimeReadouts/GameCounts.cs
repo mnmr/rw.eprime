@@ -140,6 +140,40 @@ namespace EPrimeReadouts
                     tallies[inner.def] = tally;
                 }
 
+                // Container storage (bookcases, outfit stands, modded haul
+                // sources) holds its contents unspawned, so neither the
+                // lister pass above nor vanilla's slot-group counter sees
+                // them. They are stored stock the vanilla counter omits, so
+                // every eligible def feeds the group-count basis here. Graves
+                // and caskets are haul destinations but not sources and stay
+                // out. A source that is also a slot-group parent keeps its
+                // things spawned and was covered above. Fog reads the
+                // container's cell.
+                var sources = map.haulDestinationManager.AllHaulSourcesListForReading;
+                for (int i = 0; i < sources.Count; i++)
+                {
+                    IHaulSource source = sources[i];
+                    if (source is ISlotGroupParent) continue;
+                    if (source is Thing container && container.Spawned
+                        && container.Position.Fogged(map)) continue;
+                    ThingOwner held = source.GetDirectlyHeldThings();
+                    if (held == null) continue;
+                    for (int j = 0; j < held.Count; j++)
+                    {
+                        Thing thing = held[j];
+                        var inner = thing.GetInnerIfMinified();
+                        if (!inner.def.CountAsResource
+                            && !GameResourceCatalog.IsExtraCountedDef(inner.def)) continue;
+                        if (inner.IsNotFresh()) continue;
+                        tallies.TryGetValue(inner.def, out DefTally tally);
+                        tally.ExtraStored += inner.stackCount;
+                        if (options.InspectForbidden && thing.IsForbidden(Faction.OfPlayer))
+                            tally.StoredForbidden += inner.stackCount;
+                        else tally.StoredUnforbidden += inner.stackCount;
+                        tallies[inner.def] = tally;
+                    }
+                }
+
                 // Flush the def-keyed tallies into the string-keyed accumulator.
                 // Emission order does not matter: search tallies are additive and
                 // the fingerprint folds commutatively.

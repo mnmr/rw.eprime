@@ -8,7 +8,10 @@ Con **Aggiungi automaticamente ordini per gli impianti mancanti** attivo, Implan
 Quando più ricette producono lo stesso impianto, Implanner preferisce un percorso disponibile che possa pagare subito. Un impianto base libero può essere potenziato; altrimenti una ricetta diretta può produrre quello avanzato dai materiali. Se è abilitato solo il potenziamento, la produzione di intermedi può fabbricare prima la base. Le ricette devono essere ricercate e supportate da un banco idoneo.
 
 <!-- l10n:b-0aa3ded1d655 -->
-Per dedicare un banco agli impianti, attiva **Banco Implanner** nella sua scheda Ordini. La casella appare solo sui banchi capaci di fabbricare impianti. Gli ordini già presenti vengono sospesi e Implanner aggiunge i propri a questo banco prima che agli altri. Finché la casella è attiva, non puoi aggiungere, incollare, sospendere o riprendere ordini su quel banco.
+Per dedicare un banco agli impianti, attiva **Banco Implanner** nella sua scheda Ordini. La casella appare solo sui banchi capaci di fabbricare impianti. Gli ordini già presenti vengono sospesi e Implanner aggiunge i propri a questo banco prima che agli altri.
+
+<!-- l10n:queue -->
+Finché la casella è attiva, la scheda Ordini mostra la coda di produzione di Implanner al posto del consueto elenco degli ordini del banco. Ogni riga è un ordine messo in coda da Implanner: l'oggetto, se un artigiano l'ha già iniziato, il piano a cui appartiene, il colono che è il prossimo in lista per eseguirlo e da quanto tempo è in coda. Un ordine per un ingrediente indica l'impianto per cui serve. **Dettagli** apre le impostazioni del gioco per quell'ordine. La riga in fondo conta i tuoi ordini che sono in pausa. Non puoi aggiungere ordini al banco finché non disattivi la casella.
 
 <!-- l10n:b-a4d04c1bceb2 -->
 ![Un banco di fabbricazione affidato a Implanner](implanner-bench.png)

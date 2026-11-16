@@ -2,7 +2,7 @@
 title: Organización de la paleta
 ---
 <!-- l10n:b-920248b013cc -->
-La paleta de Colonos tiene dos modos, elegidos al final de la configuración visual de Opciones:
+La paleta de roles de la pestaña Colonos puede organizarse de dos maneras, que se eligen en la configuración visual de la pestaña Opciones:
 
 <!-- l10n:b-b429b8db5576 -->
 ![Configuración visual con selector de paleta](options-display.png)

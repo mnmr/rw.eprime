@@ -263,10 +263,8 @@ WorkRoles는 기본 게임 방식으로 관리 대상의 작업 목록을 제공
   <WR_OptVanillaRangeTipWhat>WorkRoles는 1부터 시작하는 고유한 연속 우선순위로 작업 순서를 정합니다.</WR_OptVanillaRangeTipWhat>
   <WR_OptVerdictsColonists>정착민 역할에 적합도 표시</WR_OptVerdictsColonists>
   <WR_OptVerdictsColonistsTip>정착민 표의 각 역할에 추천 엔진의 적합도를 별로 표시합니다. 좋은 평가는 흰색(하나: 적합, 둘: 매우 적합, 금색: 최적), 나쁜 평가는 빨간색(하나: 부적합, 둘: 매우 부적합), 중립은 회색입니다.</WR_OptVerdictsColonistsTip>
-  <WR_OptVerdictsPalette>팔레트에 선택한 정착민의 적합도 표시</WR_OptVerdictsPalette>
-  <WR_OptVerdictsPaletteTip>팔레트의 역할마다 현재 선택한 정착민의 적합도를 표시합니다.</WR_OptVerdictsPaletteTip>
-  <WR_OptVerdictsRecommendations>추천 역할에 적합도 표시</WR_OptVerdictsRecommendations>
-  <WR_OptVerdictsRecommendationsTip>능력치 패널과 변경 미리보기의 추천 역할에 해당 정착민의 적합도를 표시합니다.</WR_OptVerdictsRecommendationsTip>
+  <WR_OptVerdictsPalette>팔레트와 기술 패널에 선택한 정착민의 적합도 표시</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>켜면 역할 팔레트와 정착민 기술 패널의 역할에 적합도 별을 표시합니다.</WR_OptVerdictsPaletteTip>
   <WR_OptionsTab>옵션</WR_OptionsTab>
   <WR_OrderSuffixAZ>(가나다순)</WR_OrderSuffixAZ>
   <WR_OrderSuffixBar>(정착민 표시줄)</WR_OrderSuffixBar>
@@ -667,4 +665,24 @@ WorkRoles는 기본 게임 방식으로 관리 대상의 작업 목록을 제공
   <WR_HelpChapterMods>모드</WR_HelpChapterMods>
   <WR_HiddenRole>숨김 역할</WR_HiddenRole>
   <WR_HiddenRoleTip>숨김 역할은 정착민 탭 상단의 역할 팔레트에 표시되지 않습니다. 그 외에는 평소처럼 작동합니다. 이 역할을 가진 정착민은 그대로 유지하고, 정착민 행의 + 버튼 목록에도 나타나며, 추천에도 계속 포함될 수 있습니다. 직접 지정하는 일이 드문 역할을 숨기거나, 역할 팔레트가 공간을 너무 많이 차지할 때 사용하세요.</WR_HiddenRoleTip>
+  <WR_ChipMarkersDots>점</WR_ChipMarkersDots>
+  <WR_ChipMarkersIcons>아이콘</WR_ChipMarkersIcons>
+  <WR_ChipMarkersOff>끄기</WR_ChipMarkersOff>
+  <WR_OptChipMarkers>역할 표식</WR_OptChipMarkers>
+  <WR_OptChipMarkersTip>역할에 표식을 표시하는 방식입니다.
+
+점: 표식마다 작은 색 점을 표시합니다. 흰색은 항상 켜짐, 노란색은 규칙이 있는 역할, 청록색은 고정을 뜻합니다. 속이 빈 별은 정착민이 그 역할의 모든 작업을 할 수는 없다는 뜻입니다.
+
+아이콘: 표식마다 아이콘을 표시합니다.
+
+끄기: 표식을 표시하지 않습니다.</WR_OptChipMarkersTip>
+  <WR_OptRecommendations>추천 표시</WR_OptRecommendations>
+  <WR_OptRecommendationsTip>끄면 추천 탭, 정착지 최적화 버튼, 선택한 정착민의 추천 역할을 숨깁니다. 적합도는 계속 표시됩니다.</WR_OptRecommendationsTip>
+  <WR_OptRemoveIcon>역할에 제거 아이콘 표시</WR_OptRemoveIcon>
+  <WR_OptRemoveIconTip>끄면 배정된 역할에서 휴지통 아이콘이 사라집니다. 대신 역할을 오른쪽 클릭해 '역할 제거'를 고르세요.</WR_OptRemoveIconTip>
+  <WR_PreviewColonist>정착민</WR_PreviewColonist>
+  <WR_RemoveRole>역할 제거</WR_RemoveRole>
+  <WR_SelectedActivity>활동</WR_SelectedActivity>
+  <WR_SelectedName>이름</WR_SelectedName>
+  <WR_SelectedTraits>특성</WR_SelectedTraits>
 </LanguageData>

@@ -71,6 +71,32 @@ namespace WorkRoles.Core.Signals
             return ordered;
         }
 
+        /// The colonist-row caption: the best skills at Strong or better;
+        /// when none qualifies, the single highest-level candidate (above
+        /// level 0) with its own verdict, so a colonist whose only usable
+        /// work skill carries no passion still shows it.
+        public static List<SkillBucketChoice> Caption(
+            SkillBucketSnapshot snapshot,
+            IReadOnlyList<SkillBucketCandidate> candidates,
+            int max,
+            Recs.RecommendationsTuningOptions tuning)
+        {
+            List<SkillBucketChoice> top =
+                Top(snapshot, candidates, SignalBucket.Strong, max, tuning);
+            if (top.Count > 0) return top;
+            int best = -1;
+            for (int i = 0; i < candidates.Count; i++)
+                if (candidates[i].SkillLevel > 0 && (best < 0
+                        || candidates[i].SkillLevel > candidates[best].SkillLevel))
+                    best = i;
+            if (best >= 0)
+                top.Add(new SkillBucketChoice(candidates[best].SkillDefName,
+                    snapshot.ForSkill(candidates[best].SkillDefName)?.Bucket
+                        ?? SignalBucket.Neutral,
+                    candidates[best].SkillLevel));
+            return top;
+        }
+
         public static SkillBucketChoice? Best(
             SkillBucketSnapshot snapshot,
             IEnumerable<SkillBucketCandidate> candidates)

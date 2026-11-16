@@ -82,5 +82,23 @@ Weitere Anzeigeschalter stehen im Optionsreiter:
 <!-- l10n:b-b1a38cc7f63a -->
 ![Anzeigeeinstellungen im Optionsreiter](options-display.png)
 
+<!-- l10n:b-7a3c91e04d52 -->
+Markierungen auf Rollenmarken legt fest, wie Marken „immer aktiv“, Regeln und angeheftete Zuweisungen kennzeichnen. Punkte, die Standardeinstellung, zeichnet einen kleinen Punkt am linken Rand der Marke: weiß für „immer aktiv“, gelb für eine Rolle mit Regeln und türkis für eine angeheftete Zuweisung. Symbole zeichnet stattdessen für jede Art ein Symbol: eine Flagge für „immer aktiv“, eine Uhr oder Kartennadel für Regeln und eine Stecknadel für eine angeheftete Zuweisung. Aus blendet die Markierungen aus. Die Bilder in dieser Hilfe zeigen Punkte.
+
+<!-- l10n:b-c81e5d2a40f7 -->
+Ein Kolonist, der nicht alle Aufgaben einer Rolle ausführen kann, erhält bei Punkten hohle Bewertungssterne und bei Symbolen ein Warnsymbol.
+
+<!-- l10n:b-19b4f0a6d3e8 -->
+Entfernen-Symbol auf Rollenmarken anzeigen steuert den Mülleimer auf zugewiesenen Marken. Ist die Option aus, klicke mit der rechten Maustaste auf eine Marke und wähle „Rolle entfernen“.
+
+<!-- l10n:b-5e7a2c9b6d14 -->
+Beste Fertigkeiten unter Kolonistennamen anzeigen steuert die kleine Fertigkeitszeile in jeder Kolonistenzeile.
+
+<!-- l10n:b-a40d93f1b7c2 -->
+Empfehlungen anzeigen ist für Spieler gedacht, die Rollen von Hand zuweisen. Ist die Option aus, werden der Reiter Empfehlungen, die Schaltfläche „Meine Kolonie verbessern“ und die empfohlenen Rollen des ausgewählten Kolonisten ausgeblendet. Die Bewertungssterne bleiben verfügbar.
+
+<!-- l10n:b-3d6f81e0c5a9 -->
+Die Vorschauen zwischen den Schaltern zeigen eine Kolonistenzeile, die Rollenpalette und das Kolonistenpanel mit den aktuellen Einstellungen.
+
 <!-- l10n:b-e505859311eb -->
 Alles hier sind persönliche Einstellungen: Jeder Spieler behält seine eigenen; keine Zuweisung wird verändert.

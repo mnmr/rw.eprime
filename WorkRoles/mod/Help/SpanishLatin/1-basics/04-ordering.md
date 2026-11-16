@@ -22,7 +22,7 @@ Arrastra para cambiar la prioridad:
 @demo:chip-drag
 
 <!-- l10n:b-be64d575edc7 -->
-También puedes arrastrar a otra fila para trasladar la asignación. La papelera de la ficha la elimina de la fila.
+También puedes arrastrar una ficha a otra fila para trasladar la asignación. Haz clic en el icono de papelera dentro de una ficha para eliminar la asignación; la ficha sale de la fila. Si la papelera está [desactivada](topic:display), haz clic derecho en la ficha y elige Quitar rol.
 
 <!-- l10n:b-6bbb9dc33edb -->
 RimWorld mantiene una lista aparte de emergencias: apagar incendios, atención urgente y acostarse para tratamiento urgente. Interrumpen el sueño, las comidas y cualquier trabajo. Por defecto, solo entran si las cubre alguno de los cinco primeros roles activos. Los posteriores realizan esas emergencias en su posición normal. Con Esencial primero y Médico sexto, el colono interrumpe todo por un incendio, pero trata la atención urgente como trabajo médico normal en su posición. Si bajas Esencial más allá del quinto, apagar incendios también pasa a ser trabajo normal.

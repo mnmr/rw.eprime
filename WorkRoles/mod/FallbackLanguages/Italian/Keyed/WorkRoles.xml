@@ -33,11 +33,9 @@
   <WR_OptSkillCaptionsTip>Ogni riga della tabella mostra sotto il nome una breve didascalia con le migliori abilità lavorative del colono e i relativi livelli, colorati secondo l'idoneità. Disattiva l'opzione per mostrare solo il nome sulla riga.</WR_OptSkillCaptionsTip>
   <WR_OptVerdictsColonists>Mostra i giudizi sulle tessere dei ruoli dei coloni</WR_OptVerdictsColonists>
   <WR_OptVerdictsColonistsTip>Ogni tessera nella tabella dei coloni mostra una coppia di stelle di idoneità per il suo titolare, secondo il sistema di consigli: stelle bianche per giudizi positivi, una per Buono e due per Ottimo, dorate per Eccezionale; rosse per quelli negativi, una per Scarso e due per Pessimo; grigie per Neutro.</WR_OptVerdictsColonistsTip>
-  <WR_OptVerdictsPalette>Mostra nella palette i giudizi per il colono selezionato</WR_OptVerdictsPalette>
-  <WR_OptVerdictsPaletteTip>Le tessere della palette mostrano quanto ogni ruolo sia adatto al colono attualmente selezionato.</WR_OptVerdictsPaletteTip>
-  <WR_OptVerdictsRecommendations>Mostra i giudizi sulle tessere dei ruoli consigliati</WR_OptVerdictsRecommendations>
+  <WR_OptVerdictsPalette>Mostra i giudizi per il colono selezionato nella palette dei ruoli e nel pannello delle abilità</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>Attiva per mostrare le stelle dei giudizi di idoneità sulle tessere della palette dei ruoli e del pannello delle abilità del colono.</WR_OptVerdictsPaletteTip>
   <WR_OptPaletteGrouping>Raggruppamento della palette dei ruoli</WR_OptPaletteGrouping>
-  <WR_OptVerdictsRecommendationsTip>Le tessere consigliate, nel pannello delle statistiche e nelle anteprime delle modifiche, mostrano il giudizio di idoneità per il colono a cui sono proposte.</WR_OptVerdictsRecommendationsTip>
   <WR_RecGlobalPanel>Opzioni globali</WR_RecGlobalPanel>
   <WR_RecGlobalPanelHelp>Queste opzioni modificano i punteggi e la graduatoria dei candidati, oltre alla posizione dei ruoli nell'elenco finale dei consigli. Usa Ripristina per tornare ai valori predefiniti se cambi idea.</WR_RecGlobalPanelHelp>
   <WR_RecRolePanel>Opzioni dei ruoli</WR_RecRolePanel>
@@ -667,4 +665,24 @@ L'attività non è stata interrotta. Questo avviso appare una volta per salvatag
   <WR_HelpChapterMods>Mod</WR_HelpChapterMods>
   <WR_HiddenRole>Ruolo nascosto</WR_HiddenRole>
   <WR_HiddenRoleTip>I ruoli nascosti non compaiono nella tavolozza dei ruoli in cima alla scheda Coloni. Funzionano comunque normalmente: i coloni che li hanno li mantengono, il pulsante + nella riga di un colono li elenca ancora e i suggerimenti possono ancora proporli. Usalo per nascondere i ruoli che assegni di rado in modo diretto o se la tavolozza dei ruoli occupa troppo spazio.</WR_HiddenRoleTip>
+  <WR_ChipMarkersDots>Punti</WR_ChipMarkersDots>
+  <WR_ChipMarkersIcons>Icone</WR_ChipMarkersIcons>
+  <WR_ChipMarkersOff>Disattivati</WR_ChipMarkersOff>
+  <WR_OptChipMarkers>Marcatori delle tessere dei ruoli</WR_OptChipMarkers>
+  <WR_OptChipMarkersTip>Come le tessere dei ruoli mostrano i marcatori.
+
+Punti: un piccolo punto colorato per ogni marcatore. Il bianco indica sempre attivo, il giallo indica che il ruolo ha delle regole e l'azzurro indica fissato. Le stelle vuote indicano che il colono non può svolgere tutti i lavori del ruolo.
+
+Icone: un'icona per ogni marcatore.
+
+Disattivati: nessun marcatore.</WR_OptChipMarkersTip>
+  <WR_OptRecommendations>Mostra i consigli</WR_OptRecommendations>
+  <WR_OptRecommendationsTip>Disattiva per nascondere la scheda Consigli, il pulsante Ottimizza la colonia e i ruoli consigliati per il colono selezionato. I giudizi di idoneità restano disponibili.</WR_OptRecommendationsTip>
+  <WR_OptRemoveIcon>Mostra l'icona di rimozione sulle tessere dei ruoli</WR_OptRemoveIcon>
+  <WR_OptRemoveIconTip>Disattiva per eliminare il cestino dalle tessere dei ruoli assegnati. In alternativa, fai clic destro su una tessera e scegli Rimuovi ruolo.</WR_OptRemoveIconTip>
+  <WR_PreviewColonist>Colono</WR_PreviewColonist>
+  <WR_RemoveRole>Rimuovi ruolo</WR_RemoveRole>
+  <WR_SelectedActivity>Attività</WR_SelectedActivity>
+  <WR_SelectedName>Nome</WR_SelectedName>
+  <WR_SelectedTraits>Tratti</WR_SelectedTraits>
 </LanguageData>

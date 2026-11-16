@@ -2,7 +2,7 @@
 title: Sắp bảng vai trò
 ---
 <!-- l10n:b-920248b013cc -->
-Bảng vai trò ở thẻ Cư dân có hai cách sắp, chọn ở cuối thiết lập hiển thị trong Tùy chọn:
+Bảng vai trò ở thẻ Cư dân có hai cách sắp xếp, chọn trong thiết lập hiển thị ở thẻ Tùy chọn:
 
 <!-- l10n:b-b429b8db5576 -->
 ![Thiết lập hiển thị với nút đổi bảng vai trò](options-display.png)

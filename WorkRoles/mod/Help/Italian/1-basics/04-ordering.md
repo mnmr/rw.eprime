@@ -22,7 +22,7 @@ Per cambiare priorità basta trascinare:
 @demo:chip-drag
 
 <!-- l10n:b-be64d575edc7 -->
-Puoi anche trascinare tra righe: rilascia una tessera su un altro colono per spostare l'assegnazione. Fai clic sul cestino nella tessera per rimuoverla dalla riga.
+Puoi anche trascinare tra righe: rilascia una tessera su un altro colono per spostare l'assegnazione. Fai clic sul cestino nella tessera per rimuovere l'assegnazione; la tessera esce dalla riga. Se il cestino è [disattivato](topic:display), fai clic con il tasto destro sulla tessera e scegli Rimuovi ruolo.
 
 <!-- l10n:b-6bbb9dc33edb -->
 RimWorld mantiene un elenco separato per le emergenze: spegnere incendi, prestare cure urgenti e andare a letto per ricevere cure d'emergenza. Queste attività interrompono sonno, pasti e qualsiasi altro lavoro. Per impostazione predefinita, un'attività urgente entra nell'elenco solo se è coperta da uno dei primi cinque ruoli attivi del colono. Le emergenze dei ruoli successivi vengono svolte nella posizione normale. Un colono con Essenziale al primo posto e Medico al sesto interrompe comunque tutto per un incendio, ma tratta le cure urgenti come normale lavoro medico nella posizione della riga. Spostare Essenziale oltre il quinto posto rende anche lo spegnimento incendi un lavoro ordinario per quel colono.

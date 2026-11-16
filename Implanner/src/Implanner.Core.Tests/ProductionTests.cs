@@ -300,4 +300,60 @@ public class ProductionTests
         await Assert.That(model.ProductionBillQualityOf("Bill_Make_7"))
             .IsEqualTo(ProductionQueue.UnknownQuality);
     }
+
+    /// The bench queue shows when a bill was queued and whose goal it
+    /// serves. Both live beside the bill's record: the tick is fixed when
+    /// first known, the colonist follows the rollout, and a bill loaded
+    /// from an older save has neither.
+    [Test]
+    public async Task ProductionBillOriginFollowsItsRecord()
+    {
+        var model = new PlannerModel();
+        model.AddLoadedProductionBill("Bill_Old_3", "BionicLeg");
+        model.SetOwnedProductionBill("Bill_Make_7", "BionicArm");
+
+        await Assert.That(model.ProductionBillOriginOf("Bill_Old_3").CreatedTick).IsEqualTo(-1);
+        await Assert.That(model.ProductionBillOriginOf("Bill_Old_3").HasTarget).IsFalse();
+
+        await Assert.That(model.SetProductionBillOrigin("Bill_Make_7", 5000, 12, "p1:BionicArm:Arm#0"))
+            .IsEqualTo(PlannerChange.Production);
+        await Assert.That(model.SetProductionBillOrigin("Bill_Make_7", 5000, 12, "p1:BionicArm:Arm#0"))
+            .IsEqualTo(PlannerChange.None);
+        // The rollout moved on: the bill now serves another colonist, and
+        // its age is unchanged.
+        await Assert.That(model.SetProductionBillTarget("Bill_Make_7", 14, "p2:BionicArm:Arm#1"))
+            .IsEqualTo(PlannerChange.Production);
+        await Assert.That(model.SetProductionBillTarget("Bill_Make_7", 14, "p2:BionicArm:Arm#1"))
+            .IsEqualTo(PlannerChange.None);
+        ProductionBillOrigin origin = model.ProductionBillOriginOf("Bill_Make_7");
+        await Assert.That(origin.CreatedTick).IsEqualTo(5000);
+        await Assert.That(origin.PawnId).IsEqualTo(14);
+        await Assert.That(origin.GoalKey).IsEqualTo("p2:BionicArm:Arm#1");
+
+        // No record, no origin.
+        await Assert.That(model.SetProductionBillOrigin("Bill_Other_8", 1, 2, "p1:X:Arm#0"))
+            .IsEqualTo(PlannerChange.None);
+        model.RemoveOwnedProductionBill("Bill_Make_7");
+        await Assert.That(model.ProductionBillOriginOf("Bill_Make_7").HasTarget).IsFalse();
+    }
+
+    /// Bills are not bound to a colonist, so the queue names the goal each
+    /// one most likely serves: oldest bill first, the earliest goal in
+    /// rollout order wanting that item. A bill for an ingredient, and one
+    /// more bill than there are goals, match nothing.
+    [Test]
+    public async Task BillsAreMatchedToTheEarliestGoalWantingTheirItem()
+    {
+        var needs = new List<CraftNeed<string>>
+        {
+            new CraftNeed<string>("Leg", 0, pawnId: 1, goalKey: "p1:Leg:Leg#0"),
+            new CraftNeed<string>("Arm", 0, pawnId: 2, goalKey: "p1:Arm:Arm#0"),
+            new CraftNeed<string>("Arm", 0, pawnId: 3, goalKey: "p1:Arm:Arm#0"),
+        };
+
+        int[] matched = ProductionTargets.Match(
+            new[] { "Arm", "Arm", "Component", "Leg", "Arm" }, needs);
+
+        await Assert.That(string.Join(",", matched)).IsEqualTo("1,2,-1,0,-1");
+    }
 }

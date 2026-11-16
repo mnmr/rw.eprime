@@ -555,15 +555,17 @@ namespace EPrimeReadouts.UI
 
         // Cache contract:
         // Owner: this EditorView instance.
-        // Key: none (single value).
+        // Key: the options body's width.
         // Value: immutable ThresholdRowLayout.
         // Dependencies: UiRevision.Current (language, UI scale, tiny-text
-        // preference — label/button text and the resolved font both follow it).
-        // Refresh policy: immediate on UI revision change.
+        // preference — label/button text and the resolved font both follow it)
+        // and the body width (a narrow column shrinks the number fields).
+        // Refresh policy: immediate on UI revision or width change.
         // Equality policy: value struct; equal rebuilds are identical.
         // Teardown: Reset restores the unset stamp.
         private ThresholdRowLayout thresholdRow;
         private int thresholdRowUiRevision = -1;
+        private float thresholdRowWidth = -1f;
 
         /// Extra width ButtonText needs around its caption.
         private const float ButtonPadX = 16f;
@@ -655,9 +657,10 @@ namespace EPrimeReadouts.UI
             return state;
         }
 
-        private ThresholdRowLayout EnsureThresholdRow()
+        private ThresholdRowLayout EnsureThresholdRow(float width)
         {
-            if (thresholdRowUiRevision == UiRevision.Current) return thresholdRow;
+            if (thresholdRowUiRevision == UiRevision.Current
+                && thresholdRowWidth == width) return thresholdRow;
             using (GuiStateScope.Capture())
             {
                 // Labels render in Tiny, which RimWorld resolves to Small when
@@ -668,9 +671,10 @@ namespace EPrimeReadouts.UI
                 Text.Font = GameFont.Small;
                 float setW = WrText.FitWidth(UiText.Get("EPR.Set")) + ButtonPadX;
                 float clearW = WrText.FitWidth(UiText.Get("EPR.Clear")) + ButtonPadX;
-                thresholdRow = ThresholdRowLayout.Compute(lowW, criticalW, setW, clearW);
+                thresholdRow = ThresholdRowLayout.Compute(lowW, criticalW, setW, clearW, width);
             }
             thresholdRowUiRevision = UiRevision.Current;
+            thresholdRowWidth = width;
             return thresholdRow;
         }
 
@@ -709,7 +713,7 @@ namespace EPrimeReadouts.UI
             // Line 3: low/critical/set/clear. Columns start where measured
             // labels end, so substituted fonts and long translations shift
             // the row instead of clipping.
-            var row = EnsureThresholdRow();
+            var row = EnsureThresholdRow(rect.width);
             const float ControlH = 24f;
             float thresholdRowH = Mathf.Max(ControlH, tinyMetrics.LineHeight);
             float controlY = y + Mathf.Floor((thresholdRowH - ControlH) / 2f);
@@ -724,7 +728,7 @@ namespace EPrimeReadouts.UI
                 UiText.Get("EPR.Low"));
             thresholdEditor.EditLow(DrawThresholdField(
                 new Rect(rect.x + row.LowFieldX, controlY,
-                    ThresholdRowLayout.FieldW, ControlH),
+                    row.FieldWidth, ControlH),
                 "EPR.LowThreshold", thresholdEditor.LowBuffer));
             TinyText.Label(new Rect(
                     rect.x + row.CriticalLabelX,
@@ -734,7 +738,7 @@ namespace EPrimeReadouts.UI
                 UiText.Get("EPR.Critical"));
             thresholdEditor.EditCritical(DrawThresholdField(
                 new Rect(rect.x + row.CriticalFieldX, controlY,
-                    ThresholdRowLayout.FieldW, ControlH),
+                    row.FieldWidth, ControlH),
                 "EPR.CriticalThreshold", thresholdEditor.CriticalBuffer));
             if (Widgets.ButtonText(new Rect(
                     rect.x + row.SetX, controlY, row.SetW, ControlH),
@@ -813,6 +817,7 @@ namespace EPrimeReadouts.UI
             optionsLanguageVersion = -1;
             thresholdRow = default;
             thresholdRowUiRevision = -1;
+            thresholdRowWidth = -1f;
             ruleRowUiRevision = -1;
             ruleCaption = null;
             ruleStorageLabel = null;

@@ -2,7 +2,7 @@
 title: Organisation de la palette
 ---
 <!-- l10n:b-920248b013cc -->
-La palette de l'onglet Colons peut être organisée de deux façons, choisies en bas des réglages d'affichage de l'onglet Options :
+La palette de rôles de l'onglet Colons peut être organisée de deux façons, choisies dans les réglages d'affichage de l'onglet Options :
 
 <!-- l10n:b-b429b8db5576 -->
 ![Réglages d'affichage avec le choix de palette](options-display.png)

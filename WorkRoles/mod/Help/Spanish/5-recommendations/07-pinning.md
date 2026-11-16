@@ -2,7 +2,7 @@
 title: Fijar asignaciones
 ---
 <!-- l10n:b-1075eaae5085 -->
-Haz clic derecho en una ficha y elige Fijar. Aparece una chincheta:
+Haz clic derecho en una ficha y elige Fijar. Una ficha fijada muestra un punto turquesa o, con los [marcadores de iconos](topic:display), una chincheta:
 
 <!-- l10n:b-62dc1c2c1729 -->
 ![Ficha de rol fijada](chip-pinned.png)

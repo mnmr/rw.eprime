@@ -66,15 +66,15 @@ namespace WorkRoles.UI
         // Owner: Colonists window. Key: RoleStore, selected Pawn and its fix-plan
         // identity, selected external-facts identity, presentation/activation/rule
         // revisions for referenced roles, map identity, recommendation tuning,
-        // UI metrics/definitions/language, verdict preference, panel dimensions.
+        // UI metrics/definitions/language, panel width.
         // Value: immutable ColonistRecommendationRenderSnapshot with detached
-        // chip facts, complete local geometry and overflow viewport/content bounds,
-        // measured full-label widths for names bounded to the scroll content,
-        // tooltips, command ids/indices, and a
+        // chip facts, complete local geometry (chips wrap inside their own
+        // box between the prefix and the apply button; the box height is the
+        // wrapped content height), measured full-label widths for names wider
+        // than that box, tooltips, command ids/indices, and a
         // producer-owned target-assignment buffer. Dependencies: the keyed plan,
         // role/assignment presentation, external pawn snapshots, translated
-        // labels/tooltips, verdicts, dimensions and the fixed 16px scrollbar reserve.
-        // Scroll offset is view-local input and never rebuilds this snapshot.
+        // labels/tooltips, verdicts and the panel width.
         // Refresh: immediate on the
         // next read after a key change; plan and external-fact access share their
         // existing producer gates. Equality: equal rebuilt
@@ -87,12 +87,10 @@ namespace WorkRoles.UI
         private int previewMetricRevision = -1;
         private int previewDefinitionRevision = -1;
         private Pawn? previewPawn;
-        private bool previewVerdictsShown;
         private int previewTuningRevision = -1;
         private int previewMapId = -1;
         private int previewLanguageRevision = -1;
         private float previewWidth = -1f;
-        private float previewHeight = -1f;
         private ColonistRecommendationRenderSnapshot? preview;
 
         internal void Reset()
@@ -148,12 +146,10 @@ namespace WorkRoles.UI
             previewFacts = null;
             previewRoleRevision = previewMetricRevision = previewDefinitionRevision = -1;
             previewPawn = null;
-            previewVerdictsShown = false;
             previewTuningRevision = -1;
             previewMapId = -1;
             previewLanguageRevision = -1;
             previewWidth = -1f;
-            previewHeight = -1f;
             preview = null;
         }
 
@@ -210,10 +206,9 @@ namespace WorkRoles.UI
         internal ColonistRecommendationRenderSnapshot RenderSnapshot(
             RoleStore store, Pawn pawn,
             ColonistsRosterCatalogSnapshot catalog, ScopeCacheStamp stamp,
-            float width, float height,
+            float width,
             Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
-            bool verdictsShown = VerdictsShown;
             int tuningRevision = store?.RecommendationTuningRevision ?? -1;
             int mapId = ((pawn == null ? null : ColonyScope.MapOf(pawn)) ?? Find.CurrentMap)?.uniqueID ?? -1;
             int languageRevision = LanguageChangeCoordinator.Revision;
@@ -228,19 +223,18 @@ namespace WorkRoles.UI
                 }
             PawnExternalSnapshot facts = externalSnapshot(pawn!);
             int roleRevision = plan?.PresentationRevision() ?? 0;
-            int metricRevision = UiRevision.Current;
+            int metricRevision = RoleChipUI.MetricRevision;
             int definitionRevision = DefinitionReloadCoordinator.Revision;
             if (preview != null && ReferenceEquals(previewOwner, store)
                 && ReferenceEquals(previewPlan, plan) && ReferenceEquals(previewFacts, facts)
                 && previewRoleRevision == roleRevision && ReferenceEquals(previewPawn, pawn)
                 && previewMetricRevision == metricRevision && previewDefinitionRevision == definitionRevision
-                && previewVerdictsShown == verdictsShown
                 && previewTuningRevision == tuningRevision && previewMapId == mapId
                 && previewLanguageRevision == languageRevision
-                && previewWidth == width && previewHeight == height)
+                && previewWidth == width)
                 return preview;
             ColonistRecommendationRenderSnapshot rebuilt =
-                BuildRenderSnapshot(store!, pawn!, catalog, plan, width, height, // null store/pawn yield a null plan, so neither is dereferenced
+                BuildRenderSnapshot(store!, pawn!, catalog, plan, width, // null store/pawn yield a null plan, so neither is dereferenced
                     externalSnapshot);
             bool ownerChanged = !ReferenceEquals(previewOwner, store);
             if (preview == null || ownerChanged
@@ -255,19 +249,17 @@ namespace WorkRoles.UI
             previewMetricRevision = metricRevision;
             previewDefinitionRevision = definitionRevision;
             previewPawn = pawn;
-            previewVerdictsShown = verdictsShown;
             previewTuningRevision = tuningRevision;
             previewMapId = mapId;
             previewLanguageRevision = languageRevision;
             previewWidth = width;
-            previewHeight = height;
             return preview;
         }
 
         private ColonistRecommendationRenderSnapshot BuildRenderSnapshot(
             RoleStore store, Pawn pawn,
             ColonistsRosterCatalogSnapshot catalog, PawnFixPlan? plan,
-            float width, float height,
+            float width,
             Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
             string header = "WR_RecommendedRoles".Translate().ToString();
@@ -308,7 +300,7 @@ namespace WorkRoles.UI
                             != Dialog_ChangesPreview.ChipState.Added;
                         RoleChipVerdict verdict = line.VerdictAt(i);
                         float chipWidth = RoleChipUI.WidthFor(chip,
-                            showRemove: assigned,
+                            showRemove: assigned && RoleChipUI.RemoveIcon,
                             verdictSlot: verdict.Shown);
 
                         AssignmentState assignmentState =
@@ -355,23 +347,33 @@ namespace WorkRoles.UI
 
             var widths = new float[chips.Count];
             for (int i = 0; i < chips.Count; i++) widths[i] = chips[i].Rect.width;
-            var viewport = new Rect(0f, 28f, width, Mathf.Max(0f, height - 56f));
+            // The Small-font prefix on the top row, the chips wrapping inside
+            // their own box, the apply button on the bottom row.
+            float prefixWidth = RoleChipUI.SmallFitWidth(header);
+            float chipsLeft = prefixWidth + 8f;
+            float chipsWidth = Mathf.Max(0f, width - chipsLeft - 114f);
+            for (int i = 0; i < widths.Length; i++)
+                widths[i] = Mathf.Min(widths[i], chipsWidth);
             RecommendationChipLayout layout = RecommendationChipLayout.Calculate(
-                widths, width, viewport.height, RoleChipUI.Height, 4f, 16f);
+                widths, chipsWidth, float.MaxValue, RoleChipUI.Height, 4f, 0f);
+            var viewport = new Rect(chipsLeft, 0f, chipsWidth,
+                Mathf.Max(RoleChipUI.Height, layout.ContentHeight));
             for (int i = 0; i < chips.Count; i++)
             {
                 float chipWidth = layout.ChipWidth(i);
-                float fadeLabelWidth = chipWidth < widths[i]
+                float fadeLabelWidth = chipWidth < chips[i].Rect.width
                     ? RoleChipUI.SmallFitWidth(chips[i].Chip.Label) : 0f;
-                chips[i] = chips[i].WithRect(new Rect(layout.ChipLeft(i),
+                chips[i] = chips[i].WithRect(new Rect(
+                    viewport.x + layout.ChipLeft(i),
                     viewport.y + layout.ChipTop(i), chipWidth, RoleChipUI.Height),
                     fadeLabelWidth);
             }
 
             return new ColonistRecommendationRenderSnapshot(pawn, chips,
                 target, plan?.HasChanges == true, MechanicalWorkers.IsMechanical(pawn), header, applyLabel,
-                new Rect(0f, 0f, width, 28f),
-                new Rect(width - 110f, height - 26f, 106f, 24f), viewport, layout);
+                new Rect(0f, 0f, prefixWidth, RoleChipUI.Height),
+                new Rect(width - 106f, viewport.height - RoleChipUI.Height,
+                    106f, RoleChipUI.Height), viewport);
         }
 
         private static int RecommendedInsertIndex(int roleId,
@@ -411,12 +413,6 @@ namespace WorkRoles.UI
             return entries;
         }
 
-        /// Recommendation chips carry the verdict badge for the pawn they are
-        /// recommended to; the setting is read here so toggling it rebuilds
-        /// previews without touching the plan cache.
-        private static bool VerdictsShown =>
-            WorkRolesMod.Settings?.verdictsOnRecommendationChips ?? true;
-
         private RoleChipVerdict VerdictFor(Pawn pawn, int roleId) =>
             planSuitability.TryGetValue(
                 pawn, out Dictionary<int, SignalBucket>? buckets)
@@ -434,7 +430,6 @@ namespace WorkRoles.UI
             var targetIds = new HashSet<int>(plan.Target.Select(a => a.roleId));
             SkillBucketSnapshot skillBuckets = externalSnapshot(plan.Pawn)
                 .Signals.SkillBuckets;
-            bool verdictsShown = VerdictsShown;
 
             var line = new Dialog_ChangesPreview.Line();
             foreach (RoleAssignment assignment in plan.Target)
@@ -448,7 +443,7 @@ namespace WorkRoles.UI
                 plan.Explanations.TryGetValue(role.id, out var explanation);
                 line.AddChip(role, state, RecommendationPresentation.CreateTooltip(
                     store, plan.Pawn, role, state, explanation, skillBuckets),
-                    verdictsShown && !role.blocker
+                    !role.blocker
                         ? VerdictFor(plan.Pawn, role.id) : default);
             }
             for (int i = 0; i < existing.Count; i++)
@@ -461,7 +456,7 @@ namespace WorkRoles.UI
                 line.InsertChip(Math.Min(i, line.ChipCount), role, state,
                     RecommendationPresentation.CreateTooltip(
                         store, plan.Pawn, role, state, explanation, skillBuckets),
-                    verdictsShown && !role.blocker
+                    !role.blocker
                         ? VerdictFor(plan.Pawn, role.id) : default);
             }
 
@@ -858,7 +853,7 @@ namespace WorkRoles.UI
             List<ColonistRecommendationRenderChip> chips,
             List<RoleAssignment> target, bool hasChanges, bool isMechanical, string headerLabel,
             string applyLabel, Rect headerRect, Rect applyRect,
-            Rect chipViewport, RecommendationChipLayout chipLayout)
+            Rect chipViewport)
         {
             Pawn = pawn;
             this.chips = chips;
@@ -870,9 +865,6 @@ namespace WorkRoles.UI
             HeaderRect = headerRect;
             ApplyRect = applyRect;
             ChipViewport = chipViewport;
-            ChipContentRect = new Rect(0f, 0f, chipLayout.ContentWidth, chipLayout.ContentHeight);
-            Scrollable = chipLayout.Scrollable;
-            MaxChipScroll = chipLayout.ClampScroll(float.MaxValue);
         }
 
         internal Pawn Pawn { get; }
@@ -883,9 +875,8 @@ namespace WorkRoles.UI
         internal Rect HeaderRect { get; }
         internal Rect ApplyRect { get; }
         internal Rect ChipViewport { get; }
-        internal Rect ChipContentRect { get; }
-        internal bool Scrollable { get; }
-        internal float MaxChipScroll { get; }
+        /// Height of the whole section: the wrapped chip rows.
+        internal float Height => ChipViewport.height;
         internal int ChipCount => chips.Count;
         internal ColonistRecommendationRenderChip ChipAt(int index) =>
             chips[index];
@@ -904,8 +895,6 @@ namespace WorkRoles.UI
                 || !RectEquals(HeaderRect, other.HeaderRect)
                 || !RectEquals(ApplyRect, other.ApplyRect)
                 || !RectEquals(ChipViewport, other.ChipViewport)
-                || !RectEquals(ChipContentRect, other.ChipContentRect)
-                || Scrollable != other.Scrollable
                 || chips.Count != other.chips.Count
                 || target.Count != other.target.Count)
                 return false;

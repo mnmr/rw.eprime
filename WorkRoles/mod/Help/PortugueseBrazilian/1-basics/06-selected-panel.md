@@ -8,7 +8,7 @@ O painel inferior pertence ao colono selecionado. Fica oculto com [vários colon
 ![Painel de detalhes do colono](colonist-stats.png)
 
 <!-- l10n:b-f23e4317881f -->
-As cores indicam adequação, chamas mostram paixões e pares de estrelas são [avaliações](topic:verdicts). Abaixo do retrato aparece a atividade atual.
+As habilidades são coloridas conforme a adequação, chamas indicam paixões e os pares de estrelas são [avaliações](topic:verdicts). Ao lado do retrato ficam o nome do colono, o que ele está fazendo agora e suas características.
 
 <!-- l10n:b-4ef63a2d37a4 -->
 Passe o cursor sobre uma habilidade para entender a nota:
@@ -17,4 +17,4 @@ Passe o cursor sobre uma habilidade para entender a nota:
 ![Dica de sinais de habilidade](skill-tooltip.png)
 
 <!-- l10n:b-e50531dfa09e -->
-Todos os sinais usados nas recomendações aparecem com efeito e origem. À direita ficam as Funções recomendadas, explicadas em [Aplicar funções individuais](topic:cherry-picking).
+Todos os sinais usados pelo mecanismo de recomendação aparecem com efeito e origem, então uma nota nunca fica sem explicação. A parte inferior do painel traz a lista de Funções recomendadas, explicada em [Aplicar funções individuais](topic:cherry-picking).

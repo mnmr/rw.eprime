@@ -2,7 +2,7 @@
 title: Thực hiện
 ---
 <!-- l10n:b-0dfc2d230c51 -->
-Nút ![Thực hiện](make-it-so-btn.png) dưới danh sách Vai trò đề xuất áp dụng toàn bộ bộ vai trò đang hiện cho cư dân đã chọn bằng một nhấp.
+Nút ![Thực hiện](make-it-so-btn.png) bên cạnh danh sách Vai trò đề xuất áp dụng toàn bộ bộ vai trò đang hiện cho cư dân đã chọn bằng một nhấp.
 
 <!-- l10n:b-1c171d400b80 -->
 Vai trò không được đề xuất bị bỏ; phần còn lại theo thứ tự đề xuất. Phân công [đã ghim](topic:pinning) được giữ, kể cả trong [Vai trò bị loại](topic:recommendation-order). Tiện khi hàng một cư dân đã lệch khỏi cấu hình phù hợp.

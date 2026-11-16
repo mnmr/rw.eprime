@@ -1,0 +1,1 @@
+<ModMetaData><name>Readouts books verification</name><author>Local test</author><packageId>eprime.readouts.booksprobe</packageId><supportedVersions><li>1.7</li></supportedVersions><loadAfter><li>mnmr.eprimereadouts</li></loadAfter></ModMetaData>

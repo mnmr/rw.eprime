@@ -201,6 +201,41 @@ overview,strata`; build `Probe.csproj` first). It opens the mod's main tab
 on Help at each slug by reflection and writes nothing else; Readouts uses its
 Display probe's `help:<slug>` scene and Quality Jobs its Help probe.
 
+## Help images
+
+Every mod's help images (`<Mod>\mod\Help\Images`) are cut from a scripted
+capture run, with no screenshots taken by hand:
+
+```powershell
+pwsh <Mod>\scripts\update-help-images.ps1            # capture and cut
+pwsh <Mod>\scripts\update-help-images.ps1 -Check     # capture, report only
+pwsh <Mod>\scripts\update-help-images.ps1 -RunFolder <folder>   # cut again from an earlier capture
+```
+
+- `help-shots\update-help-images.ps1` (called by each mod's thin script with
+  its mod set) builds the mod with its `scripts\build.cmd` (which also
+  deploys it to the player's installation; `-NoBuild` skips it) and its
+  probe, then runs
+  `help-shots\run-help-shots.ps1` once per mod set: local 1.7 copy,
+  1920x1080, effective UI scale exactly 1.0 (the probe sets it and fails the
+  run otherwise), up to 180 s after game-ready. Frames, manifest and logs go
+  to `<Mod>\temp\help-shots\run-<id>`; the run is removed.
+- The probe is `<Mod>\tests\InGame\HelpShots\Probe.cs`: the mod's scenes and
+  its own recorder hooks, on the shared source in
+  `Shared\Tests\InGame\HelpShots` (scene walker, recorder, hooks on the
+  game's widgets, windows and tooltips, `PatchDrawMethods` for a mod's
+  `Draw*` methods). A scene may click or right-click a region (`click:`),
+  rest the pointer on one (`hover:`), and wait for a condition.
+- `help-shots\crop-help.py` cuts each image in
+  `<Mod>\tests\InGame\HelpShots\crops.json` by region name:
+  `"box": "<region>"` or `l`/`t`/`r`/`b` edge expressions
+  (`<region>.<l|t|r|b>±n`, `id@container`), `trimRight`/`trimBottom`,
+  `frame` (a highlight), `jitter` (pixels allowed to differ), `variant` (the
+  mod set whose run shows it). `--list <capture> [prefix]` and
+  `--overlay <capture> <out.png>` show a capture's regions; `--preview
+  <folder>` writes the cuts elsewhere to look at them. An unchanged image is
+  not rewritten.
+
 ## Game state queries (RimBridgeServer)
 
 `launch.ps1` gives each run its own loopback bridge port and token

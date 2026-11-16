@@ -8,7 +8,7 @@ A avaliação resume a adequação de um colono para uma função com pares de e
 ![Linha de Koen com estrelas de avaliação](verdict-row.png)
 
 <!-- l10n:b-7f555b0b6d7d -->
-Estrelas vermelhas alertam: uma para Ruim, duas para Péssima. Cinza é Neutra. Branco aprova: uma para Forte, duas para Ótima; dourado indica Excepcional. Uma ficha tingida com aviso aponta um problema de capacidade além da nota; passe o cursor para ver o motivo.
+Estrelas vermelhas alertam: uma para Ruim, duas para Péssima. Cinza é Neutra. Estrelas brancas aprovam: uma para Forte, duas para Ótima; dourado indica Excepcional. Estrelas vazias indicam um problema de capacidade além da nota; passe o cursor sobre a ficha para ver o motivo. Com [marcadores de ícone](topic:display), um ícone de aviso indica isso.
 
 <!-- l10n:b-3fee18313e0f -->
 A dica também mostra a avaliação por escrito:
@@ -17,7 +17,7 @@ A dica também mostra a avaliação por escrito:
 ![Avaliação na dica da ficha](chip-tooltip-verdict.png)
 
 <!-- l10n:b-adcd8b157418 -->
-Três controles em Opções definem onde aparecem:
+Duas opções na aba Opções definem onde as estrelas de avaliação aparecem:
 
 <!-- l10n:b-0b21b231401d -->
 ![Controles de avaliações](verdict-switches.png)

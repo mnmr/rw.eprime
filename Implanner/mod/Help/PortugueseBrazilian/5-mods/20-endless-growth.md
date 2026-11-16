@@ -12,5 +12,5 @@ icon: verdict-blue.png
 Mínimos e limites de habilidade acima de 20 são mantidos.
 
 <!-- l10n:detail -->
-Os mínimos de médico e os limites manuais de habilidade mantêm valores acima de 20, e as ordens de serviço do Implanner não têm limite superior de habilidade. Aumente o **Valor máximo do controle deslizante de habilidade** na aba Opções para escolher mínimos mais altos (veja [opções do mod](topic:mod-options)).
+Os mínimos de médico e os limites manuais de habilidade mantêm valores acima de 20, e as tarefas do Implanner não têm limite superior de habilidade. Aumente o **Valor máximo do controle deslizante de habilidade** na aba Opções para escolher mínimos mais altos (veja [opções do mod](topic:mod-options)).
 

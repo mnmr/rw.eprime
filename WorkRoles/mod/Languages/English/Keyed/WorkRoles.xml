@@ -36,11 +36,29 @@
   <WR_OptSkillCaptionsTip>Each colonist row in the table carries a small caption under the name listing that colonist's best work skills with their levels, coloured by suitability. Turn this off to render the name on its own line.</WR_OptSkillCaptionsTip>
   <WR_OptVerdictsColonists>Show verdicts on colonist role chips</WR_OptVerdictsColonists>
   <WR_OptVerdictsColonistsTip>Each role chip in the colonist table shows a suitability star pair for the colonist holding it, matching the recommendation engine's judgment: white stars for good verdicts (one strong, two great, gold exceptional), red stars for bad ones (one poor, two awful), grey for neutral.</WR_OptVerdictsColonistsTip>
-  <WR_OptVerdictsPalette>Show verdicts for the selected colonist in the role palette</WR_OptVerdictsPalette>
-  <WR_OptVerdictsPaletteTip>Palette chips show how well suited each role is for the currently selected colonist.</WR_OptVerdictsPaletteTip>
-  <WR_OptVerdictsRecommendations>Show verdicts on recommended role chips</WR_OptVerdictsRecommendations>
+  <WR_OptVerdictsPalette>Show verdicts for the selected colonist in the role palette and skill panel</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>Enable to show the suitability verdict stars on chips in the role palette and colonist skill panel.</WR_OptVerdictsPaletteTip>
   <WR_OptPaletteGrouping>Role palette grouping</WR_OptPaletteGrouping>
-  <WR_OptVerdictsRecommendationsTip>Recommended role chips (stats panel and change previews) show the suitability verdict for the colonist they are recommended to.</WR_OptVerdictsRecommendationsTip>
+  <WR_OptRecommendations>Show recommendations</WR_OptRecommendations>
+  <WR_OptRecommendationsTip>Turn this off to hide the Recommendations tab, the Fix My Colony button and the recommended roles of the selected colonist. Suitability verdicts stay available.</WR_OptRecommendationsTip>
+  <WR_OptRemoveIcon>Show the remove icon on role chips</WR_OptRemoveIcon>
+  <WR_OptRemoveIconTip>Turn this off to drop the trash can from assigned role chips. Right-click a chip and choose Remove role instead.</WR_OptRemoveIconTip>
+  <WR_PreviewColonist>Colonist</WR_PreviewColonist>
+  <WR_SelectedName>Name</WR_SelectedName>
+  <WR_SelectedActivity>Activity</WR_SelectedActivity>
+  <WR_SelectedTraits>Traits</WR_SelectedTraits>
+  <WR_RemoveRole>Remove role</WR_RemoveRole>
+  <WR_OptChipMarkers>Role chip markers</WR_OptChipMarkers>
+  <WR_OptChipMarkersTip>How role chips show their markers.
+
+Dots: a small colored dot per marker. White means always on, yellow means the role has rules, and aqua means pinned. Hollow stars mean the colonist cannot do all of the role's jobs.
+
+Icons: one icon per marker.
+
+Off: no markers.</WR_OptChipMarkersTip>
+  <WR_ChipMarkersDots>Dots</WR_ChipMarkersDots>
+  <WR_ChipMarkersIcons>Icons</WR_ChipMarkersIcons>
+  <WR_ChipMarkersOff>Off</WR_ChipMarkersOff>
   <!-- Recommendations tab -->
   <WR_RecGlobalPanel>Global Options</WR_RecGlobalPanel>
   <WR_RecGlobalPanelHelp>These options modify how the recommendation engine scores/ranks candidates as well as where orders land in the final recommendation list. Use the Reset buttons to restore defaults if you regret your edits.</WR_RecGlobalPanelHelp>

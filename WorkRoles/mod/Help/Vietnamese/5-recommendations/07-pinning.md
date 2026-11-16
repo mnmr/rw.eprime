@@ -2,7 +2,7 @@
 title: Ghim phân công
 ---
 <!-- l10n:b-1075eaae5085 -->
-Nhấp phải thẻ và chọn Ghim. Thẻ ghim có dấu ghim:
+Nhấp phải thẻ và chọn Ghim. Thẻ đã ghim có chấm màu xanh nước biển, hoặc biểu tượng ghim khi dùng [dấu hiệu dạng biểu tượng](topic:display):
 
 <!-- l10n:b-62dc1c2c1729 -->
 ![Thẻ vai trò đã ghim](chip-pinned.png)

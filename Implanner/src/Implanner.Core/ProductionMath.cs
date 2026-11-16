@@ -27,16 +27,83 @@ namespace Implanner.Core
     /// lowest quality the slot accepts (0 for items without quality).
     public readonly struct CraftNeed<TKey>
     {
-        public CraftNeed(TKey item, int minQuality, int acceptableQualities = ImplantQuality.AllQualities)
+        public CraftNeed(TKey item, int minQuality, int acceptableQualities = ImplantQuality.AllQualities,
+            int pawnId = ProductionBillOrigin.NoPawn, string goalKey = "")
         {
             Item = item;
             MinQuality = minQuality;
             AcceptableQualities = acceptableQualities;
+            PawnId = pawnId;
+            GoalKey = goalKey;
         }
 
         public TKey Item { get; }
         public int MinQuality { get; }
         public int AcceptableQualities { get; }
+
+        /// Whose slot this is; presentation only (the bench queue).
+        public int PawnId { get; }
+        public string GoalKey { get; }
+    }
+
+    /// When a production bill was queued and the goal it most likely
+    /// serves. Bills are not bound to a colonist: the target is the bench
+    /// queue's best answer to "who is this for", never an allocation.
+    public readonly struct ProductionBillOrigin : IEquatable<ProductionBillOrigin>
+    {
+        public const int NoPawn = -1;
+        public const int UnknownTick = -1;
+
+        public static readonly ProductionBillOrigin Unknown =
+            new ProductionBillOrigin(UnknownTick, NoPawn, "");
+
+        public ProductionBillOrigin(int createdTick, int pawnId, string? goalKey)
+        {
+            CreatedTick = createdTick < 0 ? UnknownTick : createdTick;
+            GoalKey = goalKey ?? "";
+            PawnId = GoalKey.Length == 0 ? NoPawn : pawnId;
+        }
+
+        public int CreatedTick { get; }
+        public int PawnId { get; }
+        public string GoalKey { get; }
+        public bool HasTarget => PawnId != NoPawn;
+
+        public bool Equals(ProductionBillOrigin other) =>
+            CreatedTick == other.CreatedTick && PawnId == other.PawnId
+            && string.Equals(GoalKey ?? "", other.GoalKey ?? "", StringComparison.Ordinal);
+
+        public override bool Equals(object? obj) =>
+            obj is ProductionBillOrigin other && Equals(other);
+
+        public override int GetHashCode() => CreatedTick ^ (PawnId * 397);
+    }
+
+    public static class ProductionTargets
+    {
+        /// For each bill (oldest first, by the item it makes) the index of
+        /// the earliest need in rollout order wanting that item that no
+        /// older bill took, or -1. Ingredient bills and surplus bills match
+        /// nothing.
+        public static int[] Match<TKey>(IReadOnlyList<TKey> billItems,
+            IReadOnlyList<CraftNeed<TKey>> needs)
+        {
+            var comparer = EqualityComparer<TKey>.Default;
+            var taken = new bool[needs.Count];
+            var matched = new int[billItems.Count];
+            for (int b = 0; b < billItems.Count; b++)
+            {
+                matched[b] = -1;
+                for (int n = 0; n < needs.Count; n++)
+                {
+                    if (taken[n] || !comparer.Equals(needs[n].Item, billItems[b])) continue;
+                    taken[n] = true;
+                    matched[b] = n;
+                    break;
+                }
+            }
+            return matched;
+        }
     }
 
     /// The crafting queue one colony still needs, in surgery rollout order.

@@ -7,7 +7,7 @@ A coluna Estado resume cada colono:
 <!-- l10n:b-03986aa19f4e -->
 - **Aguardando**: faltam implantes, mas nenhum item foi reservado para este colono ainda.
 - **Preparando**: itens reservados estão sendo reunidos para a próxima cirurgia do colono.
-- **Em cirurgia**: há uma cirurgia agendada na lista de ordens do colono.
+- **Em cirurgia**: há uma cirurgia agendada na lista de tarefas do colono.
 - **Concluído**: todos os implantes planejados estão instalados.
 - **Ausente da colônia**: o colono está viajando; a automação aguarda.
 - **Não serve a este corpo**: o colono está em um plano feito para outro corpo, então nada nele se aplica. Mude-o para um plano para qualquer corpo ou para o próprio corpo.

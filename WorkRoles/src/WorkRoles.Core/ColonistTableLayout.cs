@@ -7,7 +7,6 @@ namespace WorkRoles.Core
         private const float HeaderHeight = 30f;
         private const float GridWidth = 39f;
         private const float GridHeight = 20f;
-        private const float EdgeInset = 5f;
         private const float ScrollBarReservation = 16f;
 
         private ColonistTableHeaderLayout(float headerWidth,
@@ -34,7 +33,9 @@ namespace WorkRoles.Core
             return new ColonistTableHeaderLayout(
                 tableWidth,
                 Math.Max(0f, tableWidth - ScrollBarReservation),
-                right - EdgeInset - GridWidth,
+                // Flush with the table's right edge: the scrollbar below
+                // and the layout toggle above end on the same line.
+                right - GridWidth,
                 tableTop + (HeaderHeight - GridHeight) / 2f);
         }
     }

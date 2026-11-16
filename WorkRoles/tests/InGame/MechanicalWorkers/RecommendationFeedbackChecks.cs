@@ -21,7 +21,6 @@ namespace WorkRolesMechanicalVerification
             Role core = store.RoleByTemplate("WS_Core");
             var original = store.pawnSets[omni].assignments.Select(a => new RoleAssignment
                 { roleId = a.roleId, state = a.state, pinned = a.pinned }).ToList();
-            bool showVerdicts = WorkRolesMod.Settings.verdictsOnRecommendationChips;
             Type stateType = AccessTools.TypeByName("WorkRoles.UI.ColonistRecommendationState");
             object state = Activator.CreateInstance(stateType, true);
             var plansMethod = AccessTools.GetDeclaredMethods(stateType).Single(m => m.Name == "Plans" && m.GetParameters().Length == 3);
@@ -30,12 +29,11 @@ namespace WorkRolesMechanicalVerification
             Func<IList> read = () => (IList)plansMethod.Invoke(state, new[] { omni, stamp, external });
             Func<IList, object> robotPlan = plans => plans.Cast<object>().Single(p => (Pawn)Property(p, "Pawn") == omni);
             Func<object> render = () => InvokePresentation(state, "RenderSnapshot", store, omni,
-                InvokePresentation(Field(view, "rosterState"), "Catalog", store), stamp, 320f, 210f, external);
+                InvokePresentation(Field(view, "rosterState"), "Catalog", store), stamp, 320f, external);
             Func<bool> firefighting = () => CompiledJobOrders.NormalFor(omni).Concat(CompiledJobOrders.EmergencyFor(omni))
                 .Any(g => g.def.workType == WorkTypeDefOf.Firefighter);
             try
             {
-                WorkRolesMod.Settings.verdictsOnRecommendationChips = true;
                 RoleCommands.PasteRoleSet(omni, new List<RoleAssignment> {
                     new RoleAssignment { roleId = build.id }, new RoleAssignment { roleId = core.id } });
                 ReviewCheck(firefighting(), "native Omni Core supplies firefighting before Fix");
@@ -83,7 +81,6 @@ namespace WorkRolesMechanicalVerification
             finally
             {
                 RoleCommands.PasteRoleSet(omni, original);
-                WorkRolesMod.Settings.verdictsOnRecommendationChips = showVerdicts;
                 InvokePresentation(state, "Reset");
             }
         }

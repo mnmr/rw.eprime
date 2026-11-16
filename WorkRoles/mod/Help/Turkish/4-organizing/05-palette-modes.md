@@ -2,7 +2,7 @@
 title: Palet düzeni
 ---
 <!-- l10n:b-920248b013cc -->
-Koloniciler sekmesinin rol paleti, Seçenekler sekmesinin görünüm ayarlarının altından seçilen iki düzende olabilir:
+Koloniciler sekmesindeki rol paleti, Seçenekler sekmesinin görünüm ayarlarından seçilen iki düzende olabilir:
 
 <!-- l10n:b-b429b8db5576 -->
 ![Palet anahtarıyla görünüm ayarları](options-display.png)

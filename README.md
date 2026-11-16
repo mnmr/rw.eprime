@@ -118,10 +118,10 @@ libraries and PowerShell 7.6 or newer; SteamCMD is no longer required. Legacy
 
 The mod's `RELEASES.md` (written by the publisher after each upload) is the
 record of what shipped. The version guard stops before any network access
-(exit 3) unless About.xml's `modVersion` is exactly the next patch after the
-last row (1.2.6 to 1.2.7) or, with `-AllowRepublish`, that last row itself.
-Any other version (a skipped patch, a minor or major step, a republish of an
-older release) needs `-ApproveVersion <modVersion>`, and the plan then says so
+(exit 3) unless About.xml's `modVersion` is exactly the next patch, minor or
+major version after the last row (1.2.6 to 1.2.7, 1.3.0 or 2.0.0) or, with
+`-AllowRepublish`, that last row itself. Any other version (a skipped
+version, a republish of an older release) needs `-ApproveVersion <modVersion>`, and the plan then says so
 before the usual y/yes confirmation. Unreleased changes belong in one changelog
 section headed with that next version.
 

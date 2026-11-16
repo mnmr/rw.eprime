@@ -11,7 +11,10 @@ Haz clic en su ficha en la paleta para alternar entre ![activado en paleta](pale
 Al desactivarlo globalmente, todos sus titulares muestran una doble raya: ![ficha con doble raya](chip-state-global-off.png).
 
 <!-- l10n:b-4d81d20fcc44 -->
-En la fila del colono, el clic alterna activado ![ficha activada](chip-state-on.png), desactivado para ese colono ![ficha con una raya](chip-state-off.png) y forzado ![ficha con bandera](chip-state-forced.png). Si está desactivado global e individualmente, se acumulan las rayas ![ficha con rayas acumuladas](chip-state-both-off.png). Forzado sigue funcionando aunque esté desactivado globalmente.
+En la fila del colono, al hacer clic en una ficha se alterna entre activado ![ficha activada](chip-state-on.png), desactivado para ese colono ![ficha con una raya](chip-state-off.png) y forzado ![ficha con un punto blanco](chip-state-forced.png). Si está desactivado global e individualmente, se acumulan las rayas ![ficha con rayas acumuladas](chip-state-both-off.png). Forzado sigue funcionando aunque el rol esté desactivado globalmente.
+
+<!-- l10n:b-8c2e4f7a1d93 -->
+El punto blanco es el marcador predeterminado de forzado. Con los [marcadores de iconos](topic:display), la ficha muestra una bandera en su lugar.
 
 <!-- l10n:b-c5c0217224df -->
 Alternar el estado nunca elimina la asignación ni cambia su posición.

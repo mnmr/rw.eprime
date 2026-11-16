@@ -19,4 +19,4 @@ A **estratégia de progressão** define a ordem de entrega. A prioridade na Vis�
 **Dar os melhores implantes aos colonos mais prioritários** aparece quando um mod atribui qualidade a implantes. Veja [Qualidade mínima](topic:minimum-quality).
 
 <!-- l10n:b-ca0c8956721b -->
-**Atribuir as cirurgias ao melhor médico disponível**, ligada por padrão, restringe ordens ao melhor médico de cada colônia. O requisito acompanha chegadas e partidas. Ninguém pode operar a si próprio, então o melhor médico é operado pelo segundo melhor. Desligue para definir um mínimo fixo de Medicina.
+**Atribuir as cirurgias ao melhor médico disponível**, ligada por padrão, restringe tarefas ao melhor médico de cada colônia. O requisito acompanha chegadas e partidas. Ninguém pode operar a si próprio, então o melhor médico é operado pelo segundo melhor. Desligue para definir um mínimo fixo de Medicina.

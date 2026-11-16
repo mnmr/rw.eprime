@@ -11,7 +11,10 @@ Clique na paleta para alternar entre ![ficha ligada na paleta](palette-chip-on.p
 Desligada globalmente, a ficha tem dois riscos em todos os colonos que a possuem: ![ficha com dois riscos](chip-state-global-off.png).
 
 <!-- l10n:b-4d81d20fcc44 -->
-Na linha do colono, clicar alterna entre ligada ![ficha ligada](chip-state-on.png), desligada para ele ![ficha com um risco](chip-state-off.png) e forçada ![ficha com bandeira](chip-state-forced.png). Desligar global e individualmente acumula riscos ![ficha com riscos acumulados](chip-state-both-off.png). Forçada continua ativa mesmo desligada globalmente.
+Na linha do colono, clicar em uma ficha alterna entre ligada ![ficha ligada](chip-state-on.png), desligada para ele ![ficha com um risco](chip-state-off.png) e forçada ![ficha com um ponto branco](chip-state-forced.png). Desligar global e individualmente acumula os riscos ![ficha com riscos acumulados](chip-state-both-off.png). Forçada continua ativa mesmo com a função desligada globalmente.
+
+<!-- l10n:b-8c2e4f7a1d93 -->
+O ponto branco é o marcador padrão de forçada. Com [marcadores de ícone](topic:display), a ficha mostra uma bandeira.
 
 <!-- l10n:b-c5c0217224df -->
 Alternar nunca remove a atribuição nem muda seu lugar.

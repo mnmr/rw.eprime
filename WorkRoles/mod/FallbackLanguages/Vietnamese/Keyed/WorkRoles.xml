@@ -263,10 +263,8 @@ Việc không bị ngắt. Thông báo chỉ hiện một lần mỗi bản lưu
   <WR_OptVanillaRangeTipWhat>WorkRoles xếp việc bằng ưu tiên riêng biệt (số liên tiếp bắt đầu từ 1).</WR_OptVanillaRangeTipWhat>
   <WR_OptVerdictsColonists>Hiện đánh giá trên thẻ vai trò cư dân</WR_OptVerdictsColonists>
   <WR_OptVerdictsColonistsTip>Mỗi thẻ vai trò trong bảng cư dân hiện cặp sao phù hợp theo đánh giá của bộ đề xuất: sao trắng cho đánh giá tốt (một sao khá phù hợp, hai sao rất phù hợp, vàng đặc biệt phù hợp), đỏ cho kém (một sao ít phù hợp, hai sao rất không phù hợp), xám cho trung tính.</WR_OptVerdictsColonistsTip>
-  <WR_OptVerdictsPalette>Hiện đánh giá cho cư dân đã chọn trong bảng vai trò</WR_OptVerdictsPalette>
-  <WR_OptVerdictsPaletteTip>Thẻ trong bảng vai trò hiện mức phù hợp của từng vai trò với cư dân đang chọn.</WR_OptVerdictsPaletteTip>
-  <WR_OptVerdictsRecommendations>Hiện đánh giá trên thẻ vai trò đề xuất</WR_OptVerdictsRecommendations>
-  <WR_OptVerdictsRecommendationsTip>Thẻ vai trò đề xuất (bảng chỉ số và xem trước thay đổi) hiện đánh giá phù hợp cho cư dân nhận đề xuất.</WR_OptVerdictsRecommendationsTip>
+  <WR_OptVerdictsPalette>Hiện đánh giá cho cư dân đã chọn trong bảng vai trò và bảng kỹ năng</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>Bật để hiện sao đánh giá mức phù hợp trên thẻ trong bảng vai trò và bảng kỹ năng của cư dân.</WR_OptVerdictsPaletteTip>
   <WR_OptionsTab>Tùy chọn</WR_OptionsTab>
   <WR_OrderSuffixAZ>(A-Z)</WR_OrderSuffixAZ>
   <WR_OrderSuffixBar>(Thanh cư dân)</WR_OrderSuffixBar>
@@ -667,4 +665,24 @@ Thông báo hiện một lần mỗi mod trong mỗi bản lưu.</WR_SetPriority
   <WR_HelpChapterMods>Mod</WR_HelpChapterMods>
   <WR_HiddenRole>Vai trò ẩn</WR_HiddenRole>
   <WR_HiddenRoleTip>Vai trò ẩn không hiện trong bảng vai trò ở đầu tab Người định cư. Chúng vẫn hoạt động bình thường: người định cư đang giữ vai trò nào vẫn giữ nguyên, nút + trên hàng của người định cư vẫn liệt kê chúng, và phần đề xuất vẫn có thể gợi ý chúng. Hãy dùng tính năng này để ẩn những vai trò bạn hiếm khi gán trực tiếp, hoặc khi bảng vai trò chiếm quá nhiều chỗ.</WR_HiddenRoleTip>
+  <WR_ChipMarkersDots>Chấm</WR_ChipMarkersDots>
+  <WR_ChipMarkersIcons>Biểu tượng</WR_ChipMarkersIcons>
+  <WR_ChipMarkersOff>Tắt</WR_ChipMarkersOff>
+  <WR_OptChipMarkers>Dấu hiệu trên thẻ vai trò</WR_OptChipMarkers>
+  <WR_OptChipMarkersTip>Cách thẻ vai trò hiện các dấu hiệu.
+
+Chấm: mỗi dấu hiệu là một chấm màu nhỏ. Trắng nghĩa là luôn bật, vàng nghĩa là vai trò có quy tắc, xanh nước biển nghĩa là đã ghim. Sao rỗng nghĩa là cư dân không thể làm hết các công việc của vai trò.
+
+Biểu tượng: mỗi dấu hiệu một biểu tượng.
+
+Tắt: không hiện dấu hiệu.</WR_OptChipMarkersTip>
+  <WR_OptRecommendations>Hiện đề xuất</WR_OptRecommendations>
+  <WR_OptRecommendationsTip>Tắt để ẩn thẻ Đề xuất, nút Tối ưu khu định cư và các vai trò đề xuất của cư dân đã chọn. Đánh giá mức phù hợp vẫn dùng được.</WR_OptRecommendationsTip>
+  <WR_OptRemoveIcon>Hiện biểu tượng xóa trên thẻ vai trò</WR_OptRemoveIcon>
+  <WR_OptRemoveIconTip>Tắt để bỏ biểu tượng thùng rác khỏi thẻ vai trò đã phân công. Thay vào đó, nhấp phải thẻ và chọn Xóa vai trò.</WR_OptRemoveIconTip>
+  <WR_PreviewColonist>Cư dân</WR_PreviewColonist>
+  <WR_RemoveRole>Xóa vai trò</WR_RemoveRole>
+  <WR_SelectedActivity>Hoạt động</WR_SelectedActivity>
+  <WR_SelectedName>Tên</WR_SelectedName>
+  <WR_SelectedTraits>Đặc điểm</WR_SelectedTraits>
 </LanguageData>

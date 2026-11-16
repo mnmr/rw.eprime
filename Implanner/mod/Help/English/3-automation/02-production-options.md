@@ -20,8 +20,16 @@ Recipes must be researched and supported by an eligible bench.
 To give implant crafting a bench of its own, check **Implanner bench** on
 the bench's Bills tab. The checkbox appears only on benches that can craft
 implants. The bills already on the bench are suspended, and Implanner
-places its crafting bills on it before any other bench. While it is
-checked, you cannot add, paste, suspend or resume bills on it.
+places its crafting bills on it before any other bench.
+
+<!-- l10n:queue -->
+While it is checked, the Bills tab shows the Implanner production queue
+instead of the bench's usual bill list. Each row is one bill Implanner
+queued: the item, whether a crafter has started it, the plan it belongs to,
+the colonist next in line for it, and how long it has been queued. A bill
+for an ingredient names the implant it is needed for. **Details** opens the
+game's settings for that bill. The line at the bottom counts your own bills
+that are paused. You cannot add bills to the bench until you uncheck it.
 
 <!-- l10n:b-a4d04c1bceb2 -->
 ![A fabrication bench handed over to Implanner](implanner-bench.png)

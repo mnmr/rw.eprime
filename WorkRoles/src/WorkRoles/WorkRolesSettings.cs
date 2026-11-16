@@ -14,6 +14,9 @@ namespace WorkRoles
         // the former textual name to this icon mode.
         Icons = 2,
     }
+    /// How a role chip shows its markers: the four-light stripe, one icon
+    /// per marker (the original display, with strike-throughs), or none.
+    public enum ChipMarkers { Dots = 0, Icons = 1, Off = 2 }
     public enum ColonistOrder { ColonistBar, Alphabetical }
     /// Hidden is retired (kept so older persisted settings still parse); it
     /// normalizes to Skills on load.
@@ -24,7 +27,8 @@ namespace WorkRoles
         ColonistSkillCaptions,
         VerdictsOnColonistChips,
         VerdictsInPalette,
-        VerdictsOnRecommendationChips,
+        RemoveRoleIcon,
+        RecommendationsEnabled,
     }
 
     /// Per-player display preferences: persisted across saves via ModSettings and
@@ -33,6 +37,7 @@ namespace WorkRoles
     {
         public bool autoUpdateDefault;
         public ChipDisplay chipDisplay = ChipDisplay.Normal;
+        public ChipMarkers chipMarkers = ChipMarkers.Dots;
         /// Colonist table chips in equal-width grid columns (false = stacked
         /// at their natural widths). New installs start in the grid with
         /// Medium columns; the field initializers are the new-install
@@ -59,11 +64,17 @@ namespace WorkRoles
         /// Palette arrangement: skill clusters or role groups in player order.
         public PaletteMode paletteMode = PaletteMode.Skills;
         /// Suitability verdict badges on role chips, per surface: colonist
-        /// table rows (each row's own pawn), the role palette (the selected
-        /// colonist), and recommendation previews (the pawn recommended to).
+        /// table rows (each row's own pawn) and the role palette (the
+        /// selected colonist). Recommendation previews always show them.
         public bool verdictsOnColonistChips = true;
         public bool verdictsInPalette = true;
-        public bool verdictsOnRecommendationChips = true;
+        /// Trash can on assigned role chips (false = no icon; the chip's
+        /// right-click menu removes the role instead).
+        public bool removeRoleIcon = true;
+        /// Recommendation surfaces: the Recommendations tab, Fix My Colony
+        /// and the selected colonist's recommended roles. Verdicts and the
+        /// per-save auto-optimize schedule are independent of it.
+        public bool recommendationsEnabled = true;
         /// Colonist table: best-skills caption under each name (false = name only).
         public bool colonistSkillCaptions = true;
         /// Player-chosen window size (0 = automatic, content-driven). Content
@@ -109,9 +120,13 @@ namespace WorkRoles
                     if (verdictsInPalette == value) return false;
                     verdictsInPalette = value;
                     return true;
-                case OptionsDisplayPreference.VerdictsOnRecommendationChips:
-                    if (verdictsOnRecommendationChips == value) return false;
-                    verdictsOnRecommendationChips = value;
+                case OptionsDisplayPreference.RemoveRoleIcon:
+                    if (removeRoleIcon == value) return false;
+                    removeRoleIcon = value;
+                    return true;
+                case OptionsDisplayPreference.RecommendationsEnabled:
+                    if (recommendationsEnabled == value) return false;
+                    recommendationsEnabled = value;
                     return true;
                 default:
                     return false;
@@ -136,6 +151,10 @@ namespace WorkRoles
                 if (!System.Enum.IsDefined(typeof(GridNamePreference), chipGridNames))
                     chipGridNames = GridNamePreference.Automatic;
             }
+            Scribe_Values.Look(ref chipMarkers, "chipMarkers", ChipMarkers.Dots);
+            if (Scribe.mode == LoadSaveMode.LoadingVars
+                && !System.Enum.IsDefined(typeof(ChipMarkers), chipMarkers))
+                chipMarkers = ChipMarkers.Dots;
             Scribe_Values.Look(ref colonistOrder, "colonistOrder", ColonistOrder.ColonistBar);
             Scribe_Collections.Look(ref skillColumns, "skillColumns", LookMode.Value);
             Scribe_Values.Look(ref groupBy, "groupBy", "none");
@@ -151,8 +170,9 @@ namespace WorkRoles
                 paletteMode = PaletteMode.Skills;
             Scribe_Values.Look(ref verdictsOnColonistChips, "verdictsOnColonistChips", true);
             Scribe_Values.Look(ref verdictsInPalette, "verdictsInPalette", true);
-            Scribe_Values.Look(ref verdictsOnRecommendationChips, "verdictsOnRecommendationChips", true);
             Scribe_Values.Look(ref colonistSkillCaptions, "colonistSkillCaptions", true);
+            Scribe_Values.Look(ref removeRoleIcon, "removeRoleIcon", true);
+            Scribe_Values.Look(ref recommendationsEnabled, "recommendationsEnabled", true);
             Scribe_Values.Look(ref windowWidth, "windowWidth", 0f);
             Scribe_Values.Look(ref windowHeight, "windowHeight", 0f);
             Scribe_Collections.Look(ref warnedPriorityMods, "warnedPriorityMods", LookMode.Value);

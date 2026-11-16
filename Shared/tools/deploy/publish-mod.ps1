@@ -6,11 +6,11 @@
 # BBCode. The plan (version, change note, tag/description/preview changes) is
 # shown and must be approved with y/yes. A successful upload is recorded in the
 # mod's RELEASES.md; an already-recorded version is skipped (-AllowRepublish).
-# Version guard: modVersion must be exactly the next patch after the last row
-# of RELEASES.md (1.2.6 -> 1.2.7), or a republish of that last row. Any other
-# version (a skipped patch, a minor/major step, a republish of an older row)
-# stops before any network access unless -ApproveVersion names that exact
-# version.
+# Version guard: modVersion must be exactly the next patch, minor or major
+# version after the last row of RELEASES.md (1.2.6 -> 1.2.7, 1.3.0 or 2.0.0),
+# or a republish of that last row. Any other version (a skipped version, a
+# republish of an older row) stops before any network access unless
+# -ApproveVersion names that exact version.
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][string]$ModRoot,
@@ -18,7 +18,7 @@ param(
     # Overrides the change note generated from CHANGELOG.md.
     [string]$ChangeNote = "",
     [switch]$AllowRepublish,
-    # Manual approval of a version that is not the next patch (must equal
+    # Manual approval of a version that is not the next version (must equal
     # About.xml's modVersion).
     [string]$ApproveVersion = "",
     [string]$RimWorldMods = "C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods",
@@ -81,14 +81,14 @@ if ($latestRelease) {
             }
             $versionPlan += ' (approved by -ApproveVersion)'
         }
-    } elseif (Test-NextPatchVersion $latestRelease.Version $version) {
-        $versionPlan = "next patch after $($latestRelease.Version)"
+    } elseif (Test-NextVersion $latestRelease.Version $version) {
+        $versionPlan = "$(if ($version -ceq $expected) { 'next patch' } else { "next version $version" }) after $($latestRelease.Version)"
     } else {
         if (-not $versionApproved) {
-            Write-Host "Version guard: $version is not the next patch after the last published version $($latestRelease.Version)$(if ($expected) { " (expected $expected)" }). Fix modVersion, or pass -ApproveVersion $version to publish this version deliberately."
+            Write-Host "Version guard: $version is not the next patch, minor or major version after the last published version $($latestRelease.Version)$(if ($expected) { " (next patch: $expected)" }). Fix modVersion, or pass -ApproveVersion $version to publish this version deliberately."
             exit 3
         }
-        $versionPlan = "$version after $($latestRelease.Version), NOT the next patch$(if ($expected) { " ($expected)" }) (approved by -ApproveVersion)"
+        $versionPlan = "$version after $($latestRelease.Version), NOT the next version$(if ($expected) { " (next patch: $expected)" }) (approved by -ApproveVersion)"
     }
 } elseif ($versionApproved) {
     $versionPlan += ' (approved by -ApproveVersion)'

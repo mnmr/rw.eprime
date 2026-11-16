@@ -142,7 +142,7 @@ namespace WorkRoles.UI
             try
             {
                 GUI.color = Color.white;
-                Widgets.DrawMenuSection(inRect);
+                PixelBox.MenuSection(inRect);
                 DrawGrid(inRect);
             }
             finally
@@ -175,7 +175,7 @@ namespace WorkRoles.UI
                 GUI.color = selected
                     ? SelectedFrameColor
                     : RoleIconStyle.FrameColor;
-                Widgets.DrawBox(frameRect);
+                PixelBox.Outline(frameRect, GUI.color);
                 GUI.color = choice.Unassigned
                     ? RoleIconStyle.PlaceholderTint
                     : RoleIconStyle.IconTint;

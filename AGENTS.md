@@ -598,9 +598,16 @@ dotnet build -c Release --no-restore
 dotnet test src/RimMod.Core.Tests --no-restore
 ```
 
-Building never deploys. Automated verification requires creating a fresh managed
-run after building; creation deploys the copies used by that game. Deployment to
-the player's installation still uses `pwsh scripts/deploy.ps1` and a game restart.
+Build every mod with its own build script, `<mod>\scripts\build.cmd`, not a
+bare `dotnet build`. The script builds Release for 1.6 and 1.7 and then runs
+the mod's `scripts/deploy.ps1`, so the player's installation always carries
+the change after a game restart. `<mod>\scripts\test.cmd` runs the mod's
+tests. A bare `dotnet build` never deploys; use it only for a focused compile
+check that is followed by the build script before the work is described as
+done.
+
+Automated verification requires creating a fresh managed run after building;
+creation deploys the copies used by that game.
 
 ## Exceptions
 

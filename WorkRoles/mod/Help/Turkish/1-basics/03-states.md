@@ -11,7 +11,10 @@ Palette role tıklamak genel durumunu ![etkin palet etiketi](palette-chip-on.png
 Genel olarak kapalı rolün etiketi, tüm sahiplerinde çift çizgi taşır: ![çift çizgili etiket](chip-state-global-off.png).
 
 <!-- l10n:b-4d81d20fcc44 -->
-Kolonici satırındaki etikete tıklamak açık ![etkin etiket](chip-state-on.png), bu kolonici için kapalı ![tek çizgili etiket](chip-state-off.png) ve zorla açık ![bayraklı etiket](chip-state-forced.png) arasında döner. Hem genel hem kişisel kapalıysa çizgiler birleşir ![birleşik çizgili etiket](chip-state-both-off.png); zorla açık ise rol genel olarak kapalı olsa bile çalışır.
+Kolonici satırındaki etikete tıklamak açık ![etkin etiket](chip-state-on.png), bu kolonici için kapalı ![tek çizgili etiket](chip-state-off.png) ve zorla açık ![beyaz noktalı etiket](chip-state-forced.png) arasında döner. Hem genel hem kişisel kapalıysa çizgiler birleşir ![birleşik çizgili etiket](chip-state-both-off.png); zorla açık ise rol genel olarak kapalı olsa bile çalışır.
+
+<!-- l10n:b-8c2e4f7a1d93 -->
+Beyaz nokta, zorla açık için varsayılan işarettir. [Simge işaretleri](topic:display) açıkken etiket bunun yerine bayrak gösterir.
 
 <!-- l10n:b-c5c0217224df -->
 Açıp kapatmak atamayı kaldırmaz; etiket satırdaki yerini korur.

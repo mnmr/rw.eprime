@@ -8,7 +8,7 @@ Eine Bewertung zeigt auf einen Blick, wie die Logik einen Kolonisten für eine R
 ![Koens Reihe mit Bewertungssternen](verdict-row.png)
 
 <!-- l10n:b-7f555b0b6d7d -->
-Rote Sterne warnen: einer bedeutet Schwach, ein zweiter Miserabel. Grau bedeutet Neutral. Weiße Sterne zeigen Zustimmung: einer bedeutet Stark, zwei Großartig; Gold steht für Außergewöhnlich. Eine eingefärbte Rollenmarke mit Warnsymbol weist zusätzlich zur Bewertung auf ein Fähigkeitsproblem hin. Fahre darüber, um den Grund zu sehen.
+Rote Sterne warnen: einer bedeutet Schwach, ein zweiter Miserabel. Grau bedeutet Neutral. Weiße Sterne zeigen Zustimmung: einer bedeutet Stark, zwei Großartig; Gold steht für Außergewöhnlich. Hohle Sterne weisen zusätzlich zur Bewertung auf ein Fähigkeitsproblem hin. Fahre über die Rollenmarke, um den Grund zu sehen. Bei [Symbolmarkierungen](topic:display) zeigt stattdessen ein Warnsymbol darauf hin.
 
 <!-- l10n:b-3fee18313e0f -->
 Der Tooltip der Rollenmarke nennt die Bewertung in Worten:
@@ -17,7 +17,7 @@ Der Tooltip der Rollenmarke nennt die Bewertung in Worten:
 ![Bewertung im Tooltip der Rollenmarke](chip-tooltip-verdict.png)
 
 <!-- l10n:b-adcd8b157418 -->
-Drei Schalter auf dem Reiter „Optionen“ bestimmen, wo Bewertungssterne erscheinen:
+Zwei Schalter auf dem Reiter „Optionen“ bestimmen, wo Bewertungssterne erscheinen:
 
 <!-- l10n:b-0b21b231401d -->
 ![Die Schalter für Bewertungen](verdict-switches.png)

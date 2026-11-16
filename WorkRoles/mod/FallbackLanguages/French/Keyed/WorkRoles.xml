@@ -33,11 +33,9 @@
   <WR_OptSkillCaptionsTip>Chaque ligne de colon comporte une petite légende sous le nom indiquant ses meilleures compétences professionnelles et leurs niveaux, colorés selon l'aptitude. Désactivez cette option pour afficher uniquement le nom sur sa ligne.</WR_OptSkillCaptionsTip>
   <WR_OptVerdictsColonists>Afficher les évaluations sur les pastilles des colons</WR_OptVerdictsColonists>
   <WR_OptVerdictsColonistsTip>Chaque pastille de rôle dans la table des colons affiche une paire d'étoiles d'aptitude pour le colon concerné, selon l'avis du moteur de recommandations : étoiles blanches pour les bonnes évaluations (une : bon, deux : excellent, dorées : exceptionnel), rouges pour les mauvaises (une : médiocre, deux : désastreux), grises pour neutre.</WR_OptVerdictsColonistsTip>
-  <WR_OptVerdictsPalette>Afficher les évaluations du colon sélectionné dans la palette des rôles</WR_OptVerdictsPalette>
-  <WR_OptVerdictsPaletteTip>Les pastilles de la palette indiquent l'aptitude du colon sélectionné pour chaque rôle.</WR_OptVerdictsPaletteTip>
-  <WR_OptVerdictsRecommendations>Afficher les évaluations sur les rôles recommandés</WR_OptVerdictsRecommendations>
+  <WR_OptVerdictsPalette>Afficher les évaluations du colon sélectionné dans la palette des rôles et le panneau des compétences</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>Activez pour afficher les étoiles d'évaluation d'aptitude sur les pastilles de la palette des rôles et du panneau des compétences du colon.</WR_OptVerdictsPaletteTip>
   <WR_OptPaletteGrouping>Regroupement de la palette des rôles</WR_OptPaletteGrouping>
-  <WR_OptVerdictsRecommendationsTip>Les pastilles des rôles recommandés (panneau de statistiques et aperçus des changements) indiquent l'aptitude du colon auquel ils sont recommandés.</WR_OptVerdictsRecommendationsTip>
   <WR_RecGlobalPanel>Options générales</WR_RecGlobalPanel>
   <WR_RecGlobalPanelHelp>Ces options modifient la notation et le classement des candidats par le moteur de recommandations, ainsi que la place des rôles dans la liste finale. Les boutons Réinitialiser permettent de retrouver les valeurs par défaut si vos changements ne vous conviennent pas.</WR_RecGlobalPanelHelp>
   <WR_RecRolePanel>Options des rôles</WR_RecRolePanel>
@@ -667,4 +665,24 @@ La tâche n'a pas été interrompue. Cet avertissement apparaît une fois par sa
   <WR_HelpChapterMods>Mods</WR_HelpChapterMods>
   <WR_HiddenRole>Rôle masqué</WR_HiddenRole>
   <WR_HiddenRoleTip>Les rôles masqués n'apparaissent pas dans la palette de rôles en haut de l'onglet Colons. Ils fonctionnent normalement : les colons qui les possèdent les conservent, le bouton + sur la ligne d'un colon les affiche toujours, et les recommandations peuvent encore les suggérer. Utile pour masquer les rôles que vous attribuez rarement directement, ou si votre palette de rôles prend trop de place.</WR_HiddenRoleTip>
+  <WR_ChipMarkersDots>Points</WR_ChipMarkersDots>
+  <WR_ChipMarkersIcons>Icônes</WR_ChipMarkersIcons>
+  <WR_ChipMarkersOff>Désactivés</WR_ChipMarkersOff>
+  <WR_OptChipMarkers>Marqueurs des pastilles de rôle</WR_OptChipMarkers>
+  <WR_OptChipMarkersTip>Façon dont les pastilles de rôle affichent leurs marqueurs.
+
+Points : un petit point de couleur par marqueur. Blanc : toujours actif ; jaune : le rôle a des règles ; turquoise : épinglé. Les étoiles creuses signifient que le colon ne peut pas effectuer toutes les tâches du rôle.
+
+Icônes : une icône par marqueur.
+
+Désactivés : aucun marqueur.</WR_OptChipMarkersTip>
+  <WR_OptRecommendations>Afficher les recommandations</WR_OptRecommendations>
+  <WR_OptRecommendationsTip>Désactivez pour masquer l'onglet Recommandations, le bouton Optimiser ma colonie et les rôles recommandés du colon sélectionné. Les évaluations d'aptitude restent disponibles.</WR_OptRecommendationsTip>
+  <WR_OptRemoveIcon>Afficher l'icône de retrait sur les pastilles de rôle</WR_OptRemoveIcon>
+  <WR_OptRemoveIconTip>Désactivez pour retirer la corbeille des pastilles de rôle attribuées. Faites plutôt un clic droit sur une pastille et choisissez Retirer le rôle.</WR_OptRemoveIconTip>
+  <WR_PreviewColonist>Colon</WR_PreviewColonist>
+  <WR_RemoveRole>Retirer le rôle</WR_RemoveRole>
+  <WR_SelectedActivity>Activité</WR_SelectedActivity>
+  <WR_SelectedName>Nom</WR_SelectedName>
+  <WR_SelectedTraits>Traits</WR_SelectedTraits>
 </LanguageData>

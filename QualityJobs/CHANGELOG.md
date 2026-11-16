@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.2.10 — 2026-11-16
+
+- Fixed: Long option captions on a bill's quality panel wrap instead of being cut off.
+
 ## 1.2.9 — 2026-11-03
 
 - Added: Help pages for mods to show compatibility verdicts and other relevant information.

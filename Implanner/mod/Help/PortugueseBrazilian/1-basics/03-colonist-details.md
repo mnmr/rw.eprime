@@ -11,7 +11,7 @@ Selecione um colono para ver cada implante do plano e seu estado:
 - **Ausente**: ainda necessário, sem item reservado.
 - **Reservado**: um item armazenado foi destinado ao colono. A cirurgia começa quando tudo o que o colono precisa em seguida estiver reservado e no local (veja [Como a automação funciona](topic:how-automation-works)).
 - **Pronto**: o item reservado chegou à colônia do colono.
-- **Cirurgia agendada**: a operação está na lista de ordens do colono.
+- **Cirurgia agendada**: a operação está na lista de tarefas do colono.
 - **Em recuperação**: a cirurgia aguarda enquanto o colono estiver sangrando, tiver ferimentos sem tratamento ou estiver caído. Sono por anestesia não conta.
 - **Aguardando médico com Medicina ...+**: nenhum médico apto atende ao requisito de habilidade desta operação. Verifique a disponibilidade de médicos ou ajuste o mínimo na aba Automação (veja [Opções de cirurgia](topic:surgery-options)).
 - **Concluído**: instalado.

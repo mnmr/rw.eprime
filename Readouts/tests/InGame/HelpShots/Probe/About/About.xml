@@ -1,0 +1,7 @@
+<ModMetaData>
+  <name>Readouts help screenshots probe</name>
+  <author>Readouts tests</author>
+  <packageId>tests.readouts.helpshots</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <loadAfter><li>mnmr.eprimereadouts</li></loadAfter>
+</ModMetaData>

@@ -82,5 +82,23 @@ Altri comandi di visualizzazione si trovano nella scheda Opzioni:
 <!-- l10n:b-b1a38cc7f63a -->
 ![Impostazioni di visualizzazione nella scheda Opzioni](options-display.png)
 
+<!-- l10n:b-7a3c91e04d52 -->
+Marcatori delle tessere dei ruoli sceglie come le tessere segnalano le assegnazioni sempre attive, le regole e le assegnazioni fissate. Punti, l'impostazione predefinita, disegna un piccolo punto sul bordo sinistro della tessera: bianco per sempre attivo, giallo per un ruolo con regole e azzurro per un'assegnazione fissata. Icone disegna invece un'icona per ciascuno: una bandiera per sempre attivo, un orologio o un segnaposto sulla mappa per le regole e una puntina per un'assegnazione fissata. Disattivati nasconde i marcatori. Le immagini di questa guida mostrano i punti.
+
+<!-- l10n:b-c81e5d2a40f7 -->
+Un colono che non può svolgere tutti i lavori di un ruolo riceve stelle dei giudizi vuote con i punti e un'icona di avviso con le icone.
+
+<!-- l10n:b-19b4f0a6d3e8 -->
+Mostra l'icona di rimozione sulle tessere dei ruoli controlla il cestino sulle tessere assegnate. Se è disattivata, fai clic destro su una tessera e scegli Rimuovi ruolo.
+
+<!-- l10n:b-5e7a2c9b6d14 -->
+Mostra le abilità migliori sotto i nomi dei coloni controlla la piccola didascalia delle abilità in ogni riga del colono.
+
+<!-- l10n:b-a40d93f1b7c2 -->
+Mostra i consigli è pensata per chi assegna i ruoli a mano. Se è disattivata, la scheda Consigli, il pulsante Ottimizza la colonia e i Ruoli consigliati del colono selezionato sono nascosti. Le stelle dei giudizi restano disponibili.
+
+<!-- l10n:b-3d6f81e0c5a9 -->
+Le anteprime tra i comandi mostrano una riga del colono, la palette dei ruoli e il pannello del colono con le impostazioni attuali.
+
 <!-- l10n:b-e505859311eb -->
 Sono tutte preferenze personali: in multigiocatore ciascuno conserva le proprie e nulla qui modifica le assegnazioni.

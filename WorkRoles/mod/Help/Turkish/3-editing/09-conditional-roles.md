@@ -10,5 +10,8 @@ Koşullu rol kurallara göre kendini açıp kapatır:
 <!-- l10n:b-ed5e5f41560b -->
 Saat şeridi rolün ne zaman uygulanacağını (boş zaman için saatleri kapatın), konum seçici nerede uygulanacağını belirler: yerleşimler, kervanlar veya adı belli gemi. Herhangi bir kural konduğu anda rol koşullu olur ve ağaçtaki otomatik Koşullu roller grubunda toplanır.
 
+<!-- l10n:b-2f8d6b1c9a70 -->
+Koşullu rolün etiketlerinde sarı nokta bulunur; [simge işaretleri](topic:display) açıksa saat veya harita iğnesi simgesi görünür.
+
 <!-- l10n:b-fe334f5209e8 -->
 Kural rolü bastırırken etiketler soluklaşır; ipucu nedenini söyler ("Kapalı: etkin saatlerin dışında"). Hazır düzende bunlardan yoktur; klasik özel örnek, yalnızca kolonici evden uzaktayken çalışan madencilik rolüdür.

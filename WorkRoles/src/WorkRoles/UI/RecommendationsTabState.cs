@@ -118,8 +118,8 @@ namespace WorkRoles.UI
 
         private void ObserveMetrics()
         {
-            if (metricRevision == UiRevision.Current) return;
-            metricRevision = UiRevision.Current;
+            if (metricRevision == RoleChipUI.MetricRevision) return;
+            metricRevision = RoleChipUI.MetricRevision;
             tuningWidth = panelsWidth = detailWidth = -1f;
         }
 

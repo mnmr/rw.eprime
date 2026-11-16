@@ -13,6 +13,10 @@ downtime), and the location picker sets where: settlements, caravans, or
 a named ship. A role becomes conditional the moment any rule is set, and
 gathers under the automatic Conditional Roles group in the tree.
 
+<!-- l10n:b-2f8d6b1c9a70 -->
+The chips of a conditional role carry a yellow dot, or a clock or map
+pin icon with [icon markers](topic:display).
+
 <!-- l10n:b-fe334f5209e8 -->
 While a rule suppresses the role, its chips dim and their tooltips say
 why ("Off: outside active hours"). The seeded setup has none of these;

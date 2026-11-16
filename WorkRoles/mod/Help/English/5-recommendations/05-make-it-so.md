@@ -2,7 +2,7 @@
 title: Make It So
 ---
 <!-- l10n:b-0dfc2d230c51 -->
-The ![Make It So button](make-it-so-btn.png) button under the
+The ![Make It So button](make-it-so-btn.png) button beside the
 Recommended Roles list applies the whole displayed set to the selected
 colonist in one click.
 

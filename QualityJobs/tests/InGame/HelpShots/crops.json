@@ -1,0 +1,8 @@
+[
+  {"image": "toolbar", "capture": "toolbar", "l": "img:AutoRebuild.l", "t": "toolbar.t", "r": "toolbar.r", "b": "img:ShowLearningHelper.b"},
+  {"image": "options", "capture": "options", "box": "window:Dialog_QualityJobs"},
+  {"image": "crafting-bill", "capture": "crafting", "box": "window:Dialog_BillConfig"},
+  {"image": "finisher-options", "capture": "crafting", "l": "billpanel:DrawQualityPanel.l-8", "t": "label:Quality Jobs@billpanel:Draw.t-4", "r": "billpanel:DrawQualityPanel.r+8", "b": "billpanel:DrawQualityPanel.b", "trimBottom": 10},
+  {"image": "construction", "capture": "construction", "box": "window:Dialog_ConstructionPlanConfig"},
+  {"image": "rebuild", "capture": "rebuild", "box": "window:Dialog_ConstructionPlanConfig"}
+]

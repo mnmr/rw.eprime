@@ -147,6 +147,10 @@ namespace QualityJobs.UI
         private float statusWidth = -1f;
         private string? measuredQueue, measuredFinishers, measuredNames, measuredStall;
         private float queueHeight, finishersHeight, namesHeight, stallHeight;
+        // Option checkbox rows, same gate: a caption too long for the panel
+        // (a translation, or "Choose the best finisher automatically" at UI
+        // scale 1.0) wraps, and its row grows to hold it.
+        private float manageRowH, inspiredRowH, specialistRowH, autoBestRowH;
 
         internal BillQualityPanel(Bill_ProductionWithUft bill)
         {
@@ -207,10 +211,10 @@ namespace QualityJobs.UI
                 const float SliderH = 30f; // slider row height
                 const float Gap = 2f;      // vertical gap between rows
                 float skillRowH = autoBest ? RowH : SliderH;
-                float optionsContentH = RowH + Gap          // manage
-                    + RowH + Gap                            // inspired
-                    + (ModsConfig.IdeologyActive ? RowH + Gap : 0f)
-                    + RowH + Gap                            // auto-adjust
+                float optionsContentH = manageRowH + Gap    // manage
+                    + inspiredRowH + Gap                    // inspired
+                    + (ModsConfig.IdeologyActive ? specialistRowH + Gap : 0f)
+                    + autoBestRowH + Gap                    // auto-adjust
                     + skillRowH + Gap                       // skill row
                     + RowH + Gap                            // target quality
                     + SliderH;                              // cap (last row)
@@ -233,28 +237,28 @@ namespace QualityJobs.UI
 
                     // (1) Manage this bill.
                     bool newManaged = managed;
-                    Widgets.CheckboxLabeled(new Rect(x, y, w, RowH), _manageBillLabel!, ref newManaged);
-                    y += RowH + Gap;
+                    Widgets.CheckboxLabeled(new Rect(x, y, w, manageRowH), _manageBillLabel!, ref newManaged);
+                    y += manageRowH + Gap;
 
                     // (2) Require inspired creativity.
                     bool newInspired = requireInspired;
-                    Widgets.CheckboxLabeled(new Rect(x, y, w, RowH), _requireInspiredLabel!, ref newInspired);
-                    y += RowH + Gap;
+                    Widgets.CheckboxLabeled(new Rect(x, y, w, inspiredRowH), _requireInspiredLabel!, ref newInspired);
+                    y += inspiredRowH + Gap;
 
                     // (3) Require production specialist (Ideology only).
                     bool newSpecialist = requireSpecialist;
                     if (ModsConfig.IdeologyActive)
                     {
-                        Widgets.CheckboxLabeled(new Rect(x, y, w, RowH), _requireSpecialistLabel!, ref newSpecialist);
-                        y += RowH + Gap;
+                        Widgets.CheckboxLabeled(new Rect(x, y, w, specialistRowH), _requireSpecialistLabel!, ref newSpecialist);
+                        y += specialistRowH + Gap;
                     }
 
                     // (4) Auto-adjust finisher skill.
                     bool newAutoBest = autoBest;
-                    Rect autoRect = new Rect(x, y, w, RowH);
+                    Rect autoRect = new Rect(x, y, w, autoBestRowH);
                     Widgets.CheckboxLabeled(autoRect, _autoBestLabel!, ref newAutoBest);
                     WrTips.Key("QJ_AutoBestTip").Region(autoRect);
-                    y += RowH + Gap;
+                    y += autoBestRowH + Gap;
 
                     // (5) Finisher skill: slider, or the current-best label in auto mode.
                     int newMinSkill = minSkill;
@@ -401,6 +405,12 @@ namespace QualityJobs.UI
                 finishersHeight = StatusHeight(_statusFinishersLabel, width, lineHeight);
                 namesHeight = StatusHeight(_statusNamesLabel, width, lineHeight);
                 stallHeight = StatusHeight(_statusStalledLabel, width, lineHeight);
+                // CheckboxLabeled keeps 24 on the right for the box itself.
+                float optionWidth = width - SectionPad * 2f - 24f;
+                manageRowH = StatusHeight(_manageBillLabel, optionWidth, 22f);
+                inspiredRowH = StatusHeight(_requireInspiredLabel, optionWidth, 22f);
+                specialistRowH = StatusHeight(_requireSpecialistLabel, optionWidth, 22f);
+                autoBestRowH = StatusHeight(_autoBestLabel, optionWidth, 22f);
             }
             measuredQueue = _statusQueueLabel;
             measuredFinishers = _statusFinishersLabel;

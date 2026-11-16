@@ -82,5 +82,23 @@ Há mais controles visuais em Opções:
 <!-- l10n:b-b1a38cc7f63a -->
 ![Configurações de exibição em Opções](options-display.png)
 
+<!-- l10n:b-7a3c91e04d52 -->
+Marcadores das fichas de função define como as fichas indicam atribuições sempre ativas, com regras e fixadas. Pontos, o padrão, desenha um pequeno ponto na borda esquerda da ficha: branco para sempre ativa, amarelo para uma função com regras e azul-turquesa para uma atribuição fixada. Ícones desenha um ícone para cada caso: uma bandeira para sempre ativa, um relógio ou um marcador de mapa para regras e um alfinete para uma atribuição fixada. Desligado oculta os marcadores. As imagens desta ajuda mostram pontos.
+
+<!-- l10n:b-c81e5d2a40f7 -->
+Um colono que não pode executar todas as tarefas de uma função recebe estrelas de avaliação vazias com pontos e um ícone de aviso com ícones.
+
+<!-- l10n:b-19b4f0a6d3e8 -->
+Mostrar o ícone de remover nas fichas de função controla a lixeira nas fichas atribuídas. Com ele desativado, clique com o botão direito em uma ficha e escolha Remover função.
+
+<!-- l10n:b-5e7a2c9b6d14 -->
+Mostrar as melhores habilidades sob os nomes dos colonos controla a pequena legenda de habilidades em cada linha de colono.
+
+<!-- l10n:b-a40d93f1b7c2 -->
+Mostrar recomendações é para jogadores que atribuem funções manualmente. Com a opção desativada, a aba Recomendações, o botão Ajustar minha colônia e as Funções recomendadas do colono selecionado ficam ocultos. As estrelas de avaliação continuam disponíveis.
+
+<!-- l10n:b-3d6f81e0c5a9 -->
+As prévias entre as opções mostram uma linha de colono, a paleta de funções e o painel do colono com as configurações atuais.
+
 <!-- l10n:b-e505859311eb -->
 Tudo é preferência pessoal: cada jogador mantém a sua e nada altera atribuições.

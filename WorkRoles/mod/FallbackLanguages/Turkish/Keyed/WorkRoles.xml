@@ -263,10 +263,8 @@ WorkRoles, yönetilen her koloniciye standart oyun yöntemleriyle iş listesi ve
   <WR_OptVanillaRangeTipWhat>WorkRoles işleri benzersiz önceliklerle sıralar (1'den başlayan ardışık sayılar).</WR_OptVanillaRangeTipWhat>
   <WR_OptVerdictsColonists>Kolonici rol etiketlerinde değerlendirmeleri göster</WR_OptVerdictsColonists>
   <WR_OptVerdictsColonistsTip>Kolonici tablosundaki her rol etiketi, öneri motorunun değerlendirmesine uyan bir çift uygunluk yıldızı gösterir: olumlu sonuçlar beyazdır (bir: güçlü, iki: çok uygun, altın: olağanüstü), olumsuzlar kırmızıdır (bir: zayıf, iki: çok uygunsuz), nötr gridir.</WR_OptVerdictsColonistsTip>
-  <WR_OptVerdictsPalette>Rol paletinde seçili kolonici için değerlendirmeleri göster</WR_OptVerdictsPalette>
-  <WR_OptVerdictsPaletteTip>Palet etiketleri, her rolün seçili koloniciye ne kadar uygun olduğunu gösterir.</WR_OptVerdictsPaletteTip>
-  <WR_OptVerdictsRecommendations>Önerilen rol etiketlerinde değerlendirmeleri göster</WR_OptVerdictsRecommendations>
-  <WR_OptVerdictsRecommendationsTip>Önerilen rol etiketleri (istatistik paneli ve değişiklik önizlemeleri), önerildikleri kolonici için uygunluk değerlendirmesini gösterir.</WR_OptVerdictsRecommendationsTip>
+  <WR_OptVerdictsPalette>Rol paletinde ve beceri panelinde seçili kolonici için değerlendirmeleri göster</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>Rol paletindeki ve kolonici beceri panelindeki etiketlerde uygunluk değerlendirmesi yıldızlarını göstermek için açın.</WR_OptVerdictsPaletteTip>
   <WR_OptionsTab>Seçenekler</WR_OptionsTab>
   <WR_OrderSuffixAZ>(A-Z)</WR_OrderSuffixAZ>
   <WR_OrderSuffixBar>(Kolonici çubuğu)</WR_OrderSuffixBar>
@@ -667,4 +665,24 @@ Bu bildirim kayıt başına her mod için bir kez gösterilir.</WR_SetPriorityBl
   <WR_HelpChapterMods>Modlar</WR_HelpChapterMods>
   <WR_HiddenRole>Gizli rol</WR_HiddenRole>
   <WR_HiddenRoleTip>Gizli roller, Yerleşimciler sekmesinin üstündeki rol paletinde gösterilmez. Yine de her zamanki gibi çalışmaya devam ederler: onlara sahip yerleşimciler rolü korur, yerleşimcinin satırındaki + düğmesi onları yine listeler ve öneriler de onları yine önerebilir. Doğrudan nadiren atadığınız rolleri gizlemek veya rol paletiniz çok fazla yer kaplıyorsa kullanın.</WR_HiddenRoleTip>
+  <WR_ChipMarkersDots>Noktalar</WR_ChipMarkersDots>
+  <WR_ChipMarkersIcons>Simgeler</WR_ChipMarkersIcons>
+  <WR_ChipMarkersOff>Kapalı</WR_ChipMarkersOff>
+  <WR_OptChipMarkers>Rol etiketi işaretleri</WR_OptChipMarkers>
+  <WR_OptChipMarkersTip>Rol etiketlerinin işaretlerini nasıl göstereceği.
+
+Noktalar: her işaret için küçük renkli bir nokta. Beyaz her zaman açık, sarı rolün kuralları olduğu, camgöbeği ise sabitlenmiş olduğu anlamına gelir. İçi boş yıldızlar, kolonicinin rolün tüm işlerini yapamadığını gösterir.
+
+Simgeler: her işaret için bir simge.
+
+Kapalı: işaret yok.</WR_OptChipMarkersTip>
+  <WR_OptRecommendations>Önerileri göster</WR_OptRecommendations>
+  <WR_OptRecommendationsTip>Öneriler sekmesini, Kolonimi düzenle düğmesini ve seçili kolonicinin önerilen rollerini gizlemek için kapatın. Uygunluk değerlendirmeleri kullanılabilir kalır.</WR_OptRecommendationsTip>
+  <WR_OptRemoveIcon>Rol etiketlerinde kaldırma simgesini göster</WR_OptRemoveIcon>
+  <WR_OptRemoveIconTip>Atanmış rol etiketlerindeki çöp kutusunu kaldırmak için kapatın. Bunun yerine etikete sağ tıklayıp Rolü kaldır'ı seçin.</WR_OptRemoveIconTip>
+  <WR_PreviewColonist>Kolonici</WR_PreviewColonist>
+  <WR_RemoveRole>Rolü kaldır</WR_RemoveRole>
+  <WR_SelectedActivity>Etkinlik</WR_SelectedActivity>
+  <WR_SelectedName>Ad</WR_SelectedName>
+  <WR_SelectedTraits>Özellikler</WR_SelectedTraits>
 </LanguageData>

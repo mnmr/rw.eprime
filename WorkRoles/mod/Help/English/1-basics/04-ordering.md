@@ -27,7 +27,9 @@ Changing priority is a drag:
 <!-- l10n:b-be64d575edc7 -->
 Drops work across rows too: drag a chip onto another colonist to move the
 assignment. Click the trash can icon inside a chip to remove the
-assignment; the chip leaves the row.
+assignment; the chip leaves the row. With the trash can
+[turned off](topic:display), right-click the chip and choose Remove
+role.
 
 <!-- l10n:b-6bbb9dc33edb -->
 RimWorld keeps a separate list for emergency jobs: firefighting, urgent

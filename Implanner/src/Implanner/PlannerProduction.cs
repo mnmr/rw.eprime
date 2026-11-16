@@ -283,6 +283,10 @@ namespace Implanner
             internal readonly HashSet<int> ProtectedItems = new HashSet<int>();
             private readonly List<CraftNeed<ThingDef>> missing = new List<CraftNeed<ThingDef>>();
             private int startedBenches;
+            /// The rollout slot the craft being queued serves (its own, or
+            /// the one its ingredient is built for); recorded with the bill
+            /// for the bench queue.
+            private CraftNeed<ThingDef> served;
             // Pass-owned promises for uncounted ingredient instances. Different
             // recipes can accept different subsets of the same def (fresh corpses
             // versus any corpse); one physical item cannot fund two bills.
@@ -422,15 +426,16 @@ namespace Implanner
                     if (supply.Take(missing[i].Item, 1, missing[i].MinQuality, missing[i].AcceptableQualities) > 0)
                         queue.Add(missing[i]);
 
-                var skipped = new List<ThingDef>();
+                var skipped = new List<CraftNeed<ThingDef>>();
                 for (int i = 0; i < queue.Count; i++)
                 {
                     // A newly placed multi-output bill may cover later slots.
                     var need = queue[i];
                     if (supply.Take(need.Item, 1, need.MinQuality, need.AcceptableQualities) == 0) continue;
+                    served = need;
                     Craft result = TryCraft(need.Item, 0, need.MinQuality);
                     if (result == Craft.Created) supply.Take(need.Item, 1, need.MinQuality, need.AcceptableQualities);
-                    else if (result == Craft.Blocked) skipped.Add(need.Item);
+                    else if (result == Craft.Blocked) skipped.Add(need);
                 }
                 BuildAhead(skipped);
                 // Final and prerequisite demand share this ledger. A bill
@@ -442,7 +447,26 @@ namespace Implanner
                     bill.billStack.Delete(bill);
                     change |= model.RemoveOwnedProductionBill(pass.BillId(bill));
                 }
+                Retarget();
                 return change;
+            }
+
+            /// Names the goal each surviving bill most likely serves, for
+            /// the bench queue: oldest bill first, the earliest slot in
+            /// rollout order wanting its item. Ingredient bills keep the
+            /// goal they were queued for. Bills queued this pass were
+            /// recorded with their own slot.
+            private void Retarget()
+            {
+                PruneDeleted();
+                var items = new List<ThingDef>(owned.Count);
+                for (int i = 0; i < owned.Count; i++)
+                    items.Add(owned[i].Bill.recipe.ProducedThingDef!);
+                int[] matched = ProductionTargets.Match(items, missing);
+                for (int i = 0; i < owned.Count; i++)
+                    if (matched[i] >= 0)
+                        change |= model.SetProductionBillTarget(pass.BillId(owned[i].Bill),
+                            missing[matched[i]].PawnId, missing[matched[i]].GoalKey);
             }
 
             private static readonly Comparison<Thing> ByQualityThenId = static (a, b) =>
@@ -471,27 +495,35 @@ namespace Implanner
             /// ready when the raw resource arrives. Bounded to the first
             /// ProductionConcurrency skipped crafts; each ingredient bill is
             /// one craft and must fit the budget like any other.
-            private void BuildAhead(List<ThingDef> skipped)
+            private void BuildAhead(List<CraftNeed<ThingDef>> skipped)
             {
                 if (!model.AllowIntermediaries || skipped.Count == 0) return;
                 var requirement = new Dictionary<ThingDef, int>();
                 var order = new List<ThingDef>();
+                var firstFor = new List<CraftNeed<ThingDef>>();
                 int horizon = Math.Min(skipped.Count, model.ProductionConcurrency);
                 for (int i = 0; i < horizon; i++)
                 {
-                    ProductionRoute<ThingDef> route = SelectRoute(skipped[i]);
+                    ProductionRoute<ThingDef> route = SelectRoute(skipped[i].Item);
                     if (route.Recipe == null) continue;
                     var costs = route.Recipe.Costs;
                     for (int k = 0; k < costs.Count; k++)
                     {
                         ThingDef ingredient = costs[k].Resource;
                         if (!intermediaries.Contains(ingredient)) continue;
-                        if (!requirement.TryGetValue(ingredient, out int sum)) order.Add(ingredient);
+                        if (!requirement.TryGetValue(ingredient, out int sum))
+                        {
+                            order.Add(ingredient);
+                            firstFor.Add(skipped[i]);
+                        }
                         requirement[ingredient] = sum + costs[k].Count;
                     }
                 }
                 for (int i = 0; i < order.Count; i++)
+                {
+                    served = firstFor[i];
                     EnsureIngredient(order[i], budget.Shortfall(order[i], requirement[order[i]]), 1);
+                }
             }
 
             private void EnsureIngredient(ThingDef item, int wanted, int depth)
@@ -551,7 +583,8 @@ namespace Implanner
                             sampled = true;
                         }
                         itemOf[(pawnId, missing[k])] = new CraftNeed<ThingDef>(item, minimum,
-                            PawnProjection.AcceptableQualities(pawn, entry!, part, evaluation.Plan.MinQuality));
+                            PawnProjection.AcceptableQualities(pawn, entry!, part, evaluation.Plan.MinQuality),
+                            pawnId, missing[k]);
                         work.Add(new SurgeryWorkItem(pawnId, priority,
                             StarRanking.TierOf(model.ImplantStarsOf(goal.ImplantDefName)),
                             missing[k], goal.ImplantDefName, entry!.Limb, candidate,
@@ -691,12 +724,16 @@ namespace Implanner
                 Bill_Production bill = MakeBill(recipe, 1, model.ProductionSkill);
                 RestrictIngredients(bill, costs);
                 RestrictCorpseFreshness(bill);
-                bench.BillStack.AddBill(bill);
+                BenchDesignations.AddingOwnBill = true;
+                try { bench.BillStack.AddBill(bill); }
+                finally { BenchDesignations.AddingOwnBill = false; }
                 TakeSlot(bench);
                 string billId = pass.BillId(bill);
                 change |= model.SetOwnedProductionBill(billId, item.defName);
                 int quality = PromiseQuality(bill, item, minQuality);
                 change |= model.SetProductionBillQuality(billId, quality);
+                change |= model.SetProductionBillOrigin(billId, Find.TickManager.TicksGame,
+                    served.PawnId, served.GoalKey);
                 supply.Add(item, billId, OutputCount(recipe, item), quality);
                 return Craft.Created;
             }

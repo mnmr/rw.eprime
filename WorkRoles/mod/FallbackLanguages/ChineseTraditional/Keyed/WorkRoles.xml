@@ -33,11 +33,9 @@
   <WR_OptSkillCaptionsTip>每行會在姓名下方用小字顯示殖民者最擅長的工作技能與等級，並按適合程度著色。關閉後僅顯示姓名。</WR_OptSkillCaptionsTip>
   <WR_OptVerdictsColonists>在殖民者職責標籤上顯示適合度</WR_OptVerdictsColonists>
   <WR_OptVerdictsColonistsTip>職責標籤以星標顯示該殖民者的適合度，與推薦引擎一致：正面評價為白星（一星適合、二星優秀，金星卓越），負面為紅星（一星較差、二星極差），中性為灰色。</WR_OptVerdictsColonistsTip>
-  <WR_OptVerdictsPalette>在職責面板中顯示所選殖民者的適合度</WR_OptVerdictsPalette>
-  <WR_OptVerdictsPaletteTip>職責面板中的標籤顯示每個職責對當前選中殖民者的適合程度。</WR_OptVerdictsPaletteTip>
-  <WR_OptVerdictsRecommendations>在推薦職責標籤上顯示適合度</WR_OptVerdictsRecommendations>
+  <WR_OptVerdictsPalette>在職責面板與技能面板中顯示所選殖民者的適合度</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>啟用後，會在職責面板與殖民者技能面板的標籤上顯示適合度星級。</WR_OptVerdictsPaletteTip>
   <WR_OptPaletteGrouping>職責面板分組</WR_OptPaletteGrouping>
-  <WR_OptVerdictsRecommendationsTip>推薦標籤（技能面板和更改預覽中）顯示對應殖民者的職責適合度。</WR_OptVerdictsRecommendationsTip>
   <WR_RecGlobalPanel>全局選項</WR_RecGlobalPanel>
   <WR_RecGlobalPanelHelp>這些選項影響候選人的評分、排名及職責在最終推薦列表中的位置。若對修改不滿意，可用“重置”恢復預設值。</WR_RecGlobalPanelHelp>
   <WR_RecRolePanel>職責選項</WR_RecRolePanel>
@@ -667,4 +665,24 @@ WorkRoles 通過遊戲標準方法為受管理殖民者提供工作列表。另�
   <WR_HelpChapterMods>模組</WR_HelpChapterMods>
   <WR_HiddenRole>隱藏職責</WR_HiddenRole>
   <WR_HiddenRoleTip>隱藏職責不會顯示在殖民者分頁頂部的職責選擇列中，但仍照常運作：已持有的殖民者會保留它，殖民者所在行的 + 按鈕仍會列出它，推薦也仍可能建議它。適用於很少直接指派的職責，或職責選擇列佔用空間過多時。</WR_HiddenRoleTip>
+  <WR_ChipMarkersDots>圓點</WR_ChipMarkersDots>
+  <WR_ChipMarkersIcons>圖示</WR_ChipMarkersIcons>
+  <WR_ChipMarkersOff>關閉</WR_ChipMarkersOff>
+  <WR_OptChipMarkers>職責標籤標記</WR_OptChipMarkers>
+  <WR_OptChipMarkersTip>職責標籤顯示標記的方式。
+
+圓點：每個標記顯示一個彩色小圓點。白色表示始終開啟，黃色表示職責有規則，水藍色表示已固定。空心星表示殖民者無法完成該職責的全部工作。
+
+圖示：每個標記顯示一個圖示。
+
+關閉：不顯示標記。</WR_OptChipMarkersTip>
+  <WR_OptRecommendations>顯示推薦</WR_OptRecommendations>
+  <WR_OptRecommendationsTip>關閉後將隱藏「推薦」頁、「調整殖民地」按鈕以及所選殖民者的推薦職責。適合度評價仍可使用。</WR_OptRecommendationsTip>
+  <WR_OptRemoveIcon>在職責標籤上顯示移除圖示</WR_OptRemoveIcon>
+  <WR_OptRemoveIconTip>關閉後，已指派的職責標籤上將不再顯示垃圾桶圖示。請改為在標籤上按右鍵，然後選擇「移除職責」。</WR_OptRemoveIconTip>
+  <WR_PreviewColonist>殖民者</WR_PreviewColonist>
+  <WR_RemoveRole>移除職責</WR_RemoveRole>
+  <WR_SelectedActivity>活動</WR_SelectedActivity>
+  <WR_SelectedName>名稱</WR_SelectedName>
+  <WR_SelectedTraits>特性</WR_SelectedTraits>
 </LanguageData>

@@ -2,7 +2,7 @@
 title: Opciones de mods
 ---
 <!-- l10n:b-459ed37f94ab -->
-![Opciones con Compatibilidad con mods y Catálogo](options-tab.png)
+![La pestaña Opciones](options-tab.png)
 
 <!-- l10n:b-045738932f34 -->
 Opciones contiene la compatibilidad de planes y el intervalo visual de habilidad. La automatización se configura en su propia pestaña. La configuración de planes y automatización se comparte entre todos los jugadores.

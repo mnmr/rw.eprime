@@ -8,7 +8,10 @@ Mit **Fertigungsaufträge für fehlende Implantate automatisch hinzufügen** ers
 Gibt es mehrere Rezepte für ein Implantat, bevorzugt Implanner eine verfügbare und sofort bezahlbare Möglichkeit. Ein freies Basisimplantat kann verbessert werden; andernfalls kann ein direktes Rezept das fortgeschrittene Implantat aus Materialien herstellen. Ist nur die Verbesserung verfügbar, kann Zwischenproduktion zuerst das Basisimplantat fertigen. Rezepte müssen erforscht sein und von einer geeigneten Werkbank unterstützt werden.
 
 <!-- l10n:b-0aa3ded1d655 -->
-Aktiviere **Implanner-Werkbank** im Auftragsreiter einer Bank, um sie der Implantatherstellung zu widmen. Das Kästchen erscheint nur an implantatfähigen Werkbänken. Bestehende Aufträge werden ausgesetzt; Implanner verwendet diese Bank vor allen anderen. Währenddessen kannst du keine Aufträge hinzufügen, einfügen, aussetzen oder fortsetzen.
+Aktiviere **Implanner-Werkbank** im Auftragsreiter einer Bank, um sie der Implantatherstellung zu widmen. Das Kästchen erscheint nur an implantatfähigen Werkbänken. Bestehende Aufträge werden ausgesetzt, und Implanner legt seine Fertigungsaufträge vor allen anderen Bänken hier an.
+
+<!-- l10n:queue -->
+Solange das Kästchen aktiviert ist, zeigt der Auftragsreiter statt der üblichen Auftragsliste der Werkbank die Implanner-Produktionswarteschlange. Jede Zeile ist ein Auftrag, den Implanner eingereiht hat: der Gegenstand, ob ein Handwerker ihn begonnen hat, der zugehörige Plan, der Kolonist, der als Nächster an der Reihe ist, und wie lange der Auftrag schon in der Warteschlange steht. Ein Auftrag für eine Zutat nennt das Implantat, für das sie benötigt wird. **Details** öffnet die Einstellungen des Spiels für diesen Auftrag. Die Zeile unten zählt deine eigenen Aufträge, die pausiert sind. Du kannst der Werkbank erst wieder Aufträge hinzufügen, wenn du das Kästchen deaktivierst.
 
 <!-- l10n:b-a4d04c1bceb2 -->
 ![Ein an Implanner übergebener Fabrikationstisch](implanner-bench.png)

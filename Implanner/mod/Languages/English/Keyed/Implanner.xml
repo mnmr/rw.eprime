@@ -307,7 +307,31 @@
   <IMP_OptDesignatedBenchesTip>Crafting bills only go to benches with "Implanner bench" checked on their Bills tab, so a colony without one crafts no implants. Switched off, Implanner benches get bills first and other benches are used once every Implanner bench holds two bills. The "Benches that may hold bills" limit applies either way.</IMP_OptDesignatedBenchesTip>
   <!-- Bills tab of a workbench -->
   <IMP_BenchToggle>Implanner bench</IMP_BenchToggle>
-  <IMP_BenchToggleTip>Implanner places its crafting bills on this bench before any other, and the bills already here are suspended. While it is checked, you cannot add, paste, suspend or resume bills here.\n\nUncheck it to take the bench back. Bills that were already suspended when you checked it stay suspended, and the rest resume.</IMP_BenchToggleTip>
+  <IMP_BenchToggleTip>Implanner places its crafting bills on this bench before any other, and the bills already here are suspended. While it is checked, the Bills tab shows Implanner's production queue and you cannot add, paste, suspend or resume bills here.\n\nUncheck it to take the bench back. Bills that were already suspended when you checked it stay suspended, and the rest resume.</IMP_BenchToggleTip>
+  <!-- Bills tab of an Implanner bench: the production queue -->
+  <IMP_QueueTitle>Implanner production queue</IMP_QueueTitle>
+  <IMP_QueueEmpty>No bills are queued here. Implanner adds bills when a plan needs an implant this bench can make.</IMP_QueueEmpty>
+  <IMP_QueuePausedOne>1 other bill is paused while this is an Implanner bench.</IMP_QueuePausedOne>
+  <!-- {0} = number of bills, 2 or more -->
+  <IMP_QueuePausedMany>{0} other bills are paused while this is an Implanner bench.</IMP_QueuePausedMany>
+  <!-- Short captions in front of a value, e.g. "Plan  Soldier", "For  Fisso" -->
+  <IMP_QueuePlan>Plan</IMP_QueuePlan>
+  <IMP_QueueFor>For</IMP_QueueFor>
+  <!-- Caption in front of a bare period: "In queue  0.5 hours" -->
+  <IMP_QueueAge>In queue</IMP_QueueAge>
+  <IMP_QueueAgeTip>In-game time since Implanner queued this bill.</IMP_QueueAgeTip>
+  <IMP_QueueAgeNow>Just now</IMP_QueueAgeNow>
+  <IMP_QueueQuality>Quality</IMP_QueueQuality>
+  <!-- {0} = a quality such as "Good" -->
+  <IMP_QueueQualityValue>{0} or better</IMP_QueueQualityValue>
+  <!-- Caption on a bill for an ingredient; the value is the implant it goes into -->
+  <IMP_QueueNeededFor>Needed for</IMP_QueueNeededFor>
+  <IMP_QueueWorker>Worker</IMP_QueueWorker>
+  <IMP_QueueStatusWaiting>Waiting</IMP_QueueStatusWaiting>
+  <IMP_QueueStatusCrafting>Crafting</IMP_QueueStatusCrafting>
+  <!-- {0} = work done, e.g. "43%" -->
+  <IMP_QueueStatusCraftingAt>Crafting {0}</IMP_QueueStatusCraftingAt>
+  <IMP_QueueStatusStarted>Started {0}</IMP_QueueStatusStarted>
   <IMP_BenchLockedTip>You cannot paste, suspend or resume bills on an Implanner bench. Uncheck "Implanner bench" at the top of the Bills tab to take the bench back.</IMP_BenchLockedTip>
   <IMP_BenchNoNewBills>Uncheck "Implanner bench" to add bills here</IMP_BenchNoNewBills>
   <IMP_OptProductionSkillTip>The minimum Crafting skill for Implanner production bills. Higher values keep expensive components away from low-skill crafters; lower values let more colonists help. Bills wait until a qualifying crafter picks them up.</IMP_OptProductionSkillTip>

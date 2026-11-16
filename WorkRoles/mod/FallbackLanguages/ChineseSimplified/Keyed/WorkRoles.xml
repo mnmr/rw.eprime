@@ -33,11 +33,9 @@
   <WR_OptSkillCaptionsTip>每行会在姓名下方用小字显示殖民者最擅长的工作技能与等级，并按适合程度着色。关闭后仅显示姓名。</WR_OptSkillCaptionsTip>
   <WR_OptVerdictsColonists>在殖民者职责标签上显示适合度</WR_OptVerdictsColonists>
   <WR_OptVerdictsColonistsTip>职责标签以星标显示该殖民者的适合度，与推荐引擎一致：正面评价为白星（一星适合、二星优秀，金星卓越），负面为红星（一星较差、二星极差），中性为灰色。</WR_OptVerdictsColonistsTip>
-  <WR_OptVerdictsPalette>在职责面板中显示所选殖民者的适合度</WR_OptVerdictsPalette>
-  <WR_OptVerdictsPaletteTip>职责面板中的标签显示每个职责对当前选中殖民者的适合程度。</WR_OptVerdictsPaletteTip>
-  <WR_OptVerdictsRecommendations>在推荐职责标签上显示适合度</WR_OptVerdictsRecommendations>
+  <WR_OptVerdictsPalette>在职责面板和技能面板中显示所选殖民者的适合度</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>启用后，职责面板和殖民者技能面板中的标签上会显示适合度星级。</WR_OptVerdictsPaletteTip>
   <WR_OptPaletteGrouping>职责面板分组</WR_OptPaletteGrouping>
-  <WR_OptVerdictsRecommendationsTip>推荐标签（技能面板和更改预览中）显示对应殖民者的职责适合度。</WR_OptVerdictsRecommendationsTip>
   <WR_RecGlobalPanel>全局选项</WR_RecGlobalPanel>
   <WR_RecGlobalPanelHelp>这些选项影响候选人的评分、排名及职责在最终推荐列表中的位置。若对修改不满意，可用“重置”恢复默认值。</WR_RecGlobalPanelHelp>
   <WR_RecRolePanel>职责选项</WR_RecRolePanel>
@@ -667,4 +665,24 @@ WorkRoles 通过游戏标准方法为受管理殖民者提供工作列表。另�
   <WR_HelpChapterMods>模组</WR_HelpChapterMods>
   <WR_HiddenRole>隐藏职责</WR_HiddenRole>
   <WR_HiddenRoleTip>隐藏职责不会显示在殖民者标签页顶部的职责调色板中，但它们仍照常运作：已持有的殖民者保留该职责，殖民者所在行的 + 按钮仍会列出它，推荐功能也仍可能建议它。适用于很少直接分配的职责，或职责调色板占用空间过多的情况。</WR_HiddenRoleTip>
+  <WR_ChipMarkersDots>圆点</WR_ChipMarkersDots>
+  <WR_ChipMarkersIcons>图标</WR_ChipMarkersIcons>
+  <WR_ChipMarkersOff>关闭</WR_ChipMarkersOff>
+  <WR_OptChipMarkers>职责标签标记</WR_OptChipMarkers>
+  <WR_OptChipMarkersTip>职责标签显示标记的方式。
+
+圆点：每个标记对应一个彩色小圆点。白色表示始终开启，黄色表示该职责有规则，青色表示已固定。空心星表示殖民者无法胜任该职责的全部工作。
+
+图标：每个标记对应一个图标。
+
+关闭：不显示标记。</WR_OptChipMarkersTip>
+  <WR_OptRecommendations>显示推荐</WR_OptRecommendations>
+  <WR_OptRecommendationsTip>关闭后将隐藏“推荐”页、“调整殖民地”按钮以及所选殖民者的推荐职责。适合度评价仍然可用。</WR_OptRecommendationsTip>
+  <WR_OptRemoveIcon>在职责标签上显示移除图标</WR_OptRemoveIcon>
+  <WR_OptRemoveIconTip>关闭后，已分配的职责标签上将不再显示垃圾桶图标。请右键单击标签并选择“移除职责”。</WR_OptRemoveIconTip>
+  <WR_PreviewColonist>殖民者</WR_PreviewColonist>
+  <WR_RemoveRole>移除职责</WR_RemoveRole>
+  <WR_SelectedActivity>活动</WR_SelectedActivity>
+  <WR_SelectedName>姓名</WR_SelectedName>
+  <WR_SelectedTraits>特性</WR_SelectedTraits>
 </LanguageData>

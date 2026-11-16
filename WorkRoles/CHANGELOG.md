@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 1.9.0 — 2026-11-16
+
+- Added: Display options to reduce the visual noise on the Colonists tab.
+- Added: Live preview of display option changes.
+- Added: Recommendations can be turned off for players who prefer to assign roles by hand.
+- Changed: Redesigned the selected colonist panel to be more compact, leaving more room for the colonist table.
+- Fixed: Role tooltips no longer show an outdated state after clicking a role chip.
+- Fixed: Lines and borders are sharp at every UI scale.
+
 ## 1.8.4 — 2026-11-14
 
 - Added: Option to hide roles from the role palette on the Colonist tab. Hidden roles can still be added with the + icon.

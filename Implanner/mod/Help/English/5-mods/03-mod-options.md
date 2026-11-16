@@ -2,7 +2,7 @@
 title: Mod options
 ---
 <!-- l10n:b-459ed37f94ab -->
-![The Options tab with the Mod compatibility and Catalog sections](options-tab.png)
+![The Options tab](options-tab.png)
 
 <!-- l10n:b-045738932f34 -->
 The Options tab holds plan compatibility settings and the skill-slider

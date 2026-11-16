@@ -37,6 +37,6 @@ Quality Bionics RemasteredまたはVanilla Genetics Expandedを導入すると�
 プラン用のインプラントを製作する際は:
 
 <!-- l10n:b-51f50276fd20 -->
-- Quality Jobsがあれば、加工指示に最低品質を設定し、達成できる製作者が仕上げます。
+- Quality Jobsがあれば、加工に最低品質を設定し、達成できる製作者が仕上げます。
 - Vanilla Genetics Expandedのハイブリッド品はジーノフレームの品質を引き継ぎます。最低品質以上のジーノフレームだけを使います。
 - どちらもなければ誰でも仕上げられますが、最低品質未満なら再度製作します。資源が減りすぎる前に、[在庫の確保](topic:keeping-stock)で設定した下限が生産を止めます。

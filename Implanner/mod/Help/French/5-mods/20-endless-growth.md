@@ -12,5 +12,5 @@ icon: verdict-blue.png
 Les seuils de compétence supérieurs à 20 sont conservés.
 
 <!-- l10n:detail -->
-Les seuils minimaux des médecins et les seuils de compétence manuels conservent les valeurs supérieures à 20, et les ordres d'Implanner n'imposent aucune limite supérieure de compétence. Augmentez la **valeur maximale du curseur de compétence** dans l'onglet Options pour choisir des minimums plus élevés (voir [options du mod](topic:mod-options)).
+Les seuils minimaux des médecins et les seuils de compétence manuels conservent les valeurs supérieures à 20, et les tâches d'Implanner n'imposent aucune limite supérieure de compétence. Augmentez la **valeur maximale du curseur de compétence** dans l'onglet Options pour choisir des minimums plus élevés (voir [options du mod](topic:mod-options)).
 

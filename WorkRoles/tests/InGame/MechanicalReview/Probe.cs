@@ -168,7 +168,6 @@ namespace WorkRolesMechanicalReview
             WorkRolesMod.Settings.groupBy = "none";
             WorkRolesMod.Settings.verdictsOnColonistChips = true;
             WorkRolesMod.Settings.verdictsInPalette = true;
-            WorkRolesMod.Settings.verdictsOnRecommendationChips = true;
             Find.Selector.ClearSelection(); Find.Selector.Select(humans[0]);
             var button = DefDatabase<MainButtonDef>.AllDefsListForReading.First(d => d.TabWindow is MainTabWindow_WorkRoles);
             Find.MainTabsRoot.SetCurrentTab(button);

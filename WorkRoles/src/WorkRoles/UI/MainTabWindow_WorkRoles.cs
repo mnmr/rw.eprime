@@ -41,6 +41,7 @@ namespace WorkRoles.UI
                 rect, roleId, RoleTipContext.TreeRow);
             optionsTab.showAutoOptimizeEnablePreview =
                 colonistsTab.ShowAutoOptimizeEnablePreview;
+            optionsTab.catalogProvider = colonistsTab.Catalog;
         }
 
         /// Width floors at the design width and grows with the widest chip
@@ -111,8 +112,15 @@ namespace WorkRoles.UI
         private void ObserveLanguageRevision()
         {
             int current = LanguageChangeCoordinator.Revision;
-            if (observedLanguageRevision == current && tabs != null) return;
+            bool recommendations =
+                WorkRolesMod.Settings?.recommendationsEnabled ?? true;
+            if (observedLanguageRevision == current && tabs != null
+                && tabsShowRecommendations == recommendations) return;
+            // The option only rebuilds the tab list; language caches stay.
+            bool languageChanged = observedLanguageRevision != current
+                || tabs == null;
             observedLanguageRevision = current;
+            tabsShowRecommendations = recommendations;
             tabs = new List<TabRecord>
             {
                 new TabRecord("WR_ColonistsTab".Translate(), () =>
@@ -138,6 +146,14 @@ namespace WorkRoles.UI
                     curTab = Tab.Help;
                 }, () => curTab == Tab.Help),
             };
+            // The option is only reachable from the Options tab, so the
+            // hidden tab is never the active one; the fallback covers an
+            // imported setup applied while it is open.
+            if (!recommendations)
+            {
+                tabs.RemoveAt((int)Tab.Recommendations);
+                if (curTab == Tab.Recommendations) curTab = Tab.Colonists;
+            }
             fixMyColonyLabel = "WR_FixMyColony".Translate().ToString();
             autoManagedLabel = "WR_AutoManaged".Translate().ToString();
             restoreDefaultsLabel = "WR_RestoreDefaults".Translate().ToString();
@@ -145,6 +161,7 @@ namespace WorkRoles.UI
             exportLabel = "WR_Export".Translate().ToString();
             importLabel = "WR_Import".Translate().ToString();
             defaultsLabel = "WR_NewGameDefaults".Translate().ToString();
+            if (!languageChanged) return;
             colonistsTab.InvalidateLanguageCaches();
             rolesTab.InvalidateLanguageCaches();
             recommendationsTab.InvalidateLanguageCaches();
@@ -199,7 +216,15 @@ namespace WorkRoles.UI
         // Refresh: immediately when the observed language revision changes.
         // Equality: matching revision reuses strings, list, and delegates.
         // Teardown: PostClose clears the tab list; strings follow the window.
+        // The tab list also keys on the per-player recommendations option.
         private List<TabRecord>? tabs;
+        private bool tabsShowRecommendations = true;
+
+        /// Position of the active tab in the drawn strip (the Recommendations
+        /// tab may be absent).
+        private int ActiveTabIndex =>
+            !tabsShowRecommendations && curTab > Tab.Recommendations
+                ? (int)curTab - 1 : (int)curTab;
         private string fixMyColonyLabel = null!;         // assigned by ObserveLanguageRevision before any draw
         private string autoManagedLabel = null!;
         private string restoreDefaultsLabel = null!;
@@ -268,7 +293,7 @@ namespace WorkRoles.UI
             Color oldColor = GUI.color;
             try
             {
-                Widgets.DrawBoxSolidWithOutline(rect, AutoManagedBackground,
+                PixelBox.SolidWithOutline(rect, AutoManagedBackground,
                     AutoManagedOutline);
                 GUI.color = AutoManagedColor;
                 const float DotSize = 8f;
@@ -317,11 +342,11 @@ namespace WorkRoles.UI
                 Event.current.Use();
 
             Rect content = new Rect(inRect.x, inRect.y + TabStrip.TabHeight, inRect.width, inRect.height - TabStrip.TabHeight);
-            Widgets.DrawMenuSection(content);
+            PixelBox.MenuSection(content);
             // Active-tab emphasis: TabRecord reads labelColor per pass, so a
             // per-frame field write is how selection tints the label.
             for (int i = 0; i < tabs!.Count; i++) // ObserveLanguageRevision built the list this pass
-                tabs[i].labelColor = i == (int)curTab ? TabStrip.ActiveLabelColor : (Color?)null;
+                tabs[i].labelColor = i == ActiveTabIndex ? TabStrip.ActiveLabelColor : (Color?)null;
             // The strip stops short of the per-tab action buttons at the top
             // right (widest cluster: Import, Export, Set defaults, Restore Defaults on the
             // Roles tab), so narrow windows shrink the tabs instead of
@@ -329,7 +354,7 @@ namespace WorkRoles.UI
             var tabStrip = new Rect(content.x, content.y,
                 content.width - actionWidth - defaultsWidth - 2f * ioWidth - 32f, content.height);
             TabStrip.Draw(tabStrip, tabs, WorkRolesTex.TabAtlas);
-            TabStrip.DrawActiveTabSeam(tabStrip, (int)curTab, tabs.Count);
+            TabStrip.DrawActiveTabSeam(tabStrip, ActiveTabIndex, tabs.Count);
 
             // Per-tab action button in the window's top-right corner, beside the tab
             // strip: Fix My Colony on Colonists, Restore Defaults on Roles.
@@ -337,9 +362,11 @@ namespace WorkRoles.UI
             var actionRect = new Rect(inRect.xMax - actionWidth, btnY, actionWidth, actionHeight);
             if (curTab == Tab.Colonists)
             {
+                // The auto-managed status shows whether or not this player
+                // hides recommendations; Fix My Colony is a recommendation.
                 if (AutoManagedSnapshot())
                     DrawAutoManagedIndicator(actionRect);
-                else
+                else if (tabsShowRecommendations)
                 {
                     // Colony planning is per location: with pawns from several
                     // maps (or caravans) in view, Fix My Colony disables.

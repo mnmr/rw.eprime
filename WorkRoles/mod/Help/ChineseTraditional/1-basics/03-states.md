@@ -11,7 +11,10 @@ title: 職責狀態
 全局禁用時，所有持有者的標籤都有雙刪除線 ![雙刪除線標籤](chip-state-global-off.png)。
 
 <!-- l10n:b-4d81d20fcc44 -->
-點選殖民者行內標籤依次切換：開啟 ![開啟標籤](chip-state-on.png)、對此人關閉 ![單刪除線標籤](chip-state-off.png)、強制開啟 ![旗標標籤](chip-state-forced.png)。全局和個人均關閉時刪除線疊加 ![疊加刪除線標籤](chip-state-both-off.png)；強制開啟則即使全局關閉也照常執行。
+點選殖民者行內標籤依次切換：開啟 ![開啟標籤](chip-state-on.png)、對此人關閉 ![單刪除線標籤](chip-state-off.png)、強制開啟 ![帶白點的標籤](chip-state-forced.png)。全局和個人均關閉時刪除線疊加 ![疊加刪除線標籤](chip-state-both-off.png)；強制開啟則即使全局關閉也照常運作。
+
+<!-- l10n:b-8c2e4f7a1d93 -->
+白點是強制開啟的預設標記。使用[圖示標記](topic:display)時，標籤改為顯示旗幟。
 
 <!-- l10n:b-c5c0217224df -->
 切換狀態不會移除分配，標籤保持原位置。

@@ -54,13 +54,13 @@
   <IMP_TipColReserved>已分配</IMP_TipColReserved>
   <IMP_TipColHeldBack>留作手動使用</IMP_TipColHeldBack>
   <IMP_TipColQueued>待生產</IMP_TipColQueued>
-  <IMP_TipColCrafting>已列入生產清單</IMP_TipColCrafting>
+  <IMP_TipColCrafting>已列入生產工作</IMP_TipColCrafting>
   <IMP_TipColStatus>狀態</IMP_TipColStatus>
   <IMP_TipCovered>已滿足</IMP_TipCovered>
   <IMP_TipMaking>製作中</IMP_TipMaking>
   <IMP_TipMakingMaterials>正在製作材料</IMP_TipMakingMaterials>
   <IMP_TipNoRecipe>無配方</IMP_TipNoRecipe>
-  <IMP_TipBenchesInUse>持有 Implanner 清單的工作臺：{0}</IMP_TipBenchesInUse>
+  <IMP_TipBenchesInUse>持有 Implanner 工作的工作臺：{0}</IMP_TipBenchesInUse>
   <IMP_TipColPlanned>計劃數量</IMP_TipColPlanned>
   <IMP_TipColInstalled>已安裝</IMP_TipColInstalled>
   <IMP_TipColMissing>缺少</IMP_TipColMissing>
@@ -133,18 +133,18 @@
   <IMP_IterTier>按層級分批</IMP_IterTier>
   <IMP_IterColonist>整套安裝</IMP_IterColonist>
   <IMP_IterAsap>盡快安裝</IMP_IterAsap>
-  <IMP_OptManualFloor>手術清單所需醫療技能</IMP_OptManualFloor>
+  <IMP_OptManualFloor>手術工作所需醫療技能</IMP_OptManualFloor>
   <IMP_OptAutoFloor>將手術分配給當前最佳醫生</IMP_OptAutoFloor>
   <IMP_OptImplantReserves>植入體留存</IMP_OptImplantReserves>
   <IMP_AddImplantReserve>添加植入體</IMP_AddImplantReserve>
   <IMP_OptProduction>生產</IMP_OptProduction>
-  <IMP_OptAutoProduction>自動添加缺失植入體的生產清單</IMP_OptAutoProduction>
-  <IMP_OptConcurrency>可持有清單的工作臺數</IMP_OptConcurrency>
-  <IMP_OptIdleBenches>僅向空閒工作臺添加清單</IMP_OptIdleBenches>
+  <IMP_OptAutoProduction>自動添加缺失植入體的生產工作</IMP_OptAutoProduction>
+  <IMP_OptConcurrency>可持有工作的工作臺數</IMP_OptConcurrency>
+  <IMP_OptIdleBenches>僅向空閒工作臺添加工作</IMP_OptIdleBenches>
   <IMP_OptDesignatedBenches>僅使用 Implanner 工作臺</IMP_OptDesignatedBenches>
-  <IMP_OptProductionSkill>生產清單所需手工技能</IMP_OptProductionSkill>
-  <IMP_OptIntermediaries>允許為缺少的中間產品添加生產清單</IMP_OptIntermediaries>
-  <IMP_OptReserves>保留庫存（扣除清單成本後）</IMP_OptReserves>
+  <IMP_OptProductionSkill>生產工作所需手工技能</IMP_OptProductionSkill>
+  <IMP_OptIntermediaries>允許為缺少的中間產品添加生產工作</IMP_OptIntermediaries>
+  <IMP_OptReserves>保留庫存（扣除工作成本後）</IMP_OptReserves>
   <IMP_OptModCompat>模組兼容</IMP_OptModCompat>
   <IMP_OptSkillSliderMaximum>技能滑塊最大值</IMP_OptSkillSliderMaximum>
   <IMP_OptSkillSliderMaximumTip>設定醫療和手工技能滑塊的上限。不影響現有技能要求或醫生自動選擇。</IMP_OptSkillSliderMaximumTip>
@@ -153,31 +153,31 @@
   <IMP_OptCatalog>目錄</IMP_OptCatalog>
   <IMP_OptShowPurchaseOnly>顯示僅能購買的植入體</IMP_OptShowPurchaseOnly>
   <IMP_CleanupTitle>關閉自動化？</IMP_CleanupTitle>
-  <IMP_CleanupBody>這些清單由 Implanner 建立。確認會關閉自動化，並移除已勾選的清單。未勾選的清單仍然有效，殖民者仍可繼續製作或進行這些手術。重新啟用自動化後，Implanner 會恢復管理保留的清單。無論保留與否，已分配的植入體物品都會被釋放。取消則保持自動化開啟。</IMP_CleanupBody>
-  <IMP_OptEnableTip>控制 Implanner 所有自動操作的總開關：分配植入體物品、安排手術和建立製作清單。關閉後 Implanner 仍會追蹤方案與進度。關閉時會詢問保留哪些現有清單；保留的清單仍然有效，因此殖民者仍可繼續製作或進行這些手術。</IMP_OptEnableTip>
+  <IMP_CleanupBody>這些工作由 Implanner 建立。確認會關閉自動化，並移除已勾選的工作。未勾選的工作仍然有效，殖民者仍可繼續製作或進行這些手術。重新啟用自動化後，Implanner 會恢復管理保留的工作。無論保留與否，已分配的植入體物品都會被釋放。取消則保持自動化開啟。</IMP_CleanupBody>
+  <IMP_OptEnableTip>控制 Implanner 所有自動操作的總開關：分配植入體物品、安排手術和建立製作工作。關閉後 Implanner 仍會追蹤方案與進度。關閉時會詢問保留哪些現有工作；保留的工作仍然有效，因此殖民者仍可繼續製作或進行這些手術。</IMP_OptEnableTip>
   <IMP_OptIterationTip>決定自動化處理缺失植入體的順序。“概覽”頁的殖民者優先級始終決定先後。\n\n按層級分批：先讓所有人獲得最高層級的植入體，再依次處理較低層級。某殖民者整個層級所需物品都已分配後才進入手術。\n\n整套安裝：完成一名殖民者的整個方案後再處理下一名。全部方案物品都已分配後才安排手術。\n\n盡快安裝：庫存中的每個植入體立即安排給缺少它且優先級最高的殖民者。優先級相同時，腿優先給行動最慢者；手臂先給裝備近戰武器者，再給手工與知識技能總和最高者。</IMP_OptIterationTip>
-  <IMP_OptAutoFloorTip>手術清單僅允許當前最佳醫生執行，避免新手醫生僅因先到手術臺就失誤損壞仿生體。每個殖民地的要求會隨人員來去跟隨最佳醫生變化。任何人都無法給自己動手術，因此最佳醫生本人的手術交給次佳醫生。\n\n關閉後可手動設定固定技能下限。</IMP_OptAutoFloorTip>
+  <IMP_OptAutoFloorTip>手術工作僅允許當前最佳醫生執行，避免新手醫生僅因先到手術臺就失誤損壞仿生體。每個殖民地的要求會隨人員來去跟隨最佳醫生變化。任何人都無法給自己動手術，因此最佳醫生本人的手術交給次佳醫生。\n\n關閉後可手動設定固定技能下限。</IMP_OptAutoFloorTip>
   <IMP_OptSurgeryConcurrencyTip>每個殖民地可同時持有已安排手術的殖民者人數。較高值可讓更多人並行排隊，較低值則為醫院和醫生保留餘力。初始為每十名殖民者一名。點選 +/- 時按住 Shift 可每次調整 10，按住 Ctrl 則調整 5。</IMP_OptSurgeryConcurrencyTip>
   <IMP_OptCountHospitalizedTip>躺在醫療床上的殖民者和奴隸，以及倒地等待治療者，也會佔用手術名額。新的 Implanner 手術會等待，直到醫院佔用人數低於上述上限。囚犯、訪客和其他派系的來訪患者不會佔名額。關閉後，安排植入手術時將不考慮已接受治療的人。</IMP_OptCountHospitalizedTip>
   <IMP_OptUpgradeByPriorityTip>更高品質的植入體優先給「概覽」頁中優先級最高的殖民者。新手術使用方案允許的最低品質，以騰出更好的植入體。\n\n有更好的同類植入體時，持有較差植入體且優先級最高的殖民者會獲得它。先移除其舊植入體，再把舊件分給下一人。已分配給較低優先級殖民者的植入體也可轉交，前提是對方尚未安排手術。\n\n將已安裝的植入體換成更高品質的植入體需要兩次手術：移除與安裝。關閉時，每名殖民者輪到自己時獲得庫存中最好的植入體。</IMP_OptUpgradeByPriorityTip>
-  <IMP_OptManualFloorTip>執行 Implanner 手術所需的最低醫療技能。清單會等待達到此等級的醫生。關閉自動分配時，初始值設為當前最佳醫生的技能。</IMP_OptManualFloorTip>
-  <IMP_OptImplantReservesTip>從現有植入體中留出最多此數量，供手動使用。Implanner 不會將這些植入體分配給計劃手術，也不會將其用作製作原料。只有已分配的方案仍需要植入體時，自動生產才會製作額外植入體。如果沒有方案需求但想補充急救庫存，請自行新增製作清單。</IMP_OptImplantReservesTip>
+  <IMP_OptManualFloorTip>執行 Implanner 手術所需的最低醫療技能。工作會等待達到此等級的醫生。關閉自動分配時，初始值設為當前最佳醫生的技能。</IMP_OptManualFloorTip>
+  <IMP_OptImplantReservesTip>從現有植入體中留出最多此數量，供手動使用。Implanner 不會將這些植入體分配給計劃手術，也不會將其用作製作原料。只有已分配的方案仍需要植入體時，自動生產才會製作額外植入體。如果沒有方案需求但想補充急救庫存，請自行新增製作工作。</IMP_OptImplantReservesTip>
   <IMP_AddImplantReserveTip>選擇要留存、不供自動化使用的植入體。</IMP_AddImplantReserveTip>
   <IMP_OptAllowMultipleBladdersTip>來自不同模組的膀胱植入體在遊戲中屬於不同植入體，因此殖民者可同時擁有多個，效果也會疊加。關閉後將它們視為同一個欄位：在方案中選擇一個會覆蓋其他選項，已擁有下列任意一個的殖民者即視為完成。不會移除任何現有植入體。\n\n受影響的植入體：\n{0}</IMP_OptAllowMultipleBladdersTip>
   <IMP_OptAllowMultipleHygieneEnhancersTip>來自不同模組的衛生增強裝置在遊戲中屬於不同植入體，因此殖民者可同時擁有多個，效果也會疊加。關閉後將它們視為同一個欄位：在方案中選擇一個會覆蓋其他選項，已擁有下列任意一個的殖民者即視為完成。不會移除任何現有植入體。\n\n受影響的植入體：\n{0}</IMP_OptAllowMultipleHygieneEnhancersTip>
   <IMP_OptShowPurchaseOnlyTip>列出沒有工作臺能夠製作的植入體，例如遠古科技部件。它們只能通過交易、任務或回收穫得。啟用後仍可將其納入方案。物品一旦入庫，自動化便會分配它，並在下一批安裝；缺少此類物品絕不會阻礙其他植入體。如果某個模組添加了製作配方，它會自動變為普通可製作植入體。\n\n受影響的植入體：\n{0}</IMP_OptShowPurchaseOnlyTip>
   <IMP_OptCompatNoneLoaded>尚未載入任何受影響的植入體。</IMP_OptCompatNoneLoaded>
-  <IMP_OptAutoProductionTip>自動為缺少的植入體添加生產清單。Implanner 統計各殖民地方案的剩餘需求，扣除庫存和已排隊清單，然後向可製作的工作臺添加清單。需求消失後，會撤回其創建的清單。</IMP_OptAutoProductionTip>
-  <IMP_OptConcurrencyTip>每個殖民地可同時持有 Implanner 生產清單的工作臺數量。每份清單製作一個植入體，每臺最多兩份，確保首份完成時下一份已在等待。更多工作臺可並行製作，但會讓工匠把更多時間花在植入體上，減少其他工作。點選 +/- 時按住 Shift 可每次調整 10，按住 Ctrl 則調整 5。</IMP_OptConcurrencyTip>
-  <IMP_OptIdleBenchesTip>僅向沒有待執行工作的工作臺添加新清單。你自己的生產隊列優先，植入體利用空閒時間製作。關閉後，植入體清單可排在你自己的清單之後。</IMP_OptIdleBenchesTip>
-  <IMP_OptDesignatedBenchesTip>僅向“選單”頁中勾選“Implanner 工作臺”的工作臺添加生產清單，因此沒有專用臺的殖民地不會製作植入體。關閉後仍優先使用 Implanner 工作臺，所有專用臺各有兩份清單後才使用其他工作臺。兩種情況下都適用“可持有清單的工作臺數”上限。</IMP_OptDesignatedBenchesTip>
+  <IMP_OptAutoProductionTip>自動為缺少的植入體添加生產工作。Implanner 統計各殖民地方案的剩餘需求，扣除庫存和已排隊工作，然後向可製作的工作臺添加工作。需求消失後，會撤回其創建的工作。</IMP_OptAutoProductionTip>
+  <IMP_OptConcurrencyTip>每個殖民地可同時持有 Implanner 生產工作的工作臺數量。每份工作製作一個植入體，每臺最多兩份，確保首份完成時下一份已在等待。更多工作臺可並行製作，但會讓工匠把更多時間花在植入體上，減少其他工作。點選 +/- 時按住 Shift 可每次調整 10，按住 Ctrl 則調整 5。</IMP_OptConcurrencyTip>
+  <IMP_OptIdleBenchesTip>僅向沒有待執行工作的工作臺添加新工作。你自己的生產隊列優先，植入體利用空閒時間製作。關閉後，植入體工作可排在你自己的工作之後。</IMP_OptIdleBenchesTip>
+  <IMP_OptDesignatedBenchesTip>僅向“選單”頁中勾選“Implanner 工作臺”的工作臺添加生產工作，因此沒有專用臺的殖民地不會製作植入體。關閉後仍優先使用 Implanner 工作臺，所有專用臺各有兩份工作後才使用其他工作臺。兩種情況下都適用“可持有工作的工作臺數”上限。</IMP_OptDesignatedBenchesTip>
   <IMP_BenchToggle>Implanner 工作臺</IMP_BenchToggle>
-  <IMP_BenchToggleTip>Implanner 優先在此工作臺放置生產清單，並暫停原有清單。勾選期間，你無法在此添加、貼上、暫停或恢復清單。\n\n取消勾選可收回工作臺。指定前已暫停的清單仍保持暫停，其餘恢復。</IMP_BenchToggleTip>
-  <IMP_BenchLockedTip>無法在 Implanner 工作臺貼上、暫停或恢復清單。取消勾選“選單”頁頂部的“Implanner 工作臺”即可收回。</IMP_BenchLockedTip>
-  <IMP_BenchNoNewBills>取消勾選“Implanner 工作臺”後才能在此添加清單</IMP_BenchNoNewBills>
-  <IMP_OptProductionSkillTip>Implanner 生產清單所需的最低手工技能。較高值可避免低技能工匠使用昂貴零件，較低值則讓更多殖民者參與。清單會等待符合要求的工匠接手。</IMP_OptProductionSkillTip>
-  <IMP_OptIntermediariesTip>若因缺少零件等原料而無法製作植入體，且該原料是可製作的工業產品，Implanner 也可為其添加生產清單。會沿整個生產鏈追查缺口。鋼鐵等原材料絕不自動製作，仍需自行收集。</IMP_OptIntermediariesTip>
-  <IMP_OptReservesTip>自動製作的資源保留底線。只有在扣除新清單成本以及已排隊清單仍需材料後，各原料庫存仍不少於此值，才會添加新清單。提高數值可保護庫存；設為零則允許生產自由消耗。</IMP_OptReservesTip>
+  <IMP_BenchToggleTip>Implanner 會優先在此工作臺放置製作工作，並暫停此處原有的工作。勾選期間，「選單」頁會顯示 Implanner 的生產隊列，你無法在此添加、貼上、暫停或恢復工作。\n\n取消勾選可收回工作臺。勾選前已暫停的工作仍保持暫停，其餘恢復。</IMP_BenchToggleTip>
+  <IMP_BenchLockedTip>無法在 Implanner 工作臺貼上、暫停或恢復工作。取消勾選“選單”頁頂部的“Implanner 工作臺”即可收回。</IMP_BenchLockedTip>
+  <IMP_BenchNoNewBills>取消勾選“Implanner 工作臺”後才能在此添加工作</IMP_BenchNoNewBills>
+  <IMP_OptProductionSkillTip>Implanner 生產工作所需的最低手工技能。較高值可避免低技能工匠使用昂貴零件，較低值則讓更多殖民者參與。工作會等待符合要求的工匠接手。</IMP_OptProductionSkillTip>
+  <IMP_OptIntermediariesTip>若因缺少零件等原料而無法製作植入體，且該原料是可製作的工業產品，Implanner 也可為其添加生產工作。會沿整個生產鏈追查缺口。鋼鐵等原材料絕不自動製作，仍需自行收集。</IMP_OptIntermediariesTip>
+  <IMP_OptReservesTip>自動製作的資源保留底線。只有在扣除新工作成本以及已排隊工作仍需材料後，各原料庫存仍不少於此值，才會添加新工作。提高數值可保護庫存；設為零則允許生產自由消耗。</IMP_OptReservesTip>
   <IMP_HelpChapterBasics>基礎</IMP_HelpChapterBasics>
   <IMP_HelpChapterPlans>方案</IMP_HelpChapterPlans>
   <IMP_HelpChapterAutomation>自動化</IMP_HelpChapterAutomation>
@@ -243,4 +243,21 @@
   <IMP_OptCompatHygiene>Dubs Bad Hygiene 與 [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
   <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
   <IMP_OptCompatSkills>Endless Growth 與其他技能模組</IMP_OptCompatSkills>
+  <IMP_QueueAge>已排隊</IMP_QueueAge>
+  <IMP_QueueAgeNow>剛剛</IMP_QueueAgeNow>
+  <IMP_QueueAgeTip>自 Implanner 將此工作加入隊列以來經過的遊戲內時間。</IMP_QueueAgeTip>
+  <IMP_QueueEmpty>此處沒有排隊的工作。當計畫需要此工作臺能製作的植入體時，Implanner 會添加工作。</IMP_QueueEmpty>
+  <IMP_QueueFor>對象</IMP_QueueFor>
+  <IMP_QueueNeededFor>用於</IMP_QueueNeededFor>
+  <IMP_QueuePausedMany>此工作臺為 Implanner 工作臺期間，另有 {0} 份工作被暫停。</IMP_QueuePausedMany>
+  <IMP_QueuePausedOne>此工作臺為 Implanner 工作臺期間，另有 1 份工作被暫停。</IMP_QueuePausedOne>
+  <IMP_QueuePlan>計畫</IMP_QueuePlan>
+  <IMP_QueueQuality>品質</IMP_QueueQuality>
+  <IMP_QueueQualityValue>{0}或更佳</IMP_QueueQualityValue>
+  <IMP_QueueStatusCrafting>製作中</IMP_QueueStatusCrafting>
+  <IMP_QueueStatusCraftingAt>{0}製作中</IMP_QueueStatusCraftingAt>
+  <IMP_QueueStatusStarted>{0}已開始</IMP_QueueStatusStarted>
+  <IMP_QueueStatusWaiting>等待中</IMP_QueueStatusWaiting>
+  <IMP_QueueTitle>Implanner 生產隊列</IMP_QueueTitle>
+  <IMP_QueueWorker>工匠</IMP_QueueWorker>
 </LanguageData>

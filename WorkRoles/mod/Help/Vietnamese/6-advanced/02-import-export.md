@@ -5,7 +5,7 @@ title: Nhập và xuất
 Các nút ở góc thẻ Vai trò chuyển cấu hình giữa bản lưu và chia sẻ với bạn bè:
 
 <!-- l10n:b-4f44ec3259f6 -->
-![Nút Nhập, Xuất và Khôi phục mặc định](io-buttons.png)
+![Nút Nhập, Xuất, Đặt mặc định và Khôi phục mặc định](io-buttons.png)
 
 <!-- l10n:b-fcca50ae80e8 -->
 Xuất ghi toàn bộ cấu hình vai trò vào tệp hoặc bộ nhớ tạm: các vai trò, nhóm và thứ tự của chúng, biểu tượng tùy chỉnh, màu trong bảng màu (kể cả màu chưa dùng), quy tắc, lộ trình đào tạo, tinh chỉnh đề xuất và các tùy chọn áp dụng cho toàn bản lưu. Các tùy chọn hiển thị cũng được đưa vào dưới dạng một phần có thể chọn khi nhập. Phân công cư dân, liên kết với lệnh sản xuất và trạng thái cửa sổ tạm thời vẫn thuộc bản lưu hoặc phiên hiện tại.

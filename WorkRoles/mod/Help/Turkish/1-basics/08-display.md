@@ -82,5 +82,23 @@ Seçenekler sekmesinde ek görünüm anahtarları vardır:
 <!-- l10n:b-b1a38cc7f63a -->
 ![Seçenekler sekmesindeki görünüm ayarları](options-display.png)
 
+<!-- l10n:b-7a3c91e04d52 -->
+Rol etiketi işaretleri, etiketlerin her zaman açık, kurallı ve sabitlenmiş atamaları nasıl belirteceğini seçer. Varsayılan olan Noktalar, etiketin sol kenarına küçük bir nokta çizer: her zaman açık için beyaz, kurallı rol için sarı, sabitlenmiş atama için camgöbeği. Simgeler ise her biri için bir simge çizer: her zaman açık için bayrak, kurallar için saat veya harita iğnesi, sabitlenmiş atama için iğne. Kapalı işaretleri gizler. Bu yardımdaki görseller noktaları gösterir.
+
+<!-- l10n:b-c81e5d2a40f7 -->
+Bir rolün tüm işlerini yapamayan kolonici, noktalarla içi boş uygunluk yıldızları, simgelerle ise bir uyarı simgesi alır.
+
+<!-- l10n:b-19b4f0a6d3e8 -->
+Rol etiketlerinde kaldırma simgesini göster, atanmış etiketlerdeki çöp kutusunu denetler. Kapalıyken bir etikete sağ tıklayıp Rolü kaldır'ı seçin.
+
+<!-- l10n:b-5e7a2c9b6d14 -->
+Kolonici adlarının altında en iyi becerileri göster, her kolonici satırındaki küçük beceri açıklamasını denetler.
+
+<!-- l10n:b-a40d93f1b7c2 -->
+Önerileri göster, rolleri elle atayan oyuncular içindir. Kapalıyken Öneriler sekmesi, Kolonimi düzenle düğmesi ve seçili kolonicinin Önerilen rolleri gizlenir. Uygunluk yıldızları kullanılabilir kalır.
+
+<!-- l10n:b-3d6f81e0c5a9 -->
+Anahtarların arasındaki önizlemeler, bir kolonici satırını, rol paletini ve kolonici panelini mevcut ayarlarla gösterir.
+
 <!-- l10n:b-e505859311eb -->
 Hepsi kişisel tercihtir: çok oyunculu oyunda herkes kendi ayarlarını tutar; buradaki hiçbir şey atama değiştirmez.

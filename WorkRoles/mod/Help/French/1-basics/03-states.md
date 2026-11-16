@@ -11,7 +11,17 @@ Cliquer sur un rôle dans la palette change son état global, de ![pastille acti
 Lorsqu'un rôle est désactivé globalement, sa pastille porte une double barre ![pastille doublement barrée](chip-state-global-off.png) chez tous les colons qui le possèdent.
 
 <!-- l10n:b-4d81d20fcc44 -->
-Cliquer sur une pastille dans la ligne d'un colon alterne entre activé ![pastille activée](chip-state-on.png), désactivé pour ce colon ![pastille simplement barrée](chip-state-off.png) et forcé ![pastille avec drapeau](chip-state-forced.png). La désactivation globale et individuelle cumule les barres ![pastille avec barres cumulées](chip-state-both-off.png), tandis que l'activation forcée fonctionne même si le rôle est désactivé globalement.
+Cliquer sur une pastille dans la ligne d'un colon alterne entre activé
+![pastille activée](chip-state-on.png), désactivé pour ce colon
+![pastille simplement barrée](chip-state-off.png) et forcé
+![pastille avec un point blanc](chip-state-forced.png). La désactivation globale et individuelle
+cumule les barres
+![pastille avec barres cumulées](chip-state-both-off.png), tandis que l'activation forcée
+fonctionne même si le rôle est désactivé globalement.
+
+<!-- l10n:b-8c2e4f7a1d93 -->
+Le point blanc est le marqueur par défaut de l'activation forcée. Avec les
+[marqueurs en icônes](topic:display), la pastille affiche un drapeau à la place.
 
 <!-- l10n:b-c5c0217224df -->
 Changer d'état ne retire jamais l'affectation ; la pastille garde sa place.

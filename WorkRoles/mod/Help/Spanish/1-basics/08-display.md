@@ -82,5 +82,23 @@ Hay más interruptores visuales en Opciones:
 <!-- l10n:b-b1a38cc7f63a -->
 ![Ajustes visuales de Opciones](options-display.png)
 
+<!-- l10n:b-7a3c91e04d52 -->
+Marcadores de las fichas de rol elige cómo señalan las fichas los roles siempre activos, con reglas y las asignaciones fijadas. Puntos, la opción predeterminada, dibuja un pequeño punto en el borde izquierdo de la ficha: blanco para siempre activo, amarillo para un rol con reglas y turquesa para una asignación fijada. Iconos dibuja en su lugar un icono para cada caso: una bandera para siempre activo, un reloj o una chincheta de mapa para reglas y una chincheta para una asignación fijada. Desactivados oculta los marcadores. Las imágenes de esta ayuda muestran puntos.
+
+<!-- l10n:b-c81e5d2a40f7 -->
+Un colono que no puede hacer todos los trabajos de un rol recibe estrellas de valoración huecas con puntos, y un icono de advertencia con iconos.
+
+<!-- l10n:b-19b4f0a6d3e8 -->
+Mostrar el icono de quitar en las fichas de rol controla la papelera de las fichas asignadas. Si está desactivado, haz clic derecho en una ficha y elige Quitar rol.
+
+<!-- l10n:b-5e7a2c9b6d14 -->
+Mostrar las mejores habilidades bajo los nombres controla el pequeño texto de habilidades en cada fila de colono.
+
+<!-- l10n:b-a40d93f1b7c2 -->
+Mostrar recomendaciones es para quienes asignan los roles a mano. Si está desactivado, se ocultan la pestaña Recomendaciones, el botón Arreglar mi colonia y los Roles recomendados del colono seleccionado. Las estrellas de valoración siguen disponibles.
+
+<!-- l10n:b-3d6f81e0c5a9 -->
+Las vistas previas entre los interruptores muestran una fila de colono, la paleta de roles y el panel del colono con los ajustes actuales.
+
 <!-- l10n:b-e505859311eb -->
 Son preferencias personales: cada jugador conserva las suyas y ninguna cambia asignaciones.

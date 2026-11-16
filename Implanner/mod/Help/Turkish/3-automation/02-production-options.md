@@ -8,7 +8,10 @@ title: Üretim seçenekleri
 Aynı implantı birkaç tarif üretebiliyorsa Implanner şu anda maliyeti karşılanabilen kullanılabilir yolu seçer. Serbest bir temel implant yükseltilebilir; yoksa doğrudan tarif, malzemelerden ileri implantı yapabilir. Yalnızca yükseltme yolu açıksa ara ürün üretimi önce temel implantı yapabilir. Tarif araştırılmış olmalı ve uygun tezgâh tarafından desteklenmelidir.
 
 <!-- l10n:b-0aa3ded1d655 -->
-İmplant üretimine özel tezgâh ayırmak için tezgâhın Siparişler sekmesinde **Implanner tezgâhı** kutusunu işaretleyin. Kutu yalnızca implant üretebilen tezgâhlarda görünür. Mevcut siparişler duraklatılır ve Implanner kendi üretim siparişlerini diğer tezgâhlardan önce buraya koyar. İşaretliyken sipariş ekleyemez, yapıştıramaz, siparişleri duraklatamaz veya sürdüremezsiniz.
+İmplant üretimine özel tezgâh ayırmak için tezgâhın Siparişler sekmesinde **Implanner tezgâhı** kutusunu işaretleyin. Kutu yalnızca implant üretebilen tezgâhlarda görünür. Tezgâhtaki mevcut siparişler duraklatılır ve Implanner kendi üretim siparişlerini diğer tezgâhlardan önce buraya koyar.
+
+<!-- l10n:queue -->
+İşaretliyken Siparişler sekmesi, tezgâhın olağan sipariş listesi yerine Implanner üretim kuyruğunu gösterir. Her satır, Implanner'ın kuyruğa aldığı bir siparişi gösterir: eşya, bir üreticinin işe başlayıp başlamadığı, ait olduğu plan, sıradaki koloni üyesi ve siparişin ne kadardır kuyrukta olduğu. Bir malzeme siparişi, hangi implant için gerektiğini belirtir. **Ayrıntılar**, o siparişin oyun içi ayarlarını açar. En alttaki satır, duraklatılmış kendi siparişlerinizin sayısını gösterir. İşareti kaldırana kadar tezgâha sipariş ekleyemezsiniz.
 
 <!-- l10n:b-a4d04c1bceb2 -->
 ![Implanner'a devredilmiş üretim tezgâhı](implanner-bench.png)

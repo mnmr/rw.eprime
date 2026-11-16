@@ -8,7 +8,10 @@ Con **Añadir proyectos automáticamente para implantes faltantes** activado, Im
 Si varias recetas producen el mismo implante, se prefiere una ruta disponible que pueda pagarse ahora. Puede mejorarse un implante base libre o fabricar directamente el avanzado con materiales. Si solo está habilitada la mejora, la producción intermedia puede fabricar primero la base. Las recetas deben estar investigadas y disponer de un banco apto.
 
 <!-- l10n:b-0aa3ded1d655 -->
-Para dedicar un banco, marca **Banco de Implanner** en su pestaña Proyectos. Solo aparece en bancos capaces de fabricar implantes. Suspende los proyectos existentes y recibe encargos antes que los demás bancos. Mientras esté marcado no puedes añadir, pegar, suspender ni reanudar proyectos.
+Para dedicar un banco a la fabricación de implantes, marca **Banco de Implanner** en la pestaña Proyectos del banco. La casilla solo aparece en bancos capaces de fabricar implantes. Los proyectos que ya hay en el banco se suspenden, y Implanner coloca allí sus proyectos de fabricación antes que en cualquier otro banco.
+
+<!-- l10n:queue -->
+Mientras esté marcada, la pestaña Proyectos muestra la cola de producción de Implanner en lugar de la lista de proyectos habitual del banco. Cada fila es un proyecto encargado por Implanner: el objeto, si un artesano ya lo ha empezado, el plan al que pertenece, el colono que sigue en la fila para recibirlo y cuánto tiempo lleva en cola. Un proyecto para un ingrediente indica el implante para el que se necesita. **Detalles** abre los ajustes del juego para ese proyecto. La línea inferior cuenta tus propios proyectos que están en pausa. No puedes añadir proyectos al banco hasta que desmarques la casilla.
 
 <!-- l10n:b-a4d04c1bceb2 -->
 ![Banco de fabricación cedido a Implanner](implanner-bench.png)

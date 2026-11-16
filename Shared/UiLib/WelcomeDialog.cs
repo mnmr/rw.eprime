@@ -547,7 +547,7 @@ namespace RimShared.UiLib
                 {
                     if (conflictHeight > 0f)
                     {
-                        Widgets.DrawBoxSolidWithOutline(conflictRect, WarningBackground, WarningOutline);
+                        PixelBox.SolidWithOutline(conflictRect, WarningBackground, WarningOutline);
                         Color previous = GUI.color;
                         GUI.color = WarningText;
                         Widgets.Label(conflictRect.ContractedBy(PanelPad), conflictText);
@@ -564,7 +564,7 @@ namespace RimShared.UiLib
                     Widgets.Label(findLabelRect, find);
                     if (warningHeight > 0f)
                     {
-                        Widgets.DrawBoxSolidWithOutline(warningRect, WarningBackground, WarningOutline);
+                        PixelBox.SolidWithOutline(warningRect, WarningBackground, WarningOutline);
                         GUI.color = WarningText;
                         Widgets.Label(warningRect.ContractedBy(PanelPad), Warning!);
                     }

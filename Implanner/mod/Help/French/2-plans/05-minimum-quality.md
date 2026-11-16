@@ -37,6 +37,6 @@ Remplacer un implant déjà posé par un autre de meilleure qualité nécessite 
 Quand Implanner fabrique un implant pour le plan :
 
 <!-- l10n:b-51f50276fd20 -->
-- Avec Quality Jobs, l'ordre vise le minimum ; la finition revient donc à un artisan capable de l'atteindre.
-- Un implant hybride de Vanilla Genetics Expanded tire sa qualité du génocadre. L'ordre n'utilise que des génocadres au minimum requis ou mieux.
+- Avec Quality Jobs, la tâche vise le minimum ; la finition revient donc à un artisan capable de l'atteindre.
+- Un implant hybride de Vanilla Genetics Expanded tire sa qualité du génocadre. La tâche n'utilise que des génocadres au minimum requis ou mieux.
 - Sans l'un ni l'autre, tout artisan peut terminer l'implant ; un résultat inférieur au minimum est fabriqué à nouveau. Les stocks minimaux (voir [Conserver du stock](topic:keeping-stock)) arrêtent ce processus avant d'épuiser les matériaux.

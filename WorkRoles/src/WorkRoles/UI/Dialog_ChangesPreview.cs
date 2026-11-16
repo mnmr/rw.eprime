@@ -401,7 +401,7 @@ namespace WorkRoles.UI
             int factsCurrent = ExternalPawnFacts.Revisions.Current;
             bool ownerChanged = !ReferenceEquals(renderOwner, store);
             bool keyChanged = renderSnapshot == null || ownerChanged
-                || renderMetricRevision != UiRevision.Current
+                || renderMetricRevision != RoleChipUI.MetricRevision
                 || renderLanguageRevision != languageRevision
                 || renderEntriesGeneration != entriesGeneration
                 || renderWidth != width;
@@ -502,7 +502,7 @@ namespace WorkRoles.UI
 
             renderOwner = store;
             renderUiRevision = uiRevision;
-            renderMetricRevision = UiRevision.Current;
+            renderMetricRevision = RoleChipUI.MetricRevision;
             renderLanguageRevision = languageRevision;
             renderEntriesGeneration = entriesGeneration;
             renderFactsCurrent = factsCurrent;

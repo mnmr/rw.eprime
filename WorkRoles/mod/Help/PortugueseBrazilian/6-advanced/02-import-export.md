@@ -5,7 +5,7 @@ title: Importar e exportar
 Os botões no canto de Funções levam configurações entre partidas e amigos:
 
 <!-- l10n:b-4f44ec3259f6 -->
-![Importar, Exportar e Restaurar padrões](io-buttons.png)
+![Importar, Exportar, Definir padrões e Restaurar padrões](io-buttons.png)
 
 <!-- l10n:b-fcca50ae80e8 -->
 Exportar grava a configuração completa de funções em um arquivo ou na área de transferência: funções, grupos e sua ordem, ícones personalizados, cores da paleta (incluindo as não utilizadas), regras, percursos de treinamento, ajustes de recomendações e opções gerais da partida. Também inclui suas preferências de exibição como uma seção de importação opcional. As atribuições dos colonos, os vínculos com ordens de produção e o estado temporário da janela permanecem na partida ou sessão atual.

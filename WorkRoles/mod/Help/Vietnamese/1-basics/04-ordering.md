@@ -22,7 +22,7 @@ Kéo để đổi ưu tiên:
 @demo:chip-drag
 
 <!-- l10n:b-be64d575edc7 -->
-Cũng kéo được giữa hàng: kéo thẻ sang cư dân khác để chuyển phân công. Nhấp thùng rác trong thẻ để bỏ phân công; thẻ rời hàng.
+Cũng kéo được giữa các hàng: kéo thẻ sang cư dân khác để chuyển phân công. Nhấp biểu tượng thùng rác trong thẻ để bỏ phân công; thẻ rời hàng. Khi đã [tắt thùng rác](topic:display), hãy nhấp chuột phải vào thẻ và chọn Xóa vai trò.
 
 <!-- l10n:b-6bbb9dc33edb -->
 RimWorld có danh sách khẩn cấp riêng: chữa cháy, chữa trị khẩn và lên giường điều trị khẩn. Chúng ngắt ngủ, ăn và mọi việc khác. Mặc định chỉ thêm việc khẩn cấp vào danh sách nếu một trong năm vai trò đầu đang bật chứa nó. Việc khẩn từ vai trò sau chạy ở vị trí thường. Cư dân có Cốt lõi đầu tiên và Bác sĩ thứ sáu vẫn ngắt mọi việc để chữa cháy, nhưng chữa trị khẩn ở thứ tự bác sĩ bình thường. Đưa Cốt lõi xuống sau vị trí thứ năm cũng biến chữa cháy thành việc thường.

@@ -96,6 +96,13 @@ namespace WorkRoles.UI
                 DrawGrip(new Rect(rect.xMax - BandOuterPad - BandHandleW, rect.y, BandHandleW, rect.height));
             }
 
+            // Explicit glyph offset: the Small font's ink sits one
+            // physical pixel high in a middle-anchored 24-unit chip. The
+            // label's top is put on the chip's snapped pixel row plus one
+            // whole pixel, so the text never lands between pixels.
+            float uiScale = Prefs.UIScale > 0f ? Prefs.UIScale : 1f;
+            float labelNudgeY =
+                (Mathf.Round(rect.y * uiScale) + 1f) / uiScale - rect.y;
             var labelRect = new Rect(rect.x + spec.LabelInsetLeft, rect.y,
                 Mathf.Max(rect.width - spec.LabelInsetLeft - spec.LabelInsetRight, 0f), rect.height);
 
@@ -114,7 +121,7 @@ namespace WorkRoles.UI
                     // the overhang, its tail faded into the chip fill.
                     GUI.BeginGroup(new Rect(labelRect.x, labelRect.y,
                         labelRect.width + LabelFadeOverhang, labelRect.height));
-                    Widgets.Label(new Rect(0f, 0f, spec.FadeLabelWidth,
+                    Widgets.Label(new Rect(0f, labelNudgeY, spec.FadeLabelWidth,
                         labelRect.height), spec.Label);
                     GUI.EndGroup();
                     GUI.color = spec.Bg;
@@ -125,7 +132,9 @@ namespace WorkRoles.UI
                         WorkRolesTex.LabelFade);
                 }
                 else
-                    Widgets.Label(labelRect, spec.Label);
+                    Widgets.Label(new Rect(labelRect.x,
+                        labelRect.y + labelNudgeY, labelRect.width,
+                        labelRect.height), spec.Label);
             }
             else if (spec.Icon != null)
             {

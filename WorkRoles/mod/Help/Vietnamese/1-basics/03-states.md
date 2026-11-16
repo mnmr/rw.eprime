@@ -11,7 +11,10 @@ Nhấp vai trò trong bảng để bật/tắt toàn cục, từ ![thẻ bật](
 Khi tắt toàn cục, thẻ có gạch đôi ![thẻ gạch đôi](chip-state-global-off.png) ở mọi người giữ vai trò.
 
 <!-- l10n:b-4d81d20fcc44 -->
-Nhấp thẻ trong hàng cư dân lần lượt chuyển bật ![thẻ bật](chip-state-on.png), tắt riêng ![thẻ gạch đơn](chip-state-off.png), rồi buộc bật ![thẻ có cờ](chip-state-forced.png). Tắt cả toàn cục lẫn riêng thì các gạch chồng nhau ![thẻ nhiều gạch](chip-state-both-off.png); buộc bật vẫn làm việc khi vai trò tắt toàn cục.
+Nhấp thẻ trong hàng cư dân sẽ lần lượt chuyển giữa bật ![thẻ bật](chip-state-on.png), tắt riêng cho cư dân này ![thẻ gạch đơn](chip-state-off.png), rồi buộc bật ![thẻ có chấm trắng](chip-state-forced.png). Tắt cả toàn cục lẫn riêng thì các gạch chồng nhau ![thẻ nhiều gạch](chip-state-both-off.png); buộc bật vẫn làm việc khi vai trò tắt toàn cục.
+
+<!-- l10n:b-8c2e4f7a1d93 -->
+Chấm trắng là dấu mặc định của trạng thái buộc bật. Với [dấu hiệu dạng biểu tượng](topic:display), thẻ sẽ hiện một lá cờ.
 
 <!-- l10n:b-c5c0217224df -->
 Bật/tắt không bỏ phân công; thẻ giữ vị trí.

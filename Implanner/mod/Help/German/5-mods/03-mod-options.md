@@ -2,7 +2,7 @@
 title: Modoptionen
 ---
 <!-- l10n:b-459ed37f94ab -->
-![Optionsreiter mit Mod-Kompatibilität und Katalog](options-tab.png)
+![Der Optionsreiter](options-tab.png)
 
 <!-- l10n:b-045738932f34 -->
 Der Optionsreiter enthält Plankompatibilität und Anzeigebereich der Fertigkeitsregler. Automatisierungseinstellungen stehen im Automatisierungsreiter. Plan- und Automatisierungseinstellungen teilen alle Spieler einer Mehrspielerpartie.

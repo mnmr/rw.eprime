@@ -5,7 +5,7 @@ title: Importar y exportar
 Los botones de la esquina de Roles permiten llevar configuraciones entre partidas y amigos:
 
 <!-- l10n:b-4f44ec3259f6 -->
-![Importar, Exportar y Restaurar valores predeterminados](io-buttons.png)
+![Importar, Exportar, Establecer valores predeterminados y Restaurar valores predeterminados](io-buttons.png)
 
 <!-- l10n:b-fcca50ae80e8 -->
 Exportar guarda la configuración completa de roles en un fichero o en el portapapeles: roles, grupos y su orden, iconos personalizados, colores de la paleta (incluidos los que no se usan), reglas, rutas de formación, ajustes de recomendaciones y opciones generales de la partida. También incluye tus preferencias de visualización como sección de importación opcional. Las asignaciones de colonos, las vinculaciones de órdenes de producción y el estado temporal de las ventanas permanecen en su partida o sesión actual.

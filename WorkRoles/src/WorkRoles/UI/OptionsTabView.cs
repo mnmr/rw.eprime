@@ -4,27 +4,39 @@ using Verse;
 
 namespace WorkRoles.UI
 {
-    /// Options tab: per-save compatibility toggles (synced in MP) plus
-    /// client-side display preferences (ModSettings, never synced). All
+    /// Options tab: client-side display preferences (ModSettings, never
+    /// synced) with live previews on the left; per-save automation and
+    /// compatibility toggles (synced in MP) on the right. All
     /// recommendation configuration lives on the Recommendations tab.
     public class OptionsTabView
     {
         private readonly OptionsTabState state = new OptionsTabState();
+        private readonly OptionsPreviewState previews = new OptionsPreviewState();
 
         /// Opens the auto-optimize enable confirmation; wired by the window to
         /// the Colonists tab, which owns the fix-plan machinery. Disabling
         /// needs no confirmation and issues the command directly.
         internal System.Action? showAutoOptimizeEnablePreview;
 
-        /// Fixed flow height below (headers, rows and gaps); the tab scrolls
-        /// when a screen-sized minimum window is shorter than that.
-        private const float ContentHeight = 504f;
+        /// The Colonists tab's shared role catalog (palette clusters and
+        /// chip data), wired by the window; the previews consume it
+        /// instead of building their own.
+        internal System.Func<RoleStore, ColonistsRosterCatalogSnapshot>? catalogProvider;
+
+        private const float ColumnX = 16f;
+        private const float ColumnGap = 32f;
+        private const float MaxColumnWidth = 640f;
+        private const float RowAdvance = 34f;
+        private const float CompatibilityGapAbove = 20f;
+        private const float PreviewGapAbove = 4f;
+        private const float PreviewGapBelow = 12f;
         private Vector2 scroll;
 
         public void Reset()
         {
             scroll = Vector2.zero;
             state.Reset();
+            previews.Reset();
         }
 
         internal void ReleaseWindowData() => Reset();
@@ -36,13 +48,26 @@ namespace WorkRoles.UI
             var store = RoleStore.Current;
             if (store == null) return;
             float viewW = rect.width - 16f;
-            OptionsRenderSnapshot snapshot = state.Snapshot(store, Mathf.Min(viewW - 32f, 640f));
+            float columnW = Mathf.Min(
+                (viewW - 2f * ColumnX - ColumnGap) / 2f, MaxColumnWidth);
+            OptionsRenderSnapshot snapshot = state.Snapshot(store, columnW);
+            ColonistsRosterCatalogSnapshot? catalog = catalogProvider?.Invoke(store);
+            OptionsPreviewSnapshot? preview = catalog == null ? null
+                : previews.Snapshot(catalog, columnW, snapshot);
+
+            float leftH = 12f + 32f + 7f * RowAdvance
+                + PreviewBlock(preview?.Row) + PreviewBlock(preview?.Palette)
+                + PreviewBlock(preview?.Panel);
+            float rightH = 12f + 32f + RowAdvance + CompatibilityGapAbove + 32f
+                + 3f * RowAdvance
+                + snapshot.MechanicalHeight + 6f
+                + snapshot.MechanicalRecommendationsHeight + 6f;
             Widgets.BeginScrollView(rect, ref scroll,
-                new Rect(0f, 0f, viewW, ContentHeight + snapshot.MechanicalHeight
-                    + snapshot.MechanicalRecommendationsHeight - 56f));
+                new Rect(0f, 0f, viewW, Mathf.Max(leftH, rightH) + 12f));
             try
             {
-                DrawFlow(store, snapshot, viewW);
+                DrawDisplay(snapshot, preview, ColumnX, columnW);
+                DrawSaveOptions(snapshot, ColumnX + columnW + ColumnGap, columnW);
             }
             finally
             {
@@ -50,32 +75,148 @@ namespace WorkRoles.UI
             }
         }
 
-        private void DrawFlow(RoleStore store, OptionsRenderSnapshot snapshot,
-            float viewW)
-        {
-            const float flowX = 16f;
-            float flowW = Mathf.Min(viewW - 32f, 640f);
-            float y = 12f;
-            var compatHeader = new Rect(flowX, y, flowW, 28f);
-            y += 32f;
-            var numericRect = new Rect(flowX, y, flowW, 28f);
-            y += 34f;
-            var rangeRect = new Rect(flowX, y, flowW, 28f);
-            y += 34f;
-            var emergencyRect = new Rect(flowX, y, flowW, 28f);
-            y += 34f;
-            var mechanicalRect = new Rect(flowX, y, flowW, snapshot.MechanicalHeight);
-            y += snapshot.MechanicalHeight + 6f;
-            var mechanicalRecommendationsRect = new Rect(flowX, y, flowW, snapshot.MechanicalRecommendationsHeight);
-            y += snapshot.MechanicalRecommendationsHeight + 6f;
-            var automationHeader = new Rect(flowX, y + 8f, flowW, 28f);
-            y += 8f + 32f;
-            var autoOptimizeRect = new Rect(flowX, y, flowW, 28f);
-            y += 34f;
-            var displayHeader = new Rect(flowX, y + 8f, flowW, 28f);
-            y += 8f + 32f;
+        private static float PreviewBlock(OptionsPreviewStrip? strip) =>
+            strip == null ? 0f
+                : PreviewGapAbove + strip.Height + PreviewGapBelow;
 
-            WrLabels.HeaderLabel(compatHeader, snapshot.CompatibilityHeader);
+        private static float DrawPreview(OptionsPreviewStrip? strip, float x,
+            float y, float width)
+        {
+            if (strip == null) return y;
+            OptionsPreviewState.Draw(new Rect(x, y + PreviewGapAbove, width,
+                strip.Height), strip);
+            return y + PreviewBlock(strip);
+        }
+
+        /// Client-side display preferences: chip caches key on these values
+        /// directly, so a write here is picked up on the next draw pass.
+        /// Each set of options is followed by the preview it changes.
+        private static void DrawDisplay(OptionsRenderSnapshot snapshot,
+            OptionsPreviewSnapshot? preview, float x, float width)
+        {
+            float y = 12f;
+            WrLabels.HeaderLabel(new Rect(x, y, width, 28f), snapshot.DisplayHeader);
+            y += 32f;
+
+            // Colonist rows and their chips.
+            bool? changed = DisplayToggle(new Rect(x, y, width, 28f),
+                snapshot.ColonistVerdictsLabel, "WR_OptVerdictsColonistsTip",
+                snapshot.ColonistVerdicts);
+            if (changed.HasValue)
+                SetDisplayPreference(
+                    OptionsDisplayPreference.VerdictsOnColonistChips,
+                    changed.Value);
+            y += RowAdvance;
+            // Chip markers: Dots / Icons / Off. Chip width caches key on the
+            // value (RoleChipUI.MetricRevision), so the write shows at once.
+            int clicked = SegmentRow(x, y, width, snapshot.ChipMarkersLabel,
+                "WR_OptChipMarkersTip", snapshot.ChipMarkersOptions,
+                snapshot.ChipMarkersIndex, snapshot.ChipMarkersControlWidth);
+            if (clicked >= 0)
+            {
+                WorkRolesSettings settings = WorkRolesMod.Settings;
+                if (settings != null)
+                {
+                    settings.chipMarkers = (ChipMarkers)clicked;
+                    WorkRolesGameComponent.RequestSettingsWrite();
+                }
+            }
+            y += RowAdvance;
+            changed = DisplayToggle(new Rect(x, y, width, 28f),
+                snapshot.RemoveIconLabel, "WR_OptRemoveIconTip",
+                snapshot.RemoveIcon);
+            if (changed.HasValue)
+                SetDisplayPreference(
+                    OptionsDisplayPreference.RemoveRoleIcon, changed.Value);
+            y += RowAdvance;
+            changed = DisplayToggle(new Rect(x, y, width, 28f),
+                snapshot.SkillCaptionsLabel, "WR_OptSkillCaptionsTip",
+                snapshot.SkillCaptions);
+            if (changed.HasValue)
+                SetDisplayPreference(
+                    OptionsDisplayPreference.ColonistSkillCaptions,
+                    changed.Value);
+            y += RowAdvance;
+            y = DrawPreview(preview?.Row, x, y, width);
+
+            // Role palette.
+            clicked = SegmentRow(x, y, width, snapshot.PaletteGroupingLabel,
+                "WR_PaletteModeTip", snapshot.PaletteGroupingOptions,
+                snapshot.PaletteGroupingIndex,
+                snapshot.PaletteGroupingControlWidth);
+            if (clicked >= 0)
+            {
+                WorkRolesSettings settings = WorkRolesMod.Settings;
+                if (settings != null)
+                {
+                    settings.paletteMode = clicked == 1
+                        ? PaletteMode.Groups : PaletteMode.Skills;
+                    WorkRolesGameComponent.RequestSettingsWrite();
+                }
+            }
+            y += RowAdvance;
+            changed = DisplayToggle(new Rect(x, y, width, 28f),
+                snapshot.PaletteVerdictsLabel, "WR_OptVerdictsPaletteTip",
+                snapshot.PaletteVerdicts);
+            if (changed.HasValue)
+                SetDisplayPreference(
+                    OptionsDisplayPreference.VerdictsInPalette,
+                    changed.Value);
+            y += RowAdvance;
+            y = DrawPreview(preview?.Palette, x, y, width);
+
+            // Selected colonist panel.
+            changed = DisplayToggle(new Rect(x, y, width, 28f),
+                snapshot.RecommendationsLabel, "WR_OptRecommendationsTip",
+                snapshot.Recommendations);
+            if (changed.HasValue)
+                SetDisplayPreference(
+                    OptionsDisplayPreference.RecommendationsEnabled,
+                    changed.Value);
+            y += RowAdvance;
+            DrawPreview(preview?.Panel, x, y, width);
+        }
+
+        /// Per-save options (shared world state, edited through synced
+        /// commands): automation first, then compatibility.
+        private void DrawSaveOptions(OptionsRenderSnapshot snapshot, float x,
+            float width)
+        {
+            float y = 12f;
+            // The hourly auto-optimize schedule runs in the synced
+            // simulation (AutoOptimizer).
+            WrLabels.HeaderLabel(new Rect(x, y, width, 28f),
+                snapshot.AutomationHeader);
+            y += 32f;
+            var autoOptimizeRect = new Rect(x, y, width, 28f);
+            StructuredTipPresenter.TipRegion(
+                autoOptimizeRect, snapshot.AutoOptimizeTip);
+            bool autoOptimizeNew = snapshot.AutoOptimize;
+            Widgets.CheckboxLabeled(
+                autoOptimizeRect, snapshot.AutoOptimizeLabel, ref autoOptimizeNew);
+            if (autoOptimizeNew != snapshot.AutoOptimize)
+            {
+                // Enabling opens a confirmation preview; the checkbox stays
+                // unchecked until the dialog's apply issues the command.
+                if (autoOptimizeNew) showAutoOptimizeEnablePreview?.Invoke();
+                else RoleCommands.SetAutoOptimize(false);
+            }
+            y += RowAdvance;
+
+            WrLabels.HeaderLabel(
+                new Rect(x, y + CompatibilityGapAbove, width, 28f),
+                snapshot.CompatibilityHeader);
+            y += CompatibilityGapAbove + 32f;
+            var numericRect = new Rect(x, y, width, 28f);
+            y += RowAdvance;
+            var rangeRect = new Rect(x, y, width, 28f);
+            y += RowAdvance;
+            var emergencyRect = new Rect(x, y, width, 28f);
+            y += RowAdvance;
+            var mechanicalRect = new Rect(x, y, width, snapshot.MechanicalHeight);
+            y += snapshot.MechanicalHeight + 6f;
+            var mechanicalRecommendationsRect = new Rect(x, y, width,
+                snapshot.MechanicalRecommendationsHeight);
 
             StructuredTipPresenter.TipRegion(numericRect, snapshot.NumericTip);
             bool numericNew = snapshot.Numeric;
@@ -109,91 +250,30 @@ namespace WorkRoles.UI
                 snapshot.MechanicalRecommendationsLabel, ref recommendationsNew);
             if (recommendationsNew != snapshot.MechanicalRecommendationsEnabled)
                 RoleCommands.SetMechanicalRecommendationsEnabled(recommendationsNew);
+        }
 
-            // Per-save automation: the hourly auto-optimize schedule is shared
-            // world state (AutoOptimizer runs in the synced simulation), so
-            // the edit travels through a synced command like the toggles above.
-            WrLabels.HeaderLabel(automationHeader, snapshot.AutomationHeader);
-            StructuredTipPresenter.TipRegion(
-                autoOptimizeRect, snapshot.AutoOptimizeTip);
-            bool autoOptimizeNew = snapshot.AutoOptimize;
-            Widgets.CheckboxLabeled(
-                autoOptimizeRect, snapshot.AutoOptimizeLabel, ref autoOptimizeNew);
-            if (autoOptimizeNew != snapshot.AutoOptimize)
-            {
-                // Enabling opens a confirmation preview; the checkbox stays
-                // unchecked until the dialog's apply issues the command.
-                if (autoOptimizeNew) showAutoOptimizeEnablePreview?.Invoke();
-                else RoleCommands.SetAutoOptimize(false);
-            }
-
-            // Client-side display preferences: chip caches key on these values
-            // directly, so a write here is picked up on the next draw pass.
-            WrLabels.HeaderLabel(displayHeader, snapshot.DisplayHeader);
-            bool? changed = DisplayToggle(new Rect(flowX, y, flowW, 28f),
-                snapshot.SkillCaptionsLabel, "WR_OptSkillCaptionsTip",
-                snapshot.SkillCaptions);
-            if (changed.HasValue)
-                SetDisplayPreference(
-                    OptionsDisplayPreference.ColonistSkillCaptions,
-                    changed.Value);
-            y += 34f;
-            changed = DisplayToggle(new Rect(flowX, y, flowW, 28f),
-                snapshot.ColonistVerdictsLabel, "WR_OptVerdictsColonistsTip",
-                snapshot.ColonistVerdicts);
-            if (changed.HasValue)
-                SetDisplayPreference(
-                    OptionsDisplayPreference.VerdictsOnColonistChips,
-                    changed.Value);
-            y += 34f;
-            changed = DisplayToggle(new Rect(flowX, y, flowW, 28f),
-                snapshot.PaletteVerdictsLabel, "WR_OptVerdictsPaletteTip",
-                snapshot.PaletteVerdicts);
-            if (changed.HasValue)
-                SetDisplayPreference(
-                    OptionsDisplayPreference.VerdictsInPalette,
-                    changed.Value);
-            y += 34f;
-            changed = DisplayToggle(new Rect(flowX, y, flowW, 28f),
-                snapshot.RecommendationVerdictsLabel,
-                "WR_OptVerdictsRecommendationsTip",
-                snapshot.RecommendationVerdicts);
-            if (changed.HasValue)
-                SetDisplayPreference(
-                    OptionsDisplayPreference.VerdictsOnRecommendationChips,
-                    changed.Value);
-            y += 34f;
-
-            // Palette grouping: a right-aligned Skills/Groups segmented pair
-            // (the retired in-palette cycle button's replacement).
-            var paletteRow = new Rect(flowX, y, flowW, 28f);
-            WrTips.Key("WR_PaletteModeTip").Region(paletteRow);
-            float controlW = snapshot.PaletteGroupingControlWidth;
+        /// Label with a right-aligned segmented control; returns the newly
+        /// clicked segment or -1.
+        private static int SegmentRow(float x, float y, float width,
+            string label, string tipKey, string[] options, int index,
+            float controlWidth)
+        {
+            WrTips.Key(tipKey).Region(new Rect(x, y, width, 28f));
             TextAnchor oldAnchor = Text.Anchor;
             try
             {
                 Text.Anchor = TextAnchor.MiddleLeft;
-                Widgets.Label(new Rect(flowX, y, flowW - controlW - 8f, 28f),
-                    snapshot.PaletteGroupingLabel);
+                Widgets.Label(new Rect(x, y, width - controlWidth - 8f, 28f),
+                    label);
             }
             finally
             {
                 Text.Anchor = oldAnchor;
             }
             int clicked = SegmentedControl.Row(
-                new Rect(flowX + flowW - controlW, y + 2f, controlW, 24f),
-                snapshot.PaletteGroupingOptions,
-                snapshot.PaletteGroupingIndex);
-            if (clicked >= 0 && clicked != snapshot.PaletteGroupingIndex)
-            {
-                WorkRolesSettings settings = WorkRolesMod.Settings;
-                if (settings != null)
-                {
-                    settings.paletteMode = clicked == 1
-                        ? PaletteMode.Groups : PaletteMode.Skills;
-                    WorkRolesGameComponent.RequestSettingsWrite();
-                }
-            }
+                new Rect(x + width - controlWidth, y + 2f, controlWidth, 24f),
+                options, index);
+            return clicked >= 0 && clicked != index ? clicked : -1;
         }
 
         private static bool? DisplayToggle(

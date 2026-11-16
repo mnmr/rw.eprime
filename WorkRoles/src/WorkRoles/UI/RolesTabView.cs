@@ -616,7 +616,7 @@ namespace WorkRoles.UI
                 Widgets.DrawBoxSolid(swatch, publishedRow.HasCustomColor
                     ? publishedRow.Color : RoleChipUI.DefaultChipColor);
                 GUI.color = WrStyle.PanelBackground;
-                Widgets.DrawBox(swatch.ExpandedBy(1f));
+                PixelBox.Outline(swatch.ExpandedBy(1f), GUI.color);
                 GUI.color = Color.white;
                 if (publishedRow.VirtualRow && Mouse.IsOver(row))
                     WrTips.Key("WR_VirtualRoleTip",
@@ -955,7 +955,7 @@ namespace WorkRoles.UI
                 + TopBoxPadding * 2f;
 
             var topBox = new Rect(rect.x, rect.y, rect.width, TopBoxHeight);
-            Widgets.DrawBoxSolidWithOutline(
+            PixelBox.SolidWithOutline(
                 topBox, WrStyle.PanelBackground, WrStyle.PanelOutline);
 
             // RIGHT half: swatch grid, right-aligned inside box (or under the
@@ -980,7 +980,7 @@ namespace WorkRoles.UI
                 if (!selectionMarked && header.HasCustomColor
                     && header.RoleColor.IndistinguishableFrom(SwatchPalette.Swatches[i]))
                 {
-                    Widgets.DrawBox(swatchRect.ExpandedBy(2f));
+                    PixelBox.Outline(swatchRect.ExpandedBy(2f), GUI.color);
                     selectionMarked = true;
                 }
                 TooltipHandler.TipRegion(swatchRect, SwatchPalette.Names[i]);
@@ -1009,7 +1009,7 @@ namespace WorkRoles.UI
                 {
                     Widgets.DrawBoxSolid(slotRect, new Color(0.14f, 0.14f, 0.14f));
                     GUI.color = new Color(1f, 1f, 1f, 0.35f);
-                    Widgets.DrawBox(slotRect);
+                    PixelBox.Outline(slotRect, GUI.color);
                     Text.Anchor = TextAnchor.MiddleCenter;
                     Widgets.Label(slotRect, "+");
                     Text.Anchor = TextAnchor.UpperLeft;
@@ -1025,7 +1025,7 @@ namespace WorkRoles.UI
                     if (!selectionMarked && header.HasCustomColor
                         && header.RoleColor.IndistinguishableFrom(slotColor))
                     {
-                        Widgets.DrawBox(slotRect.ExpandedBy(2f));
+                        PixelBox.Outline(slotRect.ExpandedBy(2f), GUI.color);
                         selectionMarked = true;
                     }
                     WrTips.Key("WR_CustomSwatchTip").Region(slotRect);
@@ -1075,7 +1075,7 @@ namespace WorkRoles.UI
                 RoleIconStyle.FrameSize, RoleIconStyle.FrameSize);
             Widgets.DrawHighlightIfMouseover(frameRect);
             GUI.color = RoleIconStyle.FrameColor;
-            Widgets.DrawBox(frameRect);
+            PixelBox.Outline(frameRect, GUI.color);
             GUI.color = header.RoleIconAssigned
                 ? RoleIconStyle.IconTint
                 : RoleIconStyle.PlaceholderTint;
@@ -1281,7 +1281,7 @@ namespace WorkRoles.UI
                     GUI.color = AgeBands.BandLacksJobs(band, header.AgeMinUnlock)
                         ? AgeLacksJobsOutline
                         : AgeSelectedOutline;
-                    Widgets.DrawBox(cell);
+                    PixelBox.Outline(cell, GUI.color);
                     GUI.color = Color.white;
                 }
                 else
@@ -1965,7 +1965,7 @@ namespace WorkRoles.UI
                     treeTopY,
                     rect.width - WarningMargin,
                     tree.WarningHeight);
-                Widgets.DrawBoxSolidWithOutline(
+                PixelBox.SolidWithOutline(
                     warningPanel, WarningPanelBackground, WarningPanelBorder);
                 Color previousColor = GUI.color;
                 TextAnchor previousAnchor = Text.Anchor;
@@ -2250,7 +2250,7 @@ namespace WorkRoles.UI
             Widgets.DrawBoxSolid(swatch, role.HasCustomColor
                 ? role.Color : RoleChipUI.DefaultChipColor);
             GUI.color = WrStyle.PanelBackground;
-            Widgets.DrawBox(swatch.ExpandedBy(1f));
+            PixelBox.Outline(swatch.ExpandedBy(1f), GUI.color);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;

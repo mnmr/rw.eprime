@@ -423,7 +423,7 @@ namespace RimShared.UiLib
                         if (read[i])
                             GUI.DrawTexture(checkRect, Widgets.CheckboxOnTex);
                         else
-                            Widgets.DrawBoxSolidWithOutline(checkRect,
+                            PixelBox.SolidWithOutline(checkRect,
                                 UnreadBoxFill, SegmentedControl.PanelOutline);
                         Widgets.Label(new Rect(row.x + 32f, row.y,
                             row.width - 190f, row.height), rows[i].Title);
@@ -472,7 +472,7 @@ namespace RimShared.UiLib
         private void DrawTourProgress(Rect rect, int total)
         {
             var barRect = new Rect(rect.x, rect.y + 4f, 220f, 12f);
-            Widgets.DrawBoxSolidWithOutline(barRect, ProgressBarFill,
+            PixelBox.SolidWithOutline(barRect, ProgressBarFill,
                 SegmentedControl.PanelOutline);
             if (total > 0 && tourReadCount > 0)
             {

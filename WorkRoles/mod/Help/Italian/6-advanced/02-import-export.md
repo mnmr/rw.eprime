@@ -5,7 +5,7 @@ title: Importazione ed esportazione
 I pulsanti nell'angolo della scheda Ruoli permettono di trasferire configurazioni tra salvataggi e amici:
 
 <!-- l10n:b-4f44ec3259f6 -->
-![Pulsanti Importa, Esporta e Ripristina i valori predefiniti](io-buttons.png)
+![Pulsanti Importa, Esporta, Imposta i valori predefiniti e Ripristina i valori predefiniti](io-buttons.png)
 
 <!-- l10n:b-fcca50ae80e8 -->
 Esporta scrive la configurazione completa dei ruoli in un file o negli appunti: ruoli, gruppi e relativo ordine, icone personalizzate, colori della tavolozza (inclusi quelli inutilizzati), regole, percorsi di addestramento, impostazioni dei suggerimenti e opzioni valide per l'intero salvataggio. Include anche le preferenze di visualizzazione come sezione facoltativa da importare. Le assegnazioni dei coloni, i collegamenti degli ordini di lavoro e lo stato temporaneo delle finestre restano nel salvataggio o nella sessione corrente.

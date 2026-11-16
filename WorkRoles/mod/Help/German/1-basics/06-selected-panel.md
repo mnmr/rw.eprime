@@ -8,7 +8,7 @@ Das Panel unten im Kolonistenreiter gehört zum ausgewählten Kolonisten. Bei [M
 ![Das Kolonistendetailpanel](colonist-stats.png)
 
 <!-- l10n:b-f23e4317881f -->
-Fertigkeiten sind nach Eignung eingefärbt, Flammen markieren Leidenschaften und Sternpaare zeigen [Bewertungen](topic:verdicts). Unter dem Porträt steht die aktuelle Tätigkeit.
+Fertigkeiten sind nach Eignung eingefärbt, Flammen markieren Leidenschaften und Sternpaare zeigen [Bewertungen](topic:verdicts). Neben dem Porträt stehen Name, aktuelle Tätigkeit und Merkmale des Kolonisten.
 
 <!-- l10n:b-4ef63a2d37a4 -->
 Fahre über eine Fertigkeit für die vollständige Erklärung ihrer Bewertung:
@@ -17,4 +17,4 @@ Fahre über eine Fertigkeit für die vollständige Erklärung ihrer Bewertung:
 ![Tooltip der Fertigkeitssignale](skill-tooltip.png)
 
 <!-- l10n:b-e50531dfa09e -->
-Jedes verwendete Empfehlungssignal steht mit Wirkung und Quelle in der Liste. Rechts im Panel stehen Empfohlene Rollen, erklärt unter [Einzelne Rollen anwenden](topic:cherry-picking).
+Jedes verwendete Empfehlungssignal steht mit Wirkung und Quelle in der Liste, sodass eine Bewertung nie ein Rätsel bleibt. Unten im Panel steht die Liste Empfohlene Rollen, erklärt unter [Einzelne Rollen anwenden](topic:cherry-picking).

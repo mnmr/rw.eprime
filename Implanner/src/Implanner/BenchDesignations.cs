@@ -27,6 +27,10 @@ namespace Implanner
 
         internal static void Reset() => ids = new HashSet<int>();
 
+        /// Set only around Implanner's own BillStack.AddBill, which runs
+        /// before the bill is recorded as owned (Patch_BenchStrayBill).
+        internal static bool AddingOwnBill;
+
         internal static bool Contains(IBillGiver? giver) =>
             ids.Count > 0
             && giver is Building_WorkTable bench

@@ -2,7 +2,8 @@
 title: Pinning assignments
 ---
 <!-- l10n:b-1075eaae5085 -->
-Right-click a chip and pick Pin. A pinned chip wears a pin marker:
+Right-click a chip and pick Pin. A pinned chip wears an aqua dot, or a
+pin icon with [icon markers](topic:display):
 
 <!-- l10n:b-62dc1c2c1729 -->
 ![A pinned role chip](chip-pinned.png)

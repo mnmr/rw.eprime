@@ -2,7 +2,7 @@
 title: Épingler les affectations
 ---
 <!-- l10n:b-1075eaae5085 -->
-Faites un clic droit sur une pastille puis choisissez Épingler. Elle porte alors une épingle :
+Faites un clic droit sur une pastille puis choisissez Épingler. Une pastille épinglée porte un point turquoise, ou une icône d'épingle avec les [marqueurs en icônes](topic:display) :
 
 <!-- l10n:b-62dc1c2c1729 -->
 ![Pastille de rôle épinglée](chip-pinned.png)

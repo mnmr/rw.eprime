@@ -8,7 +8,7 @@ Koloniciler sekmesinin altındaki panel seçili koloniciye aittir. [Birkaç kolo
 ![Kolonici ayrıntı paneli](colonist-stats.png)
 
 <!-- l10n:b-f23e4317881f -->
-Beceriler uygunluğa göre renklidir, alevler tutkuları, yıldız çiftleri [değerlendirmeleri](topic:verdicts) gösterir. Portrenin altındaki yuva kolonicinin şu an ne yaptığını gösterir.
+Beceriler uygunluğa göre renklidir, alevler tutkuları, yıldız çiftleri [değerlendirmeleri](topic:verdicts) gösterir. Portrenin yanında kolonicinin adı, şu an ne yaptığı ve özellikleri yer alır.
 
 <!-- l10n:b-4ef63a2d37a4 -->
 Puanının tüm nedenlerini görmek için beceri üzerine gelin:
@@ -17,4 +17,4 @@ Puanının tüm nedenlerini görmek için beceri üzerine gelin:
 ![Beceri işareti ipucu](skill-tooltip.png)
 
 <!-- l10n:b-e50531dfa09e -->
-Öneri motorunun kullandığı her işaret etkisi ve kaynağıyla listelenir; puanlama gizemli kalmaz. Panelin sağında, [Tek tek rol uygulama](topic:cherry-picking) konusunda anlatılan Önerilen roller listesi bulunur.
+Öneri motorunun kullandığı her işaret etkisi ve kaynağıyla listelenir; puanlama gizemli kalmaz. Panelin altında, [Tek tek rol uygulama](topic:cherry-picking) konusunda anlatılan Önerilen roller listesi bulunur.

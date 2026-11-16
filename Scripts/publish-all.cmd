@@ -4,7 +4,7 @@ rem Publish every mod present to the Steam Workshop. Each mod shows its plan
 rem (version, change note from CHANGELOG.md, tag/description/preview changes)
 rem and asks for y/yes. A version already in the mod's RELEASES.md, or already
 rem the latest Workshop update, is skipped. A modVersion that is not the next
-rem patch after the mod's last RELEASES.md row stops with exit 3 (run that
+rem patch, minor or major after the mod's last RELEASES.md row stops with exit 3 (run that
 rem mod's scripts/publish.ps1 -ApproveVersion <version> to publish it on
 rem purpose). A declined or failed publish moves on to the next mod; the
 rem summary lists each outcome. Build and deploy first.

@@ -2,7 +2,7 @@
 title: Aplicar sugestões
 ---
 <!-- l10n:b-0dfc2d230c51 -->
-O botão ![Aplicar sugestões](make-it-so-btn.png) abaixo da lista aplica todo o conjunto mostrado ao colono selecionado.
+O botão ![Aplicar sugestões](make-it-so-btn.png) ao lado da lista de Funções recomendadas aplica todo o conjunto mostrado ao colono selecionado com um só clique.
 
 <!-- l10n:b-1c171d400b80 -->
 Funções não recomendadas são removidas; as demais seguem a ordem sugerida. Atribuições [fixadas](topic:pinning) ficam preservadas, inclusive em [Funções excluídas](topic:recommendation-order). É útil para corrigir uma linha desorganizada.

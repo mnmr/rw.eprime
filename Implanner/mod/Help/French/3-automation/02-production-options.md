@@ -2,29 +2,32 @@
 title: Options de production
 ---
 <!-- l10n:b-bdd2b459773e -->
-Avec **Ajouter automatiquement des ordres pour les implants manquants** activé, Implanner place des ordres sur les établis capables de les fabriquer et retire ses propres ordres lorsque le besoin disparaît. Vos ordres manuels ne sont jamais retirés. Chaque ordre fabrique un objet, dans l'ordre de pose prévu : avec Ensembles complets, les jambes d'un colon précèdent ses bras si elles sont mieux classées dans votre classement commun des implants.
+Avec **Ajouter automatiquement des tâches pour les implants manquants** activé, Implanner place des tâches sur les établis capables de les fabriquer et retire ses propres tâches lorsque le besoin disparaît. Vos tâches manuelles ne sont jamais retirées. Chaque tâche fabrique un objet, dans l'ordre de pose prévu : avec Ensembles complets, les jambes d'un colon précèdent ses bras si elles sont mieux classées dans votre classement commun des implants.
 
 <!-- l10n:b-8effc9e9b828 -->
 Si plusieurs recettes produisent le même implant, Implanner préfère une voie disponible qu'il peut payer immédiatement. Un implant de base libre peut être amélioré ; sinon, une recette directe peut fabriquer l'implant avancé à partir de matériaux. Si seule la voie d'amélioration est activée, la production d'intermédiaires peut fabriquer la base d'abord. Les recettes doivent être recherchées et disposer d'un établi admissible.
 
 <!-- l10n:b-0aa3ded1d655 -->
-Pour dédier un établi aux implants, cochez **Établi Implanner** dans son onglet Tâches. Cette case apparaît uniquement sur les établis capables de fabriquer des implants. Les ordres existants sont suspendus et Implanner y place ses ordres avant tout autre établi. Tant que la case est cochée, vous ne pouvez pas y ajouter, coller, suspendre ou reprendre des ordres.
+Pour dédier un établi aux implants, cochez **Établi Implanner** dans l'onglet Tâches de l'établi. Cette case apparaît uniquement sur les établis capables de fabriquer des implants. Les tâches déjà présentes sur l'établi sont suspendues, et Implanner y place ses tâches de fabrication avant tout autre établi.
+
+<!-- l10n:queue -->
+Tant que la case est cochée, l'onglet Tâches affiche la file de production d'Implanner à la place de la liste de tâches habituelle de l'établi. Chaque ligne correspond à une tâche mise en file par Implanner : l'objet, si un artisan l'a commencé, le plan auquel il appartient, le colon suivant sur la liste et depuis combien de temps la tâche est en file. Une tâche pour un ingrédient indique l'implant pour lequel elle est nécessaire. **Détails** ouvre les réglages de cette tâche dans le jeu. La ligne du bas indique le nombre de vos propres tâches en pause. Vous ne pouvez pas ajouter de tâches à l'établi tant que vous ne décochez pas la case.
 
 <!-- l10n:b-a4d04c1bceb2 -->
 ![Établi de fabrication confié à Implanner](implanner-bench.png)
 
 <!-- l10n:b-a89a880dcac5 -->
-Décochez pour récupérer l'établi. Les ordres déjà suspendus à l'activation le restent ; les autres reprennent. Si vous retirez Implanner alors qu'un établi est désigné, celui-ci fonctionne toujours, mais vous devez reprendre ses ordres vous-même.
+Décochez pour récupérer l'établi. Les tâches déjà suspendues à l'activation le restent ; les autres reprennent. Si vous retirez Implanner alors qu'un établi est désigné, celui-ci fonctionne toujours, mais vous devez reprendre ses tâches vous-même.
 
 <!-- l10n:b-c9f0dad1a5c5 -->
 ![Options de production](production-options.png)
 
 <!-- l10n:b-f6f358878993 -->
-- **Établis pouvant recevoir des ordres** limite le nombre d'établis travaillant sur les implants simultanément par colonie. Chacun contient jusqu'à deux ordres Implanner, afin que le suivant attende déjà à la fin du premier. Les établis Implanner comptent dans cette limite.
-- **Créer des ordres uniquement sur les établis inactifs** évite ceux ayant déjà du travail en attente, pour donner la priorité à vos propres files.
-- **Utiliser uniquement les établis Implanner** y limite les ordres ; sans établi désigné, la colonie ne fabrique aucun implant. Désactivé, les autres établis sont utilisés une fois que chaque établi Implanner contient deux ordres.
-- **Compétence d'artisanat requise pour les ordres de production** évite de confier les matériaux coûteux aux artisans peu qualifiés.
-- **Autoriser les ordres de production des intermédiaires manquants** suit les manques dans la chaîne : un composant avancé manquant pour la prochaine jambe bionique entraîne d'abord un ordre de composant avancé. Pendant qu'un implant attend une ressource brute comme le plastacier, les établis libres fabriquent les composants avancés nécessaires. Les produits manufacturés, comme composants et implants de base, conviennent. Les ressources brutes comme l'acier ne sont jamais fabriquées, même si une recette de fonte le permet ; vous devez les récolter vous-même.
+- **Établis pouvant recevoir des tâches** limite le nombre d'établis travaillant sur les implants simultanément par colonie. Chacun contient jusqu'à deux tâches Implanner, afin que le suivant attende déjà à la fin du premier. Les établis Implanner comptent dans cette limite.
+- **Créer des tâches uniquement sur les établis inactifs** évite ceux ayant déjà du travail en attente, pour donner la priorité à vos propres files.
+- **Utiliser uniquement les établis Implanner** y limite les tâches ; sans établi désigné, la colonie ne fabrique aucun implant. Désactivé, les autres établis sont utilisés une fois que chaque établi Implanner contient deux tâches.
+- **Compétence d'artisanat requise pour les tâches de production** évite de confier les matériaux coûteux aux artisans peu qualifiés.
+- **Autoriser les tâches de production des intermédiaires manquants** suit les manques dans la chaîne : un composant avancé manquant pour la prochaine jambe bionique entraîne d'abord une tâche de composant avancé. Pendant qu'un implant attend une ressource brute comme le plastacier, les établis libres fabriquent les composants avancés nécessaires. Les produits manufacturés, comme composants et implants de base, conviennent. Les ressources brutes comme l'acier ne sont jamais fabriquées, même si une recette de fonte le permet ; vous devez les récolter vous-même.
 
 <!-- l10n:b-24089426e9a9 -->
-Chaque ordre respecte aussi les stocks minimaux (voir [Conserver du stock](topic:keeping-stock)).
+Chaque tâche respecte aussi les stocks minimaux (voir [Conserver du stock](topic:keeping-stock)).

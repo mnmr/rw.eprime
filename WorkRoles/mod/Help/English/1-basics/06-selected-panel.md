@@ -11,8 +11,8 @@ are selected and returns when you click a single one:
 
 <!-- l10n:b-f23e4317881f -->
 Skills are colored by suitability, flames mark passions, and the star
-pairs are [verdicts](topic:verdicts). The slot under the portrait shows
-what the colonist is doing right now.
+pairs are [verdicts](topic:verdicts). Next to the portrait are the
+colonist's name, what they are doing right now, and their traits.
 
 <!-- l10n:b-4ef63a2d37a4 -->
 Hover any skill for the full story behind its rating:
@@ -22,6 +22,6 @@ Hover any skill for the full story behind its rating:
 
 <!-- l10n:b-e50531dfa09e -->
 Every signal the recommendation engine used is listed with its effect and
-source, so a rating is never a mystery. The panel's right side holds the
-Recommended Roles list, covered in
+source, so a rating is never a mystery. The bottom of the panel holds
+the Recommended Roles list, covered in
 [Applying single roles](topic:cherry-picking).

@@ -13,28 +13,45 @@ namespace WorkRoles.Core
         private readonly float[] cellTops;
         private readonly float[] separatorLefts;
 
-        private ColonistSkillGridLayout(int skillCount, float columnWidth)
+        private ColonistSkillGridLayout(int skillCount, float columnWidth,
+            int compactColumns)
         {
-            ColumnCount = skillCount > 12 ? 3 : 2;
+            bool compact = compactColumns > 0;
+            Compact = compact;
+            ColumnCount = compact ? compactColumns : skillCount > 12 ? 3 : 2;
             RowCount = (skillCount + ColumnCount - 1) / ColumnCount;
             // Keep the familiar six-row panel footprint when extra skills use
             // a third column. Larger skill packs may still grow downwards.
-            if (skillCount > 12) RowCount = Math.Max(6, RowCount);
+            if (compact) RowCount = Math.Max(CompactRows, RowCount);
+            else if (skillCount > 12) RowCount = Math.Max(6, RowCount);
             ColumnWidth = columnWidth;
             float advance = columnWidth + 2f * SeparatorMargin + SeparatorWidth;
-            RecommendationLeft = ColumnCount * advance;
-            ContentHeight = Math.Max(118f, RowCount * CellHeight);
+            // The compact grid has no recommendation section after it: a
+            // separator leads every column and the last column ends the grid.
+            float lead = compact ? SeparatorWidth + SeparatorMargin : 0f;
+            RecommendationLeft = compact
+                ? ColumnCount * advance - SeparatorMargin : ColumnCount * advance;
+            ContentHeight = compact
+                ? RowCount * CellHeight : Math.Max(118f, RowCount * CellHeight);
             cellLefts = new float[skillCount];
             cellTops = new float[skillCount];
             for (int i = 0; i < skillCount; i++)
             {
-                cellLefts[i] = (i % ColumnCount) * advance;
+                cellLefts[i] = lead + (i % ColumnCount) * advance;
                 cellTops[i] = (i / ColumnCount) * CellHeight;
             }
             separatorLefts = new float[ColumnCount];
             for (int i = 0; i < ColumnCount; i++)
-                separatorLefts[i] = i * advance + columnWidth + SeparatorMargin;
+                separatorLefts[i] = compact
+                    ? i * advance : i * advance + columnWidth + SeparatorMargin;
         }
+
+        /// Rows and columns of the compact grid for the vanilla twelve
+        /// skills.
+        public const int CompactRows = 4;
+        public const int CompactColumns = 3;
+        /// Columns led by separators, as tall as its rows only.
+        public bool Compact { get; }
 
         public int ColumnCount { get; }
         public int RowCount { get; }
@@ -46,6 +63,29 @@ namespace WorkRoles.Core
         public float SeparatorLeft(int index) => separatorLefts[index];
 
         public static ColonistSkillGridLayout Calculate(int skillCount,
-            float columnWidth) => new ColonistSkillGridLayout(skillCount, columnWidth);
+            float columnWidth) =>
+            new ColonistSkillGridLayout(skillCount, columnWidth, 0);
+
+        /// Compact grid: more skills than three columns of four hold add
+        /// columns while they fit availableWidth, and only then rows.
+        /// Width of the smallest compact grid (CompactColumns columns); the
+        /// blocks left of the grid may only use room beyond it.
+        public static float MinimumCompactWidth(float columnWidth) =>
+            CompactColumns * (columnWidth + 2f * SeparatorMargin + SeparatorWidth)
+                - SeparatorMargin;
+
+        public static ColonistSkillGridLayout CalculateCompact(int skillCount,
+            float columnWidth, float availableWidth)
+        {
+            float advance = columnWidth + 2f * SeparatorMargin + SeparatorWidth;
+            int wanted = Math.Max(CompactColumns,
+                (skillCount + CompactRows - 1) / CompactRows);
+            int columns = wanted;
+            // The last column needs no trailing margin.
+            if (availableWidth < wanted * advance - SeparatorMargin)
+                columns = Math.Max(CompactColumns, (int)Math.Floor(
+                    (availableWidth + SeparatorMargin) / advance));
+            return new ColonistSkillGridLayout(skillCount, columnWidth, columns);
+        }
     }
 }

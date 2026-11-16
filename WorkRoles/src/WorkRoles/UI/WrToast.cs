@@ -1,3 +1,4 @@
+using RimShared.UiLib;
 using System.Collections.Generic;
 using RimWorld;
 using UnityEngine;
@@ -214,7 +215,7 @@ namespace WorkRoles.UI
                         y,
                         toast.TextWidth + 24f,
                         toast.TextHeight + 12f);
-                    Widgets.DrawBoxSolidWithOutline(
+                    PixelBox.SolidWithOutline(
                         panel, WrStyle.PanelBackground, WrStyle.PanelOutline);
                     Widgets.Label(new Rect(panel.x + 12f, panel.y + 6f,
                         toast.TextWidth, toast.TextHeight), toast.Text);

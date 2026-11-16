@@ -11,7 +11,10 @@ title: 역할 상태
 전역으로 끄면 가진 모든 정착민의 역할에 ![두 줄 취소선](chip-state-global-off.png)이 붙습니다.
 
 <!-- l10n:b-4d81d20fcc44 -->
-정착민 행의 역할 클릭은 ![켜짐](chip-state-on.png), ![이 정착민에게 꺼짐의 한 줄 취소선](chip-state-off.png), ![강제 켜짐 깃발](chip-state-forced.png)을 순환합니다. 둘 다 꺼지면 ![겹친 취소선](chip-state-both-off.png)으로 표시합니다. 강제 켜짐은 전역으로 꺼도 작동합니다.
+정착민 행의 역할 칩을 클릭하면 ![켜짐](chip-state-on.png), 이 정착민에게만 꺼짐 ![한 줄 취소선이 있는 칩](chip-state-off.png), 강제 켜짐 ![흰 점이 있는 칩](chip-state-forced.png) 순으로 전환됩니다. 전역과 정착민 모두 꺼지면 취소선이 겹쳐 ![겹친 취소선이 있는 칩](chip-state-both-off.png)으로 표시됩니다. 강제 켜짐은 역할이 전역으로 꺼져 있어도 계속 작동합니다.
+
+<!-- l10n:b-8c2e4f7a1d93 -->
+흰 점은 강제 켜짐의 기본 표시입니다. [아이콘 표식](topic:display)를 사용하면 칩에 깃발이 대신 표시됩니다.
 
 <!-- l10n:b-c5c0217224df -->
 전환해도 배정이나 행의 위치는 유지됩니다.

@@ -9,8 +9,8 @@ icon: verdict-blue.png
 | **Versions** | Implanner 1.1.5, Quality Jobs 1.1.4, [Workshop 3776722051](https://steamcommunity.com/sharedfiles/filedetails/?id=3776722051) |
 
 <!-- l10n:summary -->
-Les ordres de production peuvent porter la qualité minimale d'un plan.
+Les tâches de production peuvent porter la qualité minimale d'un plan.
 
 <!-- l10n:detail -->
-Lorsqu'un plan définit une [qualité minimale](topic:minimum-quality) supérieure à Épouvantable et que la qualité de l'implant n'est pas déterminée par un ingrédient, Implanner transmet l'ordre de production à Quality Jobs avec cet objectif : l'établi continue donc d'essayer jusqu'à obtenir un implant suffisamment bon pour le plan. Sans Quality Jobs, un implant fabriqué sous le minimum ne comble simplement pas l'emplacement et il est fabriqué de nouveau.
+Lorsqu'un plan définit une [qualité minimale](topic:minimum-quality) supérieure à Épouvantable et que la qualité de l'implant n'est pas déterminée par un ingrédient, Implanner transmet la tâche de production à Quality Jobs avec cet objectif : l'établi continue donc d'essayer jusqu'à obtenir un implant suffisamment bon pour le plan. Sans Quality Jobs, un implant fabriqué sous le minimum ne comble simplement pas l'emplacement et il est fabriqué de nouveau.
 

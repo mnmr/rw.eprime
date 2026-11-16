@@ -48,6 +48,9 @@ namespace WorkRoles.UI
         // Runtime-built white 5-pointed star (point up), tinted via GUI.color
         // at draw time — the chip verdict marker stack.
         public static Texture2D Star { get; private set; } = null!;
+        // The same star with its middle cut out (same silhouette): the
+        // verdict of a colonist who cannot do all of the role's jobs.
+        public static Texture2D StarHollow { get; private set; } = null!;
         // 1px-wide gradient (section bg fading to transparent), stretched to
         // the panel width at draw time; bilinear sampling makes it smooth
         // where stacked 1px strips banded.
@@ -56,6 +59,24 @@ namespace WorkRoles.UI
         // the right, tinted with a chip's fill at draw time to fade out a
         // clipped label's tail (ChipUI.FadeLabelWidth).
         public static Texture2D LabelFade { get; private set; } = null!;
+
+        // Owner: process (world session lifetime, like the textures above).
+        // Key: Prefs.UIScale (ChipDotsScale). Value: one WorkRoles-owned
+        // point-filtered atlas holding every RoleChipDots mask as a
+        // physical-pixel stripe cell, plus the cell metrics; immutable after
+        // Apply. Dependencies: the UI scale only (light size and cell height
+        // are whole physical pixels of the 24-unit chip). Refresh: immediate,
+        // on the first measure or draw after the scale changed. Equality:
+        // an unchanged scale reuses the texture. Teardown: ReleaseForTeardown
+        // destroys it; the next EnsureChipDots rebuilds it.
+        public static Texture2D? ChipDots { get; private set; }
+        internal static float ChipDotsScale { get; private set; }
+        /// Stripe cell size in physical pixels: one light plus a shaded
+        /// pixel each side, by the chip's height inside its outline.
+        internal static int ChipDotsCellW { get; private set; }
+        internal static int ChipDotsCellH { get; private set; }
+        internal const int ChipDotsColumns =
+            WorkRoles.Core.RoleChipDots.Combinations;
 
         static WorkRolesTex()
         {
@@ -89,7 +110,8 @@ namespace WorkRoles.UI
         internal static void EnsureRuntimeTextures()
         {
             if (Circle == null) Circle = MakeCircle(32);
-            if (Star == null) Star = MakeStar(32);
+            if (Star == null) Star = MakeStar(32, hollow: false);
+            if (StarHollow == null) StarHollow = MakeStar(32, hollow: true);
             if (ScrollEdgeFade == null) ScrollEdgeFade = MakeScrollEdgeFade(20);
             if (LabelFade == null) LabelFade = MakeLabelFade(32);
         }
@@ -98,12 +120,98 @@ namespace WorkRoles.UI
         {
             if (Circle != null) UnityEngine.Object.Destroy(Circle);
             if (Star != null) UnityEngine.Object.Destroy(Star);
+            if (StarHollow != null) UnityEngine.Object.Destroy(StarHollow);
+            StarHollow = null!;
             if (ScrollEdgeFade != null) UnityEngine.Object.Destroy(ScrollEdgeFade);
             if (LabelFade != null) UnityEngine.Object.Destroy(LabelFade);
+            if (ChipDots != null) UnityEngine.Object.Destroy(ChipDots);
+            ChipDots = null;
+            ChipDotsScale = 0f;
             Circle = null!; // cleared at teardown; rebuilt by EnsureRuntimeTextures
             Star = null!;
             ScrollEdgeFade = null!;
             LabelFade = null!;
+        }
+
+        // Dot colours in stacking order (top to bottom), by RoleChipDots
+        // bit: always on, has rules, pinned.
+        private static readonly Color[] DotColors =
+        {
+            Color.white, // always on
+            new Color(1f, 0.92f, 0.2f), // yellow: has rules
+            new Color(0f, 1f, 0.863f), // aqua: pinned
+        };
+
+        /// Builds the dot atlas for the current UI scale when it is missing
+        /// or was built for another scale. Each cell stacks the dots of its
+        /// mask, centred on the verdict star pair; three dots span exactly
+        /// the pair (first row on the stars' top row, last on their bottom).
+        internal static void EnsureChipDots()
+        {
+            float scale = Prefs.UIScale > 0f ? Prefs.UIScale : 1f;
+            if (ChipDots != null && ChipDotsScale == scale) return;
+            if (ChipDots != null) UnityEngine.Object.Destroy(ChipDots);
+            int inner = Mathf.RoundToInt(RoleChipUI.Height * scale) - 2;
+            // The star pair's extent inside the chip, in physical pixels
+            // (RoleChipUI.DrawVerdictBadge geometry).
+            float starTop = RoleChipUI.VerdictStarsTop * scale;
+            int top = Mathf.RoundToInt(starTop);
+            int span = Mathf.RoundToInt(
+                starTop + RoleChipUI.VerdictStarsSpan * scale) - top;
+            // Largest light leaving two equal gaps of at least a pixel.
+            int light = Mathf.Max(2, (span - 2) / 3);
+            if ((span - 3 * light) % 2 != 0) light--;
+            int gap = (span - 3 * light) / 2;
+            int cellW = light + 2;
+            int width = cellW * ChipDotsColumns;
+            int height = inner;
+            var pixels = new Color[width * height];
+            for (int mask = 1; mask < ChipDotsColumns; mask++)
+            {
+                int count = Core.RoleChipDots.Count(mask);
+                // Texture rows run bottom-up; the cell starts one pixel
+                // inside the chip (below its outline row).
+                int y = inner - 1 - (top - 1)
+                    - (span - count * light - (count - 1) * gap) / 2;
+                for (int bit = 0; bit < DotColors.Length; bit++)
+                {
+                    if ((mask & (1 << bit)) == 0) continue;
+                    PaintLight(pixels, width, mask * cellW + 1, y, light,
+                        DotColors[bit]);
+                    y -= light + gap;
+                }
+            }
+            var tex = new Texture2D(width, height, TextureFormat.RGBA32, mipChain: false)
+            {
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Point,
+                name = "WorkRolesChipDots",
+            };
+            tex.SetPixels(pixels);
+            tex.Apply();
+            ChipDots = tex;
+            ChipDotsScale = scale;
+            ChipDotsCellW = cellW;
+            ChipDotsCellH = inner;
+        }
+
+        /// One flat round light, size x size, its top-left pixel at
+        /// (left, top) in bottom-up texture rows, with an anti-aliased edge
+        /// (straight alpha over the transparent cell).
+        private static void PaintLight(Color[] pixels, int stride, int left,
+            int top, int size, Color color)
+        {
+            float r = size / 2f;
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = x + 0.5f - r, dy = y + 0.5f - r;
+                    float cover = Mathf.Clamp01(
+                        r - Mathf.Sqrt(dx * dx + dy * dy) + 0.5f);
+                    if (cover > 0f)
+                        pixels[(top - y) * stride + left + x] =
+                            new Color(color.r, color.g, color.b, cover);
+                }
         }
 
         /// 32px so a 16px draw stays anti-aliased at UI scales above 1.
@@ -129,7 +237,7 @@ namespace WorkRoles.UI
         /// 32px filled 5-pointed star, point up, anti-aliased by 4x4
         /// supersampled polygon coverage. Inner radius 0.5R keeps the legs
         /// chunky enough to read at a 10px draw size.
-        private static Texture2D MakeStar(int size)
+        private static Texture2D MakeStar(int size, bool hollow)
         {
             var tex = new Texture2D(size, size, TextureFormat.RGBA32, mipChain: false);
             float c = (size - 1) / 2f;
@@ -165,14 +273,20 @@ namespace WorkRoles.UI
                     int hits = 0;
                     for (int sy = 0; sy < 4; sy++)
                         for (int sx = 0; sx < 4; sx++)
-                            if (Inside(x + (sx + 0.5f) / 4f, y + (sy + 0.5f) / 4f))
+                        {
+                            float px = x + (sx + 0.5f) / 4f, py = y + (sy + 0.5f) / 4f;
+                            // The hole is the star itself at half size
+                            // about its centre.
+                            if (Inside(px, py) && !(hollow
+                                    && Inside(c + (px - c) * 2f, c + (py - c) * 2f)))
                                 hits++;
+                        }
                     pixels[y * size + x] = new Color(1f, 1f, 1f, hits / 16f);
                 }
             tex.SetPixels(pixels);
             tex.Apply();
             tex.wrapMode = TextureWrapMode.Clamp;
-            tex.name = "WorkRolesStar";
+            tex.name = hollow ? "WorkRolesStarHollow" : "WorkRolesStar";
             return tex;
         }
 

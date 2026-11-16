@@ -37,6 +37,6 @@ Substituir um implante instalado por outro de qualidade superior exige duas oper
 Ao fabricar para o plano:
 
 <!-- l10n:b-51f50276fd20 -->
-- Com Quality Jobs, a ordem busca a qualidade mínima, entregando o acabamento a um fabricante capaz de alcançá-la.
+- Com Quality Jobs, a tarefa busca a qualidade mínima, entregando o acabamento a um fabricante capaz de alcançá-la.
 - Híbridos de Vanilla Genetics Expanded recebem a qualidade da estrutura genética. Só são usadas estruturas na qualidade mínima ou acima.
 - Sem esses mecanismos, qualquer fabricante pode terminar. Um resultado abaixo do mínimo é fabricado novamente. Os limites de estoque (veja [Preservar estoque](topic:keeping-stock)) impedem que os materiais se esgotem.

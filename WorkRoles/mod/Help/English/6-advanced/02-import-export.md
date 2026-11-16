@@ -6,7 +6,7 @@ The Roles tab's corner buttons move role setups between saves and
 friends:
 
 <!-- l10n:b-4f44ec3259f6 -->
-![Import, Export and Restore Defaults buttons](io-buttons.png)
+![Import, Export, Set defaults and Restore Defaults buttons](io-buttons.png)
 
 <!-- l10n:b-fcca50ae80e8 -->
 Export writes the complete role setup to a file or the clipboard: roles,

@@ -6,11 +6,11 @@
   <IMP_AggregateColonists>入植者: {0} / {1}</IMP_AggregateColonists>
   <IMP_BadDirectory>有効なフォルダーを入力してください。</IMP_BadDirectory>
   <IMP_BadFileName>有効なファイル名を入力してください。</IMP_BadFileName>
-  <IMP_BenchLockedTip>Implanner専用作業台では、指示の貼り付け、中断、再開はできません。「加工」タブ上部の「Implanner専用作業台」をオフにすると通常の管理に戻せます。</IMP_BenchLockedTip>
+  <IMP_BenchLockedTip>Implanner専用作業台では、加工の貼り付け、中断、再開はできません。「加工」タブ上部の「Implanner専用作業台」をオフにすると通常の管理に戻せます。</IMP_BenchLockedTip>
   <IMP_BenchNoNewBills>追加するには「Implanner専用作業台」をオフにしてください</IMP_BenchNoNewBills>
   <IMP_BenchToggle>Implanner専用作業台</IMP_BenchToggle>
-  <IMP_BenchToggleTip>Implannerはこの台を優先して加工指示を置き、既存の指示を中断します。オンの間、この台では指示の追加、貼り付け、中断、再開ができません。\n\nオフにすると通常の管理に戻ります。指定前から中断中だった指示はそのまま、残りは再開します。</IMP_BenchToggleTip>
-  <IMP_CleanupBody>以下はImplannerが作成した指示です。「OK」で自動化を停止し、チェックした指示を削除します。未チェックの指示は有効なままなので、入植者は引き続き製作や手術を行えます。自動化を再開すると、Implannerは残した指示の管理を再開します。どちらの場合もインプラントの割り当ては解除します。「キャンセル」なら自動化を続けます。</IMP_CleanupBody>
+  <IMP_BenchToggleTip>Implannerはこの台を優先して加工を置き、既存の加工を中断します。オンの間、「加工」タブにはImplannerの生産キューが表示され、この台では加工の追加、貼り付け、中断、再開ができません。\n\nオフにすると通常の管理に戻ります。指定前から中断中だった加工はそのまま、残りは再開します。</IMP_BenchToggleTip>
+  <IMP_CleanupBody>以下はImplannerが作成した加工です。「OK」で自動化を停止し、チェックした加工を削除します。未チェックの加工は有効なままなので、入植者は引き続き製作や手術を行えます。自動化を再開すると、Implannerは残した加工の管理を再開します。どちらの場合もインプラントの割り当ては解除します。「キャンセル」なら自動化を続けます。</IMP_CleanupBody>
   <IMP_CleanupTitle>自動化を停止しますか？</IMP_CleanupTitle>
   <IMP_ColColonist>入植者</IMP_ColColonist>
   <IMP_ColMelee>格</IMP_ColMelee>
@@ -82,34 +82,34 @@
   <IMP_OptAllowMultipleHygieneEnhancersTip>異なるModの衛生強化器は別種として扱われるため、複数を取り付けて効果を重ねられます。オフにすると同じ枠として扱い、プランで1つを選ぶと他を置き換えます。下記のいずれかを既に持つ入植者は完了とみなします。既存のインプラントは取り外しません。\n\n対象のインプラント:\n{0}</IMP_OptAllowMultipleHygieneEnhancersTip>
   <IMP_OptAutoFloor>最良の医者に手術を割り当てる</IMP_OptAutoFloor>
   <IMP_OptAutoFloorTip>最も優れた医者だけが手術できるようにします。初心者が先に手術台へ来たというだけで義肢の取付を担当するのを防ぎます。各コロニーの医者の出入りに合わせて必要レベルを調整します。自分自身には手術できないため、最良の医者自身の手術は次に優れた医者が担当します。\n\nオフにすると、必要レベルの下限を自分で固定できます。</IMP_OptAutoFloorTip>
-  <IMP_OptAutoProduction>不足分の加工指示を自動追加</IMP_OptAutoProduction>
-  <IMP_OptAutoProductionTip>不足するインプラントの加工指示を自動作成します。各コロニーのプランに必要な残数から、在庫と既存の加工指示を差し引き、対応する作業台へ追加します。不要になった指示は削除します。</IMP_OptAutoProductionTip>
+  <IMP_OptAutoProduction>不足分の加工を自動追加</IMP_OptAutoProduction>
+  <IMP_OptAutoProductionTip>不足するインプラントの加工を自動作成します。各コロニーのプランに必要な残数から、在庫と既存の加工を差し引き、対応する作業台へ追加します。不要になった加工は削除します。</IMP_OptAutoProductionTip>
   <IMP_OptCatalog>カタログ</IMP_OptCatalog>
   <IMP_OptCompatNoneLoaded>対象のインプラントは読み込まれていません。</IMP_OptCompatNoneLoaded>
-  <IMP_OptConcurrency>加工指示を置ける作業台数</IMP_OptConcurrency>
-  <IMP_OptConcurrencyTip>各コロニーでImplannerの加工指示を同時に置ける作業台数です。1指示で1個製作し、作業台ごとに2件まで置くので、1件が終わると次が待っています。作業台を増やすと並行して製作しますが、製作者が他の仕事に使える時間は減ります。+/-のクリック時にShiftで10、Ctrlで5ずつ変更します。</IMP_OptConcurrencyTip>
+  <IMP_OptConcurrency>加工を置ける作業台数</IMP_OptConcurrency>
+  <IMP_OptConcurrencyTip>各コロニーでImplannerの加工を同時に置ける作業台数です。1件の加工で1個製作し、作業台ごとに2件まで置くので、1件が終わると次が待っています。作業台を増やすと並行して製作しますが、製作者が他の仕事に使える時間は減ります。+/-のクリック時にShiftで10、Ctrlで5ずつ変更します。</IMP_OptConcurrencyTip>
   <IMP_OptCountHospitalized>既存の患者も数える</IMP_OptCountHospitalized>
   <IMP_OptCountHospitalizedTip>病床にいる、またはダウンして治療を待っている入植者と奴隷も手術枠を使います。上記の上限に余裕ができるまで、新しいImplannerの手術は待機します。囚人、客、他派閥からの外来患者は枠を使いません。オフなら治療中の人数に関係なく手術を予定します。</IMP_OptCountHospitalizedTip>
   <IMP_OptDesignatedBenches>Implanner専用作業台のみ使用</IMP_OptDesignatedBenches>
-  <IMP_OptDesignatedBenchesTip>「加工」タブの「Implanner専用作業台」がオンの台だけに指示を追加します。専用台のないコロニーでは製作しません。オフなら専用台を優先し、全ての専用台に2件ずつ指示があると他の台も使います。どちらも「加工指示を置ける作業台数」の上限に従います。</IMP_OptDesignatedBenchesTip>
+  <IMP_OptDesignatedBenchesTip>「加工」タブの「Implanner専用作業台」がオンの台だけに加工を追加します。専用台のないコロニーでは製作しません。オフなら専用台を優先し、全ての専用台に2件ずつ加工があると他の台も使います。どちらも「加工を置ける作業台数」の上限に従います。</IMP_OptDesignatedBenchesTip>
   <IMP_OptEnable>自動化を有効にする</IMP_OptEnable>
-  <IMP_OptEnableTip>インプラントの割り当て、手術の予約、加工指示の作成など、Implannerが自動で行う全ての動作を切り替えます。オフでもプランと進捗は追跡します。オフにする際は、既存の指示のうち、どれを残すか確認します。残した指示は有効なままなので、入植者は引き続き製作や手術を行えます。</IMP_OptEnableTip>
+  <IMP_OptEnableTip>インプラントの割り当て、手術の予約、加工の作成など、Implannerが自動で行う全ての動作を切り替えます。オフでもプランと進捗は追跡します。オフにする際は、既存の加工のうち、どれを残すか確認します。残した加工は有効なままなので、入植者は引き続き製作や手術を行えます。</IMP_OptEnableTip>
   <IMP_OptIdleBenches>空いている作業台にのみ追加</IMP_OptIdleBenches>
-  <IMP_OptIdleBenchesTip>待機中の仕事がない作業台にだけImplannerの指示を追加します。自分で設定した生産を優先し、空き時間にインプラントを製作します。オフなら既存の指示の後ろに追加できます。</IMP_OptIdleBenchesTip>
+  <IMP_OptIdleBenchesTip>待機中の仕事がない作業台にだけImplannerの加工を追加します。自分で設定した生産を優先し、空き時間にインプラントを製作します。オフなら既存の加工の後ろに追加できます。</IMP_OptIdleBenchesTip>
   <IMP_OptImplantReserves>手動用インプラントの確保</IMP_OptImplantReserves>
-  <IMP_OptImplantReservesTip>既存在庫からこの数を上限として、手動使用のために取り置きます。Implannerは取り置き分を予定手術や製作材料に使いません。自動製作で追加の品を作るのは、割り当て済みのプランに不足がある間だけです。どのプランでも必要としていない品を緊急用に補充したい場合は、自分で加工指示を追加してください。</IMP_OptImplantReservesTip>
+  <IMP_OptImplantReservesTip>既存在庫からこの数を上限として、手動使用のために取り置きます。Implannerは取り置き分を予定手術や製作材料に使いません。自動製作で追加の品を作るのは、割り当て済みのプランに不足がある間だけです。どのプランでも必要としていない品を緊急用に補充したい場合は、自分で加工を追加してください。</IMP_OptImplantReservesTip>
   <IMP_OptIntermediaries>不足する中間材料の製作を許可</IMP_OptIntermediaries>
-  <IMP_OptIntermediariesTip>コンポーネントなどの材料不足で製作できない場合、その材料が製作可能な加工品なら加工指示も追加できます。生産工程をさかのぼって不足分を補います。スチールなどの原資源は製作せず、自分で集める必要があります。</IMP_OptIntermediariesTip>
+  <IMP_OptIntermediariesTip>コンポーネントなどの材料不足で製作できない場合、その材料が製作可能な加工品なら加工も追加できます。生産工程をさかのぼって不足分を補います。スチールなどの原資源は製作せず、自分で集める必要があります。</IMP_OptIntermediariesTip>
   <IMP_OptIteration>進行方式</IMP_OptIteration>
   <IMP_OptIterationTip>不足するインプラントを処理する順番です。誰を先にするかは、常に概要タブの入植者の優先度で決まります。\n\nティア単位: 全員に最上位ティアを取り付けてから、次のティアへ進みます。その入植者のティア全体の品を割り当てると手術を開始します。\n\n一人ずつ全て: 一人のプランを全て終えてから次の入植者に進みます。プラン全体の品を割り当てるまで手術を待ちます。\n\n随時: 在庫のあるインプラントは、それが不足している最も優先度の高い入植者の手術にすぐ回します。同じ優先度なら、脚は移動の最も遅い人へ、腕は近接武器を装備している人を優先し、その次に工芸と知力の合計が最も高い人へ回します。</IMP_OptIterationTip>
-  <IMP_OptManualFloor>手術指示の必要医術レベル</IMP_OptManualFloor>
-  <IMP_OptManualFloorTip>Implannerの手術に必要な医術レベルです。このレベル以上の医者が作業できるまで手術指示は待機します。自動割り当てをオフにした時点の最良の医者を初期値にします。</IMP_OptManualFloorTip>
+  <IMP_OptManualFloor>手術加工の必要医術レベル</IMP_OptManualFloor>
+  <IMP_OptManualFloorTip>Implannerの手術に必要な医術レベルです。このレベル以上の医者が作業できるまで手術の加工は待機します。自動割り当てをオフにした時点の最良の医者を初期値にします。</IMP_OptManualFloorTip>
   <IMP_OptModCompat>Mod互換性</IMP_OptModCompat>
   <IMP_OptProduction>生産</IMP_OptProduction>
-  <IMP_OptProductionSkill>加工指示の必要工芸レベル</IMP_OptProductionSkill>
-  <IMP_OptProductionSkillTip>Implannerの加工指示に必要な工芸レベルです。高くすると低スキルの製作者に高価な部品を任せずに済み、低くすると多くの入植者が手伝えます。条件を満たす製作者が着手するまで待機します。</IMP_OptProductionSkillTip>
+  <IMP_OptProductionSkill>加工の必要工芸レベル</IMP_OptProductionSkill>
+  <IMP_OptProductionSkillTip>Implannerの加工に必要な工芸レベルです。高くすると低スキルの製作者に高価な部品を任せずに済み、低くすると多くの入植者が手伝えます。条件を満たす製作者が着手するまで待機します。</IMP_OptProductionSkillTip>
   <IMP_OptReserves>製作後に残す在庫</IMP_OptReserves>
-  <IMP_OptReservesTip>自動生産で残す資源の下限です。待機中の加工指示が必要とする材料に加え、新しい指示の費用をまかない、全ての材料をこの数以上残せる場合だけ指示を追加します。在庫を守るには値を増やし、自由に消費させるには0にします。</IMP_OptReservesTip>
+  <IMP_OptReservesTip>自動生産で残す資源の下限です。待機中の加工が必要とする材料に加え、新しい加工の費用をまかない、全ての材料をこの数以上残せる場合だけ加工を追加します。在庫を守るには値を増やし、自由に消費させるには0にします。</IMP_OptReservesTip>
   <IMP_OptShowPurchaseOnly>製作不可のインプラントを表示</IMP_OptShowPurchaseOnly>
   <IMP_OptShowPurchaseOnlyTip>アルコテック部位など、作業台で製作できないインプラントを表示します。交易、クエスト、回収などでのみ入手できます。オンにするとプランに含められます。自動化は入荷次第割り当て、次の一括手術で取り付けます。不足していても他の取付は止めません。Modで製作レシピが追加されると、自動的に通常のインプラントとして扱います。\n\n対象のインプラント:\n{0}</IMP_OptShowPurchaseOnlyTip>
   <IMP_OptSkillSliderMaximum>スキルスライダーの上限</IMP_OptSkillSliderMaximum>
@@ -178,9 +178,9 @@
   <IMP_TierLow>低優先</IMP_TierLow>
   <IMP_TierMedium>中優先</IMP_TierMedium>
   <IMP_TierNormal>通常</IMP_TierNormal>
-  <IMP_TipBenchesInUse>Implannerの加工指示がある作業台: {0}</IMP_TipBenchesInUse>
+  <IMP_TipBenchesInUse>Implannerの加工がある作業台: {0}</IMP_TipBenchesInUse>
   <IMP_TipCapacity>身体部位: {0}</IMP_TipCapacity>
-  <IMP_TipColCrafting>加工指示あり</IMP_TipColCrafting>
+  <IMP_TipColCrafting>加工中の分</IMP_TipColCrafting>
   <IMP_TipColFree>未割当</IMP_TipColFree>
   <IMP_TipColHeldBack>手動用</IMP_TipColHeldBack>
   <IMP_TipColImplant>インプラント</IMP_TipColImplant>
@@ -243,4 +243,21 @@
   <IMP_OptCompatHygiene>Dubs Bad Hygiene と [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
   <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
   <IMP_OptCompatSkills>Endless Growth などのスキル系MOD</IMP_OptCompatSkills>
+  <IMP_QueueAge>待機時間</IMP_QueueAge>
+  <IMP_QueueAgeNow>たった今</IMP_QueueAgeNow>
+  <IMP_QueueAgeTip>Implannerがこの加工を追加してからのゲーム内経過時間です。</IMP_QueueAgeTip>
+  <IMP_QueueEmpty>キューに加工はありません。この作業台で作れるインプラントが計画で必要になると、Implannerが加工を追加します。</IMP_QueueEmpty>
+  <IMP_QueueFor>対象</IMP_QueueFor>
+  <IMP_QueueNeededFor>必要なインプラント</IMP_QueueNeededFor>
+  <IMP_QueuePausedMany>Implanner専用作業台の間、他の{0}件の加工を中断しています。</IMP_QueuePausedMany>
+  <IMP_QueuePausedOne>Implanner専用作業台の間、他の1件の加工を中断しています。</IMP_QueuePausedOne>
+  <IMP_QueuePlan>計画</IMP_QueuePlan>
+  <IMP_QueueQuality>品質</IMP_QueueQuality>
+  <IMP_QueueQualityValue>{0}以上</IMP_QueueQualityValue>
+  <IMP_QueueStatusCrafting>製作中</IMP_QueueStatusCrafting>
+  <IMP_QueueStatusCraftingAt>{0}が製作中</IMP_QueueStatusCraftingAt>
+  <IMP_QueueStatusStarted>{0}に着手</IMP_QueueStatusStarted>
+  <IMP_QueueStatusWaiting>待機中</IMP_QueueStatusWaiting>
+  <IMP_QueueTitle>Implanner生産キュー</IMP_QueueTitle>
+  <IMP_QueueWorker>担当者</IMP_QueueWorker>
 </LanguageData>

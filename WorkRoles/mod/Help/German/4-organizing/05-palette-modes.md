@@ -2,7 +2,7 @@
 title: Palettenanordnung
 ---
 <!-- l10n:b-920248b013cc -->
-Die Rollenpalette im Kolonistenreiter lässt sich auf zwei Arten anordnen. Die Auswahl steht unten in den Anzeigeeinstellungen des Optionsreiters:
+Die Rollenpalette im Kolonistenreiter lässt sich auf zwei Arten anordnen. Die Auswahl steht in den Anzeigeeinstellungen des Optionsreiters:
 
 <!-- l10n:b-b429b8db5576 -->
 ![Anzeigeeinstellungen mit Palettenschalter](options-display.png)

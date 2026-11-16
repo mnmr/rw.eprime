@@ -1,6 +1,7 @@
 # Version guard regression (owner, 2026-11-01): publishing stops before any
 # network access or prompt unless About.xml's modVersion is exactly the next
-# patch after the last RELEASES.md row, or a republish of that row;
+# patch, minor (x.y+1.0) or major (x+1.0.0) version after the last RELEASES.md
+# row, or a republish of that row;
 # -ApproveVersion <version> is the manual override.
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -16,10 +17,12 @@ function Write-FixtureFile([string]$Root, [string]$RelativePath, [string]$Value)
 . "$deployRoot\publish-release.ps1"
 foreach ($case in @(
     @('1.2.6', '1.2.7', $true), @('1.2.9', '1.2.10', $true),
-    @('1.2.6', '1.2.8', $false), @('1.2.6', '1.3.0', $false), @('1.2.6', '2.0.0', $false),
+    @('1.2.6', '1.3.0', $true), @('1.2.6', '2.0.0', $true),
+    @('1.2.6', '1.2.8', $false), @('1.2.6', '1.3.1', $false), @('1.2.6', '1.4.0', $false),
+    @('1.2.6', '2.1.0', $false), @('1.2.6', '3.0.0', $false),
     @('1.2.6', '1.2.6', $false), @('1.2.6', '1.2.5', $false), @('1.2', '1.2.1', $false),
     @('1.2.6', '1.2.7.0', $false), @('1.2.4', '1.2.6', $false))) {
-    Check ((Test-NextPatchVersion $case[0] $case[1]) -eq $case[2]) "Test-NextPatchVersion $($case[0]) -> $($case[1]) must be $($case[2])"
+    Check ((Test-NextVersion $case[0] $case[1]) -eq $case[2]) "Test-NextVersion $($case[0]) -> $($case[1]) must be $($case[2])"
 }
 Check ((Get-NextPatchVersion '1.2.6') -ceq '1.2.7') 'Next patch after 1.2.6 is 1.2.7'
 
@@ -93,7 +96,13 @@ function Invoke-SteamWorkshopProcess {
     Assert-Published (Invoke-Publish @{}) 'The next patch'
 
     Set-Fixture '1.3.0' @('1.2.6')
-    Assert-Stopped (Invoke-Publish @{}) 'A minor step'
+    Assert-Published (Invoke-Publish @{}) 'The next minor version'
+
+    Set-Fixture '2.0.0' @('1.2.6')
+    Assert-Published (Invoke-Publish @{}) 'The next major version'
+
+    Set-Fixture '1.4.0' @('1.2.6')
+    Assert-Stopped (Invoke-Publish @{}) 'A skipped minor version'
 
     Set-Fixture '1.2.6' @('1.2.4', '1.2.6')
     Assert-Published (Invoke-Publish @{ AllowRepublish = $true }) 'Republishing the last release'

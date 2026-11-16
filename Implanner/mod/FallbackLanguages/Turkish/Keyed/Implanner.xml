@@ -6,10 +6,10 @@
   <IMP_AggregateColonists>Koloniciler: {0} / {1}</IMP_AggregateColonists>
   <IMP_BadDirectory>Geçerli bir klasör girin.</IMP_BadDirectory>
   <IMP_BadFileName>Geçerli bir dosya adı girin.</IMP_BadFileName>
-  <IMP_BenchLockedTip>Bir Implanner tezgâhına iş siparişi yapıştıramaz, siparişleri duraklatamaz veya sürdüremezsiniz. Tezgâhın kontrolünü geri almak için Siparişler sekmesinin üstündeki "Implanner tezgâhı" işaretini kaldırın.</IMP_BenchLockedTip>
-  <IMP_BenchNoNewBills>Buraya iş siparişi eklemek için "Implanner tezgâhı" işaretini kaldırın</IMP_BenchNoNewBills>
+  <IMP_BenchLockedTip>Bir Implanner tezgâhına sipariş yapıştıramaz, siparişleri duraklatamaz veya sürdüremezsiniz. Tezgâhın kontrolünü geri almak için Siparişler sekmesinin üstündeki "Implanner tezgâhı" işaretini kaldırın.</IMP_BenchLockedTip>
+  <IMP_BenchNoNewBills>Buraya sipariş eklemek için "Implanner tezgâhı" işaretini kaldırın</IMP_BenchNoNewBills>
   <IMP_BenchToggle>Implanner tezgâhı</IMP_BenchToggle>
-  <IMP_BenchToggleTip>Implanner üretim siparişlerini önce bu tezgâha koyar ve mevcut siparişleri duraklatır. İşaretliyken buraya sipariş ekleyemez, yapıştıramaz, siparişleri duraklatamaz veya sürdüremezsiniz.\n\nKontrolü geri almak için işareti kaldırın. İşaretlediğinizde zaten duraklatılmış olan siparişler öyle kalır, diğerleri sürdürülür.</IMP_BenchToggleTip>
+  <IMP_BenchToggleTip>Implanner üretim siparişlerini önce bu tezgâha koyar ve buradaki mevcut siparişler duraklatılır. İşaretliyken Siparişler sekmesi Implanner'ın üretim kuyruğunu gösterir ve buraya sipariş ekleyemez, yapıştıramaz, siparişleri duraklatamaz veya sürdüremezsiniz.\n\nKontrolü geri almak için işareti kaldırın. İşaretlediğinizde zaten duraklatılmış olan siparişler öyle kalır, diğerleri sürdürülür.</IMP_BenchToggleTip>
   <IMP_CleanupBody>Bu siparişleri Implanner oluşturdu. Tamam, otomasyonu kapatır ve işaretli siparişleri kaldırır. İşaretlenmeyen siparişler etkin kalır: koloniciler bunlara göre üretim yapmaya veya ameliyatları gerçekleştirmeye devam edebilir. Otomasyon yeniden açıldığında Implanner kalan siparişlerin yönetimini devralır. Her iki durumda da ayrılan implantlar serbest bırakılır. İptal, otomasyonu açık tutar.</IMP_CleanupBody>
   <IMP_CleanupTitle>Otomasyon kapatılsın mı?</IMP_CleanupTitle>
   <IMP_ColColonist>Kolonici</IMP_ColColonist>
@@ -243,4 +243,21 @@
   <IMP_OptCompatHygiene>Dubs Bad Hygiene ve [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
   <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
   <IMP_OptCompatSkills>Endless Growth ve diğer beceri modları</IMP_OptCompatSkills>
+  <IMP_QueueAge>Kuyrukta</IMP_QueueAge>
+  <IMP_QueueAgeNow>Az önce</IMP_QueueAgeNow>
+  <IMP_QueueAgeTip>Implanner bu siparişi kuyruğa aldığından beri geçen oyun içi süre.</IMP_QueueAgeTip>
+  <IMP_QueueEmpty>Burada kuyruğa alınmış sipariş yok. Implanner, bir plan bu tezgâhın üretebileceği bir implant gerektirdiğinde sipariş ekler.</IMP_QueueEmpty>
+  <IMP_QueueFor>Kimin için</IMP_QueueFor>
+  <IMP_QueueNeededFor>Gerekli olduğu yer</IMP_QueueNeededFor>
+  <IMP_QueuePausedMany>Bu bir Implanner tezgâhı olduğu sürece diğer {0} sipariş duraklatılır.</IMP_QueuePausedMany>
+  <IMP_QueuePausedOne>Bu bir Implanner tezgâhı olduğu sürece diğer 1 sipariş duraklatılır.</IMP_QueuePausedOne>
+  <IMP_QueuePlan>Plan</IMP_QueuePlan>
+  <IMP_QueueQuality>Kalite</IMP_QueueQuality>
+  <IMP_QueueQualityValue>{0} veya daha iyi</IMP_QueueQualityValue>
+  <IMP_QueueStatusCrafting>Üretiyor</IMP_QueueStatusCrafting>
+  <IMP_QueueStatusCraftingAt>Üretiyor: {0}</IMP_QueueStatusCraftingAt>
+  <IMP_QueueStatusStarted>Başladı: {0}</IMP_QueueStatusStarted>
+  <IMP_QueueStatusWaiting>Bekliyor</IMP_QueueStatusWaiting>
+  <IMP_QueueTitle>Implanner üretim kuyruğu</IMP_QueueTitle>
+  <IMP_QueueWorker>Çalışan</IMP_QueueWorker>
 </LanguageData>

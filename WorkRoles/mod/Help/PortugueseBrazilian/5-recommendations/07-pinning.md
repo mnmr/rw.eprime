@@ -2,7 +2,7 @@
 title: Fixar atribuições
 ---
 <!-- l10n:b-1075eaae5085 -->
-Clique com o botão direito na ficha e escolha Fixar. Ela passa a mostrar um alfinete:
+Clique com o botão direito na ficha e escolha Fixar. Uma ficha fixada exibe um ponto azul-turquesa ou, com [marcadores de ícone](topic:display), um alfinete:
 
 <!-- l10n:b-62dc1c2c1729 -->
 ![Ficha de função fixada](chip-pinned.png)

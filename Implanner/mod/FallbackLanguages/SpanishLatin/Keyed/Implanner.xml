@@ -172,7 +172,7 @@
   <IMP_OptIdleBenchesTip>Solo reciben proyectos nuevos los bancos sin trabajo pendiente. Tus propias colas de producción mantienen la prioridad y los implantes aprovechan los huecos. Desactívalo para permitir que sus proyectos se añadan detrás de los tuyos.</IMP_OptIdleBenchesTip>
   <IMP_OptDesignatedBenchesTip>Los proyectos solo van a bancos que tengan marcada la opción «Banco de Implanner» en su pestaña Proyectos; una colonia sin ellos no fabrica implantes. Desactivado, esos bancos reciben los proyectos primero y se usan los demás cuando cada banco de Implanner ya tiene dos. En ambos casos se aplica el límite de Bancos con proyectos.</IMP_OptDesignatedBenchesTip>
   <IMP_BenchToggle>Banco de Implanner</IMP_BenchToggle>
-  <IMP_BenchToggleTip>Implanner da prioridad a este banco para sus proyectos y suspende los que ya haya. Mientras esté marcado, no puedes añadir, pegar, suspender ni reanudar proyectos aquí.\n\nDesmárcalo para recuperar el banco. Los proyectos que ya estaban suspendidos al marcarlo siguen suspendidos; los demás se reanudan.</IMP_BenchToggleTip>
+  <IMP_BenchToggleTip>Implanner coloca sus proyectos de fabricación en este banco antes que en cualquier otro, y los proyectos que ya hay aquí se suspenden. Mientras esté marcada, la pestaña Proyectos muestra la cola de producción de Implanner y no puedes añadir, pegar, suspender ni reanudar proyectos aquí.\n\nDesmárcala para recuperar el banco. Los proyectos que ya estaban suspendidos al marcarla siguen suspendidos; los demás se reanudan.</IMP_BenchToggleTip>
   <IMP_BenchLockedTip>No puedes pegar, suspender ni reanudar proyectos en un banco de Implanner. Desmarca «Banco de Implanner» arriba en la pestaña Proyectos para recuperarlo.</IMP_BenchLockedTip>
   <IMP_BenchNoNewBills>Desmarca «Banco de Implanner» para añadir proyectos aquí</IMP_BenchNoNewBills>
   <IMP_OptProductionSkillTip>Habilidad mínima de Fabricación para los proyectos de producción de Implanner. Un valor alto mantiene los componentes caros fuera del alcance de artesanos poco cualificados; uno bajo permite ayudar a más colonos. Los proyectos esperan a que los tome alguien apto.</IMP_OptProductionSkillTip>
@@ -243,4 +243,21 @@
   <IMP_OptCompatHygiene>Dubs Bad Hygiene y [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
   <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
   <IMP_OptCompatSkills>Endless Growth y otros mods de habilidades</IMP_OptCompatSkills>
+  <IMP_QueueAge>En cola</IMP_QueueAge>
+  <IMP_QueueAgeNow>Ahora mismo</IMP_QueueAgeNow>
+  <IMP_QueueAgeTip>Tiempo del juego transcurrido desde que Implanner puso en cola este proyecto.</IMP_QueueAgeTip>
+  <IMP_QueueEmpty>No hay proyectos en cola. Implanner añade proyectos cuando un plan necesita un implante que este banco puede fabricar.</IMP_QueueEmpty>
+  <IMP_QueueFor>Para</IMP_QueueFor>
+  <IMP_QueueNeededFor>Necesario para</IMP_QueueNeededFor>
+  <IMP_QueuePausedMany>Otros {0} proyectos están en pausa mientras este sea un banco de Implanner.</IMP_QueuePausedMany>
+  <IMP_QueuePausedOne>1 otro proyecto está en pausa mientras este sea un banco de Implanner.</IMP_QueuePausedOne>
+  <IMP_QueuePlan>Plan</IMP_QueuePlan>
+  <IMP_QueueQuality>Calidad</IMP_QueueQuality>
+  <IMP_QueueQualityValue>{0} o mejor</IMP_QueueQualityValue>
+  <IMP_QueueStatusCrafting>Fabricando</IMP_QueueStatusCrafting>
+  <IMP_QueueStatusCraftingAt>Fabricando {0}</IMP_QueueStatusCraftingAt>
+  <IMP_QueueStatusStarted>Iniciado {0}</IMP_QueueStatusStarted>
+  <IMP_QueueStatusWaiting>En espera</IMP_QueueStatusWaiting>
+  <IMP_QueueTitle>Cola de producción de Implanner</IMP_QueueTitle>
+  <IMP_QueueWorker>Trabajador</IMP_QueueWorker>
 </LanguageData>

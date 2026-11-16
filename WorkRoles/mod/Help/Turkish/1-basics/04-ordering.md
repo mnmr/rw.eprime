@@ -22,7 +22,7 @@ Koloniciler yalnızca atanmış rollerin işlerini yapar. Rol atamamak, temel oy
 @demo:chip-drag
 
 <!-- l10n:b-be64d575edc7 -->
-Satırlar arasında da bırakabilirsiniz: atamayı taşımak için etiketi başka koloniciye sürükleyin. Atamayı kaldırmak için etiketteki çöp kutusuna tıklayın; etiket satırdan çıkar.
+Satırlar arasında da bırakabilirsiniz: atamayı taşımak için etiketi başka koloniciye sürükleyin. Atamayı kaldırmak için etiketteki çöp kutusu simgesine tıklayın; etiket satırdan çıkar. Çöp kutusu [kapalıysa](topic:display) etikete sağ tıklayıp Rolü kaldır'ı seçin.
 
 <!-- l10n:b-6bbb9dc33edb -->
 RimWorld acil işler için ayrı liste tutar: yangın söndürme, acil tedavi ve acil tedavi için yatağa gitme. Bu listedekiler uykuyu, yemekleri ve diğer işleri böler. Varsayılan olarak acil iş, yalnızca kolonicinin ilk beş etkin rolünden biri kapsıyorsa bu listeye girer. Sonraki rollerin acil işleri normal konumunda yapılır. İlk rolü Çekirdek işler, altıncısı Doktor olan kolonici yangında her işi bırakır ama acil tedaviyi satırındaki sıradan doktor işi sayar. Çekirdek işleri beşinci konumun altına taşımak yangın söndürmeyi de o kolonici için sıradan iş yapar.

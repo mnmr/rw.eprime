@@ -2,7 +2,7 @@
 title: Disposizione della palette
 ---
 <!-- l10n:b-920248b013cc -->
-La palette nella scheda Coloni può essere organizzata in due modi, selezionabili in fondo alle impostazioni di visualizzazione della scheda Opzioni:
+La palette dei ruoli nella scheda Coloni può essere organizzata in due modi, selezionabili nelle impostazioni di visualizzazione della scheda Opzioni:
 
 <!-- l10n:b-b429b8db5576 -->
 ![Le impostazioni di visualizzazione con il selettore della palette](options-display.png)

@@ -32,7 +32,7 @@ verification commands. Where this file is silent, the root contract governs.
 | Wrapped help-topic rows (`HelpTabView`) | Topic-array identity, panel width/height and UI metric revision; scrollbar width participates in the gated build, which also measures the widest title into the splitter's double-click fit width. The panel width is a per-assembly session value set by dragging the gap between the panels (resize cursor from `SplitterCursor`, released on close); changing it re-keys this build only. Equal rectangle contents preserve array identity. Close releases topic references and geometry; changing topic geometry does not invalidate content models. |
 | Per-map render data | Store/world identity and map identity |
 | Pool structure snapshot | `PoolsVersion`, immediately |
-| Resource-count snapshot | Canonical map identity (MultiFloors ground map; lowest-id reachable map in Strata combined mode), external-level mode and the map-set stamp while external levels are active; Strata's combined-resource preference and graph epoch invalidate immediately through that stamp. Each Strata floor contributes its unmerged resource counter, disposition breakdown and planned-work debt exactly once. Derived collection needs (storage-only and hide-forbidden count-basis options unioned with stored count rules via `CountRulesVersion`) and `PlannedWorkOptions` invalidate immediately, including while paused; dynamic counts refresh after 204 elapsed game ticks and equal contents retain identity. |
+| Resource-count snapshot | Canonical map identity (MultiFloors ground map; lowest-id reachable map in Strata combined mode), external-level mode and the map-set stamp while external levels are active; Strata's combined-resource preference and graph epoch invalidate immediately through that stamp. Each Strata floor contributes its unmerged resource counter, disposition breakdown and planned-work debt exactly once. Contents of non-slot-group haul sources (bookcases, outfit stands, modded containers) are unspawned and count as stored stock on the same pass, including the group-count basis; runtime regression `tests/InGame/Books`. Derived collection needs (storage-only and hide-forbidden count-basis options unioned with stored count rules via `CountRulesVersion`) and `PlannedWorkOptions` invalidate immediately, including while paused; dynamic counts refresh after 204 elapsed game ticks and equal contents retain identity. |
 | Main readout layout/draw model | Map, width, view state (per-player depths, search text, the display options including the tier layout option and resolved counter font, and the kept toolbar toggle's hidden-bands state derived from `Prefs.ResourceReadoutCategorized`, all routed through the view stamp), `GroupsVersion`, `ThresholdsVersion`, `CountRulesVersion`, pool snapshot identity, count snapshot identity, UI metric/language revision. Pool search highlights use the displayed name resolved from immutable seed provenance behind this gate; a rebuild with content equal to the published model preserves model identity. |
 | Hover model variants (per hovered group id) | Every non-hover draw-model input above plus count snapshot identity, immediately (any such change clears all variants; a successful in-place count refresh keeps only the active variant); a pure hover transition republishes the stored DrawModel identity instead of rebuilding |
 | Base pixel surface | Draw-model identity, content dimensions, UI metric revision, icon scale revision, icon data revision, visual options; scroll offset and viewport height are presentation-only and never invalidate it. Buffered rendering is selected automatically when supported; the retired per-player buffering preference is ignored. A repaint whose cached presentation fails draws directly; three consecutive publication failures retire buffering for the session |
@@ -185,6 +185,27 @@ different old/new pool dependencies must still allow a thresholds-only import,
 and an incomplete selection must keep Import disabled with an explanation.
 Probe code is a separate test mod, never compiled into the shipped assembly.
 
-Building never deploys. Automated verification requires creating a fresh managed
+Build with `scripts\build.cmd` (see the root contract); a bare `dotnet build`
+never deploys. Automated verification requires creating a fresh managed
 run after building, following the root contract; creation deploys its copies.
 Player installation deployment uses `pwsh scripts/deploy.ps1` and a game restart.
+
+Help images are regenerated with `pwsh scripts/update-help-images.ps1` (no
+arguments: 1920x1080, UI scale 1.0, local 1.7 copy; `-Check` reports without
+writing, `-RunFolder <folder>` cuts again from an earlier capture). The script
+is a thin call into the shared pipeline
+(`Shared/tools/automation/help-shots`, shared probe source in
+`Shared/Tests/InGame/HelpShots`): it builds the mod and the test-only probe
+`tests/InGame/HelpShots`, plays a scripted run that saves a full frame per
+scene and a manifest naming the pixel rectangle of every element drawn in it
+(Harmony hooks in the probe; nothing in the shipped mod), then cuts each image
+listed in `crops.json` by region name. An image whose pixels did not change
+is not rewritten. The probe sets the effective UI scale itself and fails the
+run unless the frame is at exactly the requested scale (the 1.7 runtime does
+render at 1.0; only the preference is skewed by the automation desktop's DPI
+factor). Every in-game image the English help references is cut by `crops.json`. The
+on-map panel is translucent and open ground can move while paused (clouds
+under a ship in orbit), so the probe parks the camera over the emptiest roofed
+room (`StillBackground`) to get the same pixels from every run. A new image needs a scene in `Probe.cs` (if no
+existing frame shows it) and an entry in `crops.json`. The `verdict-*.png`
+icons are artwork from `Shared/assets/help-icons`.

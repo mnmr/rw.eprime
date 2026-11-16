@@ -54,13 +54,13 @@
   <IMP_TipColReserved>Réservés</IMP_TipColReserved>
   <IMP_TipColHeldBack>Mis de côté</IMP_TipColHeldBack>
   <IMP_TipColQueued>Restant à produire</IMP_TipColQueued>
-  <IMP_TipColCrafting>Dans les ordres de fabrication</IMP_TipColCrafting>
+  <IMP_TipColCrafting>Dans les tâches de fabrication</IMP_TipColCrafting>
   <IMP_TipColStatus>État</IMP_TipColStatus>
   <IMP_TipCovered>Couvert</IMP_TipCovered>
   <IMP_TipMaking>En fabrication</IMP_TipMaking>
   <IMP_TipMakingMaterials>Fabrication de matériaux</IMP_TipMakingMaterials>
   <IMP_TipNoRecipe>Aucune recette</IMP_TipNoRecipe>
-  <IMP_TipBenchesInUse>Établis avec des ordres Implanner : {0}</IMP_TipBenchesInUse>
+  <IMP_TipBenchesInUse>Établis avec des tâches Implanner : {0}</IMP_TipBenchesInUse>
   <IMP_TipColPlanned>Prévus</IMP_TipColPlanned>
   <IMP_TipColInstalled>Posés</IMP_TipColInstalled>
   <IMP_TipColMissing>Manquants</IMP_TipColMissing>
@@ -138,13 +138,13 @@
   <IMP_OptImplantReserves>Implants mis de côté</IMP_OptImplantReserves>
   <IMP_AddImplantReserve>Ajouter un implant</IMP_AddImplantReserve>
   <IMP_OptProduction>Production</IMP_OptProduction>
-  <IMP_OptAutoProduction>Ajouter automatiquement des ordres pour les implants manquants</IMP_OptAutoProduction>
-  <IMP_OptConcurrency>Établis pouvant recevoir des ordres</IMP_OptConcurrency>
-  <IMP_OptIdleBenches>Créer des ordres uniquement sur les établis inactifs</IMP_OptIdleBenches>
+  <IMP_OptAutoProduction>Ajouter automatiquement des tâches pour les implants manquants</IMP_OptAutoProduction>
+  <IMP_OptConcurrency>Établis pouvant recevoir des tâches</IMP_OptConcurrency>
+  <IMP_OptIdleBenches>Créer des tâches uniquement sur les établis inactifs</IMP_OptIdleBenches>
   <IMP_OptDesignatedBenches>Utiliser uniquement les établis Implanner</IMP_OptDesignatedBenches>
-  <IMP_OptProductionSkill>Compétence d'artisanat requise pour les ordres de production</IMP_OptProductionSkill>
-  <IMP_OptIntermediaries>Autoriser les ordres de production des intermédiaires manquants</IMP_OptIntermediaries>
-  <IMP_OptReserves>Conserver en stock (après le coût des ordres)</IMP_OptReserves>
+  <IMP_OptProductionSkill>Compétence d'artisanat requise pour les tâches de production</IMP_OptProductionSkill>
+  <IMP_OptIntermediaries>Autoriser les tâches de production des intermédiaires manquants</IMP_OptIntermediaries>
+  <IMP_OptReserves>Conserver en stock (après le coût des tâches)</IMP_OptReserves>
   <IMP_OptModCompat>Compatibilité des mods</IMP_OptModCompat>
   <IMP_OptSkillSliderMaximum>Valeur maximale des curseurs de compétence</IMP_OptSkillSliderMaximum>
   <IMP_OptSkillSliderMaximumTip>Définit la borne supérieure des curseurs de Médecine et d'Artisanat. Les exigences existantes et la sélection automatique du médecin restent inchangées.</IMP_OptSkillSliderMaximumTip>
@@ -153,31 +153,31 @@
   <IMP_OptCatalog>Catalogue</IMP_OptCatalog>
   <IMP_OptShowPurchaseOnly>Afficher les implants uniquement disponibles à l'achat</IMP_OptShowPurchaseOnly>
   <IMP_CleanupTitle>Désactiver l'automatisation ?</IMP_CleanupTitle>
-  <IMP_CleanupBody>Implanner a créé ces ordres. OK désactive l’automatisation et supprime les ordres cochés. Les ordres décochés restent actifs : les colons peuvent toujours fabriquer les objets ou effectuer les opérations. Implanner reprend la gestion des ordres restants à la réactivation. Les implants réservés sont libérés dans les deux cas. Annuler maintient l’automatisation active.</IMP_CleanupBody>
-  <IMP_OptEnableTip>Commande principale de toutes les actions automatiques d’Implanner : réserver des implants, programmer des opérations et créer des ordres de fabrication. Désactivée, elle laisse le suivi des plans et de la progression actif. La désactivation vous demande quels ordres existants conserver ; ceux-ci restent actifs, et les colons peuvent toujours fabriquer les objets ou effectuer les opérations.</IMP_OptEnableTip>
+  <IMP_CleanupBody>Implanner a créé ces tâches. OK désactive l’automatisation et supprime les tâches cochées. Les tâches décochées restent actives : les colons peuvent toujours fabriquer les objets ou effectuer les opérations. Implanner reprend la gestion des tâches restantes à la réactivation. Les implants réservés sont libérés dans les deux cas. Annuler maintient l’automatisation active.</IMP_CleanupBody>
+  <IMP_OptEnableTip>Commande principale de toutes les actions automatiques d’Implanner : réserver des implants, programmer des opérations et créer des tâches de fabrication. Désactivée, elle laisse le suivi des plans et de la progression actif. La désactivation vous demande quelles tâches existantes conserver ; celles-ci restent actives, et les colons peuvent toujours fabriquer les objets ou effectuer les opérations.</IMP_OptEnableTip>
   <IMP_OptIterationTip>Ordre dans lequel l'automatisation traite les implants manquants. La priorité des colons dans l'onglet Vue d'ensemble détermine toujours qui passe en premier.\n\nLots par niveau : chacun reçoit d'abord les implants du niveau le plus élevé, puis le travail descend dans les niveaux. Un colon part en opération une fois tout son niveau réservé.\n\nEnsembles complets : terminer tout le plan d'un colon avant de passer au suivant. Les opérations attendent que tout le plan soit réservé.\n\nDès que possible : chaque implant en stock est immédiatement programmé pour le colon le plus prioritaire qui en manque. À priorité égale, les jambes vont au colon le plus lent, et les bras d'abord aux colons équipés d'une arme de mêlée, puis au colon ayant le meilleur total en Artisanat et en Intellectuel.</IMP_OptIterationTip>
   <IMP_OptAutoFloorTip>Les opérations sont réservées à votre meilleur médecin disponible, afin qu'un novice ne rate pas la pose d'un implant bionique simplement parce qu'il est arrivé le premier. Cette restriction suit le meilleur médecin de chaque colonie au gré des arrivées et des départs. Personne ne peut s'opérer lui-même : les opérations du meilleur médecin reviennent donc au deuxième meilleur.\n\nDésactivez cette option pour définir vous-même un minimum fixe.</IMP_OptAutoFloorTip>
   <IMP_OptSurgeryConcurrencyTip>Nombre de colons par colonie pouvant avoir des opérations prévues simultanément. Une valeur élevée fait attendre davantage de colons en parallèle ; une valeur faible laisse l'hôpital et les médecins disponibles. La valeur initiale est d'un pour dix colons. Maintenez Maj en cliquant sur +/- pour changer de 10, ou Ctrl pour changer de 5.</IMP_OptSurgeryConcurrencyTip>
   <IMP_OptCountHospitalizedTip>Les colons et esclaves allongés dans des lits médicaux ou à terre en attente de soins occupent aussi des places d'opération. Les nouvelles opérations Implanner attendent que l'hôpital ait de la place sous la limite ci-dessus. Les prisonniers, invités et patients d'autres factions n'occupent jamais de place. Désactivez cette option pour programmer les poses d'implants indépendamment des personnes déjà soignées.</IMP_OptCountHospitalizedTip>
   <IMP_OptUpgradeByPriorityTip>Les implants de meilleure qualité vont aux colons les plus prioritaires dans l'onglet Vue d'ensemble. Les nouvelles opérations utilisent la qualité la plus basse acceptée par le plan, ce qui garde les meilleurs implants disponibles.\n\nLorsqu'un meilleur implant devient disponible, le colon le plus prioritaire portant un implant moins bon du même type le reçoit. Son ancien implant est d'abord retiré, puis passe au colon suivant. Un implant déjà réservé pour un colon moins prioritaire est aussi transféré, tant que son opération n'est pas encore programmée.\n\nRemplacer un implant installé par un autre de meilleure qualité nécessite deux opérations : le retrait et la pose. Si l'option est désactivée, chaque colon reçoit le meilleur implant en stock lorsque vient son tour.</IMP_OptUpgradeByPriorityTip>
-  <IMP_OptManualFloorTip>Compétence minimale en Médecine exigée pour les opérations Implanner. Les ordres attendent qu'un médecin de ce niveau ou supérieur soit disponible. À la désactivation de l'affectation automatique, la valeur initiale est celle de votre meilleur médecin actuel.</IMP_OptManualFloorTip>
-  <IMP_OptImplantReservesTip>Garde jusqu’à ce nombre d’implants existants disponibles pour un usage manuel. Implanner ne les utilise ni pour les opérations prévues ni comme ingrédients de fabrication. La production automatique fabrique des implants supplémentaires tant que les plans assignés en ont besoin. Pour renouveler un stock d’urgence lorsqu’aucun plan n’a besoin de l’implant, ajoutez vous-même un ordre de fabrication.</IMP_OptImplantReservesTip>
+  <IMP_OptManualFloorTip>Compétence minimale en Médecine exigée pour les opérations Implanner. Les tâches attendent qu'un médecin de ce niveau ou supérieur soit disponible. À la désactivation de l'affectation automatique, la valeur initiale est celle de votre meilleur médecin actuel.</IMP_OptManualFloorTip>
+  <IMP_OptImplantReservesTip>Garde jusqu’à ce nombre d’implants existants disponibles pour un usage manuel. Implanner ne les utilise ni pour les opérations prévues ni comme ingrédients de fabrication. La production automatique fabrique des implants supplémentaires tant que les plans assignés en ont besoin. Pour renouveler un stock d’urgence lorsqu’aucun plan n’a besoin de l’implant, ajoutez vous-même une tâche de fabrication.</IMP_OptImplantReservesTip>
   <IMP_AddImplantReserveTip>Choisissez un implant à mettre de côté pour l'exclure de l'automatisation.</IMP_AddImplantReserveTip>
   <IMP_OptAllowMultipleBladdersTip>Le jeu considère les implants de vessie de différents mods comme distincts : un colon peut en porter plusieurs et cumuler leurs effets. Désactivez cette option pour les traiter comme un seul emplacement : en choisir un dans un plan remplace les autres, et un colon portant déjà l'un des implants ci-dessous est considéré comme équipé. Aucun implant n'est jamais retiré.\n\nImplants concernés :\n{0}</IMP_OptAllowMultipleBladdersTip>
   <IMP_OptAllowMultipleHygieneEnhancersTip>Le jeu considère les améliorateurs d'hygiène de différents mods comme distincts : un colon peut en porter plusieurs et cumuler leurs effets. Désactivez cette option pour les traiter comme un seul emplacement : en choisir un dans un plan remplace les autres, et un colon portant déjà l'un des implants ci-dessous est considéré comme équipé. Aucun implant n'est jamais retiré.\n\nImplants concernés :\n{0}</IMP_OptAllowMultipleHygieneEnhancersTip>
   <IMP_OptShowPurchaseOnlyTip>Affiche les implants qu'aucun établi ne peut fabriquer, comme les parties archotech. Ils ne s'obtiennent que par le commerce, les quêtes ou la récupération. Activez cette option pour les inclure malgré tout dans les plans. L'automatisation réserve l'objet dès son arrivée en stock et le pose avec le lot suivant ; son absence ne bloque jamais les autres implants. Un mod ajoutant une recette de fabrication le transforme automatiquement en implant ordinaire.\n\nImplants concernés :\n{0}</IMP_OptShowPurchaseOnlyTip>
   <IMP_OptCompatNoneLoaded>Aucun des implants concernés n'est chargé.</IMP_OptCompatNoneLoaded>
-  <IMP_OptAutoProductionTip>Les implants manquants reçoivent automatiquement des ordres de fabrication. Implanner compte les besoins restants des plans de chaque colonie, en déduit les stocks et les ordres en attente, puis place des ordres sur les établis capables de les réaliser. Les ordres qu'il a créés sont retirés quand le besoin disparaît.</IMP_OptAutoProductionTip>
-  <IMP_OptConcurrencyTip>Nombre d'établis par colonie pouvant recevoir des ordres de fabrication Implanner simultanément. Chaque ordre fabrique un implant, et un établi en accueille jusqu'à deux pour que le suivant attende déjà lorsque le premier se termine. Davantage d'établis fabriquent en parallèle, mais vos artisans consacrent alors plus de temps aux implants et moins au reste. Maintenez Maj en cliquant sur +/- pour changer de 10, ou Ctrl pour changer de 5.</IMP_OptConcurrencyTip>
-  <IMP_OptIdleBenchesTip>Seuls les établis sans travail en attente reçoivent de nouveaux ordres Implanner. Vos propres files de production restent prioritaires ; la fabrication d'implants comble les périodes creuses. Désactivez cette option pour autoriser les ordres d'implants à se placer après les vôtres.</IMP_OptIdleBenchesTip>
-  <IMP_OptDesignatedBenchesTip>Les ordres de fabrication vont uniquement aux établis dont l'option « Établi Implanner » est cochée dans l'onglet Tâches : une colonie sans établi désigné ne fabrique donc aucun implant. Désactivée, cette option donne la priorité aux établis Implanner ; les autres sont utilisés une fois que chacun contient deux ordres. La limite « Établis pouvant recevoir des ordres » s'applique dans les deux cas.</IMP_OptDesignatedBenchesTip>
+  <IMP_OptAutoProductionTip>Les implants manquants reçoivent automatiquement des tâches de fabrication. Implanner compte les besoins restants des plans de chaque colonie, en déduit les stocks et les tâches en attente, puis place des tâches sur les établis capables de les réaliser. Les tâches qu'il a créées sont retirées quand le besoin disparaît.</IMP_OptAutoProductionTip>
+  <IMP_OptConcurrencyTip>Nombre d'établis par colonie pouvant recevoir des tâches de fabrication Implanner simultanément. Chaque tâche fabrique un implant, et un établi en accueille jusqu'à deux pour que le suivant attende déjà lorsque le premier se termine. Davantage d'établis fabriquent en parallèle, mais vos artisans consacrent alors plus de temps aux implants et moins au reste. Maintenez Maj en cliquant sur +/- pour changer de 10, ou Ctrl pour changer de 5.</IMP_OptConcurrencyTip>
+  <IMP_OptIdleBenchesTip>Seuls les établis sans travail en attente reçoivent de nouvelles tâches Implanner. Vos propres files de production restent prioritaires ; la fabrication d'implants comble les périodes creuses. Désactivez cette option pour autoriser les tâches d'implants à se placer après les vôtres.</IMP_OptIdleBenchesTip>
+  <IMP_OptDesignatedBenchesTip>Les tâches de fabrication vont uniquement aux établis dont l'option « Établi Implanner » est cochée dans l'onglet Tâches : une colonie sans établi désigné ne fabrique donc aucun implant. Désactivée, cette option donne la priorité aux établis Implanner ; les autres sont utilisés une fois que chacun contient deux tâches. La limite « Établis pouvant recevoir des tâches » s'applique dans les deux cas.</IMP_OptDesignatedBenchesTip>
   <IMP_BenchToggle>Établi Implanner</IMP_BenchToggle>
-  <IMP_BenchToggleTip>Implanner place ses ordres de fabrication sur cet établi avant tout autre, et les ordres déjà présents sont suspendus. Tant que cette option est cochée, vous ne pouvez pas y ajouter, coller, suspendre ou reprendre des ordres.\n\nDécochez-la pour récupérer l'établi. Les ordres déjà suspendus lors de l'activation le restent ; les autres reprennent.</IMP_BenchToggleTip>
-  <IMP_BenchLockedTip>Vous ne pouvez pas coller, suspendre ou reprendre d'ordres sur un établi Implanner. Décochez « Établi Implanner » en haut de l'onglet Tâches pour le récupérer.</IMP_BenchLockedTip>
-  <IMP_BenchNoNewBills>Décochez « Établi Implanner » pour ajouter des ordres ici</IMP_BenchNoNewBills>
-  <IMP_OptProductionSkillTip>Compétence minimale en Artisanat pour les ordres de production Implanner. Une valeur élevée confie les composants coûteux aux artisans compétents ; une valeur faible permet à plus de colons d'aider. Les ordres attendent qu'un artisan qualifié les prenne.</IMP_OptProductionSkillTip>
-  <IMP_OptIntermediariesTip>Lorsqu'un ordre d'implant manque d'un ingrédient, par exemple de composants, Implanner peut aussi créer un ordre pour cet ingrédient s'il s'agit d'un produit manufacturé fabricable. Les manques sont suivis tout au long de la chaîne de production. Les ressources brutes, comme l'acier, ne sont jamais fabriquées ; vous devez toujours les récolter vous-même.</IMP_OptIntermediariesTip>
-  <IMP_OptReservesTip>Stocks minimaux pour la fabrication automatique. Un ordre n'est ajouté que si la colonie peut en payer le coût, en plus des matériaux encore nécessaires aux ordres en attente, tout en conservant au moins cette quantité de chaque ingrédient. Augmentez une valeur pour protéger une réserve ; mettez-la à zéro pour laisser la production dépenser librement.</IMP_OptReservesTip>
+  <IMP_BenchToggleTip>Implanner place ses tâches de fabrication sur cet établi avant tout autre, et les tâches déjà présentes sont suspendues. Tant que cette option est cochée, l'onglet Tâches affiche la file de production d'Implanner et vous ne pouvez pas y ajouter, coller, suspendre ou reprendre des tâches.\n\nDécochez-la pour récupérer l'établi. Les tâches déjà suspendues lors de l'activation le restent ; les autres reprennent.</IMP_BenchToggleTip>
+  <IMP_BenchLockedTip>Vous ne pouvez pas coller, suspendre ou reprendre de tâches sur un établi Implanner. Décochez « Établi Implanner » en haut de l'onglet Tâches pour le récupérer.</IMP_BenchLockedTip>
+  <IMP_BenchNoNewBills>Décochez « Établi Implanner » pour ajouter des tâches ici</IMP_BenchNoNewBills>
+  <IMP_OptProductionSkillTip>Compétence minimale en Artisanat pour les tâches de production Implanner. Une valeur élevée confie les composants coûteux aux artisans compétents ; une valeur faible permet à plus de colons d'aider. Les tâches attendent qu'un artisan qualifié les prenne.</IMP_OptProductionSkillTip>
+  <IMP_OptIntermediariesTip>Lorsqu'une tâche d'implant manque d'un ingrédient, par exemple de composants, Implanner peut aussi créer une tâche pour cet ingrédient s'il s'agit d'un produit manufacturé fabricable. Les manques sont suivis tout au long de la chaîne de production. Les ressources brutes, comme l'acier, ne sont jamais fabriquées ; vous devez toujours les récolter vous-même.</IMP_OptIntermediariesTip>
+  <IMP_OptReservesTip>Stocks minimaux pour la fabrication automatique. Une tâche n'est ajoutée que si la colonie peut en payer le coût, en plus des matériaux encore nécessaires aux tâches en attente, tout en conservant au moins cette quantité de chaque ingrédient. Augmentez une valeur pour protéger une réserve ; mettez-la à zéro pour laisser la production dépenser librement.</IMP_OptReservesTip>
   <IMP_HelpChapterBasics>Notions de base</IMP_HelpChapterBasics>
   <IMP_HelpChapterPlans>Plans</IMP_HelpChapterPlans>
   <IMP_HelpChapterAutomation>Automatisation</IMP_HelpChapterAutomation>
@@ -243,4 +243,21 @@
   <IMP_OptCompatHygiene>Dubs Bad Hygiene et [FSF] Advanced Bionics Expansion</IMP_OptCompatHygiene>
   <IMP_OptCompatMultiDoctor>Multi-Doctor Surgery</IMP_OptCompatMultiDoctor>
   <IMP_OptCompatSkills>Endless Growth et autres mods de compétences</IMP_OptCompatSkills>
+  <IMP_QueueAge>En file</IMP_QueueAge>
+  <IMP_QueueAgeNow>À l'instant</IMP_QueueAgeNow>
+  <IMP_QueueAgeTip>Temps de jeu écoulé depuis que cette tâche a été mise en file par Implanner.</IMP_QueueAgeTip>
+  <IMP_QueueEmpty>Aucune tâche en file ici. Implanner ajoute des tâches lorsqu'un plan nécessite un implant que cet établi peut fabriquer.</IMP_QueueEmpty>
+  <IMP_QueueFor>Pour</IMP_QueueFor>
+  <IMP_QueueNeededFor>Nécessaire pour</IMP_QueueNeededFor>
+  <IMP_QueuePausedMany>{0} autres tâches sont suspendues tant que cet établi est un établi Implanner.</IMP_QueuePausedMany>
+  <IMP_QueuePausedOne>1 autre tâche est suspendue tant que cet établi est un établi Implanner.</IMP_QueuePausedOne>
+  <IMP_QueuePlan>Plan</IMP_QueuePlan>
+  <IMP_QueueQuality>Qualité</IMP_QueueQuality>
+  <IMP_QueueQualityValue>{0} ou mieux</IMP_QueueQualityValue>
+  <IMP_QueueStatusCrafting>Fabrication</IMP_QueueStatusCrafting>
+  <IMP_QueueStatusCraftingAt>Fabrication : {0}</IMP_QueueStatusCraftingAt>
+  <IMP_QueueStatusStarted>Commencé : {0}</IMP_QueueStatusStarted>
+  <IMP_QueueStatusWaiting>En attente</IMP_QueueStatusWaiting>
+  <IMP_QueueTitle>File de production d'Implanner</IMP_QueueTitle>
+  <IMP_QueueWorker>Travailleur</IMP_QueueWorker>
 </LanguageData>

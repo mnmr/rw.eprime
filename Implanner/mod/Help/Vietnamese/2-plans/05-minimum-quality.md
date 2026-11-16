@@ -37,6 +37,6 @@ Thay cấy ghép đã lắp bằng loại có chất lượng tốt hơn cần h
 Khi Implanner chế tạo cho kế hoạch:
 
 <!-- l10n:b-51f50276fd20 -->
-- Có Quality Jobs: lệnh nhắm mức tối thiểu, nên bước cuối giao cho thợ có thể đạt mức đó.
-- Cấy ghép lai Vanilla Genetics Expanded lấy chất lượng từ genoframe. Lệnh chỉ dùng genoframe đạt mức tối thiểu trở lên.
+- Có Quality Jobs: công việc nhắm mức tối thiểu, nên bước cuối giao cho thợ có thể đạt mức đó.
+- Cấy ghép lai Vanilla Genetics Expanded lấy chất lượng từ genoframe. Công việc chỉ dùng genoframe đạt mức tối thiểu trở lên.
 - Không có cả hai: mọi thợ có thể hoàn thành; thành phẩm dưới mức tối thiểu được chế tạo lại. Mức giữ kho (xem [giữ dự trữ](topic:keeping-stock)) dừng việc này trước khi cạn nguyên liệu.

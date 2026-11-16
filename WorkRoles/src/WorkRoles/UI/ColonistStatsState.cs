@@ -452,8 +452,16 @@ namespace WorkRoles.UI
                 store, capture!.Skills, (store?.recommendationTuning
                     ?? RecommendationsTuningOptions.Default).SkillPromotion,
                 LanguageChangeCoordinator.Revision, DefinitionReloadCoordinator.Revision,
-                UiRevision.Current));
+                // The per-player star option rides in the metric stamp:
+                // it changes the measured column width.
+                unchecked(UiRevision.Current * 2 + (PanelStars ? 1 : 0))));
         }
+
+        /// Per-player: the selected colonist's skill stars (the palette
+        /// verdict option covers both). Off reserves no star slot.
+        internal static bool PanelStars =>
+            WorkRolesMod.Settings?.verdictsInPalette ?? true;
+
 
         private ColonistStatsSnapshot BuildSnapshot(Pawn pawn,
             ColonistStatsSnapshot? previous)
@@ -462,6 +470,7 @@ namespace WorkRoles.UI
             SkillInput[] inputs = capture.Skills.Inputs;
             var items = new ColonistSkillPresentation[inputs.Length];
             float columnWidth = MinimumSkillColumnWidth;
+            float starsReserve = PanelStars ? VerdictStarsReserve : 0f;
             using (new TextBlock(GameFont.Small))
             {
                 for (int i = 0; i < inputs.Length; i++)
@@ -473,7 +482,7 @@ namespace WorkRoles.UI
                         : LabelDecoratorGap + item.SignalIcons.Count * DecoratorSize
                             + (item.SignalIcons.Count - 1) * DecoratorGap;
                     float required = item.LabelWidth + iconWidth
-                        + SkillValueGap + SkillValueWidth + VerdictStarsReserve;
+                        + SkillValueGap + SkillValueWidth + starsReserve;
                     columnWidth = Mathf.Max(columnWidth, Mathf.Ceil(required));
                 }
             }
@@ -481,7 +490,8 @@ namespace WorkRoles.UI
                 && previous.Skills.Count == items.Length
                 && previous.SkillColumnWidth == columnWidth
                     ? previous.SkillGrid : null;
-            return new ColonistStatsSnapshot(items, columnWidth, capture.Skills, grid);
+            return new ColonistStatsSnapshot(items, columnWidth, capture.Skills,
+                grid, starsReserve);
         }
 
         internal static Color SkillTextColor(SkillLine line, SignalPassionTier tier)
@@ -625,10 +635,12 @@ namespace WorkRoles.UI
 
         internal ColonistStatsSnapshot(
             IReadOnlyList<ColonistSkillPresentation> skills, float skillColumnWidth,
-            object? facts = null, ColonistSkillGridLayout? skillGrid = null)
+            object? facts = null, ColonistSkillGridLayout? skillGrid = null,
+            float starsReserve = 0f)
         {
             Skills = skills;
             SkillColumnWidth = skillColumnWidth;
+            StarsReserve = starsReserve;
             SkillGrid = skillGrid ?? ColonistSkillGridLayout.Calculate(
                 skills.Count, skillColumnWidth);
             Facts = facts ?? this;
@@ -637,6 +649,9 @@ namespace WorkRoles.UI
         internal object Facts { get; }
         internal IReadOnlyList<ColonistSkillPresentation> Skills { get; }
         internal float SkillColumnWidth { get; }
+        /// Width kept at each cell's right edge for the verdict star pair;
+        /// zero when the stars are turned off.
+        internal float StarsReserve { get; }
         internal ColonistSkillGridLayout SkillGrid { get; }
 
         internal ColonistSkillPresentation? ForSkill(SkillDef skill)
@@ -649,6 +664,7 @@ namespace WorkRoles.UI
         internal bool ContentEquals(ColonistStatsSnapshot other)
         {
             if (SkillColumnWidth != other.SkillColumnWidth
+                || StarsReserve != other.StarsReserve
                 || Skills.Count != other.Skills.Count) return false;
             for (int i = 0; i < Skills.Count; i++)
                 if (!ReferenceEquals(Skills[i], other.Skills[i])) return false;

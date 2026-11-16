@@ -13,7 +13,7 @@ Bancadas em espera ainda são usadas para produção.
 
 <!-- l10n:detail -->
 Uma bancada que o LightsOut colocou em espera conta como bancada utilizável, então
-as ordens de produção são enfileiradas e fabricadas nela normalmente. Um caso
+as tarefas de produção são enfileiradas e fabricadas nela normalmente. Um caso
 relatado de um nível inferior sendo construído primeiro era, na verdade, uma bancada
 de órgãos sem energia, corrigido no próprio Implanner.
 

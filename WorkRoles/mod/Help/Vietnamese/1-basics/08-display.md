@@ -82,5 +82,23 @@ Thêm công tắc hiển thị ở thẻ Tùy chọn:
 <!-- l10n:b-b1a38cc7f63a -->
 ![Thiết lập hiển thị ở thẻ Tùy chọn](options-display.png)
 
+<!-- l10n:b-7a3c91e04d52 -->
+Dấu hiệu trên thẻ vai trò chọn cách thẻ đánh dấu vai trò luôn bật, vai trò có quy tắc và phân công đã ghim. Chấm, mặc định, vẽ một chấm nhỏ ở mép trái thẻ: trắng cho luôn bật, vàng cho vai trò có quy tắc và xanh nước biển cho phân công đã ghim. Biểu tượng thì vẽ một biểu tượng cho từng loại: lá cờ cho luôn bật, đồng hồ hoặc ghim bản đồ cho quy tắc, và đinh ghim cho phân công đã ghim. Tắt sẽ ẩn các dấu hiệu. Các hình trong phần trợ giúp này hiển thị chấm.
+
+<!-- l10n:b-c81e5d2a40f7 -->
+Cư dân không làm được hết các công việc của một vai trò sẽ có sao đánh giá rỗng khi dùng chấm, và biểu tượng cảnh báo khi dùng biểu tượng.
+
+<!-- l10n:b-19b4f0a6d3e8 -->
+Hiện biểu tượng xóa trên thẻ vai trò điều khiển biểu tượng thùng rác trên các thẻ đã phân công. Khi tắt, hãy nhấp phải vào thẻ và chọn Xóa vai trò.
+
+<!-- l10n:b-5e7a2c9b6d14 -->
+Hiện kỹ năng mạnh dưới tên cư dân điều khiển dòng chú thích kỹ năng nhỏ trong mỗi hàng cư dân.
+
+<!-- l10n:b-a40d93f1b7c2 -->
+Hiện đề xuất dành cho người chơi tự phân công vai trò. Khi tắt, thẻ Đề xuất, nút Tối ưu khu định cư và mục Vai trò đề xuất của cư dân đang chọn sẽ bị ẩn. Sao đánh giá vẫn dùng được.
+
+<!-- l10n:b-3d6f81e0c5a9 -->
+Các bản xem trước nằm giữa các công tắc hiển thị một hàng cư dân, bảng vai trò và bảng cư dân với thiết lập hiện tại.
+
 <!-- l10n:b-e505859311eb -->
 Tất cả là tùy chọn cá nhân; mỗi người chơi giữ riêng, không đổi phân công.

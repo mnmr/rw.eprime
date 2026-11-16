@@ -1,0 +1,7 @@
+<ModMetaData>
+  <name>Quality Jobs help screenshots probe</name>
+  <author>Quality Jobs tests</author>
+  <packageId>tests.qualityjobs.helpshots</packageId>
+  <supportedVersions><li>1.7</li></supportedVersions>
+  <loadAfter><li>eprime.qualityjobs</li></loadAfter>
+</ModMetaData>

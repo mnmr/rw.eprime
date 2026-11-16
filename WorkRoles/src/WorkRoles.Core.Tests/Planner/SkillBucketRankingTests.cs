@@ -59,4 +59,44 @@ public class SkillBucketRankingTests
 
         await Assert.That(top).IsEmpty();
     }
+
+    [Test]
+    public async Task CaptionFallsBackToTheSingleHighestSkillWhenNothingIsStrong()
+    {
+        // A colonist whose only passions are combat skills (excluded by the
+        // caller): Plants 12 without a passion is still the skill to show.
+        SkillBucketSnapshot snapshot = Snapshot(("Cooking", SignalBucket.Poor));
+        SkillBucketCandidate[] candidates =
+        [
+            new SkillBucketCandidate("Mining", 2),
+            new SkillBucketCandidate("Cooking", 1),
+            new SkillBucketCandidate("Plants", 12),
+            new SkillBucketCandidate("Social", 4),
+        ];
+
+        List<SkillBucketChoice> caption = SkillBucketRanking.Caption(snapshot, candidates, max: 4, RecommendationsTuningOptions.Default);
+
+        await Assert.That(caption.Count).IsEqualTo(1);
+        await Assert.That(caption[0].SkillDefName).IsEqualTo("Plants");
+        await Assert.That(caption[0].SkillLevel).IsEqualTo(12);
+        await Assert.That(caption[0].Bucket).IsEqualTo(SignalBucket.Neutral);
+    }
+
+    [Test]
+    public async Task CaptionKeepsOnlyStrongSkillsWhenAnyExistAndShowsNothingAtLevelZero()
+    {
+        SkillBucketSnapshot snapshot = Snapshot(("Cooking", SignalBucket.Strong));
+        SkillBucketCandidate[] candidates =
+        [
+            new SkillBucketCandidate("Plants", 18),
+            new SkillBucketCandidate("Cooking", 6),
+        ];
+
+        List<SkillBucketChoice> caption = SkillBucketRanking.Caption(snapshot, candidates, max: 4, RecommendationsTuningOptions.Default);
+        List<SkillBucketChoice> unskilled = SkillBucketRanking.Caption(Snapshot(),
+            [new SkillBucketCandidate("Plants", 0)], max: 4, RecommendationsTuningOptions.Default);
+
+        await Assert.That(string.Join(",", caption.Select(choice => choice.SkillDefName))).IsEqualTo("Cooking");
+        await Assert.That(unskilled).IsEmpty();
+    }
 }

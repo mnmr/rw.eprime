@@ -10,5 +10,9 @@ Un rôle conditionnel s'active et se désactive selon des règles :
 <!-- l10n:b-ed5e5f41560b -->
 La bande horaire définit quand le rôle s'applique : désactivez des heures pour créer des pauses. Le sélecteur de lieu définit où : colonies, caravanes ou vaisseau nommé. Un rôle devient conditionnel dès qu'une règle est définie et rejoint le groupe automatique Rôles conditionnels dans l'arbre.
 
+<!-- l10n:b-2f8d6b1c9a70 -->
+Les pastilles d'un rôle conditionnel portent un point jaune, ou une icône d'horloge ou d'épingle de carte avec les
+[marqueurs en icônes](topic:display).
+
 <!-- l10n:b-fe334f5209e8 -->
 Lorsqu'une règle le désactive, ses pastilles s'estompent et les infobulles expliquent pourquoi (« Désactivé : hors horaires actifs »). Aucun rôle prédéfini n'utilise ces règles ; un exemple classique est un rôle de mineur qui ne s'applique qu'en dehors de la colonie.

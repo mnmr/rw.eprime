@@ -2,7 +2,7 @@
 title: Fissare le assegnazioni
 ---
 <!-- l10n:b-1075eaae5085 -->
-Fai clic destro su una tessera e scegli Fissa. Una tessera fissata mostra un simbolo di puntina:
+Fai clic destro su una tessera e scegli Fissa. Una tessera fissata mostra un punto azzurro, oppure un'icona di puntina con i [marcatori a icona](topic:display):
 
 <!-- l10n:b-62dc1c2c1729 -->
 ![Una tessera fissata](chip-pinned.png)

@@ -44,6 +44,11 @@ namespace Implanner
         private List<int>? productionProtectedItemIds;
         // Parallel to productionBillIds; absent in older saves (no promise).
         private List<int>? productionBillQualities;
+        // Parallel to productionBillIds; absent in older saves (unknown age,
+        // no target). Shown by the bench queue only.
+        private List<int>? productionBillTicks;
+        private List<int>? productionBillPawns;
+        private List<string>? productionBillGoals;
         // Parallel reinstall records, one entry per pushed-out implant.
         private List<int>? reinstallPawnIds;
         private List<string>? reinstallWiperKeys;
@@ -321,12 +326,20 @@ namespace Implanner
                 productionBillIds.Sort(System.StringComparer.Ordinal);
                 productionBillDefs = new List<string>();
                 productionBillQualities = new List<int>();
+                productionBillTicks = new List<int>();
+                productionBillPawns = new List<int>();
+                productionBillGoals = new List<string>();
                 for (int i = 0; i < productionBillIds.Count; i++)
                 {
                     productionBillDefs.Add(
                         Model.OwnedProductionBills[productionBillIds[i]]);
                     productionBillQualities.Add(
                         Model.ProductionBillQualityOf(productionBillIds[i]));
+                    ProductionBillOrigin origin =
+                        Model.ProductionBillOriginOf(productionBillIds[i]);
+                    productionBillTicks.Add(origin.CreatedTick);
+                    productionBillPawns.Add(origin.PawnId);
+                    productionBillGoals.Add(origin.GoalKey);
                 }
 
                 reinstallPawnIds = new List<int>();
@@ -417,6 +430,9 @@ namespace Implanner
             Scribe_Collections.Look(ref productionBillIds, "productionBillIds", LookMode.Value);
             Scribe_Collections.Look(ref productionBillDefs, "productionBillDefs", LookMode.Value);
             Scribe_Collections.Look(ref productionBillQualities, "productionBillQualities", LookMode.Value);
+            Scribe_Collections.Look(ref productionBillTicks, "productionBillTicks", LookMode.Value);
+            Scribe_Collections.Look(ref productionBillPawns, "productionBillPawns", LookMode.Value);
+            Scribe_Collections.Look(ref productionBillGoals, "productionBillGoals", LookMode.Value);
             Scribe_Collections.Look(ref productionProtectedItemIds, "productionProtectedItems", LookMode.Value);
             Scribe_Collections.Look(ref reinstallPawnIds, "reinstallPawns", LookMode.Value);
             Scribe_Collections.Look(ref reinstallWiperKeys, "reinstallWipers", LookMode.Value);
@@ -560,6 +576,11 @@ namespace Implanner
                 {
                     bool qualitiesValid = productionBillQualities != null
                         && productionBillQualities.Count == productionBillIds.Count;
+                    bool originsValid = productionBillTicks != null
+                        && productionBillPawns != null && productionBillGoals != null
+                        && productionBillTicks.Count == productionBillIds.Count
+                        && productionBillPawns.Count == productionBillIds.Count
+                        && productionBillGoals.Count == productionBillIds.Count;
                     for (int i = 0; i < productionBillIds.Count; i++)
                         if (!productionBillIds[i].NullOrEmpty()
                             && !productionBillDefs[i].NullOrEmpty())
@@ -567,7 +588,10 @@ namespace Implanner
                                 productionBillIds[i], productionBillDefs[i],
                                 qualitiesValid
                                     ? productionBillQualities![i]
-                                    : ProductionQueue.UnknownQuality);
+                                    : ProductionQueue.UnknownQuality,
+                                originsValid ? productionBillTicks![i] : ProductionBillOrigin.UnknownTick,
+                                originsValid ? productionBillPawns![i] : ProductionBillOrigin.NoPawn,
+                                originsValid ? productionBillGoals![i] ?? "" : "");
                 }
                 if (reinstallPawnIds != null && reinstallWiperKeys != null
                     && reinstallDefs != null && reinstallParts != null
@@ -651,6 +675,9 @@ namespace Implanner
                 productionBillIds = null;
                 productionBillDefs = null;
                 productionBillQualities = null;
+                productionBillTicks = null;
+                productionBillPawns = null;
+                productionBillGoals = null;
                 productionProtectedItemIds = null;
                 reinstallPawnIds = null;
                 reinstallWiperKeys = null;

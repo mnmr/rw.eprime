@@ -33,11 +33,9 @@
   <WR_OptSkillCaptionsTip>Jede Kolonistenzeile zeigt unter dem Namen eine kleine Beschriftung mit den besten Arbeitsfertigkeiten und ihren Stufen, nach Eignung eingefärbt. Deaktiviere dies, um nur den Namen in der Zeile anzuzeigen.</WR_OptSkillCaptionsTip>
   <WR_OptVerdictsColonists>Bewertungen auf Rollenmarken der Kolonisten anzeigen</WR_OptVerdictsColonists>
   <WR_OptVerdictsColonistsTip>Jede Rollenmarke in der Kolonistentabelle zeigt ein Eignungssternpaar für ihren Inhaber, entsprechend der Empfehlung: weiße Sterne für gute Bewertungen (einer stark, zwei großartig, gold außergewöhnlich), rote für schlechte (einer schwach, zwei miserabel), grau für neutral.</WR_OptVerdictsColonistsTip>
-  <WR_OptVerdictsPalette>Bewertungen für den gewählten Kolonisten in der Rollenpalette anzeigen</WR_OptVerdictsPalette>
-  <WR_OptVerdictsPaletteTip>Die Marken der Palette zeigen, wie gut jede Rolle zum gewählten Kolonisten passt.</WR_OptVerdictsPaletteTip>
-  <WR_OptVerdictsRecommendations>Bewertungen auf empfohlenen Rollenmarken anzeigen</WR_OptVerdictsRecommendations>
+  <WR_OptVerdictsPalette>Bewertungen für den gewählten Kolonisten in Rollenpalette und Fertigkeitenpanel anzeigen</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>Aktivieren, um die Bewertungssterne zur Eignung auf den Marken in der Rollenpalette und im Fertigkeitenpanel des Kolonisten anzuzeigen.</WR_OptVerdictsPaletteTip>
   <WR_OptPaletteGrouping>Gruppierung der Rollenpalette</WR_OptPaletteGrouping>
-  <WR_OptVerdictsRecommendationsTip>Empfohlene Rollenmarken (Statistikpanel und Änderungsvorschauen) zeigen die Eignungsbewertung für den Kolonisten, dem sie empfohlen werden.</WR_OptVerdictsRecommendationsTip>
   <WR_RecGlobalPanel>Globale Optionen</WR_RecGlobalPanel>
   <WR_RecGlobalPanelHelp>Diese Optionen verändern die Bewertung und Rangfolge von Kandidaten sowie die Platzierung in der endgültigen Empfehlungsliste. Mit Zurücksetzen stellst du die Standards wieder her, falls du deine Änderungen bereust.</WR_RecGlobalPanelHelp>
   <WR_RecRolePanel>Rollenoptionen</WR_RecRolePanel>
@@ -667,4 +665,24 @@ Die Aufgabe wurde nicht unterbrochen. Dieser Hinweis erscheint einmal pro Spiels
   <WR_HelpChapterMods>Mods</WR_HelpChapterMods>
   <WR_HiddenRole>Verborgene Rolle</WR_HiddenRole>
   <WR_HiddenRoleTip>Verborgene Rollen erscheinen nicht in der Rollenpalette oben im Reiter „Kolonisten“. Sie funktionieren weiterhin wie gewohnt: Kolonisten, die sie haben, behalten sie, die +-Schaltfläche in der Zeile eines Kolonisten listet sie weiterhin auf, und Empfehlungen können sie weiterhin vorschlagen. Nutze dies für Rollen, die du selten direkt zuweist, oder wenn deine Rollenpalette zu viel Platz einnimmt.</WR_HiddenRoleTip>
+  <WR_ChipMarkersDots>Punkte</WR_ChipMarkersDots>
+  <WR_ChipMarkersIcons>Symbole</WR_ChipMarkersIcons>
+  <WR_ChipMarkersOff>Aus</WR_ChipMarkersOff>
+  <WR_OptChipMarkers>Markierungen auf Rollenmarken</WR_OptChipMarkers>
+  <WR_OptChipMarkersTip>Wie Rollenmarken ihre Markierungen zeigen.
+
+Punkte: ein kleiner farbiger Punkt pro Markierung. Weiß bedeutet immer aktiv, Gelb bedeutet, dass die Rolle Regeln hat, und Türkis bedeutet angeheftet. Hohle Sterne bedeuten, dass der Kolonist nicht alle Aufgaben der Rolle ausführen kann.
+
+Symbole: ein Symbol pro Markierung.
+
+Aus: keine Markierungen.</WR_OptChipMarkersTip>
+  <WR_OptRecommendations>Empfehlungen anzeigen</WR_OptRecommendations>
+  <WR_OptRecommendationsTip>Deaktivieren, um den Reiter „Empfehlungen“, die Schaltfläche „Meine Kolonie verbessern“ und die empfohlenen Rollen des gewählten Kolonisten auszublenden. Eignungsbewertungen bleiben verfügbar.</WR_OptRecommendationsTip>
+  <WR_OptRemoveIcon>Entfernen-Symbol auf Rollenmarken anzeigen</WR_OptRemoveIcon>
+  <WR_OptRemoveIconTip>Deaktivieren, um den Mülleimer auf zugewiesenen Rollenmarken auszublenden. Klicke stattdessen mit der rechten Maustaste auf eine Marke und wähle „Rolle entfernen“.</WR_OptRemoveIconTip>
+  <WR_PreviewColonist>Kolonist</WR_PreviewColonist>
+  <WR_RemoveRole>Rolle entfernen</WR_RemoveRole>
+  <WR_SelectedActivity>Tätigkeit</WR_SelectedActivity>
+  <WR_SelectedName>Name</WR_SelectedName>
+  <WR_SelectedTraits>Merkmale</WR_SelectedTraits>
 </LanguageData>

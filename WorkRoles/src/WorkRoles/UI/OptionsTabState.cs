@@ -18,11 +18,16 @@ namespace WorkRoles.UI
             string skillCaptionsLabel,
             string colonistVerdictsLabel,
             string paletteVerdictsLabel,
-            string recommendationVerdictsLabel,
+            string removeIconLabel,
+            string recommendationsLabel,
             string paletteGroupingLabel,
             string[] paletteGroupingOptions,
             int paletteGroupingIndex,
             float paletteGroupingControlWidth,
+            string chipMarkersLabel,
+            string[] chipMarkersOptions,
+            int chipMarkersIndex,
+            float chipMarkersControlWidth,
             StructuredTip numericTip,
             StructuredTip rangeTip,
             StructuredTip emergencyRuleTip,
@@ -34,7 +39,8 @@ namespace WorkRoles.UI
             bool skillCaptions,
             bool colonistVerdicts,
             bool paletteVerdicts,
-            bool recommendationVerdicts,
+            bool removeIcon,
+            bool recommendations,
             string mechanicalLabel, bool mechanicalEnabled,
             string mechanicalRecommendationsLabel, bool mechanicalRecommendationsEnabled,
             float mechanicalHeight, float mechanicalRecommendationsHeight)
@@ -49,11 +55,16 @@ namespace WorkRoles.UI
             SkillCaptionsLabel = skillCaptionsLabel;
             ColonistVerdictsLabel = colonistVerdictsLabel;
             PaletteVerdictsLabel = paletteVerdictsLabel;
-            RecommendationVerdictsLabel = recommendationVerdictsLabel;
+            RemoveIconLabel = removeIconLabel;
+            RecommendationsLabel = recommendationsLabel;
             PaletteGroupingLabel = paletteGroupingLabel;
             PaletteGroupingOptions = paletteGroupingOptions;
             PaletteGroupingIndex = paletteGroupingIndex;
             PaletteGroupingControlWidth = paletteGroupingControlWidth;
+            ChipMarkersLabel = chipMarkersLabel;
+            ChipMarkersOptions = chipMarkersOptions;
+            ChipMarkersIndex = chipMarkersIndex;
+            ChipMarkersControlWidth = chipMarkersControlWidth;
             NumericTip = numericTip;
             RangeTip = rangeTip;
             EmergencyRuleTip = emergencyRuleTip;
@@ -65,7 +76,8 @@ namespace WorkRoles.UI
             SkillCaptions = skillCaptions;
             ColonistVerdicts = colonistVerdicts;
             PaletteVerdicts = paletteVerdicts;
-            RecommendationVerdicts = recommendationVerdicts;
+            RemoveIcon = removeIcon;
+            Recommendations = recommendations;
             MechanicalLabel = mechanicalLabel;
             MechanicalEnabled = mechanicalEnabled;
             MechanicalRecommendationsLabel = mechanicalRecommendationsLabel;
@@ -91,13 +103,20 @@ namespace WorkRoles.UI
         internal string SkillCaptionsLabel { get; }
         internal string ColonistVerdictsLabel { get; }
         internal string PaletteVerdictsLabel { get; }
-        internal string RecommendationVerdictsLabel { get; }
+        internal string RemoveIconLabel { get; }
+        internal string RecommendationsLabel { get; }
         internal string PaletteGroupingLabel { get; }
         /// Segment labels in PaletteMode ordinal order (Skills, Groups);
         /// producer-owned array, never mutated after publication.
         internal string[] PaletteGroupingOptions { get; }
         internal int PaletteGroupingIndex { get; }
         internal float PaletteGroupingControlWidth { get; }
+        internal string ChipMarkersLabel { get; }
+        /// Segment labels in ChipMarkers ordinal order (Dots, Icons, Off);
+        /// producer-owned array, never mutated after publication.
+        internal string[] ChipMarkersOptions { get; }
+        internal int ChipMarkersIndex { get; }
+        internal float ChipMarkersControlWidth { get; }
         internal StructuredTip NumericTip { get; }
         internal StructuredTip RangeTip { get; }
         internal StructuredTip EmergencyRuleTip { get; }
@@ -109,7 +128,8 @@ namespace WorkRoles.UI
         internal bool SkillCaptions { get; }
         internal bool ColonistVerdicts { get; }
         internal bool PaletteVerdicts { get; }
-        internal bool RecommendationVerdicts { get; }
+        internal bool RemoveIcon { get; }
+        internal bool Recommendations { get; }
 
         internal bool ContentEquals(OptionsRenderSnapshot other) =>
             other != null
@@ -139,9 +159,6 @@ namespace WorkRoles.UI
                 System.StringComparison.Ordinal)
             && string.Equals(PaletteVerdictsLabel, other.PaletteVerdictsLabel,
                 System.StringComparison.Ordinal)
-            && string.Equals(RecommendationVerdictsLabel,
-                other.RecommendationVerdictsLabel,
-                System.StringComparison.Ordinal)
             && string.Equals(PaletteGroupingLabel, other.PaletteGroupingLabel,
                 System.StringComparison.Ordinal)
             && SameOptions(PaletteGroupingOptions,
@@ -149,6 +166,11 @@ namespace WorkRoles.UI
             && PaletteGroupingIndex == other.PaletteGroupingIndex
             && PaletteGroupingControlWidth
                 == other.PaletteGroupingControlWidth
+            && string.Equals(ChipMarkersLabel, other.ChipMarkersLabel,
+                System.StringComparison.Ordinal)
+            && SameOptions(ChipMarkersOptions, other.ChipMarkersOptions)
+            && ChipMarkersIndex == other.ChipMarkersIndex
+            && ChipMarkersControlWidth == other.ChipMarkersControlWidth
             && NumericTip.ContentEquals(other.NumericTip)
             && RangeTip.ContentEquals(other.RangeTip)
             && EmergencyRuleTip.ContentEquals(other.EmergencyRuleTip)
@@ -160,7 +182,12 @@ namespace WorkRoles.UI
             && SkillCaptions == other.SkillCaptions
             && ColonistVerdicts == other.ColonistVerdicts
             && PaletteVerdicts == other.PaletteVerdicts
-            && RecommendationVerdicts == other.RecommendationVerdicts;
+            && string.Equals(RemoveIconLabel, other.RemoveIconLabel,
+                System.StringComparison.Ordinal)
+            && string.Equals(RecommendationsLabel, other.RecommendationsLabel,
+                System.StringComparison.Ordinal)
+            && RemoveIcon == other.RemoveIcon
+            && Recommendations == other.Recommendations;
 
         private static bool SameOptions(string[] left, string[] right)
         {
@@ -185,7 +212,7 @@ namespace WorkRoles.UI
         // structured tips, measured control geometry, and detached values.
         // Dependencies: language, UI metrics, manual-priority mode, reported
         // priority range, the emergency rule, the auto-optimize schedule toggle, the palette
-        // grouping preference, both mechanical options, and the four client-local display preferences.
+        // grouping preference, the chip marker display, both mechanical options, and the six client-local display preferences.
         // Refresh: immediate when an exact key input changes, including paused
         // synced execution and local preference edits.
         // Equality: exact equal rebuilt contents preserve snapshot identity.
@@ -204,10 +231,12 @@ namespace WorkRoles.UI
         private bool builtMechanicalEnabled;
         private bool builtMechanicalRecommendationsEnabled;
         private int builtPaletteGrouping = -1;
+        private int builtChipMarkers = -1;
         private bool builtSkillCaptions;
         private bool builtColonistVerdicts;
         private bool builtPaletteVerdicts;
-        private bool builtRecommendationVerdicts;
+        private bool builtRemoveIcon;
+        private bool builtRecommendations;
         private OptionsRenderSnapshot? snapshot;
 
         internal void Reset()
@@ -217,6 +246,7 @@ namespace WorkRoles.UI
             languageRevision = -1;
             uiRevision = -1;
             builtPaletteGrouping = -1;
+            builtChipMarkers = -1;
             snapshot = null;
         }
 
@@ -239,11 +269,12 @@ namespace WorkRoles.UI
             PaletteMode paletteGrouping =
                 settings?.paletteMode == PaletteMode.Groups
                     ? PaletteMode.Groups : PaletteMode.Skills;
+            int chipMarkers = (int)(settings?.chipMarkers ?? ChipMarkers.Dots);
             bool skillCaptions = settings?.colonistSkillCaptions ?? true;
             bool colonistVerdicts = settings?.verdictsOnColonistChips ?? true;
             bool paletteVerdicts = settings?.verdictsInPalette ?? true;
-            bool recommendationVerdicts =
-                settings?.verdictsOnRecommendationChips ?? true;
+            bool removeIcon = settings?.removeRoleIcon ?? true;
+            bool recommendations = settings?.recommendationsEnabled ?? true;
             bool ownerChanged = !ReferenceEquals(owner, store)
                 || !ReferenceEquals(settingsOwner, settings);
             if (snapshot != null
@@ -258,10 +289,12 @@ namespace WorkRoles.UI
                 && builtMechanicalEnabled == mechanicalEnabled
                 && builtMechanicalRecommendationsEnabled == mechanicalRecommendationsEnabled
                 && builtPaletteGrouping == (int)paletteGrouping
+                && builtChipMarkers == chipMarkers
                 && builtSkillCaptions == skillCaptions
                 && builtColonistVerdicts == colonistVerdicts
                 && builtPaletteVerdicts == paletteVerdicts
-                && builtRecommendationVerdicts == recommendationVerdicts)
+                && builtRemoveIcon == removeIcon
+                && builtRecommendations == recommendations)
                 return snapshot;
 
             string numericLabel = "WR_OptNumeric".Translate();
@@ -310,7 +343,13 @@ namespace WorkRoles.UI
                 "WR_PaletteBySkills".Translate().ToString(),
                 "WR_PaletteByGroups".Translate().ToString(),
             };
-            float paletteControlWidth;
+            var chipMarkersOptions = new[]
+            {
+                "WR_ChipMarkersDots".Translate().ToString(),
+                "WR_ChipMarkersIcons".Translate().ToString(),
+                "WR_ChipMarkersOff".Translate().ToString(),
+            };
+            float paletteControlWidth, chipMarkersControlWidth;
             string mechanicalLabel = "WR_OptMechanicalWorkers".Translate();
             string mechanicalRecommendationsLabel = "WR_OptMechanicalRecommendations".Translate();
             float mechanicalHeight, mechanicalRecommendationsHeight;
@@ -330,6 +369,14 @@ namespace WorkRoles.UI
                 }
                 paletteControlWidth = Mathf.Max(140f,
                     (widestSegment + 24f) * paletteGroupingOptions.Length + 5f);
+                widestSegment = 0f;
+                foreach (string option in chipMarkersOptions)
+                {
+                    float width = WrText.FitWidth(option);
+                    if (width > widestSegment) widestSegment = width;
+                }
+                chipMarkersControlWidth = Mathf.Max(140f,
+                    (widestSegment + 24f) * chipMarkersOptions.Length + 5f);
             }
             finally
             {
@@ -346,11 +393,16 @@ namespace WorkRoles.UI
                 "WR_OptSkillCaptions".Translate(),
                 "WR_OptVerdictsColonists".Translate(),
                 "WR_OptVerdictsPalette".Translate(),
-                "WR_OptVerdictsRecommendations".Translate(),
+                "WR_OptRemoveIcon".Translate(),
+                "WR_OptRecommendations".Translate(),
                 "WR_OptPaletteGrouping".Translate(),
                 paletteGroupingOptions,
                 paletteGrouping == PaletteMode.Groups ? 1 : 0,
                 paletteControlWidth,
+                "WR_OptChipMarkers".Translate(),
+                chipMarkersOptions,
+                chipMarkers,
+                chipMarkersControlWidth,
                 new StructuredTip("options:numeric", numericModel),
                 new StructuredTip("options:vanilla-range", rangeModel),
                 new StructuredTip("options:emergency-rule", emergencyRuleModel),
@@ -362,7 +414,8 @@ namespace WorkRoles.UI
                 skillCaptions,
                 colonistVerdicts,
                 paletteVerdicts,
-                recommendationVerdicts,
+                removeIcon,
+                recommendations,
                 mechanicalLabel, mechanicalEnabled,
                 mechanicalRecommendationsLabel, mechanicalRecommendationsEnabled,
                 mechanicalHeight, mechanicalRecommendationsHeight);
@@ -381,10 +434,12 @@ namespace WorkRoles.UI
             builtMechanicalEnabled = mechanicalEnabled;
             builtMechanicalRecommendationsEnabled = mechanicalRecommendationsEnabled;
             builtPaletteGrouping = (int)paletteGrouping;
+            builtChipMarkers = chipMarkers;
             builtSkillCaptions = skillCaptions;
             builtColonistVerdicts = colonistVerdicts;
             builtPaletteVerdicts = paletteVerdicts;
-            builtRecommendationVerdicts = recommendationVerdicts;
+            builtRemoveIcon = removeIcon;
+            builtRecommendations = recommendations;
             return snapshot;
         }
     }

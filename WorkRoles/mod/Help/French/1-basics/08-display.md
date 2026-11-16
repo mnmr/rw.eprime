@@ -82,5 +82,23 @@ D'autres réglages d'affichage se trouvent dans l'onglet Options :
 <!-- l10n:b-b1a38cc7f63a -->
 ![Réglages d'affichage de l'onglet Options](options-display.png)
 
+<!-- l10n:b-7a3c91e04d52 -->
+Marqueurs des pastilles de rôle choisit comment les pastilles signalent les rôles toujours actifs, les règles et les affectations épinglées. Points, le choix par défaut, dessine un petit point au bord gauche de la pastille : blanc pour un rôle toujours actif, jaune pour un rôle avec des règles et turquoise pour une affectation épinglée. Icônes dessine à la place une icône pour chacun : un drapeau pour toujours actif, une horloge ou une épingle de carte pour les règles, et une punaise pour une affectation épinglée. Désactivés masque les marqueurs. Les images de cette aide montrent des points.
+
+<!-- l10n:b-c81e5d2a40f7 -->
+Un colon qui ne peut pas accomplir toutes les tâches d'un rôle reçoit des étoiles d'évaluation creuses avec les points, et une icône d'avertissement avec les icônes.
+
+<!-- l10n:b-19b4f0a6d3e8 -->
+Afficher l'icône de retrait sur les pastilles de rôle commande la corbeille des pastilles affectées. Si l'option est désactivée, faites un clic droit sur une pastille et choisissez Retirer le rôle.
+
+<!-- l10n:b-5e7a2c9b6d14 -->
+Afficher les meilleures compétences sous les noms commande la petite légende de compétences dans chaque ligne de colon.
+
+<!-- l10n:b-a40d93f1b7c2 -->
+Afficher les recommandations s'adresse aux joueurs qui affectent les rôles à la main. Si l'option est désactivée, l'onglet Recommandations, le bouton Optimiser ma colonie et les rôles recommandés du colon sélectionné sont masqués. Les étoiles d'évaluation restent disponibles.
+
+<!-- l10n:b-3d6f81e0c5a9 -->
+Les aperçus entre les commutateurs montrent une ligne de colon, la palette de rôles et le panneau du colon avec les réglages actuels.
+
 <!-- l10n:b-e505859311eb -->
 Toutes ces préférences sont personnelles : chaque joueur conserve les siennes en multijoueur, et aucune ne modifie les affectations.

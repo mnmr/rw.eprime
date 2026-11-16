@@ -8,7 +8,7 @@ El panel inferior pertenece al colono seleccionado. Se oculta al seleccionar [va
 ![Panel de detalles del colono](colonist-stats.png)
 
 <!-- l10n:b-f23e4317881f -->
-Los colores indican aptitud, las llamas pasión y las parejas de estrellas son [valoraciones](topic:verdicts). Bajo el retrato aparece su actividad actual.
+Los colores indican aptitud, las llamas marcan pasiones y las parejas de estrellas son [valoraciones](topic:verdicts). Junto al retrato aparecen el nombre del colono, lo que está haciendo en ese momento y sus rasgos.
 
 <!-- l10n:b-4ef63a2d37a4 -->
 Pasa el cursor sobre una habilidad para ver los motivos de su valoración:
@@ -17,4 +17,4 @@ Pasa el cursor sobre una habilidad para ver los motivos de su valoración:
 ![Descripción de señales de habilidad](skill-tooltip.png)
 
 <!-- l10n:b-e50531dfa09e -->
-Se enumera cada señal usada por las recomendaciones, con efecto y origen. A la derecha está la lista Roles recomendados, explicada en [Aplicar roles individuales](topic:cherry-picking).
+Se enumera cada señal usada por las recomendaciones, con su efecto y origen, así que una valoración nunca es un misterio. En la parte inferior del panel está la lista Roles recomendados, explicada en [Aplicar roles individuales](topic:cherry-picking).

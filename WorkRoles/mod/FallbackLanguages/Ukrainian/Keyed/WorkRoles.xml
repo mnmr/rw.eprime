@@ -263,10 +263,8 @@ WorkRoles надає керованим колоністам списки зав
   <WR_OptVanillaRangeTipWhat>WorkRoles впорядковує роботу унікальними пріоритетами — послідовними числами від 1.</WR_OptVanillaRangeTipWhat>
   <WR_OptVerdictsColonists>Оцінки на значках ролей колоністів</WR_OptVerdictsColonists>
   <WR_OptVerdictsColonistsTip>Кожен значок ролі в таблиці колоністів показує пару зірок придатності за оцінкою рекомендацій: білі для позитивних оцінок (одна — вправність, дві — висока вправність, золоті — виняткова), червоні для негативних (одна — слабкість, дві — непридатність), сірі — нейтральність.</WR_OptVerdictsColonistsTip>
-  <WR_OptVerdictsPalette>Оцінки вибраного колоніста на палітрі ролей</WR_OptVerdictsPalette>
-  <WR_OptVerdictsPaletteTip>Значки палітри показують, наскільки кожна роль підходить вибраному колоністу.</WR_OptVerdictsPaletteTip>
-  <WR_OptVerdictsRecommendations>Оцінки на рекомендованих ролях</WR_OptVerdictsRecommendations>
-  <WR_OptVerdictsRecommendationsTip>Рекомендовані значки ролей у панелі характеристик і перегляді змін показують придатність колоніста, якому їх рекомендують.</WR_OptVerdictsRecommendationsTip>
+  <WR_OptVerdictsPalette>Показувати оцінки вибраного колоніста на палітрі ролей і панелі навичок</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>Увімкніть, щоб показувати зірки оцінок придатності на значках палітри ролей і панелі навичок колоніста.</WR_OptVerdictsPaletteTip>
   <WR_OptionsTab>Параметри</WR_OptionsTab>
   <WR_OrderSuffixAZ>(за абеткою)</WR_OrderSuffixAZ>
   <WR_OrderSuffixBar>(панель колоністів)</WR_OrderSuffixBar>
@@ -667,4 +665,24 @@ WorkRoles керує пріоритетами колоністів із роля
   <WR_HelpChapterMods>Моди</WR_HelpChapterMods>
   <WR_HiddenRole>Прихована роль</WR_HiddenRole>
   <WR_HiddenRoleTip>Приховані ролі не показуються в палітрі ролей угорі вкладки колоністів. Вони працюють як зазвичай: колоністи, які їх мають, зберігають їх, кнопка + у рядку колоніста все ще їх показує, а рекомендації все ще можуть їх пропонувати. Використовуйте це, щоб сховати ролі, які ви рідко призначаєте напряму, або якщо палітра ролей займає забагато місця.</WR_HiddenRoleTip>
+  <WR_ChipMarkersDots>Крапки</WR_ChipMarkersDots>
+  <WR_ChipMarkersIcons>Піктограми</WR_ChipMarkersIcons>
+  <WR_ChipMarkersOff>Вимк.</WR_ChipMarkersOff>
+  <WR_OptChipMarkers>Позначки на значках ролей</WR_OptChipMarkers>
+  <WR_OptChipMarkersTip>Як значки ролей показують свої позначки.
+
+Крапки: маленька кольорова крапка для кожної позначки. Біла означає «завжди ввімкнено», жовта означає, що роль має правила, а бірюзова означає, що роль закріплено. Порожні зірки означають, що колоніст не може виконувати всі завдання ролі.
+
+Піктограми: одна піктограма для кожної позначки.
+
+Вимк.: без позначок.</WR_OptChipMarkersTip>
+  <WR_OptRecommendations>Показувати рекомендації</WR_OptRecommendations>
+  <WR_OptRecommendationsTip>Вимкніть, щоб приховати вкладку «Рекомендації», кнопку «Впорядкувати колонію» та рекомендовані ролі вибраного колоніста. Оцінки придатності залишаються доступними.</WR_OptRecommendationsTip>
+  <WR_OptRemoveIcon>Показувати піктограму вилучення на значках ролей</WR_OptRemoveIcon>
+  <WR_OptRemoveIconTip>Вимкніть, щоб прибрати смітник зі значків призначених ролей. Натомість клацніть значок правою кнопкою й виберіть «Вилучити роль».</WR_OptRemoveIconTip>
+  <WR_PreviewColonist>Колоніст</WR_PreviewColonist>
+  <WR_RemoveRole>Вилучити роль</WR_RemoveRole>
+  <WR_SelectedActivity>Діяльність</WR_SelectedActivity>
+  <WR_SelectedName>Ім'я</WR_SelectedName>
+  <WR_SelectedTraits>Риси</WR_SelectedTraits>
 </LanguageData>

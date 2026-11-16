@@ -8,7 +8,7 @@ Değerlendirme, motorun kolonicinin role uygunluğunu tek bakışta gösteren pu
 ![Koen'in değerlendirme yıldızlı satırı](verdict-row.png)
 
 <!-- l10n:b-7f555b0b6d7d -->
-Kırmızı yıldızlar uyarır: biri Zayıf, ikincisi Çok uygunsuz. Gri Nötrdür. Beyazlar olumlu: biri Güçlü, ikisi Çok uygun; altın Olağanüstüdür. Uyarı işaretli renkli etiket, puana ek olarak yeterlilik sorununu belirtir; nedeni için üzerine gelin.
+Kırmızı yıldızlar uyarır: biri Zayıf, ikinci kırmızı yıldız Çok uygunsuz anlamına gelir. Gri Nötrdür. Beyaz yıldızlar olumludur: biri Güçlü, ikisi Çok uygun; altın ise Olağanüstüdür. İçi boş yıldızlar, puana ek olarak yeterlilik sorununu belirtir; nedeni için etiketin üzerine gelin. [Simge işaretleri](topic:display) açıksa bunun yerine bir uyarı simgesi görünür.
 
 <!-- l10n:b-3fee18313e0f -->
 Etiket ipucu değerlendirmeyi sözcükle yazar:
@@ -17,7 +17,7 @@ Etiket ipucu değerlendirmeyi sözcükle yazar:
 ![Etiket ipucunda değerlendirme](chip-tooltip-verdict.png)
 
 <!-- l10n:b-adcd8b157418 -->
-Seçenekler sekmesindeki üç anahtar yıldızların nerede görüneceğini belirler:
+Seçenekler sekmesindeki iki anahtar yıldızların nerede görüneceğini belirler:
 
 <!-- l10n:b-0b21b231401d -->
 ![Değerlendirme anahtarları](verdict-switches.png)

@@ -97,16 +97,38 @@ namespace WorkRoles.UI
     {
         private readonly string tipText;
 
+        // Trait Rarity Colors' default colours by TraitRarityTiers tier.
+        private static readonly Color[] RarityColors =
+        {
+            new Color32(0xFF, 0x00, 0x00, 0xFF), // mystic
+            new Color32(0xFF, 0x99, 0x00, 0xFF), // legendary
+            new Color32(0xCC, 0x00, 0x99, 0xFF), // epic
+            new Color32(0x00, 0x73, 0xE6, 0xFF), // rare
+            new Color32(0x00, 0xFF, 0x00, 0xFF), // uncommon
+            Color.white, // common
+        };
+
         internal ColonistSelectedTraitRowSnapshot(string label, string tipText,
-            StructuredTip? tooltip)
+            StructuredTip? tooltip, int rarityTier)
         {
             Label = label;
             this.tipText = tipText;
             Tooltip = tooltip;
+            // A label that carries its own rich-text colour (Trait Rarity
+            // Colors writes colour tags into the trait definitions' labels)
+            // is drawn untinted; otherwise the tier colour tints it.
+            bool tagged = label.IndexOf("<color", StringComparison.Ordinal) >= 0;
+            Tint = tagged ? Color.white : RarityColors[rarityTier - 1];
+            RichLabel = tagged ? label : "<color=#"
+                + ColorUtility.ToHtmlStringRGB(Tint) + ">" + label + "</color>";
         }
 
         internal string Label { get; }
+        /// The label carrying its colour as a rich-text tag, for the
+        /// wrapped list where one tint cannot colour each trait.
+        internal string RichLabel { get; }
         internal StructuredTip? Tooltip { get; }
+        internal Color Tint { get; }
 
         internal bool ContentEquals(ColonistSelectedTraitRowSnapshot other) =>
             other != null
@@ -122,9 +144,25 @@ namespace WorkRoles.UI
             List<ColonistSelectedTraitRowSnapshot> rows)
         {
             this.rows = rows;
+            if (rows.Count > MaxRows)
+            {
+                var text = new System.Text.StringBuilder();
+                for (int i = 0; i < rows.Count; i++)
+                {
+                    if (i > 0) text.Append(", ");
+                    text.Append(rows[i].RichLabel);
+                }
+                WrappedLabel = text.ToString();
+            }
         }
 
+        /// Traits shown one per row; more are drawn as one wrapped text.
+        internal const int MaxRows = 4;
+
         internal int Count => rows.Count;
+        /// All traits as one comma-separated rich text, or null when they
+        /// fit one per row.
+        internal string? WrappedLabel { get; }
         internal ColonistSelectedTraitRowSnapshot RowAt(int index) => rows[index];
 
         internal bool ContentEquals(ColonistSelectedTraitsSnapshot other)
@@ -204,7 +242,7 @@ namespace WorkRoles.UI
             ColonistSelectedChromeSnapshot? nextChrome = chrome;
             if (ownerChanged || pawnChanged || externalRevision != nextExternal
                 || languageRevision != nextLanguage
-                || metricRevision != UiRevision.Current
+                || metricRevision != RoleChipUI.MetricRevision
                 || this.portraitSize != portraitSize)
             {
                 nextChrome = BuildChrome(selected, portraitSize);
@@ -228,7 +266,7 @@ namespace WorkRoles.UI
                 || uiRevision != nextUi || languageRevision != nextLanguage
                 || definitionRevision != nextDefinition
                 || rolePresentationRevision != nextRolePresentation
-                || metricRevision != UiRevision.Current
+                || metricRevision != RoleChipUI.MetricRevision
                 || this.activityWidth != activityWidth)
             {
                 nextActivitySnapshot = BuildActivity(store, selected, catalog,
@@ -253,7 +291,7 @@ namespace WorkRoles.UI
             activityRevision = nextActivity;
             uiRevision = nextUi;
             rolePresentationRevision = nextRolePresentation;
-            metricRevision = UiRevision.Current;
+            metricRevision = RoleChipUI.MetricRevision;
             definitionRevision = nextDefinition;
             languageRevision = nextLanguage;
             this.portraitSize = portraitSize;
@@ -365,7 +403,11 @@ namespace WorkRoles.UI
                 string key = "trait:" + pawn.thingIDNumber + ":"
                     + trait.def.defName + ":" + trait.Degree;
                 rows.Add(new ColonistSelectedTraitRowSnapshot(trait.LabelCap,
-                    text, BuildTextTip(key, text)));
+                    text, BuildTextTip(key, text),
+                    Core.TraitRarityTiers.Tier(Core.TraitRarityTiers.Commonality(
+                        trait.def.GetGenderSpecificCommonality(Gender.None),
+                        trait.def.GetGenderSpecificCommonality(Gender.Male),
+                        trait.def.GetGenderSpecificCommonality(Gender.Female)))));
             }
             return new ColonistSelectedTraitsSnapshot(rows);
         }

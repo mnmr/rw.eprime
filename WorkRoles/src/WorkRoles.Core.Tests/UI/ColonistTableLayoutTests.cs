@@ -13,11 +13,11 @@ public class ColonistTableLayoutTests
 
         await Assert.That(layout.HeaderWidth).IsEqualTo(300f);
         await Assert.That(layout.ScrollContentWidth).IsEqualTo(284f);
-        await Assert.That(layout.PriorityGridLeft).IsEqualTo(266f);
+        await Assert.That(layout.PriorityGridLeft).IsEqualTo(271f);
         await Assert.That(layout.PriorityGridTop).IsEqualTo(25f);
         await Assert.That(310f
             - (layout.PriorityGridLeft + layout.PriorityGridWidth))
-            .IsEqualTo(5f);
+            .IsEqualTo(0f);
         await Assert.That(layout.PriorityGridTop - 20f).IsEqualTo(5f);
     }
 }

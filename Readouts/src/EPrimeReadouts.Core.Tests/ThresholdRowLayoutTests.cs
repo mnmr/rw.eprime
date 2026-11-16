@@ -46,4 +46,33 @@ public class ThresholdRowLayoutTests
         await Assert.That(row.Width).IsEqualTo(402f);
     }
 
+    /// The editor's column is 332 wide in the 960-wide minimum window, 12
+    /// short of the classic row: the Clear button was cut off at its edge.
+    /// The two number fields give up the difference; the buttons keep their
+    /// captions.
+    [Test]
+    public async Task NarrowColumnShrinksTheFieldsSoClearStaysInside()
+    {
+        var row = ThresholdRowLayout.Compute(34f, 56f, 50f, 56f, 332f);
+        await Assert.That(row.Width).IsEqualTo(332f);
+        await Assert.That(row.FieldWidth).IsEqualTo(54f);
+        await Assert.That(row.SetW).IsEqualTo(50f);
+        await Assert.That(row.ClearW).IsEqualTo(56f);
+    }
+
+    [Test]
+    public async Task FieldsNeverShrinkBelowFourDigitsOfRoom()
+    {
+        var row = ThresholdRowLayout.Compute(34f, 56f, 50f, 56f, 200f);
+        await Assert.That(row.FieldWidth).IsEqualTo(ThresholdRowLayout.MinFieldW);
+    }
+
+    [Test]
+    public async Task RoomToSpareLeavesTheClassicRow()
+    {
+        var row = ThresholdRowLayout.Compute(34f, 56f, 50f, 56f, 470f);
+        await Assert.That(row.FieldWidth).IsEqualTo(60f);
+        await Assert.That(row.Width).IsEqualTo(344f);
+    }
+
 }

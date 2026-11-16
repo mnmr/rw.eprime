@@ -5,7 +5,7 @@ title: Import und Export
 Mit den Schaltflächen in der Ecke des Reiters „Rollen“ kannst du Rollenkonfigurationen zwischen Spielständen und mit Freunden austauschen:
 
 <!-- l10n:b-4f44ec3259f6 -->
-![Die Schaltflächen Importieren, Exportieren und Standards wiederherstellen](io-buttons.png)
+![Die Schaltflächen Importieren, Exportieren, Standards festlegen und Standards wiederherstellen](io-buttons.png)
 
 <!-- l10n:b-fcca50ae80e8 -->
 Der Export schreibt die vollständige Rollenkonfiguration in eine Datei oder die Zwischenablage: Rollen, Gruppen und deren Reihenfolge, benutzerdefinierte Symbole, Palettenfarben (auch ungenutzte Farben), Regeln, Ausbildungspfade, Einstellungen für Empfehlungen und spielstandweite Optionen. Deine Anzeigeeinstellungen sind ebenfalls enthalten und können optional importiert werden. Kolonistenzuweisungen, Auftragsbindungen und der vorübergehende Fensterzustand bleiben beim aktuellen Spielstand bzw. der aktuellen Sitzung.

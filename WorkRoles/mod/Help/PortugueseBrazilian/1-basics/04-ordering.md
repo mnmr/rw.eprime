@@ -22,7 +22,7 @@ Arraste para mudar a prioridade:
 @demo:chip-drag
 
 <!-- l10n:b-be64d575edc7 -->
-Também pode arrastar para outro colono e transferir a atribuição. Clique na lixeira da ficha para removê-la da linha.
+Soltar também funciona entre linhas: arraste uma ficha para outro colono para transferir a atribuição. Clique no ícone de lixeira dentro da ficha para remover a atribuição; a ficha sai da linha. Com a lixeira [desativada](topic:display), clique com o botão direito na ficha e escolha Remover função.
 
 <!-- l10n:b-6bbb9dc33edb -->
 RimWorld mantém uma lista separada de emergências: apagar incêndios, tratar urgências e deitar para tratamento urgente. Elas interrompem sono, refeições e qualquer trabalho. Por padrão, só entram nessa lista se cobertas por uma das cinco primeiras funções ligadas. Nas posteriores, executam na posição normal. Com Essencial primeiro e Médico sexto, o colono interrompe tudo por incêndios, mas trata urgências na posição normal de Medicina. Mover Essencial além do quinto também torna apagar incêndios um trabalho comum.

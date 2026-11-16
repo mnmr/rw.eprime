@@ -2,7 +2,7 @@
 title: Mod seçenekleri
 ---
 <!-- l10n:b-459ed37f94ab -->
-![Mod uyumluluğu ve Katalog bölümleriyle Seçenekler sekmesi](options-tab.png)
+![Seçenekler sekmesi](options-tab.png)
 
 <!-- l10n:b-045738932f34 -->
 Seçenekler sekmesinde plan uyumluluğu ve beceri sürgüsünün görünüm aralığı bulunur. Otomasyon ayarları Otomasyon sekmesindedir. Plan ve otomasyon ayarları çok oyunculu oyunda herkesçe paylaşılır.

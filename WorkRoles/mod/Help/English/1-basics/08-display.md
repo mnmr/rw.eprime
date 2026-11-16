@@ -92,6 +92,35 @@ More display switches live on the Options tab:
 <!-- l10n:b-b1a38cc7f63a -->
 ![Display settings on the Options tab](options-display.png)
 
+<!-- l10n:b-7a3c91e04d52 -->
+Role chip markers picks how chips flag always on, rules and pinned
+assignments. Dots, the default, draws a small dot at the chip's left
+edge: white for always on, yellow for a role with rules, and aqua for a
+pinned assignment. Icons draws an icon for each instead: a flag for
+always on, a clock or map pin for rules, and a pin for a pinned
+assignment. Off hides the markers. The images in this help show dots.
+
+<!-- l10n:b-c81e5d2a40f7 -->
+A colonist who cannot do all of a role's jobs gets hollow verdict stars
+with dots, and a warning icon with icons.
+
+<!-- l10n:b-19b4f0a6d3e8 -->
+Show the remove icon on role chips controls the trash can on assigned
+chips. With it off, right-click a chip and choose Remove role.
+
+<!-- l10n:b-5e7a2c9b6d14 -->
+Show top skills under colonist names controls the small skill caption
+in each colonist row.
+
+<!-- l10n:b-a40d93f1b7c2 -->
+Show recommendations is for players who assign roles by hand. With it
+off, the Recommendations tab, the Fix My Colony button and the selected
+colonist's Recommended Roles are hidden. Verdict stars stay available.
+
+<!-- l10n:b-3d6f81e0c5a9 -->
+The previews between the switches show a colonist row, the role palette
+and the colonist panel with the current settings.
+
 <!-- l10n:b-e505859311eb -->
 All of these are personal preferences: in multiplayer each player keeps
 their own, and nothing here changes any assignment.

@@ -36,9 +36,11 @@ namespace WorkRoles
             Add(result, "nestedRoleTree", s.nestedRoleTree);
             Add(result, "verdictsOnColonistChips", s.verdictsOnColonistChips);
             Add(result, "verdictsInPalette", s.verdictsInPalette);
-            Add(result, "verdictsOnRecommendationChips", s.verdictsOnRecommendationChips);
             Add(result, "colonistSkillCaptions", s.colonistSkillCaptions);
+            Add(result, "removeRoleIcon", s.removeRoleIcon);
+            Add(result, "recommendationsEnabled", s.recommendationsEnabled);
             result.values["chipDisplay"] = ((int)s.chipDisplay).ToString(CultureInfo.InvariantCulture);
+            result.values["chipMarkers"] = ((int)s.chipMarkers).ToString(CultureInfo.InvariantCulture);
             result.values["chipGridNames"] = ((int)s.chipGridNames).ToString(CultureInfo.InvariantCulture);
             result.values["colonistOrder"] = ((int)s.colonistOrder).ToString(CultureInfo.InvariantCulture);
             result.values["paletteMode"] = ((int)s.paletteMode).ToString(CultureInfo.InvariantCulture);
@@ -65,9 +67,13 @@ namespace WorkRoles
             s.nestedRoleTree = Boolean(defaults, "nestedRoleTree", true);
             s.verdictsOnColonistChips = Boolean(defaults, "verdictsOnColonistChips", true);
             s.verdictsInPalette = Boolean(defaults, "verdictsInPalette", true);
-            s.verdictsOnRecommendationChips = Boolean(defaults, "verdictsOnRecommendationChips", true);
             s.colonistSkillCaptions = Boolean(defaults, "colonistSkillCaptions", true);
+            s.removeRoleIcon = Boolean(defaults, "removeRoleIcon", true);
+            s.recommendationsEnabled = Boolean(defaults, "recommendationsEnabled", true);
             s.chipDisplay = (ChipDisplay)int.Parse(defaults.values["chipDisplay"], CultureInfo.InvariantCulture);
+            int markers = int.Parse(defaults.values["chipMarkers"], CultureInfo.InvariantCulture);
+            s.chipMarkers = System.Enum.IsDefined(typeof(ChipMarkers), markers)
+                ? (ChipMarkers)markers : ChipMarkers.Dots;
             s.chipGridNames = (GridNamePreference)int.Parse(defaults.values["chipGridNames"], CultureInfo.InvariantCulture);
             s.colonistOrder = (ColonistOrder)int.Parse(defaults.values["colonistOrder"], CultureInfo.InvariantCulture);
             s.paletteMode = (PaletteMode)int.Parse(defaults.values["paletteMode"], CultureInfo.InvariantCulture);

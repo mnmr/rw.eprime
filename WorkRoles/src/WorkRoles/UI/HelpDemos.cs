@@ -168,7 +168,7 @@ namespace WorkRoles.UI
             fill.a = alpha;
             Color outline = ChipOutline;
             outline.a *= alpha;
-            Widgets.DrawBoxSolidWithOutline(chip, fill, outline);
+            PixelBox.SolidWithOutline(chip, fill, outline);
             GameFont oldFont = Text.Font;
             TextAnchor oldAnchor = Text.Anchor;
             Color oldColor = GUI.color;
@@ -188,7 +188,7 @@ namespace WorkRoles.UI
         }
 
         private static void DrawEmptySlot(float x, float y)
-            => Widgets.DrawBoxSolidWithOutline(
+            => PixelBox.SolidWithOutline(
                 new Rect(x, y, ChipWidth, ChipHeight),
                 new Color(0f, 0f, 0f, 0.25f), EmptySlotOutline);
 
