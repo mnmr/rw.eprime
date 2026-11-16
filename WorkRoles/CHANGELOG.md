@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.9.1 — 2026-11-16
+
+- Changed: Progression: Education proficiencies no longer fill the selected colonist's Traits box.
+- Fixed: Long text in skill tooltips now wraps instead of running past the tooltip's edge.
+
 ## 1.9.0 — 2026-11-16
 
 - Added: Display options to reduce the visual noise on the Colonists tab.

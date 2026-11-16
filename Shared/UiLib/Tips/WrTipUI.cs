@@ -25,6 +25,7 @@ namespace RimShared.UiLib
         private const float RuleGapBelow = 3f;
         private const float RowTighten = 4f;   // tight rows pull toward their parent
         private const float InlineIconSize = 10f; // star pairs match the chip draw size
+        private const float MinWrappedColumn = 48f; // narrowest a wrapped table column gets
         internal const float MaxContentWidth = 800f;
 
         private static readonly Color SeparatorColor = new Color(1f, 1f, 1f, 0.2f);
@@ -455,10 +456,21 @@ namespace RimShared.UiLib
                 float tableLineW;
                 if (tableCols != null)
                 {
+                    // A table wider than the tip narrows its widest columns;
+                    // their cells wrap below instead of running past the edge.
+                    tableCols = TipTableLayout.FitColumns(tableCols,
+                        contentW - TableInset * 2f
+                            - InterColumnGap * (tableCols.Length - 1),
+                        MinWrappedColumn);
                     tableLineW = InterColumnGap * (tableCols.Length - 1);
                     foreach (float col in tableCols) tableLineW += col;
                 }
                 else tableLineW = contentW;
+                // Bottom of the last cell drawn in each column, valid while
+                // the flow cursor still sits where the last columns row left it.
+                float[]? colBottom = tableCols != null
+                    ? new float[tableCols.Length] : null;
+                float colBottomY = float.NaN;
 
                 foreach (var row in section.Rows)
                 {
@@ -515,33 +527,65 @@ namespace RimShared.UiLib
                         case TipColumnsRow cols:
                         {
                             if (tableCols == null) break;
-                            if (cols.Tight) y -= RowTighten;
                             int cellCount = cols.Cells.Count;
+                            // A continuation row directly under a columns
+                            // row starts below the cells above it in its own
+                            // columns, not below a taller wrapped neighbour.
+                            bool continues = cols.Tight && y == colBottomY;
+                            if (continues)
+                            {
+                                float start = float.MinValue;
+                                for (int i = 0; i < tableCols.Length; i++)
+                                    if (i < cellCount && !cols.Cells[i].NullOrEmpty())
+                                        start = Mathf.Max(start, colBottom![i]);
+                                if (start > float.MinValue) y = start;
+                            }
+                            if (cols.Tight) y -= RowTighten;
                             var rowColor = cols.Color ?? Color.white;
                             float cx = TableInset;
                             for (int i = 0; i < tableCols.Length; i++)
                             {
                                 string? cell = i < cellCount ? cols.Cells[i] : null;
+                                float cellH = lineH;
                                 if (cell is { Length: > 0 })
                                 {
                                     float textW = WrText.FitWidth(cell);
+                                    float cellW = tableCols[i]
+                                        - (i == 0 && cols.Icon != null
+                                            ? CellIconGap + CellIconSize : 0f);
                                     TipColumnAlignment alignment =
                                         cols.Alignments is { } alignments
                                         && i < alignments.Count
                                             ? alignments[i]
                                             : TipColumnAlignment.Left;
-                                    float textX = TipTableLayout.TextX(
-                                        cx, tableCols[i], textW, alignment);
-                                    geo.Cmds.Add(new Cmd
+                                    if (textW > cellW)
                                     {
-                                        Rect = new Rect(textX, y,
-                                            alignment == TipColumnAlignment.Right
-                                                ? textW : tableCols[i],
-                                            lineH),
-                                        Color = rowColor,
-                                        Text = cell,
-                                        NoWrap = true,
-                                    });
+                                        // Narrowed column: the cell wraps in
+                                        // its own width and grows the row.
+                                        float h = Text.CalcHeight(cell, cellW);
+                                        cellH = Mathf.Max(cellH, h);
+                                        geo.Cmds.Add(new Cmd
+                                        {
+                                            Rect = new Rect(cx, y, cellW, h),
+                                            Color = rowColor,
+                                            Text = cell,
+                                        });
+                                    }
+                                    else
+                                    {
+                                        float textX = TipTableLayout.TextX(
+                                            cx, tableCols[i], textW, alignment);
+                                        geo.Cmds.Add(new Cmd
+                                        {
+                                            Rect = new Rect(textX, y,
+                                                alignment == TipColumnAlignment.Right
+                                                    ? textW : tableCols[i],
+                                                lineH),
+                                            Color = rowColor,
+                                            Text = cell,
+                                            NoWrap = true,
+                                        });
+                                    }
                                 }
                                 if (i == 0 && cols.Icon != null)
                                 {
@@ -557,9 +601,16 @@ namespace RimShared.UiLib
                                         Icon = cols.Icon,
                                     });
                                 }
+                                // An empty cell of a continuation row keeps
+                                // the bottom of the cell above it.
+                                if (!continues || cell is { Length: > 0 })
+                                    colBottom![i] = Mathf.Max(
+                                        continues ? colBottom[i] : 0f, y + cellH);
                                 cx += tableCols[i] + InterColumnGap;
                             }
-                            y += lineH;
+                            for (int i = 0; i < tableCols.Length; i++)
+                                y = Mathf.Max(y, colBottom![i]);
+                            colBottomY = y;
                             break;
                         }
                         case TipFactGridRow grid:

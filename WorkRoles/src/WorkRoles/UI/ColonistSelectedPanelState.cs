@@ -390,6 +390,8 @@ namespace WorkRoles.UI
                 label, tipText, tip);
         }
 
+        private const string EducationPackageId = "ferny.progressioneducation";
+
         private static ColonistSelectedTraitsSnapshot BuildTraits(Pawn pawn)
         {
             var rows = new List<ColonistSelectedTraitRowSnapshot>();
@@ -399,6 +401,12 @@ namespace WorkRoles.UI
             {
                 Trait trait = source[i];
                 if (trait == null || trait.Suppressed) continue;
+                // Progression: Education stores its proficiencies (weapon,
+                // vehicle, speech) as traits; they are not character traits
+                // and would crowd the real ones out of the box.
+                if (string.Equals(trait.def.modContentPack?.PackageId,
+                        EducationPackageId, StringComparison.OrdinalIgnoreCase))
+                    continue;
                 string text = trait.TipString(pawn) ?? "";
                 string key = "trait:" + pawn.thingIDNumber + ":"
                     + trait.def.defName + ":" + trait.Degree;

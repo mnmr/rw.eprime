@@ -19,6 +19,46 @@ namespace RimShared.Common
                 ? TipLayoutPolicy.RightAlignedTextX(
                     columnX, columnWidth, textWidth)
                 : columnX;
+
+        /// Column widths for a table that must fit <paramref name="available"/>
+        /// (the room for column text, gaps and insets already removed). A
+        /// table that fits keeps its natural widths (same array). Otherwise
+        /// the widest columns share one cap, so narrow columns keep their
+        /// width and only the long ones wrap. No column goes below
+        /// <paramref name="minWidth"/>, even when that overflows.
+        public static float[] FitColumns(
+            float[] natural, float available, float minWidth)
+        {
+            float total = 0f;
+            for (int i = 0; i < natural.Length; i++) total += natural[i];
+            if (total <= available) return natural;
+
+            // Columns at or under the cap keep their width and leave their
+            // unused share to the rest, until the cap stops rising.
+            float cap = 0f;
+            float room = available;
+            int sharing = natural.Length;
+            bool settled = false;
+            var kept = new bool[natural.Length];
+            while (!settled && sharing > 0)
+            {
+                settled = true;
+                cap = room / sharing;
+                for (int i = 0; i < natural.Length; i++)
+                    if (!kept[i] && natural[i] <= cap)
+                    {
+                        kept[i] = true;
+                        room -= natural[i];
+                        sharing--;
+                        settled = false;
+                    }
+            }
+            cap = Math.Max(minWidth, (float)Math.Floor(cap));
+            var fitted = new float[natural.Length];
+            for (int i = 0; i < natural.Length; i++)
+                fitted[i] = Math.Min(natural[i], cap);
+            return fitted;
+        }
     }
 
     public readonly struct TipColumnLayout
