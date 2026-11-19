@@ -3,14 +3,13 @@ param([string[]]$Languages = @('Danish'), [string]$EvidenceRoot = 'D:\Code\RimWo
 $ErrorActionPreference = 'Stop'
 $Languages = @($Languages | ForEach-Object { $_ -split ',' })
 $automation = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..\tools\automation'))
-$game = 'C:\Program Files (x86)\Steam\steamapps\common\RimWorld'
 $mod = Join-Path $PSScriptRoot 'VanillaLanguageAudit17'
 New-Item -ItemType Directory -Force -Path $EvidenceRoot | Out-Null
 & (Join-Path $automation 'list-runs.ps1') -Json -Detailed | Set-Content -LiteralPath (Join-Path $EvidenceRoot 'runs-before.json')
 foreach ($language in $Languages) {
     $destination = Join-Path $EvidenceRoot $language
     if (Test-Path -LiteralPath $destination) { throw "Evidence already exists: $destination" }
-    $run = & (Join-Path $automation 'create-run.ps1') -Purpose "Native 1.7 vanilla and official DLC language audit: $language; main menu; zero localization probe" -ModSet 'vanilla-language-audit17' -AdditionalModSource $mod -GameRoot $game
+    $run = & (Join-Path $automation 'create-run.ps1') -Purpose "Native 1.7 vanilla and official DLC language audit: $language; main menu; zero localization probe" -ModSet 'vanilla-language-audit17' -AdditionalModSource $mod -GameVersion 1.7
     try {
         $expected = @('brrainz.harmony','ludeon.rimworld','eprime.sharedautomation','ludeon.rimworld.royalty','ludeon.rimworld.ideology','ludeon.rimworld.biotech','ludeon.rimworld.anomaly','ludeon.rimworld.odyssey','rimshared.tests.vanillalanguages17')
         if (($run.configuration.activeMods -join '|') -cne ($expected -join '|')) { throw "Unexpected active mods: $($run.configuration.activeMods -join ', ')" }

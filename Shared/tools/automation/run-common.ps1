@@ -2,7 +2,8 @@ $ErrorActionPreference = 'Stop'
 $script:AutomationRepositoryRoot = 'D:\Code\RimWorld'
 $script:AutomationSharedRoot = Join-Path $script:AutomationRepositoryRoot 'AutomationProfiles\Shared'
 $script:AutomationRunsRoot = Join-Path $script:AutomationSharedRoot 'Runs'
-$script:InstalledGameRoot = 'C:\Program Files (x86)\Steam\steamapps\common\RimWorld'
+$script:SteamGameRoot = 'C:\Program Files (x86)\Steam\steamapps\common\RimWorld'
+$script:InstalledGameRoot = $script:SteamGameRoot
 $script:InstalledWorkshopRoot = 'C:\Program Files (x86)\Steam\steamapps\workshop\content\294100'
 # Persistent per-version game copies (create-run -GameVersion) and the reusable
 # slots Windows runs execute from (stable executable paths, see Request-RunSlot).
@@ -12,6 +13,18 @@ $script:AutomationSlotsRoot = Join-Path $script:AutomationSharedRoot 'Slots'
 # is read solely by Copy-PlayerSave (create-run -RefreshFromPlayer), never written.
 $script:LocalSavesRoot = Join-Path $script:AutomationRepositoryRoot 'Saves'
 $script:PlayerSavesRoot = 'C:\Users\morte\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Saves'
+
+function Enter-GamePreparation {
+    $mutex = [Threading.Mutex]::new($false, 'Local\RimWorld-Automation-Prepare')
+    try {
+        try { $acquired = $mutex.WaitOne(60000) } catch [Threading.AbandonedMutexException] { $acquired = $true }
+        if (-not $acquired) { throw 'Another game sync, build or run preparation did not release its lock.' }
+        return $mutex
+    } catch {
+        $mutex.Dispose()
+        throw
+    }
+}
 
 function Copy-PlayerSave {
     param([Parameter(Mandatory)][string]$SavePattern, [string]$Destination = $script:LocalSavesRoot)

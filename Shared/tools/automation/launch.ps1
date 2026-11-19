@@ -13,12 +13,14 @@
 param([string]$RunId = $env:RIMWORLD_AUTOMATION_RUN_ID, [int]$TimeoutMinutes = 12, [string[]]$GameArguments = @(), [ValidateRange(1, 300)][int]$HardCapSeconds = 60, [switch]$AllowRecoverableSaveErrors)
 $pickle = $GameArguments.Count -gt 0
 . (Join-Path $PSScriptRoot 'automation-common.ps1') -RunId $RunId
+. (Join-Path $PSScriptRoot 'game-sync-common.ps1')
 $record = Get-SelectedRun
 $control = Open-RunLock (Join-Path $record.profile 'control.lock')
 $hostProcess = $null
 $runToken = 'rimworld-shared-' + $record.runId
 try {
     if (Test-Path -LiteralPath (Join-Path $record.profile 'started.json')) { throw 'Runs are single-use; create a new run to restart.' }
+    Assert-RunGame17Current $record.gameRoot
     # Early copy of RunIdentity.IsAllowedGameArgument; the host enforces it.
     foreach ($argument in $GameArguments) { if ($argument -cnotmatch '^-pickle-[a-z-]+(=[^\s"]*)?\z') { throw "Unsupported game argument: $argument" } }
     Assert-NoSharedRimWorldProcess

@@ -14,6 +14,7 @@ Use PowerShell 7 from `D:\Code\RimWorld`. Build the mods under test first. Each
 run copies their build artifacts and the host, so creating the run is its
 **deployment** step; no deployment into the player installation is needed.
 
+Runtime builds and run preparation default to the Steam-synced local 1.7 copy.
 The builder detects Unity 1.6 (`RimWorldWin64.exe`) or Waylith 1.7
 (`RimWorld.exe` with `UnityStubs.dll`). Each run records and retains its selected
 executable and runtime version, even if the installation later changes. Waylith
@@ -71,13 +72,23 @@ try {
 
 ### Local game copies and persistent slots
 
-`create-run.ps1 -GameVersion 1.6` (or `1.7`) runs against the persistent local
-copy `GameInstalls\<version>` instead of the Steam install, so Steam can update
-independently. Make a copy while Steam holds that version, for example:
+`build-runtime.ps1` and `create-run.ps1` check the Steam build and installed
+content, then refresh `GameInstalls\1.7` when either changes. They preserve the local
+`Mods` folder, remove obsolete game files, and reuse an already current copy.
+Steam must have a fully installed Windows 1.7 build. Run the same sync manually
+before building mods against the new references:
 
 ```powershell
-robocopy 'C:\Program Files (x86)\Steam\steamapps\common\RimWorld' D:\Code\RimWorld\GameInstalls\1.7 /E
+& Shared/tools/automation/update-game-1.7.ps1
 ```
+
+When an existing run still uses the local copy, sync reports its run ID.
+Stop the running test or remove the prepared run before retrying. Launch
+rejects a prepared run if Steam has since changed its installed files.
+Remove that run and create a fresh one to pick up the update.
+`-GameVersion 1.6` selects the persistent legacy copy and `-GameRoot` can
+select an independent installation for a pinned fixture. Explicit paths to
+the standard Steam 1.7 installation also use the synced copy.
 
 Windows runs execute from a reserved persistent slot,
 `AutomationProfiles\Shared\Slots\slot-N\Game`, instead of a per-run folder.
